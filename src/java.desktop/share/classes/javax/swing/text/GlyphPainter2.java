@@ -231,8 +231,8 @@ class GlyphPainter2 extends GlyphView.GlyphPainter {
          *  SwingConstants.NORTH, or SwingConstants.SOUTH.
          * @return the location within the model that best represents the next
          *  location visual position.
-         * @exception BadLocationException
-         * @exception IllegalArgumentException for an invalid direction
+         * @throws BadLocationException
+         * @throws IllegalArgumentException for an invalid direction
          */
         public int getNextVisualPositionFrom(GlyphView v, int pos,
                                              Position.Bias b, Shape a,

@@ -207,7 +207,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @deprecated replaced by
      *     {@link #drawUnselectedText(Graphics2D, float, float, int, int)}
@@ -252,7 +252,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the X location of the end of the range &gt;= 0
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @since 9
      */
@@ -272,7 +272,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the location of the end of the range.
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @deprecated replaced by
      *     {@link #drawSelectedText(Graphics2D, float, float, int, int)}
@@ -320,7 +320,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
      * @param p0 the beginning position in the model &gt;= 0
      * @param p1 the ending position in the model &gt;= p0
      * @return the location of the end of the range.
-     * @exception BadLocationException if the range is invalid
+     * @throws BadLocationException if the range is invalid
      *
      * @since 9
      */
@@ -748,7 +748,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
          * @param pos the position to convert
          * @param a the allocated region to render into
          * @return the bounding box of the given position is returned
-         * @exception BadLocationException  if the given position does not represent a
+         * @throws BadLocationException  if the given position does not represent a
          *   valid location in the associated document
          * @see View#modelToView
          */

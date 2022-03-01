@@ -142,8 +142,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
      *   content &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void read(InputStream in, Document doc, int pos)
@@ -161,8 +161,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param pos The location in the document to fetch the
      *   content &gt;=0.
      * @param len The amount to write out &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void write(OutputStream out, Document doc, int pos, int len)
@@ -193,8 +193,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
      *   content &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void read(Reader in, Document doc, int pos)
@@ -303,8 +303,8 @@ public class DefaultEditorKit extends EditorKit {
      * @param pos The location in the document to fetch the
      *   content from &gt;=0.
      * @param len The amount to write out &gt;=0.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos is not within 0 and
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos is not within 0 and
      *   the length of the document.
      */
     public void write(Writer out, Document doc, int pos, int len)

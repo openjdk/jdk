@@ -102,7 +102,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
      * operation represented by this edit. Override should begin with
      * a call to super.
      *
-     * @exception CannotUndoException if <code>canUndo</code>
+     * @throws CannotUndoException if <code>canUndo</code>
      *    returns <code>false</code>
      * @see     #canUndo
      */
@@ -134,7 +134,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
      * Subclasses should override to redo the operation represented by
      * this edit. Override should begin with a call to super.
      *
-     * @exception CannotRedoException if <code>canRedo</code>
+     * @throws CannotRedoException if <code>canRedo</code>
      *     returns <code>false</code>
      * @see     #canRedo
      */
