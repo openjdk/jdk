@@ -528,7 +528,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   if (recv_type->maybe_null()) {
     if (C->print_inlining() || C->print_intrinsics()) {
       C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(),
-                        "late call devirtualization failed");
+                        "late call devirtualization failed (receiver may be null)");
     }
     return false;
   }
@@ -538,7 +538,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
     // Don't convert the interface call to a direct call guarded by an interface subtype check.
     if (C->print_inlining() || C->print_intrinsics()) {
       C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(),
-                      "late call devirtualization failed");
+                        "late call devirtualization failed (interface call)");
     }
     return false;
   }
