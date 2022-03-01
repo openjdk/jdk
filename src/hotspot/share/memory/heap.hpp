@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 // Blocks
@@ -216,7 +217,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   int         adapter_count()                    { return _adapter_count; }
   void    set_adapter_count(int count)           {        _adapter_count = count; }
   int         full_count()                       { return _full_count; }
-  void        report_full()                      {        _full_count++; }
+  int         report_full()                      { return Atomic::add(&_full_count, 1); }
 
 private:
   size_t heap_unallocated_capacity() const;
