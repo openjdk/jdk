@@ -81,7 +81,7 @@ import jdk.internal.misc.Unsafe;
         name = "Random",
         i = 48, j = 0, k = 0,
         equidistribution = 0
-        )
+)
 public class Random implements RandomGenerator, java.io.Serializable {
 
     /**
