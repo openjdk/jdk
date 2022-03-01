@@ -25,11 +25,12 @@
  * @test
  * @bug 6430675 8010430
  * @summary Check for correct implementation of {Math, StrictMath}.round
+ * @run main/othervm -XX:+LogCompilation -XX:Tier3CompileThreshold=100 -XX:CompileThresholdScaling=0.01 -XX:+TieredCompilation RoundTests
  */
 public class RoundTests {
     public static void main(String... args) {
         int failures = 0;
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 2000; i++) {
             failures += testNearFloatHalfCases();
             failures += testNearDoubleHalfCases();
             failures += testUnityULPCases();
