@@ -125,11 +125,11 @@ void PhaseCoalesce::combine_these_two(Node *n1, Node *n2) {
 }
 
 // Copy coalescing
-void PhaseCoalesce::coalesce_driver() {
-  verify();
+void PhaseCoalesce::coalesce_driver(Block_List blocks, uint region) {
+  verify(region);
   // Coalesce from high frequency to low
-  for (uint i = 0; i < _phc._cfg.number_of_blocks(); i++) {
-    coalesce(_phc._blks[i]);
+  for (uint i = 0; i < blocks.size(); i++) {
+    coalesce(blocks[i]);
   }
 }
 
@@ -485,9 +485,9 @@ PhaseConservativeCoalesce::PhaseConservativeCoalesce(PhaseChaitin &chaitin) : Ph
   _ulr.initialize(_phc._lrg_map.max_lrg_id());
 }
 
-void PhaseConservativeCoalesce::verify() {
+void PhaseConservativeCoalesce::verify(uint region) {
 #ifdef ASSERT
-  _phc.set_was_low();
+  _phc.set_was_low(region);
 #endif
 }
 

@@ -215,6 +215,7 @@ public:
          _has_copy:1,           // Adjacent to some copy instruction
          _at_risk:1;            // Simplify says this guy is at risk to spill
 
+  uint _region;
 
   // Alive if non-zero, dead if zero
   bool alive() const { return _def != NULL; }
@@ -245,6 +246,7 @@ class PhaseIFG : public Phase {
   // Assertion bit for proper use of Squaring
   bool _is_square;
 
+public:
   // Live range structure goes here
   LRG *_lrgs;                   // Array of LRG structures
 
@@ -685,17 +687,17 @@ private:
   // Set the was-lo-degree bit.  Conservative coalescing should not change the
   // colorability of the graph.  If any live range was of low-degree before
   // coalescing, it should Simplify.  This call sets the was-lo-degree bit.
-  void set_was_low();
+  void set_was_low(uint region);
 
   // Init LRG caching of degree, numregs.  Init lo_degree list.
-  void cache_lrg_info( );
+  void cache_lrg_info(uint region);
 
   // Simplify the IFG by removing LRGs of low degree
-  void Simplify();
+  void Simplify(uint region);
 
   // Select colors by re-inserting edges into the IFG.
   // Return TRUE if any spills occurred.
-  uint Select( );
+  uint Select(uint region);
   // Helper function for select which allows biased coloring
   OptoReg::Name choose_color( LRG &lrg, int chunk );
   // Helper function which implements biasing heuristic
@@ -703,7 +705,7 @@ private:
 
   // Split uncolorable live ranges
   // Return new number of live ranges
-  uint Split(uint maxlrg, ResourceArea* split_arena);
+  uint Split(uint maxlrg, ResourceArea* split_arena, Block_List blocks);
 
   // Set the 'spilled_once' or 'spilled_twice' flag on a node.
   void set_was_spilled( Node *n );

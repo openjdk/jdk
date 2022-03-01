@@ -493,7 +493,7 @@ bool PhaseChaitin::prompt_use( Block *b, uint lidx ) {
 // USES: If USE is in HRP, split at use to leave main LRG on stack.
 //       Else, hoist LRG back up to register only (ie - split is also DEF)
 // We will compute a new maxlrg as we go
-uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
+uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List blocks) {
   Compile::TracePhase tp("regAllocSplit", &timers[_t_regAllocSplit]);
 
   // Free thread local resources used by this method on exit.

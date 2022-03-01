@@ -44,10 +44,10 @@ public:
   : Phase(Coalesce)
   , _phc(phc) {}
 
-  virtual void verify() = 0;
+  virtual void verify(uint region) = 0;
 
   // Coalesce copies
-  void coalesce_driver();
+  void coalesce_driver(Block_List blocks, uint region);
 
   // Coalesce copies in this block
   virtual void coalesce(Block *b) = 0;
@@ -75,7 +75,7 @@ public:
   // Coalesce copies
   PhaseAggressiveCoalesce( PhaseChaitin &chaitin ) : PhaseCoalesce(chaitin) {}
 
-  virtual void verify() { };
+  virtual void verify(uint region) { };
 
   // Aggressively coalesce copies in this block
   virtual void coalesce( Block *b );
@@ -99,7 +99,7 @@ public:
   // Coalesce copies
   PhaseConservativeCoalesce( PhaseChaitin &chaitin );
 
-  virtual void verify();
+  virtual void verify(uint region);
 
   // Conservatively coalesce copies in this block
   virtual void coalesce( Block *b );
