@@ -533,14 +533,6 @@ Node* PhaseCFG::select(
       return n;
     }
 
-    // These nodes must be scheduled at the beginning of the block.
-    if (n->Opcode()== Op_Con ||
-        iop == Op_CreateEx ||
-        iop == Op_CheckCastPP) {
-      worklist.map(i,worklist.pop());
-      return n;
-    }
-
     // Final call in a block must be adjacent to 'catch'
     Node *e = block->end();
     if( e->is_Catch() && e->in(0)->in(0) == n )
@@ -559,7 +551,16 @@ Node* PhaseCFG::select(
       }
     }
 
-    uint n_choice  = 2;
+    // Default priority level.
+    uint n_choice = 2;
+
+    // These nodes must be scheduled at the beginning of the block, give highest
+    // n_choice value (only projections get higher priority).
+    if (n->Opcode()== Op_Con ||
+        iop == Op_CreateEx ||
+        iop == Op_CheckCastPP) {
+      n_choice = 4;
+    }
 
     // See if this instruction is consumed by a branch. If so, then (as the
     // branch is the last instruction in the basic block) force it to the
@@ -627,7 +628,7 @@ Node* PhaseCFG::select(
 
       if (_scheduling_for_pressure) {
         latency = n_latency;
-        if (n_choice != 3) {
+        if (n_choice != 4) {
           // Now evaluate each register pressure component based on threshold in the score.
           // In general the defining register type will dominate the score, ergo we will not see register pressure grow on both banks
           // on a single instruction, but we might see it shrink on both banks.
