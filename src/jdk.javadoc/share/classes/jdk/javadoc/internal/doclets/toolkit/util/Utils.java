@@ -159,27 +159,22 @@ public class Utils {
     }
 
     // our own little symbol table
-    private HashMap<String, TypeMirror> symtab = new HashMap<>();
+    private final Map<String, TypeMirror> symtab = new HashMap<>();
 
     public TypeMirror getSymbol(String signature) {
-        TypeMirror type = symtab.get(signature);
-        if (type == null) {
-            TypeElement typeElement = elementUtils.getTypeElement(signature);
-            if (typeElement == null)
-                return null;
-            type = typeElement.asType();
-            if (type == null)
-                return null;
-            symtab.put(signature, type);
-        }
-        return type;
+        return symtab.computeIfAbsent(signature, s -> {
+            var typeElement = elementUtils.getTypeElement(s);
+            return typeElement == null ? null : typeElement.asType();
+        });
     }
 
     public TypeMirror getObjectType() {
         return getSymbol("java.lang.Object");
     }
 
-    public TypeMirror getThrowableType() { return getSymbol("java.lang.Throwable"); }
+    public TypeMirror getThrowableType() {
+        return getSymbol("java.lang.Throwable");
+    }
 
     public TypeMirror getSerializableType() {
         return getSymbol("java.io.Serializable");
@@ -241,9 +236,9 @@ public class Utils {
     /**
      * Test whether a class is a subclass of another class.
      *
-     * @param t1 the candidate superclass.
-     * @param t2 the target
-     * @return true if t1 is a superclass of t2.
+     * @param t1 the candidate subclass
+     * @param t2 the candidate superclass
+     * @return true if t1 is a superclass of t2
      */
     public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
         return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
@@ -261,20 +256,14 @@ public class Utils {
             List<? extends VariableElement> parameters2 = e2.getParameters();
             if (e1.getSimpleName().equals(e2.getSimpleName()) &&
                     parameters1.size() == parameters2.size()) {
-                int j;
-                for (j = 0 ; j < parameters1.size(); j++) {
+                for (int j = 0; j < parameters1.size(); j++) {
                     VariableElement v1 = parameters1.get(j);
                     VariableElement v2 = parameters2.get(j);
-                    String t1 = getTypeName(v1.asType(), true);
-                    String t2 = getTypeName(v2.asType(), true);
-                    if (!(t1.equals(t2) ||
-                            isTypeVariable(v1.asType()) || isTypeVariable(v2.asType()))) {
-                        break;
+                    if (!typeUtils.isSameType(v1.asType(), v2.asType())) {
+                        return false;
                     }
                 }
-                if (j == parameters1.size()) {
-                    return true;
-                }
+                return true;
             }
             return false;
         } else {
@@ -534,34 +523,25 @@ public class Utils {
     }
 
     public boolean isExecutableElement(Element e) {
-        ElementKind kind = e.getKind();
-        switch (kind) {
-            case CONSTRUCTOR: case METHOD: case INSTANCE_INIT:
-                return true;
-            default:
-                return false;
-        }
+        return switch (e.getKind()) {
+            case CONSTRUCTOR, METHOD, INSTANCE_INIT -> true;
+            default -> false;
+        };
     }
 
     public boolean isVariableElement(Element e) {
-        ElementKind kind = e.getKind();
-        switch(kind) {
-              case ENUM_CONSTANT: case EXCEPTION_PARAMETER: case FIELD:
-              case LOCAL_VARIABLE: case PARAMETER:
-              case RESOURCE_VARIABLE:
-                  return true;
-              default:
-                  return false;
-        }
+        return switch (e.getKind()) {
+            case ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE,
+                    PARAMETER, RESOURCE_VARIABLE -> true;
+            default -> false;
+        };
     }
 
     public boolean isTypeElement(Element e) {
-        switch (e.getKind()) {
-            case CLASS: case ENUM: case INTERFACE: case ANNOTATION_TYPE: case RECORD:
-                return true;
-            default:
-                return false;
-        }
+        return switch (e.getKind()) {
+            case CLASS, ENUM, INTERFACE, ANNOTATION_TYPE, RECORD -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -718,7 +698,7 @@ public class Utils {
     }
 
     public boolean ignoreBounds(TypeMirror bound) {
-        return bound.equals(getObjectType()) && !isAnnotated(bound);
+        return typeUtils.isSameType(bound, getObjectType()) && !isAnnotated(bound);
     }
 
     /*
@@ -783,11 +763,20 @@ public class Utils {
                !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
-    /**
-     * Return the type containing the method that this method overrides.
-     * It may be a {@code TypeElement} or a {@code TypeParameterElement}.
+    /*
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
+     *
+     *   - overridden by the specified method, and
+     *   - is not itself a *simple* override
+     *
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         return configuration.workArounds.overriddenType(method);
     }
 
@@ -806,7 +795,7 @@ public class Utils {
      * such class exists.
      *
      * @return a TypeElement representing the superclass that
-     * originally defined this method, null if this method does
+     * originally defined this method, or null if this method does
      * not override a definition in a superclass.
      */
     public TypeElement overriddenClass(ExecutableElement ee) {
@@ -820,8 +809,8 @@ public class Utils {
         }
         final TypeElement origin = getEnclosingTypeElement(method);
         for (TypeMirror t = getSuperType(origin);
-                t.getKind() == DECLARED;
-                t = getSuperType(asTypeElement(t))) {
+             t.getKind() == DECLARED;
+             t = getSuperType(asTypeElement(t))) {
             TypeElement te = asTypeElement(t);
             if (te == null) {
                 return null;
@@ -834,7 +823,7 @@ public class Utils {
                     return ee;
                 }
             }
-            if (t.equals(getObjectType()))
+            if (typeUtils.isSameType(t, getObjectType()))
                 return null;
         }
         return null;
@@ -916,30 +905,31 @@ public class Utils {
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
-        getAllInterfaces(te.asType(), results);
+        addSuperInterfaces(te.asType(), results);
         return results;
     }
 
-    private void getAllInterfaces(TypeMirror type, Set<TypeMirror> results) {
-        List<? extends TypeMirror> intfacs = typeUtils.directSupertypes(type);
+    private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results) {
         TypeMirror superType = null;
-        for (TypeMirror intfac : intfacs) {
-            if (intfac == getObjectType())
+        for (TypeMirror t : typeUtils.directSupertypes(type)) {
+            if (typeUtils.isSameType(t, getObjectType()))
                 continue;
-            TypeElement e = asTypeElement(intfac);
+            TypeElement e = asTypeElement(t);
             if (isInterface(e)) {
-                if (isPublic(e) || isLinkable(e))
-                    results.add(intfac);
-
-                getAllInterfaces(intfac, results);
+                if (isPublic(e) || isLinkable(e)) {
+                    results.add(t);
+                }
+                addSuperInterfaces(t, results);
             } else {
+                // there can be at most one superclass and it is not null
+                assert superType == null && t != null : superType;
                 // Save the supertype for later.
-                superType = intfac;
+                superType = t;
             }
         }
         // Collect the super-interfaces of the supertype.
         if (superType != null)
-            getAllInterfaces(superType, results);
+            addSuperInterfaces(superType, results);
     }
 
     /**
@@ -1176,8 +1166,7 @@ public class Utils {
     }
 
     public TypeElement getSuperClass(TypeElement te) {
-        if (isInterface(te) || isAnnotationType(te) ||
-                te.asType().equals(getObjectType())) {
+        if (checkType(te)) {
             return null;
         }
         TypeMirror superclass = te.getSuperclass();
@@ -1187,9 +1176,13 @@ public class Utils {
         return asTypeElement(superclass);
     }
 
+    private boolean checkType(TypeElement te) {
+        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType())
+                || isAnnotationType(te);
+    }
+
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {
-        if (isAnnotationType(te) || isInterface(te) ||
-                te.asType().equals(getObjectType())) {
+        if (checkType(te)) {
             return null;
         }
         TypeMirror firstVisibleSuperClass = getFirstVisibleSuperClass(te);
@@ -1202,7 +1195,6 @@ public class Utils {
      * @return  the closest visible super class.  Return null if it cannot
      *          be found.
      */
-
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
         return getFirstVisibleSuperClass(asTypeElement(type));
     }
@@ -1213,7 +1205,7 @@ public class Utils {
      *
      * @param te the TypeElement to be interrogated
      * @return the closest visible super class.  Return null if it cannot
-     *         be found..
+     *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
         TypeMirror superType = te.getSuperclass();
@@ -1233,7 +1225,7 @@ public class Utils {
             superType = supersuperType;
             superClass = supersuperClass;
         }
-        if (te.asType().equals(superType)) {
+        if (typeUtils.isSameType(te.asType(), superType)) {
             return null;
         }
         return superType;
@@ -1481,10 +1473,14 @@ public class Utils {
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
     }
 
-    /**
-     * Returns true if the method has no comments, or a lone &commat;inheritDoc.
-     * @param m a method
-     * @return true if there are no comments, false otherwise
+    /*
+     * Returns true if the passed method does not change the specification it
+     * inherited.
+     *
+     * If the passed method is not deprecated and has either no comment or a
+     * comment consisting of single {@inheritDoc} tag, the inherited
+     * specification is deemed unchanged and this method returns true;
+     * otherwise this method returns false.
      */
     public boolean isSimpleOverride(ExecutableElement m) {
         if (!options.summarizeOverriddenMethods() || !isIncluded(m)) {
@@ -2592,7 +2588,7 @@ public class Utils {
 
     /**
      * A cache of doc comment info objects for elements.
-     * The entries may come from the AST and DocCommentParser, or may be autromatically
+     * The entries may come from the AST and DocCommentParser, or may be automatically
      * generated comments for mandated elements and JavaFX properties.
      *
      * @see CommentUtils#dcInfoMap
