@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 6561126
+ * @bug 6561126 8267319
+ * @modules jdk.jartool/jdk.security.jarsigner
  * @summary keytool should use larger default keysize for keypairs
  * @library /test/lib
  */
@@ -37,8 +38,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import jdk.security.jarsigner.JarSigner;
 
 public class NewSize7 {
+
+    private static final String DEF_DIGEST_ALGO =
+            JarSigner.Builder.getDefaultDigestAlgorithm();
+
     public static void main(String[] args) throws Exception {
         String common = "-storepass changeit -keypass changeit -keystore ks ";
         SecurityTools.keytool(common
@@ -53,13 +59,13 @@ public class NewSize7 {
                     jf.getEntry("META-INF/MANIFEST.MF"))) {
                 Asserts.assertTrue(new Manifest(is).getAttributes("ns7.txt")
                         .keySet().stream()
-                        .anyMatch(s -> s.toString().contains("SHA-256")));
+                        .anyMatch(s -> s.toString().contains(DEF_DIGEST_ALGO)));
             }
             try (InputStream is = jf.getInputStream(
                     jf.getEntry("META-INF/ME.SF"))) {
                 Asserts.assertTrue(new Manifest(is).getAttributes("ns7.txt")
                         .keySet().stream()
-                        .anyMatch(s -> s.toString().contains("SHA-256")));
+                        .anyMatch(s -> s.toString().contains(DEF_DIGEST_ALGO)));
             }
         }
     }

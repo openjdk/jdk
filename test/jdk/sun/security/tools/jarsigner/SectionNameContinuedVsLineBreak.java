@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.jar.Manifest;
 import java.util.jar.JarFile;
 import jdk.test.lib.util.JarUtils;
 import jdk.test.lib.SecurityTools;
+import jdk.security.jarsigner.JarSigner;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -39,8 +40,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @test
- * @bug 8217375
+ * @bug 8217375 8267319
  * @library /test/lib
+ * @modules jdk.jartool/jdk.security.jarsigner
  * @run testng SectionNameContinuedVsLineBreak
  * @summary Checks some specific line break character sequences in section name
  * continuation line breaks.
@@ -48,6 +50,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class SectionNameContinuedVsLineBreak {
 
     static final String KEYSTORE_FILENAME = "test.jks";
+    private static final String DEF_DIGEST_STR =
+            JarSigner.Builder.getDefaultDigestAlgorithm() + "-Digest";
 
     @BeforeTest
     public void prepareCertificate() throws Exception {
@@ -107,12 +111,12 @@ public class SectionNameContinuedVsLineBreak {
     public void testContinueNameAfterCr() throws Exception {
         String filename = "abc";
         test("testContinueNameAfterCr", m -> {
-            String digest = m.getAttributes("abc").getValue("SHA-256-Digest");
+            String digest = m.getAttributes("abc").getValue(DEF_DIGEST_STR);
             m.getEntries().remove("abc");
             return (manifestToString(m)
                     + "Name: a\r"
                     + " bc\r\n"
-                    + "SHA-256-Digest: " + digest + "\r\n"
+                    + DEF_DIGEST_STR + ": " + digest + "\r\n"
                     + "\r\n").getBytes(UTF_8);
         }, filename);
     }
@@ -126,13 +130,13 @@ public class SectionNameContinuedVsLineBreak {
     public void testContinueNameAfterCrOnContinuationLine() throws Exception {
         String filename = "abc";
         test("testContinueNameAfterCr", m -> {
-            String digest = m.getAttributes("abc").getValue("SHA-256-Digest");
+            String digest = m.getAttributes("abc").getValue(DEF_DIGEST_STR);
             m.getEntries().remove("abc");
             return (manifestToString(m)
                     + "Name: a\r\n"
                     + " b\r"
                     + " c\r\n"
-                    + "SHA-256-Digest: " + digest + "\r\n"
+                    + DEF_DIGEST_STR + ": " + digest + "\r\n"
                     + "\r\n").getBytes(UTF_8);
         }, filename);
     }
@@ -146,12 +150,12 @@ public class SectionNameContinuedVsLineBreak {
     public void testEndNameWithCrOnContinuationLine() throws Exception {
         String filename = "abc";
         test("testContinueNameAfterCr", m -> {
-            String digest = m.getAttributes("abc").getValue("SHA-256-Digest");
+            String digest = m.getAttributes("abc").getValue(DEF_DIGEST_STR);
             m.getEntries().remove("abc");
             return (manifestToString(m)
                     + "Name: a\r\n"
                     + " bc\r"
-                    + "SHA-256-Digest: " + digest + "\r\n"
+                    + DEF_DIGEST_STR + ": " + digest + "\r\n"
                     + "\r\n").getBytes(UTF_8);
         }, filename);
     }

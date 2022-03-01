@@ -1857,6 +1857,8 @@ public final class Main {
                     keysize = 56;
                 } else if ("DESede".equalsIgnoreCase(keyAlgName)) {
                     keysize = 168;
+                } else if ("AES".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.getDefAESKeySize();
                 } else {
                     throw new Exception(rb.getString
                         ("Please.provide.keysize.for.secret.key.generation"));
@@ -1917,6 +1919,8 @@ public final class Main {
                     keysize = SecurityProviderConstants.DEF_EC_KEY_SIZE;
                 } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+                } else if ("RSASSA-PSS".equalsIgnoreCase(keyAlgName)) {
+                    keysize = SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
                 } else if ("DSA".equalsIgnoreCase(keyAlgName)) {
                     keysize = SecurityProviderConstants.DEF_DSA_KEY_SIZE;
                 } else if ("EdDSA".equalsIgnoreCase(keyAlgName)) {

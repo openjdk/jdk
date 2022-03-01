@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8029659 8214179
+ * @bug 8029659 8214179 8267319
  * @summary Keytool, print key algorithm of certificate or key entry
  * @library /test/lib
  */
@@ -41,9 +41,9 @@ public class KeyAlg {
         keytool("-printcert -file user.crt")
                 .shouldMatch("Signature algorithm name:.*SHA1withECDSA")
                 .shouldMatch("Subject Public Key Algorithm:.*1024.*RSA");
-        keytool("-genkeypair -alias f -dname CN=f -keyalg EC")
+        keytool("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 256")
                 .shouldContain("Generating 256 bit EC (secp256r1) key pair");
-        keytool("-genkeypair -alias g -dname CN=g -keyalg EC -keysize 384")
+        keytool("-genkeypair -alias f -dname CN=f -keyalg EC")
                 .shouldContain("Generating 384 bit EC (secp384r1) key pair");
     }
 

@@ -60,13 +60,11 @@ public class SignatureUtil {
             if (algName.startsWith("OID.")) {
                 algName = algName.substring(4);
             }
-
             KnownOIDs ko = KnownOIDs.findMatch(algName);
             if (ko != null) {
                 return ko.stdName().toUpperCase(Locale.ENGLISH);
             }
         }
-
         return algName;
     }
 
@@ -521,11 +519,16 @@ public class SignatureUtil {
                 64, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 
-    // The following values are from SP800-57 part 1 rev 4 tables 2 and 3
+    // SP800-57 part 1 rev5 table 2 "Comparable security strengths of
+    // symmetric block cipher and asymmetric-key algorithms", and table 3
+    // "Maximum security strengths for hash and hash-based functions"
+    // define security strength for various algorithms.
+    // Besides matching the security strength, the default algorithms may
+    // also be chosen based on various recommendations such as NIST CNSA.
 
     /**
-     * Return the default message digest algorithm with the same security
-     * strength as the specified EC key size.
+     * Return the default message digest algorithm based on the specified
+     * EC key size.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
@@ -541,16 +544,17 @@ public class SignatureUtil {
     }
 
     /**
-     * Return the default message digest algorithm with the same security
-     * strength as the specified IFC/FFC key size.
+     * Return the default message digest algorithm based on both the
+     * security strength of the specified IFC/FFC key size and the
+     * recommendation from NIST CNSA, e.g. use SHA-384 for 3072-bit.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
     private static String ifcFfcStrength (int bitLength) {
-        if (bitLength > 7680) { // 256 bits
+        if (bitLength >= 7680) { // 192 bits
             return "SHA512";
-        } else if (bitLength > 3072) {  // 192 bits
+        } else if (bitLength >= 3072) {  // 128 bits
             return "SHA384";
         } else  { // 128 bits and less
             return "SHA256";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,12 @@ package sun.security.util;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
 import java.security.InvalidParameterException;
 import java.security.ProviderException;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -105,6 +108,25 @@ public final class SecurityProviderConstants {
         }
     }
 
+    public static final int getDefAESKeySize() {
+        int currVal = DEF_AES_KEY_SIZE.get();
+        if (currVal == -1) {
+            int v = 256; // default AES key size
+            try {
+                // adjust if crypto policy only allows a smaller value
+                int max = Cipher.getMaxAllowedKeyLength("AES");
+                if (v > max)  {
+                    v = max;
+                }
+            } catch (NullPointerException | NoSuchAlgorithmException ne) {
+                // should never happen; ignore and use the default
+            }
+            DEF_AES_KEY_SIZE.compareAndSet(-1, v);
+            currVal = v;
+        }
+        return currVal;
+    }
+
     public static final int DEF_DSA_KEY_SIZE;
     public static final int DEF_RSA_KEY_SIZE;
     public static final int DEF_RSASSA_PSS_KEY_SIZE;
@@ -112,6 +134,7 @@ public final class SecurityProviderConstants {
     public static final int DEF_EC_KEY_SIZE;
     public static final int DEF_ED_KEY_SIZE;
     public static final int DEF_XEC_KEY_SIZE;
+    private static final AtomicInteger DEF_AES_KEY_SIZE;
 
     private static final String KEY_LENGTH_PROP =
         "jdk.security.defaultKeySize";
@@ -119,13 +142,14 @@ public final class SecurityProviderConstants {
     static {
         String keyLengthStr = GetPropertyAction.privilegedGetProperty
             (KEY_LENGTH_PROP);
-        int dsaKeySize = 2048;
-        int rsaKeySize = 2048;
+        int dsaKeySize = 3072;
+        int rsaKeySize = 3072;
         int rsaSsaPssKeySize = rsaKeySize; // default to same value as RSA
-        int dhKeySize = 2048;
-        int ecKeySize = 256;
+        int dhKeySize = 3072;
+        int ecKeySize = 384;
         int edKeySize = 255;
         int xecKeySize = 255;
+        int aesKeySize = -1; // needs to check crypto policy
 
         if (keyLengthStr != null) {
             try {
@@ -167,6 +191,8 @@ public final class SecurityProviderConstants {
                         edKeySize = value;
                     } else if (algoName.equals("XDH")) {
                         xecKeySize = value;
+                    } else if (algoName.equals("AES")) {
+                        aesKeySize = value;
                     } else {
                         if (debug != null) {
                             debug.println("Ignoring unsupported algo in " +
@@ -195,6 +221,7 @@ public final class SecurityProviderConstants {
         DEF_EC_KEY_SIZE = ecKeySize;
         DEF_ED_KEY_SIZE = edKeySize;
         DEF_XEC_KEY_SIZE = xecKeySize;
+        DEF_AES_KEY_SIZE = new AtomicInteger(aesKeySize);
 
         // Set up aliases with default mappings
         // This is needed when the mapping contains non-oid

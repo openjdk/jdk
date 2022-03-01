@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8056174 8242068 8255536
+ * @bug 8056174 8242068 8255536 8267319
  * @summary Make sure JarSigner impl conforms to spec
  * @library /test/lib
  * @modules java.base/sun.security.tools.keytool
@@ -178,7 +178,8 @@ public class Spec {
         assertTrue(js3.getProperty("altsigner").equals("MyContentSigner"));
         assertTrue(js3.getProperty("altsignerpath") == null);
 
-        assertTrue(JarSigner.Builder.getDefaultDigestAlgorithm().equals("SHA-256"));
+        assertTrue(JarSigner.Builder.getDefaultDigestAlgorithm()
+                .equals("SHA-384"));
 
         // Calculating large DSA and RSA keys are too slow.
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
