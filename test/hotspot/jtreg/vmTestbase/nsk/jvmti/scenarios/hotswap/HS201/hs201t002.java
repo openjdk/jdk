@@ -81,7 +81,8 @@ public class hs201t002 extends DebugeeClass {
 
         thread.start();
 
-        // enable events requires live thread
+        // setThread(thread) enables JVMTI events, and that can only be done on a live thread,
+        // so wait until the thread has started.
         try {
             thread.ready.await();
         } catch (InterruptedException e) {
