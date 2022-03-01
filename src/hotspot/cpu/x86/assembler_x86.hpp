@@ -211,9 +211,10 @@ class Address {
       _isxmmindex(false){
   }
 
-  // Make this explicit otherwise Register can be implicitly
+  // No default displacement otherwise Register can be implicitly
   // converted to 0(Register) which is quite a different animal.
-  explicit Address(Register base, int disp = 0)
+
+  Address(Register base, int disp)
     : _base(base),
       _index(noreg),
       _xmmindex(xnoreg),

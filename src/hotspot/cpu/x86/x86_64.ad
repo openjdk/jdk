@@ -3699,7 +3699,6 @@ operand rRegL()
   constraint(ALLOC_IN_RC(long_reg));
   match(RegL);
   match(rax_RegL);
-  match(rcx_RegL);
   match(rdx_RegL);
 
   format %{ %}
@@ -3712,7 +3711,6 @@ operand no_rax_rdx_RegL()
   constraint(ALLOC_IN_RC(long_no_rax_rdx_reg));
   match(RegL);
   match(rRegL);
-  match(rcx_RegL);
 
   format %{ %}
   interface(REG_INTER);
@@ -3723,7 +3721,6 @@ operand no_rax_RegL()
   constraint(ALLOC_IN_RC(long_no_rax_rdx_reg));
   match(RegL);
   match(rRegL);
-  match(rcx_RegL);
   match(rdx_RegL);
 
   format %{ %}
