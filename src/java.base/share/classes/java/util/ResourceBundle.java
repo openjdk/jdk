@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -840,6 +840,10 @@ public abstract class ResourceBundle {
      * <blockquote>
      * {@code getBundle(baseName, Locale.getDefault(), callerModule)},
      * </blockquote>
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @throws    java.lang.NullPointerException
@@ -872,6 +876,10 @@ public abstract class ResourceBundle {
      * #getBundle(String, Locale, ClassLoader, Control) getBundle} for the
      * complete description of the resource bundle loading process with a
      * {@code ResourceBundle.Control}.
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class
@@ -910,6 +918,10 @@ public abstract class ResourceBundle {
      * <blockquote>
      * {@code getBundle(baseName, locale, callerModule)},
      * </blockquote>
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class name
@@ -939,6 +951,10 @@ public abstract class ResourceBundle {
      * <blockquote>
      * {@code getBundle(baseName, Locale.getDefault(), module)}
      * </blockquote>
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -990,6 +1006,11 @@ public abstract class ResourceBundle {
      * unnamed module. Custom {@link java.util.spi.ResourceBundleControlProvider}
      * implementations, if present, will only be invoked if the specified
      * module is an unnamed module.
+     * <p>
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -1028,6 +1049,10 @@ public abstract class ResourceBundle {
      * #getBundle(String, Locale, ClassLoader, Control) getBundle} for the
      * complete description of the resource bundle loading process with a
      * {@code ResourceBundle.Control}.
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified
@@ -1256,6 +1281,10 @@ public abstract class ResourceBundle {
      * find resource bundles from named modules.
      * Use {@link #getBundle(String, Locale, Module)} to load resource bundles
      * on behalf on a specific module instead.
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @param locale the locale for which a resource bundle is desired
@@ -1466,6 +1495,13 @@ public abstract class ResourceBundle {
      * that becomes the parent of the instance for
      * {@code foo/bar/Messages_fr.properties}.
      *
+     * <p>
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * </p>
+     *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified
      *        class name
@@ -1505,7 +1541,8 @@ public abstract class ResourceBundle {
     }
 
     private static Control getDefaultControl(Class<?> caller, String baseName) {
-        return getDefaultControl(caller.getModule(), baseName);
+        final Module callerModule = getCallerModule(caller);
+        return getDefaultControl(callerModule, baseName);
     }
 
     private static Control getDefaultControl(Module targetModule, String baseName) {
@@ -1536,7 +1573,8 @@ public abstract class ResourceBundle {
     }
 
     private static void checkNamedModule(Class<?> caller) {
-        if (caller.getModule().isNamed()) {
+        Module callerModule = getCallerModule(caller);
+        if (callerModule.isNamed()) {
             throw new UnsupportedOperationException(
                     "ResourceBundle.Control not supported in named modules");
         }
@@ -1546,7 +1584,23 @@ public abstract class ResourceBundle {
                                                 Locale locale,
                                                 Class<?> caller,
                                                 Control control) {
-        return getBundleImpl(baseName, locale, caller, caller.getClassLoader(), control);
+        final ClassLoader loader = (caller != null) ?
+                caller.getClassLoader() : getLoader(getCallerModule(caller));
+        return getBundleImpl(baseName, locale, caller, loader, control);
+    }
+
+    /**
+     * Determine the module to be used for the caller.  If
+     * {@link Reflection#getCallerClass()} is called from JNI with an empty
+     * stack frame the caller will be null, so the bootloader unnamed module
+     * will be used.
+     * @param caller
+     * @return
+     */
+    private static Module getCallerModule(Class<?> caller) {
+        final Module callerModule = (caller != null) ?
+                caller.getModule() : BootLoader.getUnnamedModule();
+        return callerModule;
     }
 
     /**
@@ -1565,10 +1619,7 @@ public abstract class ResourceBundle {
                                                 Class<?> caller,
                                                 ClassLoader loader,
                                                 Control control) {
-        if (caller == null) {
-            throw new InternalError("null caller");
-        }
-        Module callerModule = caller.getModule();
+        Module callerModule = getCallerModule(caller);
 
         // get resource bundles for a named module only if loader is the module's class loader
         if (callerModule.isNamed() && loader == getLoader(callerModule)) {
@@ -1592,7 +1643,7 @@ public abstract class ResourceBundle {
                                                       Locale locale,
                                                       Control control) {
         Objects.requireNonNull(module);
-        Module callerModule = caller.getModule();
+        Module callerModule = getCallerModule(caller);
         if (callerModule != module) {
             @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
@@ -2221,6 +2272,10 @@ public abstract class ResourceBundle {
     /**
      * Removes all resource bundles from the cache that have been loaded
      * by the caller's module.
+     * In cases where this method is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), the callers module will be considered
+     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
      *
      * @since 1.6
      * @revised 9
@@ -2228,9 +2283,9 @@ public abstract class ResourceBundle {
      */
     @CallerSensitive
     public static final void clearCache() {
-        Class<?> caller = Reflection.getCallerClass();
+        final Module callerModule = getCallerModule(Reflection.getCallerClass());
         cacheList.keySet().removeIf(
-            key -> key.getCallerModule() == caller.getModule()
+            key -> key.getCallerModule() == callerModule
         );
     }
 
