@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2741,6 +2741,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                      access_flags,
                                      &sizes,
                                      ConstMethod::NORMAL,
+                                     _cp->symbol_at(name_index),
                                      CHECK_NULL);
 
   ClassLoadingService::add_class_method_size(m->size()*wordSize);

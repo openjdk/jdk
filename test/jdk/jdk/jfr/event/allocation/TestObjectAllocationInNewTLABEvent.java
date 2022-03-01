@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
 
 /**
  * @test
@@ -37,8 +39,16 @@ import jdk.test.lib.Asserts;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1 jdk.jfr.event.allocation.TestObjectAllocationInNewTLABEvent
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1 -Xint jdk.jfr.event.allocation.TestObjectAllocationInNewTLABEvent
+ * @build sun.hotspot.WhiteBox
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                   -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1
+ *                   jdk.jfr.event.allocation.TestObjectAllocationInNewTLABEvent
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                   -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1
+ *                   -Xint
+ *                   jdk.jfr.event.allocation.TestObjectAllocationInNewTLABEvent
  */
 
 /**
@@ -46,17 +56,19 @@ import jdk.test.lib.Asserts;
  * an event will be triggered. The test is done for default and interpreted mode (-Xint).
  *
  * To force objects to be allocated in a new TLAB:
- *      the size of TLAB is set to 100k (-XX:TLABSize=100k);
- *      the size of allocated objects is set to 100k minus 16 bytes overhead;
+ *      the initial size of TLAB is set to 100k (-XX:TLABSize=100k);
+ *      the size of allocated objects is set to 128k;
  *      max TLAB waste at refill is set to minimum (-XX:TLABRefillWasteFraction=1),
  *          to provoke a new TLAB creation.
  */
 public class TestObjectAllocationInNewTLABEvent {
     private final static String EVENT_NAME = EventNames.ObjectAllocationInNewTLAB;
 
-    private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array.
-    private static final int OBJECT_SIZE  = 100 * 1024;
-    private static final int OBJECT_SIZE_ALT = OBJECT_SIZE + 8; // Object size in case of disabled CompressedOops.
+    private static final Boolean COMPRESSED_CLASS_PTRS = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedClassPointers");
+
+    private static final int BYTE_ARRAY_OVERHEAD = (Platform.is64bit() && !COMPRESSED_CLASS_PTRS) ? 24 : 16;
+    private static final int OBJECT_SIZE = 128 * 1024;
+
     private static final int OBJECTS_TO_ALLOCATE = 100;
     private static final String BYTE_ARRAY_CLASS_NAME = new byte[0].getClass().getName();
     private static final int INITIAL_TLAB_SIZE = 100 * 1024;
@@ -112,9 +124,9 @@ public class TestObjectAllocationInNewTLABEvent {
         long allocationSize = Events.assertField(event, "allocationSize").atLeast(1L).getValue();
         long tlabSize = Events.assertField(event, "tlabSize").atLeast(allocationSize).getValue();
         String className = Events.assertField(event, "objectClass.name").notEmpty().getValue();
-        if (className.equals(BYTE_ARRAY_CLASS_NAME) && (allocationSize == OBJECT_SIZE || allocationSize == OBJECT_SIZE_ALT)) {
+        if (className.equals(BYTE_ARRAY_CLASS_NAME) && (allocationSize == OBJECT_SIZE)) {
             countAllTlabs++;
-            if (tlabSize == INITIAL_TLAB_SIZE + OBJECT_SIZE || tlabSize == INITIAL_TLAB_SIZE + OBJECT_SIZE_ALT) {
+            if (tlabSize == INITIAL_TLAB_SIZE + OBJECT_SIZE) {
                 countFullTlabs++;
             }
         }
