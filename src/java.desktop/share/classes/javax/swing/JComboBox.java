@@ -638,7 +638,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @param anIndex an integer specifying the list item to select,
      *                  where 0 specifies the first item in the list and -1 indicates no selection
-     * @exception IllegalArgumentException if <code>anIndex</code> &lt; -1 or
+     * @throws IllegalArgumentException if <code>anIndex</code> &lt; -1 or
      *                  <code>anIndex</code> is greater than or equal to size
      */
     @BeanProperty(bound = false, preferred = true, description
@@ -815,7 +815,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     /**
      * Checks that the <code>dataModel</code> is an instance of
      * <code>MutableComboBoxModel</code>.  If not, it throws an exception.
-     * @exception RuntimeException if <code>dataModel</code> is not an
+     * @throws RuntimeException if <code>dataModel</code> is not an
      *          instance of <code>MutableComboBoxModel</code>.
      */
     void checkMutableComboBoxModel() {
@@ -2298,7 +2298,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
              * @return this component's locale.  If this component does not have
              * a locale, the locale of its parent is returned.
              *
-             * @exception IllegalComponentStateException
+             * @throws IllegalComponentStateException
              * If the Component does not have its own locale and has not yet been
              * added to a containment hierarchy such that the locale can be
              * determined from the containing parent.

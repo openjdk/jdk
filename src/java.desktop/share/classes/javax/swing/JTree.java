@@ -1251,7 +1251,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * tree's {@code TransferHandler}.
      *
      * @param b whether or not to enable automatic drag handling
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *            <code>b</code> is <code>true</code> and
      *            <code>GraphicsEnvironment.isHeadless()</code>
      *            returns <code>true</code>
@@ -3087,7 +3087,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * Position.Bias.Forward or Position.Bias.Backward.
      * @return the TreePath of the next tree element that
      * starts with the prefix; otherwise null
-     * @exception IllegalArgumentException if prefix is null
+     * @throws IllegalArgumentException if prefix is null
      * or startingRow is out of bounds
      * @since 1.4
      */
@@ -5053,7 +5053,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
              *
              * @return This component's locale. If this component does not have
              * a locale, the locale of its parent is returned.
-             * @exception IllegalComponentStateException
+             * @throws IllegalComponentStateException
              * If the Component does not have its own locale and has not yet
              * been added to a containment hierarchy such that the locale can be
              * determined from the containing parent.

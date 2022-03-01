@@ -144,7 +144,7 @@ public class EventListenerList implements Serializable {
      * @param <T> the type of {@code EventListener} to search for
      * @param t the type of {@code EventListener} classes to be returned
      * @return all of the listeners of the specified type.
-     * @exception  ClassCastException if the supplied class
+     * @throws  ClassCastException if the supplied class
      *          is not assignable to EventListener
      *
      * @since 1.3

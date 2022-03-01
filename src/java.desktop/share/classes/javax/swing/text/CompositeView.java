@@ -244,7 +244,7 @@ public abstract class CompositeView extends View {
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does
+     * @throws BadLocationException  if the given position does
      *   not represent a valid location in the associated document
      * @see View#modelToView
      */
@@ -294,9 +294,9 @@ public abstract class CompositeView extends View {
      *  position is a boundary of two views
      * @param a the allocated region to render into
      * @return the bounding box of the given position is returned
-     * @exception BadLocationException  if the given position does
+     * @throws BadLocationException  if the given position does
      *   not represent a valid location in the associated document
-     * @exception IllegalArgumentException for an invalid bias argument
+     * @throws IllegalArgumentException for an invalid bias argument
      * @see View#viewToModel
      */
     public Shape modelToView(int p0, Position.Bias b0, int p1, Position.Bias b1, Shape a) throws BadLocationException {
@@ -458,9 +458,9 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException the given position is not a valid
+     * @throws BadLocationException the given position is not a valid
      *                                 position within the document
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      */
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction, Position.Bias[] biasRet)
@@ -715,8 +715,8 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  north or south location
-     * @exception BadLocationException for a bad location within a document model
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws BadLocationException for a bad location within a document model
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
      */
     protected int getNextNorthSouthVisualPositionFrom(int pos, Position.Bias b,
@@ -748,8 +748,8 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  west or east location
-     * @exception BadLocationException for a bad location within a document model
-     * @exception IllegalArgumentException if <code>direction</code> is invalid
+     * @throws BadLocationException for a bad location within a document model
+     * @throws IllegalArgumentException if <code>direction</code> is invalid
      * @see #getNextVisualPositionFrom
      */
     protected int getNextEastWestVisualPositionFrom(int pos, Position.Bias b,

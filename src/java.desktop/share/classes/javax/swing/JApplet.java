@@ -135,7 +135,7 @@ public class JApplet extends Applet implements Accessible,
      * This constructor sets the component's locale property to the value
      * returned by <code>JComponent.getDefaultLocale</code>.
      *
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see JComponent#getDefaultLocale
@@ -312,10 +312,10 @@ public class JApplet extends Applet implements Accessible,
      * @param comp the component to be enhanced
      * @param constraints the constraints to be respected
      * @param index the index
-     * @exception IllegalArgumentException if <code>index</code> is invalid
-     * @exception IllegalArgumentException if adding the container's parent
+     * @throws IllegalArgumentException if <code>index</code> is invalid
+     * @throws IllegalArgumentException if adding the container's parent
      *                  to itself
-     * @exception IllegalArgumentException if adding a window to a container
+     * @throws IllegalArgumentException if adding a window to a container
      *
      * @see #setRootPaneCheckingEnabled
      * @see javax.swing.RootPaneContainer
@@ -423,7 +423,7 @@ public class JApplet extends Applet implements Accessible,
      * Sets the contentPane property.  This method is called by the constructor.
      * @param contentPane the contentPane object for this applet
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *            exception) if the content pane parameter is null
      * @see #getContentPane
      * @see RootPaneContainer#setContentPane
@@ -437,7 +437,7 @@ public class JApplet extends Applet implements Accessible,
     /**
      * Returns the layeredPane object for this applet.
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *            exception) if the layered pane parameter is null
      * @see #setLayeredPane
      * @see RootPaneContainer#getLayeredPane

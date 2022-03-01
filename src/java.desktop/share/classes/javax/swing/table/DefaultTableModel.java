@@ -375,7 +375,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      * @param   row             the row index of the row to be inserted
      * @param   rowData         optional data of the row being added
-     * @exception  ArrayIndexOutOfBoundsException  if the row was invalid
+     * @throws  ArrayIndexOutOfBoundsException  if the row was invalid
      */
     public void insertRow(int row, Vector<?> rowData) {
         dataVector.insertElementAt(rowData, row);
@@ -390,7 +390,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      * @param   row      the row index of the row to be inserted
      * @param   rowData          optional data of the row being added
-     * @exception  ArrayIndexOutOfBoundsException  if the row was invalid
+     * @throws  ArrayIndexOutOfBoundsException  if the row was invalid
      */
     public void insertRow(int row, Object[] rowData) {
         insertRow(row, convertToVector(rowData));
@@ -438,7 +438,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   start       the starting row index to be moved
      * @param   end         the ending row index to be moved
      * @param   to          the destination of the rows to be moved
-     * @exception  ArrayIndexOutOfBoundsException  if any of the elements
+     * @throws  ArrayIndexOutOfBoundsException  if any of the elements
      * would be moved out of the table's range
      *
      */
@@ -463,7 +463,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *  of the row being removed will be sent to all the listeners.
      *
      * @param   row      the row index of the row to be removed
-     * @exception  ArrayIndexOutOfBoundsException  if the row was invalid
+     * @throws  ArrayIndexOutOfBoundsException  if the row was invalid
      */
     public void removeRow(int row) {
         dataVector.removeElementAt(row);
@@ -652,7 +652,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   row             the row whose value is to be queried
      * @param   column          the column whose value is to be queried
      * @return                  the value Object at the specified cell
-     * @exception  ArrayIndexOutOfBoundsException  if an invalid row or
+     * @throws  ArrayIndexOutOfBoundsException  if an invalid row or
      *               column was given
      */
     public Object getValueAt(int row, int column) {
@@ -669,7 +669,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   aValue          the new value; this can be null
      * @param   row             the row whose value is to be changed
      * @param   column          the column whose value is to be changed
-     * @exception  ArrayIndexOutOfBoundsException  if an invalid row or
+     * @throws  ArrayIndexOutOfBoundsException  if an invalid row or
      *               column was given
      */
     public void setValueAt(Object aValue, int row, int column) {

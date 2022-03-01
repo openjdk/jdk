@@ -132,7 +132,7 @@ public class ComponentView extends View  {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getPreferredSpan(int axis) {
         if ((axis != X_AXIS) && (axis != Y_AXIS)) {
@@ -160,7 +160,7 @@ public class ComponentView extends View  {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getMinimumSpan(int axis) {
         if ((axis != X_AXIS) && (axis != Y_AXIS)) {
@@ -188,7 +188,7 @@ public class ComponentView extends View  {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getMaximumSpan(int axis) {
         if ((axis != X_AXIS) && (axis != Y_AXIS)) {
@@ -325,7 +325,7 @@ public class ComponentView extends View  {
      * @param pos the position to convert &gt;=0
      * @param a the allocated region to render into
      * @return the bounding box of the given position is returned
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see View#modelToView
      */

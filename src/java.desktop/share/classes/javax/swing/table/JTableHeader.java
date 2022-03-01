@@ -550,7 +550,7 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      *  for listener notifications from the new column model.
      *
      * @param   columnModel     the new data source for this table
-     * @exception IllegalArgumentException
+     * @throws IllegalArgumentException
      *                          if <code>newModel</code> is <code>null</code>
      * @see     #getColumnModel
      */

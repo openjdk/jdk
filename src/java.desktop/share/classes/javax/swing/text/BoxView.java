@@ -293,7 +293,7 @@ public class BoxView extends CompositeView {
      * @param axis may be either <code>View.X_AXIS</code> or
      *          <code>View.Y_AXIS</code>
      * @return the weight
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public int getResizeWeight(int axis) {
         checkRequests(axis);
@@ -473,7 +473,7 @@ public class BoxView extends CompositeView {
      * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does
+     * @throws BadLocationException  if the given position does
      *  not represent a valid location in the associated document
      * @see View#modelToView
      */
@@ -519,7 +519,7 @@ public class BoxView extends CompositeView {
      *   origin and 1.0 indicates alignment to the full span
      *   away from the origin; an alignment of 0.5 would be the
      *   center of the view
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getAlignment(int axis) {
         checkRequests(axis);
@@ -540,7 +540,7 @@ public class BoxView extends CompositeView {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getPreferredSpan(int axis) {
         checkRequests(axis);
@@ -563,7 +563,7 @@ public class BoxView extends CompositeView {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getMinimumSpan(int axis) {
         checkRequests(axis);
@@ -586,7 +586,7 @@ public class BoxView extends CompositeView {
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
-     * @exception IllegalArgumentException for an invalid axis type
+     * @throws IllegalArgumentException for an invalid axis type
      */
     public float getMaximumSpan(int axis) {
         checkRequests(axis);
@@ -919,7 +919,7 @@ public class BoxView extends CompositeView {
     /**
      * Checks the request cache and update if needed.
      * @param axis the axis being studied
-     * @exception IllegalArgumentException if <code>axis</code> is
+     * @throws IllegalArgumentException if <code>axis</code> is
      *  neither <code>View.X_AXIS</code> nor <code>View.Y_AXIS</code>
      */
     void checkRequests(int axis) {
