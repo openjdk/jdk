@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1737,11 +1737,48 @@ public abstract class FloatVector extends AbstractVector<Float> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Float> test(VectorOperators.Test op,
-                                  VectorMask<Float> m) {
-        return test(op).and(m);
+                                  VectorMask<Float> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M1 extends VectorMask<Float>,
+     M2 extends VectorMask<Integer>>
+    M1 testTemplate(Class<M1> maskType, Test op, M2 mask) {
+        FloatSpecies vsp = vspecies();
+        if (opKind(op, VO_SPECIAL)) {
+            IntVector bits = this.viewAsIntegralLanes();
+            VectorMask<Integer> m;
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (int) 0, mask);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (int) 0, mask);
+            }
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and(Integer.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                int infbits = (int) toBits(Float.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, mask);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, mask);
+                } else {
+                    m = bits.compare(EQ, infbits, mask);
+                }
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m.cast(this.vspecies()));
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**

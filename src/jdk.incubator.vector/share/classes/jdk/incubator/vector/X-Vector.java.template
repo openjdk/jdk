@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2166,11 +2166,55 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<$Boxtype$> test(VectorOperators.Test op,
-                                  VectorMask<$Boxtype$> m) {
-        return test(op).and(m);
+                                  VectorMask<$Boxtype$> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+#if[FP]
+    <M1 extends VectorMask<$Boxtype$>,
+     M2 extends VectorMask<$Boxbitstype$>>
+    M1 testTemplate(Class<M1> maskType, Test op, M2 mask) {
+#else[FP]
+    <M extends VectorMask<$Boxtype$>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+#end[FP]
+        $Type$Species vsp = vspecies();
+        if (opKind(op, VO_SPECIAL)) {
+            $Bitstype$Vector bits = this.viewAsIntegralLanes();
+            VectorMask<$Boxbitstype$> m;
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, ($bitstype$) 0, mask);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, ($bitstype$) 0, mask);
+            }
+#if[FP]
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and($Boxbitstype$.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                $bitstype$ infbits = ($bitstype$) toBits($Boxtype$.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, mask);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, mask);
+                } else {
+                    m = bits.compare(EQ, infbits, mask);
+                }
+            }
+#end[FP]
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m{#if[FP]?.cast(this.vspecies())});
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**

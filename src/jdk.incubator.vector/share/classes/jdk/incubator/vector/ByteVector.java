@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1875,11 +1875,31 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Byte> test(VectorOperators.Test op,
-                                  VectorMask<Byte> m) {
-        return test(op).and(m);
+                                  VectorMask<Byte> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Byte>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        ByteSpecies vsp = vspecies();
+        if (opKind(op, VO_SPECIAL)) {
+            ByteVector bits = this.viewAsIntegralLanes();
+            VectorMask<Byte> m;
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (byte) 0, mask);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (byte) 0, mask);
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m);
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**

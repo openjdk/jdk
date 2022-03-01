@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
+import static jdk.incubator.vector.Int64Vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -355,6 +356,12 @@ final class Float64Vector extends FloatVector {
     @ForceInline
     public final Float64Mask test(Test op) {
         return super.testTemplate(Float64Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Float64Mask test(Test op, VectorMask<Float> m) {
+        return super.testTemplate(Float64Mask.class, op, (Int64Mask) m.cast(vspecies().asIntegral()));  // specialize
     }
 
     // Specialized comparisons

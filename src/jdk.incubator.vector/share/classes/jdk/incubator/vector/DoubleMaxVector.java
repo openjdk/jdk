@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
+import static jdk.incubator.vector.LongMaxVector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -355,6 +356,12 @@ final class DoubleMaxVector extends DoubleVector {
     @ForceInline
     public final DoubleMaxMask test(Test op) {
         return super.testTemplate(DoubleMaxMask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final DoubleMaxMask test(Test op, VectorMask<Double> m) {
+        return super.testTemplate(DoubleMaxMask.class, op, (LongMaxMask) m.cast(vspecies().asIntegral()));  // specialize
     }
 
     // Specialized comparisons
