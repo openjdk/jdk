@@ -488,8 +488,16 @@ GetJavaProperties(JNIEnv *env)
 #else
         sprops.user_home = pwent ? strdup(pwent->pw_dir) : NULL;
 #endif
-        if (sprops.user_home == NULL) {
-            sprops.user_home = "?";
+        if (sprops.user_home == NULL || sprops.user_home[0] == '\0' ||
+            sprops.user_home[1] == '\0') {
+            // If the OS supplied home directory is not defined or less than two characters long
+            // $HOME is the backup source for the home directory, if defined
+            char* user_home = getenv("HOME");
+            if ((user_home != NULL) && (user_home[0] != '\0')) {
+                sprops.user_home = user_home;
+            } else {
+                sprops.user_home = "?";
+            }
         }
     }
 

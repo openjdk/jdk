@@ -4673,6 +4673,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     // precondition: a copy of len is already in result
     // __ mov(result, len);
+
   Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16,
         LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
 
