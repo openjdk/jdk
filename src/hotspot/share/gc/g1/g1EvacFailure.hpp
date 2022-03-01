@@ -48,8 +48,6 @@ public:
   void work(uint worker_id);
 
   uint num_failed_regions() const;
-
-  void initialize_chunks(uint active_workers);
 };
 
 #endif // SHARE_GC_G1_G1EVACFAILURE_HPP

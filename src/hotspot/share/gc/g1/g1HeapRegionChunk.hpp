@@ -71,7 +71,6 @@ public:
 
 class G1HeapRegionChunkClosure {
 public:
-  // Typically called on each region until it returns true.
   virtual void do_heap_region_chunk(G1HeapRegionChunk* c) = 0;
 };
 
@@ -79,18 +78,18 @@ class G1ScanChunksInHeapRegions {
   const G1CMBitMap* const _bitmap;
   CHeapBitMap _chunks;
   const uint* _evac_failure_regions;
-  uint _evac_failure_regions_length;
   uint _chunks_per_region;
   uint _chunk_size;
   uint _total_chunks;
 
   bool claim_chunk(uint id);
+  void process_chunk(G1HeapRegionChunkClosure* chunk_closure, uint chunk_id, uint worker_id);
 
 public:
   G1ScanChunksInHeapRegions();
   void initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers);
 
-  void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, uint worker_id);
+  void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, const uint worker_id);
 };
 
 #endif //SHARE_GC_G1_G1HEAPREGIONCHUNK_HPP

@@ -152,13 +152,43 @@ public:
 };
 
 class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
+  class RegionMarkedWordsCache {
+    G1CollectedHeap* _g1h;
+    uint _region_idx;
+    size_t _marked_words;
+
+  public:
+    RegionMarkedWordsCache():
+      _g1h(G1CollectedHeap::heap()),
+      _region_idx(_g1h->max_regions()),
+      _marked_words(0) { }
+
+    void add(uint region_idx, size_t marked_words) {
+      if (_region_idx == _g1h->max_regions()) {
+        _region_idx = region_idx;
+        _marked_words = marked_words;
+      } else if (_region_idx == region_idx) {
+        _marked_words += marked_words;
+      } else {
+        _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+        _region_idx = region_idx;
+        _marked_words = marked_words;
+      }
+    }
+
+    void flush() {
+      if (_region_idx != _g1h->max_regions()) {
+        _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+      }
+    }
+  };
+
   G1CollectedHeap* _g1h;
   uint _worker_id;
-  uint _region_idx;
-  size_t _marked_words;
+  RegionMarkedWordsCache _region_marked_words_cache;
 
-  void remove_self_forward_ptr_by_walking_chunk(G1HeapRegionChunk* chunk,
-                                                bool during_concurrent_start) {
+  void remove_self_forward_ptr_by_walking_chunk(G1HeapRegionChunk* chunk) {
+    bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
     RemoveSelfForwardPtrObjClosure rspc(chunk->heap_region(),
                                         chunk,
                                         during_concurrent_start,
@@ -168,7 +198,7 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
     // Use the bitmap to apply the above closure to all failing objects.
     chunk->apply_to_marked_objects(&rspc);
     uint current_region_idx = chunk->heap_region()->hrm_index();
-    update_states(current_region_idx, rspc.marked_words());
+    _region_marked_words_cache.add(current_region_idx, rspc.marked_words());
 
     // Need to zap the remainder area of the processed region.
     if (!chunk->empty()) {
@@ -180,36 +210,18 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, rspc.marked_objects(), G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
   }
 
-  void update_states(uint current_region_idx, size_t marked_words) {
-    if (_region_idx == _g1h->max_regions()) {
-      _region_idx = current_region_idx;
-      _marked_words = marked_words;
-    } else if (_region_idx == current_region_idx) {
-      _marked_words += marked_words;
-    } else {
-      _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
-      _region_idx = current_region_idx;
-      _marked_words = marked_words;
-    }
-  }
-
 public:
   RemoveSelfForwardPtrHRChunkClosure(uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
-    _worker_id(worker_id),
-    _region_idx(_g1h->max_regions()),
-    _marked_words(0) {
+    _worker_id(worker_id) {
   }
 
   void do_heap_region_chunk(G1HeapRegionChunk* chunk) override {
-    bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
-    remove_self_forward_ptr_by_walking_chunk(chunk, during_concurrent_start);
+    remove_self_forward_ptr_by_walking_chunk(chunk);
   }
 
   void sync_last_region_data() {
-    if (_region_idx != _g1h->max_regions()) {
-      _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
-    }
+    _region_marked_words_cache.flush();
   }
 };
 
@@ -229,8 +241,4 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
 
 uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
   return _evac_failure_regions->num_regions_failed_evacuation();
-}
-
-void G1ParRemoveSelfForwardPtrsTask::initialize_chunks(uint active_workers) {
-  _evac_failure_regions->initialize_chunks(active_workers);
 }

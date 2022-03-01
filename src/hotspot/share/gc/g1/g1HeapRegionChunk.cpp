@@ -53,13 +53,30 @@ bool G1ScanChunksInHeapRegions::claim_chunk(uint chunk_id) {
   return _chunks.par_set_bit(chunk_id);
 }
 
+void G1ScanChunksInHeapRegions::process_chunk(G1HeapRegionChunkClosure* chunk_closure, uint chunk_id, uint worker_id) {
+  G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+  Ticks chunk_prepare_start = Ticks::now();
+  uint region_idx = _evac_failure_regions[chunk_id / _chunks_per_region];
+  HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
+  G1HeapRegionChunk chunk(r, chunk_id % _chunks_per_region, _chunk_size, _bitmap);
+  p->record_or_add_time_secs(G1GCPhaseTimes::PrepareChunks, worker_id, (Ticks::now() - chunk_prepare_start).seconds());
+
+  if (chunk.empty()) {
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardEmptyChunksNum);
+    return;
+  }
+  p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardChunksNum);
+  Ticks start = Ticks::now();
+  chunk_closure->do_heap_region_chunk(&chunk);
+  p->record_or_add_time_secs(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, (Ticks::now() - start).seconds());
+}
+
 G1ScanChunksInHeapRegions::G1ScanChunksInHeapRegions() :
   _bitmap(G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap()),
   _chunks(mtGC) { }
 
 void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers) {
   _evac_failure_regions = evac_failure_regions;
-  _evac_failure_regions_length = evac_failure_regions_length;
 
   _chunks_per_region = next_power_of_2(num_workers * G1RemoveSelfForwardPtrsThreadLoadFactor / evac_failure_regions_length);
   _chunk_size = static_cast<uint>(G1HeapRegionSize / _chunks_per_region);
@@ -71,32 +88,12 @@ void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uin
 }
 
 void G1ScanChunksInHeapRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, uint worker_id) {
-  G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
-  uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-  const uint start_pos = worker_id * _total_chunks / total_workers;
-  uint chunk_id = start_pos;
-
-  while (true) {
+  const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
+  const uint start_chunk_id = worker_id * _total_chunks / total_workers;
+  for (uint i = 0; i < _total_chunks; i++) {
+    const uint chunk_id = (start_chunk_id + i) % _total_chunks;
     if (claim_chunk(chunk_id)) {
-      Ticks chunk_prepare_start = Ticks::now();
-      uint region_idx = _evac_failure_regions[chunk_id / _chunks_per_region];
-      HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-      G1HeapRegionChunk chunk(r, chunk_id % _chunks_per_region, _chunk_size, _bitmap);
-      p->record_or_add_time_secs(G1GCPhaseTimes::PrepareChunks, worker_id, (Ticks::now() - chunk_prepare_start).seconds());
-
-      if (chunk.empty()) {
-        p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardEmptyChunksNum);
-        continue;
-      }
-      p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardChunksNum);
-      Ticks start = Ticks::now();
-      chunk_closure->do_heap_region_chunk(&chunk);
-      p->record_or_add_time_secs(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, (Ticks::now() - start).seconds());
+      process_chunk(chunk_closure, chunk_id, worker_id);
     }
-
-    if (++chunk_id == _total_chunks) {
-      chunk_id = 0;
-    }
-    if (chunk_id == start_pos) break;
   }
 }
