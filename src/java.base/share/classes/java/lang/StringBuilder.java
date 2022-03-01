@@ -449,9 +449,7 @@ public final class StringBuilder
     @Override
     @IntrinsicCandidate
     public String toString() {
-        // Create a copy, don't share the array
-        return isLatin1() ? StringLatin1.newString(value, 0, count)
-                          : StringUTF16.newString(value, 0, count);
+        return new String(this);
     }
 
     /**

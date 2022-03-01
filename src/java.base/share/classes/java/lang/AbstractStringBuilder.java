@@ -68,6 +68,11 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     byte coder;
 
     /**
+     *  The attribute indicates {@code value} has been deleted partially.
+     */
+    boolean growOnly = true;
+
+    /**
      * The count is the number of characters used.
      */
     int count;
@@ -191,6 +196,14 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     public int capacity() {
         return value.length >> coder;
+    }
+
+    /**
+     * Return true if value has been deleted partially. coder may not be accurate.
+     * @return the attribute growOnly.
+     */
+    boolean isGrowOnly() {
+        return growOnly;
     }
 
     /**
@@ -318,6 +331,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             } else {
                 StringUTF16.fillNull(value, count, newLength);
             }
+        } else if (count > newLength) {
+            growOnly = false;
         }
         count = newLength;
     }
@@ -528,6 +543,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             }
             StringUTF16.putCharSB(value, index, ch);
         }
+        growOnly = false;
     }
 
     /**
@@ -906,6 +922,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (len > 0) {
             shift(end, -len);
             this.count = count - len;
+            growOnly = false;
         }
         return this;
     }
@@ -957,6 +974,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         checkIndex(index, count);
         shift(index + 1, -1);
         count--;
+        growOnly = false;
         return this;
     }
 
@@ -991,6 +1009,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         shift(end, newCount - count);
         this.count = newCount;
         putStringAt(start, str);
+        if (end - start > 0) {
+            growOnly = false;
+        }
         return this;
     }
 
