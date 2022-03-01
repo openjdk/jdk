@@ -2235,6 +2235,9 @@ void Compile::Optimize() {
 
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* m = n->fast_out(i);
+        if (not_a_node(m)) {
+          continue;
+        }
         ideal_nodes.push(m);
       }
     }
