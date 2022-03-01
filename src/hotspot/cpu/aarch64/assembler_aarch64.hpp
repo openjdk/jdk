@@ -3173,8 +3173,11 @@ public:
   INSN(sve_fnmla, 0b01100101, 1, 0b010); // floating-point negated fused multiply-add: Zda = -Zda + -Zn * Zm
   INSN(sve_fnmls, 0b01100101, 1, 0b011); // floating-point negated fused multiply-subtract: Zda = -Zda + Zn * Zm
   INSN(sve_fmad,  0b01100101, 1, 0b100); // floating-point fused multiply-add, writing multiplicand: Zda = Zm + Zda * Zn
-  INSN(sve_mla,   0b00000100, 0, 0b010); // multiply-add: Zda = Zda + Zn*Zm
-  INSN(sve_mls,   0b00000100, 0, 0b011); // multiply-subtract: Zda = Zda + -Zn*Zm
+  INSN(sve_fmsb,  0b01100101, 1, 0b101); // floating-point fused multiply-subtract, writing multiplicand: Zda = Zm + -Zda * Zn
+  INSN(sve_fnmad, 0b01100101, 1, 0b110); // floating-point negated fused multiply-add, writing multiplicand: Zda = -Zm + -Zda * Zn
+  INSN(sve_fnmsb, 0b01100101, 1, 0b111); // floating-point negated fused multiply-subtract, writing multiplicand: Zda = -Zm + Zda * Zn
+  INSN(sve_mla,   0b00000100, 0, 0b010); // multiply-add, writing addend: Zda = Zda + Zn*Zm
+  INSN(sve_mls,   0b00000100, 0, 0b011); // multiply-subtract, writing addend: Zda = Zda + -Zn*Zm
 #undef INSN
 
 // SVE bitwise logical - unpredicated
