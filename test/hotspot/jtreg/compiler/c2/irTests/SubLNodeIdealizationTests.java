@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265
+ * @bug 8267265 8272735
  * @summary Test that Ideal transformations of SubLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.SubLNodeIdealizationTests
@@ -42,7 +42,8 @@ public class SubLNodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16", "test17", "test18"})
+                 "test16", "test17", "test18",
+                 "test19", "test20", "test21"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -77,6 +78,9 @@ public class SubLNodeIdealizationTests {
         Asserts.assertEQ(a*b - b*c        , test16(a, b, c));
         Asserts.assertEQ(a*c - b*c        , test17(a, b, c));
         Asserts.assertEQ(a*b - c*a        , test18(a, b, c));
+        Asserts.assertEQ((a+b) - a        , test19(a, b));
+        Asserts.assertEQ((a+b) - b        , test20(a, b));
+        Asserts.assertEQ((a-b) - a        , test21(a, b));
     }
 
     @Test
@@ -223,5 +227,26 @@ public class SubLNodeIdealizationTests {
     // Checks a*b-c*a => a*(b-c)
     public long test18(long a, long b, long c) {
         return a*b - c*a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.SUB})
+    // Checks "(a+b) - b" => "a"
+    public long test19(long a, long b) {
+        return (a+b) - a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.SUB})
+    // Checks "(a+b) - a" => "b"
+    public long test20(long a, long b) {
+        return (a+b) - b;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks "(a-b) - a" => "0 - b"
+    public long test21(long a, long b) {
+        return (a-b) - a;
     }
 }
