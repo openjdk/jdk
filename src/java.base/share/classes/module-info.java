@@ -225,6 +225,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
+        java.naming,
         jdk.incubator.foreign;
     exports jdk.internal.reflect to
         java.logging,

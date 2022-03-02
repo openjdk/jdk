@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,15 +69,15 @@ final class LdapBindingEnumeration
         }
         if (obj == null) {
             // DirContext object
-            obj = new LdapCtx(homeCtx, dn);
+            obj = new LdapCtx(homeCtx(), dn);
         }
 
         CompositeName cn = new CompositeName();
         cn.add(atom);
 
         try {
-            obj = DirectoryManager.getObjectInstance(obj, cn, homeCtx,
-                homeCtx.envprops, attrs);
+            obj = DirectoryManager.getObjectInstance(obj, cn, homeCtx(),
+                homeCtx().envprops, attrs);
 
         } catch (NamingException e) {
             throw e;
@@ -93,7 +93,7 @@ final class LdapBindingEnumeration
         Binding binding;
         if (respCtls != null) {
            binding = new BindingWithControls(cn.toString(), obj,
-                                homeCtx.convertControls(respCtls));
+                                homeCtx().convertControls(respCtls));
         } else {
             binding = new Binding(cn.toString(), obj);
         }

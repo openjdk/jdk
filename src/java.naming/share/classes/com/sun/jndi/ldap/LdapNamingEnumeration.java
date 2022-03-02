@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ final class LdapNamingEnumeration
         if (respCtls != null) {
             ncp = new NameClassPairWithControls(
                         cn.toString(), className,
-                        homeCtx.convertControls(respCtls));
+                        homeCtx().convertControls(respCtls));
         } else {
             ncp = new NameClassPair(cn.toString(), className);
         }

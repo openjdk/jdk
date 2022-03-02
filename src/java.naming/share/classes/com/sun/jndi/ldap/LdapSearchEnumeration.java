@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,19 +82,19 @@ final class LdapSearchEnumeration
 
             if (startName != null && parsed.startsWith(startName)) {
                 relStart = parsed.getSuffix(startName.size()).toString();
-                relHome = parsed.getSuffix(homeCtx.currentParsedDN.size()).toString();
+                relHome = parsed.getSuffix(homeCtx().currentParsedDN.size()).toString();
             } else {
                 relative = false;
                 relHome = relStart =
-                    LdapURL.toUrlString(homeCtx.hostname, homeCtx.port_number,
-                    dn, homeCtx.hasLdapsScheme);
+                    LdapURL.toUrlString(homeCtx().hostname, homeCtx().port_number,
+                    dn, homeCtx().hasLdapsScheme);
             }
         } catch (NamingException e) {
             // could not parse name
             relative = false;
             relHome = relStart =
-                LdapURL.toUrlString(homeCtx.hostname, homeCtx.port_number,
-                dn, homeCtx.hasLdapsScheme);
+                LdapURL.toUrlString(homeCtx().hostname, homeCtx().port_number,
+                dn, homeCtx().hasLdapsScheme);
         }
 
         // Name relative to search context
@@ -112,7 +112,7 @@ final class LdapSearchEnumeration
         //System.err.println("relHome: " + rcn);
 
         // Fix attributes to be able to get schema
-        homeCtx.setParents(attrs, rcn);
+        homeCtx().setParents(attrs, rcn);
 
         // only generate object when requested
         if (searchArgs.cons.getReturningObjFlag()) {
@@ -128,15 +128,15 @@ final class LdapSearchEnumeration
                 }
             }
             if (obj == null) {
-                obj = new LdapCtx(homeCtx, dn);
+                obj = new LdapCtx(homeCtx(), dn);
             }
 
             // Call getObjectInstance before removing unrequested attributes
             try {
                 // rcn is either relative to homeCtx or a fully qualified DN
                 obj = DirectoryManager.getObjectInstance(
-                    obj, rcn, (relative ? homeCtx : null),
-                    homeCtx.envprops, attrs);
+                    obj, rcn, (relative ? homeCtx() : null),
+                    homeCtx().envprops, attrs);
             } catch (NamingException e) {
                 throw e;
             } catch (Exception e) {
@@ -178,7 +178,7 @@ final class LdapSearchEnumeration
         if (respCtls != null) {
             sr = new SearchResultWithControls(
                 (relative ? cn.toString() : relStart), obj, attrs,
-                relative, homeCtx.convertControls(respCtls));
+                relative, homeCtx().convertControls(respCtls));
         } else {
             sr = new SearchResult(
                 (relative ? cn.toString() : relStart),
