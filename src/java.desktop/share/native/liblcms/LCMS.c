@@ -759,8 +759,10 @@ static cmsHPROFILE _writeCookedTag(const cmsHPROFILE pfTarget,
             cmsCloseProfile(p);
             p = NULL;
         }
-        cmsCloseProfile(pfSanity);
-        pfSanity = NULL;
+        // The profile we used for sanity checking needs to be returned
+        // since the one we updated is raw - not cooked.
+        cmsCloseProfile(p);
+        p = pfSanity;
     }
 
     return p;
