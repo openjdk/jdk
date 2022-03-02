@@ -75,14 +75,15 @@ G1ScanChunksInHeapRegions::G1ScanChunksInHeapRegions() :
   _bitmap(G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap()),
   _chunks(mtGC) { }
 
-void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers) {
+void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers, const char* task_name) {
   _evac_failure_regions = evac_failure_regions;
 
   _chunks_per_region = next_power_of_2(num_workers * G1RemoveSelfForwardPtrsThreadLoadFactor / evac_failure_regions_length);
   _chunk_size = static_cast<uint>(G1HeapRegionSize / _chunks_per_region);
   _total_chunks = _chunks_per_region * evac_failure_regions_length;
 
-  G1CollectedHeap::heap()->phase_times()->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, 0, _chunks_per_region, G1GCPhaseTimes::RemoveSelfForwardChunksPerRegion);
+  log_debug(gc, ergo)("Running %s using %u workers for removing self forwards with %u chunks per region",
+                      task_name, num_workers, _chunk_size);
 
   _chunks.resize(_total_chunks);
 }

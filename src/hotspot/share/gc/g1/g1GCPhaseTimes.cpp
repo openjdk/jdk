@@ -138,7 +138,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
 
   _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failure Regions:", RestoreRetainedRegionsNum);
 
-  _gc_par_phases[RemoveSelfForwardsInChunks]->create_thread_work_items("Chunks Per Region:", RemoveSelfForwardChunksPerRegion);
   _gc_par_phases[RemoveSelfForwardsInChunks]->create_thread_work_items("Forward Chunks:", RemoveSelfForwardChunksNum);
   _gc_par_phases[RemoveSelfForwardsInChunks]->create_thread_work_items("Empty Forward Chunks:", RemoveSelfForwardEmptyChunksNum);
   _gc_par_phases[RemoveSelfForwardsInChunks]->create_thread_work_items("Forward Objects:", RemoveSelfForwardObjectsNum);

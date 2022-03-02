@@ -80,10 +80,10 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                                      worker_id);
 }
 
-void G1EvacFailureRegions::initialize_chunks(uint num_workers) {
+void G1EvacFailureRegions::initialize_chunks(uint num_workers, const char* task_name) {
   _chunks_in_regions->initialize(_evac_failure_regions,
                                  Atomic::load(&_evac_failure_regions_cur_length),
-                                 num_workers);
+                                 num_workers, task_name);
 }
 
 void G1EvacFailureRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,

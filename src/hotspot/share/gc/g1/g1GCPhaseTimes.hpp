@@ -153,7 +153,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   };
 
   enum RemoveSelfForwardsInChunksWorkItems {
-    RemoveSelfForwardChunksPerRegion,
     RemoveSelfForwardChunksNum,
     RemoveSelfForwardEmptyChunksNum,
     RemoveSelfForwardObjectsNum,

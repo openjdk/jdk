@@ -102,12 +102,14 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
   G1ParRemoveSelfForwardPtrsTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
+  const char* _task_name;
 
 public:
-  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
+  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions, const char* task_name) :
     G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
-    _evac_failure_regions(evac_failure_regions) { }
+    _evac_failure_regions(evac_failure_regions),
+    _task_name(task_name) { }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
@@ -119,13 +121,15 @@ public:
   }
 
   void initialize_chunks(uint num_workers) {
-    _evac_failure_regions->initialize_chunks(num_workers);
+    _evac_failure_regions->initialize_chunks(num_workers, _task_name);
   }
 };
 
+const char* G1PostEvacuateCollectionSetCleanupTask1::_name = "Post Evacuate Cleanup 1";
+
 G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask(_name, G1CollectedHeap::heap()->phase_times())
 {
   bool evacuation_failed = evac_failure_regions->evacuation_failed();
 
@@ -136,7 +140,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evacuation_failed) {
-    RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions);
+    RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions, _name);
     add_parallel_task(remove_self_forward_task);
     uint num_workers = MAX2(1u, MIN2(num_workers_estimate(), G1CollectedHeap::heap()->workers()->active_workers()));
     remove_self_forward_task->initialize_chunks(num_workers);

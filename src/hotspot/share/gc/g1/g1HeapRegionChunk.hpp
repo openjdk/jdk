@@ -87,7 +87,7 @@ class G1ScanChunksInHeapRegions {
 
 public:
   G1ScanChunksInHeapRegions();
-  void initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers);
+  void initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers, const char* task_name);
 
   void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, const uint worker_id);
 };
