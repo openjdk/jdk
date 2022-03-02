@@ -143,8 +143,10 @@ public class TestRunTests {
         } catch (IllegalArgumentException e) {
             g.log.add(e.toString());
         }
-        // implicit in the following is that the error was detected before any test methods were executed
-        checkEqualOrdered(g.log, List.of("java.lang.IllegalArgumentException: unknown signature for method "
+        // since the exception comes from the nested use of `getTestArgs`, it will be thrown
+        // when the test method is being called, and so is not constrained to be thrown
+        // before any test method is called
+        checkContainsAll(g.log, List.of("java.lang.IllegalArgumentException: unknown signature for method "
                 + "public void TestRunTests$InvalidSignatureGroup.invalidSignature(java.lang.Object)(class java.lang.Object)"));
     }
 
@@ -158,6 +160,14 @@ public class TestRunTests {
         }
         // implicit in the following is that the error was detected before any test methods were executed
         checkEqualOrdered(g.log, List.of("java.lang.IllegalStateException: test method m1 is overloaded"));
+    }
+
+    void checkContainsAll(List<String> found, List<String> expect) {
+        if (!found.containsAll(expect)) {
+            out.println("Found:  " + found);
+            out.println("Expect: " + expect);
+            error("Expected results not found");
+        }
     }
 
     void checkEqualOrdered(List<String> found, List<String> expect) {
