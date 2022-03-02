@@ -256,6 +256,12 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * resource bundle provider</a>, it does not fall back to the
  * class loader search.
  *
+ * <p>
+ * In cases where the {@code getBundle} factory method is called from a context
+ * where there is no caller frame on the stack (e.g. when called directly from
+ * a JNI attached thread), the caller module is default to the unnamed module for the
+ * {@linkplain ClassLoader#getSystemClassLoader system class loader}.
+ *
  * <h3>Resource bundles in automatic modules</h3>
  *
  * A common format of resource bundles is in {@linkplain PropertyResourceBundle
@@ -840,10 +846,6 @@ public abstract class ResourceBundle {
      * <blockquote>
      * {@code getBundle(baseName, Locale.getDefault(), callerModule)},
      * </blockquote>
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @throws    java.lang.NullPointerException
@@ -876,10 +878,6 @@ public abstract class ResourceBundle {
      * #getBundle(String, Locale, ClassLoader, Control) getBundle} for the
      * complete description of the resource bundle loading process with a
      * {@code ResourceBundle.Control}.
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class
@@ -918,10 +916,6 @@ public abstract class ResourceBundle {
      * <blockquote>
      * {@code getBundle(baseName, locale, callerModule)},
      * </blockquote>
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class name
@@ -951,10 +945,6 @@ public abstract class ResourceBundle {
      * <blockquote>
      * {@code getBundle(baseName, Locale.getDefault(), module)}
      * </blockquote>
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -1006,11 +996,6 @@ public abstract class ResourceBundle {
      * unnamed module. Custom {@link java.util.spi.ResourceBundleControlProvider}
      * implementations, if present, will only be invoked if the specified
      * module is an unnamed module.
-     * <p>
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -1049,10 +1034,6 @@ public abstract class ResourceBundle {
      * #getBundle(String, Locale, ClassLoader, Control) getBundle} for the
      * complete description of the resource bundle loading process with a
      * {@code ResourceBundle.Control}.
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified
@@ -1281,10 +1262,6 @@ public abstract class ResourceBundle {
      * find resource bundles from named modules.
      * Use {@link #getBundle(String, Locale, Module)} to load resource bundles
      * on behalf on a specific module instead.
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @param locale the locale for which a resource bundle is desired
@@ -1495,13 +1472,6 @@ public abstract class ResourceBundle {
      * that becomes the parent of the instance for
      * {@code foo/bar/Messages_fr.properties}.
      *
-     * <p>
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
-     * </p>
-     *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified
      *        class name
@@ -1584,8 +1554,7 @@ public abstract class ResourceBundle {
                                                 Locale locale,
                                                 Class<?> caller,
                                                 Control control) {
-        final ClassLoader loader = (caller != null) ?
-              ClassLoader loader = getLoader(getCallerModule(caller));
+        ClassLoader loader = getLoader(getCallerModule(caller));
         return getBundleImpl(baseName, locale, caller, loader, control);
     }
 
@@ -2272,10 +2241,6 @@ public abstract class ResourceBundle {
     /**
      * Removes all resource bundles from the cache that have been loaded
      * by the caller's module.
-     * In cases where this method is called from a context where
-     * there is no caller frame on the stack (e.g. when called directly
-     * from a JNI attached thread), the callers module will be considered
-     * to be the system class loader unnamed module.
      *
      * @since 1.6
      * @revised 9
