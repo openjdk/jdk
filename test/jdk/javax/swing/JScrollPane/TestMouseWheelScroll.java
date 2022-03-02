@@ -43,9 +43,9 @@ public class TestMouseWheelScroll {
 
     static JFrame frame;
     static JScrollPane scrollPane;
-    static Point p;
-    static int width;
-    static int height;
+    static volatile Point p;
+    static volatile int width;
+    static volatile int height;
     static volatile Point viewPosition;
     static volatile Point newPosition;
 
@@ -93,6 +93,7 @@ public class TestMouseWheelScroll {
                 robot.mouseMove(p.x + width / 2, p.y + height / 2);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                robot.waitForIdle();
                 SwingUtilities.invokeAndWait(() -> {
                     viewPosition = scrollPane.getViewport().getViewPosition();
                 });
