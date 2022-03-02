@@ -72,7 +72,7 @@ TEST_VM(LARGE_OPTION, small_ints) {
 
 
 TEST_VM(LARGE_OPTION, large_int_overflow) { // Test 0x100000000
-  ASSERT_FALSE(LargeOptionsTest::test_option_value("CompilerDirectivesLimit", 4294967296));
+  ASSERT_FALSE(LargeOptionsTest::test_option_value("CompilerDirectivesLimit=4294967296"));
 }
 
 
@@ -102,9 +102,12 @@ TEST_VM(LARGE_OPTION, large_intxs) {
 
 TEST_VM(LARGE_OPTION, small_intxs) {
   ASSERT_TRUE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity", min_intx + 1));
-  ASSERT_EQ(MaxJNILocalCapacity, -9223372036854775807);
+  ASSERT_EQ(MaxJNILocalCapacity, min_intx + 1);
   ASSERT_TRUE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity", min_intx));
   ASSERT_EQ(MaxJNILocalCapacity, min_intx);
   // Test value that's less than min_intx (-0x8000000000000001).
-  ASSERT_FALSE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity=-9223372036854775809"));
+  if (sizeof(intx) == 8)
+    ASSERT_FALSE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity=-9223372036854775809"));
+  else // must be 4
+    ASSERT_FALSE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity=-2147483647"));
 }
