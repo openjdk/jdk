@@ -39,8 +39,8 @@ public class DHKeyAgreementPadding {
 
     public static void main(String[] args) throws Exception {
 
-        byte[] aliceSecret = new byte[64];
-        byte[] bobSecret = new byte[64];
+        byte[] aliceSecret = new byte[80];
+        byte[] bobSecret = new byte[80];
 
         KeyAgreement alice = KeyAgreement.getInstance("DiffieHellman");
         KeyAgreement bob = KeyAgreement.getInstance("DiffieHellman");
@@ -53,21 +53,21 @@ public class DHKeyAgreementPadding {
             KeyPair bobKeyPair = keyPairGen.generateKeyPair();
 
             // Different stale data
-            aliceSecret[0] = 0;
-            bobSecret[0] = 1;
+            Arrays.fill(aliceSecret, (byte)'a');
+            Arrays.fill(bobSecret, (byte)'b');
 
             alice.init(aliceKeyPair.getPrivate());
             alice.doPhase(bobKeyPair.getPublic(), true);
-            alice.generateSecret(aliceSecret, 0);
+            int aliceLen = alice.generateSecret(aliceSecret, 0);
 
             bob.init(bobKeyPair.getPrivate());
             bob.doPhase(aliceKeyPair.getPublic(), true);
-            bob.generateSecret(bobSecret, 0);
+            int bobLen = bob.generateSecret(bobSecret, 0);
 
-            if (!Arrays.equals(aliceSecret, bobSecret)) {
-                System.out.println(HexFormat.ofDelimiter(":").formatHex(aliceSecret));
-                System.out.println(HexFormat.ofDelimiter(":").formatHex(bobSecret));
-                throw new RuntimeException();
+            if (!Arrays.equals(aliceSecret, 0, aliceLen, bobSecret, 0, bobLen)) {
+                System.out.println(HexFormat.ofDelimiter(":").formatHex(aliceSecret, 0, aliceLen));
+                System.out.println(HexFormat.ofDelimiter(":").formatHex(bobSecret, 0, bobLen));
+                throw new RuntimeException("Different secrets observed at runs #" + i);
             }
         }
     }
