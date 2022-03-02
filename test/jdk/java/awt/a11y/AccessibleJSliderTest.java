@@ -43,13 +43,11 @@ public class AccessibleJSliderTest extends AccessibleComponentTest {
     private void createSlider() {
         AccessibleComponentTest.INSTRUCTIONS = """
                 INSTRUCTIONS:
-                "Turn on screen reader. Press Tab key to move the focus to the JSlider 
+                "Turn on screen reader. Press Tab key to move the focus to the JSlider
                 or click on the JSlider.
-                
                 Note: Pressing the following keys, check that screen reader reads the JSlider value
                 correctly & it should match with the JLabel value above the JSlider then the
                 testcase pass else testcase is failed.
-                             
                 1) Use arrow keys to increase and decrease the value of JSlider.
                 2) Use Page Up to increase the value of JSlider.
                 3) Use Page Down to decrease the value of JSlider.
