@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,15 +281,11 @@ Thread::Thread() {
 }
 
 void Thread::switch_to_primary_resource_area() {
-  if (_resource_area != _resource_areas[0]) {
-    _resource_area = _resource_areas[0];
-  }
+  _resource_area = _resource_areas[0];
 }
 
 void Thread::switch_to_secondary_resource_area() {
-  if (_resource_area != _resource_areas[1]) {
-    _resource_area = _resource_areas[1];
-  }
+  _resource_area = _resource_areas[1];
 }
 
 void Thread::initialize_resource_areas() {
