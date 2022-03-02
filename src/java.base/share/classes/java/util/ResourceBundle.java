@@ -1585,7 +1585,7 @@ public abstract class ResourceBundle {
                                                 Class<?> caller,
                                                 Control control) {
         final ClassLoader loader = (caller != null) ?
-                caller.getClassLoader() : getLoader(getCallerModule(caller));
+              ClassLoader loader = getLoader(getCallerModule(caller));
         return getBundleImpl(baseName, locale, caller, loader, control);
     }
 
