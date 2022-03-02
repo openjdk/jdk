@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,10 +23,27 @@
  * questions.
  */
 
-package q;
+package jdk.jfr.internal.consumer;
 
-public class Hello {
-    public static void hello() {
-        System.out.println("hello");
+import jdk.jfr.internal.Type;
+
+/**
+ * A temporary placeholder, so objects can reference themselves (directly, or
+ * indirectly), when making a transition from numeric id references to Java
+ * object references.
+ */
+public record Reference(ConstantMap pool, long key) {
+
+    Object resolve() {
+        return pool.get(key);
+    }
+
+    public Type type() {
+        return pool.getType();
+    }
+
+    @Override
+    public String toString() {
+        return "ref: " + pool.getName() + "[" + key + "]";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
-#define SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP
+package q.r;
 
-#include "services/mallocTracker.hpp"
-
-#include "services/memTracker.hpp"
-
-inline void* MallocTracker::get_base(void* memblock){
-  return get_base(memblock, MemTracker::tracking_level());
+public class Hello {
+    public static void hello() {
+        System.out.println("hello");
+    }
 }
-
-#endif // SHARE_SERVICES_MALLOCTRACKER_INLINE_HPP

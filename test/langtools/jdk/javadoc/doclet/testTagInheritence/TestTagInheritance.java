@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,15 @@
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @run main TestTagInheritence
+ * @run main TestTagInheritance
  */
 
-// TODO: Inheritence should be Inheritance!   fix separately as noreg-trivial
 import javadoc.tester.JavadocTester;
 
-public class TestTagInheritence extends JavadocTester {
+public class TestTagInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestTagInheritence tester = new TestTagInheritence();
+        TestTagInheritance tester = new TestTagInheritance();
         tester.runTests();
     }
 
@@ -56,7 +55,7 @@ public class TestTagInheritence extends JavadocTester {
 
         //Test valid usage of inheritDoc tag.
         for (int i = 1; i < 40; i++) {
-            checkOutput("pkg/TestTagInheritence.html", true,
+            checkOutput("pkg/TestTagInheritance.html", true,
                     "Test " + i + " passes");
         }
 

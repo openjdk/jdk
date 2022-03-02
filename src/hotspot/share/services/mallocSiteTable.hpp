@@ -111,11 +111,22 @@ class MallocSiteTable : AllStatic {
     table_size = (table_base_size * NMT_TrackingStackDepth - 1)
   };
 
-  // The table must not be wider than the maximum value the bucket_idx field
-  // in the malloc header can hold.
+  // Table cannot be wider than a 16bit bucket idx can hold
+#define MAX_MALLOCSITE_TABLE_SIZE (USHRT_MAX - 1)
+  // Each bucket chain cannot be longer than what a 16 bit pos idx can hold (hopefully way shorter)
+#define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
+
   STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
+  static uint32_t build_marker(unsigned bucket_idx, unsigned pos_idx) {
+    assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && pos_idx < MAX_BUCKET_LENGTH, "overflow");
+    return (uint32_t)bucket_idx << 16 | pos_idx;
+  }
+  static uint16_t bucket_idx_from_marker(uint32_t marker) { return marker >> 16; }
+  static uint16_t pos_idx_from_marker(uint32_t marker) { return marker & 0xFFFF; }
+
  public:
+
   static bool initialize();
 
   // Number of hash buckets
@@ -123,9 +134,8 @@ class MallocSiteTable : AllStatic {
 
   // Access and copy a call stack from this table. Shared lock should be
   // acquired before access the entry.
-  static inline bool access_stack(NativeCallStack& stack, size_t bucket_idx,
-    size_t pos_idx) {
-    MallocSite* site = malloc_site(bucket_idx, pos_idx);
+  static inline bool access_stack(NativeCallStack& stack, uint32_t marker) {
+    MallocSite* site = malloc_site(marker);
     if (site != NULL) {
       stack = *site->call_stack();
       return true;
@@ -134,23 +144,22 @@ class MallocSiteTable : AllStatic {
   }
 
   // Record a new allocation from specified call path.
-  // Return true if the allocation is recorded successfully, bucket_idx
-  // and pos_idx are also updated to indicate the entry where the allocation
-  // information was recorded.
+  // Return true if the allocation is recorded successfully and updates marker
+  // to indicate the entry where the allocation information was recorded.
   // Return false only occurs under rare scenarios:
   //  1. out of memory
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
-    size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) {
-    MallocSite* site = lookup_or_add(stack, bucket_idx, pos_idx, flags);
+      uint32_t* marker, MEMFLAGS flags) {
+    MallocSite* site = lookup_or_add(stack, marker, flags);
     if (site != NULL) site->allocate(size);
     return site != NULL;
   }
 
-  // Record memory deallocation. bucket_idx and pos_idx indicate where the allocation
+  // Record memory deallocation. marker indicates where the allocation
   // information was recorded.
-  static inline bool deallocation_at(size_t size, size_t bucket_idx, size_t pos_idx) {
-    MallocSite* site = malloc_site(bucket_idx, pos_idx);
+  static inline bool deallocation_at(size_t size, uint32_t marker) {
+    MallocSite* site = malloc_site(marker);
     if (site != NULL) {
       site->deallocate(size);
       return true;
@@ -170,8 +179,8 @@ class MallocSiteTable : AllStatic {
   // Delete a bucket linked list
   static void delete_linked_list(MallocSiteHashtableEntry* head);
 
-  static MallocSite* lookup_or_add(const NativeCallStack& key, size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags);
-  static MallocSite* malloc_site(size_t bucket_idx, size_t pos_idx);
+  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
+  static MallocSite* malloc_site(uint32_t marker);
   static bool walk(MallocSiteWalker* walker);
 
   static inline unsigned int hash_to_index(unsigned int hash) {
