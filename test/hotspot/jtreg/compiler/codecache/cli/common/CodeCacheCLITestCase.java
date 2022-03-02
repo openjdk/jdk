@@ -87,11 +87,11 @@ public class CodeCacheCLITestCase {
                         false)),
         /**
          * Verifies that with TieredStopAtLevel=0 PrintCodeCache output will
-         * contain information about non-nmethods and non-profiled nmethods
+         * warn about SegmentedCodeCache and contain information about all
          * heaps only.
          */
         TIERED_LEVEL_0(SEGMENTED_SERVER,
-                EnumSet.of(BlobType.NonNMethod, BlobType.MethodNonProfiled),
+                EnumSet.of(BlobType.All),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
                         true),
                 CommandLineOptionTest.prepareNumericFlag(TIERED_STOP_AT, 0)),

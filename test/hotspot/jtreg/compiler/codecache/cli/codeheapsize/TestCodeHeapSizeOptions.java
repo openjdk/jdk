@@ -67,9 +67,6 @@ public class TestCodeHeapSizeOptions extends CodeCacheCLITestBase {
                         .CommonDescriptions.NON_TIERED.description,
                         GENERIC_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.TIERED_LEVEL_0.description,
-                        GENERIC_RUNNER),
-                new CodeCacheCLITestCase(CodeCacheCLITestCase
                         .CommonDescriptions.TIERED_LEVEL_1.description,
                         GENERIC_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase

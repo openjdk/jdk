@@ -508,6 +508,10 @@ bool CompilerConfig::check_args_consistency(bool status) {
       }
       FLAG_SET_CMDLINE(TieredCompilation, false);
     }
+    if (SegmentedCodeCache) {
+      warning("SegmentedCodeCache has no meaningful effect with -Xint");
+      FLAG_SET_DEFAULT(SegmentedCodeCache, false);
+    }
 #if INCLUDE_JVMCI
     if (EnableJVMCI) {
       if (!FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler)) {
@@ -521,13 +525,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
 #if INCLUDE_JVMCI
     status = status && JVMCIGlobals::check_jvmci_flags_are_consistent();
 #endif
-  }
-
-  // TieredStopAtLevel==0 allocates nmethod space in the code heap with
-  // SegmentedCodeCache so only disallow the option for -Xint.
-  if (Arguments::is_interpreter_only() && FLAG_IS_CMDLINE(SegmentedCodeCache)) {
-    warning("SegmentedCodeCache has no meaningful effect with -Xint");
-    FLAG_SET_DEFAULT(SegmentedCodeCache, false);
   }
 
   return status;
