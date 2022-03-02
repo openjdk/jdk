@@ -27,7 +27,6 @@
  * @summary jarsigner -verify should check if the algorithm parameters of
  *          its signature algorithm use disabled or legacy algorithms
  * @library /test/lib
- * @modules java.base/sun.security.x509
  */
 
 import jdk.test.lib.SecurityTools;
@@ -65,7 +64,7 @@ public class CheckAlgParams {
                 JAVA_SECURITY_FILE +
                 " -keystore ks -storepass changeit -verbose -debug")
                 .shouldMatch("Digest algorithm: SHA-256.*(disabled)")
-                .shouldMatch("Signature algorithm: PSSParameterSpec.*hashAlgorithm=SHA-256.*(disabled)")
+                .shouldMatch("Signature algorithm: RSASSA-PSS using PSSParameterSpec.*hashAlgorithm=SHA-256.*(disabled)")
                 .shouldContain("The jar will be treated as unsigned")
                 .shouldHaveExitValue(0);
 
@@ -79,7 +78,7 @@ public class CheckAlgParams {
                 JAVA_SECURITY_FILE +
                 " -keystore ks -storepass changeit -verbose -debug")
                 .shouldMatch("Digest algorithm: SHA-256.*(weak)")
-                .shouldMatch("Signature algorithm: PSSParameterSpec.*hashAlgorithm=SHA-256.*(weak)")
+                .shouldMatch("Signature algorithm: RSASSA-PSS using PSSParameterSpec.*hashAlgorithm=SHA-256.*(weak)")
                 .shouldNotContain("The jar will be treated as unsigned")
                 .shouldHaveExitValue(0);
     }

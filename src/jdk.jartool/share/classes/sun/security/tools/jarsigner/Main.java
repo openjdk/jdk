@@ -30,7 +30,6 @@ import java.net.UnknownHostException;
 import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
-import java.security.spec.PSSParameterSpec;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -1411,7 +1410,10 @@ public class Main {
                 JAR_DISABLED_CHECK.permits(algParams, jcp);
             } catch (CertPathValidatorException e) {
                 disabledAlgFound = true;
-                return String.format(rb.getString("with.disabled"), algParams);
+                String algParamsOutput = "RSASSA-PSS using " + algParams;
+                int endPos = algParamsOutput.indexOf("]");
+                algParamsOutput = algParamsOutput.substring(0, endPos + 1) + "]";
+                return String.format(rb.getString("with.disabled"), algParamsOutput);
             }
         }
 
@@ -1435,11 +1437,13 @@ public class Main {
         if (algParams != null) {
             try {
                 LEGACY_CHECK.permits(algParams, jcp);
-                return alg;
             } catch (CertPathValidatorException e) {
                 legacyAlg |= 2;
                 legacySigAlg = alg;
-                return String.format(rb.getString("with.weak"), algParams);
+                String algParamsOutput = "RSASSA-PSS using " + algParams;
+                int endPos = algParamsOutput.indexOf("]");
+                algParamsOutput = algParamsOutput.substring(0, endPos + 1) + "]";
+                return String.format(rb.getString("with.weak"), algParamsOutput);
             }
         }
         return alg;
