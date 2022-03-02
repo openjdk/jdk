@@ -916,7 +916,10 @@ public class Utils {
                 continue;
             TypeElement e = asTypeElement(t);
             if (isInterface(e)) {
-                if ((isPublic(e) || isLinkable(e)) && visited.add(typeUtils.asElement(t))) {
+                if (!visited.add(e)) {
+                    continue; // seen it before
+                }
+                if (isPublic(e) || isLinkable(e)) {
                     results.add(t);
                 }
                 addSuperInterfaces(t, results, visited);
