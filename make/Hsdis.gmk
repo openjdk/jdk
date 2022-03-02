@@ -181,10 +181,10 @@ ifeq ($(ENABLE_HSDIS_BUNDLING), false)
           ifeq ($(HSDIS_BACKEND), binutils)
 	    $(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distributing.)
           endif
-    $(install-file)
+	$(install-file)
 
   $(INSTALLED_HSDIS_IMAGE): $(BUILT_HSDIS_LIB)
-    $(install-file)
+	$(install-file)
 
   install: $(INSTALLED_HSDIS_JDK) $(INSTALLED_HSDIS_IMAGE)
 
