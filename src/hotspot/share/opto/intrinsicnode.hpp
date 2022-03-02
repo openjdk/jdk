@@ -172,7 +172,7 @@ class CountPositivesNode: public StrIntrinsicNode {
   CountPositivesNode(Node* control, Node* char_array_mem, Node* s1, Node* c1):
   StrIntrinsicNode(control, char_array_mem, s1, c1, none) {};
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::POS; }
 };
 
 
