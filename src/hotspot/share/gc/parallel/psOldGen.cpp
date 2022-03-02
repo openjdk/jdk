@@ -283,6 +283,15 @@ void PSOldGen::shrink(size_t bytes) {
   }
 }
 
+void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
+  HeapWord* cur = archive_space.start();
+  while (cur < archive_space.end()) {
+    _start_array.allocate_block(cur);
+    size_t word_size = cast_to_oop(cur)->size();
+    cur += word_size;
+  }
+}
+
 void PSOldGen::resize(size_t desired_free_space) {
   const size_t alignment = virtual_space()->alignment();
   const size_t size_before = virtual_space()->committed_size();

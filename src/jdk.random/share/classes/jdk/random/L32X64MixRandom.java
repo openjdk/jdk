@@ -155,6 +155,8 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
         // Force a to be odd.
         this.a = a | 1;
         this.s = s;
+        this.x0 = x0;
+        this.x1 = x1;
         // If x0 and x1 are both zero, we must choose nonzero values.
         if ((x0 | x1) == 0) {
        int v = s;
