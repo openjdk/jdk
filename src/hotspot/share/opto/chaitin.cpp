@@ -500,7 +500,8 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   for (int region = regions.length()-1; region >= 0; region--) {
-    Block_List blocks = regions.at(regions.length() - 1 - region);
+//    Block_List blocks = regions.at(regions.length() - 1 - region);
+    Block_List blocks = _cfg._blocks;
     // After aggressive coalesce, attempt a first cut at coloring.
     // To color, we need the IFG and for that we need LIVE.
     {
@@ -516,7 +517,7 @@ void PhaseChaitin::Register_Allocate() {
 
     // Build physical interference graph
     uint must_spill = 0;
-    must_spill = build_ifg_physical(&live_arena, blocks);
+    must_spill = build_ifg_physical(&live_arena, blocks, region);
     // If we have a guaranteed spill, might as well spill now
     if (must_spill) {
       if (!_lrg_map.max_lrg_id()) {
@@ -551,7 +552,7 @@ void PhaseChaitin::Register_Allocate() {
         live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
         _live = &live;
       }
-      build_ifg_physical(&live_arena, blocks);
+      build_ifg_physical(&live_arena, blocks, region);
       _ifg->SquareUp();
       _ifg->Compute_Effective_Degree();
       // Only do conservative coalescing if requested
@@ -624,7 +625,7 @@ void PhaseChaitin::Register_Allocate() {
         live.compute(_lrg_map.max_lrg_id());
         _live = &live;
       }
-      must_spill = build_ifg_physical(&live_arena, blocks);
+      must_spill = build_ifg_physical(&live_arena, blocks, region);
       _ifg->SquareUp();
       _ifg->Compute_Effective_Degree();
 
@@ -1093,7 +1094,6 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
         if (!vreg) {
           continue;
         }
-        lrg._region = MAX2(lrg._region, _cfg.get_block_for_node(n->in(k))->_region);
 
         if (_cfg.get_block_for_node(n->in(k))->_region == 1) {
           tty->print("XXX (use) %d", vreg); n->in(k)->dump();
@@ -1118,6 +1118,9 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
         }
 
         LRG &lrg = lrgs(vreg);
+
+        lrg._region = MAX2(lrg._region, _cfg.get_block_for_node(n->in(k))->_region);
+
         // // Testing for floating point code shape
         // Node *test = n->in(k);
         // if( test->is_Mach() ) {
@@ -1234,7 +1237,7 @@ void PhaseChaitin::set_was_low(uint region) {
       IndexSetIterator elements(s);
       uint lidx;
       while((lidx = elements.next()) != 0) {
-        assert(lrgs(lidx)._region == region, "");
+        assert(lrgs(lidx)._region >= region, "");
         if( !lrgs(lidx).lo_degree() )
           briggs_degree += MAX2(size,lrgs(lidx).num_regs());
       }
@@ -1253,13 +1256,14 @@ void PhaseChaitin::cache_lrg_info(uint region) {
   for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
     LRG &lrg = lrgs(i);
 
-    if (lrg._region != region) {
+    if (lrg._region < region) {
       continue;
     }
 
     if (region == 1) {
-      tty->print("XXX %d: %d %d %d - %d %d", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill, lrg.degree(), lrg.degrees_of_freedom());
-      lrg.mask().dump(); tty->cr();
+      tty->print("XXX %d: %d %d %d - %d %d - %p %d %d", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill, lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
+                 offset_of(LRG, _region), sizeof(LRG));
+      lrg.dump();
     }
 
     // Check for being of low degree: means we can be trivially colored.
@@ -1310,7 +1314,7 @@ void PhaseChaitin::Simplify(uint region) {
 
       // Put the simplified guy on the simplified list.
       lrgs(lo)._next = _simplified;
-      assert(lrgs(lo)._region == region, "");
+      assert(lrgs(lo)._region >= region, "");
       _simplified = lo;
       // If this guy is "at risk" then mark his current neighbors
       if (lrgs(lo)._at_risk && !_ifg->neighbors(lo)->is_empty()) {
@@ -1318,7 +1322,7 @@ void PhaseChaitin::Simplify(uint region) {
         uint datum;
         while ((datum = elements.next()) != 0) {
           lrgs(datum)._risk_bias = lo;
-          assert(lrgs(datum)._region == region, "");
+          assert(lrgs(datum)._region >= region, "");
         }
       }
 
@@ -1337,7 +1341,7 @@ void PhaseChaitin::Simplify(uint region) {
       uint neighbor;
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
-        assert(n->_region == region, "");
+        assert(n->_region >= region, "");
 #ifdef ASSERT
         if (VerifyRegisterAllocator) {
           assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
@@ -1353,12 +1357,12 @@ void PhaseChaitin::Simplify(uint region) {
           uint next = n->_next;
           if (prev) {
             lrgs(prev)._next = next;
-            assert(lrgs(prev)._region == region, "");
+            assert(lrgs(prev)._region >= region, "");
           } else {
             _hi_degree = next;
           }
           lrgs(next)._prev = prev;
-          assert(lrgs(next)._region == region, "");
+          assert(lrgs(next)._region >= region, "");
           n->_next = _lo_degree;
           _lo_degree = neighbor;
         }
@@ -1374,7 +1378,7 @@ void PhaseChaitin::Simplify(uint region) {
     double area = lrgs(lo_score)._area;
     double cost = lrgs(lo_score)._cost;
     bool bound = lrgs(lo_score)._is_bound;
-    assert(lrgs(lo_score)._region == region, "");
+    assert(lrgs(lo_score)._region >= region, "");
 
     // Find cheapest guy
     debug_only( int lo_no_simplify=0; );
@@ -1385,7 +1389,7 @@ void PhaseChaitin::Simplify(uint region) {
       // a float live range it's degree will drop by 2 and you can skip the
       // just-lo-degree stage.  It's very rare (shows up after 5000+ methods
       // in -Xcomp of Java2Demo).  So just choose this guy to simplify next.
-      assert(lrgs(i)._region == region, "");
+      assert(lrgs(i)._region >= region, "");
       if( lrgs(i).lo_degree() ) {
         lo_score = i;
         break;
@@ -1417,9 +1421,11 @@ void PhaseChaitin::Simplify(uint region) {
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
-    assert(lo_lrg->_region == region, "");
+    assert(lo_lrg->_region >= region, "");
 
-    tty->print_cr("YYY %d - %d %d %d - %d", lo_score, lo_lrg->degree(), lo_lrg->degrees_of_freedom(), lo_lrg->lo_degree(), lo_no_simplify);
+    if (region == 1) {
+      tty->print_cr("YYY %d - %d %d %d - %d", lo_score, lo_lrg->degree(), lo_lrg->degrees_of_freedom(), lo_lrg->lo_degree(), lo_no_simplify);
+    }
 
     // The live range we choose for spilling is either hi-degree, or very
     // rarely it can be low-degree.  If we choose a hi-degree live range
@@ -1431,17 +1437,17 @@ void PhaseChaitin::Simplify(uint region) {
     uint next = lo_lrg->_next;
     if( prev ) {
       lrgs(prev)._next = next;
-      assert(lrgs(prev)._region == region, "");
+      assert(lrgs(prev)._region >= region, "");
     } else {
       _hi_degree = next;
     }
-    assert(lrgs(next)._region == region, "");
+    assert(lrgs(next)._region >= region, "");
     lrgs(next)._prev = prev;
     // Jam him on the lo-degree list, despite his high degree.
     // Maybe he'll get a color, and maybe he'll spill.
     // Only Select() will know.
     lrgs(lo_score)._at_risk = true;
-    assert(lrgs(lo_score)._region == region, "");
+    assert(lrgs(lo_score)._region >= region, "");
     _lo_degree = lo_score;
     lo_lrg->_next = 0;
 
@@ -1615,7 +1621,7 @@ uint PhaseChaitin::Select(uint region) {
     // Pull next LRG from the simplified list - in reverse order of removal
     uint lidx = _simplified;
     LRG *lrg = &lrgs(lidx);
-    assert(lrg->_region == region, "");
+    assert(lrg->_region >= region, "");
     _simplified = lrg->_next;
 
 #ifndef PRODUCT
@@ -1656,7 +1662,7 @@ uint PhaseChaitin::Select(uint region) {
         // its chunk, a new chunk of color may be tried, in which case
         // examination of neighbors is started again, at retry_next_chunk.)
         LRG &nlrg = lrgs(neighbor);
-        assert(nlrg._region == region, "");
+        assert(nlrg._region >= region, "");
         OptoReg::Name nreg = nlrg.reg();
         // Only subtract masks in the same chunk
         if (nreg >= chunk && nreg < chunk + RegMask::CHUNK_SIZE) {

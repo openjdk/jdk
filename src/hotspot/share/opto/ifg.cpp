@@ -290,15 +290,16 @@ void PhaseIFG::verify( const PhaseChaitin *pc ) const {
  * Check for interference by checking overlap of regmasks.
  * Only interfere if acceptable register masks overlap.
  */
-void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout) {
+void PhaseChaitin::interfere_with_live(uint lid, IndexSet* liveout, uint region) {
   if (!liveout->is_empty()) {
     LRG& lrg = lrgs(lid);
+    assert(lrg._region >= region, "");
     const RegMask &rm = lrg.mask();
     IndexSetIterator elements(liveout);
     uint interfering_lid = elements.next();
     while (interfering_lid != 0) {
       LRG& interfering_lrg = lrgs(interfering_lid);
-      if (rm.overlap(interfering_lrg.mask())) {
+      if (interfering_lrg._region >= region && rm.overlap(interfering_lrg.mask())) {
         _ifg->add_edge(lid, interfering_lid);
       }
       interfering_lid = elements.next();
@@ -348,7 +349,7 @@ void PhaseChaitin::build_ifg_virtual( ) {
         }
 
         // Interfere with everything live
-        interfere_with_live(r, liveout);
+        interfere_with_live(r, liveout, 0);
       }
 
       // Make all inputs live
@@ -842,7 +843,7 @@ void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
  *   We store the biggest register pressure for each block and also the first
  *   low to high register pressure transition within the block (if any).
  */
-uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List& blocks) {
+uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks, uint region) {
   Compile::TracePhase tp("buildIFG", &timers[_t_buildIFGphysical]);
 
   uint must_spill = 0;
@@ -875,6 +876,9 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List& blocks)
 
       if (lid) {
         LRG& lrg = lrgs(lid);
+        if (lrg._region < region) {
+          continue;
+        }
 
         // A DEF normally costs block frequency; rematerialized values are
         // removed from the DEF sight, so LOWER costs here.
@@ -917,7 +921,7 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List& blocks)
         if (lrg.is_bound() && !n->rematerialize() && lrg.mask().is_NotEmpty()) {
           remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
         }
-        interfere_with_live(lid, &liveout);
+        interfere_with_live(lid, &liveout, region);
       }
 
       // Area remaining in the block

@@ -522,7 +522,7 @@ private:
   // Add edge between reg and everything in the vector.
   // Use the RegMask information to trim the set of interferences.  Return the
   // count of edges added.
-  void interfere_with_live(uint lid, IndexSet* liveout);
+  void interfere_with_live(uint lid, IndexSet* liveout, uint region);
 #ifdef ASSERT
   // Count register pressure for asserts
   uint count_int_pressure(IndexSet* liveout);
@@ -656,7 +656,7 @@ private:
   // Build the interference graph using physical registers when available.
   // That is, if 2 live ranges are simultaneously alive but in their
   // acceptable register sets do not overlap, then they do not interfere.
-  uint build_ifg_physical(ResourceArea* a, const Block_List &blocks);
+  uint build_ifg_physical(ResourceArea* a, const Block_List &blocks, uint region);
 
 public:
   // Gather LiveRanGe information, including register masks and base pointer/
