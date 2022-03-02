@@ -535,6 +535,7 @@ ifneq ($(HSDIS_BACKEND), none)
   $(eval $(call SetupTarget, install-hsdis, \
       MAKEFILE := Hsdis, \
       TARGET := install, \
+      DEPS := jdk-image, \
   ))
 endif
 
