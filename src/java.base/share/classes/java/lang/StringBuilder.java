@@ -449,6 +449,7 @@ public final class StringBuilder
     @Override
     @IntrinsicCandidate
     public String toString() {
+        // Create a copy, don't share the array
         return new String(this);
     }
 
