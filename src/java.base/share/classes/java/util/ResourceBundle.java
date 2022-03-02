@@ -843,7 +843,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @throws    java.lang.NullPointerException
@@ -879,7 +879,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class
@@ -921,7 +921,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class name
@@ -954,7 +954,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -1010,7 +1010,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -1052,7 +1052,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified
@@ -1284,7 +1284,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @param locale the locale for which a resource bundle is desired
@@ -1499,7 +1499,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      * </p>
      *
      * @param baseName
@@ -1592,14 +1592,14 @@ public abstract class ResourceBundle {
     /**
      * Determine the module to be used for the caller.  If
      * {@link Reflection#getCallerClass()} is called from JNI with an empty
-     * stack frame the caller will be null, so the bootloader unnamed module
-     * will be used.
+     * stack frame the caller will be null, so the system class loader unnamed
+     * module will be used.
      * @param caller
      * @return
      */
     private static Module getCallerModule(Class<?> caller) {
-        final Module callerModule = (caller != null) ?
-                caller.getModule() : BootLoader.getUnnamedModule();
+        final Module callerModule = (caller != null) ? caller.getModule()
+                : ClassLoader.getSystemClassLoader().getUnnamedModule();
         return callerModule;
     }
 
@@ -2275,7 +2275,7 @@ public abstract class ResourceBundle {
      * In cases where this method is called from a context where
      * there is no caller frame on the stack (e.g. when called directly
      * from a JNI attached thread), the callers module will be considered
-     * to be the bootloader unnamed module {@link BootLoader#getUnnamedModule}.
+     * to be the system class loader unnamed module.
      *
      * @since 1.6
      * @revised 9

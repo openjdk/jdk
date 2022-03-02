@@ -32,7 +32,7 @@
 
 /*
  * The java test running this native test passes in an argument to provide as
- * an option for the configuration of the JVM.  The bootclasspath has the
+ * an option for the configuration of the JVM.  The system classpath has the
  * classpath of the java test appended so it can pick up the resource that
  * was created by the java part of the test.
  */

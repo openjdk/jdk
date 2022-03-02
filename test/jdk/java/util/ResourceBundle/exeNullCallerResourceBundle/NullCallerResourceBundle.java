@@ -27,7 +27,7 @@
  * @bug 8280902
  * @summary Test uses custom launcher that starts VM using JNI that verifies
  *          ResourceBundle::getBundle with null caller class functions properly
- *          using the bootclasspath unnamed module.  The custom launcher
+ *          using the system class loader unnamed module.  The custom launcher
  *          creates a properties file and passes the VM option to the JNI
  *          functionality for the resource lookup.
  * @library /test/lib
@@ -63,8 +63,8 @@ public class NullCallerResourceBundle {
         }
 
         final Path launcher = Path.of(System.getProperty("test.nativepath"), "NullCallerResourceBundle");
-        final String bootclasspathAppend = "-Xbootclasspath/a:" + System.getProperty("test.classes");
-        final ProcessBuilder pb = new ProcessBuilder(launcher.toString(), bootclasspathAppend);
+        final String classpathAppend = "-Djava.class.path=" + System.getProperty("test.classes");
+        final ProcessBuilder pb = new ProcessBuilder(launcher.toString(), classpathAppend);
         final Map<String, String> env = pb.environment();
 
         final String libDir = Platform.libDir().toString();
