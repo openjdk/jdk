@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,6 @@ void CompilerConfig::set_compilation_policy_flags() {
     }
   }
 
-
   if (CompileThresholdScaling < 0) {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
   }
@@ -522,6 +521,13 @@ bool CompilerConfig::check_args_consistency(bool status) {
 #if INCLUDE_JVMCI
     status = status && JVMCIGlobals::check_jvmci_flags_are_consistent();
 #endif
+  }
+
+  // TieredStopAtLevel==0 allocates nmethod space in the code heap with
+  // SegmentedCodeCache so only disallow the option for -Xint.
+  if (Arguments::is_interpreter_only() && FLAG_IS_CMDLINE(SegmentedCodeCache)) {
+    warning("SegmentedCodeCache has no meaningful effect with -Xint");
+    FLAG_SET_DEFAULT(SegmentedCodeCache, false);
   }
 
   return status;
