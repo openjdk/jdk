@@ -37,9 +37,10 @@ import java.awt.Robot;
 public class SetMinimumSizeTest1 {
 
     private static Frame frame;
-    private static volatile Dimension dimension, actualDimension;
+    private static volatile Dimension dimension;
+    private static volatile Dimension actualDimension;
 
-    public static void createGUI(Frame _frame) {
+    public static void createGUI() {
         frame = new Frame();
         frame.add(new Button("Button"));
         frame.setSize(140, 140);
@@ -49,7 +50,7 @@ public class SetMinimumSizeTest1 {
 
     public static void doTest() throws Exception {
         try {
-            EventQueue.invokeAndWait(() -> createGUI(frame));
+            EventQueue.invokeAndWait(() -> createGUI());
 
             Robot robot = new Robot();
             robot.setAutoDelay(100);
@@ -57,8 +58,8 @@ public class SetMinimumSizeTest1 {
 
             EventQueue.invokeAndWait(() -> {
                 dimension = frame.getSize();
-                dimension.width = dimension.width + 20;
-                dimension.height = dimension.height + 20;
+                dimension.width += 20;
+                dimension.height += 20;
                 frame.setMinimumSize(dimension);
                 frame.invalidate();
                 frame.validate();
@@ -70,15 +71,12 @@ public class SetMinimumSizeTest1 {
                 actualDimension = frame.getSize();
             });
 
-            robot.waitForIdle();
-
             if (!actualDimension.equals(dimension)) {
                 throw new RuntimeException("Test Failed\n"
                     + "expected dimension:(" + dimension.width + "," + dimension.height +")\n"
                     + "actual dimension:(" + actualDimension.width + "," + actualDimension.height + ")");
             }
-        }
-        finally {
+        } finally {
             EventQueue.invokeAndWait(() -> frame.dispose());
         }
     }
