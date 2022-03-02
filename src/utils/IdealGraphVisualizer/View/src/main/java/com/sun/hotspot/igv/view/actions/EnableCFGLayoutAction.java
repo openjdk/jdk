@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,14 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class EnableBlockLayoutAction extends AbstractAction {
+public class EnableCFGLayoutAction extends AbstractAction {
 
     private boolean state;
 
-    public EnableBlockLayoutAction() {
+    public EnableCFGLayoutAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(SELECTED_KEY, false);
-        putValue(Action.SHORT_DESCRIPTION, "Show clustered sea of nodes");
+        putValue(Action.SHORT_DESCRIPTION, "Show control-flow graph");
     }
 
     public boolean isSelected() {
@@ -54,11 +50,10 @@ public class EnableBlockLayoutAction extends AbstractAction {
     }
 
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/blocks.png";
+        return "com/sun/hotspot/igv/view/images/cfg.png";
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
     }
-
 }

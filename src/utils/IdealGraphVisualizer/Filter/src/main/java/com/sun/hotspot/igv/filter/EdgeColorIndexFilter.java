@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class EdgeColorIndexFilter extends AbstractFilter {
             for (Slot slot : slots) {
                 if (index < colors.length && colors[index] != null) {
                     slot.setColor(colors[index]);
-                    for (Connection c : slot.getConnections()) {
+                    for (FigureConnection c : slot.getConnections()) {
 
                         c.setColor(colors[index]);
                     }

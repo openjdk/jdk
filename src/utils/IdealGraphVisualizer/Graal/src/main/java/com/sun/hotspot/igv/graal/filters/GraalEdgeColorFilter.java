@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package com.sun.hotspot.igv.graal.filters;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.filter.AbstractFilter;
-import com.sun.hotspot.igv.graph.Connection;
+import com.sun.hotspot.igv.graph.FigureConnection;
 import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
@@ -57,11 +57,8 @@ public class GraalEdgeColorFilter extends AbstractFilter {
         List<Figure> figures = d.getFigures();
         for (Figure f : figures) {
             for (InputSlot is : f.getInputSlots()) {
-                for (Connection c : is.getConnections()) {
-                    String type = c.getType();
-                    if (type == "Association" && "EndNode".equals(c.getOutputSlot().getFigure().getProperties().get("class"))) {
-                        type = "Successor";
-                    }
+                for (FigureConnection c : is.getConnections()) {
+                    String type = null;
 
                     if (type != null) {
                         Color typeColor = usageColor.get(type);

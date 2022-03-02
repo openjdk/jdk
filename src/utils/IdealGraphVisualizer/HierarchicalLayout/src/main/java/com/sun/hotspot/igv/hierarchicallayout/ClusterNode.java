@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,10 @@ public class ClusterNode implements Vertex {
     private boolean dirty;
     private boolean root;
     private String name;
-    public static final int BORDER = 20;
+    private int border;
+    private Dimension nodeOffset;
+    private int headerVerticalSpace;
+    private Dimension emptySize;
 
     public ClusterNode(Cluster cluster, String name) {
         this.subNodes = new HashSet<Vertex>();
@@ -59,6 +62,14 @@ public class ClusterNode implements Vertex {
         this.cluster = cluster;
         position = new Point(0, 0);
         this.name = name;
+        this.border = 20;
+        this.nodeOffset = new Dimension(0, 0);
+        this.headerVerticalSpace = 0;
+        this.emptySize = new Dimension(0, 0);
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void addSubNode(Vertex v) {
@@ -88,6 +99,11 @@ public class ClusterNode implements Vertex {
             public Vertex getVertex() {
                 return widget;
             }
+
+            @Override
+            public String toString() {
+                return "ClusterInput(" + name + ")";
+            }
         };
 
         outputSlot = new Port() {
@@ -99,13 +115,19 @@ public class ClusterNode implements Vertex {
             public Vertex getVertex() {
                 return widget;
             }
+
+            @Override
+            public String toString() {
+                return "ClusterOutput(" + name + ")";
+            }
         };
     }
 
     private void calculateSize() {
 
-        if (subNodes.size() == 0) {
-            size = new Dimension(0, 0);
+        if (subNodes.isEmpty()) {
+            size = emptySize;
+            return;
         }
 
         int minX = Integer.MAX_VALUE;
@@ -134,11 +156,12 @@ public class ClusterNode implements Vertex {
             }
         }
 
-        size = new Dimension(maxX - minX, maxY - minY);
+        size = new Dimension(maxX - minX, maxY - minY + headerVerticalSpace);
 
         // Normalize coordinates
         for (Vertex n : subNodes) {
-            n.setPosition(new Point(n.getPosition().x - minX, n.getPosition().y - minY));
+            n.setPosition(new Point(n.getPosition().x - minX + nodeOffset.width,
+                                    n.getPosition().y - minY + nodeOffset.height + headerVerticalSpace));
         }
 
         for (Link l : subEdges) {
@@ -151,8 +174,8 @@ public class ClusterNode implements Vertex {
 
         }
 
-        size.width += 2 * BORDER;
-        size.height += 2 * BORDER;
+        size.width += 2 * border;
+        size.height += 2 * border;
     }
 
     public Port getInputSlot() {
@@ -177,7 +200,7 @@ public class ClusterNode implements Vertex {
         this.position = pos;
         for (Vertex n : subNodes) {
             Point cur = new Point(n.getPosition());
-            cur.translate(pos.x + BORDER, pos.y + BORDER);
+            cur.translate(pos.x + border, pos.y + border);
             n.setPosition(cur);
         }
 
@@ -187,7 +210,7 @@ public class ClusterNode implements Vertex {
             for (Point p : arr) {
                 if (p != null) {
                     Point p2 = new Point(p);
-                    p2.translate(pos.x + BORDER, pos.y + BORDER);
+                    p2.translate(pos.x + border, pos.y + border);
                     newArr.add(p2);
                 } else {
                     newArr.add(null);
@@ -216,6 +239,27 @@ public class ClusterNode implements Vertex {
 
     public boolean isRoot() {
         return root;
+    }
+
+    public void setBorder(int border) {
+        this.border = border;
+    }
+
+    public int getBorder() {
+        return border;
+    }
+
+    public void setNodeOffset(Dimension nodeOffset) {
+        this.nodeOffset = nodeOffset;
+    }
+
+    public void setHeaderVerticalSpace(int headerVerticalSpace) {
+        this.headerVerticalSpace = headerVerticalSpace;
+    }
+
+    public void setEmptySize(Dimension emptySize) {
+        this.emptySize = emptySize;
+        updateSize();
     }
 
     public int compareTo(Vertex o) {
