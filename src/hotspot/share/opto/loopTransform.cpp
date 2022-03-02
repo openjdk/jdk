@@ -2548,6 +2548,7 @@ bool PhaseIdealLoop::is_iv(Node* exp, Node* iv, BasicType bt) {
 //            | (LShiftX VIV[iv] ConI)
 //            | (ConvI2L SIV[iv])  -- a "short-scale" can occur here; note recursion
 //            | (SubX 0 SIV[iv])  -- same as MulX(iv, -scale); note recursion
+//    VIV[iv] = [either iv or its value converted; see is_iv() above]
 // On success, the constant scale value is stored back to *p_scale.
 // The value (*p_short_scale) reports if such a ConvI2L conversion was present.
 bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth) {
@@ -2641,7 +2642,7 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
 //            | (AddX SIV[iv] E) | (AddX E SIV[iv])
 //            | (SubX SIV[iv] E) | (SubX E SIV[iv])
 //    SSIV[iv] = (ConvI2X SIV[iv])  -- a "short scale" might occur here
-//    SIV[iv] = [see is_scaled_iv() above]
+//    SIV[iv] = [a possibly scaled value of iv; see is_scaled_iv() above]
 //
 // On success, the constant scale value is stored back to *p_scale unless null.
 // Likewise, the addend (perhaps a synthetic AddX node) is stored to *p_offset.
