@@ -81,14 +81,6 @@ public class HashMapsPutAllOverAllocateTableTest {
                             i
                     }
             );
-            testParameters.add(
-                    new Object[]{
-                            (Supplier<Map<Object, Object>>) IdentityHashMap::new,
-                            (Function<Integer, Map<Object, Object>>) IdentityHashMap::new,
-                            (Function<Map<Object, Object>, Map<Object, Object>>) IdentityHashMap::new,
-                            i
-                    }
-            );
         }
         return testParameters;
     }

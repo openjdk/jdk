@@ -267,14 +267,9 @@ public class IdentityHashMap<K,V>
      * @throws NullPointerException if the specified map is null
      */
     public IdentityHashMap(Map<? extends K, ? extends V> m) {
-        int expectedMaxSize = m.size();
-        init(capacity(expectedMaxSize));
-        if (expectedMaxSize == 0) {
-            return;
-        }
-        for (Entry<? extends K, ? extends V> e : m.entrySet()) {
-            put(e.getKey(), e.getValue());
-        }
+        // Allow for a bit of growth
+        this((int) ((1 + m.size()) * 1.1));
+        putAll(m);
     }
 
     /**
