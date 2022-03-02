@@ -234,9 +234,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_encodeByteISOArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray)) return false;
     break;
-  case vmIntrinsics::_hasNegatives:
-    if (!Matcher::match_rule_supported(Op_HasNegatives))  return false;
-    break;
   case vmIntrinsics::_countPositives:
     if (!Matcher::match_rule_supported(Op_CountPositives))  return false;
     break;

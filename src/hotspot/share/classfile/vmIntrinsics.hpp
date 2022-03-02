@@ -354,10 +354,6 @@ class methodHandle;
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
-  do_intrinsic(_hasNegatives,             java_lang_StringCoding, hasNegatives_name, hasNegatives_signature,     F_S)   \
-   do_name(     hasNegatives_name,                               "hasNegatives")                                        \
-   do_signature(hasNegatives_signature,                          "([BII)Z")                                             \
-                                                                                                                        \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives")                                            \
    do_signature(countPositives_signature,                  "([BII)I")                                                   \

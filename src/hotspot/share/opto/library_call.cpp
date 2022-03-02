@@ -617,9 +617,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isCompileConstant:
     return inline_isCompileConstant();
 
-  case vmIntrinsics::_hasNegatives:
-    return inline_hasNegatives();
-
   case vmIntrinsics::_countPositives:
     return inline_countPositives();
 
@@ -1011,31 +1008,6 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
   clear_upper_avx();
 
-  return true;
-}
-
-//------------------------------inline_hasNegatives------------------------------
-bool LibraryCallKit::inline_hasNegatives() {
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-
-  assert(callee()->signature()->size() == 3, "hasNegatives has 3 parameters");
-  // no receiver since it is static method
-  Node* ba         = argument(0);
-  Node* offset     = argument(1);
-  Node* len        = argument(2);
-
-  ba = must_be_not_null(ba, true);
-
-  // Range checks
-  generate_string_range_check(ba, offset, len, false);
-  if (stopped()) {
-    return true;
-  }
-  Node* ba_start = array_element_address(ba, offset, T_BYTE);
-  Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
-  set_result(_gvn.transform(result));
   return true;
 }
 
