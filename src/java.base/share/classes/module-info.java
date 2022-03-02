@@ -238,6 +238,7 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
+        java.naming,
         java.net.http,
         jdk.naming.dns;
     exports jdk.internal.reflect to

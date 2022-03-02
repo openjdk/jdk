@@ -33,6 +33,9 @@ import javax.naming.*;
 import javax.naming.directory.Attributes;
 import javax.naming.ldap.Control;
 
+import java.lang.ref.Cleaner.Cleanable;
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * Basic enumeration for NameClassPair, Binding, and SearchResults.
  */
@@ -42,17 +45,48 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
     protected Name listArg;
 
-    private boolean cleaned = false;
-    private LdapResult res;
-    private LdapClient enumClnt;
     private Continuation cont;  // used to fill in exceptions
     private Vector<LdapEntry> entries = null;
     private int limit = 0;
     private int posn = 0;
-    protected LdapCtx homeCtx;
+    
     private LdapReferralException refEx = null;
     private NamingException errEx = null;
 
+    /* This class maintains the pieces of state that need (or are needed for)
+     * cleanup, which happens by calling cleanup(), or is done by the Cleaner.
+     */
+    private static class CleaningAction implements Runnable {
+        private LdapCtx homeCtx;
+        private LdapResult res;
+        private LdapClient enumClnt;
+        
+        private CleaningAction(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
+            this.homeCtx = homeCtx;
+            this.res = answer;
+            this.enumClnt = client;
+        }
+        
+        @Override
+        public void run() {
+            if (enumClnt != null) {
+                enumClnt.clearSearchReply(res, homeCtx.reqCtls);
+                enumClnt = null;
+            }
+            if (homeCtx != null) {
+                homeCtx.decEnumCount();
+                homeCtx = null;
+            }
+        }
+    }
+    
+    private CleaningAction state;
+    private Cleanable cleanable;
+
+    // Subclasses interact directly with the LdapCtx. This method provides
+    // access to the LdapCtx in the CleaningAction.
+    protected final LdapCtx homeCtx() { return state.homeCtx; }
+    
     /*
      * Record the next set of entries and/or referrals.
      */
@@ -84,7 +118,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
             // otherwise continue
 
-            res = answer;
             entries = answer.entries;
             limit = (entries == null) ? 0 : entries.size(); // handle empty set
             this.listArg = listArg;
@@ -94,10 +127,10 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 refEx = answer.refEx;
             }
 
+            this.state = new CleaningAction(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            this.homeCtx = homeCtx;
-            homeCtx.incEnumCount();
-            enumClnt = homeCtx.clnt; // remember
+            this.state.homeCtx.incEnumCount();
+            this.cleanable = CleanerFactory.cleaner().register(this, state);
     }
 
     @Override
@@ -127,25 +160,25 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     private void getNextBatch() throws NamingException {
 
-        res = homeCtx.getSearchReply(enumClnt, res);
-        if (res == null) {
+        state.res = state.homeCtx.getSearchReply(state.enumClnt, state.res);
+        if (state.res == null) {
             limit = posn = 0;
             return;
         }
 
-        entries = res.entries;
+        entries = state.res.entries;
         limit = (entries == null) ? 0 : entries.size(); // handle empty set
         posn = 0; // reset
 
         // minimize the number of calls to processReturnCode()
         // (expensive when batchSize is small and there are many results)
-        if ((res.status != LdapClient.LDAP_SUCCESS) ||
-            ((res.status == LdapClient.LDAP_SUCCESS) &&
-                (res.referrals != null))) {
+        if ((state.res.status != LdapClient.LDAP_SUCCESS) ||
+            ((state.res.status == LdapClient.LDAP_SUCCESS) &&
+                (state.res.referrals != null))) {
 
             try {
                 // convert referrals into a chain of LdapReferralException
-                homeCtx.processReturnCode(res, listArg);
+                state.homeCtx.processReturnCode(state.res, listArg);
 
             } catch (LimitExceededException | PartialResultException e) {
                 setNamingException(e);
@@ -154,17 +187,17 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         }
 
         // merge any newly received referrals with any current referrals
-        if (res.refEx != null) {
+        if (state.res.refEx != null) {
             if (refEx == null) {
-                refEx = res.refEx;
+                refEx = state.res.refEx;
             } else {
-                refEx = refEx.appendUnprocessedReferrals(res.refEx);
+                refEx = refEx.appendUnprocessedReferrals(state.res.refEx);
             }
-            res.refEx = null; // reset
+            state.res.refEx = null; // reset
         }
 
-        if (res.resControls != null) {
-            homeCtx.respCtls = res.resControls;
+        if (state.res.resControls != null) {
+            state.homeCtx.respCtls = state.res.resControls;
         }
     }
 
@@ -313,7 +346,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
             (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
 
-            if (homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
+            if (state.homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
                 throw (NamingException)(refEx.fillInStackTrace());
             }
 
@@ -322,7 +355,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
                 LdapReferralContext refCtx =
                     (LdapReferralContext)refEx.getReferralContext(
-                    homeCtx.envprops, homeCtx.reqCtls);
+                    state.homeCtx.envprops, state.homeCtx.reqCtls);
 
                 try {
 
@@ -365,21 +398,22 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     protected void update(AbstractLdapNamingEnumeration<? extends NameClassPair> ne) {
         // Cleanup previous context first
-        homeCtx.decEnumCount();
+        state.homeCtx.decEnumCount();
 
         // New enum will have already incremented enum count and recorded clnt
-        homeCtx = ne.homeCtx;
-        enumClnt = ne.enumClnt;
+        state.homeCtx = ne.state.homeCtx;
+        state.enumClnt = ne.state.enumClnt;
 
-        // Do this to prevent referral enumeration (ne) from decrementing
-        // enum count because we'll be doing that here from this
-        // enumeration.
-        ne.homeCtx = null;
+        // ne's homeCtx is now referred to by state.homeCtx; we will decrement
+        // its enum count later (via cleanup() or Cleaner).
+        // Clear ne's reference to homeCtx so ne's Cleaner doesn't *also*
+        // decrement the count.
+        ne.state.homeCtx = null;
 
         // Record rest of information from new enum
         posn = ne.posn;
         limit = ne.limit;
-        res = ne.res;
+        state.res = ne.state.res;
         entries = ne.entries;
         refEx = ne.refEx;
         listArg = ne.listArg;
@@ -389,24 +423,9 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         }
     }
 
-    @SuppressWarnings("removal")
-    protected final void finalize() {
-        cleanup();
-    }
-
     protected final void cleanup() {
-        if (cleaned) return; // been there; done that
-
-        if(enumClnt != null) {
-            enumClnt.clearSearchReply(res, homeCtx.reqCtls);
-        }
-
-        enumClnt = null;
-        cleaned = true;
-        if (homeCtx != null) {
-            homeCtx.decEnumCount();
-            homeCtx = null;
-        }
+        // Run the cleaning action (if it has not run already)
+        cleanable.clean();
     }
 
     @Override
