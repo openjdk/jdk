@@ -2178,7 +2178,6 @@ void Compile::Optimize() {
     bool progress;
     do {
       bool has_nonescaping_objs = ConnectionGraph::do_analysis(this, &igvn);
-
       if (failing())  return;
 
       int mcount = macro_count(); // Record number of allocations and locks before IGVN
@@ -2213,6 +2212,8 @@ void Compile::Optimize() {
     // ideal_nodes.map(live_nodes(), NULL)
     Unique_Node_List ideal_nodes; 
     ideal_nodes.push(root());
+
+    tty->print_cr("HELLOOOOO");
 
     for(uint next = 0; next < ideal_nodes.size(); ++next) {
       Node* n = ideal_nodes.at(next);

@@ -639,6 +639,7 @@ public:
   static int _no_escape_counter;
   static int _arg_escape_counter;
   static int _global_escape_counter;
+  static double _time_elapsed;
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
   static void print_statistics();
 #endif

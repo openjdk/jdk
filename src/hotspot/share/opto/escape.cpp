@@ -93,7 +93,10 @@ bool ConnectionGraph::has_candidates(Compile *C) {
 
 bool ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
+  elapsedTimer et;
   ResourceMark rm;
+  et.start();
+
 
   // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction
   // to create space for them in ConnectionGraph::_nodes[].
@@ -116,6 +119,13 @@ bool ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   if (noop_null->outcnt() == 0) {
     igvn->hash_delete(noop_null);
   }
+
+  et.stop();
+
+  #ifndef PRODUCT
+    ConnectionGraph::_time_elapsed += et.seconds();
+  #endif
+
   return has_non_escaping_obj;
 }
 
@@ -3634,6 +3644,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 int ConnectionGraph::_no_escape_counter = 0;
 int ConnectionGraph::_arg_escape_counter = 0;
 int ConnectionGraph::_global_escape_counter = 0;
+double ConnectionGraph::_time_elapsed = 0;
 
 static const char *node_type_names[] = {
   "UnknownType",
@@ -3747,6 +3758,8 @@ void ConnectionGraph::print_statistics() {
   tty->print_cr("No Escape: %d", _no_escape_counter);
   tty->print_cr("Arg Escape: %d", _arg_escape_counter);
   tty->print_cr("Global Escape: %d", _global_escape_counter);
+  tty->print_cr("Total Java Objects in Escape Analysis: %d", _global_escape_counter +_arg_escape_counter + _no_escape_counter);
+  tty->print_cr("Total time in Escape Analysis: %7.5f seconds", _time_elapsed);
 }
 void ConnectionGraph::trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields, const char* reason) const {
   if (_compile->directive()->TraceEscapeAnalysisOption) {
