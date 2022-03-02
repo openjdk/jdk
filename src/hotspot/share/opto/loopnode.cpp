@@ -852,7 +852,10 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   SafePointNode* safepoint;
   if (bt == T_INT && head->as_CountedLoop()->is_strip_mined()) {
     // Loop is strip mined: use the safepoint of the outer strip mined loop
-    strip_mined_nest_back_to_counted_loop(loop, head, back_control, exit_test, safepoint);
+    OuterStripMinedLoopNode* outer_loop = head->as_CountedLoop()->outer_loop();
+    safepoint = outer_loop->outer_safepoint();
+    outer_loop->transform_to_counted_loop(&_igvn, this);
+    exit_test = head->loopexit();
   } else {
     safepoint = find_safepoint(back_control, x, loop);
   }
@@ -1056,68 +1059,6 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   outer_head->mark_loop_nest_outer_loop();
 
   return true;
-}
-
-// Convert the strip mined loop nest back to a single loop with the safepoint right before the loop exit test
-void PhaseIdealLoop::strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head,
-                                                           Node* back_control, IfNode*& exit_test,
-                                                           SafePointNode*& safepoint) {
-  CountedLoopNode* cl = head->as_CountedLoop();
-  cl->verify_strip_mined(1);
-  safepoint = cl->outer_safepoint();
-  CountedLoopEndNode* cle = cl->loopexit();
-  OuterStripMinedLoopNode* outer_head = cl->outer_loop();
-  OuterStripMinedLoopEndNode* outer_end = cl->outer_loop_end();
-
-  cl->clear_strip_mined();
-
-  _igvn.replace_input_of(cl, LoopNode::EntryControl, outer_head->in(LoopNode::EntryControl));
-  _igvn.replace_input_of(outer_head, LoopNode::EntryControl, C->top());
-  set_idom(cl, cl->in(LoopNode::EntryControl), dom_depth(cl));
-
-  Node* exit_bol = cle->in(1);
-  Node *zero = _igvn.intcon(0);
-  set_ctrl(zero, C->root());
-  _igvn.replace_input_of(cle, 1, zero);
-
-  _igvn.replace_input_of(outer_end, 1, exit_bol);
-
-  assert(outer_head->in(LoopNode::LoopBackControl)->in(0) == outer_end, "");
-  _igvn.replace_input_of(outer_head->in(LoopNode::LoopBackControl), 0, C->top());
-  _igvn.replace_input_of(back_control, 0, outer_end);
-  set_idom(back_control, outer_end, dom_depth(outer_end) + 1);
-
-  Unique_Node_List wq;
-  wq.push(safepoint);
-
-  IdealLoopTree* outer_loop_ilt = get_loop(outer_head);
-
-  for (uint i = 0; i < wq.size(); i++) {
-    Node* n = wq.at(i);
-    for (uint j = 0; j < n->req(); ++j) {
-      Node* in = n->in(j);
-      if (in == NULL || in->is_CFG()) {
-        continue;
-      }
-      if (get_loop(get_ctrl(in)) != outer_loop_ilt) {
-        continue;
-      }
-      assert(!loop->_body.contains(in), "");
-      loop->_body.push(in);
-      wq.push(in);
-    }
-  }
-
-  set_loop(outer_end, loop);
-  loop->_body.push(outer_end);
-  set_loop(safepoint, loop);
-  loop->_body.push(safepoint);
-  set_loop(safepoint->in(0), loop);
-  loop->_body.push(safepoint->in(0));
-
-  exit_test = outer_end;
-
-  outer_loop_ilt->_tail = C->top();
 }
 
 int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong stride_con, int iters_limit, PhiNode* phi,
@@ -2559,7 +2500,8 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
   return new LongCountedLoopNode(entry, backedge);
 }
 
-void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn) {
+void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn,
+                                              PhaseIdealLoop* iloop) {
   Node* cle_out = inner_cle->proj_out(false);
   Node* cle_tail = inner_cle->proj_out(true);
   if (cle_out->outcnt() > 1) {
@@ -2600,17 +2542,10 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
             if (be->is_Store() && be->in(0) == target->in(LoopNode::LoopBackControl)) {
-              assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "");
-//              assert(false, "store on the backedge + sunk stores: unsupported");
-//              // drop outer loop
-//              IfNode* outer_le = outer_loop_end();
-//              Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
-//              igvn->replace_node(outer_le, iff);
-//              inner_cl->clear_strip_mined();
-//              return;
+              assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "unexpected store");
             }
             if (be == last || be == first->in(MemNode::Memory)) {
-              assert(igvn->C->get_alias_index(uu->adr_type()) == alias_idx || igvn->C->get_alias_index(uu->adr_type()) == Compile::AliasIdxBot, "");
+              assert(igvn->C->get_alias_index(uu->adr_type()) == alias_idx || igvn->C->get_alias_index(uu->adr_type()) == Compile::AliasIdxBot, "unexpected alias");
               assert(phi == NULL, "only one phi");
               phi = uu;
             }
@@ -2655,7 +2590,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           phi = PhiNode::make(target, first->in(MemNode::Memory), Type::MEMORY,
                               igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
           phi->set_req(LoopNode::LoopBackControl, last);
-          phi = igvn->transform(phi);
+          phi = register_new_node(phi, target, igvn, iloop);
           igvn->replace_input_of(first, MemNode::Memory, phi);
         } else {
           // Or fix the outer loop fix to include
@@ -2694,25 +2629,7 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     return;
   }
   if (LoopStripMiningIter == 1) {
-    CountedLoopEndNode* cle = inner_cl->loopexit();
-    Node* inner_test = cle->in(1);
-    IfNode* outer_le = outer_loop_end();
-
-    CountedLoopEndNode* inner_cle = inner_cl->loopexit();
-    fix_sunk_stores(inner_cle, inner_cl, igvn);
-
-    // make counted loop exit test always fail
-    igvn->replace_input_of(cle, 1, igvn->intcon(0));
-    // replace outer loop end with CountedLoopEndNode with formers' CLE's exit test
-    Node* new_end = igvn->transform(new CountedLoopEndNode(outer_le->in(0), inner_test, cle->_prob, cle->_fcnt));
-    igvn->replace_node(outer_le, new_end);
-    // the backedge of the inner loop must be rewired to the new loop end
-    Node* backedge = cle->proj_out(true);
-    igvn->replace_input_of(backedge, 0, new_end);
-    // make the outer loop go away
-    igvn->replace_input_of(this, LoopBackControl, igvn->C->top());
-    inner_cl->clear_strip_mined();
-
+    transform_to_counted_loop(igvn, NULL);
     return;
   }
   Node* inner_iv_phi = inner_cl->phi();
@@ -2863,6 +2780,71 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
   }
 }
 
+void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop) {
+  CountedLoopNode* inner_cl = unique_ctrl_out()->as_CountedLoop();
+  CountedLoopEndNode* cle = inner_cl->loopexit();
+  Node* inner_test = cle->in(1);
+  IfNode* outer_le = outer_loop_end();
+  CountedLoopEndNode* inner_cle = inner_cl->loopexit();
+  Node* safepoint = outer_safepoint();
+
+  fix_sunk_stores(inner_cle, inner_cl, igvn, iloop);
+
+  // make counted loop exit test always fail
+  ConINode* zero = igvn->intcon(0);
+  if (iloop != NULL) {
+    iloop->set_ctrl(zero, igvn->C->root());
+  }
+  igvn->replace_input_of(cle, 1, zero);
+  // replace outer loop end with CountedLoopEndNode with formers' CLE's exit test
+  Node* new_end = new CountedLoopEndNode(outer_le->in(0), inner_test, cle->_prob, cle->_fcnt);
+  register_control(new_end, inner_cl, outer_le->in(0), igvn, iloop);
+  if (iloop == NULL) {
+    igvn->replace_node(outer_le, new_end);
+  } else {
+    iloop->lazy_replace(outer_le, new_end);
+  }
+  // the backedge of the inner loop must be rewired to the new loop end
+  Node* backedge = cle->proj_out(true);
+  igvn->replace_input_of(backedge, 0, new_end);
+  if (iloop != NULL) {
+    iloop->set_idom(backedge, new_end, iloop->dom_depth(new_end) + 1);
+  }
+  // make the outer loop go away
+  igvn->replace_input_of(in(LoopBackControl), 0, igvn->C->top());
+  igvn->replace_input_of(this, LoopBackControl, igvn->C->top());
+  inner_cl->clear_strip_mined();
+  if (iloop != NULL) {
+    Unique_Node_List wq;
+    wq.push(safepoint);
+
+    IdealLoopTree* outer_loop_ilt = iloop->get_loop(this);
+    IdealLoopTree* loop = iloop->get_loop(inner_cl);
+
+    for (uint i = 0; i < wq.size(); i++) {
+      Node* n = wq.at(i);
+      for (uint j = 0; j < n->req(); ++j) {
+        Node* in = n->in(j);
+        if (in == NULL || in->is_CFG()) {
+          continue;
+        }
+        if (iloop->get_loop(iloop->get_ctrl(in)) != outer_loop_ilt) {
+          continue;
+        }
+        assert(!loop->_body.contains(in), "");
+        loop->_body.push(in);
+        wq.push(in);
+      }
+    }
+    iloop->set_loop(safepoint, loop);
+    loop->_body.push(safepoint);
+    iloop->set_loop(safepoint->in(0), loop);
+    loop->_body.push(safepoint->in(0));
+    outer_loop_ilt->_tail = igvn->C->top();
+  }
+  igvn->C->print_method(PHASE_DEBUG, 2);
+}
+
 void OuterStripMinedLoopNode::remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const {
   CountedLoopNode* inner_cl = unique_ctrl_out()->as_CountedLoop();
   Node* outer_sfpt = outer_safepoint();
@@ -2870,6 +2852,23 @@ void OuterStripMinedLoopNode::remove_outer_loop_and_safepoint(PhaseIterGVN* igvn
   igvn->replace_node(outer_out, outer_sfpt->in(0));
   igvn->replace_input_of(outer_sfpt, 0, igvn->C->top());
   inner_cl->clear_strip_mined();
+}
+
+Node* OuterStripMinedLoopNode::register_new_node(Node* node, LoopNode* ctrl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop) {
+  if (iloop == NULL) {
+    return igvn->transform(node);
+  }
+  iloop->register_new_node(node, ctrl);
+  return node;
+}
+
+Node* OuterStripMinedLoopNode::register_control(Node* node, Node* loop, Node* idom, PhaseIterGVN* igvn,
+                                                PhaseIdealLoop* iloop) {
+  if (iloop == NULL) {
+    return igvn->transform(node);
+  }
+  iloop->register_control(node, iloop->get_loop(loop), idom);
+  return node;
 }
 
 const Type* OuterStripMinedLoopEndNode::Value(PhaseGVN* phase) const {

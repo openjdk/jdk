@@ -546,8 +546,7 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  CountedLoopNode* inner_loop() const;
-  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn);
+  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
@@ -566,6 +565,13 @@ public:
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
 
   void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
+
+  void transform_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  static Node* register_new_node(Node* node, LoopNode* ctrl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  Node* register_control(Node* node, Node* loop, Node* idom, PhaseIterGVN* igvn,
+                         PhaseIdealLoop* iloop);
 };
 
 class OuterStripMinedLoopEndNode : public IfNode {
@@ -1660,8 +1666,6 @@ public:
 
   bool safe_for_if_replacement(const Node* dom) const;
 
-  void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
-                                             IfNode*&exit_test, SafePointNode*&safepoint);
   void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
 
   bool try_merge_identical_ifs(Node* n);
