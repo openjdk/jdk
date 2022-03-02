@@ -344,7 +344,8 @@ extends KeyAgreementSpi {
         } else {
             // Array too short, pad it w/ leading 0s
             if (secret.length < expectedLen) {
-                Arrays.fill(sharedSecret, offset, offset + (expectedLen - secret.length), (byte)0);
+                Arrays.fill(sharedSecret, offset,
+                        offset + (expectedLen - secret.length), (byte)0);
                 System.arraycopy(secret, 0, sharedSecret,
                     offset + (expectedLen - secret.length),
                     secret.length);

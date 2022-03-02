@@ -25,7 +25,8 @@
  * @test
  * @bug 8281628
  * @library /test/lib
- * @summary KeyAgreement : generateSecret intermittently not resetting
+ * @summary ensure padding bytes are always added when generated secret
+ *      is smaller than buffer size.
  */
 
 import javax.crypto.KeyAgreement;
