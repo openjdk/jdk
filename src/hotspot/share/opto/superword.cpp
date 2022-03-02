@@ -999,6 +999,12 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
     }
   }
 
+  // Check for special case where there is a type conversion between different data size.
+  int vectsize = max_vector_size_in_ud_chain(s);
+  if (vectsize < Matcher::max_vector_size(btype)) {
+    vw = MIN2(vectsize * type2aelembytes(btype), vw);
+  }
+
   return vw;
 }
 
@@ -1187,7 +1193,9 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   BasicType bt2 = velt_basic_type(s2);
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
-  if (Matcher::max_vector_size(bt1) < 2) {
+  BasicType longer_bt = longer_type_for_conversion(s1);
+  if (Matcher::max_vector_size(bt1) < 2 ||
+      (longer_bt != T_ILLEGAL && Matcher::max_vector_size(longer_bt) < 2)) {
     return false; // No vectors for this type
   }
 
@@ -1432,16 +1440,20 @@ bool SuperWord::follow_use_defs(Node_List* p) {
 
   if (s1->is_Load()) return false;
 
-  int align = alignment(s1);
-  NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d", s1->_idx, align);)
+  NOT_PRODUCT(if(is_trace_alignment()) tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d", s1->_idx, alignment(s1));)
   bool changed = false;
   int start = s1->is_Store() ? MemNode::ValueIn   : 1;
   int end   = s1->is_Store() ? MemNode::ValueIn+1 : s1->req();
   for (int j = start; j < end; j++) {
+    int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
     if (!in_bb(t1) || !in_bb(t2))
       continue;
+    if (longer_type_for_conversion(s1) != T_ILLEGAL ||
+        longer_type_for_conversion(t1) != T_ILLEGAL) {
+      align = align / data_size(s1) * data_size(t1);
+    }
     if (stmts_can_pack(t1, t2, align)) {
       if (est_savings(t1, t2) >= 0) {
         Node_List* pair = new Node_List();
@@ -1485,12 +1497,18 @@ bool SuperWord::follow_def_uses(Node_List* p) {
       if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
-      if (stmts_can_pack(t1, t2, align)) {
+      int adjusted_align = alignment(s1);
+      if (longer_type_for_conversion(s1) != T_ILLEGAL ||
+          longer_type_for_conversion(t1) != T_ILLEGAL) {
+        adjusted_align = adjusted_align / data_size(s1) * data_size(t1);
+      }
+      if (stmts_can_pack(t1, t2, adjusted_align)) {
         int my_savings = est_savings(t1, t2);
         if (my_savings > savings) {
           savings = my_savings;
           u1 = t1;
           u2 = t2;
+          align = adjusted_align;
         }
       }
     }
@@ -1683,8 +1701,7 @@ void SuperWord::combine_packs() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p1 = _packset.at(i);
     if (p1 != NULL) {
-      BasicType bt = velt_basic_type(p1->at(0));
-      uint max_vlen = Matcher::max_vector_size(bt); // Max elements in vector
+      uint max_vlen = max_vector_size_in_ud_chain(p1->at(0)); // Max elements in vector
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
@@ -2007,6 +2024,8 @@ bool SuperWord::implemented(Node_List* p) {
       } else {
         retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
       }
+    } else if (VectorNode::is_convert_opcode(opc)) {
+      retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
     } else {
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
     }
@@ -2558,12 +2577,11 @@ void SuperWord::output() {
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (opc == Op_ConvI2F || opc == Op_ConvL2D ||
-                 opc == Op_ConvF2I || opc == Op_ConvD2L) {
+      } else if (VectorNode::is_convert_opcode(opc)) {
         assert(n->req() == 2, "only one input expected");
         BasicType bt = velt_basic_type(n);
-        int vopc = VectorNode::opcode(opc, bt);
         Node* in = vector_opd(p, 1);
+        int vopc = VectorCastNode::opcode(in->bottom_type()->is_vect()->element_basic_type());
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (is_cmov_pack(p)) {
@@ -2961,9 +2979,26 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     return true;
   }
 
-
   if (u_pk->size() != d_pk->size())
     return false;
+
+  if (longer_type_for_conversion(use) != T_ILLEGAL) {
+    // type conversion takes a type of a kind of size and produces a type of
+    // another size - hence the special checks on alignment and size.
+    for (uint i = 0; i < u_pk->size(); i++) {
+      Node* ui = u_pk->at(i);
+      Node* di = d_pk->at(i);
+      if (ui->in(u_idx) != di) {
+        return false;
+      }
+      if (alignment(ui) / type2aelembytes(velt_basic_type(ui)) !=
+          alignment(di) / type2aelembytes(velt_basic_type(di))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   for (uint i = 0; i < u_pk->size(); i++) {
     Node* ui = u_pk->at(i);
     Node* di = d_pk->at(i);
@@ -3194,6 +3229,63 @@ void SuperWord::compute_max_depth() {
   if (TraceSuperWord && Verbose) {
     tty->print_cr("compute_max_depth iterated: %d times", ct);
   }
+}
+
+BasicType SuperWord::longer_type_for_conversion(Node* n) {
+  int opcode = n->Opcode();
+  switch (opcode) {
+    case Op_ConvD2I:
+    case Op_ConvI2D:
+    case Op_ConvF2D:
+    case Op_ConvD2F: return T_DOUBLE;
+    case Op_ConvF2L:
+    case Op_ConvL2F:
+    case Op_ConvL2I:
+    case Op_ConvI2L: return T_LONG;
+    case Op_ConvI2F: {
+      BasicType src_t = velt_basic_type(n->in(1));
+      if (src_t == T_BYTE || src_t == T_SHORT) {
+        return T_FLOAT;
+      }
+      return T_ILLEGAL;
+    }
+    case Op_ConvF2I: {
+      BasicType dst_t = velt_basic_type(n);
+      if (dst_t == T_BYTE || dst_t == T_SHORT) {
+        return T_FLOAT;
+      }
+      return T_ILLEGAL;
+    }
+  }
+  return T_ILLEGAL;
+}
+
+int SuperWord::max_vector_size_in_ud_chain(Node* n) {
+  BasicType bt = velt_basic_type(n);
+  BasicType vt = bt;
+
+  // find the longest type among def nodes.
+  uint start, end;
+  VectorNode::vector_operands(n, &start, &end);
+  for (uint i = start; i < end; ++i) {
+    Node* input = n->in(i);
+    if (!in_bb(input)) continue;
+    BasicType newt = longer_type_for_conversion(input);
+    vt = (newt == T_ILLEGAL) ? vt : newt;
+  }
+
+  // find the longest type among use nodes.
+  for (uint i = 0; i < n->outcnt(); ++i) {
+    Node* output = n->raw_out(i);
+    if (!in_bb(output)) continue;
+    BasicType newt = longer_type_for_conversion(output);
+    vt = (newt == T_ILLEGAL) ? vt : newt;
+  }
+
+  int max = Matcher::max_vector_size(vt);
+  // If now there is no vectors for the longest type, the nodes with the longest
+  // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
+  return max < 2 ? Matcher::max_vector_size(bt) : max;
 }
 
 //-------------------------compute_vector_element_type-----------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,6 +528,10 @@ class SuperWord : public ResourceObj {
   void bb_insert_after(Node* n, int pos);
   // Compute max depth for expressions from beginning of block
   void compute_max_depth();
+  // Return the longer type for type-conversion node and return illegal type for other nodes.
+  BasicType longer_type_for_conversion(Node* n);
+  // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
+  int max_vector_size_in_ud_chain(Node* n);
   // Compute necessary vector element type for expressions
   void compute_vector_element_type();
   // Are s1 and s2 in a pack pair and ordered as s1,s2?

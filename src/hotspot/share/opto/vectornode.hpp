@@ -80,6 +80,7 @@ class VectorNode : public TypeNode {
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
+  static bool is_convert_opcode(int opc);
 
   static bool is_vshift_cnt_opcode(int opc);
 
@@ -1469,7 +1470,7 @@ class VectorCastNode : public VectorNode {
 
   static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(BasicType bt, bool is_signed = true);
-  static bool implemented(BasicType bt, uint vlen);
+  static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 
   virtual Node* Identity(PhaseGVN* phase);
 };

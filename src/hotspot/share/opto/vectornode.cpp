@@ -226,15 +226,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_StoreVector;
   case Op_MulAddS2I:
     return Op_MulAddVS2VI;
-  case Op_ConvI2F:
-    return Op_VectorCastI2X;
-  case Op_ConvL2D:
-    return Op_VectorCastL2X;
-  case Op_ConvF2I:
-    return Op_VectorCastF2X;
-  case Op_ConvD2L:
-    return Op_VectorCastD2X;
-
   default:
     return 0; // Unimplemented
   }
@@ -362,6 +353,26 @@ bool VectorNode::is_shift_opcode(int opc) {
     return true;
   default:
     return false;
+  }
+}
+
+bool VectorNode::is_convert_opcode(int opc) {
+  switch (opc) {
+    case Op_ConvI2F:
+    case Op_ConvL2D:
+    case Op_ConvF2I:
+    case Op_ConvD2L:
+    case Op_ConvI2D:
+    case Op_ConvL2F:
+    case Op_ConvL2I:
+    case Op_ConvI2L:
+    case Op_ConvF2L:
+    case Op_ConvD2F:
+    case Op_ConvF2D:
+    case Op_ConvD2I:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -1118,9 +1129,19 @@ int VectorCastNode::opcode(BasicType bt, bool is_signed) {
     case T_FLOAT:  return Op_VectorCastF2X;
     case T_DOUBLE: return Op_VectorCastD2X;
     default:
-      assert(false, "unknown type: %s", type2name(bt));
+      assert(bt == T_CHAR || bt == T_BOOLEAN, "unknown type: %s", type2name(bt));
       return 0;
   }
+}
+
+bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
+  if (is_java_primitive(dst_type) &&
+      (vlen > 1) && is_power_of_2(vlen) &&
+      Matcher::vector_size_supported(dst_type, vlen)) {
+    int vopc = VectorCastNode::opcode(src_type);
+    return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, dst_type);
+  }
+  return false;
 }
 
 Node* VectorCastNode::Identity(PhaseGVN* phase) {
