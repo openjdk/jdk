@@ -1553,55 +1553,50 @@ VFABD(fabd, fabd, 4, F, X, S, 128)
 VFABD(fabd, fabd, 2, D, X, D, 128)
 dnl
 define(`VREPLICATE', `
-instruct replicate$3$4$5`'(vec$6 dst, $7 ifelse($7, immI0, zero, $7, immI, con, src))
+instruct replicate$2$3$4`'(vec$5 dst, $6 ifelse($4, _imm, con, src))
 %{
-  predicate(UseSVE == 0 && ifelse($8, `',
-                                  n->as_Vector()->length() == $3,
-                                  (n->as_Vector()->length() == $3 ||`
-                            'n->as_Vector()->length() == $8)));
-  match(Set dst (Replicate`'ifelse($7, immI0, I, $4) ifelse($7, immI0, zero, $7, immI, con, $7, zero, I, src)));
+  predicate(UseSVE == 0 && ifelse($7, `',
+                                  n->as_Vector()->length() == $2,
+                                  (n->as_Vector()->length() == $2 ||`
+                            'n->as_Vector()->length() == $7)));
+  match(Set dst (Replicate$3 ifelse($4, _imm, con, src)));
   ins_cost(INSN_COST);
-  format %{ "$1  $dst, $ifelse($7, immI0, zero, $7, immI, con, src)`\t# vector ('ifelse($4$7, SimmI, $3H, $2, eor, 4I, $3$4)`)"' %}
+  format %{ "ifelse($1, mov, movi, $1)  $dst, $ifelse($4, _imm, con, src)`\t# vector ('ifelse($3$4, S_imm, $2H, $2$3)`)"' %}
   ins_encode %{
-    __ $2(as_FloatRegister($dst$$reg), __ ifelse(
-            $2, eor, T16B, T$3`'$9),ifelse(
-            `$4 $7', `B immI', ` '$con$$constant & 0xff,
-            `$4 $7', `S immI', ` '$con$$constant & 0xffff,
-            `$4 $7', `I immI', ` '$con$$constant,
-            `$2', eor,`
-           as_FloatRegister($dst$$reg),
-           as_FloatRegister($dst$$reg)',
-            `$7', vRegF,`
+    __ $1(as_FloatRegister($dst$$reg), __ T$2$8,ifelse(
+            `$3 $4', `B _imm', ` '$con$$constant & 0xff,
+            `$3 $4', `S _imm', ` '$con$$constant & 0xffff,
+            `$3 $4', `I _imm', ` '$con$$constant,
+            `$3 $4', `L _imm', ` '$con$$constant,
+            `$6', vRegF,`
            as_FloatRegister($src$$reg)',
-            `$7', vRegD,`
+            `$6', vRegD,`
            as_FloatRegister($src$$reg)',
            ` 'as_Register($src$$reg)));
   %}
-  ins_pipe(ifelse($7, immI0, v$1_reg_imm,
-                  $7, immI,  v$1_reg_imm,
-                  $7, iRegIorL2I, v$1_reg_reg,
-                  $7, zero, vmovi_reg_imm,
-                  $7, iRegL, vdup_reg_reg,
-                  $4, F, vdup_reg_freg, vdup_reg_dreg)`'ifelse($6, X, 128, 64));
+  ins_pipe(ifelse($4, _imm,  vmovi_reg_imm,
+                  $6, iRegIorL2I, v$1_reg_reg,
+                  $6, iRegL, vdup_reg_reg,
+                  $3, F, vdup_reg_freg, vdup_reg_dreg)`'ifelse($5, X, 128, 64));
 %}')dnl
-dnl        $1    $2    $3  $4 $5     $6 $7          $8 $9
-VREPLICATE(dup,  dup,  8,  B, ,      D, iRegIorL2I, 4, B)
-VREPLICATE(dup,  dup,  16, B, ,      X, iRegIorL2I,  , B)
-VREPLICATE(movi, mov,  8,  B, _imm,  D, immI,       4, B)
-VREPLICATE(movi, mov,  16, B, _imm,  X, immI,        , B)
-VREPLICATE(dup,  dup,  4,  S, ,      D, iRegIorL2I, 2, H)
-VREPLICATE(dup,  dup,  8,  S, ,      X, iRegIorL2I,  , H)
-VREPLICATE(movi, mov,  4,  S, _imm,  D, immI,       2, H)
-VREPLICATE(movi, mov,  8,  S,  _imm, X, immI,        , H)
-VREPLICATE(dup,  dup,  2,  I, ,      D, iRegIorL2I, ,  S)
-VREPLICATE(dup,  dup,  4,  I, ,      X, iRegIorL2I, ,  S)
-VREPLICATE(movi, mov,  2,  I, _imm,  D, immI,       ,  S)
-VREPLICATE(movi, mov,  4,  I,  _imm, X, immI,       ,  S)
-VREPLICATE(dup,  dup,  2,  L, ,      X, iRegL,      ,  D)
-VREPLICATE(movi, eor,  2,  L, _zero, X, immI0,      ,  D)
-VREPLICATE(dup,  dup,  2,  F, ,      D, vRegF,      ,  S)
-VREPLICATE(dup,  dup,  4,  F, ,      X, vRegF,      ,  S)
-VREPLICATE(dup,  dup,  2,  D, ,      X, vRegD,      ,  D)
+dnl        $1   $2  $3 $4     $5 $6          $7 $8
+VREPLICATE(dup, 8,  B, ,      D, iRegIorL2I, 4, B)
+VREPLICATE(dup, 16, B, ,      X, iRegIorL2I,  , B)
+VREPLICATE(mov, 8,  B, _imm,  D, immI,       4, B)
+VREPLICATE(mov, 16, B, _imm,  X, immI,        , B)
+VREPLICATE(dup, 4,  S, ,      D, iRegIorL2I, 2, H)
+VREPLICATE(dup, 8,  S, ,      X, iRegIorL2I,  , H)
+VREPLICATE(mov, 4,  S, _imm,  D, immI,       2, H)
+VREPLICATE(mov, 8,  S, _imm,  X, immI,        , H)
+VREPLICATE(dup, 2,  I, ,      D, iRegIorL2I,  , S)
+VREPLICATE(dup, 4,  I, ,      X, iRegIorL2I,  , S)
+VREPLICATE(mov, 2,  I, _imm,  D, immI,        , S)
+VREPLICATE(mov, 4,  I, _imm,  X, immI,        , S)
+VREPLICATE(dup, 2,  L, ,      X, iRegL,       , D)
+VREPLICATE(mov, 2,  L, _imm,  X, immL,        , D)
+VREPLICATE(dup, 2,  F, ,      D, vRegF,       , S)
+VREPLICATE(dup, 4,  F, ,      X, vRegF,       , S)
+VREPLICATE(dup, 2,  D, ,      X, vRegD,       , D)
 dnl
 
 // ====================REDUCTION ARITHMETIC====================================

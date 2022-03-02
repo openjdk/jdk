@@ -3255,16 +3255,14 @@ instruct replicate2L(vecX dst, iRegL src)
   ins_pipe(vdup_reg_reg128);
 %}
 
-instruct replicate2L_zero(vecX dst, immI0 zero)
+instruct replicate2L_imm(vecX dst, immL con)
 %{
   predicate(UseSVE == 0 && n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI zero));
+  match(Set dst (ReplicateL con));
   ins_cost(INSN_COST);
-  format %{ "movi  $dst, $zero\t# vector (4I)" %}
+  format %{ "movi  $dst, $con\t# vector (2L)" %}
   ins_encode %{
-    __ eor(as_FloatRegister($dst$$reg), __ T16B,
-           as_FloatRegister($dst$$reg),
-           as_FloatRegister($dst$$reg));
+    __ mov(as_FloatRegister($dst$$reg), __ T2D, $con$$constant);
   %}
   ins_pipe(vmovi_reg_imm128);
 %}

@@ -508,7 +508,7 @@ public:
 
   void movptr(Register r, uintptr_t imm64);
 
-  void mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32);
+  void mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64);
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
