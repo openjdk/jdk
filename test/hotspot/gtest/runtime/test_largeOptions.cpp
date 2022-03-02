@@ -30,10 +30,10 @@
 
 class LargeOptionsTest : public ::testing::Test {
 public:
-  static bool test_option_value(const char* option, intx value) {
+  static bool test_option_value(const char* option, int64_t value) {
     char buffer[100];
     UnlockDiagnosticVMOptions = true;
-    os::snprintf(buffer, 100, "%s=" INTX_FORMAT, option, value);
+    os::snprintf(buffer, 100, "%s=" INT64_FORMAT, option, value);
     return Arguments::parse_argument(buffer, JVMFlagOrigin::COMMAND_LINE);
   }
 
