@@ -1239,7 +1239,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
 // |..Q_max-2^64   .    .    0    .    .    .   Q_min..|  s64 overflow
 // |    .     .    .    .    R>   R>   R>   R>    R    |  (against R values)
 //
-// In this case, Q_min >s64 Q_max+1, even though the mathematical values of Q_min adn Q_max+1 are correctly ordered.
+// In this case, Q_min >s64 Q_max+1, even though the mathematical values of Q_min and Q_max+1 are correctly ordered.
 // The formulas from the previous case can be used, except that the bad upper bound Q_max is replaced by max_jlong.
 // (In fact, we could use any replacement bound from R to max_jlong inclusive, as the input to the clamp function.)
 //
@@ -1399,7 +1399,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     // H_clamp = Q_max+1 < Q_min ? max_jlong : Q_max+1
     // (Because Q_min and Q_max are close, the overflow check could also be encoded as Q_max+1 < 0 & Q_min >= 0.)
     Node* max_jlong_long = _igvn.longcon(max_jlong);
-    set_ctrl(max_jlong_long, C->root());
+    set_ctrl(max_jlong_long, this->C->root());
     Node* Q_max_cmp = new CmpLNode(Q_max_plus_one, Q_min);
     register_new_node(Q_max_cmp, entry_control);
     Node* Q_max_bool = new BoolNode(Q_max_cmp, BoolTest::lt);
