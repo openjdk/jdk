@@ -38,20 +38,25 @@ import java.util.List;
 
 /*
  * @test
- * @bug 8138990
+ * @bug 8138990 8281561
  * @summary Tests for HTTP Digest auth
  *          The impl maintains a cache for auth info,
  *          the testcases run in a separate JVM to avoid cache hits
  * @modules jdk.httpserver
- * @run main/othervm DigestAuth good
- * @run main/othervm DigestAuth only_nonce
+ * @run main/othervm DigestAuth bad
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth good
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth only_nonce
  * @run main/othervm DigestAuth sha1
- * @run main/othervm DigestAuth no_header
- * @run main/othervm DigestAuth no_nonce
- * @run main/othervm DigestAuth no_qop
- * @run main/othervm DigestAuth invalid_alg
- * @run main/othervm DigestAuth validate_server
- * @run main/othervm DigestAuth validate_server_no_qop
+ * @run main/othervm DigestAuth sha256
+ * @run main/othervm DigestAuth sha512
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth sha1
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth sha256
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth no_header
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth no_nonce
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth no_qop
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth invalid_alg
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth validate_server
+ * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth validate_server_no_qop
  */
 public class DigestAuth {
 
@@ -88,6 +93,21 @@ public class DigestAuth {
             + "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
             + "algorithm=\"SHA1\"";
 
+    static final String WWW_AUTH_HEADER_SHA256 = "Digest "
+	    + "nonce=\"a69ae8a2e17c219bc6c118b673e93601616a6a"
+	    + "4d8fde3a19996748d77ad0464b\", qop=\"auth\", "
+	    + "opaque=\"efc62777cff802cb29252f626b041f381cd360"
+	    + "7187115871ca25e7b51a3757e9\", algorithm=SHA-256";
+
+    static final String WWW_AUTH_HEADER_SHA512 = "Digest "
+	    + "nonce=\"9aaa8d3ae53b54ce653a5d52d895afcd9c0e430"
+	    + "a17bdf98bb34235af84fba268d31376a63e0c39079b519"
+ 	    + "c14baa0429754266f35b62a47b9c8b5d3d36c638282\","
+	    + " qop=\"auth\", opaque=\"28cdc6bae6c5dd7ec89dbf"
+	    + "af4d4f26b70f41ebbb83dc7af0950d6de016c40f412224"
+ 	    + "676cd45ebcf889a70e65a2b055a8b5232e50281272ba7c"
+ 	    + "67628cc3bb3492\", algorithm=SHA-512";
+
     static final String WWW_AUTH_HEADER_INVALID_ALGORITHM = "Digest "
             + "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
             + "algorithm=\"SHA123\"";
@@ -123,6 +143,18 @@ public class DigestAuth {
 
             boolean success = true;
             switch (testcase) {
+                case "bad":
+                    // server returns a good WWW-Authenticate header with MD5
+                    // but MD5 is disallowed by default
+                    server.setWWWAuthHeader(GOOD_WWW_AUTH_HEADER);
+                    success = testAuth(url, auth, EXPECT_FAILURE);
+                    if (auth.lastRequestedPrompt == null ||
+                            !auth.lastRequestedPrompt.equals(REALM)) {
+                        System.out.println("Unexpected realm: "
+                                + auth.lastRequestedPrompt);
+                        success = false;
+                    }
+                    break;
                 case "good":
                     // server returns a good WWW-Authenticate header
                     server.setWWWAuthHeader(GOOD_WWW_AUTH_HEADER);
@@ -204,6 +236,16 @@ public class DigestAuth {
                 case "sha1":
                     // server returns a good WWW-Authenticate header with SHA-1
                     server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA1);
+                    success = testAuth(url, auth, EXPECT_DIGEST);
+                    break;
+                case "sha256":
+                    // server returns a good WWW-Authenticate header with SHA-256
+                    server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA256);
+                    success = testAuth(url, auth, EXPECT_DIGEST);
+                    break;
+                case "sha512":
+                    // server returns a good WWW-Authenticate header with SHA-512
+                    server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA512);
                     success = testAuth(url, auth, EXPECT_DIGEST);
                     break;
                 case "no_header":
