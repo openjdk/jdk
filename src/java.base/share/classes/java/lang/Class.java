@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1582,7 +1582,7 @@ public final class Class<T> implements java.io.Serializable,
      * representing the class in which it was declared.  This method returns
      * null if this class or interface is not a member of any other class.  If
      * this {@code Class} object represents an array class, a primitive
-     * type, or void,then this method returns null.
+     * type, or void, then this method returns null.
      *
      * @return the declaring class for this class
      * @throws SecurityException
@@ -1732,8 +1732,18 @@ public final class Class<T> implements java.io.Serializable,
      * <li>an array whose component type does not have a canonical name</li>
      * </ul>
      *
+     * The canonical name for a primitive class is the keyword for the
+     * corresponding primitive type ({@code byte}, {@code short},
+     * {@code char}, {@code int}, and so on).
+     *
+     * <p>An array type has a canonical name if and only if its
+     * component type has a canonical name. When an array type has a
+     * canonical name, it is equal to the canonical name of the
+     * component type followed by "{@code []}".
+     *
      * @return the canonical name of the underlying class if it exists, and
      * {@code null} otherwise.
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      * @since 1.5
      */
     public String getCanonicalName() {
@@ -4475,12 +4485,21 @@ public final class Class<T> implements java.io.Serializable,
      * Returns a {@code Class} for an array type whose component type
      * is described by this {@linkplain Class}.
      *
+     * @throws UnsupportedOperationException if this component type is {@linkplain
+     *         Void#TYPE void} or if the number of dimensions of the resulting array
+     *         type would exceed 255.
      * @return a {@code Class} describing the array type
+     * @jvms 4.3.2 Field Descriptors
+     * @jvms 4.4.1 The {@code CONSTANT_Class_info} Structure
      * @since 12
      */
     @Override
     public Class<?> arrayType() {
-        return Array.newInstance(this, 0).getClass();
+        try {
+            return Array.newInstance(this, 0).getClass();
+        } catch (IllegalArgumentException iae) {
+            throw new UnsupportedOperationException(iae);
+        }
     }
 
     /**

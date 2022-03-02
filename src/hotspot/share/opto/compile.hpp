@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,6 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
   bool                  _trace_opto_output;
-  bool                  _print_ideal;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
@@ -354,7 +353,7 @@ class Compile : public Phase {
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
-  IdealGraphPrinter*    _printer;
+  IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
   static IdealGraphPrinter* _debug_network_printer;
 #endif
@@ -489,7 +488,7 @@ class Compile : public Phase {
   }
 
 #ifndef PRODUCT
-  IdealGraphPrinter* printer() { return _printer; }
+  IdealGraphPrinter* igv_printer() { return _igv_printer; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -636,7 +635,8 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
-  bool          print_ideal() const             { return _print_ideal; }
+  void          print_ideal_ir(const char* phase_name);
+  bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
@@ -650,36 +650,12 @@ class Compile : public Phase {
 
   Ticks _latest_stage_start_counter;
 
-  void begin_method(int level = 1) {
-#ifndef PRODUCT
-    if (_method != NULL && should_print(level)) {
-      _printer->begin_method();
-    }
-#endif
-    C->_latest_stage_start_counter.stamp();
-  }
+  void begin_method();
+  void end_method();
+  bool should_print_igv(int level);
+  bool should_print_phase(CompilerPhaseType cpt);
 
-  bool should_print(int level = 1) {
-#ifndef PRODUCT
-    if (PrintIdealGraphLevel < 0) { // disabled by the user
-      return false;
-    }
-
-    bool need = directive()->IGVPrintLevelOption >= level;
-    if (need && !_printer) {
-      _printer = IdealGraphPrinter::printer();
-      assert(_printer != NULL, "_printer is NULL when we need it!");
-      _printer->set_compile(this);
-    }
-    return need;
-#else
-    return false;
-#endif
-  }
-
-  void print_method(CompilerPhaseType cpt, const char *name, int level = 1);
-  void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
-  void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
@@ -687,8 +663,6 @@ class Compile : public Phase {
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
-
-  void end_method(int level = 1);
 
   int           macro_count()             const { return _macro_nodes.length(); }
   int           predicate_count()         const { return _predicate_opaqs.length(); }

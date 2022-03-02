@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ private:
 
 public:
   // cmpstr does string comparisions.  hashstr computes a key.
-  ProductionState(Arena *arena) : _production(cmpstr, hashstr, arena) { initialize(); };
+  ProductionState(AdlArena *arena) : _production(cmpstr, hashstr, arena) { initialize(); };
   ~ProductionState() { };
 
   void        initialize();                // reset local and dictionary state
@@ -817,7 +817,7 @@ bool Expr::check_buffers() {
 
 //------------------------------ExprDict---------------------------------------
 // Constructor
-ExprDict::ExprDict( CmpKey cmp, Hash hash, Arena *arena )
+ExprDict::ExprDict( CmpKey cmp, Hash hash, AdlArena *arena )
   : _expr(cmp, hash, arena), _defines()  {
 }
 ExprDict::~ExprDict() {

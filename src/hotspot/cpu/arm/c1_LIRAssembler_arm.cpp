@@ -1680,6 +1680,9 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     } else {
       assert(right->is_constant(), "must be");
       const uint c = (uint)right->as_constant_ptr()->as_jint();
+      if (!Assembler::is_arith_imm_in_range(c)) {
+        BAILOUT("illegal arithmetic operand");
+      }
       switch (code) {
         case lir_logic_and: __ and_32(res, lreg, c); break;
         case lir_logic_or:  __ orr_32(res, lreg, c); break;

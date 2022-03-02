@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,6 +363,7 @@ class Instruction: public CompilationResourceObj {
     NeedsRangeCheckFlag,
     InWorkListFlag,
     DeoptimizeOnException,
+    KillsMemoryFlag,
     InstructionLastFlag
   };
 
@@ -718,13 +719,13 @@ LEAF(Constant, Instruction)
     assert(type->is_constant(), "must be a constant");
   }
 
-  Constant(ValueType* type, ValueStack* state_before):
+  Constant(ValueType* type, ValueStack* state_before, bool kills_memory = false):
     Instruction(type, state_before, /*type_is_constant*/ true)
   {
     assert(state_before != NULL, "only used for constants which need patching");
     assert(type->is_constant(), "must be a constant");
-    // since it's patching it needs to be pinned
-    pin();
+    set_flag(KillsMemoryFlag, kills_memory);
+    pin(); // since it's patching it needs to be pinned
   }
 
   // generic
@@ -735,6 +736,8 @@ LEAF(Constant, Instruction)
   virtual bool is_equal(Value v) const;
 
   virtual ciType* exact_type() const;
+
+  bool kills_memory() const { return check_flag(KillsMemoryFlag); }
 
   enum CompareResult { not_comparable = -1, cond_false, cond_true };
 
@@ -1822,6 +1825,7 @@ BASE(BlockEnd, StateSplit)
   // successors
   int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
+  bool is_sux(BlockBegin* sux) const             { return _sux == NULL ? false : _sux->contains(sux); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };

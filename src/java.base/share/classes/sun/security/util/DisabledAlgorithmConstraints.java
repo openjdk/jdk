@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,12 @@ import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,7 +54,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -686,41 +688,30 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * timezone.
      */
     private static class DenyAfterConstraint extends Constraint {
-        private Date denyAfterDate;
+        private ZonedDateTime zdt;
+        private Instant denyAfterDate;
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
-            Calendar c;
 
             algorithm = algo;
 
             if (debug != null) {
-                debug.println("DenyAfterConstraint read in as:  year " +
+                debug.println("DenyAfterConstraint read in as: year " +
                         year + ", month = " + month + ", day = " + day);
             }
 
-            c = new Calendar.Builder().setTimeZone(TimeZone.getTimeZone("GMT"))
-                    .setDate(year, month - 1, day).build();
-
-            if (year > c.getActualMaximum(Calendar.YEAR) ||
-                    year < c.getActualMinimum(Calendar.YEAR)) {
+            try {
+                zdt = ZonedDateTime
+                    .of(year, month, day, 0, 0, 0, 0, ZoneId.of("GMT"));
+                denyAfterDate = zdt.toInstant();
+            } catch (DateTimeException dte) {
                 throw new IllegalArgumentException(
-                        "Invalid year given in constraint: " + year);
-            }
-            if ((month - 1) > c.getActualMaximum(Calendar.MONTH) ||
-                    (month - 1) < c.getActualMinimum(Calendar.MONTH)) {
-                throw new IllegalArgumentException(
-                        "Invalid month given in constraint: " + month);
-            }
-            if (day > c.getActualMaximum(Calendar.DAY_OF_MONTH) ||
-                    day < c.getActualMinimum(Calendar.DAY_OF_MONTH)) {
-                throw new IllegalArgumentException(
-                        "Invalid Day of Month given in constraint: " + day);
+                    "Invalid denyAfter date", dte);
             }
 
-            denyAfterDate = c.getTime();
             if (debug != null) {
                 debug.println("DenyAfterConstraint date set to: " +
-                        denyAfterDate);
+                        zdt.toLocalDate());
             }
         }
 
@@ -735,23 +726,22 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         @Override
         public void permits(ConstraintsParameters cp)
                 throws CertPathValidatorException {
-            Date currentDate;
-            String errmsg;
+            Instant currentDate;
 
             if (cp.getDate() != null) {
-                currentDate = cp.getDate();
+                currentDate = cp.getDate().toInstant();
             } else {
-                currentDate = new Date();
+                currentDate = Instant.now();
             }
 
-            if (!denyAfterDate.after(currentDate)) {
+            if (!denyAfterDate.isAfter(currentDate)) {
                 if (next(cp)) {
                     return;
                 }
                 throw new CertPathValidatorException(
                         "denyAfter constraint check failed: " + algorithm +
                         " used with Constraint date: " +
-                        denyAfterDate + "; params date: " +
+                        zdt.toLocalDate() + "; params date: " +
                         currentDate + cp.extendedExceptionMsg(),
                         null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
             }
@@ -770,7 +760,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                 debug.println("DenyAfterConstraints.permits(): " + algorithm);
             }
 
-            return denyAfterDate.after(new Date());
+            return denyAfterDate.isAfter(Instant.now());
         }
     }
 
@@ -793,7 +783,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             for (String usage : usages) {
 
                 boolean match = false;
-                switch (usage.toLowerCase()) {
+                switch (usage.toLowerCase(Locale.ENGLISH)) {
                     case "tlsserver":
                         match = variant.equals(Validator.VAR_TLS_SERVER);
                         break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ public abstract class Dependencies {
                 super(value);
                 this.depsByKind = new EnumMap<>(CompletionCause.class);
                 for (CompletionCause depKind : CompletionCause.values()) {
-                    depsByKind.put(depKind, new ArrayList<Node>());
+                    depsByKind.put(depKind, new ArrayList<>());
                 }
             }
 
@@ -216,7 +216,7 @@ public abstract class Dependencies {
             }
 
             @Override
-            public java.util.Collection<? extends Node> getDependenciesByKind(DependencyKind dk) {
+            public Collection<? extends Node> getDependenciesByKind(DependencyKind dk) {
                 return depsByKind.get(dk);
             }
 

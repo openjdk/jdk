@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -683,6 +684,21 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
       }
+#ifndef PRODUCT
+      else if (option == CompileCommand::PrintIdealPhase) {
+        uint64_t mask = 0;
+        PhaseNameValidator validator(value, mask);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::TestOptionList) {
+        // all values are ok
+      }
+#endif
+      else {
+        assert(false, "Ccstrlist type option missing validator");
+      }
 
       register_command(matcher, option, (ccstr) value);
       return;
@@ -932,7 +948,7 @@ bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
   assert(has_command_file(), "command file must be specified");
-  FILE* stream = fopen(cc_file(), "rt");
+  FILE* stream = os::fopen(cc_file(), "rt");
   if (stream == NULL) return;
 
   char token[1024];

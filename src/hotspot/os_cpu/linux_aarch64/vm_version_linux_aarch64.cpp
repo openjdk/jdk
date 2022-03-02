@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -72,6 +72,10 @@
 #define HWCAP_SVE (1 << 22)
 #endif
 
+#ifndef HWCAP_PACA
+#define HWCAP_PACA (1 << 30)
+#endif
+
 #ifndef HWCAP2_SVE2
 #define HWCAP2_SVE2 (1 << 1)
 #endif
@@ -111,6 +115,7 @@ void VM_Version::get_os_cpu_info() {
   static_assert(CPU_SHA3    == HWCAP_SHA3,    "Flag CPU_SHA3 must follow Linux HWCAP");
   static_assert(CPU_SHA512  == HWCAP_SHA512,  "Flag CPU_SHA512 must follow Linux HWCAP");
   static_assert(CPU_SVE     == HWCAP_SVE,     "Flag CPU_SVE must follow Linux HWCAP");
+  static_assert(CPU_PACA    == HWCAP_PACA,    "Flag CPU_PACA must follow Linux HWCAP");
   _features = auxv & (
       HWCAP_FP      |
       HWCAP_ASIMD   |
@@ -124,7 +129,8 @@ void VM_Version::get_os_cpu_info() {
       HWCAP_DCPOP   |
       HWCAP_SHA3    |
       HWCAP_SHA512  |
-      HWCAP_SVE);
+      HWCAP_SVE     |
+      HWCAP_PACA);
 
   if (auxv2 & HWCAP2_SVE2) _features |= CPU_SVE2;
 
@@ -143,7 +149,7 @@ void VM_Version::get_os_cpu_info() {
     _zva_length = 4 << (dczid_el0 & 0xf);
   }
 
-  if (FILE *f = fopen("/proc/cpuinfo", "r")) {
+  if (FILE *f = os::fopen("/proc/cpuinfo", "r")) {
     // need a large buffer as the flags line may include lots of text
     char buf[1024], *p;
     while (fgets(buf, sizeof (buf), f) != NULL) {
@@ -174,8 +180,8 @@ static bool read_fully(const char *fname, char *buf, size_t buflen) {
   assert(buflen >= 1, "invalid argument");
   int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
-    ssize_t read_sz = os::read(fd, buf, buflen);
-    os::close(fd);
+    ssize_t read_sz = ::read(fd, buf, buflen);
+    ::close(fd);
 
     // Skip if the contents is just "\n" because some machine only sets
     // '\n' to the board name.

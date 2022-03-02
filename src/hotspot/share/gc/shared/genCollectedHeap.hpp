@@ -48,7 +48,6 @@ class GenCollectedHeap : public CollectedHeap {
   friend class GenMarkSweep;
   friend class VM_GenCollectForAllocation;
   friend class VM_GenCollectFull;
-  friend class VM_GenCollectFullConcurrent;
   friend class VM_GC_HeapInspection;
   friend class VM_HeapDumper;
   friend class HeapInspection;

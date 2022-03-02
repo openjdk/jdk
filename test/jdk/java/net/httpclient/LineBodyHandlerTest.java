@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ import static org.testng.Assert.assertTrue;
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib http2/server
- * @build Http2TestServer LineBodyHandlerTest HttpServerAdapters
+ * @build Http2TestServer LineBodyHandlerTest HttpServerAdapters ReferenceTracker
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=1 LineBodyHandlerTest
  */
@@ -100,6 +100,10 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     String httpsURI;
     String http2URI;
     String https2URI;
+
+    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    final AtomicInteger clientCount = new AtomicInteger();
+    HttpClient sharedClient;
 
     @DataProvider(name = "uris")
     public Object[][] variants() {
@@ -189,10 +193,14 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     }
 
     HttpClient newClient() {
-        return HttpClient.newBuilder()
+        if (sharedClient != null) {
+            return sharedClient;
+        }
+        clientCount.incrementAndGet();
+        return sharedClient = TRACKER.track(HttpClient.newBuilder()
                 .sslContext(sslContext)
                 .proxy(Builder.NO_PROXY)
-                .build();
+                .build());
     }
 
     @Test(dataProvider = "uris")
@@ -695,10 +703,21 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
 
     @AfterTest
     public void teardown() throws Exception {
+        sharedClient = null;
+        try {
+            System.gc();
+            Thread.sleep(200);
+        } catch (InterruptedException io) {
+            // don't care;
+        }
+        AssertionError fail = TRACKER.check(500);
+        System.out.printf("Tear down: %s client created.%n", clientCount.get());
+        System.err.printf("Tear down: %s client created.%n", clientCount.get());
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        if (fail != null) throw fail;
     }
 
     static void printBytes(PrintStream out, String prefix, byte[] bytes) {

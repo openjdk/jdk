@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @throws SecurityException
      *         if a security manager exists and its {@code checkRead}
-     *         method doesn't allow read access to the file,or its
+     *         method doesn't allow read access to the file, or its
      *         {@code checkDelete} method doesn't allow deleting the
      *         file when the {@code OPEN_DELETE} flag is set
      *
@@ -345,7 +345,8 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @param entry the zip file entry
      * @return the input stream for reading the contents of the specified
-     * zip file entry.
+     * zip file entry or null if the zip file entry does not exist
+     * within the zip file.
      * @throws ZipException if a ZIP format error has occurred
      * @throws IOException if an I/O error has occurred
      * @throws IllegalStateException if the zip file has been closed
@@ -368,28 +369,28 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             in = new ZipFileInputStream(zsrc.cen, pos);
             switch (CENHOW(zsrc.cen, pos)) {
-            case STORED:
-                synchronized (istreams) {
-                    istreams.add(in);
-                }
-                return in;
-            case DEFLATED:
-                // Inflater likes a bit of slack
-                // MORE: Compute good size for inflater stream:
-                long size = CENLEN(zsrc.cen, pos) + 2;
-                if (size > 65536) {
-                    size = 8192;
-                }
-                if (size <= 0) {
-                    size = 4096;
-                }
-                InputStream is = new ZipFileInflaterInputStream(in, res, (int)size);
-                synchronized (istreams) {
-                    istreams.add(is);
-                }
-                return is;
-            default:
-                throw new ZipException("invalid compression method");
+                case STORED:
+                    synchronized (istreams) {
+                        istreams.add(in);
+                    }
+                    return in;
+                case DEFLATED:
+                    // Inflater likes a bit of slack
+                    // MORE: Compute good size for inflater stream:
+                    long size = CENLEN(zsrc.cen, pos) + 2;
+                    if (size > 65536) {
+                        size = 8192;
+                    }
+                    if (size <= 0) {
+                        size = 4096;
+                    }
+                    InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
+                    synchronized (istreams) {
+                        istreams.add(is);
+                    }
+                    return is;
+                default:
+                    throw new ZipException("invalid compression method");
             }
         }
     }
@@ -1497,6 +1498,9 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid END header (bad central directory offset)");
                 }
                 // read in the CEN and END
+                if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
+                    zerror("invalid END header (central directory size too large)");
+                }
                 cen = this.cen = new byte[(int)(end.cenlen + ENDHDR)];
                 if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
                     zerror("read CEN tables failed");

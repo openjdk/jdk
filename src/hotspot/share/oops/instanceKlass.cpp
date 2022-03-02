@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListWriter.hpp"
+#include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
@@ -1503,6 +1504,17 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     return;
   }
 
+#if INCLUDE_CDS
+  // This is needed to ensure the consistency of the archived heap objects.
+  if (has_archived_enum_objs()) {
+    assert(is_shared(), "must be");
+    bool initialized = HeapShared::initialize_enum_klass(this, CHECK);
+    if (initialized) {
+      return;
+    }
+  }
+#endif
+
   methodHandle h_method(THREAD, class_initializer());
   assert(!is_initialized(), "we cannot initialize twice");
   LogTarget(Info, class, init) lt;
@@ -2417,7 +2429,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   } else {
     it->push(&_default_vtable_indices);
   }
-  it->push(&_fields);
+
+  // _fields might be written into by Rewriter::scan_method() -> fd.set_has_initialized_final_update()
+  it->push(&_fields, MetaspaceClosure::_writable);
 
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();

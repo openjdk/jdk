@@ -1,0 +1,78 @@
+<!--
+Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+or visit www.oracle.com if you need additional information or have any
+questions.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+  table, th, td {
+  border: 1px solid black;
+}
+
+    </style>
+</head>
+<body>
+
+
+<table>
+    <tr>
+        <th style="background-color:rgb(204,255,255); font-weight:bold; width:5%;">S.No</th>
+        <th style="background-color:rgb(204,255,255); font-weight:bold; width:25%;">Test</th>
+        <th style="background-color:rgb(204,255,255); font-weight:bold; width:75%;">Scenario</th>
+    </tr>
+    <tr>
+        <td>1</td>
+        <td>OptionPane Demo</td>
+        <td>
+            <ol>
+                <li>Tab until the OptionPane icon <img src="./resource/op.png">has focus. Press 'space' to choose.
+                <li>Tab until the "OptionPane Demo" tab has focus. Press 'space'. Press 'tab'. The 'Show Input Dialog'
+                    button should have focus.
+                <li>Press 'space'. An Input dialog should pop up. Type some text, and hit return. The dialog should
+                    change to a Message dialog with text saying "That was a pretty good movie!" Press return.
+                <li>Bring up the dialog again (space). Press 'esc' and confirm that the dialog goes away without the
+                    Message from above.
+                <li>Press Tab to move down through the buttons, and select "Component Dialog Example" (press space). A
+                    dialog should appear. Tab to ensure that you can navigate through all the components:<br>
+                    a. Textfield<br>
+                    b. ComboBox<br>
+                    c. All 4 buttons: "Cancel", "Probably", "Maybe", "No", "Yes".<br>
+                    d. Press 'esc' to cancel the dialog.<br>
+            </ol>
+        </td>
+    </tr>
+    <tr>
+        <td style="Width:100%;" colspan="3">
+            <b>Expected Result</b>
+        </td>
+    </tr>
+    <tr>
+        <td style="Width:100%;" colspan="3">
+            When a popup window is created, focus must be on the popup window; when the window is closed, focus must
+            return to the previous focus point.
+        </td>
+    </tr>
+</table>
+</body>
+</html>
+
+                                            

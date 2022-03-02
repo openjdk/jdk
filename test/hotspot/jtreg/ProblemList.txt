@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,11 @@ compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
-compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-aarch64
-compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-aarch64
-compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-aarch64
+compiler/whitebox/ClearMethodStateTest.java 8265360 macosx-all
+compiler/whitebox/EnqueueMethodForCompilationTest.java 8265360 macosx-all
+compiler/whitebox/MakeMethodNotCompilableTest.java 8265360 macosx-all
 
-compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-generic
+compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 compiler/codecache/TestStressCodeBuffers.java 8272094 generic-aarch64
 
 
@@ -121,10 +121,10 @@ serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 serviceability/sa/ClhsdbCDSCore.java 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/TestJmapCore.java 8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
+serviceability/sa/TestJmapCore.java 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,macosx-x64
 
 #############################################################################
 
@@ -145,7 +145,6 @@ vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded002
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded003/TestDescription.java 8198668 generic-all
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004/TestDescription.java 8153598 generic-all
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8153598 generic-all
-vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
 
 vmTestbase/nsk/jdi/HiddenClass/events/events001.java                 8257705 generic-all
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all

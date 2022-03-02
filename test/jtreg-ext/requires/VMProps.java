@@ -102,6 +102,7 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.hasJFR is "true" if JFR is included in the build of the VM and
         // so tests can be executed.
         map.put("vm.hasJFR", this::vmHasJFR);
+        map.put("vm.hasDTrace", this::vmHasDTrace);
         map.put("vm.jvmti", this::vmHasJVMTI);
         map.put("vm.cpu.features", this::cpuFeatures);
         map.put("vm.pageSize", this::vmPageSize);
@@ -366,6 +367,13 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmHasJVMTI() {
         return "" + WB.isJVMTIIncluded();
+    }
+
+    /**
+     * @return "true" if the VM is compiled with DTrace
+     */
+    protected String vmHasDTrace() {
+        return "" + WB.isDTraceIncluded();
     }
 
     /**

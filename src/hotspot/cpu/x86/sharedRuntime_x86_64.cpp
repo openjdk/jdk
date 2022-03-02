@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2064,13 +2064,15 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Simple recursive lock?
       __ cmpptr(Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size), (int32_t)NULL_WORD);
       __ jcc(Assembler::equal, done);
+    }
 
-      // Must save rax if if it is live now because cmpxchg must use it
-      if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
-        save_native_result(masm, ret_type, stack_slots);
-      }
+    // Must save rax if it is live now because cmpxchg must use it
+    if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
+      save_native_result(masm, ret_type, stack_slots);
+    }
 
 
+    if (!UseHeavyMonitors) {
       // get address of the stack lock
       __ lea(rax, Address(rsp, lock_slot_offset * VMRegImpl::stack_slot_size));
       //  get old displaced header
@@ -3000,7 +3002,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // allocate space for the code
   ResourceMark rm;
 
-  CodeBuffer buffer(name, 1000, 512);
+  CodeBuffer buffer(name, 1200, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
   int frame_size_in_words;
@@ -3540,8 +3542,9 @@ void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints
   // Make very sure we don't use so much space that the stack might
   // overflow.  512 jints corresponds to an 16384-bit integer and
   // will use here a total of 8k bytes of stack space.
+  int divisor = sizeof(julong) * 4;
+  guarantee(longwords <= 8192 / divisor, "must be");
   int total_allocation = longwords * sizeof (julong) * 4;
-  guarantee(total_allocation <= 8192, "must be");
   julong *scratch = (julong *)alloca(total_allocation);
 
   // Local scratch arrays
@@ -3569,8 +3572,9 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   // Make very sure we don't use so much space that the stack might
   // overflow.  512 jints corresponds to an 16384-bit integer and
   // will use here a total of 6k bytes of stack space.
+  int divisor = sizeof(julong) * 3;
+  guarantee(longwords <= (8192 / divisor), "must be");
   int total_allocation = longwords * sizeof (julong) * 3;
-  guarantee(total_allocation <= 8192, "must be");
   julong *scratch = (julong *)alloca(total_allocation);
 
   // Local scratch arrays

@@ -517,13 +517,9 @@ public final class Integer extends Number
         }
 
         // We know there are at most two digits left at this point.
-        q = i / 10;
-        r = (q * 10) - i;
-        buf[--charPos] = (byte)('0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q < 0) {
-            buf[--charPos] = (byte)('0' - q);
+        buf[--charPos] = DigitOnes[-i];
+        if (i < -9) {
+            buf[--charPos] = DigitTens[-i];
         }
 
         if (negative) {

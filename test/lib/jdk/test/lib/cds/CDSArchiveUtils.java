@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,6 +339,18 @@ public class CDSArchiveUtils {
         setReadWritePermission(newJsaFile);
 
         return newJsaFile;
+    }
+
+    public static File createMagicOnlyFile(String fileName, boolean createStatic) throws Exception {
+        File file = new File(fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            ByteBuffer buffer = ByteBuffer.allocate(4).putInt(createStatic ? staticMagic: dynamicMagic);
+            out.write(buffer.array(), 0, 4);
+        }
+        return file;
     }
 
     private static FileChannel getFileChannel(File file, boolean write) throws Exception {

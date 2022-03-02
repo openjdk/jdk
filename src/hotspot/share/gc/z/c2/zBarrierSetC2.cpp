@@ -135,7 +135,9 @@ address ZLoadBarrierStubC2::slow_path() const {
 }
 
 RegMask& ZLoadBarrierStubC2::live() const {
-  return *barrier_set_state()->live(_node);
+  RegMask* mask = barrier_set_state()->live(_node);
+  assert(mask != NULL, "must be mach-node with barrier");
+  return *mask;
 }
 
 Label* ZLoadBarrierStubC2::entry() {

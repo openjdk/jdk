@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,12 +194,6 @@ oop Universe::java_mirror(BasicType t) {
 // Used by CDS dumping
 void Universe::replace_mirror(BasicType t, oop new_mirror) {
   Universe::_mirrors[t].replace(new_mirror);
-}
-
-void Universe::basic_type_classes_do(void f(Klass*)) {
-  for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
-    f(_typeArrayKlassObjs[i]);
-  }
 }
 
 void Universe::basic_type_classes_do(KlassClosure *closure) {
@@ -747,6 +741,10 @@ jint universe_init() {
   initialize_global_behaviours();
 
   GCLogPrecious::initialize();
+
+#ifdef _LP64
+  MetaspaceShared::adjust_heap_sizes_for_dumping();
+#endif // _LP64
 
   GCConfig::arguments()->initialize_heap_sizes();
 

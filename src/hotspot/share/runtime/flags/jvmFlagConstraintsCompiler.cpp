@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,15 @@ JVMFlag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
+  if ((uintx)CodeEntryAlignment > CodeCacheSegmentSize) {
+    JVMFlag::printError(verbose,
+                        "CodeEntryAlignment (" INTX_FORMAT ") must be "
+                        "less than or equal to CodeCacheSegmentSize (" UINTX_FORMAT ") "
+                        "to align entry points\n",
+                        CodeEntryAlignment, CodeCacheSegmentSize);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
   return JVMFlag::SUCCESS;
 }
 
@@ -247,6 +256,14 @@ JVMFlag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
                         "OptoLoopAlignment (" INTX_FORMAT ") must be "
                         "multiple of NOP size (%d)\n",
                         value, relocInfo::addr_unit());
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if (OptoLoopAlignment > CodeEntryAlignment) {
+    JVMFlag::printError(verbose,
+                        "OptoLoopAlignment (" INTX_FORMAT ") must be "
+                        "less or equal to CodeEntryAlignment (" INTX_FORMAT ")\n",
+                        value, CodeEntryAlignment);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 
