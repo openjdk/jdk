@@ -125,8 +125,10 @@ public final class Constructor<T> extends Executable {
                 byte[] annotations,
                 byte[] parameterAnnotations) {
         this.clazz = declaringClass;
-        this.parameterTypes = parameterTypes;
-        this.exceptionTypes = checkedExceptions;
+        this.parameterTypes = (parameterTypes.length == 0) ?
+            Executable.NO_TYPES : parameterTypes;
+        this.exceptionTypes = (checkedExceptions.length == 0) ?
+            Executable.NO_TYPES : checkedExceptions;
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
@@ -244,7 +246,7 @@ public final class Constructor<T> extends Executable {
       if (getSignature() != null) {
         return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
       } else
-          return (TypeVariable<Constructor<T>>[])new TypeVariable[0];
+          return (TypeVariable<Constructor<T>>[])Executable.NO_TYPE_VARS;
     }
 
 

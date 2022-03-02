@@ -132,9 +132,11 @@ public final class Method extends Executable {
            byte[] annotationDefault) {
         this.clazz = declaringClass;
         this.name = name;
-        this.parameterTypes = parameterTypes;
+        this.parameterTypes = (parameterTypes.length == 0) ?
+            Executable.NO_TYPES : parameterTypes;
         this.returnType = returnType;
-        this.exceptionTypes = checkedExceptions;
+        this.exceptionTypes = (checkedExceptions.length == 0) ?
+            Executable.NO_TYPES : checkedExceptions;
         this.modifiers = modifiers;
         this.slot = slot;
         this.signature = signature;
@@ -254,7 +256,7 @@ public final class Method extends Executable {
         if (getGenericSignature() != null)
             return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
         else
-            return (TypeVariable<Method>[])new TypeVariable[0];
+            return (TypeVariable<Method>[])Executable.NO_TYPE_VARS;
     }
 
     /**

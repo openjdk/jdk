@@ -55,6 +55,11 @@ public abstract sealed class Executable extends AccessibleObject
     @SuppressWarnings("deprecation")
     Executable() {}
 
+    @SuppressWarnings({"rawtypes"})
+    static final TypeVariable[] NO_TYPE_VARS = new TypeVariable[0];
+
+    static final Class<?>[] NO_TYPES = new Class<?>[0];
+
     /**
      * Accessor method to allow code sharing
      */
