@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /*
@@ -49,6 +52,7 @@ import java.util.List;
  * @run main/othervm DigestAuth sha1
  * @run main/othervm DigestAuth sha256
  * @run main/othervm DigestAuth sha512
+ * @run main/othervm DigestAuth sha256-userhash
  * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth sha1
  * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth sha256
  * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 DigestAuth no_header
@@ -94,19 +98,26 @@ public class DigestAuth {
             + "algorithm=\"SHA1\"";
 
     static final String WWW_AUTH_HEADER_SHA256 = "Digest "
-	    + "nonce=\"a69ae8a2e17c219bc6c118b673e93601616a6a"
-	    + "4d8fde3a19996748d77ad0464b\", qop=\"auth\", "
-	    + "opaque=\"efc62777cff802cb29252f626b041f381cd360"
-	    + "7187115871ca25e7b51a3757e9\", algorithm=SHA-256";
+            + "nonce=\"a69ae8a2e17c219bc6c118b673e93601616a6a"
+            + "4d8fde3a19996748d77ad0464b\", qop=\"auth\", "
+            + "opaque=\"efc62777cff802cb29252f626b041f381cd360"
+            + "7187115871ca25e7b51a3757e9\", algorithm=SHA-256";
 
     static final String WWW_AUTH_HEADER_SHA512 = "Digest "
-	    + "nonce=\"9aaa8d3ae53b54ce653a5d52d895afcd9c0e430"
-	    + "a17bdf98bb34235af84fba268d31376a63e0c39079b519"
- 	    + "c14baa0429754266f35b62a47b9c8b5d3d36c638282\","
-	    + " qop=\"auth\", opaque=\"28cdc6bae6c5dd7ec89dbf"
-	    + "af4d4f26b70f41ebbb83dc7af0950d6de016c40f412224"
- 	    + "676cd45ebcf889a70e65a2b055a8b5232e50281272ba7c"
- 	    + "67628cc3bb3492\", algorithm=SHA-512";
+            + "nonce=\"9aaa8d3ae53b54ce653a5d52d895afcd9c0e430"
+            + "a17bdf98bb34235af84fba268d31376a63e0c39079b519"
+            + "c14baa0429754266f35b62a47b9c8b5d3d36c638282\","
+            + " qop=\"auth\", opaque=\"28cdc6bae6c5dd7ec89dbf"
+            + "af4d4f26b70f41ebbb83dc7af0950d6de016c40f412224"
+            + "676cd45ebcf889a70e65a2b055a8b5232e50281272ba7c"
+            + "67628cc3bb3492\", algorithm=SHA-512";
+
+    static final String WWW_AUTH_HEADER_SHA_256_UHASH = "Digest "
+            + "realm=\"testrealm@host.com\", "
+            + "qop=\"auth\", algorithm=SHA-256,"
+            + "nonce=\"5TsQWLVdgBdmrQ0XsxbDODV+57QdFR34I9HAbC"
+            + "/RVvkK\", opaque=\"HRPCssKJSGjCrkzDg8OhwpzCiGP"
+            + "ChXYjwrI2QmXDnsOS\", charset=UTF-8, userhash=true";
 
     static final String WWW_AUTH_HEADER_INVALID_ALGORITHM = "Digest "
             + "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
@@ -248,6 +259,15 @@ public class DigestAuth {
                     server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA512);
                     success = testAuth(url, auth, EXPECT_DIGEST);
                     break;
+                case "sha256-userhash":
+                    // server returns a good WWW-Authenticate header with SHA-256
+                    // also sets the userhash=true parameter
+                    server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA_256_UHASH);
+                    success = testAuth(url, auth, EXPECT_DIGEST);
+                    // make sure the userhash parameter was set correctly
+                    // and the username itself is the correct hash
+                    server.checkUserHash(getUserHash("SHA-256", "Mufasa", REALM));
+                    break;
                 case "no_header":
                     // server returns no WWW-Authenticate header
                     success = testAuth(url, auth, EXPECT_FAILURE);
@@ -334,6 +354,24 @@ public class DigestAuth {
         }
     }
 
+    public static String getUserHash(String alg, String user, String realm) {
+        try {
+            MessageDigest md = MessageDigest.getInstance(alg);
+            String msg = user + ":" + realm;
+            //String msg = "Mufasa:testrealm@host.com";
+            byte[] output = md.digest(msg.getBytes(StandardCharsets.ISO_8859_1));
+            StringBuilder sb = new StringBuilder();
+            for (int i=0; i<output.length; i++) {
+                String s1 = Integer.toHexString(output[i] & 0xf);
+                String s2 = Integer.toHexString(Byte.toUnsignedInt(output[i]) >>> 4);
+                sb.append(s2).append(s1);
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static class AuthenticatorImpl extends Authenticator {
 
         private String lastRequestedScheme;
@@ -345,7 +383,8 @@ public class DigestAuth {
             lastRequestedPrompt = getRequestingPrompt();
             System.out.println("AuthenticatorImpl: requested "
                     + lastRequestedScheme);
-
+            var realm = getRequestingPrompt();
+            System.out.println("Realm: " + realm);
             return new PasswordAuthentication("Mufasa",
                     "Circle Of Life".toCharArray());
         }
@@ -358,6 +397,8 @@ public class DigestAuth {
         private volatile String wwwAuthHeader = null;
         private volatile String authInfoHeader = null;
         private volatile String lastRequestedNonce;
+        private volatile String lastRequestedUser;
+        private volatile String lastRequestedUserhash;
 
         private LocalHttpServer(HttpServer server) {
             this.server = server;
@@ -379,6 +420,23 @@ public class DigestAuth {
 
         void setAuthInfoHeader(String authInfoHeader) {
             this.authInfoHeader = authInfoHeader;
+        }
+
+        void checkUserHash(String expectedUser) {
+            boolean pass = true;
+            if (!expectedUser.equals(lastRequestedUser)) {
+                System.out.println("Username mismatch:");
+                System.out.println("Expected: " + expectedUser);
+                System.out.println("Received: " + lastRequestedUser);
+                pass = false;
+            }
+            if (!lastRequestedUserhash.equalsIgnoreCase("true")) {
+                System.out.println("Userhash mismatch:");
+                pass = false;
+            }
+            if (!pass) {
+                throw new RuntimeException("Test failed: checkUserHash");
+            }
         }
 
         static LocalHttpServer startServer() throws IOException {
@@ -428,6 +486,8 @@ public class DigestAuth {
                                 authInfoHeader);
                     }
                     lastRequestedNonce = findParameter(header, "nonce");
+                    lastRequestedUser = findParameter(header, "username");
+                    lastRequestedUserhash = findParameter(header, "userhash");
                     byte[] output = "hello".getBytes();
                     t.sendResponseHeaders(200, output.length);
                     t.getResponseBody().write(output);

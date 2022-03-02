@@ -126,6 +126,12 @@ class DigestAuthentication extends AuthenticationInfo {
         private String algorithm;
         private int NCcount=0;
 
+        // true if the server supports user hashing
+        // in which case the username returned to server
+        // will be H(unq(username) ":" unq(realm))
+        // meaning the username doesn't appear in the clear
+        private boolean userhash;
+
         // The H(A1) string used for MD5-sess
         private String  cachedHA1;
 
@@ -185,6 +191,13 @@ class DigestAuthentication extends AuthenticationInfo {
             redoCachedHA1 = true;
         }
 
+        synchronized boolean getUserhash() {
+            return userhash;
+        }
+
+        synchronized void setUserhash(boolean userhash) {
+            this.userhash = userhash;
+        }
         synchronized void setQop (String qop) {
             if (qop != null) {
                 String items[] = qop.split(",");
@@ -347,6 +360,7 @@ class DigestAuthentication extends AuthenticationInfo {
         params.setNonce (p.findValue("nonce"));
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));
+        params.setUserhash (Boolean.valueOf(p.findValue("userhash")));
 
         String uri="";
         String method;
@@ -405,6 +419,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String cnonce = params.getCnonce ();
         String nonce = params.getNonce ();
         String algorithm = params.getAlgorithm ();
+        boolean userhash = params.getUserhash ();
         params.incrementNC ();
         int  nccount = params.getNCCount ();
         String ncstring=null;
@@ -454,11 +469,25 @@ class DigestAuthentication extends AuthenticationInfo {
             qopS = ", qop=auth";
         }
 
+        String user = pw.getUserName();
+        String userhashField = "";
+        try {
+            if (userhash) {
+                user = computeUserhash(algorithm, user, realm);
+                userhashField = ", userhash=true";
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            // can't happen as the algorithm was found already
+            assert false;
+            return null;
+        }
+
         String value = authMethod
-                        + " username=\"" + pw.getUserName()
+                        + " username=\"" + user
                         + "\", realm=\"" + realm
                         + "\", nonce=\"" + nonce
                         + ncfield
+                        + userhashField
                         + ", uri=\"" + uri
                         + "\", response=\"" + response + "\""
                         + algoS;
@@ -545,6 +574,20 @@ class DigestAuthentication extends AuthenticationInfo {
         } catch (NoSuchAlgorithmException ex) {
             throw new ProtocolException ("Unsupported algorithm in response");
         }
+    }
+
+    private String computeUserhash(String algorithm, String user, String realm)
+        throws NoSuchAlgorithmException
+    {
+        boolean truncate256 = false;
+
+        if (algorithm.equals("SHA-512-256")) {
+            algorithm = "SHA-512";
+            truncate256 = true;
+        }
+        MessageDigest md = MessageDigest.getInstance(algorithm);
+        String s = user + ":" + realm;
+        return encode(s, null, md, truncate256);
     }
 
     private String computeDigest(
