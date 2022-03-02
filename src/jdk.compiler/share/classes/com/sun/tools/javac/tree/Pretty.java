@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,9 +194,7 @@ public class Pretty extends JCTree.Visitor {
                 tree.accept(this);
             }
         } catch (UncheckedIOException ex) {
-            IOException e = new IOException(ex.getMessage());
-            e.initCause(ex);
-            throw e;
+            throw new IOException(ex.getMessage(), ex);
         } finally {
             this.prec = prevPrec;
         }
