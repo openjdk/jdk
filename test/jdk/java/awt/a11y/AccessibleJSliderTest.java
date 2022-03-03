@@ -25,7 +25,8 @@
  * @test
  * @bug 8262981
  * @summary Test JSlider Accessibility
- * @run main AccessibleJSliderTest
+ * @run main/manual AccessibleJSliderTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 
 import java.awt.BorderLayout;
