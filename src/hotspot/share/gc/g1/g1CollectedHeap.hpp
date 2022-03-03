@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
