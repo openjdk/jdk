@@ -43,7 +43,7 @@ public:
   }
 };
 
-
+#ifdef _LP64
 // CompilerDirectivesLimit is a diagnostic int option.
 TEST_VM(LARGE_OPTION, large_ints) {
   for (intx x = max_jint - 1; x <= (intx)max_jint + 1; x++) {
@@ -57,7 +57,6 @@ TEST_VM(LARGE_OPTION, large_ints) {
   }
 }
 
-
 TEST_VM(LARGE_OPTION, small_ints) {
   for (intx x = min_jint + 1; x >= (intx)min_jint - 1; x--) {
     bool result = LargeOptionsTest::test_option_value("CompilerDirectivesLimit", x);
@@ -70,11 +69,10 @@ TEST_VM(LARGE_OPTION, small_ints) {
   }
 }
 
-
 TEST_VM(LARGE_OPTION, large_int_overflow) { // Test 0x100000000
   ASSERT_FALSE(LargeOptionsTest::test_option_value("CompilerDirectivesLimit", 4294967296));
 }
-
+#endif
 
 // HandshakeTimeout is a diagnostic uint option.
 TEST_VM(LARGE_OPTION, large_uints) {
@@ -89,7 +87,7 @@ TEST_VM(LARGE_OPTION, large_uints) {
   }
 }
 
-
+#ifdef _LP64
 // MaxJNILocalCapacity is an intx option.
 TEST_VM(LARGE_OPTION, large_intxs) {
   // max_intx + 1 equals min_intx!
@@ -99,7 +97,6 @@ TEST_VM(LARGE_OPTION, large_intxs) {
   }
 }
 
-
 TEST_VM(LARGE_OPTION, small_intxs) {
   ASSERT_TRUE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity", min_intx + 1));
   ASSERT_EQ(MaxJNILocalCapacity, -9223372036854775807);
@@ -108,3 +105,4 @@ TEST_VM(LARGE_OPTION, small_intxs) {
   // Test value that's less than min_intx (-0x8000000000000001).
   ASSERT_FALSE(LargeOptionsTest::test_option_value("MaxJNILocalCapacity=-9223372036854775809"));
 }
+#endif
