@@ -1207,6 +1207,8 @@ public class ZipFile implements ZipConstants, Closeable {
                 entries[index++] = next;
                 entries[index  ] = pos;
                 // Validate comment if it exists
+                // if the bytes representing the comment cannot be converted to
+                // a String via zcp.toString, an Exception will be thrown
                 int clen = CENCOM(cen, pos);
                 if (clen > 0) {
                     int elen = CENEXT(cen, pos);
