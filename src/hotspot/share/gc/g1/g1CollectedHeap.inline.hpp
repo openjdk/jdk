@@ -208,7 +208,7 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
   _region_attr.set_optional(r->hrm_index(), r->rem_set()->is_tracked());
 }
 
-inline bool G1CollectedHeap::is_in_young(const oop obj) {
+inline bool G1CollectedHeap::is_in_young(const oop obj) const {
   if (obj == NULL) {
     return false;
   }
