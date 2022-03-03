@@ -76,7 +76,7 @@ public class TitledBorderTest {
           testFail = false;
           break;
         }
-      }g
+      }
     }
 
     if (testFail) {
