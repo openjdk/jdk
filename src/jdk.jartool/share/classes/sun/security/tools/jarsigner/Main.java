@@ -1412,8 +1412,6 @@ public class Main {
                 disabledAlgFound = true;
                 switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
                     case "RSASSA-PSS":
-                        String using;
-                        using = "using";
                         return String.format(rb.getString("with.algparams.disabled"),
                                 "RSASSA-PSS", algParams);
                     default:
@@ -1447,8 +1445,6 @@ public class Main {
                 legacySigAlg = alg;
                 switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
                     case "RSASSA-PSS":
-                        String using;
-                        using = "using";
                         return String.format(rb.getString("with.algparams.weak"),
                                 "RSASSA-PSS", algParams);
                     default:
