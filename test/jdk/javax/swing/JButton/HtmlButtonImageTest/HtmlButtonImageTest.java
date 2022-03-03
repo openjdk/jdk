@@ -65,8 +65,8 @@ public final class HtmlButtonImageTest {
         testDir = Path.of(System.getProperty("test.classes", "."));
         generateRedSquare();
 
+        SwingUtilities.invokeAndWait(HtmlButtonImageTest::createButton);
         SwingUtilities.invokeAndWait(HtmlButtonImageTest::paintButton);
-        SwingUtilities.invokeAndWait(HtmlButtonImageTest::createImage);
 
         testImageCentering(image.getRGB(centerX, centerY),
                 image.getRGB(minX, minY),
@@ -84,14 +84,14 @@ public final class HtmlButtonImageTest {
         ImageIO.write(bImg, "png", new File(testDir + "/red_square.png"));
     }
 
-    private static void paintButton() {
+    private static void createButton() {
         button = new JButton();
         button.setSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setText("<html><img src='"
                 + testDir.resolve("red_square.png").toUri() + "'></html>");
     }
 
-    private static void createImage() {
+    private static void paintButton() {
         image = new BufferedImage(BUTTON_HEIGHT, BUTTON_WIDTH, TYPE_INT_ARGB);
         Graphics2D graphics2D = image.createGraphics();
         button.paint(graphics2D);
