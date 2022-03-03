@@ -101,7 +101,7 @@ public class TestCPUAwareness {
         System.out.println("cpuSetStr = " + cpuSetStr);
 
         // OLD = use the deprecated -XX:+UseContainerCpuShares flag, which
-        // will be removed in the next JDK release. See JDK-8281571.
+        // will be removed in the next JDK release. See JDK-8281181.
         boolean OLD = true;
         boolean NEW = false;
 
