@@ -574,7 +574,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
   // This makes it safe to use ResourceArea memory while in this function (which may
   // have been triggered by an asynchronous signal).
-  Thread::ResourceAreaSwitcher ra_switcher(thread);
+  Thread::ResourceAreaSwitcher ra_switcher(Thread::current_or_null_safe());
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames
