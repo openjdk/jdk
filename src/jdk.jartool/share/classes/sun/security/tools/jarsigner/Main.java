@@ -1411,8 +1411,7 @@ public class Main {
             } catch (CertPathValidatorException e) {
                 disabledAlgFound = true;
                 return String.format(rb.getString("with.algparams.disabled"),
-                        algParams.getAlgorithm().toUpperCase(Locale.ENGLISH),
-                        algParams);
+                        alg, algParams);
             }
         }
 
@@ -1440,8 +1439,7 @@ public class Main {
                 legacyAlg |= 2;
                 legacySigAlg = alg;
                 return String.format(rb.getString("with.algparams.weak"),
-                        algParams.getAlgorithm().toUpperCase(Locale.ENGLISH),
-                        algParams);
+                        alg, algParams);
             }
         }
         return alg;
