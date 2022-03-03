@@ -116,6 +116,8 @@ public class IdealDefaultRegexes {
     public static final String LOOP   = START + "Loop" + MID + END;
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
+    public static final String OUTERSTRIPMINED_LOOP = START + "OuterStripMinedLoop\\b" + MID + END;
+    public static final String LONGCOUNTED_LOOP = START + "LongCountedLoop\\b" + MID + END;
     public static final String IF = START + "If\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
@@ -131,31 +133,64 @@ public class IdealDefaultRegexes {
     public static final String RANGE_CHECK_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*range_check" + END;
     public static final String UNHANDLED_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*unhandled" + END;
     public static final String INTRINSIC_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic" + END;
+    public static final String DIV_BY_ZERO_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*div0_check" + END;
     // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = START + "CallStaticJava" + MID + "uncommon_trap.*intrinsic_or_type_checked_inlining" + END;
 
     public static final String MEMBAR = START + "MemBar" + MID + END;
+    public static final String MEMBAR_STORESTORE = START + "MemBarStoreStore" + MID + END;
+    public static final String SAFEPOINT = START + "SafePoint" + MID + END;
 
+    public static final String CMOVEI = START + "CMoveI" + MID + END;
     public static final String ABS_I = START + "AbsI" + MID + END;
     public static final String ABS_L = START + "AbsL" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
     public static final String ABS_D = START + "AbsD" + MID + END;
+    public static final String AND = START + "And(I|L)" + MID + END;
     public static final String AND_I = START + "AndI" + MID + END;
     public static final String AND_L = START + "AndL" + MID + END;
     public static final String XOR_I = START + "XorI" + MID + END;
     public static final String XOR_L = START + "XorL" + MID + END;
+    public static final String LSHIFT = START + "LShift(I|L)" + MID + END;
     public static final String LSHIFT_I = START + "LShiftI" + MID + END;
     public static final String LSHIFT_L = START + "LShiftL" + MID + END;
+    public static final String RSHIFT = START + "RShift(I|L)" + MID + END;
+    public static final String RSHIFT_I = START + "RShiftI" + MID + END;
+    public static final String RSHIFT_L = START + "RShiftL" + MID + END;
+    public static final String RSHIFT_VB = START + "RShiftVB" + MID + END;
+    public static final String RSHIFT_VS = START + "RShiftVS" + MID + END;
+    public static final String URSHIFT = START + "URShift(B|S|I|L)" + MID + END;
+    public static final String URSHIFT_I = START + "URShiftI" + MID + END;
+    public static final String URSHIFT_L = START + "URShiftL" + MID + END;
+    public static final String ADD = START + "Add(I|L|F|D|P)" + MID + END;
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
+    public static final String ADD_VI = START + "AddVI" + MID + END;
     public static final String ADD_VD = START + "AddVD" + MID + END;
+    public static final String SUB = START + "Sub(I|L|F|D)" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
     public static final String SUB_F = START + "SubF" + MID + END;
     public static final String SUB_D = START + "SubD" + MID + END;
+    public static final String CMP_U = START + "CmpU" + MID + END;
+    public static final String CMP_UL = START + "CmpUL" + MID + END;
+    public static final String CMP_U3 = START + "CmpU3" + MID + END;
+    public static final String CMP_UL3 = START + "CmpUL3" + MID + END;
+    public static final String MUL = START + "Mul(I|L|F|D)" + MID + END;
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
+    public static final String MUL_F = START + "MulF" + MID + END;
+    public static final String DIV = START + "Div(I|L|F|D)" + MID + END;
+    public static final String DIV_L = START + "DivL" + MID + END;
+    public static final String CON_I = START + "ConI" + MID + END;
+    public static final String CON_L = START + "ConL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
+    public static final String CONV_L2I = START + "ConvL2I" + MID + END;
+    public static final String CAST_II = START + "CastII" + MID + END;
+    public static final String CAST_LL = START + "CastLL" + MID + END;
+    public static final String POPCOUNT_L = START + "PopCountL" + MID + END;
+    public static final String PHI = START + "Phi" + MID + END;
+
 
     // Vector Regexes
     public static final String STORE_VECTOR = START + "StoreVector" + MID + END;
@@ -170,6 +205,17 @@ public class IdealDefaultRegexes {
     public static final String VECTOR_UCAST_S2X = START + "VectorUCastS2X" + MID + END;
     public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
+    public static final String VECTOR_BLEND = START + "VectorBlend" + MID + END;
+    public static final String REVERSE_BYTES_V = START + "ReverseBytesV" + MID + END;
+    public static final String POPULATE_INDEX = START + "PopulateIndex" + MID + END;
+
+    public static final String MIN_I = START + "MinI" + MID + END;
+    public static final String MAX_I = START + "MaxI" + MID + END;
+    public static final String MIN_V = START + "MinV" + MID + END;
+    public static final String MAX_V = START + "MaxV" + MID + END;
+
+    public static final String FAST_LOCK   = START + "FastLock" + MID + END;
+    public static final String FAST_UNLOCK = START + "FastUnlock" + MID + END;
 
     public static final String ALLOC = START + "Allocate" + MID + END;
     public static final String ALLOC_ARRAY = START + "AllocateArray" + MID + END;
@@ -184,7 +230,6 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.STORE_D, STORE_D);
         initAvailableForAllIdealPhases(IRNode.STORE_P, STORE_P);
         initAvailableForAllIdealPhases(IRNode.STORE_N, STORE_N);
-        initRequireLoops(IRNode.STORE_VECTOR, STORE_VECTOR);
         initAvailableForAllIdealPhases(IRNode.STORE_OF_CLASS, STORE_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.STORE_B_OF_CLASS, STORE_B_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.STORE_C_OF_CLASS, STORE_C_OF_CLASS);
@@ -195,6 +240,7 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.STORE_P_OF_CLASS, STORE_P_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.STORE_N_OF_CLASS, STORE_N_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.STORE_OF_FIELD, STORE_OF_FIELD);
+
         initAvailableForAllIdealPhases(IRNode.LOAD, LOAD);
         initAvailableForAllIdealPhases(IRNode.LOAD_B, LOAD_B);
         initAvailableForAllIdealPhases(IRNode.LOAD_UB, LOAD_UB);
@@ -206,7 +252,6 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.LOAD_D, LOAD_D);
         initAvailableForAllIdealPhases(IRNode.LOAD_P, LOAD_P);
         initAvailableForAllIdealPhases(IRNode.LOAD_N, LOAD_N);
-        initRequireLoops(IRNode.LOAD_VECTOR, LOAD_VECTOR);
         initAvailableForAllIdealPhases(IRNode.LOAD_OF_CLASS, LOAD_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.LOAD_B_OF_CLASS, LOAD_B_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.LOAD_UB_OF_CLASS, LOAD_UB_OF_CLASS);
@@ -220,10 +265,14 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.LOAD_N_OF_CLASS, LOAD_N_OF_CLASS);
         initAvailableForAllIdealPhases(IRNode.LOAD_OF_FIELD, LOAD_OF_FIELD);
         initAvailableForAllIdealPhases(IRNode.LOAD_KLASS, LOAD_KLASS);
+
         initRequireLoops(IRNode.LOOP, LOOP);
         initCountedLoops(IRNode.COUNTEDLOOP, COUNTEDLOOP);
         initCountedLoops(IRNode.COUNTEDLOOP_MAIN, COUNTEDLOOP_MAIN);
+        initCountedLoops(IRNode.OUTERSTRIPMINED_LOOP, OUTERSTRIPMINED_LOOP);
+        initCountedLoops(IRNode.LONGCOUNTED_LOOP, LONGCOUNTED_LOOP);
         initAvailableForAllIdealPhases(IRNode.IF, IF);
+
         initAvailableForAllIdealPhases(IRNode.CALL, CALL);
         initAvailableForAllIdealPhases(IRNode.CALL_OF_METHOD, CALL_OF_METHOD);
         initAvailableForAllIdealPhases(IRNode.DYNAMIC_CALL_OF_METHOD, DYNAMIC_CALL_OF_METHOD);
@@ -237,28 +286,58 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.RANGE_CHECK_TRAP, RANGE_CHECK_TRAP);
         initAvailableForAllIdealPhases(IRNode.UNHANDLED_TRAP, UNHANDLED_TRAP);
         initAvailableForAllIdealPhases(IRNode.INTRINSIC_TRAP, INTRINSIC_TRAP);
+        initAvailableForAllIdealPhases(IRNode.DIV_BY_ZERO_TRAP, DIV_BY_ZERO_TRAP);
         initAvailableForAllIdealPhases(IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP, INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP);
+
         initAvailableForAllIdealPhases(IRNode.MEMBAR, MEMBAR);
+        initAvailableForAllIdealPhases(IRNode.SAFEPOINT, SAFEPOINT);
+
+        initAvailableForAllIdealPhases(IRNode.CMOVEI, CMOVEI);
         initAvailableForAllIdealPhases(IRNode.ABS_I, ABS_I);
         initAvailableForAllIdealPhases(IRNode.ABS_L, ABS_L);
         initAvailableForAllIdealPhases(IRNode.ABS_F, ABS_F);
         initAvailableForAllIdealPhases(IRNode.ABS_D, ABS_D);
+        initAvailableForAllIdealPhases(IRNode.AND, AND);
         initAvailableForAllIdealPhases(IRNode.AND_I, AND_I);
         initAvailableForAllIdealPhases(IRNode.AND_L, AND_L);
         initAvailableForAllIdealPhases(IRNode.XOR_I, XOR_I);
         initAvailableForAllIdealPhases(IRNode.XOR_L, XOR_L);
+        initAvailableForAllIdealPhases(IRNode.LSHIFT, LSHIFT);
         initAvailableForAllIdealPhases(IRNode.LSHIFT_I, LSHIFT_I);
         initAvailableForAllIdealPhases(IRNode.LSHIFT_L, LSHIFT_L);
+        initAvailableForAllIdealPhases(IRNode.RSHIFT, RSHIFT);
+        initAvailableForAllIdealPhases(IRNode.RSHIFT_I, RSHIFT_I);
+        initAvailableForAllIdealPhases(IRNode.RSHIFT_L, RSHIFT_L);
+        initAvailableForAllIdealPhases(IRNode.URSHIFT, URSHIFT);
+        initAvailableForAllIdealPhases(IRNode.URSHIFT_I, URSHIFT_I);
+        initAvailableForAllIdealPhases(IRNode.URSHIFT_L, URSHIFT_L);
+        initAvailableForAllIdealPhases(IRNode.ADD, ADD);
         initAvailableForAllIdealPhases(IRNode.ADD_I, ADD_I);
         initAvailableForAllIdealPhases(IRNode.ADD_L, ADD_L);
-        initAvailableForAllIdealPhases(IRNode.ADD_VD, ADD_VD);
+        initAvailableForAllIdealPhases(IRNode.SUB, SUB);
         initAvailableForAllIdealPhases(IRNode.SUB_I, SUB_I);
         initAvailableForAllIdealPhases(IRNode.SUB_L, SUB_L);
         initAvailableForAllIdealPhases(IRNode.SUB_F, SUB_F);
         initAvailableForAllIdealPhases(IRNode.SUB_D, SUB_D);
+        initAvailableForAllIdealPhases(IRNode.CMP_U, CMP_U);
+        initAvailableForAllIdealPhases(IRNode.CMP_UL, CMP_UL);
+        initAvailableForAllIdealPhases(IRNode.CMP_U3, CMP_U3);
+        initAvailableForAllIdealPhases(IRNode.CMP_UL3, CMP_UL3);
+        initAvailableForAllIdealPhases(IRNode.MUL, MUL);
         initAvailableForAllIdealPhases(IRNode.MUL_I, MUL_I);
         initAvailableForAllIdealPhases(IRNode.MUL_L, MUL_L);
+        initAvailableForAllIdealPhases(IRNode.MUL_F, MUL_F);
+        initAvailableForAllIdealPhases(IRNode.DIV, DIV);
+        initAvailableForAllIdealPhases(IRNode.DIV_L, DIV_L);
+        initAvailableForAllIdealPhases(IRNode.CON_I, CON_I);
+        initAvailableForAllIdealPhases(IRNode.CON_L, CON_L);
         initAvailableForAllIdealPhases(IRNode.CONV_I2L, CONV_I2L);
+        initAvailableForAllIdealPhases(IRNode.CONV_L2I, CONV_L2I);
+        initAvailableForAllIdealPhases(IRNode.CAST_II, CAST_II);
+        initAvailableForAllIdealPhases(IRNode.CAST_LL, CAST_LL);
+        initAvailableForAllIdealPhases(IRNode.POPCOUNT_L, POPCOUNT_L);
+        initAvailableForAllIdealPhases(IRNode.PHI, PHI);
+
         initRequireLoops(IRNode.STORE_VECTOR, STORE_VECTOR);
         initRequireLoops(IRNode.LOAD_VECTOR, LOAD_VECTOR);
         initRequireLoops(IRNode.VECTOR_CAST_B2X, VECTOR_CAST_B2X);
@@ -272,6 +351,21 @@ public class IdealDefaultRegexes {
         initRequireLoops(IRNode.VECTOR_UCAST_S2X, VECTOR_UCAST_S2X);
         initRequireLoops(IRNode.VECTOR_UCAST_I2X, VECTOR_UCAST_I2X);
         initRequireLoops(IRNode.VECTOR_REINTERPRET, VECTOR_REINTERPRET);
+        initRequireLoops(IRNode.VECTOR_BLEND, VECTOR_BLEND);
+        initRequireLoops(IRNode.REVERSE_BYTES_V, REVERSE_BYTES_V);
+        initRequireLoops(IRNode.POPULATE_INDEX, POPULATE_INDEX);
+        initRequireLoops(IRNode.ADD_VI, ADD_VI);
+        initRequireLoops(IRNode.ADD_VD, ADD_VD);
+        initRequireLoops(IRNode.RSHIFT_VB, RSHIFT_VB);
+        initRequireLoops(IRNode.RSHIFT_VS, RSHIFT_VS);
+
+        initAvailableForAllIdealPhases(IRNode.MIN_I, MIN_I);
+        initAvailableForAllIdealPhases(IRNode.MAX_I, MAX_I);
+        initAvailableForAllIdealPhases(IRNode.MIN_V, MIN_V);
+        initAvailableForAllIdealPhases(IRNode.MAX_V, MAX_V);
+
+        initAvailableForAllIdealPhases(IRNode.FAST_LOCK, FAST_LOCK);
+        initMapAfterMacroExpansion(IRNode.FAST_UNLOCK, FAST_UNLOCK);
     }
 
     /**
@@ -316,5 +410,12 @@ public class IdealDefaultRegexes {
         TestFramework.check(enumMap != null, "must be set by OptoAssemblyDefaultRegexes");
         List<CompilePhase> compilePhases = CompilePhase.getIdealPhasesBeforeMacroExpansion();
         updatePlaceholderMap(idealString, compilePhases, enumMap);
+    }
+
+
+    private static void initMapAfterMacroExpansion(String defaultRegexString, String idealString) {
+        List<CompilePhase> compilePhases = List.of(CompilePhase.MACRO_EXPANSION, CompilePhase.BARRIER_EXPANSION,
+                                                   CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_MATCHING);
+        initPlaceholderMap(defaultRegexString, idealString, compilePhases);
     }
 }

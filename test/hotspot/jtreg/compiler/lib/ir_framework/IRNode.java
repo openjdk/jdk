@@ -42,22 +42,10 @@ import sun.hotspot.WhiteBox;
  * @see OptoAssemblyDefaultRegexes
  */
 public class IRNode {
-
     private static final String PREFIX = "_#";
     private static final String POSTFIX = "#_";
     private static final String COMPOSITE_PREFIX = "P#";
     private static final String COMPOSITE_PREFIX_NODE = PREFIX + COMPOSITE_PREFIX;
-
-    public static final String RSHIFT_VB = START + "RShiftVB" + MID + END;
-    public static final String RSHIFT_VS = START + "RShiftVS" + MID + END;
-    public static final String ADD_VI = START + "AddVI" + MID + END;
-    public static final String CMP_U = START + "CmpU" + MID + END;
-    public static final String CMP_UL = START + "CmpUL" + MID + END;
-    public static final String CMP_U3 = START + "CmpU3" + MID + END;
-    public static final String CMP_UL3 = START + "CmpUL3" + MID + END;
-    public static final String CAST_II = START + "CastII" + MID + END;
-    public static final String CAST_LL = START + "CastLL" + MID + END;
-    public static final String PHI = START + "Phi" + MID + END;
 
     /*
      * List of placeholder strings for which at least one default regex exists.
@@ -68,6 +56,7 @@ public class IRNode {
     public static final String ALLOC_ARRAY_OF = PREFIX + COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     public static final String CHECKCAST_ARRAY_OF = PREFIX + COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
+    // Does not work on s390 (a rule containing this regex will be skipped on s390).
     public static final String CHECKCAST_ARRAYCOPY = PREFIX + "CHECKCAST_ARRAYCOPY" + POSTFIX;
     public static final String FIELD_ACCESS = PREFIX + "FIELD_ACCESS" + POSTFIX;
 
@@ -119,6 +108,8 @@ public class IRNode {
     public static final String LOOP = PREFIX + "LOOP" + POSTFIX;
     public static final String COUNTEDLOOP = PREFIX + "COUNTEDLOOP" + POSTFIX;
     public static final String COUNTEDLOOP_MAIN = PREFIX + "COUNTEDLOOP_MAIN" + POSTFIX;
+    public static final String OUTERSTRIPMINED_LOOP = PREFIX + "OUTERSTRIPMINED_LOOP" + POSTFIX;
+    public static final String LONGCOUNTED_LOOP = PREFIX + "LONGCOUNTED_LOOP" + POSTFIX;
     public static final String IF = PREFIX + "IF" + POSTFIX;
 
     public static final String CALL = PREFIX + "CALL" + POSTFIX;
@@ -134,31 +125,63 @@ public class IRNode {
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
     public static final String UNHANDLED_TRAP = PREFIX + "UNHANDLED_TRAP" + POSTFIX;
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
+    public static final String DIV_BY_ZERO_TRAP = PREFIX + "DIV_BY_ZERO_TRAP" + POSTFIX;
+    // Does not work for VM builds without JVMCI like x86_32 (a rule containing this regex will be skipped without having JVMCI built).
     public static final String INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP = PREFIX + "INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP" + POSTFIX;
 
     public static final String SCOPE_OBJECT = PREFIX + "SCOPE_OBJECT" + POSTFIX;
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
+    public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;
 
+    public static final String CMOVEI = PREFIX + "CMOVEI" + POSTFIX;
     public static final String ABS_I = PREFIX + "ABS_I" + POSTFIX;
     public static final String ABS_L = PREFIX + "ABS_L" + POSTFIX;
     public static final String ABS_F = PREFIX + "ABS_F" + POSTFIX;
     public static final String ABS_D = PREFIX + "ABS_D" + POSTFIX;
+    public static final String AND = PREFIX + "AND" + POSTFIX;
     public static final String AND_I = PREFIX + "AND_I" + POSTFIX;
     public static final String AND_L = PREFIX + "AND_L" + POSTFIX;
     public static final String XOR_I = PREFIX + "XOR_I" + POSTFIX;
     public static final String XOR_L = PREFIX + "XOR_L" + POSTFIX;
+    public static final String LSHIFT = PREFIX + "LSHIFT" + POSTFIX;
     public static final String LSHIFT_I = PREFIX + "LSHIFT_I" + POSTFIX;
     public static final String LSHIFT_L = PREFIX + "LSHIFT_L" + POSTFIX;
+    public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
+    public static final String RSHIFT_I = PREFIX + "RSHIFT_I" + POSTFIX;
+    public static final String RSHIFT_L = PREFIX + "RSHIFT_L" + POSTFIX;
+    public static final String RSHIFT_VB = PREFIX + "RSHIFT_VB" + POSTFIX;
+    public static final String RSHIFT_VS = PREFIX + "RSHIFT_VS" + POSTFIX;
+    public static final String URSHIFT = PREFIX + "URSHIFT" + POSTFIX;
+    public static final String URSHIFT_I = PREFIX + "URSHIFT_I" + POSTFIX;
+    public static final String URSHIFT_L = PREFIX + "URSHIFT_L" + POSTFIX;
+    public static final String ADD = PREFIX + "ADD" + POSTFIX;
     public static final String ADD_I = PREFIX + "ADD_I" + POSTFIX;
     public static final String ADD_L = PREFIX + "ADD_L" + POSTFIX;
+    public static final String ADD_VI = PREFIX + "ADD_VI" + POSTFIX;
     public static final String ADD_VD = PREFIX + "ADD_VD" + POSTFIX;
+    public static final String SUB = PREFIX + "SUB" + POSTFIX;
     public static final String SUB_I = PREFIX + "SUB_I" + POSTFIX;
     public static final String SUB_L = PREFIX + "SUB_L" + POSTFIX;
     public static final String SUB_F = PREFIX + "SUB_F" + POSTFIX;
     public static final String SUB_D = PREFIX + "SUB_D" + POSTFIX;
+    public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
+    public static final String CMP_UL = PREFIX + "CMP_UL" + POSTFIX;
+    public static final String CMP_U3 = PREFIX + "CMP_U3" + POSTFIX;
+    public static final String CMP_UL3 = PREFIX + "CMP_UL3" + POSTFIX;
+    public static final String MUL = PREFIX + "MUL" + POSTFIX;
     public static final String MUL_I = PREFIX + "MUL_I" + POSTFIX;
     public static final String MUL_L = PREFIX + "MUL_L" + POSTFIX;
+    public static final String MUL_F = PREFIX + "MUL_F" + POSTFIX;
+    public static final String DIV = PREFIX + "DIV" + POSTFIX;
+    public static final String DIV_L = PREFIX + "DIV_L" + POSTFIX;
+    public static final String CON_I = PREFIX + "CON_I" + POSTFIX;
+    public static final String CON_L = PREFIX + "CON_L" + POSTFIX;
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
+    public static final String CONV_L2I = PREFIX + "CONV_L2I" + POSTFIX;
+    public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
+    public static final String CAST_LL = PREFIX + "CAST_LL" + POSTFIX;
+    public static final String POPCOUNT_L = PREFIX + "POPCOUNT_L" + POSTFIX;
+    public static final String PHI = PREFIX + "PHI" + POSTFIX;
 
     // Vector Nodes
     public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
@@ -173,7 +196,17 @@ public class IRNode {
     public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
     public static final String VECTOR_UCAST_I2X = PREFIX + "VECTOR_UCAST_I2X" + POSTFIX;
     public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
+    public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
+    public static final String REVERSE_BYTES_V = PREFIX + "REVERSE_BYTES_V" + POSTFIX;
+    public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
 
+    public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;
+    public static final String MAX_I = PREFIX + "MAX_I" + POSTFIX;
+    public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
+    public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
+
+    public static final String FAST_LOCK = PREFIX + "FAST_LOCK" + POSTFIX;
+    public static final String FAST_UNLOCK = PREFIX + "FAST_UNLOCK" + POSTFIX;
 
     public static boolean isCompositeIRNode(String node) {
         return node.startsWith(COMPOSITE_PREFIX_NODE);
