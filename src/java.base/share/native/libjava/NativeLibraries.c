@@ -219,12 +219,12 @@ Java_jdk_internal_loader_NativeLibraries_unload
 }
 
 /*
- * Class:     jdk_internal_loader_NativeLibraries
+ * Class:     jdk_internal_loader_NativeLibrary
  * Method:    findEntry0
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_jdk_internal_loader_NativeLibraries_findEntry0
+Java_jdk_internal_loader_NativeLibrary_findEntry0
   (JNIEnv *env, jclass cls, jlong handle, jstring name)
 {
     const char *cname;
