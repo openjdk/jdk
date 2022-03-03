@@ -1073,6 +1073,10 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
+  static bool trampoline_needs_far_jump() {
+    return ReservedCodeCacheSize > branch_range;
+  }
+
   // Jumps that can reach a nonmethod stub
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_codestub() > branch_range;
