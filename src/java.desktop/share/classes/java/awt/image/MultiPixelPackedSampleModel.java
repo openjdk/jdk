@@ -130,7 +130,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param scanlineStride the line stride of the image data
      * @param dataBitOffset the data bit offset for the region of image
      *                  data described
-     * @exception RasterFormatException if the number of bits per pixel
+     * @throws RasterFormatException if the number of bits per pixel
      *                  is not a power of 2 or if a power of 2 number of
      *                  pixels do not fit in one data element.
      * @throws IllegalArgumentException if {@code w} or
@@ -321,7 +321,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param bands the specified bands
      * @return a new {@code SampleModel} with a subset of bands of
      * this {@code MultiPixelPackedSampleModel}.
-     * @exception RasterFormatException if the number of bands requested
+     * @throws RasterFormatException if the number of bands requested
      * is not one.
      * @throws IllegalArgumentException if {@code w} or
      *         {@code h} is not greater than 0
@@ -348,7 +348,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *                  data
      * @return the specified band containing the sample of the specified
      * pixel.
-     * @exception ArrayIndexOutOfBoundsException if the specified
+     * @throws ArrayIndexOutOfBoundsException if the specified
      *          coordinates are not in bounds.
      * @see #setSample(int, int, int, int, DataBuffer)
      */
@@ -377,7 +377,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param b the band to return, which is assumed to be 0
      * @param s the input sample as an {@code int}
      * @param data the {@code DataBuffer} where image data is stored
-     * @exception ArrayIndexOutOfBoundsException if the coordinates are
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds.
      * @see #getSample(int, int, int, DataBuffer)
      */
@@ -442,9 +442,9 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @param data the {@code DataBuffer} containing the image data.
      * @return an {@code Object} containing data for the specified
      *  pixel.
-     * @exception ClassCastException if {@code obj} is not a
+     * @throws ClassCastException if {@code obj} is not a
      *  primitive array of type TransferType or is not {@code null}
-     * @exception ArrayIndexOutOfBoundsException if the coordinates are
+     * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if {@code obj} is not {@code null} or
      * not large enough to hold the pixel data
      * @see #setDataElements(int, int, Object, DataBuffer)
@@ -526,7 +526,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *  {@code null}
      * @param data the {@code DataBuffer} where image data is stored
      * @return an array containing the specified pixel.
-     * @exception ArrayIndexOutOfBoundsException if the coordinates
+     * @throws ArrayIndexOutOfBoundsException if the coordinates
      *  are not in bounds
      * @see #setPixel(int, int, int[], DataBuffer)
      */

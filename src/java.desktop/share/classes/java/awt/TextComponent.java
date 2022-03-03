@@ -137,7 +137,7 @@ public class TextComponent extends Component implements Accessible {
      * @param      text       the text to be displayed; if
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed
-     * @exception  HeadlessException if
+     * @throws  HeadlessException if
      *             {@code GraphicsEnvironment.isHeadless}
      *             returns true
      * @see        java.awt.GraphicsEnvironment#isHeadless
@@ -511,7 +511,7 @@ public class TextComponent extends Component implements Accessible {
      * is thrown.
      *
      * @param        position the position of the text insertion caret
-     * @exception    IllegalArgumentException if {@code position}
+     * @throws    IllegalArgumentException if {@code position}
      *               is less than zero
      * @since        1.1
      */
@@ -645,7 +645,7 @@ public class TextComponent extends Component implements Accessible {
      *          <code><em>Foo</em>Listener</code>s on this text component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

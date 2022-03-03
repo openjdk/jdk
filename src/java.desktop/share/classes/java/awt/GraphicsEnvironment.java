@@ -191,7 +191,7 @@ public abstract class GraphicsEnvironment {
      * objects.
      * @return an array containing all the {@code GraphicsDevice}
      * objects that represent screen devices
-     * @exception HeadlessException if isHeadless() returns true
+     * @throws HeadlessException if isHeadless() returns true
      * @see #isHeadless()
      */
     public abstract GraphicsDevice[] getScreenDevices()
@@ -201,7 +201,7 @@ public abstract class GraphicsEnvironment {
      * Returns the default screen {@code GraphicsDevice}.
      * @return the {@code GraphicsDevice} that represents the
      * default screen device
-     * @exception HeadlessException if isHeadless() returns true
+     * @throws HeadlessException if isHeadless() returns true
      * @see #isHeadless()
      */
     public abstract GraphicsDevice getDefaultScreenDevice()
@@ -383,7 +383,7 @@ public abstract class GraphicsEnvironment {
      * within the available display area using getMaximumWindowBounds().
      * @return the point where Windows should be centered
      *
-     * @exception HeadlessException if isHeadless() returns true
+     * @throws HeadlessException if isHeadless() returns true
      * @see #getMaximumWindowBounds
      * @since 1.4
      */
@@ -409,7 +409,7 @@ public abstract class GraphicsEnvironment {
      * {@code Toolkit.getScreenInsets()}.
      * @return  the maximum bounds for centered Windows
      *
-     * @exception HeadlessException if isHeadless() returns true
+     * @throws HeadlessException if isHeadless() returns true
      * @see #getCenterPoint
      * @see GraphicsConfiguration#getBounds
      * @see Toolkit#getScreenInsets

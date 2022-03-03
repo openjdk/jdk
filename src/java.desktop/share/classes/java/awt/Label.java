@@ -114,7 +114,7 @@ public class Label extends Component implements Accessible {
     /**
      * Constructs an empty label.
      * The text of the label is the empty string {@code ""}.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -129,7 +129,7 @@ public class Label extends Component implements Accessible {
      *        A {@code null} value
      *        will be accepted without causing a NullPointerException
      *        to be thrown.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -147,7 +147,7 @@ public class Label extends Component implements Accessible {
      *        will be accepted without causing a NullPointerException
      *        to be thrown.
      * @param     alignment   the alignment value.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -216,7 +216,7 @@ public class Label extends Component implements Accessible {
      * Possible values are {@code Label.LEFT},
      * {@code Label.RIGHT}, and {@code Label.CENTER}.
      * @param      alignment    the alignment to be set.
-     * @exception  IllegalArgumentException if an improper value for
+     * @throws  IllegalArgumentException if an improper value for
      *                          {@code alignment} is given.
      * @see        java.awt.Label#getAlignment
      */

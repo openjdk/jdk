@@ -139,12 +139,12 @@ public class Polygon implements Shape, java.io.Serializable {
      * @param ypoints an array of Y coordinates
      * @param npoints the total number of points in the
      *                          {@code Polygon}
-     * @exception  NegativeArraySizeException if the value of
+     * @throws  NegativeArraySizeException if the value of
      *                       {@code npoints} is negative.
-     * @exception  IndexOutOfBoundsException if {@code npoints} is
+     * @throws  IndexOutOfBoundsException if {@code npoints} is
      *             greater than the length of {@code xpoints}
      *             or the length of {@code ypoints}.
-     * @exception  NullPointerException if {@code xpoints} or
+     * @throws  NullPointerException if {@code xpoints} or
      *             {@code ypoints} is {@code null}.
      * @since 1.0
      */

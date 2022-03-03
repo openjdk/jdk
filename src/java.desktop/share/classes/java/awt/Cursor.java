@@ -285,9 +285,9 @@ public class Cursor implements java.io.Serializable {
      *
      * @param name a string describing the desired system-specific custom cursor
      * @return the system specific custom cursor named
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      * {@code GraphicsEnvironment.isHeadless} returns true
-     * @exception AWTException in case of erroneous retrieving of the cursor
+     * @throws AWTException in case of erroneous retrieving of the cursor
      */
     public static Cursor getSystemCustomCursor(final String name)
         throws AWTException, HeadlessException {

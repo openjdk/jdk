@@ -157,7 +157,7 @@ public class TextArea extends TextComponent {
      * This text area is created with scrollbar visibility equal to
      * {@link #SCROLLBARS_BOTH}, so both vertical and horizontal
      * scrollbars will be visible for this text area.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -173,7 +173,7 @@ public class TextArea extends TextComponent {
      * @param      text       the text to be displayed; if
      *             {@code text} is {@code null}, the empty
      *             string {@code ""} will be displayed
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *        {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -191,7 +191,7 @@ public class TextArea extends TextComponent {
      * text area.
      * @param rows the number of rows
      * @param columns the number of columns
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *     {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -212,7 +212,7 @@ public class TextArea extends TextComponent {
      *             string {@code ""} will be displayed
      * @param     rows      the number of rows
      * @param     columns   the number of columns
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *   {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -252,7 +252,7 @@ public class TextArea extends TextComponent {
      * @param      scrollbars  a constant that determines what
      *             scrollbars are created to view the text area
      * @since      1.1
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless} returns true
      * @see java.awt.GraphicsEnvironment#isHeadless()
      */
@@ -421,7 +421,7 @@ public class TextArea extends TextComponent {
      * @param       rows   the number of rows
      * @see         #getRows()
      * @see         #setColumns(int)
-     * @exception   IllegalArgumentException   if the value
+     * @throws   IllegalArgumentException   if the value
      *                 supplied for {@code rows}
      *                 is less than {@code 0}
      * @since       1.1
@@ -452,7 +452,7 @@ public class TextArea extends TextComponent {
      * @param       columns   the number of columns
      * @see         #getColumns()
      * @see         #setRows(int)
-     * @exception   IllegalArgumentException   if the value
+     * @throws   IllegalArgumentException   if the value
      *                 supplied for {@code columns}
      *                 is less than {@code 0}
      * @since       1.1

@@ -194,9 +194,9 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * @param profiles the array of {@code ICC_Profile} objects
      * @param hints the {@code RenderingHints} object used to control
      *        the color conversion, or {@code null}
-     * @exception IllegalArgumentException when the profile sequence does not
+     * @throws IllegalArgumentException when the profile sequence does not
      *             specify a well-defined color conversion
-     * @exception NullPointerException if profiles is null
+     * @throws NullPointerException if profiles is null
      */
     public ColorConvertOp (ICC_Profile[] profiles, RenderingHints hints)
     {
@@ -242,7 +242,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * @return {@code dest} color converted from {@code src}
      *         or a new, converted {@code BufferedImage}
      *         if {@code dest} is {@code null}
-     * @exception IllegalArgumentException if dest is null and this op was
+     * @throws IllegalArgumentException if dest is null and this op was
      *             constructed using the constructor which takes only a
      *             RenderingHints argument, since the operation is ill defined.
      */
@@ -456,7 +456,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      * @return {@code dest} color converted from {@code src}
      *         or a new, converted {@code WritableRaster}
      *         if {@code dest} is {@code null}
-     * @exception IllegalArgumentException if the number of source or
+     * @throws IllegalArgumentException if the number of source or
      *             destination bands is incorrect, the source or destination
      *             color spaces are undefined, or this op was constructed
      *             with one of the constructors that applies only to
