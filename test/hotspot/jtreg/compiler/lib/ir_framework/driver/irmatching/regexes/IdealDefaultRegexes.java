@@ -77,7 +77,6 @@ public class IdealDefaultRegexes {
     public static final String STORE_D = START + "StoreD" + MID + END;
     public static final String STORE_P = START + "StoreP" + MID + END;
     public static final String STORE_N = START + "StoreN" + MID + END;
-    public static final String STORE_VECTOR = START + "StoreVector" + MID + END;
     public static final String STORE_OF_CLASS = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
     public static final String STORE_B_OF_CLASS = START + "StoreB" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
     public static final String STORE_C_OF_CLASS = START + "StoreC" + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
@@ -100,7 +99,6 @@ public class IdealDefaultRegexes {
     public static final String LOAD_D = START + "LoadD" + MID + END;
     public static final String LOAD_P = START + "LoadP" + MID + END;
     public static final String LOAD_N = START + "LoadN" + MID + END;
-    public static final String LOAD_VECTOR = START + "LoadVector" + MID + END;
     public static final String LOAD_OF_CLASS = START + "Load(B|UB|S|US|I|L|F|D|P|N)" + MID + "@\\S*"+  IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_B_OF_CLASS = START + "LoadB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
     public static final String LOAD_UB_OF_CLASS = START + "LoadUB" + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
@@ -159,6 +157,9 @@ public class IdealDefaultRegexes {
     public static final String MUL_L = START + "MulL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
 
+    // Vector Regexes
+    public static final String STORE_VECTOR = START + "StoreVector" + MID + END;
+    public static final String LOAD_VECTOR = START + "LoadVector" + MID + END;
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
     public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;
     public static final String VECTOR_CAST_I2X = START + "VectorCastI2X" + MID + END;
@@ -258,6 +259,9 @@ public class IdealDefaultRegexes {
         initAvailableForAllIdealPhases(IRNode.MUL_I, MUL_I);
         initAvailableForAllIdealPhases(IRNode.MUL_L, MUL_L);
         initAvailableForAllIdealPhases(IRNode.CONV_I2L, CONV_I2L);
+        initRequireLoops(IRNode.STORE_VECTOR, STORE_VECTOR);
+        initRequireLoops(IRNode.LOAD_VECTOR, LOAD_VECTOR);
+        initRequireLoops(IRNode.VECTOR_CAST_B2X, VECTOR_CAST_B2X);
         initRequireLoops(IRNode.VECTOR_CAST_B2X, VECTOR_CAST_B2X);
         initRequireLoops(IRNode.VECTOR_CAST_S2X, VECTOR_CAST_S2X);
         initRequireLoops(IRNode.VECTOR_CAST_I2X, VECTOR_CAST_I2X);
@@ -312,9 +316,5 @@ public class IdealDefaultRegexes {
         TestFramework.check(enumMap != null, "must be set by OptoAssemblyDefaultRegexes");
         List<CompilePhase> compilePhases = CompilePhase.getIdealPhasesBeforeMacroExpansion();
         updatePlaceholderMap(idealString, compilePhases, enumMap);
-    }
-
-    static void updatePlaceholderMap(String idealString, List<CompilePhase> compilePhases, Map<CompilePhase, String> enumMap) {
-        compilePhases.forEach(phase -> enumMap.put(phase, idealString));
     }
 }

@@ -124,7 +124,8 @@ public enum CompilePhase {
                 PHASEIDEALLOOP_ITERATIONS,
                 MACRO_EXPANSION,
                 BARRIER_EXPANSION,
-                OPTIMIZE_FINISHED
+                OPTIMIZE_FINISHED,
+                BEFORE_MATCHING
         );
     }
 

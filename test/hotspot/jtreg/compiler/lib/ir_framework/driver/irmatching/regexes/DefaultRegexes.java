@@ -67,6 +67,7 @@ public class DefaultRegexes {
     static {
         // Initialization of PLACEHOLDER_TO_REGEX and DEFAULT_TO_PHASE_MAP
         IdealDefaultRegexes.initMaps();
+        MachDefaultRegexes.initMaps();
         OptoAssemblyDefaultRegexes.initMaps();
         IdealDefaultRegexes.initAdditionalSharedMappings();
     }
@@ -96,5 +97,9 @@ public class DefaultRegexes {
                                  "defined for compile phase " + compilePhase + ". If you think it should be supported, " +
                                  "add a mapping to DefaultRegexes.PLACEHOLDER_TO_REGEX_MAP. Violation");
         return regex;
+    }
+
+    public static void updatePlaceholderMap(String idealString, List<CompilePhase> compilePhases, Map<CompilePhase, String> enumMap) {
+        compilePhases.forEach(phase -> enumMap.put(phase, idealString));
     }
 }

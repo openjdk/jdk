@@ -26,6 +26,10 @@ package compiler.lib.ir_framework.driver.irmatching.regexes;
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.TestFramework;
+
+import java.util.List;
+import java.util.Map;
 
 import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes.*;
 
@@ -61,4 +65,18 @@ import static compiler.lib.ir_framework.driver.irmatching.regexes.DefaultRegexes
  */
 public class MachDefaultRegexes {
     public static final String STORE = START + "Store(B|C|S|I|L|F|D|P|N)" + MID + END;
+
+    public static void initMaps() {
+        initAvailableForAllMachPhases(IRNode.LOOP, IdealDefaultRegexes.LOOP);
+        initAvailableForAllMachPhases(IRNode.COUNTEDLOOP, IdealDefaultRegexes.COUNTEDLOOP);
+        initAvailableForAllMachPhases(IRNode.COUNTEDLOOP_MAIN, IdealDefaultRegexes.COUNTEDLOOP_MAIN);
+    }
+
+    private static void initAvailableForAllMachPhases(String defaultRegexString, String idealString) {
+        Map<CompilePhase, String> enumMap = PLACEHOLDER_TO_REGEX_MAP.get(defaultRegexString);
+        TestFramework.check(enumMap != null, "must be set by IdealDefaultRegexes");
+        List<CompilePhase> compilePhases = CompilePhase.getMachPhases();
+        updatePlaceholderMap(idealString, compilePhases, enumMap);
+    }
+
 }

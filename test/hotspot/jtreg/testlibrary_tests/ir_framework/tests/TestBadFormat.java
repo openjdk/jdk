@@ -23,8 +23,8 @@
 
 package ir_framework.tests;
 
-import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.Compiler;
+import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
 
@@ -49,21 +49,21 @@ public class TestBadFormat {
 
     public static void main(String[] args) {
         checkPreFlagVM();
-        expectTestFormatException(BadNoTests.class);
-        expectTestFormatException(BadArgumentsAnnotation.class);
-        expectTestFormatException(BadOverloadedMethod.class);
-        expectTestFormatException(BadCompilerControl.class);
-        expectTestFormatException(BadWarmup.class);
-        expectTestFormatException(BadBaseTests.class);
-        expectTestFormatException(BadRunTests.class);
-        expectTestFormatException(BadCheckTest.class);
-        expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
-        expectTestFormatException(BadIRAnnotations.class);
-        expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
+//        expectTestFormatException(BadNoTests.class);
+//        expectTestFormatException(BadArgumentsAnnotation.class);
+//        expectTestFormatException(BadOverloadedMethod.class);
+//        expectTestFormatException(BadCompilerControl.class);
+//        expectTestFormatException(BadWarmup.class);
+//        expectTestFormatException(BadBaseTests.class);
+//        expectTestFormatException(BadRunTests.class);
+//        expectTestFormatException(BadCheckTest.class);
+//        expectTestFormatException(BadIRAnnotationBeforeFlagVM.class);
+//        expectTestFormatException(BadIRAnnotations.class);
+//        expectTestFormatException(BadIRAnnotationsAfterTestVM.class);
         expectTestFormatException(BadIRNodeForPhase.class);
-        expectTestFormatException(BadInnerClassTest.class);
-        expectTestFormatException(BadCompileClassInitializer.class, BadCompileClassInitializerHelper1.class,
-                                  BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
+//        expectTestFormatException(BadInnerClassTest.class);
+//        expectTestFormatException(BadCompileClassInitializer.class, BadCompileClassInitializerHelper1.class,
+//                                  BadCompileClassInitializerHelper2.class, BadCompileClassInitializerHelper3.class);
     }
 
     /**
@@ -1039,39 +1039,70 @@ class BadIRAnnotationsAfterTestVM {
 }
 
 class BadIRNodeForPhase {
-    @Test
-    @FailCount(4)
-    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.AFTER_PARSING)
-    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.OPTIMIZE_FINISHED)
-    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_IDEAL)
-    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_OPTO_ASSEMBLY) // works
-    @IR(failOn = IRNode.FIELD_ACCESS, phase = CompilePhase.FINAL_CODE)
-    public void machNode() {}
-
-    @Test
-    @FailCount(4)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
-    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
-    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
-                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
-    public void alloc() {}
-
-    @FailCount(2)
-    @Test
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PHASEIDEALLOOP1)
-    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.INCREMENTAL_INLINE)
-    public void noCompilationOutput() {}
-
 //    @Test
-//    @FailCount(2)
-//    @IR(failOn = IRNode.LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
-//    @IR(failOn = IRNode.LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+//    @FailCount(4)
+//    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.AFTER_PARSING)
+//    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.OPTIMIZE_FINISHED)
+//    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+//    @IR(failOn = IRNode.CHECKCAST_ARRAY, phase = CompilePhase.PRINT_OPTO_ASSEMBLY) // works
+//    @IR(failOn = IRNode.FIELD_ACCESS, phase = CompilePhase.FINAL_CODE)
+//    public void machNode() {}
+//
+//    @Test
+//    @FailCount(4)
+//    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+//    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PRINT_IDEAL)
+//    @IR(failOn = IRNode.ALLOC, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
+//                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
 //    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.FINAL_CODE, CompilePhase.MACRO_EXPANSION})
+//    @IR(failOn = IRNode.ALLOC_ARRAY, phase = CompilePhase.PRINT_IDEAL)
+//    @IR(failOn = IRNode.ALLOC_ARRAY, phase = {CompilePhase.ITER_GVN1, CompilePhase.AFTER_PARSING,
+//                                        CompilePhase.PRINT_OPTO_ASSEMBLY}) // works
+//    public void alloc() {}
+//
+//    @FailCount(2)
+//    @Test
+//    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.PHASEIDEALLOOP1)
+//    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.AFTER_PARSING) // works
+//    @IR(failOn = IRNode.ALLOC, phase = CompilePhase.AFTER_BEAUTIFY_LOOPS)
+//    public void noCompilationOutput() {}
+//
+//    @Test
+//    @FailCount(9)
+//    @IR(failOn = IRNode.LOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+//    @IR(failOn = IRNode.COUNTEDLOOP, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+//    @IR(failOn = IRNode.COUNTEDLOOP_MAIN, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+//    @IR(failOn = IRNode.LOOP, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+//    @IR(failOn = IRNode.COUNTEDLOOP, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+//    @IR(failOn = IRNode.COUNTEDLOOP_MAIN, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+//    @IR(failOn = IRNode.LOOP, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+//    @IR(failOn = IRNode.COUNTEDLOOP, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+//    @IR(failOn = IRNode.COUNTEDLOOP_MAIN, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+//    @IR(failOn = IRNode.LOOP, phase = CompilePhase.FINAL_CODE) // works
+//    @IR(failOn = IRNode.COUNTEDLOOP, phase = CompilePhase.FINAL_CODE) // works
+//    @IR(failOn = IRNode.COUNTEDLOOP_MAIN, phase = CompilePhase.FINAL_CODE) // works
 //    public void loops() {}
+
+    @Test
+    @FailCount(12)
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_BEAUTIFY_LOOPS)
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.FINAL_CODE, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.OPTIMIZE_FINISHED, CompilePhase.BEFORE_BEAUTIFY_LOOPS})
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_MATCHING) // works
+    public void vector() {}
+
+
 }
 
 @ClassFail

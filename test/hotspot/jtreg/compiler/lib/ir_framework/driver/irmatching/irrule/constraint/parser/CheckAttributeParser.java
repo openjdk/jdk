@@ -63,7 +63,7 @@ abstract class CheckAttributeParser<T extends RawConstraint> {
     private static void reportMissingCompositeValue(CheckAttributeIterator checkAttributeIterator) {
         String nodeName = IRNode.getCompositeNodeName(checkAttributeIterator.getCurrentElement());
         throw new TestFormatException("Must provide additional value at index " + checkAttributeIterator.getCurrentIndex()
-                                      + " right after " + nodeName);
+                                      + " right after IRNode." + nodeName);
     }
 }
 

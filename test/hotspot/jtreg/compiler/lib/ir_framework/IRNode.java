@@ -80,7 +80,6 @@ public class IRNode {
     public static final String STORE_D = PREFIX + "STORE_D" + POSTFIX;
     public static final String STORE_P = PREFIX + "STORE_P" + POSTFIX;
     public static final String STORE_N = PREFIX + "STORE_N" + POSTFIX;
-    public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
     public static final String STORE_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_OF_CLASS" + POSTFIX;
     public static final String STORE_B_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_B_OF_CLASS" + POSTFIX;
     public static final String STORE_C_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "STORE_C_OF_CLASS" + POSTFIX;
@@ -103,7 +102,6 @@ public class IRNode {
     public static final String LOAD_D = PREFIX + "LOAD_D" + POSTFIX;
     public static final String LOAD_P = PREFIX + "LOAD_P" + POSTFIX;
     public static final String LOAD_N = PREFIX + "LOAD_N" + POSTFIX;
-    public static final String LOAD_VECTOR = PREFIX + COMPOSITE_PREFIX + "LOAD_VECTOR" + POSTFIX;
     public static final String LOAD_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_OF_CLASS" + POSTFIX;
     public static final String LOAD_B_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_B_OF_CLASS" + POSTFIX;
     public static final String LOAD_UB_OF_CLASS = PREFIX + COMPOSITE_PREFIX + "LOAD_UB_OF_CLASS" + POSTFIX;
@@ -162,6 +160,9 @@ public class IRNode {
     public static final String MUL_L = PREFIX + "MUL_L" + POSTFIX;
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
 
+    // Vector Nodes
+    public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
+    public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     public static final String VECTOR_CAST_S2X = PREFIX + "VECTOR_CAST_S2X" + POSTFIX;
     public static final String VECTOR_CAST_I2X = PREFIX + "VECTOR_CAST_I2X" + POSTFIX;
@@ -183,9 +184,10 @@ public class IRNode {
     }
 
     public static String getCompositeNodeName(String irNodeString) {
+
         TestFramework.check(irNodeString.length() > PREFIX.length() + COMPOSITE_PREFIX.length() + POSTFIX.length(),
                             "Invalid composite node placeholder: " + irNodeString);
-        return irNodeString.substring(PREFIX.length() + COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length() - 1);
+        return irNodeString.substring(PREFIX.length() + COMPOSITE_PREFIX.length(), irNodeString.length() - POSTFIX.length());
     }
 
     /**
