@@ -29,10 +29,6 @@
  * @run main HtmlButtonImageTest
  */
 
-import javax.imageio.ImageIO;
-import javax.swing.JButton;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -40,6 +36,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
@@ -103,7 +104,7 @@ public final class HtmlButtonImageTest {
 
     private static void testImageCentering(int... colors) throws IOException {
         for (int c : colors) {
-            if(!checkRedColor(c)) {
+            if (!checkRedColor(c)) {
                 ImageIO.write(image, "png",
                         new File(testDir + "/fail_image.png"));
                 throw new RuntimeException("HTML image not centered in button");
