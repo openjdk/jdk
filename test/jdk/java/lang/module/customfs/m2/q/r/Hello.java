@@ -21,7 +21,7 @@
  * questions.
  */
 
-package q;
+package q.r;
 
 public class Hello {
     public static void hello() {

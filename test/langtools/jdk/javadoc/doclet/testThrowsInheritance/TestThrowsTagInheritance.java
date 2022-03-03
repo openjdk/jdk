@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,15 @@
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build javadoc.tester.*
- * @run main TestThrowsTagInheritence
+ * @run main TestThrowsTagInheritance
  */
 
-// TODO: should be TestThrowsInheritance!
 import javadoc.tester.JavadocTester;
 
-public class TestThrowsTagInheritence extends JavadocTester {
+public class TestThrowsTagInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestThrowsTagInheritence tester = new TestThrowsTagInheritence();
+        TestThrowsTagInheritance tester = new TestThrowsTagInheritance();
         tester.runTests();
     }
 
