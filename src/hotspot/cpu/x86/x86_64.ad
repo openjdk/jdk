@@ -7508,36 +7508,21 @@ instruct leaI_rReg_immI2_immI(rRegI dst, rRegI index, immI2 scale, immI disp)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct leaI_rReg_rReg_immI(rRegI dst, rRegI src1, rRegI src2, immI disp)
+instruct leaI_rReg_rReg_immI(rRegI dst, rRegI base, rRegI index, immI disp)
 %{
   predicate(VM_Version::supports_fast_3op_lea());
-  match(Set dst (AddI (AddI src1 src2) disp));
+  match(Set dst (AddI (AddI base index) disp));
 
-  format %{ "addr32 leal $dst, [$src1 + $src2 + $disp]\t# int" %}
+  format %{ "addr32 leal $dst, [$base + $index + $disp]\t# int" %}
   ins_encode %{
-    __ leal($dst$$Register, Address($src1$$Register, $src2$$Register, Address::times_1, $disp$$constant));
+    __ leal($dst$$Register, Address($base$$Register, $index$$Register, Address::times_1, $disp$$constant));
   %}
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct leaI_rReg_rReg_immI2(rRegI dst, rRegI base, rRegI index, immI2 scale)
+instruct leaI_rReg_rReg_immI2(rRegI dst, no_rbp_r13_RegI base, rRegI index, immI2 scale)
 %{
-  predicate(VM_Version::supports_fast_3op_lea());
-  match(Set dst (AddI base (LShiftI index scale)));
-  match(Set dst (AddI (LShiftI index scale) base));
-
-  format %{ "addr32 leal $dst, [$base + $index << $scale]\t# int" %}
-  ins_encode %{
-    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
-    __ leal($dst$$Register, Address($base$$Register, $index$$Register, scale));
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct leaI_rReg_rReg_immI2_no_disp(rRegI dst, no_rbp_r13_RegI base, rRegI index, immI2 scale)
-%{
-  predicate(VM_Version::supports_fast_2op_lea() &&
-            !VM_Version::supports_fast_3op_lea());
+  predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddI base (LShiftI index scale)));
   match(Set dst (AddI (LShiftI index scale) base));
 
@@ -7695,36 +7680,21 @@ instruct leaL_rReg_immI2_immL32(rRegL dst, rRegL index, immI2 scale, immL32 disp
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct leaL_rReg_rReg_immL32(rRegL dst, rRegL src1, rRegL src2, immL32 disp)
+instruct leaL_rReg_rReg_immL32(rRegL dst, rRegL base, rRegL index, immL32 disp)
 %{
   predicate(VM_Version::supports_fast_3op_lea());
-  match(Set dst (AddL (AddL src1 src2) disp));
+  match(Set dst (AddL (AddL base index) disp));
 
-  format %{ "leaq $dst, [$src1 + $src2 + $disp]\t# long" %}
+  format %{ "leaq $dst, [$base + $index + $disp]\t# long" %}
   ins_encode %{
-    __ leaq($dst$$Register, Address($src1$$Register, $src2$$Register, Address::times_1, $disp$$constant));
+    __ leaq($dst$$Register, Address($base$$Register, $index$$Register, Address::times_1, $disp$$constant));
   %}
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct leaL_rReg_rReg_immI2(rRegL dst, rRegL base, rRegL index, immI2 scale)
+instruct leaL_rReg_rReg_immI2(rRegL dst, no_rbp_r13_RegL base, rRegL index, immI2 scale)
 %{
-  predicate(VM_Version::supports_fast_3op_lea());
-  match(Set dst (AddL base (LShiftL index scale)));
-  match(Set dst (AddL (LShiftL index scale) base));
-
-  format %{ "leaq $dst, [$base + $index << $scale]\t# long" %}
-  ins_encode %{
-    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($scale$$constant);
-    __ leaq($dst$$Register, Address($base$$Register, $index$$Register, scale));
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
-instruct leaL_rReg_rReg_immI2_no_disp(rRegL dst, no_rbp_r13_RegL base, rRegL index, immI2 scale)
-%{
-  predicate(VM_Version::supports_fast_2op_lea() &&
-            !VM_Version::supports_fast_3op_lea());
+  predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddL base (LShiftL index scale)));
   match(Set dst (AddL (LShiftL index scale) base));
 

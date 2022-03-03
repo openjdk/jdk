@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 2, jvmArgsAppend = {"-XX:LoopUnrollLimit=1"})
+@Fork(value = 1, jvmArgsAppend = {"-XX:LoopUnrollLimit=1"})
 @State(Scope.Thread)
 public class LeaInstruction {
     static final int ITERATION = 1000;
