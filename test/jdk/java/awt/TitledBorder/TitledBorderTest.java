@@ -69,8 +69,8 @@ public class TitledBorderTest {
 
     robot.waitForIdle();
     boolean testFail = true;
-    for (int i = 0; i < 50 && testFail == true; i++) {
-      for (int j = 0; j < 100; j++) {
+    for (int i = 15; i < 25 && testFail == true; i++) {
+      for (int j = 80; j < 100; j++) {
         if (buff.getRGB(i, j) == -6250336) {
           System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
           testFail = false;
