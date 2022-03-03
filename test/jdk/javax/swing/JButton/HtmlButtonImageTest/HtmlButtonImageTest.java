@@ -29,17 +29,17 @@
  * @run main HtmlButtonImageTest
  */
 
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import javax.swing.JButton;
-import javax.swing.UIManager;
-import javax.swing.SwingUtilities;
-import java.nio.file.Path;
-import java.io.IOException;
 import java.io.File;
-import javax.imageio.ImageIO;
+import java.io.IOException;
+import java.nio.file.Path;
 
 import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 
@@ -64,7 +64,7 @@ public final class HtmlButtonImageTest {
         testDir = Path.of(System.getProperty("test.classes", "."));
         generateRedSquare();
 
-        SwingUtilities.invokeAndWait(HtmlButtonImageTest::createButton);
+        SwingUtilities.invokeAndWait(HtmlButtonImageTest::paintButton);
         SwingUtilities.invokeAndWait(HtmlButtonImageTest::createImage);
 
         testImageCentering(image.getRGB(centerX, centerY),
@@ -83,7 +83,7 @@ public final class HtmlButtonImageTest {
         ImageIO.write(bImg, "png", new File(testDir + "/red_square.png"));
     }
 
-    private static void createButton() {
+    private static void paintButton() {
         button = new JButton();
         button.setSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setText("<html><img src='"
@@ -97,13 +97,13 @@ public final class HtmlButtonImageTest {
         graphics2D.dispose();
     }
 
-    private static boolean checkRedness(int rgb) {
+    private static boolean checkRedColor(int rgb) {
         return (rgb == Color.RED.getRGB());
     }
 
     private static void testImageCentering(int... colors) throws IOException {
         for (int c : colors) {
-            if(!checkRedness(c)) {
+            if(!checkRedColor(c)) {
                 ImageIO.write(image, "png",
                         new File(testDir + "/fail_image.png"));
                 throw new RuntimeException("HTML image not centered in button");
