@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,6 +571,10 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_thread_exit; // -8
     return;
   }
+
+  // This makes it safe to use ResourceArea memory while in this function (which may
+  // have been triggered by an asynchronous signal).
+  Thread::ResourceAreaSwitcher ra_switcher(thread);
 
   if (thread->in_deopt_handler()) {
     // thread is in the deoptimization handler so return no frames

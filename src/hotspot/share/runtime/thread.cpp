@@ -280,18 +280,44 @@ Thread::Thread() {
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
+// Primary and secondary resource areas:
+//
+// A thread has, beside its normal resource area (the primary), a secondary one.
+// This can be used when we are unsure about the state of the primary area, e.g.
+// when running inside a signal handler which may have left the primary area in
+// an inconsistent state.
+
 void Thread::switch_to_primary_resource_area() {
-  _resource_area = _resource_areas[0];
+  _secondary_resource_area_switch_count --;
+  if (_secondary_resource_area_switch_count == 0) {
+    _resource_area = _resource_areas[0];
+  }
 }
 
 void Thread::switch_to_secondary_resource_area() {
-  _resource_area = _resource_areas[1];
+  if (_secondary_resource_area_switch_count == 0) {
+    _resource_area = _resource_areas[1];
+  }
+  _secondary_resource_area_switch_count ++;
 }
 
 void Thread::initialize_resource_areas() {
   _resource_areas[0] = new (mtThread)ResourceArea();
   _resource_areas[1] = new (mtThread)ResourceArea();
   _resource_area = _resource_areas[0];
+  _secondary_resource_area_switch_count = 0;
+}
+
+Thread::ResourceAreaSwitcher::ResourceAreaSwitcher(Thread* t) : _t(t) {
+  if (_t != NULL) {
+    _t->switch_to_secondary_resource_area();
+  }
+}
+
+Thread::ResourceAreaSwitcher::~ResourceAreaSwitcher() {
+  if (_t != NULL) {
+    _t->switch_to_primary_resource_area();
+  }
 }
 
 void Thread::initialize_tlab() {

@@ -1462,6 +1462,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   disarm_assert_poison();
 #endif
 
+  // Switch to the secondary resource area for the current thread to make it safe to use
+  // RA memory during error reporting. This is just needed for the rare case that the primary
+  // RA is broken, but we did enter via assert, not via signal (in fact, the broken primary RA
+  // may have caused the assert).
+  Thread::ResourceAreaSwitcher ra_switcher(Thread::current_or_null_safe());
+
   // Use local fdStream objects only. Do not use global instances whose initialization
   // relies on dynamic initialization (see JDK-8214975). Do not rely on these instances
   // to carry over into recursions or invocations from other threads.
@@ -1502,15 +1508,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     _lineno = lineno;
     _size = size;
     jio_vsnprintf(_detail_msg, sizeof(_detail_msg), detail_fmt, detail_args);
-
-    // Switch to the secondary resource area for the current thread to make it safe to use
-    // RA memory during error reporting. This is just needed for the rare case that the primary
-    // RA is broken, but we did enter via assert, not via signal (in fact, the broken primary RA
-    // may have caused the assert).
-    if (_thread) {
-      _thread->switch_to_secondary_resource_area();
-    }
-
 
     reporting_started();
     if (!TestUnresponsiveErrorHandler) {

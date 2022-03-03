@@ -407,9 +407,15 @@ class Thread: public ThreadShadow {
   // Resource area
   ResourceArea* resource_area() const            { return _resource_area; }
 
-  // Switch between primary and secondary resource areas
-  void switch_to_primary_resource_area();
-  void switch_to_secondary_resource_area();
+  // A RAII object to switch the thread to the secondary resource area. Use this in
+  // situations where you plan to use resource area memory but are unsure about
+  // the state of the primary resource area (e.g. while handling async signals).
+  class ResourceAreaSwitcher : public StackObj {
+    Thread* const _t; // NULL is allowed and result in noop
+  public:
+    ResourceAreaSwitcher(Thread* t);
+    ~ResourceAreaSwitcher();
+  };
 
   OSThread* osthread() const                     { return _osthread;   }
   void set_osthread(OSThread* thread)            { _osthread = thread; }
@@ -541,7 +547,12 @@ private:
   // Primary [0] and secondary [1] resource areas.
   ResourceArea* _resource_areas[2];
 
+  // The number of times we switched to the second resource area.
+  int _secondary_resource_area_switch_count;
+
   void initialize_resource_areas();
+  void switch_to_primary_resource_area();
+  void switch_to_secondary_resource_area();
 
 protected:
 
