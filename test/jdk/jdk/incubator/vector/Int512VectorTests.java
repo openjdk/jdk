@@ -3529,7 +3529,7 @@ public class Int512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "intTestOpMaskProvider")
-    static void IS_DEFAULTMaskedInt512VectorTestsSmokeTest(IntFunction<int[]> fa,
+    static void IS_DEFAULTMaskedInt512VectorTests(IntFunction<int[]> fa,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3569,7 +3569,7 @@ public class Int512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "intTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedInt512VectorTestsSmokeTest(IntFunction<int[]> fa,
+    static void IS_NEGATIVEMaskedInt512VectorTests(IntFunction<int[]> fa,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

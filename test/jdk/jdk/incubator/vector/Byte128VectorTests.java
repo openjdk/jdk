@@ -3564,7 +3564,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "byteTestOpMaskProvider")
-    static void IS_DEFAULTMaskedByte128VectorTestsSmokeTest(IntFunction<byte[]> fa,
+    static void IS_DEFAULTMaskedByte128VectorTests(IntFunction<byte[]> fa,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3604,7 +3604,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "byteTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedByte128VectorTestsSmokeTest(IntFunction<byte[]> fa,
+    static void IS_NEGATIVEMaskedByte128VectorTests(IntFunction<byte[]> fa,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

@@ -3554,7 +3554,7 @@ public class Short256VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "shortTestOpMaskProvider")
-    static void IS_DEFAULTMaskedShort256VectorTestsSmokeTest(IntFunction<short[]> fa,
+    static void IS_DEFAULTMaskedShort256VectorTests(IntFunction<short[]> fa,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3594,7 +3594,7 @@ public class Short256VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "shortTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedShort256VectorTestsSmokeTest(IntFunction<short[]> fa,
+    static void IS_NEGATIVEMaskedShort256VectorTests(IntFunction<short[]> fa,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

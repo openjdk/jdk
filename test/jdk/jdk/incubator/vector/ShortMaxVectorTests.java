@@ -3559,7 +3559,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "shortTestOpMaskProvider")
-    static void IS_DEFAULTMaskedShortMaxVectorTestsSmokeTest(IntFunction<short[]> fa,
+    static void IS_DEFAULTMaskedShortMaxVectorTests(IntFunction<short[]> fa,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3599,7 +3599,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "shortTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedShortMaxVectorTestsSmokeTest(IntFunction<short[]> fa,
+    static void IS_NEGATIVEMaskedShortMaxVectorTests(IntFunction<short[]> fa,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

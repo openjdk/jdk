@@ -34,7 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-import static jdk.incubator.vector.Int256Vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -361,7 +360,7 @@ final class Float256Vector extends FloatVector {
     @Override
     @ForceInline
     public final Float256Mask test(Test op, VectorMask<Float> m) {
-        return super.testTemplate(Float256Mask.class, op, (Int256Mask) m.cast(vspecies().asIntegral()));  // specialize
+        return super.testTemplate(Float256Mask.class, op, (Float256Mask) m);  // specialize
     }
 
     // Specialized comparisons

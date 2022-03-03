@@ -34,7 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-import static jdk.incubator.vector.LongMaxVector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -361,7 +360,7 @@ final class DoubleMaxVector extends DoubleVector {
     @Override
     @ForceInline
     public final DoubleMaxMask test(Test op, VectorMask<Double> m) {
-        return super.testTemplate(DoubleMaxMask.class, op, (LongMaxMask) m.cast(vspecies().asIntegral()));  // specialize
+        return super.testTemplate(DoubleMaxMask.class, op, (DoubleMaxMask) m);  // specialize
     }
 
     // Specialized comparisons

@@ -34,9 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-#if[FP]
-import static jdk.incubator.vector.$Bitstype$$bits$Vector.*;
-#end[FP]
 import static jdk.incubator.vector.VectorOperators.*;
 
 #warn This file is preprocessed before being compiled
@@ -380,11 +377,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public final $masktype$ test(Test op, VectorMask<$Boxtype$> m) {
-#if[FP]
-        return super.testTemplate($masktype$.class, op, ($Bitstype$$bits$Mask) m.cast(vspecies().asIntegral()));  // specialize
-#else[FP]
         return super.testTemplate($masktype$.class, op, ($masktype$) m);  // specialize
-#end[FP]
     }
 
     // Specialized comparisons

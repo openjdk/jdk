@@ -34,7 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-import static jdk.incubator.vector.Long512Vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -361,7 +360,7 @@ final class Double512Vector extends DoubleVector {
     @Override
     @ForceInline
     public final Double512Mask test(Test op, VectorMask<Double> m) {
-        return super.testTemplate(Double512Mask.class, op, (Long512Mask) m.cast(vspecies().asIntegral()));  // specialize
+        return super.testTemplate(Double512Mask.class, op, (Double512Mask) m);  // specialize
     }
 
     // Specialized comparisons

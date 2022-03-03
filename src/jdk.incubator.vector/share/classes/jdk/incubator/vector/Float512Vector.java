@@ -34,7 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-import static jdk.incubator.vector.Int512Vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -361,7 +360,7 @@ final class Float512Vector extends FloatVector {
     @Override
     @ForceInline
     public final Float512Mask test(Test op, VectorMask<Float> m) {
-        return super.testTemplate(Float512Mask.class, op, (Int512Mask) m.cast(vspecies().asIntegral()));  // specialize
+        return super.testTemplate(Float512Mask.class, op, (Float512Mask) m);  // specialize
     }
 
     // Specialized comparisons

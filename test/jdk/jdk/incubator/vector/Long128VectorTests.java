@@ -3551,7 +3551,7 @@ public class Long128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longTestOpMaskProvider")
-    static void IS_DEFAULTMaskedLong128VectorTestsSmokeTest(IntFunction<long[]> fa,
+    static void IS_DEFAULTMaskedLong128VectorTests(IntFunction<long[]> fa,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3591,7 +3591,7 @@ public class Long128VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedLong128VectorTestsSmokeTest(IntFunction<long[]> fa,
+    static void IS_NEGATIVEMaskedLong128VectorTests(IntFunction<long[]> fa,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

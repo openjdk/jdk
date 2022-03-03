@@ -20,7 +20,7 @@
     }
 
     @Test(dataProvider = "$type$TestOpMaskProvider")
-    static void [[TEST]]Masked$vectorteststype$SmokeTest(IntFunction<$type$[]> fa,
+    static void [[TEST]]Masked$vectorteststype$(IntFunction<$type$[]> fa,
                                           IntFunction<boolean[]> fm) {
         $type$[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

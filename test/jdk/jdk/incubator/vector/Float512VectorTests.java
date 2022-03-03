@@ -2587,7 +2587,7 @@ public class Float512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "floatTestOpMaskProvider")
-    static void IS_DEFAULTMaskedFloat512VectorTestsSmokeTest(IntFunction<float[]> fa,
+    static void IS_DEFAULTMaskedFloat512VectorTests(IntFunction<float[]> fa,
                                           IntFunction<boolean[]> fm) {
         float[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2627,7 +2627,7 @@ public class Float512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "floatTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedFloat512VectorTestsSmokeTest(IntFunction<float[]> fa,
+    static void IS_NEGATIVEMaskedFloat512VectorTests(IntFunction<float[]> fa,
                                           IntFunction<boolean[]> fm) {
         float[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2668,7 +2668,7 @@ public class Float512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "floatTestOpMaskProvider")
-    static void IS_FINITEMaskedFloat512VectorTestsSmokeTest(IntFunction<float[]> fa,
+    static void IS_FINITEMaskedFloat512VectorTests(IntFunction<float[]> fa,
                                           IntFunction<boolean[]> fm) {
         float[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2710,7 +2710,7 @@ public class Float512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "floatTestOpMaskProvider")
-    static void IS_NANMaskedFloat512VectorTestsSmokeTest(IntFunction<float[]> fa,
+    static void IS_NANMaskedFloat512VectorTests(IntFunction<float[]> fa,
                                           IntFunction<boolean[]> fm) {
         float[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2752,7 +2752,7 @@ public class Float512VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "floatTestOpMaskProvider")
-    static void IS_INFINITEMaskedFloat512VectorTestsSmokeTest(IntFunction<float[]> fa,
+    static void IS_INFINITEMaskedFloat512VectorTests(IntFunction<float[]> fa,
                                           IntFunction<boolean[]> fm) {
         float[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

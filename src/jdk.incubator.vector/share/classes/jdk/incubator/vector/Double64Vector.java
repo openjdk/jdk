@@ -34,7 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-import static jdk.incubator.vector.Long64Vector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -361,7 +360,7 @@ final class Double64Vector extends DoubleVector {
     @Override
     @ForceInline
     public final Double64Mask test(Test op, VectorMask<Double> m) {
-        return super.testTemplate(Double64Mask.class, op, (Long64Mask) m.cast(vspecies().asIntegral()));  // specialize
+        return super.testTemplate(Double64Mask.class, op, (Double64Mask) m);  // specialize
     }
 
     // Specialized comparisons

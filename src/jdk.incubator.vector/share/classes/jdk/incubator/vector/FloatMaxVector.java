@@ -34,7 +34,6 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import static jdk.internal.vm.vector.VectorSupport.*;
 
-import static jdk.incubator.vector.IntMaxVector.*;
 import static jdk.incubator.vector.VectorOperators.*;
 
 // -- This file was mechanically generated: Do not edit! -- //
@@ -361,7 +360,7 @@ final class FloatMaxVector extends FloatVector {
     @Override
     @ForceInline
     public final FloatMaxMask test(Test op, VectorMask<Float> m) {
-        return super.testTemplate(FloatMaxMask.class, op, (IntMaxMask) m.cast(vspecies().asIntegral()));  // specialize
+        return super.testTemplate(FloatMaxMask.class, op, (FloatMaxMask) m);  // specialize
     }
 
     // Specialized comparisons

@@ -3569,7 +3569,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "byteTestOpMaskProvider")
-    static void IS_DEFAULTMaskedByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa,
+    static void IS_DEFAULTMaskedByteMaxVectorTests(IntFunction<byte[]> fa,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3609,7 +3609,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "byteTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedByteMaxVectorTestsSmokeTest(IntFunction<byte[]> fa,
+    static void IS_NEGATIVEMaskedByteMaxVectorTests(IntFunction<byte[]> fa,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

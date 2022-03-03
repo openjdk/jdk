@@ -1715,7 +1715,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -1732,17 +1732,17 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     @ForceInline
     final
-    <M1 extends VectorMask<Double>,
-     M2 extends VectorMask<Long>>
-    M1 testTemplate(Class<M1> maskType, Test op, M2 mask) {
+    <M extends VectorMask<Double>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
         DoubleSpecies vsp = vspecies();
+        mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
             LongVector bits = this.viewAsIntegralLanes();
-            VectorMask<Long> m;
+            VectorMask<Long> m = mask.cast(LongVector.species(shape()));
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (long) 0, mask);
+                m = bits.compare(EQ, (long) 0, m);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (long) 0, mask);
+                m = bits.compare(LT, (long) 0, m);
             }
             else if (op == IS_FINITE ||
                      op == IS_NAN ||
@@ -1753,17 +1753,17 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 long infbits = (long) toBits(Double.POSITIVE_INFINITY);
                 // now compare:
                 if (op == IS_FINITE) {
-                    m = bits.compare(LT, infbits, mask);
+                    m = bits.compare(LT, infbits, m);
                 } else if (op == IS_NAN) {
-                    m = bits.compare(GT, infbits, mask);
+                    m = bits.compare(GT, infbits, m);
                 } else {
-                    m = bits.compare(EQ, infbits, mask);
+                    m = bits.compare(EQ, infbits, m);
                 }
             }
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);

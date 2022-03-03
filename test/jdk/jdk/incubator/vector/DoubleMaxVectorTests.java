@@ -2582,7 +2582,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_DEFAULTMaskedDoubleMaxVectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_DEFAULTMaskedDoubleMaxVectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2622,7 +2622,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedDoubleMaxVectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_NEGATIVEMaskedDoubleMaxVectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2663,7 +2663,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_FINITEMaskedDoubleMaxVectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_FINITEMaskedDoubleMaxVectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2705,7 +2705,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_NANMaskedDoubleMaxVectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_NANMaskedDoubleMaxVectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -2747,7 +2747,7 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_INFINITEMaskedDoubleMaxVectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_INFINITEMaskedDoubleMaxVectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());

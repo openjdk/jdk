@@ -1855,12 +1855,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     M testTemplate(Class<M> maskType, Test op) {
         ShortSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            ShortVector bits = this.viewAsIntegralLanes();
             VectorMask<Short> m;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (short) 0);
+                m = compare(EQ, (short) 0);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (short) 0);
+                m = compare(LT, (short) 0);
             }
             else {
                 throw new AssertionError(op);
@@ -1885,13 +1884,13 @@ public abstract class ShortVector extends AbstractVector<Short> {
     <M extends VectorMask<Short>>
     M testTemplate(Class<M> maskType, Test op, M mask) {
         ShortSpecies vsp = vspecies();
+        mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
-            ShortVector bits = this.viewAsIntegralLanes();
-            VectorMask<Short> m;
+            VectorMask<Short> m = mask;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (short) 0, mask);
+                m = compare(EQ, (short) 0, m);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (short) 0, mask);
+                m = compare(LT, (short) 0, m);
             }
             else {
                 throw new AssertionError(op);

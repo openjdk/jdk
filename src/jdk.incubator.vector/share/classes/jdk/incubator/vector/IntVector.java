@@ -1854,12 +1854,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     M testTemplate(Class<M> maskType, Test op) {
         IntSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            IntVector bits = this.viewAsIntegralLanes();
             VectorMask<Integer> m;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (int) 0);
+                m = compare(EQ, (int) 0);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (int) 0);
+                m = compare(LT, (int) 0);
             }
             else {
                 throw new AssertionError(op);
@@ -1884,13 +1883,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
     <M extends VectorMask<Integer>>
     M testTemplate(Class<M> maskType, Test op, M mask) {
         IntSpecies vsp = vspecies();
+        mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
-            IntVector bits = this.viewAsIntegralLanes();
-            VectorMask<Integer> m;
+            VectorMask<Integer> m = mask;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (int) 0, mask);
+                m = compare(EQ, (int) 0, m);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (int) 0, mask);
+                m = compare(LT, (int) 0, m);
             }
             else {
                 throw new AssertionError(op);

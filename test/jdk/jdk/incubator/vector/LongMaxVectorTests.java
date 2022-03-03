@@ -3556,7 +3556,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longTestOpMaskProvider")
-    static void IS_DEFAULTMaskedLongMaxVectorTestsSmokeTest(IntFunction<long[]> fa,
+    static void IS_DEFAULTMaskedLongMaxVectorTests(IntFunction<long[]> fa,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
@@ -3596,7 +3596,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "longTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedLongMaxVectorTestsSmokeTest(IntFunction<long[]> fa,
+    static void IS_NEGATIVEMaskedLongMaxVectorTests(IntFunction<long[]> fa,
                                           IntFunction<boolean[]> fm) {
         long[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
