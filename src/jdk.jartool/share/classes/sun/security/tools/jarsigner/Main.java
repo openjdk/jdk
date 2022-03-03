@@ -1412,10 +1412,10 @@ public class Main {
                 disabledAlgFound = true;
                 switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
                     case "RSASSA-PSS":
-                        String algDisplay;
-                        algDisplay = "RSASSA-PSS using";
+                        String using;
+                        using = "using";
                         return String.format(rb.getString("with.algparams.disabled"),
-                                algDisplay, algParams);
+                                "RSASSA-PSS", algParams);
                     default:
                         return String.format(rb.getString("with.disabled"), algParams);
                 }
@@ -1447,10 +1447,10 @@ public class Main {
                 legacySigAlg = alg;
                 switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
                     case "RSASSA-PSS":
-                        String algDisplay;
-                        algDisplay = "RSASSA-PSS using";
+                        String using;
+                        using = "using";
                         return String.format(rb.getString("with.algparams.weak"),
-                                algDisplay, algParams);
+                                "RSASSA-PSS", algParams);
                     default:
                         return String.format(rb.getString("with.weak"), algParams);
                 }
