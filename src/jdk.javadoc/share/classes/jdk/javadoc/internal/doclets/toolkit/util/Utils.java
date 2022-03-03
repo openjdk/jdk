@@ -123,10 +123,58 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.tool.DocEnvImpl;
 
-import static javax.lang.model.element.ElementKind.*;
-import static javax.lang.model.type.TypeKind.*;
-
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.ATTRIBUTE;
+import static com.sun.source.doctree.DocTree.Kind.AUTHOR;
+import static com.sun.source.doctree.DocTree.Kind.COMMENT;
+import static com.sun.source.doctree.DocTree.Kind.DEPRECATED;
+import static com.sun.source.doctree.DocTree.Kind.DOC_COMMENT;
+import static com.sun.source.doctree.DocTree.Kind.DOC_ROOT;
+import static com.sun.source.doctree.DocTree.Kind.END_ELEMENT;
+import static com.sun.source.doctree.DocTree.Kind.ENTITY;
+import static com.sun.source.doctree.DocTree.Kind.ERRONEOUS;
+import static com.sun.source.doctree.DocTree.Kind.EXCEPTION;
+import static com.sun.source.doctree.DocTree.Kind.HIDDEN;
+import static com.sun.source.doctree.DocTree.Kind.IDENTIFIER;
+import static com.sun.source.doctree.DocTree.Kind.INHERIT_DOC;
+import static com.sun.source.doctree.DocTree.Kind.LINK;
+import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
+import static com.sun.source.doctree.DocTree.Kind.LITERAL;
+import static com.sun.source.doctree.DocTree.Kind.PARAM;
+import static com.sun.source.doctree.DocTree.Kind.PROVIDES;
+import static com.sun.source.doctree.DocTree.Kind.REFERENCE;
+import static com.sun.source.doctree.DocTree.Kind.RETURN;
+import static com.sun.source.doctree.DocTree.Kind.SEE;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL_DATA;
+import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
+import static com.sun.source.doctree.DocTree.Kind.SINCE;
+import static com.sun.source.doctree.DocTree.Kind.START_ELEMENT;
+import static com.sun.source.doctree.DocTree.Kind.TEXT;
+import static com.sun.source.doctree.DocTree.Kind.THROWS;
+import static com.sun.source.doctree.DocTree.Kind.UNKNOWN_BLOCK_TAG;
+import static com.sun.source.doctree.DocTree.Kind.UNKNOWN_INLINE_TAG;
+import static com.sun.source.doctree.DocTree.Kind.USES;
+import static com.sun.source.doctree.DocTree.Kind.VALUE;
+import static com.sun.source.doctree.DocTree.Kind.VERSION;
+import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
+import static javax.lang.model.element.ElementKind.CLASS;
+import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
+import static javax.lang.model.element.ElementKind.ENUM;
+import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;
+import static javax.lang.model.element.ElementKind.FIELD;
+import static javax.lang.model.element.ElementKind.INTERFACE;
+import static javax.lang.model.element.ElementKind.METHOD;
+import static javax.lang.model.element.ElementKind.RECORD;
+import static javax.lang.model.element.ElementKind.STATIC_INIT;
+import static javax.lang.model.element.ElementKind.TYPE_PARAMETER;
+import static javax.lang.model.type.TypeKind.ARRAY;
+import static javax.lang.model.type.TypeKind.DECLARED;
+import static javax.lang.model.type.TypeKind.ERROR;
+import static javax.lang.model.type.TypeKind.INTERSECTION;
+import static javax.lang.model.type.TypeKind.NONE;
+import static javax.lang.model.type.TypeKind.TYPEVAR;
+import static javax.lang.model.type.TypeKind.VOID;
+import static javax.lang.model.type.TypeKind.WILDCARD;
 import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
@@ -906,9 +954,44 @@ public class Utils {
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
         addSuperInterfaces(te.asType(), results, new HashSet<>());
+        assert noSameTypes(results);
         return results;
     }
 
+    private boolean noSameTypes(Set<TypeMirror> results) {
+        for (TypeMirror t1 : results) {
+            for (TypeMirror t2 : results) {
+                if (t1 == t2) {
+                    continue;
+                }
+                if (typeUtils.isSameType(t1, t2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /*
+     * Instances of TypeMirror should be compared using
+     * Types.isSameType. However, there's no hash function
+     * consistent with that method. This makes it problematic to
+     * store TypeMirror in a collection that relies on hashing.
+     *
+     * To work around that, along with accumulating the resulting set of type
+     * mirrors, we also maintain a set of elements that correspond to those
+     * type mirrors. Element provides strong equals and hashCode. We only add
+     * a type mirror into the result set if we don't already have an element
+     * that corresponds to this type mirror in the set of seen elements.
+     *
+     * Although this might seem wrong, as an instance of Element corresponds
+     * to multiple instances of TypeMirror (one-to-many), in an
+     * inheritance hierarchy the correspondence is effectively one-to-one.
+     * This is because it is NOT possible for a type to be a subtype
+     * of different generic invocations of the same supertype; e.g.,
+     *
+     *     interface X extends G<A>, G<B>
+     */
     private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results, Set<Element> visited) {
         TypeMirror superType = null;
         for (TypeMirror t : typeUtils.directSupertypes(type)) {
