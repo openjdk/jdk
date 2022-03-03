@@ -1410,13 +1410,9 @@ public class Main {
                 JAR_DISABLED_CHECK.permits(algParams, jcp);
             } catch (CertPathValidatorException e) {
                 disabledAlgFound = true;
-                switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
-                    case "RSASSA-PSS":
-                        return String.format(rb.getString("with.algparams.disabled"),
-                                "RSASSA-PSS", algParams);
-                    default:
-                        return String.format(rb.getString("with.disabled"), algParams);
-                }
+                return String.format(rb.getString("with.algparams.disabled"),
+                        algParams.getAlgorithm().toUpperCase(Locale.ENGLISH),
+                        algParams);
             }
         }
 
@@ -1443,13 +1439,9 @@ public class Main {
             } catch (CertPathValidatorException e) {
                 legacyAlg |= 2;
                 legacySigAlg = alg;
-                switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
-                    case "RSASSA-PSS":
-                        return String.format(rb.getString("with.algparams.weak"),
-                                "RSASSA-PSS", algParams);
-                    default:
-                        return String.format(rb.getString("with.weak"), algParams);
-                }
+                return String.format(rb.getString("with.algparams.weak"),
+                        algParams.getAlgorithm().toUpperCase(Locale.ENGLISH),
+                        algParams);
             }
         }
         return alg;
