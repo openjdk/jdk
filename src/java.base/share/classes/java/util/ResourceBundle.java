@@ -1511,7 +1511,7 @@ public abstract class ResourceBundle {
     }
 
     private static Control getDefaultControl(Class<?> caller, String baseName) {
-        final Module callerModule = getCallerModule(caller);
+        Module callerModule = getCallerModule(caller);
         return getDefaultControl(callerModule, baseName);
     }
 
@@ -1558,16 +1558,14 @@ public abstract class ResourceBundle {
         return getBundleImpl(baseName, locale, caller, loader, control);
     }
 
-    /**
+    /*
      * Determine the module to be used for the caller.  If
-     * {@link Reflection#getCallerClass()} is called from JNI with an empty
+     * Reflection::getCallerClass is called from JNI with an empty
      * stack frame the caller will be null, so the system class loader unnamed
      * module will be used.
-     * @param caller
-     * @return
      */
     private static Module getCallerModule(Class<?> caller) {
-        final Module callerModule = (caller != null) ? caller.getModule()
+        Module callerModule = (caller != null) ? caller.getModule()
                 : ClassLoader.getSystemClassLoader().getUnnamedModule();
         return callerModule;
     }
@@ -2248,7 +2246,7 @@ public abstract class ResourceBundle {
      */
     @CallerSensitive
     public static final void clearCache() {
-        final Module callerModule = getCallerModule(Reflection.getCallerClass());
+        Module callerModule = getCallerModule(Reflection.getCallerClass());
         cacheList.keySet().removeIf(
             key -> key.getCallerModule() == callerModule
         );

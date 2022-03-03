@@ -38,40 +38,34 @@
 // Test disabled on AIX since we cannot invoke the JVM on the primordial thread.
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.Properties;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.ResourceBundle;
 
 public class NullCallerResourceBundle {
     public static void main(String[] args) throws IOException {
 
         // build a properties file for the native test
-        final Path propPath = Path.of(System.getProperty("test.classes"), "NullCallerResource.properties");
-        try (final OutputStream stream = Files.newOutputStream(propPath)) {
-            final Properties props = new Properties();
+        var propPath = Path.of(System.getProperty("test.classes"), "NullCallerResource.properties");
+        try (var stream = Files.newOutputStream(propPath)) {
+            var props = new Properties();
             props.put("message", "Hello!");
             props.save(stream, "Test property list");
         }
 
-        final Path launcher = Path.of(System.getProperty("test.nativepath"), "NullCallerResourceBundle");
-        final String classpathAppend = "-Djava.class.path=" + System.getProperty("test.classes");
-        final ProcessBuilder pb = new ProcessBuilder(launcher.toString(), classpathAppend);
-        final Map<String, String> env = pb.environment();
+        var launcher = Path.of(System.getProperty("test.nativepath"), "NullCallerResourceBundle");
+        var classpathAppend = "-Djava.class.path=" + System.getProperty("test.classes");
+        var pb = new ProcessBuilder(launcher.toString(), classpathAppend);
+        var env = pb.environment();
 
-        final String libDir = Platform.libDir().toString();
-        final String vmDir = Platform.jvmLibDir().toString();
+        var libDir = Platform.libDir().toString();
+        var vmDir = Platform.jvmLibDir().toString();
 
         // set up shared library path
-        final String sharedLibraryPathEnvName = Platform.sharedLibraryPathVariableName();
+        var sharedLibraryPathEnvName = Platform.sharedLibraryPathVariableName();
         env.compute(sharedLibraryPathEnvName,
                 (k, v) -> (v == null) ? libDir : v + File.pathSeparator + libDir);
         env.compute(sharedLibraryPathEnvName,
@@ -85,8 +79,5 @@ public class NullCallerResourceBundle {
                 .shouldHaveExitValue(0);
     }
 
-
-    private static void makePropertiesFile() throws IOException {
-    }
 }
 
