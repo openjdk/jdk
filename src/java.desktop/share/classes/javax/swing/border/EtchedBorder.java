@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,17 +136,30 @@ public class EtchedBorder extends AbstractBorder
 
         g.translate(x, y);
 
-        g.setColor(etchType == LOWERED? getShadowColor(c) : getHighlightColor(c));
-        g.drawRect(0, 0, w-2, h-2);
+        if (etchType == LOWERED) {
+            g.setColor(getHighlightColor(c));
+            g.drawLine(1, h-3, 1, 1);
+            g.drawLine(1, 1, w-3, 1);
 
-        g.setColor(etchType == LOWERED? getHighlightColor(c) : getShadowColor(c));
-        g.drawLine(1, h-3, 1, 1);
-        g.drawLine(1, 1, w-3, 1);
+            g.drawLine(0, h-1, w-1, h-1);
+            g.drawLine(w-1, h-1, w-1, 0);
 
-        g.drawLine(0, h-1, w-1, h-1);
-        g.drawLine(w-1, h-1, w-1, 0);
+            g.setColor(getShadowColor(c));
+            g.drawRect(0, 0, w-2, h-2);
+        } else {
+            g.setColor(getHighlightColor(c));
+            g.drawRect(0, 0, w-2, h-2);
 
-        g.translate(-x, -y);
+            g.setColor(getShadowColor(c));
+            g.drawLine(1, h-3, 1, 1);
+            g.drawLine(1, 1, w-3, 1);
+
+            g.drawLine(0, h-1, w-1, h-1);
+            g.drawLine(w-1, h-1, w-1, 0);
+        }
+
+
+        g.translate(-x-1, -y);
     }
 
     /**

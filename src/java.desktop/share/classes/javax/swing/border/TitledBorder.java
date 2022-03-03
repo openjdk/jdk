@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,10 +351,10 @@ public class TitledBorder extends AbstractBorder
                     if (g2 instanceof Graphics2D) {
                         Graphics2D g2d = (Graphics2D) g2;
                         Path2D path = new Path2D.Float();
-                        path.append(new Rectangle2D.Float((float) borderX, borderY, borderW, labelY - borderY), false);
-                        path.append(new Rectangle2D.Float((float) (borderX - 0.5), labelY, labelX - borderX - TEXT_SPACING, labelH), false);
-                        path.append(new Rectangle2D.Float((float) (labelX + labelW + TEXT_SPACING - 0.5), labelY, borderX - labelX + borderW - labelW - TEXT_SPACING, labelH), false);
-                        path.append(new Rectangle2D.Float((float) (borderX - 0.5), labelY + labelH, borderW, borderY - labelY + borderH - labelH), false);
+                        path.append(new Rectangle(borderX, borderY, borderW, labelY - borderY), false);
+                        path.append(new Rectangle(borderX, labelY, labelX - borderX - TEXT_SPACING, labelH), false);
+                        path.append(new Rectangle(labelX + labelW + TEXT_SPACING, labelY, borderX - labelX + borderW - labelW - TEXT_SPACING, labelH), false);
+                        path.append(new Rectangle(borderX, labelY + labelH, borderW, borderY - labelY + borderH - labelH), false);
                         g2d.clip(path);
                     }
                     border.paintBorder(c, g2, borderX, borderY, borderW, borderH);

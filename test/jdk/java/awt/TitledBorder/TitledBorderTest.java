@@ -1,3 +1,27 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -44,8 +68,18 @@ public class TitledBorderTest {
     graph.dispose();
 
     robot.waitForIdle();
-    if (buff.getRGB(20,80) != -6250336) {
-      System.out.println("Color " + buff.getRGB(21, 80));
+    boolean testFail = true;
+    for (int i = 0; i < 50 && testFail == true; i++) {
+      for (int j = 0; j < 100; j++) {
+        if (buff.getRGB(i, j) == -6250336) {
+          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
+          testFail = false;
+          break;
+        }
+      }g
+    }
+
+    if (testFail) {
       saveImage(buff, "test.png");
       throw new RuntimeException("Border was clipped or overdrawn.");
     }
