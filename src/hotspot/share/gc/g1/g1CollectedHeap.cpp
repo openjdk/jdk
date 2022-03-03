@@ -2409,7 +2409,6 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
-  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
   case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj, hr);
   default:                            ShouldNotReachHere();
   }
@@ -2420,7 +2419,6 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
   case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
-  case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
   case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj);
   default:                            ShouldNotReachHere();
   }

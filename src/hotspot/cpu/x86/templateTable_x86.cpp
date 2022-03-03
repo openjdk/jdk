@@ -525,7 +525,7 @@ void TemplateTable::condy_helper(Label& Done) {
       // tos in (itos, ftos, stos, btos, ctos, ztos)
       Label notInt, notFloat, notShort, notByte, notChar, notBool;
       __ cmpl(flags, itos);
-      __ jcc(Assembler::notEqual, notInt);
+      __ jccb(Assembler::notEqual, notInt);
       // itos
       __ movl(rax, field);
       __ push(itos);
@@ -533,7 +533,7 @@ void TemplateTable::condy_helper(Label& Done) {
 
       __ bind(notInt);
       __ cmpl(flags, ftos);
-      __ jcc(Assembler::notEqual, notFloat);
+      __ jccb(Assembler::notEqual, notFloat);
       // ftos
       __ load_float(field);
       __ push(ftos);
@@ -541,7 +541,7 @@ void TemplateTable::condy_helper(Label& Done) {
 
       __ bind(notFloat);
       __ cmpl(flags, stos);
-      __ jcc(Assembler::notEqual, notShort);
+      __ jccb(Assembler::notEqual, notShort);
       // stos
       __ load_signed_short(rax, field);
       __ push(stos);
@@ -549,7 +549,7 @@ void TemplateTable::condy_helper(Label& Done) {
 
       __ bind(notShort);
       __ cmpl(flags, btos);
-      __ jcc(Assembler::notEqual, notByte);
+      __ jccb(Assembler::notEqual, notByte);
       // btos
       __ load_signed_byte(rax, field);
       __ push(btos);
@@ -557,7 +557,7 @@ void TemplateTable::condy_helper(Label& Done) {
 
       __ bind(notByte);
       __ cmpl(flags, ctos);
-      __ jcc(Assembler::notEqual, notChar);
+      __ jccb(Assembler::notEqual, notChar);
       // ctos
       __ load_unsigned_short(rax, field);
       __ push(ctos);
@@ -565,7 +565,7 @@ void TemplateTable::condy_helper(Label& Done) {
 
       __ bind(notChar);
       __ cmpl(flags, ztos);
-      __ jcc(Assembler::notEqual, notBool);
+      __ jccb(Assembler::notEqual, notBool);
       // ztos
       __ load_signed_byte(rax, field);
       __ push(ztos);
@@ -579,7 +579,7 @@ void TemplateTable::condy_helper(Label& Done) {
     {
       Label notLong, notDouble;
       __ cmpl(flags, ltos);
-      __ jcc(Assembler::notEqual, notLong);
+      __ jccb(Assembler::notEqual, notLong);
       // ltos
       // Loading high word first because movptr clobbers rax
       NOT_LP64(__ movptr(rdx, field.plus_disp(4)));
@@ -589,7 +589,7 @@ void TemplateTable::condy_helper(Label& Done) {
 
       __ bind(notLong);
       __ cmpl(flags, dtos);
-      __ jcc(Assembler::notEqual, notDouble);
+      __ jccb(Assembler::notEqual, notDouble);
       // dtos
       __ load_double(field);
       __ push(dtos);

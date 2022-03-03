@@ -97,6 +97,10 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public RecordingStream() {
+        this(Map.of());
+    }
+
+    private RecordingStream(Map<String, String> settings) {
         Utils.checkAccessFlightRecorder();
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
@@ -116,6 +120,9 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         } catch (IOException ioe) {
             this.recording.close();
             throw new IllegalStateException(ioe.getMessage());
+        }
+        if (!settings.isEmpty()) {
+            recording.setSettings(settings);
         }
     }
 
@@ -148,8 +155,7 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @see Configuration
      */
     public RecordingStream(Configuration configuration) {
-        this();
-        recording.setSettings(configuration.getSettings());
+        this(Objects.requireNonNull(configuration, "configuration").getSettings());
     }
 
     /**

@@ -1010,6 +1010,10 @@ public class HtmlDocletWriter {
                         // @see reference label...
                         label = ref.subList(1, ref.size());
                     }
+                    case ERRONEOUS -> {
+                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input", seeText),
+                                Optional.empty());
+                    }
                     default ->
                         throw new IllegalStateException(ref.get(0).getKind().toString());
                 }
@@ -2397,6 +2401,10 @@ public class HtmlDocletWriter {
         Set<DeclarationPreviewLanguageFeatures> previewLanguageFeatures = new HashSet<>();
         for (Element enclosed : el.getEnclosedElements()) {
             if (!utils.isIncluded(enclosed)) {
+                continue;
+            }
+            if (utils.isPreviewAPI(enclosed)) {
+                //for class summary, ignore methods that are themselves preview:
                 continue;
             }
             if (!enclosed.getKind().isClass() && !enclosed.getKind().isInterface()) {
