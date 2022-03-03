@@ -2572,8 +2572,8 @@ bool PhaseIdealLoop::is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_sc
   int which = 0;  // this is which subexpression we find the iv in
   // Can't use is_Mul() here as it's true for AndI and AndL
   if (opc == Op_Mul(exp_bt)) {
-    if (is_iv(exp->in(which = 1), iv, exp_bt) && exp->in(2)->is_Con() ||
-        is_iv(exp->in(which = 2), iv, exp_bt) && exp->in(1)->is_Con()) {
+    if ((is_iv(exp->in(which = 1), iv, exp_bt) && exp->in(2)->is_Con()) ||
+        (is_iv(exp->in(which = 2), iv, exp_bt) && exp->in(1)->is_Con())) {
       Node* factor = exp->in(which == 1 ? 2 : 1);  // the other argument
       jlong scale = factor->find_integer_as_long(exp_bt, 0);
       if (scale == 0) {
