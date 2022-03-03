@@ -383,8 +383,6 @@ public class DigestAuth {
             lastRequestedPrompt = getRequestingPrompt();
             System.out.println("AuthenticatorImpl: requested "
                     + lastRequestedScheme);
-            var realm = getRequestingPrompt();
-            System.out.println("Realm: " + realm);
             return new PasswordAuthentication("Mufasa",
                     "Circle Of Life".toCharArray());
         }
