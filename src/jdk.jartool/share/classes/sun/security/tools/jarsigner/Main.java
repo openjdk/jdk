@@ -1410,10 +1410,15 @@ public class Main {
                 JAR_DISABLED_CHECK.permits(algParams, jcp);
             } catch (CertPathValidatorException e) {
                 disabledAlgFound = true;
-                String algParamsOutput = "RSASSA-PSS using " + algParams;
-                int endPos = algParamsOutput.indexOf("]");
-                algParamsOutput = algParamsOutput.substring(0, endPos + 1) + "]";
-                return String.format(rb.getString("with.disabled"), algParamsOutput);
+                switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+                    case "RSASSA-PSS":
+                        String algDisplay;
+                        algDisplay = "RSASSA-PSS using";
+                        return String.format(rb.getString("with.algparams.disabled"),
+                                algDisplay, algParams);
+                    default:
+                        return String.format(rb.getString("with.disabled"), algParams);
+                }
             }
         }
 
@@ -1440,10 +1445,15 @@ public class Main {
             } catch (CertPathValidatorException e) {
                 legacyAlg |= 2;
                 legacySigAlg = alg;
-                String algParamsOutput = "RSASSA-PSS using " + algParams;
-                int endPos = algParamsOutput.indexOf("]");
-                algParamsOutput = algParamsOutput.substring(0, endPos + 1) + "]";
-                return String.format(rb.getString("with.weak"), algParamsOutput);
+                switch (algParams.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+                    case "RSASSA-PSS":
+                        String algDisplay;
+                        algDisplay = "RSASSA-PSS using";
+                        return String.format(rb.getString("with.algparams.weak"),
+                                algDisplay, algParams);
+                    default:
+                        return String.format(rb.getString("with.weak"), algParams);
+                }
             }
         }
         return alg;
