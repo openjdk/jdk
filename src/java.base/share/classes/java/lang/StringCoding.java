@@ -34,14 +34,17 @@ class StringCoding {
 
     private StringCoding() { }
 
-    @IntrinsicCandidate
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;
     }
 
     /**
-     * Count the number of consecutive, leading positive bytes in the
-     * range.
+     * Count the number of leading positive bytes in the range.
+     *
+     * @implSpec the implementation must return len if there are no negative
+     *   bytes in the range. If there are negative bytes, the implementation must return
+     *   a value that is less than or equal to the index of the first negative byte
+     *   in the range.
      */
     @IntrinsicCandidate
     public static int countPositives(byte[] ba, int off, int len) {

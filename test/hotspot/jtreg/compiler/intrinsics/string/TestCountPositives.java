@@ -91,9 +91,10 @@ public class TestCountPositives {
                     int calculated = Helper.StringCodingCountPositives(tBa, off, len);
                     int expected = countPositives(tBa, off, len);
                     if (calculated != expected) {
-                        if (calculated == 0 && expected != len) {
-                            // allow intrinsics to bail out and return zero, but only if we're not expecting
-                            // the full length (no negative bytes)
+                        if (calculated < expected && expected != len) {
+                            // allow intrinsics to return early with a lower value,
+                            // but only if we're not expecting the full length (no
+                            // negative bytes)
                             continue;
                         }
                         throw new Exception("Failed test countPositives " + "offset: " + off + " "
