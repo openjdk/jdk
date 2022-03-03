@@ -23,14 +23,19 @@
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import javax.imageio.ImageIO;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -110,6 +115,7 @@ public class JEditorPaneNavigationTest {
 
                 // Check whether the caret position is at the expected value 5
                 if (caretPos != 5) {
+                    captureScreen();
                     throw new RuntimeException("Test Failed in " + laf
                             + " expected initial caret position is 5, but actual is " + caretPos);
                 }
@@ -120,6 +126,7 @@ public class JEditorPaneNavigationTest {
 
                 // Check whether the caret position is at the expected value 10
                 if (caretPos != 10) {
+                    captureScreen();
                     throw new RuntimeException("Test Failed in " + laf
                             + " expected final caret position is 10, but actual is " + caretPos);
                 }
@@ -130,6 +137,17 @@ public class JEditorPaneNavigationTest {
                 SwingUtilities.invokeAndWait(JEditorPaneNavigationTest::disposeFrame);
             }
         }
+    }
+
+    private static void captureScreen() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        try {
+            ImageIO.write(
+                    robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                    "png",
+                    new File( "JEditorPaneNavigationTest.png")
+            );
+        } catch (IOException ignore) {}
     }
 
     private static void typeSomeText() {
