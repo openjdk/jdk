@@ -249,7 +249,7 @@ public class WeakHashMap<K,V>
      * @since   1.3
      */
     public WeakHashMap(Map<? extends K, ? extends V> m) {
-        this(Math.max((int) Math.ceil(m.size() / 0.75),
+        this(Math.max((int) Math.ceil(m.size() / (double)DEFAULT_LOAD_FACTOR),
                 DEFAULT_INITIAL_CAPACITY),
              DEFAULT_LOAD_FACTOR);
         putAll(m);
@@ -555,7 +555,7 @@ public class WeakHashMap<K,V>
          * to at most one extra resize.
          */
         if (numKeysToBeAdded > threshold) {
-            int targetCapacity = (int)Math.ceil(numKeysToBeAdded / loadFactor);
+            int targetCapacity = (int)Math.ceil(numKeysToBeAdded / (double)loadFactor);
             if (targetCapacity > MAXIMUM_CAPACITY)
                 targetCapacity = MAXIMUM_CAPACITY;
             int newCapacity = table.length;

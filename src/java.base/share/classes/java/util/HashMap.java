@@ -495,7 +495,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         int s = m.size();
         if (s > 0) {
             if (table == null) { // pre-size
-                double dt = Math.ceil(s / loadFactor);
+                double dt = Math.ceil(s / (double)loadFactor);
                 int t = ((dt < (double)MAXIMUM_CAPACITY) ?
                          (int)dt : MAXIMUM_CAPACITY);
                 if (t > threshold)
@@ -1527,7 +1527,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         } else if (mappings == 0) {
             // use defaults
         } else if (mappings > 0) {
-            double dc = Math.ceil(mappings / lf);
+            double dc = Math.ceil(mappings / (double)lf);
             int cap = ((dc < DEFAULT_INITIAL_CAPACITY) ?
                        DEFAULT_INITIAL_CAPACITY :
                        (dc >= MAXIMUM_CAPACITY) ?
