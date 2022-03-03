@@ -62,12 +62,7 @@ public class JEditorPaneNavigationTest {
     private static JFrame frame;
     private static Robot robot;
 
-
     public static void main(String[] args) throws Exception {
-        runTest();
-    }
-
-    private static void runTest() throws Exception {
         robot = new Robot();
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(100);
@@ -95,7 +90,7 @@ public class JEditorPaneNavigationTest {
                 final Point jEditorLoc = pt.get();
 
                 // Click on JEditorPane
-                robot.mouseMove((int) jEditorLoc.getX() + 50, (int) jEditorLoc.getY() + 50);
+                robot.mouseMove(jEditorLoc.x + 50, jEditorLoc.y + 50);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
@@ -145,9 +140,10 @@ public class JEditorPaneNavigationTest {
             ImageIO.write(
                     robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
                     "png",
-                    new File( "JEditorPaneNavigationTest.png")
+                    new File("JEditorPaneNavigationTest.png")
             );
-        } catch (IOException ignore) {}
+        } catch (IOException ignore) {
+        }
     }
 
     private static void typeSomeText() {
@@ -155,7 +151,6 @@ public class JEditorPaneNavigationTest {
         keyType(KeyEvent.VK_E);
         keyType(KeyEvent.VK_X);
         keyType(KeyEvent.VK_T);
-
     }
 
     private static void keyType(int keyCode) {
@@ -178,7 +173,6 @@ public class JEditorPaneNavigationTest {
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
-
     }
 
     private static boolean setLookAndFeel(String lafName) {
