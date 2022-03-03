@@ -825,21 +825,59 @@ public class Utils {
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
-        addSuperInterfaces(te.asType(), results);
+        addSuperInterfaces(te.asType(), results, new HashSet<>());
+        assert noSameTypes(results);
         return results;
     }
 
-    private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results) {
+    private boolean noSameTypes(Set<TypeMirror> results) {
+        for (TypeMirror t1 : results) {
+            for (TypeMirror t2 : results) {
+                if (t1 == t2) {
+                    continue;
+                }
+                if (typeUtils.isSameType(t1, t2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /*
+     * Instances of TypeMirror should be compared using
+     * Types.isSameType. However, there's no hash function
+     * consistent with that method. This makes it problematic to
+     * store TypeMirror in a collection that relies on hashing.
+     *
+     * To work around that, along with accumulating the resulting set of type
+     * mirrors, we also maintain a set of elements that correspond to those
+     * type mirrors. Element provides strong equals and hashCode. We only add
+     * a type mirror into the result set if we don't already have an element
+     * that corresponds to this type mirror in the set of seen elements.
+     *
+     * Although this might seem wrong, as an instance of Element corresponds
+     * to multiple instances of TypeMirror (one-to-many), in an
+     * inheritance hierarchy the correspondence is effectively one-to-one.
+     * This is because it is NOT possible for a type to be a subtype
+     * of different generic invocations of the same supertype; e.g.,
+     *
+     *     interface X extends G<A>, G<B>
+     */
+    private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results, Set<Element> visited) {
         TypeMirror superType = null;
         for (TypeMirror t : typeUtils.directSupertypes(type)) {
             if (typeUtils.isSameType(t, getObjectType()))
                 continue;
             TypeElement e = asTypeElement(t);
             if (isInterface(e)) {
+                if (!visited.add(e)) {
+                    continue; // seen it before
+                }
                 if (isPublic(e) || isLinkable(e)) {
                     results.add(t);
                 }
-                addSuperInterfaces(t, results);
+                addSuperInterfaces(t, results, visited);
             } else {
                 // there can be at most one superclass and it is not null
                 assert superType == null && t != null : superType;
@@ -849,7 +887,7 @@ public class Utils {
         }
         // Collect the super-interfaces of the supertype.
         if (superType != null)
-            addSuperInterfaces(superType, results);
+            addSuperInterfaces(superType, results, visited);
     }
 
     /**
