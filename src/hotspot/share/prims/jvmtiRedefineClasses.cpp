@@ -1856,13 +1856,14 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   if (old_cp->has_dynamic_constant()) {
     scratch_cp->set_has_dynamic_constant();
   }
-  // Copy attributes from scratch_cp to merge_cp
-  merge_cp->copy_fields(scratch_cp());
 
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 
   if (_index_map_count == 0) {
     // there is nothing to map between the new and merged constant pools
+
+    // Copy attributes from scratch_cp to merge_cp
+    merge_cp->copy_fields(scratch_cp());
 
     if (old_cp->length() == scratch_cp->length()) {
       // The old and new constant pools are the same length and the
@@ -1916,6 +1917,9 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     if (!rewrite_cp_refs(scratch_class)) {
       return JVMTI_ERROR_INTERNAL;
     }
+
+    // Copy attributes from scratch_cp to merge_cp (should be done after rewrite_cp_refs())
+    merge_cp->copy_fields(scratch_cp());
 
     // Replace the new constant pool with a shrunken copy of the
     // merged constant pool so now the rewritten bytecodes have
@@ -3492,10 +3496,9 @@ void VM_RedefineClasses::rewrite_cp_refs_in_verification_type_info(
 } // end rewrite_cp_refs_in_verification_type_info()
 
 
-// Change the constant pool associated with klass scratch_class to
-// scratch_cp. If shrink is true, then scratch_cp_length elements
-// are copied from scratch_cp to a smaller constant pool and the
-// smaller constant pool is associated with scratch_class.
+// Change the constant pool associated with klass scratch_class to scratch_cp.
+// scratch_cp_length elements are copied from scratch_cp to a smaller constant pool
+// and the smaller constant pool is associated with scratch_class.
 void VM_RedefineClasses::set_new_constant_pool(
        ClassLoaderData* loader_data,
        InstanceKlass* scratch_class, constantPoolHandle scratch_cp,
@@ -4356,10 +4359,6 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->itable().initialize_itable();
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
-
-  // Copy the "source file name" attribute from new class version
-  the_class->set_source_file_name_index(
-    scratch_class->source_file_name_index());
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(
