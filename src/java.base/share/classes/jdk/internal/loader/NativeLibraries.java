@@ -309,7 +309,7 @@ public final class NativeLibraries {
 
         @Override
         public long find(String name) {
-            return findEntry0(this, name);
+            return findEntry0(handle, name);
         }
 
         /*
@@ -536,8 +536,8 @@ public final class NativeLibraries {
     private static native String findBuiltinLib(String name);
 
     /*
-     * Returns the address of the named symbol defined in the given library.
-     * Returns 0 if not found.
+     * Returns the address of the named symbol defined in the library of
+     * the given handle.  Returns 0 if not found.
      */
-    static native long findEntry0(NativeLibrary lib, String name);
+    static native long findEntry0(long handle, String name);
 }

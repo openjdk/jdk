@@ -35,8 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static jdk.internal.loader.NativeLibraries.*;
-
+import static jdk.internal.loader.NativeLibraries.findEntry0;
 
 /**
  * RawNativeLibraries has the following properties:
@@ -153,7 +152,7 @@ public final class RawNativeLibraries {
 
         @Override
         public long find(String name) {
-            return findEntry0(this, name);
+            return findEntry0(handle, name);
         }
 
         /*
