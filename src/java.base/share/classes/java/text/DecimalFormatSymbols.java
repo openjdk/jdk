@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,15 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             dfsyms = provider.getInstance(locale);
         }
         return dfsyms;
+    }
+
+    /**
+     * Gets the locale used to create this table.
+     *
+     * @return the the locale used to create this table
+     */
+    public Locale getLocale() {
+        return locale;
     }
 
     /**
