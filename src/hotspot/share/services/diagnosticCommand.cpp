@@ -961,7 +961,7 @@ ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
   _verbose("-verbose",
            "Dump the detailed content of a Java class. "
            "Some classes are annotated with flags: "
-           "F = has finalize method, "
+           "F = has, or inherits, a non-empty finalize method, "
            "f = has final method, "
            "W = methods rewritten, "
            "C = marked with @Contended annotation, "
