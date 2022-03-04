@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 4514108
- * @summary Verify host name matching behaves as defined in RFC2818.
+ * @bug 4514108 7192189
+ * @summary Verify host name matching behaves as defined in RFC2818 and RFC6125.
  * @library /test/lib
  * @modules java.base/sun.security.util
  */
@@ -193,7 +193,6 @@ public class TestHostnameChecker {
         check(checker, "altfoo2.com", cert3, true);
         check(checker, "5.6.7.8", cert3, true);
         check(checker, "foo.bar.com", cert4, true);
-        check(checker, "altfoo.bar.com", cert4, true);
         check(checker, "2001:db8:3c4d:15::1a2f:1a2b", cert5, true);
         check(checker, "2001:0db8:3c4d:0015:0000:0000:1a2f:1a2b", cert5, true);
         check(checker, "2002:db8:3c4d:15::1a2f:1a2b", cert5, false);
