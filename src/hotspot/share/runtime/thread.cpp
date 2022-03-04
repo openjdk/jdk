@@ -276,7 +276,7 @@ Thread::Thread() {
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
   }
 
-  MACOS_AARCH64_ONLY(DEBUG_ONLY(os::current_thread_deinit_wx();))
+  MACOS_AARCH64_ONLY(DEBUG_ONLY(os::current_thread_reset_wx();))
 }
 
 void Thread::initialize_tlab() {
@@ -338,7 +338,7 @@ void Thread::call_run() {
 
   register_thread_stack_with_NMT();
 
-  MACOS_AARCH64_ONLY(os::current_thread_init_wx());
+  MACOS_AARCH64_ONLY(os::current_thread_reset_wx());
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -2787,7 +2787,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
-  MACOS_AARCH64_ONLY(os::current_thread_init_wx());
+  MACOS_AARCH64_ONLY(os::current_thread_reset_wx());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(

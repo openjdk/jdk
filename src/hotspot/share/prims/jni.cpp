@@ -3806,7 +3806,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   thread->record_stack_base_and_size();
   thread->register_thread_stack_with_NMT();
   thread->initialize_thread_current();
-  MACOS_AARCH64_ONLY(os::current_thread_init_wx());
+  MACOS_AARCH64_ONLY(os::current_thread_reset_wx());
 
   if (!os::create_attached_thread(thread)) {
     thread->smr_delete();
