@@ -42,9 +42,10 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -61,29 +62,58 @@ public class HashMapsPutAllOverAllocateTableTest {
         }
     }
 
+    private static <T extends Map<Object, Object>> Object[] testCase(
+            String name,
+            Supplier<T> createNewMap,
+            Function<Integer, T> createNewMapWithInt,
+            Function<T, T> createNewMapWithMap,
+            int mapSize
+    ) {
+        return new Object[]{
+                name + " size " + mapSize,
+                createNewMap,
+                createNewMapWithInt,
+                createNewMapWithMap,
+                mapSize
+        };
+    }
+
     @Parameterized.Parameters
     public static List<Object[]> testFunctionsList() {
         List<Object[]> testParameters = new ArrayList<>(TEST_SIZE * 3);
         for (int i = 0; i <= TEST_SIZE; ++i) {
             testParameters.add(
-                    new Object[]{
-                            (Supplier<Map<Object, Object>>) HashMap::new,
-                            (Function<Integer, Map<Object, Object>>) HashMap::new,
-                            (Function<Map<Object, Object>, Map<Object, Object>>) HashMap::new,
+                    testCase(
+                            HashMap.class.getName(),
+                            HashMap::new,
+                            HashMap::new,
+                            HashMap::new,
                             i
-                    }
+                    )
             );
             testParameters.add(
-                    new Object[]{
-                            (Supplier<Map<Object, Object>>) WeakHashMap::new,
-                            (Function<Integer, Map<Object, Object>>) WeakHashMap::new,
-                            (Function<Map<Object, Object>, Map<Object, Object>>) WeakHashMap::new,
+                    testCase(
+                            LinkedHashMap.class.getName(),
+                            LinkedHashMap::new,
+                            LinkedHashMap::new,
+                            LinkedHashMap::new,
                             i
-                    }
+                    )
+            );
+            testParameters.add(
+                    testCase(
+                            WeakHashMap.class.getName(),
+                            WeakHashMap::new,
+                            WeakHashMap::new,
+                            WeakHashMap::new,
+                            i
+                    )
             );
         }
         return testParameters;
     }
+
+    private final String testName;
 
     private final Supplier<Map<Object, Object>> createNewMap;
 
@@ -94,11 +124,13 @@ public class HashMapsPutAllOverAllocateTableTest {
     private final int mapSize;
 
     public HashMapsPutAllOverAllocateTableTest(
+            String testName,
             Supplier<Map<Object, Object>> createNewMap,
             Function<Integer, Map<Object, Object>> createNewMapWithInt,
             Function<Map<Object, Object>, Map<Object, Object>> createNewMapWithMap,
             int mapSize
     ) {
+        this.testName = testName;
         this.createNewMap = createNewMap;
         this.createNewMapWithInt = createNewMapWithInt;
         this.createNewMapWithMap = createNewMapWithMap;
@@ -111,9 +143,19 @@ public class HashMapsPutAllOverAllocateTableTest {
         }
     }
 
-    public static int getArrayLength(Map<Object, Object> map) throws
-            NoSuchFieldException, IllegalAccessException {
-        Field field = map.getClass().getDeclaredField("table");
+    public static int getArrayLength(Map<?, ?> map) throws
+            IllegalAccessException {
+        Field field = null;
+        Class<?> mapClass = map.getClass();
+        while (!Map.class.equals(mapClass)) {
+            try {
+                field = mapClass.getDeclaredField("table");
+                break;
+            } catch (NoSuchFieldException ignored) {
+            }
+            mapClass = mapClass.getSuperclass();
+        }
+        Objects.requireNonNull(field);
         field.setAccessible(true);
         Object table = field.get(map);
         if (table == null) {
@@ -123,7 +165,7 @@ public class HashMapsPutAllOverAllocateTableTest {
     }
 
     @Test
-    public void test() throws NoSuchFieldException, IllegalAccessException {
+    public void test() throws IllegalAccessException {
 
         Map<Object, Object> a = createNewMap.get();
         fillN(mapSize, a);
@@ -133,7 +175,7 @@ public class HashMapsPutAllOverAllocateTableTest {
             fillN(mapSize, b);
             int length = getArrayLength(b);
             Assert.assertTrue(
-                    "length b larger than length a!",
+                    testName + " : " + "length b larger than length a!",
                     length <= lengthA
             );
         }
@@ -142,7 +184,7 @@ public class HashMapsPutAllOverAllocateTableTest {
             Map<Object, Object> c = createNewMapWithMap.apply(a);
             int length = getArrayLength(c);
             Assert.assertTrue(
-                    "length c larger than length a!",
+                    testName + " : " + "length c larger than length a!",
                     length <= lengthA
             );
         }
@@ -152,7 +194,7 @@ public class HashMapsPutAllOverAllocateTableTest {
             d.putAll(a);
             int length = getArrayLength(d);
             Assert.assertTrue(
-                    "length d larger than length a!",
+                    testName + " : " + "length d larger than length a!",
                     length <= lengthA
             );
         }
