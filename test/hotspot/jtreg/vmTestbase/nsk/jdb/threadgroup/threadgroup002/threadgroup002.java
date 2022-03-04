@@ -108,7 +108,7 @@ public class threadgroup002 extends JdbTest {
         reply = jdb.receiveReplyFor(JdbCommand.threadgroup);
         reply = jdb.receiveReplyFor(JdbCommand.threads);
         grep = new Paragrep(reply);
-        count = grep.find("MyThreadGroup#");
+        count = grep.find(threadgroup002a.THREADGROUP_NAME);
         if (count != threadgroup002a.numThreadGroups) {
             failure("jdb cannot switch to default top level threadgroup");
         }
