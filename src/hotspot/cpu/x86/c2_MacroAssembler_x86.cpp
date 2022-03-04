@@ -4356,29 +4356,16 @@ void C2_MacroAssembler::vector_popcount_int(XMMRegister dst, XMMRegister src, XM
                                             int vec_enc) {
   if (VM_Version::supports_avx512_vpopcntdq()) {
     vpopcntd(dst, src, vec_enc);
-  } else if (vec_enc == Assembler::AVX_512bit) {
-    assert(VM_Version::supports_avx512vlbw(), "");
-    movl(rtmp, 0x0F0F0F0F);
-    evpbroadcastd(xtmp1, rtmp, vec_enc);
-    evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), false, vec_enc, rtmp);
-    evpandd(xtmp3, k0, src, xtmp1, true, vec_enc);
-    vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
-    Assembler::evpsrlw(dst, k0, src, 4, true , vec_enc);
-    evpandd(dst, k0, dst, xtmp1, true, vec_enc);
-    vpshufb(dst, xtmp2, dst, vec_enc);
-    evpaddb(xtmp3, k0, dst, xtmp3, true, vec_enc);
-    evpxord(xtmp1, k0, xtmp1, xtmp1, true, vec_enc);
-    evpunpckhdq(dst, k0, xtmp3, xtmp1, true, vec_enc);
-    evpsadbw(dst, k0, dst, xtmp1, true, vec_enc);
-    evpunpckldq(xtmp2, k0, xtmp3, xtmp1, true, vec_enc);
-    evpsadbw(xtmp2, k0, xtmp2, xtmp1, true, vec_enc);
-    vpackuswb(dst, xtmp2, dst, vec_enc);
   } else {
-    assert(VM_Version::supports_avx2(), "");
+    assert((vec_enc == Assembler::AVX_512bit && VM_Version::supports_avx512bw()) || VM_Version::supports_avx2(), "");
     movl(rtmp, 0x0F0F0F0F);
     movdl(xtmp1, rtmp);
     vpbroadcastd(xtmp1, xtmp1, vec_enc);
-    vmovdqu(xtmp2, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), rtmp);
+    if (Assembler::AVX_512bit == vec_enc) {
+      evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), false, vec_enc, rtmp);
+    } else {
+      vmovdqu(xtmp2, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), rtmp);
+    }
     vpand(xtmp3, src, xtmp1, vec_enc);
     vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
     vpsrlw(dst, src, 4, vec_enc);
@@ -4400,19 +4387,19 @@ void C2_MacroAssembler::vector_popcount_long(XMMRegister dst, XMMRegister src, X
   if (VM_Version::supports_avx512_vpopcntdq()) {
     vpopcntq(dst, src, vec_enc);
   } else if (vec_enc == Assembler::AVX_512bit) {
-    assert(VM_Version::supports_avx512vlbw(), "");
+    assert(VM_Version::supports_avx512bw(), "");
     movl(rtmp, 0x0F0F0F0F);
     movdl(xtmp1, rtmp);
     vpbroadcastd(xtmp1, xtmp1, vec_enc);
     evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), true, vec_enc, rtmp);
-    evpandq(xtmp3, k0, src, xtmp1, true, vec_enc);
+    vpandq(xtmp3, src, xtmp1, vec_enc);
     vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
-    Assembler::evpsrlw(dst, k0, src, 4, true , vec_enc);
-    evpandq(dst, k0, dst, xtmp1, true, vec_enc);
+    vpsrlw(dst, src, 4, vec_enc);
+    vpandq(dst, dst, xtmp1, vec_enc);
     vpshufb(dst, xtmp2, dst, vec_enc);
-    evpaddb(xtmp3, k0, dst, xtmp3, true, vec_enc);
-    evpxorq(xtmp1, k0, xtmp1, xtmp1, true, vec_enc);
-    evpsadbw(dst, k0, xtmp3, xtmp1, true, vec_enc);
+    vpaddb(xtmp3, dst, xtmp3, vec_enc);
+    vpxorq(xtmp1, xtmp1, xtmp1, vec_enc);
+    vpsadbw(dst, xtmp3, xtmp1, vec_enc);
   } else {
     // We do not see any performance benefit of running
     // above instruction sequence on 256 bit vector which
