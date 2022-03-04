@@ -297,6 +297,16 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
     if (src_offset->is_top() || dest_offset->is_top()) {
       // Offset is out of bounds (the ArrayCopyNode will be removed)
+      // Below: make sure that we record the nodes, so that they can be deleted later (if they are dead)
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      if (igvn != NULL) {
+        if (!src_offset->is_top()) {
+          igvn->_worklist.push(src_offset);
+        }
+        if (!dest_offset->is_top()) {
+          igvn->_worklist.push(dest_offset);
+        }
+      }
       return false;
     }
 
