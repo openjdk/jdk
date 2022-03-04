@@ -210,7 +210,7 @@ void G1SegmentedArray<Slot, flag>::drop_all() {
 }
 
 template <class Slot, MEMFLAGS flag>
-Slot* G1SegmentedArray<Slot, flag>::allocate() {
+void* G1SegmentedArray<Slot, flag>::allocate() {
   assert(slot_size() > 0, "instance size not set.");
 
   G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);

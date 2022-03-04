@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public abstract class LinkFactory {
                             // we get everything as extends java.lang.Object we suppress
                             // all of them except those that have multiple extends
                             if (bounds.size() == 1 &&
-                                    bound.equals(utils.getObjectType()) &&
+                                    utils.typeUtils.isSameType(bound, utils.getObjectType()) &&
                                     !utils.isAnnotated(bound)) {
                                 continue;
                             }

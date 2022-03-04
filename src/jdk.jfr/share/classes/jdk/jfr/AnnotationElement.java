@@ -112,8 +112,8 @@ public final class AnnotationElement {
      *         signatures in the {@code annotationType}
      */
     public AnnotationElement(Class<? extends Annotation> annotationType, Map<String, Object> values) {
-        Objects.requireNonNull(annotationType);
-        Objects.requireNonNull(values);
+        Objects.requireNonNull(annotationType, "annotationType");
+        Objects.requireNonNull(values, "values");
         Utils.checkRegisterPermission();
         // copy values to avoid modification after validation
         HashMap<String, Object> map = new HashMap<>(values);
@@ -292,7 +292,7 @@ public final class AnnotationElement {
      *         not exist in the annotation
      */
     public Object getValue(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         int index = type.indexOf(name);
         if (index != -1) {
             return annotationValues.get(index);
@@ -314,7 +314,7 @@ public final class AnnotationElement {
      * @return {@code true} if method exists, {@code false} otherwise
      */
     public boolean hasValue(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         return type.indexOf(name) != -1;
     }
 

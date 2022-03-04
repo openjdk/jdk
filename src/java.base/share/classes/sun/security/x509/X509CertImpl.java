@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1584,6 +1584,17 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                     throw new RuntimeException("name cannot be encoded", ioe);
                 }
                 nameEntry.add(derOut.toByteArray());
+                if (name.getType() == GeneralNameInterface.NAME_ANY
+                        && name instanceof OtherName oname) {
+                    nameEntry.add(oname.getOID().toString());
+                    byte[] nameValue = oname.getNameValue();
+                    try {
+                        String v = new DerValue(nameValue).getAsString();
+                        nameEntry.add(v == null ? nameValue : v);
+                    } catch (IOException ioe) {
+                        nameEntry.add(nameValue);
+                    }
+                }
                 break;
             }
             newNames.add(Collections.unmodifiableList(nameEntry));
