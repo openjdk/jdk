@@ -185,21 +185,19 @@ class SimpleHttpTransactionHandler implements HttpHandler
 
                 if (port1 != port2)
                     failed = true;
-                
+
                  /* Force the server to not respond for more that the timeout
                   * set by the keepalive cleaner (5000 millis). This ensures the
                   * timeout is correctly resets the default read timeout,
                   * infinity. See 6993490. */
                 System.out.println("server sleeping...");
                 try {Thread.sleep(6000); } catch (InterruptedException e) {}
-
                 trans.sendResponseHeaders(200, -1);
             } else if(path.equals("/part2")) {
                 System.out.println("Call to /part2");
                 byte[] responseBody = new byte[RESPONSE_DATA_LENGTH];
                 for (int i=0; i<responseBody.length; i++)
                     responseBody[i] = 0x41;
-
                 // override the Content-length header to be greater than the actual response body
                 trans.sendResponseHeaders(200, responseBody.length+1);
                 try(PrintWriter pw = new PrintWriter(trans.getResponseBody(), false, Charset.forName("UTF-8"))) {
