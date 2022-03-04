@@ -24,7 +24,7 @@
 /*
  * @test
  * @key headful
- * @summary Focus stays with the ScrollPane despite it being removed from the Parent 
+ * @summary Focus stays with the ScrollPane despite it being removed from the Parent
  * @run main ScrollPaneFocusBugTest
  */
 
@@ -71,7 +71,7 @@ public class ScrollPaneFocusBugTest {
         robot = new Robot();
         robot.setAutoDelay(200);
         robot.setAutoWaitForIdle(true);
-        
+
         pressKey();
 
         SwingUtilities.invokeAndWait(() -> {
@@ -95,10 +95,10 @@ public class ScrollPaneFocusBugTest {
     protected static void pressKey() {
         robot.mouseMove(scrollPane.getLocationOnScreen().x + scrollPane.getSize().width / 2,
             scrollPane.getLocationOnScreen().y + scrollPane.getSize().height / 2);
-        
+
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        
+
         robot.keyPress(KeyEvent.VK_1);
         robot.keyRelease(KeyEvent.VK_1);
     }
