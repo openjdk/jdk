@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -989,6 +989,7 @@ public class TTY implements EventNotifier {
                    token.equals("-verify") ||
                    token.equals("-verifyremote") ||
                    token.equals("-verbosegc") ||
+                   token.equals("--enable-preview") ||
                    token.startsWith("-ms") || token.startsWith("-mx") ||
                    token.startsWith("-ss") || token.startsWith("-oss") ) {
 
@@ -1011,6 +1012,13 @@ public class TTY implements EventNotifier {
             } else if (token.equals("-classpath")) {
                 if (i == (argv.length - 1)) {
                     usageError("No classpath specified.");
+                    return;
+                }
+                javaArgs = addArgument(javaArgs, token);
+                javaArgs = addArgument(javaArgs, argv[++i]);
+            } else if (token.equals("--add-modules")) {
+                if (i == (argv.length - 1)) {
+                    usageError("No modules specified.");
                     return;
                 }
                 javaArgs = addArgument(javaArgs, token);

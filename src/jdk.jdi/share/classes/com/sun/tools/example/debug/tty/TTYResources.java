@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"No local variables", "No local variables"},
         {"No method in", "No method {0} in {1}"},
         {"No method specified.", "No method specified."},
+        {"No modules specified.", "No modules specified."},
         {"No monitor numbered:", "No monitor numbered: {0}"},
         {"No monitors owned", "  No monitors owned"},
         {"No object specified.", "No object specified."},
@@ -485,6 +486,9 @@ public class TTYResources extends java.util.ListResourceBundle {
              "    -classpath <directories separated by \"{1}\">\n" +
              "                      list directories in which to look for classes\n" +
              "    -X<option>        non-standard target VM option\n" +
+             "    --add-modules <module name>[,<module name>...]\n" +
+             "                      root modules to resolve in addition to the initial module\n" +
+             "    --enable-preview  allow debuggee to depend on preview features of this release\n" +
              "\n" +
              "<class> is the name of the class to begin debugging\n" +
              "<arguments> are the arguments passed to the main() method of <class>\n" +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,7 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
         {"No local variables", "\u6CA1\u6709\u672C\u5730\u53D8\u91CF"},
         {"No method in", "{1}\u4E2D\u6CA1\u6709\u65B9\u6CD5{0}"},
         {"No method specified.", "\u672A\u6307\u5B9A\u65B9\u6CD5\u3002"},
+        {"No modules specified.", "No modules specified."},
         {"No monitor numbered:", "\u6CA1\u6709\u7F16\u53F7\u4E3A {0} \u7684\u76D1\u89C6\u5668"},
         {"No monitors owned", "  \u4E0D\u62E5\u6709\u76D1\u89C6\u5668"},
         {"No object specified.", "\u672A\u6307\u5B9A\u5BF9\u8C61\u3002"},
