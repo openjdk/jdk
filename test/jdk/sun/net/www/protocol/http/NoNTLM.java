@@ -28,7 +28,7 @@
  *    handler when running on a profile that does not support NTLM
  * @modules java.base/sun.net.www.protocol.http:open
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 NoNTLM
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5
  *                   -Djava.net.preferIPv6Addresses=true NoNTLM
  */
 
