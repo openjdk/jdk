@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,59 +25,30 @@
 
 package jdk.internal.net.http;
 
+import jdk.internal.net.http.HttpConnection.HttpPublisher;
+import jdk.internal.net.http.common.*;
+import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
+import jdk.internal.net.http.frame.*;
+import jdk.internal.net.http.hpack.Decoder;
+import jdk.internal.net.http.hpack.DecodingCallback;
+import jdk.internal.net.http.hpack.Encoder;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Flow;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
-import jdk.internal.net.http.HttpConnection.HttpPublisher;
-import jdk.internal.net.http.common.FlowTube;
-import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
-import jdk.internal.net.http.common.HttpHeadersBuilder;
-import jdk.internal.net.http.common.Log;
-import jdk.internal.net.http.common.Logger;
-import jdk.internal.net.http.common.MinimalFuture;
-import jdk.internal.net.http.common.SequentialScheduler;
-import jdk.internal.net.http.common.Utils;
-import jdk.internal.net.http.frame.ContinuationFrame;
-import jdk.internal.net.http.frame.DataFrame;
-import jdk.internal.net.http.frame.ErrorFrame;
-import jdk.internal.net.http.frame.FramesDecoder;
-import jdk.internal.net.http.frame.FramesEncoder;
-import jdk.internal.net.http.frame.GoAwayFrame;
-import jdk.internal.net.http.frame.HeaderFrame;
-import jdk.internal.net.http.frame.HeadersFrame;
-import jdk.internal.net.http.frame.Http2Frame;
-import jdk.internal.net.http.frame.MalformedFrame;
-import jdk.internal.net.http.frame.OutgoingHeaders;
-import jdk.internal.net.http.frame.PingFrame;
-import jdk.internal.net.http.frame.PushPromiseFrame;
-import jdk.internal.net.http.frame.ResetFrame;
-import jdk.internal.net.http.frame.SettingsFrame;
-import jdk.internal.net.http.frame.WindowUpdateFrame;
-import jdk.internal.net.http.hpack.Encoder;
-import jdk.internal.net.http.hpack.Decoder;
-import jdk.internal.net.http.hpack.DecodingCallback;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.internal.net.http.frame.SettingsFrame.*;
 
@@ -776,7 +747,7 @@ class Http2Connection  {
 
                 if (!(frame instanceof ResetFrame)) {
                     if (frame instanceof DataFrame) {
-                        dropDataFrame((DataFrame)frame);
+                        dropDataFrame((DataFrame) frame);
                     }
                     if (isServerInitiatedStream(streamid)) {
                         if (streamid < nextPushStream) {
@@ -793,26 +764,37 @@ class Http2Connection  {
                 }
                 return;
             }
-            if (frame instanceof PushPromiseFrame) {
-                PushPromiseFrame pp = (PushPromiseFrame)frame;
-                try {
-                    handlePushPromise(stream, pp);
-                } catch (UncheckedIOException e) {
-                    protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
-                    return;
+
+            // While pus frame is not null, the only acceptable frame on this
+            // stream is a Continuation frame
+            if (pcs != null) {
+                if (frame instanceof ContinuationFrame cf) {
+                    handlePushContinuation(stream, cf);
+                } else {
+                    // TODO: Maybe say what kind of frame was received instead
+                    protocolError(ErrorFrame.PROTOCOL_ERROR, "Expected Continuation frame but received another type");
                 }
-            } else if (frame instanceof HeaderFrame) {
-                // decode headers (or continuation)
-                try {
-                    decodeHeaders((HeaderFrame) frame, stream.rspHeadersConsumer());
-                } catch (UncheckedIOException e) {
-                    debug.log("Error decoding headers: " + e.getMessage(), e);
-                    protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
-                    return;
-                }
-                stream.incoming(frame);
             } else {
-                stream.incoming(frame);
+                if (frame instanceof PushPromiseFrame pp) {
+                    try {
+                        handlePushPromise(stream, pp);
+                    } catch (UncheckedIOException e) {
+                        protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                        return;
+                    }
+                } else if (frame instanceof HeaderFrame) {
+                    // decode headers
+                    try {
+                        decodeHeaders((HeaderFrame) frame, stream.rspHeadersConsumer());
+                    } catch (UncheckedIOException e) {
+                        debug.log("Error decoding headers: " + e.getMessage(), e);
+                        protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                        return;
+                    }
+                    stream.incoming(frame);
+                } else {
+                    stream.incoming(frame);
+                }
             }
         }
     }
@@ -838,16 +820,40 @@ class Http2Connection  {
         }
     }
 
+    private record PushContinuationState(HeaderDecoder pushContDecoder, PushPromiseFrame pushContFrame) {}
+    private volatile PushContinuationState pcs;
+
     private <T> void handlePushPromise(Stream<T> parent, PushPromiseFrame pp)
         throws IOException
     {
         // always decode the headers as they may affect connection-level HPACK
         // decoding state
+        assert pcs == null;
         HeaderDecoder decoder = new HeaderDecoder();
         decodeHeaders(pp, decoder);
-
-        HttpRequestImpl parentReq = parent.request;
         int promisedStreamid = pp.getPromisedStream();
+        if (pp.endHeaders()) {
+            completePushPromise(promisedStreamid, parent, decoder.headers());
+        } else {
+            pcs = new PushContinuationState(decoder, pp);
+        }
+    }
+
+    private <T> void handlePushContinuation(Stream<T> parent, ContinuationFrame cf)
+            throws IOException {
+        decodeHeaders(cf, pcs.pushContDecoder);
+        // if all continuations are sent, set pushWithContinuation to null
+        if (cf.endHeaders()) {
+            completePushPromise(pcs.pushContFrame.getPromisedStream(), parent, pcs.pushContDecoder.headers());
+            pcs = null;
+        }
+    }
+
+    private <T> void completePushPromise(int promisedStreamid, Stream<T> parent, HttpHeaders headers)
+            throws IOException {
+        // Perhaps the following checks could be moved to handlePushPromise()
+        // to reset the PushPromise stream earlier?
+        HttpRequestImpl parentReq = parent.request;
         if (promisedStreamid != nextPushStream) {
             resetStream(promisedStreamid, ResetFrame.PROTOCOL_ERROR);
             return;
@@ -858,7 +864,6 @@ class Http2Connection  {
             nextPushStream += 2;
         }
 
-        HttpHeaders headers = decoder.headers();
         HttpRequestImpl pushReq = HttpRequestImpl.createPushRequest(parentReq, headers);
         Exchange<T> pushExch = new Exchange<>(pushReq, parent.exchange.multi);
         Stream.PushedStream<T> pushStream = createPushStream(parent, pushExch);
