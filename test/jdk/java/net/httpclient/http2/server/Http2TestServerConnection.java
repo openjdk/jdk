@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,63 @@
  * questions.
  */
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.URI;
-import java.net.InetAddress;
-import javax.net.ssl.*;
-import java.net.URISyntaxException;
-import java.net.http.HttpHeaders;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
-import jdk.internal.net.http.frame.*;
+import jdk.internal.net.http.frame.DataFrame;
+import jdk.internal.net.http.frame.ErrorFrame;
+import jdk.internal.net.http.frame.FramesDecoder;
+import jdk.internal.net.http.frame.FramesEncoder;
+import jdk.internal.net.http.frame.GoAwayFrame;
+import jdk.internal.net.http.frame.HeaderFrame;
+import jdk.internal.net.http.frame.HeadersFrame;
+import jdk.internal.net.http.frame.Http2Frame;
+import jdk.internal.net.http.frame.PingFrame;
+import jdk.internal.net.http.frame.PushPromiseFrame;
+import jdk.internal.net.http.frame.ResetFrame;
+import jdk.internal.net.http.frame.SettingsFrame;
+import jdk.internal.net.http.frame.WindowUpdateFrame;
 import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import jdk.internal.net.http.hpack.Encoder;
 import sun.net.www.http.ChunkedInputStream;
 import sun.net.www.http.HttpClient;
+
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIMatcher;
+import javax.net.ssl.SNIServerName;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.StandardConstants;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
+
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
@@ -906,7 +937,7 @@ public class Http2TestServerConnection {
     private void handlePush(OutgoingPushPromise op) throws IOException {
         int promisedStreamid = nextPushStreamId;
         PushPromiseFrame pp = new PushPromiseFrame(op.parentStream,
-                                                   HeaderFrame.END_HEADERS,
+                                                   op.getFlags(),
                                                    promisedStreamid,
                                                    encodeHeaders(op.headers),
                                                    0);
