@@ -128,12 +128,12 @@ public class TestIsoWeekFields {
 
     @Test
     public void test_Unit_isSupportedBy_ISO() {
-        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(LocalDate.now()),true);
-        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(ThaiBuddhistDate.now()),true);
-        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(HijrahDate.now()),false);
-        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(LocalDate.now()),true);
-        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(ThaiBuddhistDate.now()),true);
-        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(HijrahDate.now()),false);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(LocalDate.now()), true);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(ThaiBuddhistDate.now()), true);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(HijrahDate.now()), false);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(LocalDate.now()), true);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(ThaiBuddhistDate.now()), true);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(HijrahDate.now()), false);
     }
 
     @Test(dataProvider = "fields")

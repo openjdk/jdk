@@ -309,7 +309,7 @@ public final class IsoFields {
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
                 return temporal.isSupported(DAY_OF_YEAR) && temporal.isSupported(MONTH_OF_YEAR) &&
-                        temporal.isSupported(YEAR) && isIsoLike(temporal);
+                        temporal.isSupported(YEAR) && supportsIsoFields(temporal);
             }
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
@@ -397,7 +397,7 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(MONTH_OF_YEAR) && isIsoLike(temporal);
+                return temporal.isSupported(MONTH_OF_YEAR) && supportsIsoFields(temporal);
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
@@ -452,7 +452,7 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(EPOCH_DAY) && isIsoLike(temporal);
+                return temporal.isSupported(EPOCH_DAY) && supportsIsoFields(temporal);
             }
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
@@ -533,7 +533,7 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(EPOCH_DAY) && isIsoLike(temporal);
+                return temporal.isSupported(EPOCH_DAY) && supportsIsoFields(temporal);
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
@@ -595,8 +595,9 @@ public final class IsoFields {
 
 
         private static void ensureIsoLike(TemporalAccessor temporal) {
-            if (!isIsoLike(temporal)) {
-                throw new DateTimeException("Resolve requires ISO-like Chronology");
+            if (!supportsIsoFields(temporal)) {
+                throw new DateTimeException("Resolve requires ISO based chronology: " +
+                        Chronology.from(temporal));
             }
         }
 
@@ -700,7 +701,7 @@ public final class IsoFields {
 
         @Override
         public boolean isSupportedBy(Temporal temporal) {
-            return temporal.isSupported(EPOCH_DAY) && isIsoLike(temporal);
+            return temporal.isSupported(EPOCH_DAY) && supportsIsoFields(temporal);
         }
 
         @SuppressWarnings("unchecked")
@@ -734,7 +735,7 @@ public final class IsoFields {
         }
     }
 
-    static boolean isIsoLike(TemporalAccessor temporal) {
-        return Chronology.from(temporal).isIsoLike();
+    static boolean supportsIsoFields(TemporalAccessor temporal) {
+        return Chronology.from(temporal).supportsIsoFields();
     }
 }

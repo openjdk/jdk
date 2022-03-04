@@ -424,8 +424,8 @@ public class TCKChronology {
         chrono.epochSecond(y, m, d, h, min, s, offset);
     }
 
-    @DataProvider(name = "data_isIsoLike")
-    Object[][]  data_isIsoLike() {
+    @DataProvider(name = "data_supportsIsoFields")
+    Object[][]  data_supportsIsoFields() {
         return new Object[][] {
                 {IsoChronology.INSTANCE, true},
                 {JapaneseChronology.INSTANCE, true},
@@ -436,10 +436,10 @@ public class TCKChronology {
     }
 
     //-----------------------------------------------------------------------
-    // isIsoLike()
+    // supportsIsoFields()
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "data_isIsoLike")
-    public void test_isIsoLike(Chronology chrono, boolean expected) {
-        assertEquals(chrono.isIsoLike(), expected);
+    @Test(dataProvider = "data_supportsIsoFields")
+    public void test_supportsIsoFields(Chronology chrono, boolean expected) {
+        assertEquals(chrono.supportsIsoFields(), expected);
     }
 }
