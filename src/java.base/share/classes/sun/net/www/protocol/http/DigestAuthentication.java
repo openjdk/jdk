@@ -72,7 +72,7 @@ class DigestAuthentication extends AuthenticationInfo {
 
     // A net property which overrides the disabled set above.
     private static final String enabledAlgPropName = "http.auth.digest." +
-        "enabledDigestAlgs";
+        "reEnabledAlgs";
 
     private static final Set<String> disabledAlgs = new HashSet<>();
 

@@ -25,8 +25,8 @@
  * @test
  * @bug 4759514
  * @library /test/lib
- * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 B4759514
- * @run main/othervm -Dhttp.auth.digest.enabledDigestAlgs=MD5 -Djava.net.preferIPv6Addresses=true B4759514
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 B4759514
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 -Djava.net.preferIPv6Addresses=true B4759514
  * @summary Digest Authentication is erroniously quoting the nc value, contrary to RFC 2617
  */
 
