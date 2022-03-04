@@ -167,7 +167,8 @@ public:
   size_t runtime_info_bytesize() const;
 };
 
-inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
+template <typename T>
+inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
   if (DumpSharedSpaces) {
     // Deterministic archive contents
     uintx delta = k->name() - MetaspaceShared::symbol_rs_base();
@@ -175,7 +176,7 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
   } else {
     // Deterministic archive is not possible because classes can be loaded
     // in multiple threads.
-    return primitive_hash<InstanceKlass*>(k);
+    return primitive_hash<T*>(k);
   }
 }
 
