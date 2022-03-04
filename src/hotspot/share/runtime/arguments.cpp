@@ -742,6 +742,88 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 }
 #endif
 
+bool parse_integer(const char *s, char **endptr, int base, jint* result) {  
+  long long v = strtoll(s, endptr, base);
+  if (errno != 0 || v < min_jint || v > max_jint) {
+    return false;
+  }
+  *result = int(v);
+  return true;
+}
+
+bool parse_integer(const char *s, char **endptr, int base, juint* result) {
+  long long v = strtoll(s, endptr, base);
+  if (errno != 0 || v < 0 || v > max_juint) {
+    return false;
+  }
+  *result = uint(v);
+  return true;
+}
+
+bool parse_integer(const char *s, char **endptr, int base, jlong* result) {
+  *result = strtoll(s, endptr, base);
+  return true;
+}
+
+bool parse_integer(const char *s, char **endptr, int base, julong* result) {
+  if (s[0] == '-') {
+    return false;
+  }
+  *result = strtoull(s, endptr, base);
+  return true;
+}
+
+template<typename T>
+static bool _multiply(volatile T* result, T by) {
+  T n = * result;
+  *result = n * by;
+  if ((*result) / by != n) {
+    return false;
+  }
+  return true;
+}
+
+template<typename T>
+bool parse_integer(const char *s, volatile T* result) {
+  T n = 0;
+
+  bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
+                (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
+  char* remainder;
+  errno = 0; // errno is thread safe
+  if (!parse_integer(s, &remainder, (is_hex ? 16 : 10), &n) || errno != 0) {
+    return false;
+  }
+
+  // Fail if no number was read at all or if the remainder contains more than a single non-digit character.
+  if (remainder == s || strlen(remainder) > 1) {
+    return false;
+  }
+  T g = (T)G;
+  T m = (T)M;
+  T k = (T)K;
+  *result = n;
+  switch (*remainder) {
+    case 'T': case 't':
+      if (!_multiply(result, g)) return false;
+      if (!_multiply(result, k)) return false;
+      return true;
+    case 'G': case 'g':
+      if (!_multiply(result, g)) return false;
+      return true;
+    case 'M': case 'm':
+      if (!_multiply(result, m)) return false;
+      return true;
+    case 'K': case 'k':
+      if (!_multiply(result, k)) return false;
+      return true;
+    case '\0':
+      return true;
+    default:
+      return false;
+  }
+}
+
 // Parses a size specification string.
 bool Arguments::atojulong(const char *s, julong* result) {
   julong n = 0;
@@ -837,68 +919,56 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin
 }
 
 static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
-  julong v;
-  int int_v;
-  intx intx_v;
-  bool is_neg = false;
+  //if (0) xxxtest();
 
   if (flag == NULL) {
     return false;
   }
 
-  // Check the sign first since atojulong() parses only unsigned values.
-  if (*value == '-') {
-    if (!flag->is_intx() && !flag->is_int()) {
+  if (0) {
+
+  } else if (flag->is_int()) {
+    int v;
+    if (!parse_integer(value, &v)) {
       return false;
     }
-    value++;
-    is_neg = true;
-  }
-  if (!Arguments::atojulong(value, &v)) {
-    return false;
-  }
-  if (flag->is_int()) {
-    int_v = (int) v;
-    if (is_neg) {
-      int_v = -int_v;
-    }
-    if ((!is_neg && v > max_jint) || (is_neg && -(intx)v < min_jint)) {
-      return false;
-    }
-    return JVMFlagAccess::set_int(flag, &int_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_int(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
-    if (v > max_juint) {
+    uint v;
+    if (!parse_integer(value, &v)) {
       return false;
     }
-    uint uint_v = (uint) v;
-    return JVMFlagAccess::set_uint(flag, &uint_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_uint(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
-    intx_v = (intx) v;
-    if (is_neg) {
-      if (intx_v != min_intx) {
-        intx_v = - intx_v;
-        if (intx_v > 0) {
-          return false; // underflow
-        }
-      }
-    } else {
-      if (intx_v < 0) {
-        return false; // overflow
-      }
+    intx v;
+    if (!parse_integer(value, &v)) {
+      return false;
     }
-    return JVMFlagAccess::set_intx(flag, &intx_v, origin) == JVMFlag::SUCCESS;
+    return JVMFlagAccess::set_intx(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
-    uintx uintx_v = (uintx) v;
-    return JVMFlagAccess::set_uintx(flag, &uintx_v, origin) == JVMFlag::SUCCESS;
+    uintx v;
+    if (!parse_integer(value, &v)) {
+      return false;
+    }
+    return JVMFlagAccess::set_uintx(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
-    uint64_t uint64_t_v = (uint64_t) v;
-    return JVMFlagAccess::set_uint64_t(flag, &uint64_t_v, origin) == JVMFlag::SUCCESS;
+    uint64_t v;
+    if (!parse_integer(value, &v)) {
+      return false;
+    }
+    return JVMFlagAccess::set_uint64_t(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
-    size_t size_t_v = (size_t) v;
-    return JVMFlagAccess::set_size_t(flag, &size_t_v, origin) == JVMFlag::SUCCESS;
+    size_t v;
+    if (!parse_integer(value, &v)) {
+      return false;
+    }
+    return JVMFlagAccess::set_size_t(flag, &v, origin) == JVMFlag::SUCCESS;
+#if 0
   } else if (flag->is_double()) {
+    // HUH???
     double double_v = (double) v;
     return JVMFlagAccess::set_double(flag, &double_v, origin) == JVMFlag::SUCCESS;
+#endif
   } else {
     return false;
   }
