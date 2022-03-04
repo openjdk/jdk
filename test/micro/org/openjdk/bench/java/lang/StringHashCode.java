@@ -26,11 +26,14 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Performance test of String.hashCode() function
@@ -76,5 +79,93 @@ public class StringHashCode {
     @Benchmark
     public int empty() {
         return empty.hashCode();
+    }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Thread)
+    public static class Algorithm {
+        private final static byte[] alphabet;
+
+        static {
+            try {
+                alphabet = "abcdefghijklmnopqrstuvwxyz".getBytes("US-ASCII");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Param({"0", "1", "10", "100", "1000", "10000"})
+        private int size;
+
+        private byte[] value;
+
+        @Setup
+        public void setup() throws UnsupportedEncodingException {
+            value = new byte[size];
+            for (int i = 0; i < size; i++) {
+                value[i] = alphabet[ThreadLocalRandom.current().nextInt(alphabet.length)];
+            }
+        }
+
+        @Benchmark
+        public int scalar() {
+            int h = 0;
+            int i = 0;
+            for (; i < value.length; i++) {
+                h = 31 * h + (value[i] & 0xff);
+            }
+            return h;
+        }
+
+        @Benchmark
+        public int scalarUnrolled8() {
+            int h = 0;
+            int i = 0;
+            for (; i < (value.length & ~(8 - 1)); i += 8) {
+                h = -1807454463 * h                   +
+                     1742810335 * (value[i+0] & 0xff) +
+                      887503681 * (value[i+1] & 0xff) +
+                       28629151 * (value[i+2] & 0xff) +
+                         923521 * (value[i+3] & 0xff) +
+                          29791 * (value[i+4] & 0xff) +
+                            961 * (value[i+5] & 0xff) +
+                             31 * (value[i+6] & 0xff) +
+                              1 * (value[i+7] & 0xff);
+            }
+            for (; i < value.length; i++) {
+                h = 31 * h + (value[i] & 0xff);
+            }
+            return h;
+        }
+
+        @Benchmark
+        public int scalarUnrolled16() {
+            int h = 0;
+            int i = 0;
+            for (; i < (value.length & ~(16 - 1)); i += 16) {
+                h =  1353309697 * h                    +
+                     -510534177 * (value[i+ 0] & 0xff) +
+                     1507551809 * (value[i+ 1] & 0xff) +
+                     -505558625 * (value[i+ 2] & 0xff) +
+                     -293403007 * (value[i+ 3] & 0xff) +
+                      129082719 * (value[i+ 4] & 0xff) +
+                    -1796951359 * (value[i+ 5] & 0xff) +
+                     -196513505 * (value[i+ 6] & 0xff) +
+                    -1807454463 * (value[i+ 7] & 0xff) +
+                     1742810335 * (value[i+ 8] & 0xff) +
+                      887503681 * (value[i+ 9] & 0xff) +
+                       28629151 * (value[i+10] & 0xff) +
+                         923521 * (value[i+11] & 0xff) +
+                          29791 * (value[i+12] & 0xff) +
+                            961 * (value[i+13] & 0xff) +
+                             31 * (value[i+14] & 0xff) +
+                              1 * (value[i+15] & 0xff);
+            }
+            for (; i < value.length; i++) {
+                h = 31 * h + (value[i] & 0xff);
+            }
+            return h;
+        }
     }
 }
