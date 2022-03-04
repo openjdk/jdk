@@ -353,7 +353,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "\n" +
              "run [class [args]]        -- start execution of application's main class\n" +
              "\n" +
-             "threads [threadgroup]     -- list threads in threadgroup. uses current threadgroup if none specified.\n" +
+             "threads [threadgroup]     -- list threads in threadgroup. Use current threadgroup if none specified.\n" +
              "thread <thread id>        -- set default thread\n" +
              "suspend [thread id(s)]    -- suspend threads (default: all)\n" +
              "resume [thread id(s)]     -- resume threads (default: all)\n" +
