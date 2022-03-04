@@ -2090,7 +2090,7 @@ void PrintClassClosure::do_klass(Klass* k)  {
   // klass pointer
   _st->print(INTPTR_FORMAT "  ", p2i(k));
   // klass size
-  _st->print("%-4d  ", k->size());
+  _st->print("%4d  ", k->size());
   // initialization state
   if (k->is_instance_klass()) {
     _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
