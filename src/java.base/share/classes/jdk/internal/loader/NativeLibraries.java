@@ -190,7 +190,7 @@ public final class NativeLibraries {
                 }
             }
 
-            NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin, true);
+            NativeLibraryImpl lib = new NativeLibraryImpl(fromClass, name, isBuiltin);
             // load the native library
             NativeLibraryContext.push(lib);
             try {
@@ -281,7 +281,7 @@ public final class NativeLibraries {
      * the VM when it loads the library, and used by the VM to pass the correct
      * version of JNI to the native methods.
      */
-    static class NativeLibraryImpl implements NativeLibrary {
+    static class NativeLibraryImpl extends NativeLibrary {
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
         final Class<?> fromClass;
@@ -290,21 +290,16 @@ public final class NativeLibraries {
         final String name;
         // Indicates if the native library is linked into the VM
         final boolean isBuiltin;
-        // Indicate if this is JNI native library
-        final boolean isJNI;
 
         // opaque handle to native library, used in native code.
         long handle;
         // the version of JNI environment the native library requires.
         int jniVersion;
 
-        NativeLibraryImpl(Class<?> fromClass, String name, boolean isBuiltin, boolean isJNI) {
-            assert !isBuiltin || isJNI : "a builtin native library must be JNI library";
-
+        NativeLibraryImpl(Class<?> fromClass, String name, boolean isBuiltin) {
             this.fromClass = fromClass;
             this.name = name;
             this.isBuiltin = isBuiltin;
-            this.isJNI = isJNI;
         }
 
         @Override
@@ -314,7 +309,7 @@ public final class NativeLibraries {
 
         @Override
         public long find(String name) {
-            return findEntry0(this, name);
+            return findEntry0(handle, name);
         }
 
         /*
@@ -322,7 +317,7 @@ public final class NativeLibraries {
          * when this class loader becomes phantom reachable.
          */
         private Runnable unloader() {
-            return new Unloader(name, handle, isBuiltin, isJNI);
+            return new Unloader(name, handle, isBuiltin);
         }
 
         /*
@@ -333,14 +328,14 @@ public final class NativeLibraries {
                 throw new InternalError("Native library " + name + " has been loaded");
             }
 
-            return load(this, name, isBuiltin, isJNI, loadLibraryOnlyIfPresent);
+            return load(this, name, isBuiltin, loadLibraryOnlyIfPresent);
         }
 
         /*
          * Close this native library.
          */
         void close() {
-            unload(name, isBuiltin, isJNI, handle);
+            unload(name, isBuiltin, handle);
         }
     }
 
@@ -352,15 +347,13 @@ public final class NativeLibraries {
         // This represents the context when a native library is unloaded
         // and getFromClass() will return null,
         static final NativeLibraryImpl UNLOADER =
-                new NativeLibraryImpl(null, "dummy", false, false);
+                new NativeLibraryImpl(null, "dummy", false);
 
         final String name;
         final long handle;
         final boolean isBuiltin;
-        final boolean isJNI;
 
-        Unloader(String name, long handle, boolean isBuiltin, boolean isJNI) {
-            assert !isBuiltin || isJNI : "a builtin native library must be JNI library";
+        Unloader(String name, long handle, boolean isBuiltin) {
             if (handle == 0) {
                 throw new IllegalArgumentException(
                         "Invalid handle for native library " + name);
@@ -369,7 +362,6 @@ public final class NativeLibraries {
             this.name = name;
             this.handle = handle;
             this.isBuiltin = isBuiltin;
-            this.isJNI = isJNI;
         }
 
         @Override
@@ -377,12 +369,12 @@ public final class NativeLibraries {
             acquireNativeLibraryLock(name);
             try {
                 /* remove the native library name */
-                if (isJNI && !loadedLibraryNames.remove(name)) {
+                if (!loadedLibraryNames.remove(name)) {
                     throw new IllegalStateException(name + " has already been unloaded");
                 }
                 NativeLibraryContext.push(UNLOADER);
                 try {
-                    unload(name, isBuiltin, isJNI, handle);
+                    unload(name, isBuiltin, handle);
                 } finally {
                     NativeLibraryContext.pop();
                 }
@@ -524,12 +516,22 @@ public final class NativeLibraries {
         return NativeLibraryContext.peek().fromClass;
     }
 
-    // JNI FindClass expects the caller class if invoked from JNI_OnLoad
-    // and JNI_OnUnload is NativeLibrary class
+    /*
+     * Return true if the given library is successfully loaded.
+     * If the given library cannot be loaded for any reason,
+     * if throwExceptionIfFail is false, then this method returns false;
+     * otherwise, UnsatisfiedLinkError will be thrown.
+     *
+     * JNI FindClass expects the caller class if invoked from JNI_OnLoad
+     * and JNI_OnUnload is NativeLibrary class.
+     */
     private static native boolean load(NativeLibraryImpl impl, String name,
-                                       boolean isBuiltin, boolean isJNI,
+                                       boolean isBuiltin,
                                        boolean throwExceptionIfFail);
-    private static native void unload(String name, boolean isBuiltin, boolean isJNI, long handle);
+    /*
+     * Unload the named library.  JNI_OnUnload, if present, will be invoked
+     * before the native library is unloaded.
+     */
+    private static native void unload(String name, boolean isBuiltin, long handle);
     private static native String findBuiltinLib(String name);
-    private static native long findEntry0(NativeLibraryImpl lib, String name);
 }

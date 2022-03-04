@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8250768 8261976 8277300
+ * @bug      8250768 8261976 8277300 8282452
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -119,5 +119,19 @@ public class TestPreview extends JavadocTester {
                     "<a href=\"API3.html#test()\"><code>API3.test()</code></a><sup><a href=\"API3.html#preview-test()\">PREVIEW</a></sup>");
         checkOutput("api2/api/API3.html", true,
                     "<div class=\"block\"><a href=\"#test()\"><code>test()</code></a><sup><a href=\"#preview-test()\">PREVIEW</a></sup></div>");
+    }
+
+    @Test
+    public void test8282452() {
+        javadoc("-d", "out-8282452",
+                "--patch-module", "java.base=" + Paths.get(testSrc, "api").toAbsolutePath().toString(),
+                "--add-exports", "java.base/preview=m",
+                "--source-path", Paths.get(testSrc, "api").toAbsolutePath().toString(),
+                "--show-packages=all",
+                "preview");
+        checkExit(Exit.OK);
+
+        checkOutput("java.base/preview/NoPreview.html", false,
+                    "refers to one or more preview");
     }
 }

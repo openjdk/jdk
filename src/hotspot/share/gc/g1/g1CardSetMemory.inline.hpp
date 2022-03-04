@@ -34,29 +34,8 @@
 #include "utilities/globalCounter.inline.hpp"
 
 template <class Slot>
-G1CardSetContainer* volatile* G1CardSetAllocator<Slot>::next_ptr(G1CardSetContainer& slot) {
-  return slot.next_addr();
-}
-
-template <class Slot>
 Slot* G1CardSetAllocator<Slot>::allocate() {
-  assert(_segmented_array.slot_size() > 0, "instance size not set.");
-
-  if (num_free_slots() > 0) {
-    // Pop under critical section to deal with ABA problem
-    // Other solutions to the same problem are more complicated (ref counting, HP)
-    GlobalCounter::CriticalSection cs(Thread::current());
-
-    G1CardSetContainer* container = _free_slots_list.pop();
-    if (container != nullptr) {
-      Slot* slot = reinterpret_cast<Slot*>(reinterpret_cast<char*>(container));
-      Atomic::sub(&_num_free_slots, 1u);
-      guarantee(is_aligned(slot, 8), "result " PTR_FORMAT " not aligned", p2i(slot));
-      return slot;
-    }
-  }
-
-  Slot* slot = _segmented_array.allocate();
+  Slot* slot = ::new (_free_slots_list.allocate()) Slot();
   assert(slot != nullptr, "must be");
   return slot;
 }
@@ -72,11 +51,6 @@ inline uint8_t* G1CardSetMemoryManager::allocate_node() {
 
 inline void G1CardSetMemoryManager::free_node(void* value) {
   free(0, value);
-}
-
-template <class Slot>
-inline uint G1CardSetAllocator<Slot>::num_free_slots() const {
-  return Atomic::load(&_num_free_slots);
 }
 
 #endif // SHARE_GC_G1_G1CARDSETMEMORY_INLINE_HPP

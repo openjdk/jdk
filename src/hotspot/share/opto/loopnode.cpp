@@ -690,8 +690,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 
     Node* mem = safepoint->in(TypeFunc::Memory);
 
-    // We can only use that safepoint if there's not side effect
-    // between the backedge and the safepoint.
+    // We can only use that safepoint if there's no side effect between the backedge and the safepoint.
 
     // mm is used for book keeping
     MergeMemNode* mm = NULL;
@@ -1621,16 +1620,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     return false;
   }
 
-  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint &&
-          ((iv_bt == T_INT && LoopStripMiningIter != 0) ||
-           iv_bt == T_LONG)) {
-    // Leaving the safepoint on the backedge and creating a
-    // CountedLoop will confuse optimizations. We can't move the
-    // safepoint around because its jvm state wouldn't match a new
-    // location. Give up on that loop.
-    return false;
-  }
-
   Node* iftrue = back_control;
   uint iftrue_op = iftrue->Opcode();
   Node* iff = iftrue->in(0);
@@ -1859,6 +1848,37 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     }
   }
 
+  Node* sfpt = NULL;
+  if (loop->_child == NULL) {
+    sfpt = find_safepoint(back_control, x, loop);
+  } else {
+    sfpt = iff->in(0);
+    if (sfpt->Opcode() != Op_SafePoint) {
+      sfpt = NULL;
+    }
+  }
+
+  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
+    Node* backedge_sfpt = x->in(LoopNode::LoopBackControl);
+    if (((iv_bt == T_INT && LoopStripMiningIter != 0) ||
+         iv_bt == T_LONG) &&
+        sfpt == NULL) {
+      // Leaving the safepoint on the backedge and creating a
+      // CountedLoop will confuse optimizations. We can't move the
+      // safepoint around because its jvm state wouldn't match a new
+      // location. Give up on that loop.
+      return false;
+    }
+    if (is_deleteable_safept(backedge_sfpt)) {
+      lazy_replace(backedge_sfpt, iftrue);
+      if (loop->_safepts != NULL) {
+        loop->_safepts->yank(backedge_sfpt);
+      }
+      loop->_tail = iftrue;
+    }
+  }
+
+
 #ifdef ASSERT
   if (iv_bt == T_INT &&
       !x->as_Loop()->is_loop_nest_inner_loop() &&
@@ -1896,18 +1916,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       ShouldNotReachHere();
   }
   set_subtree_ctrl(adjusted_limit, false);
-
-  if (iv_bt == T_INT && LoopStripMiningIter == 0) {
-    // Check for SafePoint on backedge and remove
-    Node *sfpt = x->in(LoopNode::LoopBackControl);
-    if (sfpt->Opcode() == Op_SafePoint && is_deleteable_safept(sfpt)) {
-      lazy_replace( sfpt, iftrue );
-      if (loop->_safepts != NULL) {
-        loop->_safepts->yank(sfpt);
-      }
-      loop->_tail = iftrue;
-    }
-  }
 
   // Build a canonical trip test.
   // Clone code, as old values may be in use.
@@ -1980,13 +1988,11 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   assert(iff->outcnt() == 0, "should be dead now");
   lazy_replace( iff, le ); // fix 'get_ctrl'
 
-  Node *sfpt2 = le->in(0);
-
   Node* entry_control = init_control;
   bool strip_mine_loop = iv_bt == T_INT &&
                          LoopStripMiningIter > 1 &&
                          loop->_child == NULL &&
-                         sfpt2->Opcode() == Op_SafePoint &&
+                         sfpt != NULL &&
                          !loop->_has_call;
   IdealLoopTree* outer_ilt = NULL;
   if (strip_mine_loop) {
@@ -2012,30 +2018,30 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
     // Check for immediately preceding SafePoint and remove
-    if (sfpt2->Opcode() == Op_SafePoint && (LoopStripMiningIter != 0 || is_deleteable_safept(sfpt2))) {
+    if (sfpt != NULL && (LoopStripMiningIter != 0 || is_deleteable_safept(sfpt))) {
       if (strip_mine_loop) {
         Node* outer_le = outer_ilt->_tail->in(0);
-        Node* sfpt = sfpt2->clone();
-        sfpt->set_req(0, iffalse);
-        outer_le->set_req(0, sfpt);
+        Node* sfpt_clone = sfpt->clone();
+        sfpt_clone->set_req(0, iffalse);
+        outer_le->set_req(0, sfpt_clone);
 
-        Node* polladdr = sfpt->in(TypeFunc::Parms);
+        Node* polladdr = sfpt_clone->in(TypeFunc::Parms);
         if (polladdr != nullptr && polladdr->is_Load()) {
           // Polling load should be pinned outside inner loop.
           Node* new_polladdr = polladdr->clone();
           new_polladdr->set_req(0, iffalse);
           _igvn.register_new_node_with_optimizer(new_polladdr, polladdr);
           set_ctrl(new_polladdr, iffalse);
-          sfpt->set_req(TypeFunc::Parms, new_polladdr);
+          sfpt_clone->set_req(TypeFunc::Parms, new_polladdr);
         }
         // When this code runs, loop bodies have not yet been populated.
         const bool body_populated = false;
-        register_control(sfpt, outer_ilt, iffalse, body_populated);
-        set_idom(outer_le, sfpt, dom_depth(sfpt));
+        register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
+        set_idom(outer_le, sfpt_clone, dom_depth(sfpt_clone));
       }
-      lazy_replace( sfpt2, sfpt2->in(TypeFunc::Control));
+      lazy_replace(sfpt, sfpt->in(TypeFunc::Control));
       if (loop->_safepts != NULL) {
-        loop->_safepts->yank(sfpt2);
+        loop->_safepts->yank(sfpt);
       }
     }
   }
@@ -3663,7 +3669,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
   if (_head->is_CountedLoop() ||
       phase->is_counted_loop(_head, loop, T_INT)) {
 
-    if (LoopStripMiningIter == 0 || (LoopStripMiningIter > 1 && _child == NULL)) {
+    if (LoopStripMiningIter == 0 || _head->as_CountedLoop()->is_strip_mined()) {
       // Indicate we do not need a safepoint here
       _has_sfpt = 1;
     }
@@ -4089,11 +4095,11 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
-void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
+void PhaseIdealLoop::build_and_optimize() {
   assert(!C->post_loop_opts_phase(), "no loop opts allowed");
 
-  bool do_split_ifs = (mode == LoopOptsDefault);
-  bool skip_loop_opts = (mode == LoopOptsNone);
+  bool do_split_ifs = (_mode == LoopOptsDefault);
+  bool skip_loop_opts = (_mode == LoopOptsNone);
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -4164,9 +4170,9 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
   bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only &&
-    !bs->is_gc_specific_loop_opts_pass(mode);
+    !bs->is_gc_specific_loop_opts_pass(_mode);
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
-  bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(mode);
+  bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
   if (stop_early && !do_expensive_nodes) {
     return;
   }
@@ -4258,7 +4264,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 
   if (_verify_only) {
     C->restore_major_progress(old_progress);
-    assert(C->unique() == unique, "verification mode made Nodes? ? ?");
+    assert(C->unique() == unique, "verification _mode made Nodes? ? ?");
     assert(_igvn._worklist.size() == orig_worklist_size, "shouldn't push anything");
     return;
   }
@@ -4288,8 +4294,8 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
 #ifndef PRODUCT
   C->verify_graph_edges();
   if (_verify_me) {             // Nested verify pass?
-    // Check to see if the verify mode is broken
-    assert(C->unique() == unique, "non-optimize mode made Nodes? ? ?");
+    // Check to see if the verify _mode is broken
+    assert(C->unique() == unique, "non-optimize _mode made Nodes? ? ?");
     return;
   }
   if (VerifyLoopOptimizations) verify();
@@ -4303,7 +4309,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
-  if (mode == LoopOptsMaxUnroll) {
+  if (_mode == LoopOptsMaxUnroll) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_innermost() && lpt->_allow_optimizations && !lpt->_has_call && lpt->is_counted()) {
@@ -4324,7 +4330,7 @@ void PhaseIdealLoop::build_and_optimize(LoopOptsMode mode) {
     return;
   }
 
-  if (bs->optimize_loops(this, mode, visited, nstack, worklist)) {
+  if (bs->optimize_loops(this, _mode, visited, nstack, worklist)) {
     return;
   }
 
@@ -5755,7 +5761,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
-  if (least != early) {
+  if (least != early && !BarrierSet::barrier_set()->barrier_set_c2()->is_gc_specific_loop_opts_pass(_mode)) {
     Node* ctrl_out = least->unique_ctrl_out_or_null();
     if (ctrl_out != NULL && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl) &&
