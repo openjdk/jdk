@@ -27,6 +27,7 @@
 #include "java_awt_event_InputEvent.h"
 #include "awt_Component.h"
 #include <winuser.h>
+#include <stdlib.h>
 
 static int signum(int i) {
   // special version of signum which returns 1 when value is 0
@@ -38,10 +39,52 @@ static void MouseMove(jint x, jint y)
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.time = 0;
-    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
-    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
-    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+    static int init = 0 ;
+
+
+     char* pValue;
+     size_t len;
+     errno_t err = _dupenv_s(&pValue, &len, "OLD_CODE");
+
+    if(init == 0 )
+    {
+        if ((pValue) && ((atoi(pValue)) ==1))
+        {
+            printf("Using Current JDK code  \n");
+        }
+        else
+        {
+            printf("Using JDK code that fixes JDK-8249592  \n");
+        }
+
+        init++;
+    }
+
+     if ((pValue) && (*pValue == '1'))
+     {
+        mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
+        mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
+        mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+    }
+    else
+    {
+
+        x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+        y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+        mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE | MOUSEEVENTF_VIRTUALDESK;
+
+        int scW = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+        int scH = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+        mouseInput.mi.dx = (x * 65536 + scW - 1) / scW;
+        mouseInput.mi.dy = (y * 65536 + scH - 1) / scH;
+
+
+
+
+    }
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
+
 }
 
 static void MousePress(jint buttonMask)
