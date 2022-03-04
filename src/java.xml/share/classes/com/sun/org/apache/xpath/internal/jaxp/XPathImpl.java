@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -32,6 +32,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFunctionResolver;
 import javax.xml.xpath.XPathVariableResolver;
 import jdk.xml.internal.JdkXmlFeatures;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -45,6 +46,8 @@ import org.xml.sax.InputSource;
  * Updated 12/04/2014:
  * New methods: evaluateExpression
  * Refactored to share code with XPathExpressionImpl.
+ *
+ * @LastModified: Jan 2022
  */
 public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
 
@@ -54,18 +57,19 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
     private NamespaceContext namespaceContext=null;
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr) {
-        this(vr, fr, false, new JdkXmlFeatures(false));
+        this(vr, fr, false, new JdkXmlFeatures(false), new XMLSecurityManager(true));
     }
 
     XPathImpl(XPathVariableResolver vr, XPathFunctionResolver fr,
-            boolean featureSecureProcessing, JdkXmlFeatures featureManager) {
+            boolean featureSecureProcessing, JdkXmlFeatures featureManager,
+            XMLSecurityManager xmlSecMgr) {
         this.origVariableResolver = this.variableResolver = vr;
         this.origFunctionResolver = this.functionResolver = fr;
         this.featureSecureProcessing = featureSecureProcessing;
         this.featureManager = featureManager;
         overrideDefaultParser = featureManager.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
-
+        this.xmlSecMgr = xmlSecMgr;
     }
 
 
@@ -113,8 +117,8 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
     private XObject eval(String expression, Object contextItem)
         throws TransformerException {
         requireNonNull(expression, "XPath expression");
-        com.sun.org.apache.xpath.internal.XPath xpath = new com.sun.org.apache.xpath.internal.XPath(expression,
-            null, prefixResolver, com.sun.org.apache.xpath.internal.XPath.SELECT);
+        XPath xpath = new XPath(expression, null, prefixResolver, XPath.SELECT,
+                null, null, xmlSecMgr);
 
         return eval(contextItem, xpath);
     }
@@ -159,8 +163,8 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
         throws XPathExpressionException {
         requireNonNull(expression, "XPath expression");
         try {
-            com.sun.org.apache.xpath.internal.XPath xpath = new XPath (expression, null,
-                    prefixResolver, com.sun.org.apache.xpath.internal.XPath.SELECT);
+            XPath xpath = new XPath(expression, null, prefixResolver, XPath.SELECT,
+                    null, null, xmlSecMgr);
             // Can have errorListener
             XPathExpressionImpl ximpl = new XPathExpressionImpl (xpath,
                     prefixResolver, functionResolver, variableResolver,
