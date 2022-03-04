@@ -51,6 +51,7 @@
 <li><a href="#atomic">&lt;atomic&gt;</a></li>
 <li><a href="#uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#local-function-objects">Local Function Objects</a></li>
+<li><a href="#inheriting-constructors">Inheriting constructors</a></li>
 <li><a href="#additional-permitted-features">Additional Permitted Features</a></li>
 <li><a href="#excluded-features">Excluded Features</a></li>
 <li><a href="#undecided-features">Undecided Features</a></li>
@@ -405,6 +406,10 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <ul>
 <li>Make () more optional for lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html">p1102r2</a>)</li>
 </ul>
+<h3 id="inheriting-constructors">Inheriting constructors</h3>
+<p>Do not use <em>inheriting constructors</em> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm">n2540</a>).</p>
+<p>C++11 provides simple syntax allowing a class to inherit the constructors of a base class. Unfortunately there are a number of problems with the original specification, and C++17 contains significant revisions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html" title="p0136r1">p0136r1</a> opens with a list of 8 Core Issues). Since HotSpot doesn't support use of C++17, use of inherited constructors could run into those problems. Such uses might also change behavior in a future HotSpot update to use C++17 or later, potentially in subtle ways that could lead to hard to diagnose problems. Because of this, HotSpot code must not use inherited constructors.</p>
+<p>Note that gcc7 provides the <code>-fnew-inheriting-ctors</code> option to use the <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html" title="p0136r1">p0136r1</a> semantics. This is enabled by default when using C++17 or later. It is also enabled by default for <code>fabi-version=11</code> (introduced by gcc7) or higher when using C++11/14, as the change is considered a Defect Report that applies to those versions. Earlier versions of gcc don't have that option, and other supported compilers may not have anything similar.</p>
 <h3 id="additional-permitted-features">Additional Permitted Features</h3>
 <ul>
 <li><p><code>constexpr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>) (<a href="https://isocpp.org/files/papers/N3652.html">n3652</a>)</p></li>
