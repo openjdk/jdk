@@ -7746,18 +7746,6 @@ instruct addP_rReg_imm(rRegP dst, immL32 src, rFlagsReg cr)
 
 // XXX addP mem ops ????
 
-instruct leaP_rReg_imm(rRegP dst, rRegP src0, immL32 src1)
-%{
-  match(Set dst (AddP src0 src1));
-
-  ins_cost(110);
-  format %{ "leaq    $dst, [$src0 + $src1]\t# ptr" %}
-  ins_encode %{
-    __ leaq($dst$$Register, Address($src0$$Register, $src1$$constant));
-  %}
-  ins_pipe(ialu_reg_reg);
-%}
-
 instruct checkCastPP(rRegP dst)
 %{
   match(Set dst (CheckCastPP dst));
