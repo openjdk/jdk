@@ -178,8 +178,6 @@ public:
     _next = next;
   }
 
-  ~G1CardSetContainer() = default;
-
   // Log of largest card index that can be stored in any G1CardSetContainer
   static uint LogCardsPerRegionLimit;
 };

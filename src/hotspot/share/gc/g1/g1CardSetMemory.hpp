@@ -96,8 +96,8 @@ public:
                          G1CardSetFreeList* free_segment_list);
   ~G1CardSetAllocator();
 
-  G1CardSetContainer* allocate();
-  void free(G1CardSetContainer* slot);
+  void* allocate();
+  void free(void* slot);
 
   // Deallocate all segments to the free segment list and reset this allocator. Must
   // be called in a globally synchronized area.

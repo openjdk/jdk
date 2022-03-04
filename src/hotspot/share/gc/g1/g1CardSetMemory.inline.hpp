@@ -48,8 +48,8 @@ inline uint G1CardSetAllocator::num_segments() const {
   return _segmented_array.num_segments();
 }
 
-inline G1CardSetContainer* G1CardSetAllocator::allocate() {
-  G1CardSetContainer* slot = ::new (_free_slots_list.allocate()) G1CardSetContainer();
+inline void* G1CardSetAllocator::allocate() {
+  void* slot = _free_slots_list.allocate();
   assert(slot != nullptr, "must be");
   return slot;
 }

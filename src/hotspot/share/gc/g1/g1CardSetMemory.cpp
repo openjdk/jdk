@@ -44,9 +44,8 @@ G1CardSetAllocator::~G1CardSetAllocator() {
   drop_all();
 }
 
-void G1CardSetAllocator::free(G1CardSetContainer* slot) {
+void G1CardSetAllocator::free(void* slot) {
   assert(slot != nullptr, "precondition");
-  slot->~G1CardSetContainer();
   _free_slots_list.release(slot);
 }
 
@@ -101,7 +100,7 @@ G1CardSetMemoryManager::~G1CardSetMemoryManager() {
 
 void G1CardSetMemoryManager::free(uint type, void* value) {
   assert(type < num_mem_object_types(), "must be");
-  _allocators[type].free((G1CardSetContainer*)value);
+  _allocators[type].free(value);
 }
 
 void G1CardSetMemoryManager::flush() {
