@@ -124,7 +124,7 @@ static void save_memory_to_file(char* addr, size_t size) {
       addr += result;
     }
 
-    result = os::close(fd);
+    result = ::close(fd);
     if (PrintMiscellaneous && Verbose) {
       if (result == OS_ERR) {
         warning("Could not close %s: %s\n", destfile, os::strerror(errno));
@@ -330,7 +330,7 @@ static DIR *open_directory_secure(const char* dirname) {
   // Determine if the open directory is secure.
   if (!is_dirfd_secure(fd)) {
     // The directory is not a secure directory.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
@@ -338,21 +338,21 @@ static DIR *open_directory_secure(const char* dirname) {
   dirp = ::opendir(dirname);
   if (dirp == NULL) {
     // The directory doesn't exist, close fd and return.
-    os::close(fd);
+    ::close(fd);
     return dirp;
   }
 
   // Check to make sure fd and dirp are referencing the same file system object.
   if (!is_same_fsobject(fd, AIX_ONLY(dirp->dd_fd) NOT_AIX(dirfd(dirp)))) {
     // The directory is not secure.
-    os::close(fd);
+    ::close(fd);
     os::closedir(dirp);
     dirp = NULL;
     return dirp;
   }
 
   // Close initial open now that we know directory is secure
-  os::close(fd);
+  ::close(fd);
 
   return dirp;
 }
@@ -905,7 +905,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   if (result != -1) {
     return fd;
   } else {
-    os::close(fd);
+    ::close(fd);
     return -1;
   }
 }

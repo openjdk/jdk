@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -483,6 +483,8 @@ public class Resources extends java.util.ListResourceBundle {
                         "Subject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignature algorithm: %4$s\n"},
         {"verified.by.s.in.s.weak", "Verified by %1$s in %2$s with a %3$s"},
         {"whose.sigalg.disabled", "%1$s uses the %2$s signature algorithm which is considered a security risk and is disabled."},
+        {"whose.sigalg.usagesignedjar", "%1$s uses the %2$s signature algorithm which is considered a security risk and cannot be used to sign JARs after %3$s."},
+        {"Unable.to.parse.denyAfter.string.in.exception.message", "Unable to parse denyAfter date string in exception message"},
         {"whose.sigalg.weak", "%1$s uses the %2$s signature algorithm which is considered a security risk. This algorithm will be disabled in a future update."},
         {"whose.key.disabled", "%1$s uses a %2$s which is considered a security risk and is disabled."},
         {"whose.key.weak", "%1$s uses a %2$s which is considered a security risk. This key size will be disabled in a future update."},

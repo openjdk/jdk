@@ -38,6 +38,7 @@ class DynamicArchiveTestBase {
     private static boolean executedIn_run = false;
     private static boolean autoMode = false;  // -Xshare:auto
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static String[] baseArchiveOptions = new String[] {};
 
     public static interface DynamicArchiveTest {
         public void run() throws Exception;
@@ -93,6 +94,10 @@ class DynamicArchiveTestBase {
     }
     public static String getNewArchiveName(String stem) {
         return TestCommon.getNewArchiveName(stem);
+    }
+
+    public static void setBaseArchiveOptions(String... opts) {
+        baseArchiveOptions = opts;
     }
 
     /**
@@ -286,7 +291,7 @@ class DynamicArchiveTestBase {
     private static String getTempBaseArchive() throws Exception {
         if (tempBaseArchive == null) {
             tempBaseArchive = getNewArchiveName("tempBaseArchive");
-            TestCommon.dumpBaseArchive(tempBaseArchive);
+            TestCommon.dumpBaseArchive(tempBaseArchive, baseArchiveOptions);
         }
         return tempBaseArchive;
     }

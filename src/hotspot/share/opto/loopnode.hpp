@@ -1042,9 +1042,10 @@ private:
   Node **_idom;                  // Array of immediate dominators
   uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
+  LoopOptsMode _mode;
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(LoopOptsMode mode);
+  void build_and_optimize();
 
   // Dominators for the sea of nodes
   void Dominators();
@@ -1055,9 +1056,10 @@ private:
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
+    _mode(mode),
     _nodes_required(UINT_MAX) {
     assert(mode != LoopOptsVerify, "wrong constructor to verify IdealLoop");
-    build_and_optimize(mode);
+    build_and_optimize();
   }
 
 #ifndef PRODUCT
@@ -1068,8 +1070,9 @@ private:
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
+    _mode(LoopOptsVerify),
     _nodes_required(UINT_MAX) {
-    build_and_optimize(LoopOptsVerify);
+    build_and_optimize();
   }
 #endif
 
@@ -1449,7 +1452,8 @@ public:
   // Rework addressing expressions to get the most loop-invariant stuff
   // moved out.  We'd like to do all associative operators, but it's especially
   // important (common) to do address expressions.
-  Node *remix_address_expressions( Node *n );
+  Node* remix_address_expressions(Node* n);
+  Node* remix_address_expressions_add_left_shift(Node* n, IdealLoopTree* n_loop, Node* n_ctrl, BasicType bt);
 
   // Convert add to muladd to generate MuladdS2I under certain criteria
   Node * convert_add_to_muladd(Node * n);

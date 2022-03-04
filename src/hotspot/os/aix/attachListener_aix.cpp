@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
-#include "services/dtraceAttacher.hpp"
 
 #include <signal.h>
 #include <sys/socket.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,6 +45,7 @@ protected:
   static int _dcache_line_size;
   static int _icache_line_size;
   static int _initial_sve_vector_length;
+  static bool _rop_protection;
 
   static SpinWait _spin_wait;
 
@@ -114,10 +115,11 @@ public:
     decl(SHA3,          "sha3",          17)  \
     decl(SHA512,        "sha512",        21)  \
     decl(SVE,           "sve",           22)  \
+    decl(PACA,          "paca",          30)  \
     /* flags above must follow Linux HWCAP */ \
     decl(SVE2,          "sve2",          28)  \
     decl(STXR_PREFETCH, "stxr_prefetch", 29)  \
-    decl(A53MAC,        "a53mac",        30)
+    decl(A53MAC,        "a53mac",        31)
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -156,6 +158,7 @@ public:
 
   static void initialize_cpu_information(void);
 
+  static bool use_rop_protection() { return _rop_protection; }
 };
 
 #endif // CPU_AARCH64_VM_VERSION_AARCH64_HPP

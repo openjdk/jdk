@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -952,9 +953,29 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         Element e = env.trees.getElement(getCurrentPath());
-        if (e == null)
-            env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        if (e == null) {
+            reportBadReference(tree);
+        }
         return super.visitReference(tree, ignore);
+    }
+
+    private void reportBadReference(ReferenceTree tree) {
+        if (!env.strictReferenceChecks) {
+            String refSig = tree.getSignature();
+            int sep = refSig.indexOf("/");
+            if (sep > 0) {
+                String moduleName = refSig.substring(0, sep);
+                if (SourceVersion.isName(moduleName)) {
+                    Element m = env.elements.getModuleElement(moduleName);
+                    if (m == null) {
+                        env.messages.warning(REFERENCE, tree, "dc.ref.in.missing.module", moduleName);
+                        return;
+                    }
+                }
+            }
+        }
+
+        env.messages.error(REFERENCE, tree, "dc.ref.not.found");
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -493,17 +494,10 @@ public:
 
   inline void mov(Register dst, address addr)             { mov_immediate64(dst, (uint64_t)addr); }
 
-  inline void mov(Register dst, int imm64)                { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long imm64)               { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long long imm64)          { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned int imm64)       { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long imm64)      { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long long imm64) { mov_immediate64(dst, (uint64_t)imm64); }
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  inline void mov(Register dst, T o)                      { mov_immediate64(dst, (uint64_t)o); }
 
-  inline void movw(Register dst, uint32_t imm32)
-  {
-    mov_immediate32(dst, imm32);
-  }
+  inline void movw(Register dst, uint32_t imm32)          { mov_immediate32(dst, imm32); }
 
   void mov(Register dst, RegisterOrConstant src) {
     if (src.is_register())
@@ -606,9 +600,14 @@ public:
   static bool uses_implicit_null_check(void* address);
 
   static address target_addr_for_insn(address insn_addr, unsigned insn);
+  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
   static address target_addr_for_insn(address insn_addr) {
     unsigned insn = *(unsigned*)insn_addr;
     return target_addr_for_insn(insn_addr, insn);
+  }
+  static address target_addr_for_insn_or_null(address insn_addr) {
+    unsigned insn = *(unsigned*)insn_addr;
+    return target_addr_for_insn_or_null(insn_addr, insn);
   }
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -689,16 +688,16 @@ public:
   void align(int modulus);
 
   // Stack frame creation/removal
-  void enter()
-  {
-    stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
-    mov(rfp, sp);
-  }
-  void leave()
-  {
-    mov(sp, rfp);
-    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
-  }
+  void enter(bool strip_ret_addr = false);
+  void leave();
+
+  // ROP Protection
+  void protect_return_address();
+  void protect_return_address(Register return_reg, Register temp_reg);
+  void authenticate_return_address(Register return_reg = lr);
+  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void strip_return_address();
+  void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
   // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
   // The pointer will be loaded into the thread register.

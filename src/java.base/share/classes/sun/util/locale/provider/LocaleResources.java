@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,21 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import sun.security.action.GetPropertyAction;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
@@ -91,12 +97,41 @@ public class LocaleResources {
     private static final String COMPACT_NUMBER_PATTERNS_CACHEKEY = "CNP";
     private static final String DATE_TIME_PATTERN = "DTP.";
     private static final String RULES_CACHEKEY = "RULE";
+    private static final String SKELETON_PATTERN = "SP.";
+
+    // ResourceBundle key names for skeletons
+    private static final String SKELETON_INPUT_REGIONS_KEY = "DateFormatItemInputRegions";
 
     // TimeZoneNamesBundle exemplar city prefix
     private static final String TZNB_EXCITY_PREFIX = "timezone.excity.";
 
     // null singleton cache value
     private static final Object NULLOBJECT = new Object();
+
+    // RegEx pattern for skeleton validity checking
+    private static final Pattern VALID_SKELETON_PATTERN = Pattern.compile(
+        "(?<date>" +
+        "G{0,5}" +        // Era
+        "y*" +            // Year
+        "Q{0,5}" +        // Quarter
+        "M{0,5}" +        // Month
+        "w*" +            // Week of Week Based Year
+        "E{0,5}" +        // Day of Week
+        "d{0,2})" +       // Day of Month
+        "(?<time>" +
+        "B{0,5}" +        // Period/AmPm of Day
+        "[hHjC]{0,2}" +   // Hour of Day/AmPm
+        "m{0,2}" +        // Minute of Hour
+        "s{0,2}" +        // Second of Minute
+        "[vz]{0,4})");    // Zone
+
+    // Input Skeleton map for "preferred" and "allowed"
+    // Map<"preferred"/"allowed", Map<"region", "skeleton">>
+    private static Map<String, Map<String, String>> inputSkeletons;
+
+    // Skeletons for "j" and "C" input skeleton symbols for this locale
+    private String jPattern;
+    private String CPattern;
 
     LocaleResources(ResourceBundleBasedAdapter adapter, Locale locale) {
         this.locale = locale;
@@ -531,6 +566,202 @@ public class LocaleResources {
         return rb;
     }
 
+    /**
+     * Returns the actual format pattern string based on the requested template
+     * and calendar type for this locale.
+     *
+     * @param requestedTemplate requested template
+     * @param calType calendar type
+     * @throws IllegalArgumentException if the requested template is invalid
+     * @return format pattern string for this locale, null if not found
+     */
+    public String getLocalizedPattern(String requestedTemplate, String calType) {
+        String pattern;
+        String cacheKey = SKELETON_PATTERN + calType + "." + requestedTemplate;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(cacheKey);
+
+        if (data == null || ((pattern = (String) data.get()) == null)) {
+            pattern = getLocalizedPatternImpl(requestedTemplate, calType);
+            cache.put(cacheKey,
+                new ResourceReference(cacheKey, pattern != null ? pattern : "", referenceQueue));
+        } else if ("".equals(pattern)) {
+            // non-existent pattern
+            pattern = null;
+        }
+
+        return pattern;
+    }
+
+    private String getLocalizedPatternImpl(String requestedTemplate, String calType) {
+        initSkeletonIfNeeded();
+
+        // input skeleton substitution
+        var skeleton = substituteInputSkeletons(requestedTemplate);
+
+        // validity check
+        var matcher = VALID_SKELETON_PATTERN.matcher(skeleton);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Requested template \"%s\" is invalid".formatted(requestedTemplate) +
+                    (requestedTemplate.equals(skeleton) ? "." : ", which translated into \"%s\"".formatted(skeleton) +
+                            " after the 'j' or 'C' substitution."));
+        }
+
+        // try to match entire requested template first
+        String matched = matchSkeleton(skeleton, calType);
+        if (matched == null) {
+            // 2.6.2.2 Missing Skeleton Fields
+            var dateMatched = matchSkeleton(matcher.group("date"), calType);
+            var timeMatched = matchSkeleton(matcher.group("time"), calType);
+            if (dateMatched != null && timeMatched != null) {
+                // combine both matches
+                var style = switch (requestedTemplate.replaceAll("[^M]+", "").length()) {
+                    case 4 -> requestedTemplate.indexOf('E') >= 0 ? 0 : 1;
+                    case 3 -> 2;
+                    default -> 3;
+                };
+                var dateTimePattern = getDateTimePattern(null, "DateTimePatterns", style, calType);
+                matched = MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timeMatched, dateMatched);
+            }
+        }
+
+        trace("requested: %s, locale: %s, calType: %s, matched: %s\n", requestedTemplate, locale, calType, matched);
+
+        return matched;
+    }
+
+    private String matchSkeleton(String skeleton, String calType) {
+        // Expand it with possible inferred skeleton stream based on its priority
+        var inferred = possibleInferred(skeleton);
+
+        // Search the closest format pattern string from the resource bundle
+        ResourceBundle r = localeData.getDateFormatData(locale);
+        return inferred
+            .map(s -> ("gregory".equals(calType) ? "" : calType + ".") + "DateFormatItem." + s)
+            .map(key -> r.containsKey(key) ? r.getString(key) : null)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
+    }
+
+    private void initSkeletonIfNeeded() {
+        // "preferred"/"allowed" input skeleton maps
+        if (inputSkeletons == null) {
+            inputSkeletons = new HashMap<>();
+            Pattern p = Pattern.compile("([^:]+):([^;]+);");
+            ResourceBundle r = localeData.getDateFormatData(Locale.ROOT);
+            Stream.of("preferred", "allowed").forEach(type -> {
+                var inputRegionsKey = SKELETON_INPUT_REGIONS_KEY + "." + type;
+                Map<String, String> typeMap = new HashMap<>();
+
+                if (r.containsKey(inputRegionsKey)) {
+                    p.matcher(r.getString(inputRegionsKey)).results()
+                        .forEach(mr ->
+                            Arrays.stream(mr.group(2).split(" "))
+                                .forEach(region -> typeMap.put(region, mr.group(1))));
+                }
+                inputSkeletons.put(type, typeMap);
+            });
+        }
+
+        // j/C patterns for this locale
+        if (jPattern == null) {
+            jPattern = resolveInputSkeleton("preferred");
+            CPattern = resolveInputSkeleton("allowed");
+            // hack: "allowed" contains reversed order for hour/period, e.g, "hB" which should be "Bh" as a skeleton
+            if (CPattern.length() == 2) {
+                var ba = new byte[2];
+                ba[0] = (byte)CPattern.charAt(1);
+                ba[1] = (byte)CPattern.charAt(0);
+                CPattern = new String(ba);
+            }
+        }
+    }
+
+    /**
+     * Resolve locale specific input skeletons. Fall back method is different from usual
+     * resource bundle's, as it has to be "lang-region" -> "region" -> "lang-001" -> "001"
+     * @param type type of the input skeleton
+     * @return resolved skeletons for this locale, defaults to "h" if none found.
+     */
+    private String resolveInputSkeleton(String type) {
+        var regionToSkeletonMap = inputSkeletons.get(type);
+        return regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-" + locale.getCountry(),
+            regionToSkeletonMap.getOrDefault(locale.getCountry(),
+                regionToSkeletonMap.getOrDefault(locale.getLanguage() + "-001",
+                    regionToSkeletonMap.getOrDefault("001", "h"))));
+    }
+
+    /**
+     * Replace 'j' and 'C' input skeletons with locale specific patterns. Note that 'j'
+     * is guaranteed to be replaced with one char [hkHK], while 'C' may be replaced with
+     * multiple chars. Repeat each as much as 'C' count.
+     * @param requestedTemplate requested skeleton
+     * @return skeleton with j/C substituted with concrete patterns
+     */
+    private String substituteInputSkeletons(String requestedTemplate) {
+        var cCount = requestedTemplate.chars().filter(c -> c == 'C').count();
+        return requestedTemplate.replaceAll("j", jPattern)
+                .replaceFirst("C+", CPattern.replaceAll("([hkHK])", "$1".repeat((int)cCount)));
+    }
+
+    /**
+     * Returns a stream of possible skeletons, inferring standalone/format (M/L and/or E/c) patterns
+     * and their styles. (cf. 2.6.2.1 Matching Skeletons)
+     *
+     * @param skeleton original skeleton
+     * @return inferred Stream of skeletons in its priority order
+     */
+    private Stream<String> possibleInferred(String skeleton) {
+        return priorityList(skeleton, "M", "L").stream()
+                .flatMap(s -> priorityList(s, "E", "c").stream())
+                .distinct();
+    }
+
+    /**
+     * Inferring the possible format styles in priority order, based on the original
+     * skeleton length.
+     *
+     * @param skeleton skeleton
+     * @param pChar pattern character string
+     * @param subChar substitute character string
+     * @return list of skeletons
+     */
+    private List<String> priorityList(String skeleton, String pChar, String subChar) {
+        int first = skeleton.indexOf(pChar);
+        int last = skeleton.lastIndexOf(pChar);
+
+        if (first >= 0) {
+            var prefix = skeleton.substring(0, first);
+            var suffix = skeleton.substring(last + 1);
+
+            // Priority are based on this chart. First column is the original count of `pChar`,
+            // then it is followed by inferred skeletons base on priority.
+            //
+            // 1->2->3->4 (number form (1-digit) -> number form (2-digit) -> Abbr. form -> Full form)
+            // 2->1->3->4
+            // 3->4->2->1
+            // 4->3->2->1
+            var o1 = prefix + pChar + suffix;
+            var o2 = prefix + pChar.repeat(2) + suffix;
+            var o3 = prefix + pChar.repeat(3) + suffix;
+            var o4 = prefix + pChar.repeat(4) + suffix;
+            var s1 = prefix + subChar + suffix;
+            var s2 = prefix + subChar.repeat(2) + suffix;
+            var s3 = prefix + subChar.repeat(3) + suffix;
+            var s4 = prefix + subChar.repeat(4) + suffix;
+            return switch (last - first) {
+                case 1 -> List.of(skeleton, o1, o2, o3, o4, s1, s2, s3, s4);
+                case 2 -> List.of(skeleton, o2, o1, o3, o4, s2, s1, s3, s4);
+                case 3 -> List.of(skeleton, o3, o4, o2, o1, s3, s4, s2, s1);
+                default -> List.of(skeleton, o4, o3, o2, o1, s4, s3, s2, s1);
+            };
+        } else {
+            return List.of(skeleton);
+        }
+    }
+
     private String getDateTimePattern(String prefix, String key, int styleIndex, String calendarType) {
         StringBuilder sb = new StringBuilder();
         if (prefix != null) {
@@ -605,7 +836,7 @@ public class LocaleResources {
         }
     }
 
-    private static final boolean TRACE_ON = Boolean.valueOf(
+    private static final boolean TRACE_ON = Boolean.parseBoolean(
         GetPropertyAction.privilegedGetProperty("locale.resources.debug", "false"));
 
     public static void trace(String format, Object... params) {

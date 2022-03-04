@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,9 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = NULL;
 VirtualSpace* ArchivePtrMarker::_vs;
@@ -264,7 +266,7 @@ void WriteClosure::do_oop(oop* o) {
   } else {
     assert(HeapShared::can_write(), "sanity");
     _dump_region->append_intptr_t(
-      (intptr_t)CompressedOops::encode_not_null(*o));
+      UseCompressedOops ? (intptr_t)CompressedOops::encode_not_null(*o) : (intptr_t)((void*)(*o)));
   }
 }
 
@@ -306,13 +308,23 @@ void ReadClosure::do_tag(int tag) {
 }
 
 void ReadClosure::do_oop(oop *p) {
-  narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-  if (CompressedOops::is_null(o) || !HeapShared::is_fully_available()) {
-    *p = NULL;
+  if (UseCompressedOops) {
+    narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
+    if (CompressedOops::is_null(o) || !HeapShared::is_fully_available()) {
+      *p = NULL;
+    } else {
+      assert(HeapShared::can_use(), "sanity");
+      assert(HeapShared::is_fully_available(), "must be");
+      *p = HeapShared::decode_from_archive(o);
+    }
   } else {
-    assert(HeapShared::can_use(), "sanity");
-    assert(HeapShared::is_fully_available(), "must be");
-    *p = HeapShared::decode_from_archive(o);
+    intptr_t dumptime_oop = nextPtr();
+    if (dumptime_oop == 0 || !HeapShared::is_fully_available()) {
+      *p = NULL;
+    } else {
+      intptr_t runtime_oop = dumptime_oop + HeapShared::runtime_delta();
+      *p = cast_to_oop(runtime_oop);
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,22 +240,6 @@
 #define NOT_ZGC_RETURN        {}
 #define NOT_ZGC_RETURN_(code) { return code; }
 #endif // INCLUDE_ZGC
-
-#ifndef INCLUDE_NMT
-#define INCLUDE_NMT 1
-#endif // INCLUDE_NMT
-
-#if INCLUDE_NMT
-#define NOT_NMT_RETURN        /* next token must be ; */
-#define NOT_NMT_RETURN_(code) /* next token must be ; */
-#define NMT_ONLY(x) x
-#define NOT_NMT(x)
-#else
-#define NOT_NMT_RETURN        {}
-#define NOT_NMT_RETURN_(code) { return code; }
-#define NMT_ONLY(x)
-#define NOT_NMT(x) x
-#endif // INCLUDE_NMT
 
 #ifndef INCLUDE_JFR
 #define INCLUDE_JFR 1
@@ -528,7 +512,7 @@
 
 // Note: There are two ARM ports. They set the following in the makefiles:
 // 1. 32-bit port:   -DARM -DARM32 -DTARGET_ARCH_arm
-// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
+// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
@@ -551,6 +535,12 @@
 #else
 #define AARCH64_ONLY(code)
 #define NOT_AARCH64(code) code
+#endif
+
+#ifdef TARGET_ARCH_aarch64
+#define AARCH64_PORT_ONLY(code) code
+#else
+#define AARCH64_PORT_ONLY(code)
 #endif
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
