@@ -25,14 +25,10 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -42,7 +38,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
-
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
@@ -60,7 +55,6 @@ public class JTreeNodeCopyPasteTest {
     private static JTree tree;
     private static Robot robot;
     private static boolean isMac;
-    private static CountDownLatch treeGainedFocusLatch;
 
     public static void main(String[] args) throws Exception {
         runTest();
@@ -78,7 +72,6 @@ public class JTreeNodeCopyPasteTest {
                                   .map(LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
         for (final String laf : lafs) {
-            treeGainedFocusLatch = new CountDownLatch(1);
             try {
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
@@ -92,12 +85,6 @@ public class JTreeNodeCopyPasteTest {
                 }
 
                 robot.waitForIdle();
-
-                // Waits until the tree gains focus
-                if (!treeGainedFocusLatch.await(3, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Test Failed, waited too long, " +
-                            "but the JTree can't gain focus for L&F: " + laf);
-                }
 
                 // Select the node named as 'colors'
                 Point pt = getNodeLocation(1);
@@ -198,12 +185,6 @@ public class JTreeNodeCopyPasteTest {
         frame = new JFrame();
         tree = new JTree();
         tree.setEditable(true);
-        tree.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                treeGainedFocusLatch.countDown();
-            }
-        });
         frame.setContentPane(tree);
         frame.setSize(new Dimension(200, 200));
         frame.setAlwaysOnTop(true);
@@ -212,7 +193,6 @@ public class JTreeNodeCopyPasteTest {
         frame.toFront();
         frame.setVisible(true);
     }
-
 
     private static boolean setLookAndFeel(String lafName) {
         try {
