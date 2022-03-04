@@ -73,27 +73,6 @@ inline void Thread::set_threads_hazard_ptr(ThreadsList* new_list) {
   Atomic::release_store_fence(&_threads_hazard_ptr, new_list);
 }
 
-#if defined(__APPLE__) && defined(AARCH64)
-inline void Thread::init_wx() {
-  assert(this == Thread::current(), "should only be called for current thread");
-  assert(!_wx_init, "second init");
-  _wx_state = WXWrite;
-  os::current_thread_enable_wx(_wx_state);
-  DEBUG_ONLY(_wx_init = true);
-}
-
-inline WXMode Thread::enable_wx(WXMode new_state) {
-  assert(this == Thread::current(), "should only be called for current thread");
-  assert(_wx_init, "should be inited");
-  WXMode old = _wx_state;
-  if (_wx_state != new_state) {
-    _wx_state = new_state;
-    os::current_thread_enable_wx(new_state);
-  }
-  return old;
-}
-#endif // __APPLE__ && AARCH64
-
 inline void JavaThread::set_suspend_flag(SuspendFlags f) {
   uint32_t flags;
   do {

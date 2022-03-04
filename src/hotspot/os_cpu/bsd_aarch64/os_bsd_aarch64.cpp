@@ -534,14 +534,41 @@ void os::verify_stack_alignment() {
 }
 #endif
 
+DEBUG_ONLY(static THREAD_LOCAL bool _wx_init);
+static THREAD_LOCAL WXMode _wx_state;
 int os::extra_bang_size_in_bytes() {
   // AArch64 does not require the additional stack bang.
   return 0;
 }
 
-void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+WXMode os::current_thread_change_wx(WXMode new_state, Thread *thread) {
+  if (!_wx_init) {
+    current_thread_init_wx();
+  }
+  WXMode old = _wx_state;
+  if (_wx_state != new_state) {
+    _wx_state = new_state;
+    pthread_jit_write_protect_np(_wx_state == WXExec);
+  }
+  return old;
 }
+
+void os::current_thread_assert_wx_state(WXMode expected) {
+  assert(_wx_state == expected, "wrong state");
+}
+
+void os::current_thread_init_wx() {
+  //assert(!_wx_init, "second init");
+  pthread_jit_write_protect_np(false /* not executable but writable */);
+  _wx_state = WXWrite;
+  DEBUG_ONLY(_wx_init = true);
+}
+
+#ifdef ASSERT
+void os::current_thread_deinit_wx() {
+  _wx_init = false;
+}
+#endif
 
 extern "C" {
   int SpinPause() {

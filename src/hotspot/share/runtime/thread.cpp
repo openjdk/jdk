@@ -276,7 +276,7 @@ Thread::Thread() {
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
   }
 
-  MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
+  MACOS_AARCH64_ONLY(DEBUG_ONLY(os::current_thread_deinit_wx();))
 }
 
 void Thread::initialize_tlab() {
@@ -338,7 +338,7 @@ void Thread::call_run() {
 
   register_thread_stack_with_NMT();
 
-  MACOS_AARCH64_ONLY(this->init_wx());
+  MACOS_AARCH64_ONLY(os::current_thread_init_wx());
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -965,7 +965,7 @@ void JavaThread::check_possible_safepoint() {
   // happens in practice, making such issues hard to find and reproduce.
 #if defined(__APPLE__) && defined(AARCH64)
   if (AssertWXAtThreadSync) {
-    assert_wx_state(WXWrite);
+    os::current_thread_assert_wx_state(WXWrite);
   }
 #endif
 }
@@ -2679,7 +2679,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite, NULL));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -2787,7 +2787,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
-  MACOS_AARCH64_ONLY(main_thread->init_wx());
+  MACOS_AARCH64_ONLY(os::current_thread_init_wx());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(

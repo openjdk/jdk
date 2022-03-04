@@ -934,8 +934,19 @@ class os: AllStatic {
   };
 
 #if defined(__APPLE__) && defined(AARCH64)
+
   // Enables write or execute access to writeable and executable pages.
-  static void current_thread_enable_wx(WXMode mode);
+  // returns the previous state, expects current_thread_init_wx to be
+  // called before
+  static WXMode current_thread_change_wx(WXMode new_state, Thread *thread);
+
+  // initialize WX mode to default value (WXWrite) for the current thread
+  static void current_thread_init_wx();
+
+  DEBUG_ONLY(static void current_thread_deinit_wx());
+
+  static void current_thread_assert_wx_state(WXMode expected);
+
 #endif // __APPLE__ && AARCH64
 
 #ifndef _WINDOWS

@@ -96,7 +96,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
     // CreateJavaVM leaves WXExec context, while gtests
     // calls internal functions assuming running in WXWwrite.
     // Switch to WXWrite once for all test cases.
-    MACOS_AARCH64_ONLY(Thread::current()->enable_wx(WXWrite));
+    MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite, Thread::current()));
   }
   return ret;
 }
