@@ -31,25 +31,25 @@
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/ostream.hpp"
 
-size_t G1CardSetAllocatorImpl::mem_size() const {
-  return  _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
+inline size_t G1CardSetAllocator::mem_size() const {
+  return  sizeof(*this) +
+          _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
           _segmented_array.num_available_slots() * _segmented_array.slot_size();
 }
 
-size_t G1CardSetAllocatorImpl::wasted_mem_size() const {
+inline size_t G1CardSetAllocator::wasted_mem_size() const {
   uint num_wasted_slots = _segmented_array.num_available_slots() -
                           _segmented_array.num_allocated_slots() -
                           (uint)_free_slots_list.pending_count();
   return num_wasted_slots * _segmented_array.slot_size();
 }
 
-inline uint G1CardSetAllocatorImpl::num_segments() const {
+inline uint G1CardSetAllocator::num_segments() const {
   return _segmented_array.num_segments();
 }
 
-template <class Slot>
-Slot* G1CardSetAllocator<Slot>::allocate() {
-  Slot* slot = ::new (_free_slots_list.allocate()) Slot();
+inline G1CardSetContainer* G1CardSetAllocator::allocate() {
+  G1CardSetContainer* slot = ::new (_free_slots_list.allocate()) G1CardSetContainer();
   assert(slot != nullptr, "must be");
   return slot;
 }

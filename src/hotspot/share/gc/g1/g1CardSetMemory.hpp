@@ -84,16 +84,20 @@ typedef G1SegmentedArrayFreeList<mtGCCardSet> G1CardSetFreeList;
 // Since it is expected that every CardSet (and in extension each region) has its
 // own set of allocators, there is intentionally no padding between them to save
 // memory.
-class G1CardSetAllocatorImpl {
-  // G1CardSetSegment management.
+class G1CardSetAllocator {
+  // G1CardSetContainer slot management within the G1CardSetSegments allocated
+  // by this allocator.
   G1SegmentedArray<mtGCCardSet> _segmented_array;
-protected:
   FreeListAllocator _free_slots_list;
+
 public:
-  G1CardSetAllocatorImpl(const char* name,
+  G1CardSetAllocator(const char* name,
                          const G1CardSetAllocOptions* alloc_options,
                          G1CardSetFreeList* free_segment_list);
-  ~G1CardSetAllocatorImpl();
+  ~G1CardSetAllocator();
+
+  G1CardSetContainer* allocate();
+  void free(G1CardSetContainer* slot);
 
   // Deallocate all segments to the free segment list and reset this allocator. Must
   // be called in a globally synchronized area.
@@ -108,29 +112,12 @@ public:
   void print(outputStream* os);
 };
 
-template <class Slot>
-class G1CardSetAllocator : public G1CardSetAllocatorImpl {
-public:
-  G1CardSetAllocator(const char* name,
-                     const G1CardSetAllocOptions* alloc_options,
-                     G1CardSetFreeList* free_segment_list);
-
-  ~G1CardSetAllocator() = default;
-
-  Slot* allocate();
-  void free(Slot* slot);
-
-  size_t mem_size() const {
-    return sizeof(*this) + G1CardSetAllocatorImpl::mem_size();
-  }
-};
-
 typedef G1SegmentedArrayFreePool<mtGCCardSet> G1CardSetFreePool;
 
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;
 
-  G1CardSetAllocator<G1CardSetContainer>* _allocators;
+  G1CardSetAllocator* _allocators;
 
   uint num_mem_object_types() const;
 public:
