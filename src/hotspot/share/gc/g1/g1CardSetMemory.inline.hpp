@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,26 @@
 #define SHARE_GC_G1_G1CARDSETMEMORY_INLINE_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CardSetContainers.hpp"
+#include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/ostream.hpp"
 
-#include "gc/g1/g1CardSetContainers.inline.hpp"
-#include "utilities/globalCounter.inline.hpp"
+size_t G1CardSetAllocatorImpl::mem_size() const {
+  return  _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
+          _segmented_array.num_available_slots() * _segmented_array.slot_size();
+}
+
+size_t G1CardSetAllocatorImpl::wasted_mem_size() const {
+  uint num_wasted_slots = _segmented_array.num_available_slots() -
+                          _segmented_array.num_allocated_slots() -
+                          (uint)_free_slots_list.pending_count();
+  return num_wasted_slots * _segmented_array.slot_size();
+}
+
+inline uint G1CardSetAllocatorImpl::num_segments() const {
+  return _segmented_array.num_segments();
+}
 
 template <class Slot>
 Slot* G1CardSetAllocator<Slot>::allocate() {

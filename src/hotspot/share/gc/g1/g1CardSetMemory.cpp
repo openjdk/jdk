@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,9 @@
 #include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 
-template <class Slot>
-G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
-                                             const G1CardSetAllocOptions* alloc_options,
-                                             G1CardSetFreeList* free_segment_list) :
+G1CardSetAllocatorImpl::G1CardSetAllocatorImpl(const char* name,
+                                               const G1CardSetAllocOptions* alloc_options,
+                                               G1CardSetFreeList* free_segment_list) :
   _segmented_array(alloc_options, free_segment_list),
   _free_slots_list(name, &_segmented_array)
 {
@@ -41,26 +40,16 @@ G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
   assert(slot_size >= sizeof(G1CardSetContainer), "Slot instance size %u for allocator %s too small", slot_size, name);
 }
 
-template <class Slot>
-G1CardSetAllocator<Slot>::~G1CardSetAllocator() {
+G1CardSetAllocatorImpl::~G1CardSetAllocatorImpl() {
   drop_all();
 }
 
-template <class Slot>
-void G1CardSetAllocator<Slot>::free(Slot* slot) {
-  assert(slot != nullptr, "precondition");
-  slot->~Slot();
-  _free_slots_list.release(slot);
-}
-
-template <class Slot>
-void G1CardSetAllocator<Slot>::drop_all() {
+void G1CardSetAllocatorImpl::drop_all() {
   _free_slots_list.reset();
   _segmented_array.drop_all();
 }
 
-template <class Slot>
-void G1CardSetAllocator<Slot>::print(outputStream* os) {
+void G1CardSetAllocatorImpl::print(outputStream* os) {
   uint num_allocated_slots = _segmented_array.num_allocated_slots();
   uint num_available_slots = _segmented_array.num_available_slots();
   uint highest = _segmented_array.first_array_segment() != nullptr
@@ -77,6 +66,20 @@ void G1CardSetAllocator<Slot>::print(outputStream* os) {
             highest,
             num_segments,
             mem_size());
+}
+
+template <class Slot>
+G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
+                                             const G1CardSetAllocOptions* alloc_options,
+                                             G1CardSetFreeList* free_segment_list) :
+  G1CardSetAllocatorImpl(name, alloc_options, free_segment_list)
+{}
+
+template <class Slot>
+void G1CardSetAllocator<Slot>::free(Slot* slot) {
+  assert(slot != nullptr, "precondition");
+  slot->~Slot();
+  _free_slots_list.release(slot);
 }
 
 G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,

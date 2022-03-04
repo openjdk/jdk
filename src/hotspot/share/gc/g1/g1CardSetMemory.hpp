@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,46 +84,45 @@ typedef G1SegmentedArrayFreeList<mtGCCardSet> G1CardSetFreeList;
 // Since it is expected that every CardSet (and in extension each region) has its
 // own set of allocators, there is intentionally no padding between them to save
 // memory.
-template <class Slot>
-class G1CardSetAllocator {
+class G1CardSetAllocatorImpl {
   // G1CardSetSegment management.
-
-  typedef G1SegmentedArray<mtGCCardSet> SegmentedArray;
-  // G1CardSetContainer slot management within the G1CardSetSegments allocated
-  // by this allocator.
-
-  SegmentedArray _segmented_array;
+  G1SegmentedArray<mtGCCardSet> _segmented_array;
+protected:
   FreeListAllocator _free_slots_list;
-
 public:
-  G1CardSetAllocator(const char* name,
-                     const G1CardSetAllocOptions* alloc_options,
-                     G1CardSetFreeList* free_segment_list);
-  ~G1CardSetAllocator();
-
-  Slot* allocate();
-  void free(Slot* slot);
+  G1CardSetAllocatorImpl(const char* name,
+                         const G1CardSetAllocOptions* alloc_options,
+                         G1CardSetFreeList* free_segment_list);
+  ~G1CardSetAllocatorImpl();
 
   // Deallocate all segments to the free segment list and reset this allocator. Must
   // be called in a globally synchronized area.
   void drop_all();
 
-  size_t mem_size() const {
-    return sizeof(*this) +
-      _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
-      _segmented_array.num_available_slots() * _segmented_array.slot_size();
-  }
+  inline size_t mem_size() const;
 
-  size_t wasted_mem_size() const {
-    uint num_wasted_slots = _segmented_array.num_available_slots() -
-                            _segmented_array.num_allocated_slots() -
-                            (uint)_free_slots_list.pending_count();
-    return num_wasted_slots * _segmented_array.slot_size();
-  }
+  inline size_t wasted_mem_size() const;
 
-  inline uint num_segments() { return _segmented_array.num_segments(); }
+  inline uint num_segments() const;
 
   void print(outputStream* os);
+};
+
+template <class Slot>
+class G1CardSetAllocator : public G1CardSetAllocatorImpl {
+public:
+  G1CardSetAllocator(const char* name,
+                     const G1CardSetAllocOptions* alloc_options,
+                     G1CardSetFreeList* free_segment_list);
+
+  ~G1CardSetAllocator() = default;
+
+  Slot* allocate();
+  void free(Slot* slot);
+
+  size_t mem_size() const {
+    return sizeof(*this) + G1CardSetAllocatorImpl::mem_size();
+  }
 };
 
 typedef G1SegmentedArrayFreePool<mtGCCardSet> G1CardSetFreePool;
