@@ -185,9 +185,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
 
                 if (port1 != port2)
                     failed = true;
-
-                trans.getResponseHeaders().set("Content-length", Integer.toString(0));
-
+                
                  /* Force the server to not respond for more that the timeout
                   * set by the keepalive cleaner (5000 millis). This ensures the
                   * timeout is correctly resets the default read timeout,
@@ -203,8 +201,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
                     responseBody[i] = 0x41;
 
                 // override the Content-length header to be greater than the actual response body
-                trans.getResponseHeaders().set("Content-length", Integer.toString(responseBody.length+1));
-                trans.sendResponseHeaders(200, 0);
+                trans.sendResponseHeaders(200, responseBody.length+1);
                 try(PrintWriter pw = new PrintWriter(trans.getResponseBody(), false, Charset.forName("UTF-8"))) {
                     pw.print(responseBody);
                 }
