@@ -3828,6 +3828,8 @@ void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
       set_ctrl(neg_stride, C->root());
       Node *post = new AddINode(opaq, neg_stride);
       register_new_node(post, c);
+      post = new CastIINode(post, phi->bottom_type()); // preserve the iv phi's type
+      register_new_node(post, c);
       _igvn.rehash_node_delayed(use);
       for (uint j = 1; j < use->req(); j++) {
         if (use->in(j) == phi)
