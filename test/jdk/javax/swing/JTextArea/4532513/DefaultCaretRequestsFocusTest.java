@@ -41,7 +41,6 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 
-
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /*
@@ -60,7 +59,6 @@ public class DefaultCaretRequestsFocusTest {
     private static JFrame frame;
     private static Robot robot;
     private static volatile int shouldYieldFocusCount;
-
 
     public static void main(String[] args) throws Exception {
         runTest();
@@ -87,7 +85,6 @@ public class DefaultCaretRequestsFocusTest {
                     continue;
                 }
                 robot.waitForIdle();
-
 
                 AtomicReference<Point> jTextField1LocRef = new AtomicReference<>();
                 AtomicReference<Point> jTextField2LocRef = new AtomicReference<>();
@@ -144,7 +141,6 @@ public class DefaultCaretRequestsFocusTest {
 
     }
 
-
     private static void createUI() {
         frame = new JFrame();
         jTextField1 = new JTextField(6);
@@ -157,14 +153,14 @@ public class DefaultCaretRequestsFocusTest {
         panel.add(jTextField3);
 
         InputVerifier iv = new InputVerifier() {
-            public boolean shouldYieldFocus(JComponent input) {
-                ++shouldYieldFocusCount;
-                System.out.println("InputVerifier.shouldYieldFocus() called " + shouldYieldFocusCount);
+            public boolean verify(JComponent input) {
+                System.out.println("InputVerifier.verify() called");
                 return false;
             }
 
-            public boolean verify(JComponent input) {
-                System.out.println("InputVerifier.verify() called");
+            public boolean shouldYieldFocus(JComponent input) {
+                ++shouldYieldFocusCount;
+                System.out.println("InputVerifier.shouldYieldFocus() called " + shouldYieldFocusCount);
                 return false;
             }
         };
@@ -198,6 +194,5 @@ public class DefaultCaretRequestsFocusTest {
             frame = null;
         }
     }
-
 
 }
