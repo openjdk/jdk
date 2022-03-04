@@ -272,6 +272,13 @@
                                                                                                                                      \
   static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
                                                                                                                                      \
+  static_field(StubRoutines,                _jshort_fill,                                     address)                               \
+  static_field(StubRoutines,                _jint_fill,                                       address)                               \
+  static_field(StubRoutines,                _jbyte_fill,                                      address)                               \
+  static_field(StubRoutines,                _arrayof_jshort_fill,                             address)                               \
+  static_field(StubRoutines,                _arrayof_jint_fill,                               address)                               \
+  static_field(StubRoutines,                _arrayof_jbyte_fill,                              address)                               \
+                                                                                                                                     \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \
   static_field(StubRoutines,                _jint_arraycopy,                                  address)                               \
