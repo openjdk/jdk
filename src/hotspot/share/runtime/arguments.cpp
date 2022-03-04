@@ -742,7 +742,7 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 }
 #endif
 
-bool parse_integer(const char *s, char **endptr, int base, jint* result) {  
+bool parse_integer(const char *s, char **endptr, int base, jint* result) {
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < min_jint || v > max_jint) {
     return false;
@@ -918,60 +918,50 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin
   return false;
 }
 
-static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
-  //if (0) xxxtest();
-
+static JVMFlag::Error set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
   if (flag == NULL) {
-    return false;
+    return JVMFlag::WRONG_FORMAT;
   }
 
-  if (0) {
-
-  } else if (flag->is_int()) {
+  if (flag->is_int()) {
     int v;
-    if (!parse_integer(value, &v)) {
-      return false;
+    if (parse_integer(value, &v)) {
+      return JVMFlagAccess::set_int(flag, &v, origin);
     }
-    return JVMFlagAccess::set_int(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
     uint v;
-    if (!parse_integer(value, &v)) {
-      return false;
+    if (parse_integer(value, &v)) {
+      return JVMFlagAccess::set_uint(flag, &v, origin);
     }
-    return JVMFlagAccess::set_uint(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx v;
-    if (!parse_integer(value, &v)) {
-      return false;
+    if (parse_integer(value, &v)) {
+      return JVMFlagAccess::set_intx(flag, &v, origin);
     }
-    return JVMFlagAccess::set_intx(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
     uintx v;
-    if (!parse_integer(value, &v)) {
-      return false;
+    if (parse_integer(value, &v)) {
+      return JVMFlagAccess::set_uintx(flag, &v, origin);
     }
-    return JVMFlagAccess::set_uintx(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint64_t()) {
     uint64_t v;
-    if (!parse_integer(value, &v)) {
-      return false;
+    if (parse_integer(value, &v)) {
+      return JVMFlagAccess::set_uint64_t(flag, &v, origin);
     }
-    return JVMFlagAccess::set_uint64_t(flag, &v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_size_t()) {
     size_t v;
-    if (!parse_integer(value, &v)) {
-      return false;
+    if (parse_integer(value, &v)) {
+      return JVMFlagAccess::set_size_t(flag, &v, origin);
     }
-    return JVMFlagAccess::set_size_t(flag, &v, origin) == JVMFlag::SUCCESS;
-#if 0
   } else if (flag->is_double()) {
-    // HUH???
-    double double_v = (double) v;
-    return JVMFlagAccess::set_double(flag, &double_v, origin) == JVMFlag::SUCCESS;
-#endif
-  } else {
-    return false;
+    jlong v;
+    if (parse_integer(value, &v)) {
+      double double_v = (double) v;
+      return JVMFlagAccess::set_double(flag, &double_v, origin);
+    }
   }
+
+  return JVMFlag::WRONG_FORMAT;
 }
 
 static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
@@ -1133,7 +1123,7 @@ bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
       return false;
     }
     JVMFlag* flag = JVMFlag::find_flag(real_name);
-    return set_numeric_flag(flag, value, origin);
+    return (set_numeric_flag(flag, value, origin) == JVMFlag::SUCCESS);
   }
 
   return false;
