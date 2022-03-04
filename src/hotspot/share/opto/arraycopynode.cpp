@@ -316,9 +316,6 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
 
     disjoint_bases = true;
 
-    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
-    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
-
     BasicType elem = ary_src->klass()->as_array_klass()->element_type()->basic_type();
     if (is_reference_type(elem)) {
       elem = T_OBJECT;
@@ -328,6 +325,9 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     if (bs->array_copy_requires_gc_barriers(true, elem, true, is_clone_inst(), BarrierSetC2::Optimization)) {
       return false;
     }
+
+    adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
+    adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
 
     // The address is offseted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
@@ -566,6 +566,8 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (!prepare_array_copy(phase, can_reshape,
                           adr_src, base_src, adr_dest, base_dest,
                           copy_type, value_type, disjoint_bases)) {
+    assert(adr_src == NULL, "no node can be left behind");
+    assert(adr_dest == NULL, "no node can be left behind");
     return NULL;
   }
 

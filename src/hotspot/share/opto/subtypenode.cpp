@@ -135,7 +135,7 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     Node* obj = AddPNode::Ideal_base_and_offset(addr, phase, con);
     if (con == oopDesc::klass_offset_in_bytes() && obj != NULL) {
       assert(is_oop(phase, obj), "only for oop input");
-      set_req(ObjOrSubKlass, obj);
+      set_req_X(ObjOrSubKlass, obj, phase);
       return this;
     }
   }
@@ -144,7 +144,7 @@ Node *SubTypeCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* allocated_klass = AllocateNode::Ideal_klass(obj_or_subklass, phase);
   if (allocated_klass != NULL) {
     assert(is_oop(phase, obj_or_subklass), "only for oop input");
-    set_req(ObjOrSubKlass, allocated_klass);
+    set_req_X(ObjOrSubKlass, allocated_klass, phase);
     return this;
   }
 

@@ -152,6 +152,12 @@ bool ConnectionGraph::compute_escape() {
   java_objects_worklist.append(phantom_obj);
   for( uint next = 0; next < ideal_nodes.size(); ++next ) {
     Node* n = ideal_nodes.at(next);
+    if(n->outcnt()==0) {
+#ifdef ASSERT
+      if(!n->is_Con()) {n->dump();}
+#endif
+      assert(n->is_Con(), "only constants are allowed to be dead here");
+    }
     // Create PointsTo nodes and add them to Connection Graph. Called
     // only once per ideal node since ideal_nodes is Unique_Node list.
     add_node_to_connection_graph(n, &delayed_worklist);
