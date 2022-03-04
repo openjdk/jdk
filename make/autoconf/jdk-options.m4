@@ -211,16 +211,16 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Setup default copyright year. Mostly overridden when building close to a new year.
   AC_ARG_WITH(copyright-year, [AS_HELP_STRING([--with-copyright-year],
-      [Set copyright year value for build @<:@current year@:>@])])
+      [Set copyright year value for build @<:@current year/source-date@:>@])])
   if test "x$with_copyright_year" = xyes; then
     AC_MSG_ERROR([Copyright year must have a value])
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
-  elif test "x$SOURCE_DATE_EPOCH" != x; then
+  elif test "x$SOURCE_DATE" != xcurrent; then
     if test "x$IS_GNU_DATE" = xyes; then
-      COPYRIGHT_YEAR=`date --date=@$SOURCE_DATE_EPOCH +%Y`
+      COPYRIGHT_YEAR=`$DATE --date=@$SOURCE_DATE +%Y`
     else
-      COPYRIGHT_YEAR=`date -j -f %s $SOURCE_DATE_EPOCH +%Y`
+      COPYRIGHT_YEAR=`$DATE -j -f %s $SOURCE_DATE +%Y`
     fi
   else
     COPYRIGHT_YEAR=`$DATE +'%Y'`
@@ -676,6 +676,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   elif test "x$with_source_date" = x; then
     if test "x$SOURCE_DATE_EPOCH" != x; then
       SOURCE_DATE=$SOURCE_DATE_EPOCH
+      with_source_date_present=true
       AC_MSG_RESULT([$SOURCE_DATE, from SOURCE_DATE_EPOCH])
     else
       # Tell the makefiles to update at each build
