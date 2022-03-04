@@ -434,7 +434,7 @@ public class Proxy implements java.io.Serializable {
             if (caller != null) {
                 checkProxyAccess(caller, loader, intfsArray);
             }
-            final List<Class<?>> intfs = Arrays.asList(intfsArray);
+            final List<Class<?>> intfs = List.of(intfsArray);
             return proxyCache.sub(intfs).computeIfAbsent(
                 loader,
                 (ld, clv) -> new ProxyBuilder(ld, clv.key()).build()
@@ -1233,7 +1233,7 @@ public class Proxy implements java.io.Serializable {
                     "\" is not a method declared in the proxy class");
         }
 
-        List<Class<?>> proxyInterfaces = Arrays.asList(proxyClass.getInterfaces());
+        List<Class<?>> proxyInterfaces = List.of(proxyClass.getInterfaces());
         // the method's declaring class is a proxy interface
         if (proxyInterfaces.contains(declaringClass))
             return declaringClass;

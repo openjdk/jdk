@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.lang.reflect.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,7 +76,7 @@ public final class AnnotationSupport {
             boolean indirectFirst = direct == null ||
                                     containerBeforeContainee(annotations, annoClass);
 
-            result.addAll((indirectFirst ? 0 : 1), Arrays.asList(indirect));
+            result.addAll((indirectFirst ? 0 : 1), List.of(indirect));
         }
 
         @SuppressWarnings("unchecked")

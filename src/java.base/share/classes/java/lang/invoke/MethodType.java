@@ -959,7 +959,7 @@ class MethodType
         int myLen = ptypes.length, fullLen = fullList.size();
         if (skipPos > myLen || myLen - skipPos > fullLen)
             return false;
-        List<Class<?>> myList = Arrays.asList(ptypes);
+        List<Class<?>> myList = List.of(ptypes);
         if (skipPos != 0) {
             myList = myList.subList(skipPos, myLen);
             myLen -= skipPos;
