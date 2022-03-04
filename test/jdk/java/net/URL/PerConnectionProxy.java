@@ -40,6 +40,7 @@ import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.concurrent.Executors;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -231,7 +232,7 @@ class PerConnectionProxyHandler implements HttpHandler {
             exchange.sendResponseHeaders(200, 0);
         } catch (IOException e) {
         }
-        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody())) {
+        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody(), false, Charset.forName("UTF-8"))) {
             pw.print("Hello .");
         }
     }

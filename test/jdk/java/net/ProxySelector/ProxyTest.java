@@ -41,6 +41,7 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -113,7 +114,7 @@ class ProxyTestHandler implements HttpHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody())) {
+        try(PrintWriter pw = new PrintWriter(exchange.getResponseBody(), false, Charset.forName("UTF-8"))) {
             pw.print("Hello .");
         }
     }

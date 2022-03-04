@@ -39,6 +39,7 @@ import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.concurrent.Executors;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -136,7 +137,7 @@ class AuthHeaderTestHandler implements HttpHandler {
 
     void okReply (HttpExchange req) throws IOException {
         req.sendResponseHeaders (200, 0);
-        try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+        try(PrintWriter pw = new PrintWriter(req.getResponseBody(), false, Charset.forName("UTF-8"))) {
             pw.print("Hello .");
         }
     }

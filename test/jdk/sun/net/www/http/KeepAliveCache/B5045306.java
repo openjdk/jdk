@@ -40,6 +40,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -156,7 +157,7 @@ public class B5045306 {
 
 class SimpleHttpTransactionHandler implements HttpHandler
 {
-    static boolean failed = false;
+    static volatile boolean failed = false;
 
     // Need to have enough data here that is too large for the socket buffer to hold.
     // Also http.KeepAlive.remainingData must be greater than this value, default is 256K.
@@ -175,7 +176,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
                 for (int i=0; i<responseBody.length; i++)
                     responseBody[i] = 0x41;
                 trans.sendResponseHeaders(200, 0);
-                try(PrintWriter pw = new PrintWriter(trans.getResponseBody())) {
+                try(PrintWriter pw = new PrintWriter(trans.getResponseBody(), false, Charset.forName("UTF-8"))) {
                     pw.print(responseBody);
                 }
             } else if (path.equals("/secondCall")) {
@@ -204,7 +205,7 @@ class SimpleHttpTransactionHandler implements HttpHandler
                 // override the Content-length header to be greater than the actual response body
                 trans.getResponseHeaders().set("Content-length", Integer.toString(responseBody.length+1));
                 trans.sendResponseHeaders(200, 0);
-                try(PrintWriter pw = new PrintWriter(trans.getResponseBody())) {
+                try(PrintWriter pw = new PrintWriter(trans.getResponseBody(), false, Charset.forName("UTF-8"))) {
                     pw.print(responseBody);
                 }
                 // now close the socket
