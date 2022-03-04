@@ -2090,7 +2090,6 @@ void PrintClassClosure::do_klass(Klass* k)  {
   int i = 0;
   if (k->has_finalizer()) buf[i++] = 'F';
   if (k->has_final_method()) buf[i++] = 'f';
-  if (k->has_vanilla_constructor()) buf[i++] = 'V';
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
     if (ik->is_rewritten()) buf[i++] = 'W';

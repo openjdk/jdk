@@ -959,13 +959,12 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
 ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _verbose("-verbose",
-           "Dump the detail content of Java class. "
+           "Dump the detailed content of a Java class. "
            "Some classes are annotated with flags: "
-           "F = has finializer method, "
+           "F = has finialize method, "
            "f = has final method, "
-           "V = has vanilla constructor, "
            "W = methods rewritten, "
-           "C = marked with contended annotation, "
+           "C = marked with @Contended annotation, "
            "R = has been redefined, "
            "S = is shared class",
            "BOOLEAN", false, "false") {
