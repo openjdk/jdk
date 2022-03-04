@@ -126,6 +126,7 @@ address StubRoutines::_electronicCodeBook_decryptAESCrypt  = NULL;
 address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_galoisCounterMode_AESCrypt          = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
+address StubRoutines::_chacha20Block                       = NULL;
 address StubRoutines::_base64_encodeBlock                  = NULL;
 address StubRoutines::_base64_decodeBlock                  = NULL;
 
