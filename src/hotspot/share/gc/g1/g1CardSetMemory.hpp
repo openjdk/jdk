@@ -88,7 +88,7 @@ template <class Slot>
 class G1CardSetAllocator {
   // G1CardSetSegment management.
 
-  typedef G1SegmentedArray<Slot, mtGCCardSet> SegmentedArray;
+  typedef G1SegmentedArray<mtGCCardSet> SegmentedArray;
   // G1CardSetContainer slot management within the G1CardSetSegments allocated
   // by this allocator.
 
