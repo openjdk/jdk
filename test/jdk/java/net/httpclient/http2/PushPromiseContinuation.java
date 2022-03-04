@@ -29,13 +29,14 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm LargePushPromise
+ * @run testng/othervm PushPromiseContinuation
  */
 
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
+import org.testng.TestException;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -49,102 +50,133 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiPredicate;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.assertTrue;
 
-public class LargePushPromise {
+public class PushPromiseContinuation {
 
+    static HttpHeaders testHeaders;
+    static HttpHeadersBuilder testHeadersBuilder;
     Http2TestServer server;
     URI uri;
 
-    // Extend the Http2Test exchange impl
-    //   - extend the http2testserverconnection
-    // Supply the exchangeimpl
-    // Profit?
-
     @BeforeTest
     public void setup() throws Exception {
-        server = new Http2TestServer(false, 4040);
+        server = new Http2TestServer(false, 0);
         server.addHandler(new ServerPushHandler("Main Response Body", "/promise"), "/");
 
+        // Need to have a custom exchange supplier to manage the server's push
+        // promise with continuation flow
         server.setExchangeSupplier(Http2LPPTestExchangeImpl::new);
 
-        System.err.println("Server listening on port " + server.getAddress().getPort());
+        System.err.println("PushPromiseContinuation: Server listening on port " + server.getAddress().getPort());
         server.start();
         int port = server.getAddress().getPort();
-        uri = new URI("http://localhost:" + port + "/req");
+        uri = new URI("http://localhost:" + port + "/");
     }
 
+    /**
+     * Tests that when the client receives PushPromise Frame with the END_HEADERS
+     * flag set to 0x0 and subsequently receives a continuation frame, no exception
+     * is thrown and all headers from the PushPromise and Continuation Frames sent
+     * by the server arrive at the client.
+     */
     @Test
     public void test() throws IOException, InterruptedException {
+        ConcurrentMap<HttpRequest, HttpRequest> resultMap = new ConcurrentHashMap<>();
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
 
-        try {
-            HttpResponse<String> hres = client.send(hreq, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-            throw ioe;
+        // Set up simple client-side push promise handler
+        HttpResponse.PushPromiseHandler<String> pph = (initial, pushRequest, acceptor) -> {
+            HttpResponse.BodyHandler<String> s = HttpResponse.BodyHandlers.ofString(UTF_8);
+            acceptor.apply(s);
+            resultMap.put(initial, pushRequest);
+        };
+
+        CompletableFuture<HttpResponse<String>> cf =
+                client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
+        cf.join();
+
+        if (resultMap.size() > 1) {
+            throw new TestException("Results map size is greater than 1");
+        } else {
+            // This will only iterate once
+            for (HttpRequest r : resultMap.keySet()) {
+                HttpRequest serverPushReq = resultMap.get(r);
+                // Received headers should be the same as the combined PushPromise
+                // frame headers combined with the Continuation frame headers
+                assertTrue(serverPushReq.headers().equals(testHeaders));
+            }
         }
-//        assertTrue(hres.statusCode() == 200);
-//        ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<String>>>
-//                resultMap = new ConcurrentHashMap<>();
-//        HttpResponse.PushPromiseHandler<String> pph = (initial, pushRequest, acceptor) -> {
-//            HttpResponse.BodyHandler<String> s = HttpResponse.BodyHandlers.ofString(UTF_8);
-//            CompletableFuture<HttpResponse<String>> cf = acceptor.apply(s);
-//            resultMap.put(pushRequest, cf);
-//        };
-//
-//        CompletableFuture<HttpResponse<String>> cf =
-//                client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
-//        cf.join();
-//        resultMap.put(hreq, cf);
-//        System.err.println("results.size: " + resultMap.size());
-//        for (HttpRequest r : resultMap.keySet()) {
-//            HttpResponse<String> response = resultMap.get(r).join();
-//            System.err.println(response.toString());
-//        }
     }
 
     static class Http2LPPTestExchangeImpl extends Http2TestExchangeImpl {
+
+        HttpHeadersBuilder pushPromiseHeadersBuilder;
+        HttpHeadersBuilder continuationHeadersBuilder;
 
         Http2LPPTestExchangeImpl(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
             super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
         }
 
+        private void setPushHeaders(String name, String value) {
+            pushPromiseHeadersBuilder.setHeader(name, value);
+            testHeadersBuilder.setHeader(name, value);
+        }
+
+        private  void  setContHeaders(String name, String value) {
+            continuationHeadersBuilder.setHeader(name, value);
+            testHeadersBuilder.setHeader(name, value);
+        }
+
         @Override
         public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
-            HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
-            headersBuilder.setHeader(":method", "GET");
-            headersBuilder.setHeader(":scheme", uri.getScheme());
-            headersBuilder.setHeader(":authority", uri.getAuthority());
-            headersBuilder.setHeader(":path", uri.getPath());
+            pushPromiseHeadersBuilder = new HttpHeadersBuilder();
+            continuationHeadersBuilder = new HttpHeadersBuilder();
+            testHeadersBuilder = new HttpHeadersBuilder();
+
+            setPushHeaders(":method", "GET");
+            setPushHeaders(":scheme", uri.getScheme());
+            setPushHeaders(":authority", uri.getAuthority());
+            setPushHeaders(":path", uri.getPath());
             for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
-                for (String value : entry.getValue())
-                    headersBuilder.addHeader(entry.getKey(), value);
+                for (String value : entry.getValue()) {
+                    setPushHeaders(entry.getKey(), value);
+                }
             }
-            HttpHeaders combinedHeaders = headersBuilder.build();
-            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
-            pp.setFlag(0x00);
 
+            for (int i = 0; i < 10; i++) {
+                setPushHeaders("x-push-header-" + i, "data_" + i);
+                setContHeaders("x-cont-header-" + i, "data_" + i);
+            }
+            HttpHeaders pushPromiseHeaders = pushPromiseHeadersBuilder.build();
+            HttpHeaders continuationHeaders = continuationHeadersBuilder.build();
+            testHeaders = testHeadersBuilder.build();
 
-            HttpHeadersBuilder altHeaders = new HttpHeadersBuilder();
-//            Map<String, List<String>> map = new HashMap<>();
-            for (int i = 0; i < 50; i++)
-                altHeaders.addHeader("x-bloatedHeader-" + i, "data_" + i);
-//                map.put("x-bloatedHeader-" + i, List.of("data_" + i));
+            // Create the Push Promise Frame
+            OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, content);
+            // Indicates to the client that a continuation should be expected
+            pp.setFlag(0x0);
 
-            ContinuationFrame cf = new ContinuationFrame(streamid, HeaderFrame.END_HEADERS, conn.encodeHeaders(altHeaders.build()));
-            System.err.println("PP Flags: " + pp.getFlags());
+            // Create the continuation frame
+            List<ByteBuffer> encodedHeaders = conn.encodeHeaders(continuationHeaders);
+            ContinuationFrame cf = new ContinuationFrame(streamid, HeaderFrame.END_HEADERS, encodedHeaders);
+
             try {
+                // Schedule push promise and continuation for sending
                 conn.outputQ.put(pp);
                 conn.outputQ.put(cf);
-                // writeLoop will spin up thread to read the InputStream
             } catch (IOException ex) {
                 System.err.println("TestServer: pushPromise exception: " + ex);
             }
@@ -155,16 +187,13 @@ public class LargePushPromise {
 
         private final String mainResponseBody;
         private final String mainPromiseBody;
-        private final String promise;
 
         public ServerPushHandler(String mainResponseBody,
                                  String promise)
-                throws Exception
         {
             Objects.requireNonNull(promise);
             this.mainResponseBody = mainResponseBody;
             this.mainPromiseBody = "Main Promise Body";
-            this.promise = promise;
         }
 
         public void handle(Http2TestExchange exchange) throws IOException {
@@ -175,7 +204,6 @@ public class LargePushPromise {
 
             if (exchange.serverPushAllowed()) {
                 pushPromise(exchange);
-//                sendPushContinuation(exchange);
             }
 
             // response data for the main response
@@ -194,10 +222,8 @@ public class LargePushPromise {
             URI uri = requestURI.resolve("/promise");
             InputStream is = new ByteArrayInputStream("Test_String".getBytes(UTF_8));
             Map<String, List<String>> map = new HashMap<>();
-            map.put("X-Promise", List.of(mainPromiseBody));
-
+            map.put("x-promise", List.of(mainPromiseBody));
             HttpHeaders headers = HttpHeaders.of(map, ACCEPT_ALL);
-
             exchange.serverPush(uri, headers, is);
             System.err.println("Server: Push sent");
         }
