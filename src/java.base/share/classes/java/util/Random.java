@@ -100,7 +100,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
         /**
          * Throws {@code NotSerializableException}.
-         * 
+         *
          * @param s the object input stream
          * @throws NotSerializableException always
          */
@@ -111,7 +111,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
         /**
          * Throws {@code NotSerializableException}.
-         * 
+         *
          * @param s the object output stream
          * @throws NotSerializableException always
          */
@@ -255,7 +255,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
     public Random() {
         this(seedUniquifier() ^ System.nanoTime());
     }
-    
+
     private Random(Void unused) {
         this.seed = new AtomicLong();
     }
