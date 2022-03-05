@@ -44,6 +44,7 @@ public class VMDeprecatedOptions {
      * (true/false/n/string)}.
      */
     public static final String[][] DEPRECATED_OPTIONS;
+    public static final String[][] DEPRECATED_OPTIONS_LINUX;
     static {
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
@@ -54,8 +55,6 @@ public class VMDeprecatedOptions {
             {"InitialRAMFraction",        "64"},
             {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
-            {"UseContainerCpuShares",      "false"},
-            {"PreferContainerQuotaForCPUCount", "true"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"DefaultMaxRAMFraction", "4"},
@@ -63,6 +62,15 @@ public class VMDeprecatedOptions {
           }
         ));
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
+
+        ArrayList<String[]> deprecated_linux = new ArrayList(
+          Arrays.asList(new String[][] {
+            // deprecated non-alias flags:
+            {"UseContainerCpuShares",            "false"},
+            {"PreferContainerQuotaForCPUCount",  "true"},
+          }
+        ));
+        DEPRECATED_OPTIONS_LINUX = deprecated_linux.toArray(new String[][]{});
     };
 
     static String getDeprecationString(String optionName) {
@@ -116,5 +124,8 @@ public class VMDeprecatedOptions {
 
     public static void main(String[] args) throws Throwable {
         testDeprecated(DEPRECATED_OPTIONS);  // Make sure that each deprecated option is mentioned in the output.
+        if (Platform.isLinux()) {
+            testDeprecated(DEPRECATED_OPTIONS_LINUX);
+        }
     }
 }
