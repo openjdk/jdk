@@ -312,11 +312,11 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * @param generator the {@code RandomGenerator} calls are delegated to
      * @return the delegating {@code Random} instance
      */
-    public static Random from(RandomGenerator random) {
-        if (random instanceof Random rand)
+    public static Random from(RandomGenerator generator) {
+        if (generator instanceof Random rand)
             return rand;
 
-        return new RandomWrapper(random);
+        return new RandomWrapper(generator);
     }
 
     /**
