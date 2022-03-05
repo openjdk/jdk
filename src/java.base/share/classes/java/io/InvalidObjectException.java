@@ -60,6 +60,6 @@ public class InvalidObjectException extends ObjectStreamException {
      * @since 19
      */
     public  InvalidObjectException(String reason, Throwable cause) {
-        super(reason);
+        super(reason, cause);
     }
 }
