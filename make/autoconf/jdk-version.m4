@@ -72,7 +72,14 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # Setup username (for use in adhoc version strings etc)
   AC_ARG_WITH([build-user], [AS_HELP_STRING([--with-build-user],
       [build username to use in version strings])])
-  if test "x$with_build_user" != x; then
+  if test "x$with_build_user" = xyes; then
+    AC_MSG_ERROR([--with-build-user must have a value])
+  elif test "x$with_build_user" = xno; then
+    # Interpret --without-* differently instead of the literal "no"
+    AC_MSG_WARN([--without-build-user was specified, as it is not possible to build without a user, this will be ignored])
+    # Outer [ ] to quote m4.
+    [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  elif test "x$with_build_user" != x; then
     USERNAME="$with_build_user"
   else
     # Outer [ ] to quote m4.
@@ -103,6 +110,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
        and 'java.vm.vendor' system properties. @<:@not specified@:>@])])
   if test "x$with_vendor_name" = xyes; then
     AC_MSG_ERROR([--with-vendor-name must have a value])
+  elif test "x$with_vendor_name" = xno; then
+    # Interpret --without-* differently instead of the literal "no"
+    AC_MSG_WARN([--without-vendor-name is the same as not passing --with-vendor-name to begin with])
   elif [ ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-name contains non-printing characters: $with_vendor_name])
   elif test "x$with_vendor_name" != x; then
@@ -117,6 +127,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set the 'java.vendor.url' system property @<:@not specified@:>@])])
   if test "x$with_vendor_url" = xyes; then
     AC_MSG_ERROR([--with-vendor-url must have a value])
+  elif test "x$with_vendor_url" = xno; then
+    # Interpret --without-* differently instead of the literal "no"
+    AC_MSG_WARN([--without-vendor-url is the same as not passing --with-vendor-url to begin with])
   elif [ ! [[ $with_vendor_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-url contains non-printing characters: $with_vendor_url])
   elif test "x$with_vendor_url" != x; then
@@ -131,6 +144,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set the 'java.vendor.url.bug' system property @<:@not specified@:>@])])
   if test "x$with_vendor_bug_url" = xyes; then
     AC_MSG_ERROR([--with-vendor-bug-url must have a value])
+  elif test "x$with_vendor_bug_url" = xno; then
+    # Interpret --without-* differently instead of the literal "no"
+    AC_MSG_WARN([--without-vendor-bug-url is the same as not passing --with-vendor-bug-url to begin with])
   elif [ ! [[ $with_vendor_bug_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-bug-url contains non-printing characters: $with_vendor_bug_url])
   elif test "x$with_vendor_bug_url" != x; then
@@ -145,6 +161,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Sets the bug URL which will be displayed when the VM crashes @<:@not specified@:>@])])
   if test "x$with_vendor_vm_bug_url" = xyes; then
     AC_MSG_ERROR([--with-vendor-vm-bug-url must have a value])
+  elif test "x$with_vendor_bug_url" = xno; then
+    # Interpret --without-* differently instead of the literal "no"
+    AC_MSG_WARN([--without-vendor-vm-bug-url is the same as not passing --with-vendor-vm-bug-url to begin with])
   elif [ ! [[ $with_vendor_vm_bug_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-vm-bug-url contains non-printing characters: $with_vendor_vm_bug_url])
   elif test "x$with_vendor_vm_bug_url" != x; then
@@ -162,6 +181,11 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set version string @<:@calculated@:>@])])
   if test "x$with_version_string" = xyes; then
     AC_MSG_ERROR([--with-version-string must have a value])
+  elif test "x$with_version_string" = xno; then
+    # Interpret --without-* as a request for no explicitly passed version string instead of the literal "no"
+    AC_MSG_WARN([--without-version-string was specified, as it is not possible to build without a version string, this will be ignored])
+  elif test "x$with_version_string" = xno; then
+    AC_MSG_WARN([--without-version-string is the same as not passing --with-version-string to begin with])
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
     if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z0-9]+))?(((\+)([0-9]*))?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
@@ -497,6 +521,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set vendor version string @<:@not specified@:>@])])
   if test "x$with_vendor_version_string" = xyes; then
     AC_MSG_ERROR([--with-vendor-version-string must have a value])
+  elif test "x$with_vendor_version_string" = xno; then
+    AC_MSG_WARN([--without-vendor-version-string is the same as not passing --with-vendor-version-string to begin with])
   elif [ ! [[ $with_vendor_version_string =~ ^[[:graph:]]*$ ]] ]; then
     AC_MSG_ERROR([--with--vendor-version-string contains non-graphical characters: $with_vendor_version_string])
   else
