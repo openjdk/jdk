@@ -27,17 +27,20 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.WeakHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
 
 /*
  * @test
@@ -45,7 +48,6 @@ import static org.testng.Assert.assertNull;
  * @modules java.base/java.util:open
  * @summary White box tests for HashMap internals around table resize
  * @run testng WhiteBoxResizeTest
- * @key randomness
  */
 public class WhiteBoxResizeTest {
     final ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -68,17 +70,9 @@ public class WhiteBoxResizeTest {
     int tableSizeFor(int n) {
         try {
             return (int) TABLE_SIZE_FOR.invoke(n);
-        } catch (Throwable t) { throw new AssertionError(t); }
-    }
-
-    Object[] table(HashMap map) {
-        try {
-            return (Object[]) TABLE.get(map);
-        } catch (Throwable t) { throw new AssertionError(t); }
-    }
-
-    int capacity(HashMap map) {
-        return table(map).length;
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
     }
 
     @Test
@@ -98,36 +92,62 @@ public class WhiteBoxResizeTest {
     }
 
     @Test
-    public void capacityTestDefaultConstructor() {
+    public void capacityTestDefaultConstructor() throws IllegalAccessException {
         capacityTestDefaultConstructor(new HashMap<>());
         capacityTestDefaultConstructor(new LinkedHashMap<>());
+        capacityTestDefaultConstructor(new WeakHashMap<>());
     }
 
-    void capacityTestDefaultConstructor(HashMap<Integer, Integer> map) {
-        assertNull(table(map));
+    public static int getArrayLength(Map<?, ?> map) throws
+            IllegalAccessException {
+        Field field = null;
+        Class<?> mapClass = map.getClass();
+        while (!Map.class.equals(mapClass)) {
+            try {
+                field = mapClass.getDeclaredField("table");
+                break;
+            } catch (NoSuchFieldException ignored) {
+            }
+            mapClass = mapClass.getSuperclass();
+        }
+        Objects.requireNonNull(field);
+        field.setAccessible(true);
+        Object table = field.get(map);
+        if (table == null) {
+            return -1;
+        }
+        return Array.getLength(table);
+    }
+
+    void capacityTestDefaultConstructor(
+            Map<Integer, Integer> map
+    ) throws IllegalAccessException {
+        assertEquals(getArrayLength(map), -1);
 
         map.put(1, 1);
-        assertEquals(capacity(map), 16); // default initial capacity
+        assertEquals(getArrayLength(map), 16); // default initial capacity
 
         map.putAll(IntStream.range(0, 64).boxed().collect(toMap(i -> i, i -> i)));
-        assertEquals(capacity(map), 128);
+        assertEquals(getArrayLength(map), 128);
     }
 
     @Test
-    public void capacityTestInitialCapacity() {
+    public void capacityTestInitialCapacity() throws IllegalAccessException {
         int initialCapacity = rnd.nextInt(2, 128);
-        List<Supplier<HashMap<Integer, Integer>>> suppliers = List.of(
-            () -> new HashMap<>(initialCapacity),
-            () -> new HashMap<>(initialCapacity, 0.75f),
-            () -> new LinkedHashMap<>(initialCapacity),
-            () -> new LinkedHashMap<>(initialCapacity, 0.75f));
+        List<Supplier<Map<Integer, Integer>>> suppliers = List.of(
+                () -> new HashMap<>(initialCapacity),
+                () -> new HashMap<>(initialCapacity, 0.75f),
+                () -> new LinkedHashMap<>(initialCapacity),
+                () -> new LinkedHashMap<>(initialCapacity, 0.75f),
+                () -> new WeakHashMap<>(initialCapacity),
+                () -> new WeakHashMap<>(initialCapacity, 0.75f));
 
-        for (Supplier<HashMap<Integer, Integer>> supplier : suppliers) {
-            HashMap<Integer, Integer> map = supplier.get();
-            assertNull(table(map));
+        for (Supplier<Map<Integer, Integer>> supplier : suppliers) {
+            Map<Integer, Integer> map = supplier.get();
+            assertEquals(-1, getArrayLength(map));
 
             map.put(1, 1);
-            assertEquals(capacity(map), tableSizeFor(initialCapacity));
+            assertEquals(getArrayLength(map), tableSizeFor(initialCapacity));
         }
     }
 }
