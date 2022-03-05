@@ -158,7 +158,7 @@ public class ArcFourCrypto extends DkCrypto {
            System.arraycopy(ss, 0, new_ss, 0, ss.length);
            Ksign = getHmac(baseKey, new_ss);
         } catch (Exception e) {
-            throw new GeneralSecurityException("Calculate Checkum Failed!", e);
+            throw new GeneralSecurityException("Calculate Checksum Failed!", e);
         }
 
         // get the salt using key usage
@@ -169,7 +169,7 @@ public class ArcFourCrypto extends DkCrypto {
         try {
             messageDigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            throw new GeneralSecurityException("Calculate Checkum Failed!", e);
+            throw new GeneralSecurityException("Calculate Checksum Failed!", e);
         }
         messageDigest.update(salt);
         messageDigest.update(input, start, len);
