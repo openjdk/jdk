@@ -99,6 +99,28 @@ public class Random implements RandomGenerator, java.io.Serializable {
         }
 
         /**
+         * Throws {@code NotSerializableException}.
+         * 
+         * @param s the object input stream
+         * @throws NotSerializableException always
+         */
+        @Serial
+        private void readObject(ObjectInputStream s) throws NotSerializableException {
+            throw new NotSerializableException("not serializable");
+        }
+
+        /**
+         * Throws {@code NotSerializableException}.
+         * 
+         * @param s the object output stream
+         * @throws NotSerializableException always
+         */
+        @Serial
+        private void writeObject(ObjectOutputStream s) throws NotSerializableException {
+            throw new NotSerializableException("not serializable");
+        }
+
+        /**
          * setSeed does not exist in {@link java.util.random.RandomGenerator} so can't
          * use it.
          */
