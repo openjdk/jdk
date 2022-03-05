@@ -678,7 +678,7 @@ public abstract class ClassLoader {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (ReflectUtil.isNonPublicProxyClass(cls)) {
-                for (Class<?> intf: cls.getInterfaces()) {
+                for (Class<?> intf: cls.getInterfaces(false)) {
                     checkPackageAccess(intf, pd);
                 }
                 return;
