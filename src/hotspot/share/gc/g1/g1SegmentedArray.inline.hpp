@@ -155,7 +155,7 @@ uint G1SegmentedArray<flag>::slot_size() const {
 
 template <MEMFLAGS flag>
 G1SegmentedArray<flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* alloc_options,
-                                               G1SegmentedArrayFreeList<flag>* free_segment_list) :
+                                         G1SegmentedArrayFreeList<flag>* free_segment_list) :
      _alloc_options(alloc_options),
      _first(nullptr),
      _last(nullptr),

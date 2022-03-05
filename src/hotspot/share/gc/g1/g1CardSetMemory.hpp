@@ -62,38 +62,18 @@ typedef G1SegmentedArraySegment<mtGCCardSet> G1CardSetSegment;
 
 typedef G1SegmentedArrayFreeList<mtGCCardSet> G1CardSetFreeList;
 
-// Arena-like allocator for (card set) heap memory objects (Slot slots).
+// Arena-like allocator for (card set) heap memory objects.
 //
-// Allocation and deallocation in the first phase on G1CardSetContainer basis
-// may occur by multiple threads at once.
-//
-// Allocation occurs from an internal free list of G1CardSetContainers first,
-// only then trying to bump-allocate from the current G1CardSetSegment. If there is
-// none, this class allocates a new G1CardSetSegment (allocated from the C heap,
-// asking the G1CardSetAllocOptions instance about sizes etc) and uses that one.
-//
-// The SegmentStack free list is a linked list of G1CardSetContainers
-// within all G1CardSetSegment instances allocated so far. It uses a separate
-// pending list and global synchronization to avoid the ABA problem when the
-// user frees a memory object.
-//
-// The class also manages a few counters for statistics using atomic operations.
-// Their values are only consistent within each other with extra global
-// synchronization.
-//
-// Since it is expected that every CardSet (and in extension each region) has its
-// own set of allocators, there is intentionally no padding between them to save
-// memory.
+// Allocation occurs from an internal free list of objects first, if the free list is
+// empty then tries to bump-allocate from the G1SegmentedArray.
 class G1CardSetAllocator {
-  // G1CardSetContainer slot management within the G1CardSetSegments allocated
-  // by this allocator.
   G1SegmentedArray<mtGCCardSet> _segmented_array;
   FreeListAllocator _free_slots_list;
 
 public:
   G1CardSetAllocator(const char* name,
-                         const G1CardSetAllocOptions* alloc_options,
-                         G1CardSetFreeList* free_segment_list);
+                     const G1CardSetAllocOptions* alloc_options,
+                     G1CardSetFreeList* free_segment_list);
   ~G1CardSetAllocator();
 
   void* allocate();
@@ -103,11 +83,11 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
-  inline size_t mem_size() const;
+  size_t mem_size() const;
 
-  inline size_t wasted_mem_size() const;
+  size_t wasted_mem_size() const;
 
-  inline uint num_segments() const;
+  uint num_segments() const;
 
   void print(outputStream* os);
 };
