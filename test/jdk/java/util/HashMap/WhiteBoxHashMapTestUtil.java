@@ -42,8 +42,6 @@ public class WhiteBoxHashMapTestUtil {
     static {
         try {
             Class<?> mClass = HashMap.class;
-            String nodeClassName = mClass.getName() + "$Node";
-            Class<?> nodeArrayClass = Class.forName("[L" + nodeClassName + ";");
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(mClass, MethodHandles.lookup());
             TABLE_SIZE_FOR = lookup.findStatic(
                     mClass, "tableSizeFor",
