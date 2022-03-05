@@ -90,21 +90,12 @@ public class Random implements RandomGenerator, java.io.Serializable {
      */
 
     @SuppressWarnings("serial")
-    private static class RandomWrapper extends Random implements RandomGenerator {
+    private static final class RandomWrapper extends Random implements RandomGenerator {
         private final RandomGenerator generator;
-        private final boolean initialized;
 
         private RandomWrapper(RandomGenerator randomToWrap) {
-            this.generator = randomToWrap;
-            this.initialized = true;
-        }
-
-        public static Random wrap(RandomGenerator random) {
-            // Check to see if its not wrapping another Random instance
-            if (random instanceof Random rand)
-                return rand;
-
-            return (Random) new Random.RandomWrapper(random);
+            super(null);
+            this.generator = Objects.requireNonNull(randomToWrap);
         }
 
         /**
@@ -113,8 +104,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
          */
         @Override
         public void setSeed(long seed) {
-            if(initialized)
-                throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -243,6 +233,10 @@ public class Random implements RandomGenerator, java.io.Serializable {
     public Random() {
         this(seedUniquifier() ^ System.nanoTime());
     }
+    
+    private Random(Void unused) {
+        this.seed = new AtomicLong();
+    }
 
     private static long seedUniquifier() {
         // L'Ecuyer, "Tables of Linear Congruential Generators of
@@ -285,17 +279,22 @@ public class Random implements RandomGenerator, java.io.Serializable {
     private static long initialScramble(long seed) {
         return (seed ^ multiplier) & mask;
     }
+
     /**
-     * Returns an instance of {@link Random} based on this
-     * {@link java.util.random.RandomGenerator}. If this generator is already an instance of
-     * {@link Random}, it is returned. Otherwise, this method returns an instance of
-     * {@link Random} that delegates all methods except setSeed to this generator.
-     * Its setSeed method always throws {@link UnsupportedOperationException}.
-     * @param random the {@link java.util.random.RandomGenerator} to use
-     * @return {@link Random}
+     * Returns an instance of {@code Random} that delegates method calls to the{@link RandomGenerator}
+     * argument. If the generator is an instance of {@code Random}, it is returned. Otherwise, this method
+     * returns an instance of {@code Random} that delegates all methods except {@code setSeed} to the generator.
+     * The returned instance's {@code setSeed} method always throws {@link UnsupportedOperationException}.
+     * The returned instance is not serializable.
+     *
+     * @param generator the {@code RandomGenerator} calls are delegated to
+     * @return the delegating {@code Random} instance
      */
     public static Random from(RandomGenerator random) {
-        return RandomWrapper.wrap(random);
+        if (random instanceof Random rand)
+            return rand;
+
+        return new RandomWrapper(random);
     }
 
     /**
