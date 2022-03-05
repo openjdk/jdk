@@ -180,8 +180,7 @@ PSPromotionManager::PSPromotionManager() {
   uint queue_size;
   queue_size = claimed_stack_depth()->max_elems();
 
-  _totally_drain = (ParallelGCThreads == 1) || (GCDrainStackTargetSize == 0);
-  if (_totally_drain) {
+  if (ParallelGCThreads == 1) {
     _target_stack_size = 0;
   } else {
     // don't let the target stack size to be more than 1/4 of the entries
@@ -227,7 +226,7 @@ void PSPromotionManager::restore_preserved_marks() {
 }
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
-  totally_drain = totally_drain || _totally_drain;
+  totally_drain = totally_drain || (_target_stack_size == 0);
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
