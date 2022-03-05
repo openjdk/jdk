@@ -1947,7 +1947,7 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
 
-  AARCH64_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
+  AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
 
   address entry_point = moop->from_compiled_entry_no_trampoline();
 

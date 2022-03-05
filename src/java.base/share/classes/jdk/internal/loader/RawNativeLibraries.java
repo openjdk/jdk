@@ -35,9 +35,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static jdk.internal.loader.NativeLibraries.*;
-
-
 /**
  * RawNativeLibraries has the following properties:
  * 1. Native libraries loaded in this RawNativeLibraries instance are
@@ -48,7 +45,7 @@ import static jdk.internal.loader.NativeLibraries.*;
  * 3. No relationship with class loaders.
  */
 public final class RawNativeLibraries {
-    final Map<String, NativeLibraryImpl> libraries = new ConcurrentHashMap<>();
+    final Map<String, RawNativeLibraryImpl> libraries = new ConcurrentHashMap<>();
     final Class<?> caller;
 
     private RawNativeLibraries(MethodHandles.Lookup trustedCaller) {
@@ -116,10 +113,10 @@ public final class RawNativeLibraries {
          return libraries.computeIfAbsent(pathname, this::get);
     }
 
-    private NativeLibraryImpl get(String pathname) {
-        NativeLibraryImpl lib = new NativeLibraryImpl(caller, pathname, false, false);
+    private RawNativeLibraryImpl get(String pathname) {
+        RawNativeLibraryImpl lib = new RawNativeLibraryImpl(caller, pathname);
         if (!lib.open()) {
-            return null;    // fail to open the native library
+            return null;
         }
         return lib;
     }
@@ -132,8 +129,49 @@ public final class RawNativeLibraries {
         if (!libraries.remove(lib.name(), lib)) {
             throw new IllegalArgumentException(lib.name() + " not loaded by this RawNativeLibraries instance");
         }
-        NativeLibraryImpl nl = (NativeLibraryImpl)lib;
+        RawNativeLibraryImpl nl = (RawNativeLibraryImpl)lib;
         nl.close();
     }
+
+    static class RawNativeLibraryImpl extends NativeLibrary {
+        // the name of the raw native library.
+        final String name;
+        // opaque handle to raw native library, used in native code.
+        long handle;
+
+        RawNativeLibraryImpl(Class<?> fromClass, String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public long find(String name) {
+            return findEntry0(handle, name);
+        }
+
+        /*
+         * Loads the named native library.
+         */
+        boolean open() {
+            if (handle != 0) {
+                throw new InternalError("Native library " + name + " has been loaded");
+            }
+            return load0(this, name);
+        }
+
+        /*
+         * Close this native library.
+         */
+        void close() {
+            unload0(name, handle);
+        }
+    }
+
+    private static native boolean load0(RawNativeLibraryImpl impl, String name);
+    private static native void unload0(String name, long handle);
 }
 

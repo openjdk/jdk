@@ -54,6 +54,8 @@ public class VMDeprecatedOptions {
             {"InitialRAMFraction",        "64"},
             {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
+            {"UseContainerCpuShares",      "false"},
+            {"PreferContainerQuotaForCPUCount", "true"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
             {"DefaultMaxRAMFraction", "4"},

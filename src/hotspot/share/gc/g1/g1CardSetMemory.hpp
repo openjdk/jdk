@@ -29,9 +29,9 @@
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1SegmentedArray.hpp"
 #include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/shared/freeListAllocator.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/lockFreeStack.hpp"
 
 class G1CardSetConfiguration;
 class outputStream;
@@ -91,23 +91,9 @@ class G1CardSetAllocator {
   typedef G1SegmentedArray<Slot, mtGCCardSet> SegmentedArray;
   // G1CardSetContainer slot management within the G1CardSetSegments allocated
   // by this allocator.
-  static G1CardSetContainer* volatile* next_ptr(G1CardSetContainer& slot);
-  typedef LockFreeStack<G1CardSetContainer, &G1CardSetAllocator::next_ptr> SlotStack;
 
   SegmentedArray _segmented_array;
-  volatile bool _transfer_lock;
-  SlotStack _free_slots_list;
-  SlotStack _pending_slots_list;
-
-  volatile uint _num_pending_slots;   // Number of slots in the pending list.
-  volatile uint _num_free_slots;      // Number of slots in the free list.
-
-  // Try to transfer slots from _pending_slots_list to _free_slots_list, with a
-  // synchronization delay for any in-progress pops from the _free_slots_list
-  // to solve ABA here.
-  bool try_transfer_pending();
-
-  uint num_free_slots() const;
+  FreeListAllocator _free_slots_list;
 
 public:
   G1CardSetAllocator(const char* name,
@@ -124,13 +110,15 @@ public:
 
   size_t mem_size() const {
     return sizeof(*this) +
-      _segmented_array.num_segments() * sizeof(G1CardSetSegment) + _segmented_array.num_available_slots() *
-                                                                   _segmented_array.slot_size();
+      _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
+      _segmented_array.num_available_slots() * _segmented_array.slot_size();
   }
 
   size_t wasted_mem_size() const {
-    return (_segmented_array.num_available_slots() - (_segmented_array.num_allocated_slots() - _num_pending_slots)) *
-           _segmented_array.slot_size();
+    uint num_wasted_slots = _segmented_array.num_available_slots() -
+                            _segmented_array.num_allocated_slots() -
+                            (uint)_free_slots_list.pending_count();
+    return num_wasted_slots * _segmented_array.slot_size();
   }
 
   inline uint num_segments() { return _segmented_array.num_segments(); }

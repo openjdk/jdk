@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_COPY_HPP
 
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
@@ -295,6 +296,28 @@ class Copy : AllStatic {
   // Zero bytes
   static void zero_to_bytes(void* to, size_t count) {
     pd_zero_to_bytes(to, count);
+  }
+
+ protected:
+  inline static void shared_disjoint_words_atomic(const HeapWord* from,
+                                                  HeapWord* to, size_t count) {
+
+    switch (count) {
+    case 8:  Atomic::store(&to[7], Atomic::load(&from[7]));
+    case 7:  Atomic::store(&to[6], Atomic::load(&from[6]));
+    case 6:  Atomic::store(&to[5], Atomic::load(&from[5]));
+    case 5:  Atomic::store(&to[4], Atomic::load(&from[4]));
+    case 4:  Atomic::store(&to[3], Atomic::load(&from[3]));
+    case 3:  Atomic::store(&to[2], Atomic::load(&from[2]));
+    case 2:  Atomic::store(&to[1], Atomic::load(&from[1]));
+    case 1:  Atomic::store(&to[0], Atomic::load(&from[0]));
+    case 0:  break;
+    default:
+      while (count-- > 0) {
+        Atomic::store(to++, Atomic::load(from++));
+      }
+      break;
+    }
   }
 
  private:

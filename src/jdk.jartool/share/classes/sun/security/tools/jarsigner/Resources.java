@@ -176,7 +176,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"history.nobk", "- Missing block file for signature-related file META-INF/%s.SF"},
 
         {"with.weak", "%s (weak)"},
+        {"with.algparams.weak", "%1$s using %2$s (weak)"},
         {"with.disabled", "%s (disabled)"},
+        {"with.algparams.disabled", "%1$s using %2$s (disabled)"},
         {"key.bit", "%d-bit key"},
         {"key.bit.weak", "%d-bit key (weak)"},
         {"key.bit.disabled", "%d-bit key (disabled)"},

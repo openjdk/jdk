@@ -25,13 +25,13 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
 #include "jvm.h"
 #include "jdk_internal_loader_NativeLibraries.h"
-#include <string.h>
 
 typedef jint (JNICALL *JNI_OnLoad_t)(JavaVM *, void *);
 typedef void (JNICALL *JNI_OnUnload_t)(JavaVM *, void *);
@@ -40,18 +40,17 @@ static jfieldID handleID;
 static jfieldID jniVersionID;
 static void *procHandle;
 
-
 static jboolean initIDs(JNIEnv *env)
 {
     if (handleID == 0) {
-        jclass this =
+        jclass nlClz =
             (*env)->FindClass(env, "jdk/internal/loader/NativeLibraries$NativeLibraryImpl");
-        if (this == 0)
+        if (nlClz == 0)
             return JNI_FALSE;
-        handleID = (*env)->GetFieldID(env, this, "handle", "J");
+        handleID = (*env)->GetFieldID(env, nlClz, "handle", "J");
         if (handleID == 0)
             return JNI_FALSE;
-        jniVersionID = (*env)->GetFieldID(env, this, "jniVersion", "I");
+        jniVersionID = (*env)->GetFieldID(env, nlClz, "jniVersion", "I");
         if (jniVersionID == 0)
             return JNI_FALSE;
         procHandle = getProcessHandle();
@@ -109,12 +108,12 @@ static void *findJniFunction(JNIEnv *env, void *handle,
 /*
  * Class:     jdk_internal_loader_NativeLibraries
  * Method:    load
- * Signature: (Ljava/lang/String;ZZ)Z
+ * Signature: (Ljdk/internal/loader/NativeLibraries/NativeLibraryImpl;Ljava/lang/String;ZZ)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_jdk_internal_loader_NativeLibraries_load
-  (JNIEnv *env, jobject this, jobject lib, jstring name,
-   jboolean isBuiltin, jboolean isJNI, jboolean throwExceptionIfFail)
+  (JNIEnv *env, jclass cls, jobject lib, jstring name,
+   jboolean isBuiltin, jboolean throwExceptionIfFail)
 {
     const char *cname;
     jint jniVersion;
@@ -129,53 +128,52 @@ Java_jdk_internal_loader_NativeLibraries_load
     if (cname == 0)
         return JNI_FALSE;
     handle = isBuiltin ? procHandle : JVM_LoadLibrary(cname, throwExceptionIfFail);
-    if (isJNI) {
-        if (handle) {
-            JNI_OnLoad_t JNI_OnLoad;
-            JNI_OnLoad = (JNI_OnLoad_t)findJniFunction(env, handle,
-                                                       isBuiltin ? cname : NULL,
-                                                       JNI_TRUE);
-            if (JNI_OnLoad) {
-                JavaVM *jvm;
-                (*env)->GetJavaVM(env, &jvm);
-                jniVersion = (*JNI_OnLoad)(jvm, NULL);
-            } else {
-                jniVersion = 0x00010001;
-            }
-
-            cause = (*env)->ExceptionOccurred(env);
-            if (cause) {
-                (*env)->ExceptionClear(env);
-                (*env)->Throw(env, cause);
-                if (!isBuiltin) {
-                    JVM_UnloadLibrary(handle);
-                }
-                goto done;
-            }
-
-            if (!JVM_IsSupportedJNIVersion(jniVersion) ||
-                (isBuiltin && jniVersion < JNI_VERSION_1_8)) {
-                char msg[256];
-                jio_snprintf(msg, sizeof(msg),
-                             "unsupported JNI version 0x%08X required by %s",
-                             jniVersion, cname);
-                JNU_ThrowByName(env, "java/lang/UnsatisfiedLinkError", msg);
-                if (!isBuiltin) {
-                    JVM_UnloadLibrary(handle);
-                }
-                goto done;
-            }
-            (*env)->SetIntField(env, lib, jniVersionID, jniVersion);
+    if (handle) {
+        JNI_OnLoad_t JNI_OnLoad;
+        JNI_OnLoad = (JNI_OnLoad_t)findJniFunction(env, handle,
+                                                   isBuiltin ? cname : NULL,
+                                                   JNI_TRUE);
+        if (JNI_OnLoad) {
+            JavaVM *jvm;
+            (*env)->GetJavaVM(env, &jvm);
+            jniVersion = (*JNI_OnLoad)(jvm, NULL);
         } else {
-            cause = (*env)->ExceptionOccurred(env);
-            if (cause) {
-                (*env)->ExceptionClear(env);
-                (*env)->SetLongField(env, lib, handleID, (jlong)0);
-                (*env)->Throw(env, cause);
+            jniVersion = 0x00010001;
+        }
+
+        cause = (*env)->ExceptionOccurred(env);
+        if (cause) {
+            (*env)->ExceptionClear(env);
+            (*env)->Throw(env, cause);
+            if (!isBuiltin) {
+                JVM_UnloadLibrary(handle);
             }
             goto done;
         }
+
+        if (!JVM_IsSupportedJNIVersion(jniVersion) ||
+            (isBuiltin && jniVersion < JNI_VERSION_1_8)) {
+            char msg[256];
+            jio_snprintf(msg, sizeof(msg),
+                         "unsupported JNI version 0x%08X required by %s",
+                         jniVersion, cname);
+            JNU_ThrowByName(env, "java/lang/UnsatisfiedLinkError", msg);
+            if (!isBuiltin) {
+                JVM_UnloadLibrary(handle);
+            }
+            goto done;
+        }
+        (*env)->SetIntField(env, lib, jniVersionID, jniVersion);
+    } else {
+        cause = (*env)->ExceptionOccurred(env);
+        if (cause) {
+            (*env)->ExceptionClear(env);
+            (*env)->SetLongField(env, lib, handleID, (jlong)0);
+            (*env)->Throw(env, cause);
+        }
+        goto done;
     }
+
     (*env)->SetLongField(env, lib, handleID, ptr_to_jlong(handle));
     loaded = JNI_TRUE;
 
@@ -187,11 +185,11 @@ Java_jdk_internal_loader_NativeLibraries_load
 /*
  * Class:     jdk_internal_loader_NativeLibraries
  * Method:    unload
- * Signature: (Ljava/lang/String;ZZJ)V
+ * Signature: (Ljava/lang/String;ZJ)V
  */
 JNIEXPORT void JNICALL
 Java_jdk_internal_loader_NativeLibraries_unload
-(JNIEnv *env, jclass cls, jstring name, jboolean isBuiltin, jboolean isJNI, jlong address)
+(JNIEnv *env, jclass cls, jstring name, jboolean isBuiltin, jlong address)
 {
     const char *onUnloadSymbols[] = JNI_ONUNLOAD_SYMBOLS;
     void *handle;
@@ -205,15 +203,14 @@ Java_jdk_internal_loader_NativeLibraries_unload
         return;
     }
     handle = jlong_to_ptr(address);
-    if (isJNI) {
-        JNI_OnUnload = (JNI_OnUnload_t )findJniFunction(env, handle,
-                                                        isBuiltin ? cname : NULL,
-                                                        JNI_FALSE);
-        if (JNI_OnUnload) {
-            JavaVM *jvm;
-            (*env)->GetJavaVM(env, &jvm);
-            (*JNI_OnUnload)(jvm, NULL);
-        }
+
+    JNI_OnUnload = (JNI_OnUnload_t )findJniFunction(env, handle,
+                                                    isBuiltin ? cname : NULL,
+                                                    JNI_FALSE);
+    if (JNI_OnUnload) {
+        JavaVM *jvm;
+        (*env)->GetJavaVM(env, &jvm);
+        (*JNI_OnUnload)(jvm, NULL);
     }
     if (!isBuiltin) {
         JVM_UnloadLibrary(handle);
@@ -221,24 +218,18 @@ Java_jdk_internal_loader_NativeLibraries_unload
     JNU_ReleaseStringPlatformChars(env, name, cname);
 }
 
-
 /*
- * Class:     jdk_internal_loader_NativeLibraries
+ * Class:     jdk_internal_loader_NativeLibrary
  * Method:    findEntry0
- * Signature: (Ljava/lang/String;)J
+ * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_jdk_internal_loader_NativeLibraries_findEntry0
-  (JNIEnv *env, jobject this, jobject lib, jstring name)
+Java_jdk_internal_loader_NativeLibrary_findEntry0
+  (JNIEnv *env, jclass cls, jlong handle, jstring name)
 {
-    jlong handle;
     const char *cname;
     jlong res;
 
-    if (!initIDs(env))
-        return jlong_zero;
-
-    handle = (*env)->GetLongField(env, lib, handleID);
     cname = (*env)->GetStringUTFChars(env, name, 0);
     if (cname == 0)
         return jlong_zero;

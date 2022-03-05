@@ -235,10 +235,10 @@ inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
 }
 
 inline void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
-    // All objects failing evacuation are live. What we'll do is
-    // that we'll update the prev marking info so that they are
-    // all under PTAMS and explicitly marked.
-    _cm->par_mark_in_prev_bitmap(obj);
+  // All objects failing evacuation are live. What we'll do is
+  // that we'll update the prev marking info so that they are
+  // all under PTAMS and explicitly marked.
+  _cm->par_mark_in_prev_bitmap(obj);
 }
 
 inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
