@@ -244,8 +244,8 @@ It's possible to build both Windows and Linux binaries from WSL. To build
 Windows binaries, you must use a Windows boot JDK (located in a
 Windows-accessible directory). To build Linux binaries, you must use a Linux
 boot JDK. The default behavior is to build for Windows. To build for Linux, pass
-`--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu` to
-`configure`.
+`--build=x86_64-unknown-linux-gnu --openjdk-target=x86_64-unknown-linux-gnu`
+to `configure`.
 
 If building Windows binaries, the source code must be located in a Windows-
 accessible directory. This is because Windows executables (such as Visual Studio
@@ -382,9 +382,9 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 
-(16.8 or higher). For all other platforms the minimum accepted version of 
-Visual Studio is 2017. Older versions will not be accepted by `configure` and will 
+For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
+(16.8 or higher). For all other platforms the minimum accepted version of
+Visual Studio is 2017. Older versions will not be accepted by `configure` and will
 not work. For all platforms the maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
@@ -986,10 +986,15 @@ You *must* specify the target platform when cross-compiling. Doing so will also
 automatically turn the build into a cross-compiling mode. The simplest way to
 do this is to use the `--openjdk-target` argument, e.g.
 `--openjdk-target=arm-linux-gnueabihf`. or `--openjdk-target=aarch64-oe-linux`.
-This will automatically set the `--build`, `--host` and `--target` options for
+This will automatically set the `--host` and `--target` options for
 autoconf, which can otherwise be confusing. (In autoconf terminology, the
 "target" is known as "host", and "target" is used for building a Canadian
 cross-compiler.)
+
+If `--build` has not been explicitly passed to configure, `--openjdk-target`
+will autodetect the build platform and internally set the flag automatically,
+otherwise the platform that was explicitly passed to `--build` will be used
+instead.
 
 ### Toolchain Considerations
 

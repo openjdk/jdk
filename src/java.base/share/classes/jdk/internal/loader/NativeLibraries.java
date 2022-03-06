@@ -281,7 +281,7 @@ public final class NativeLibraries {
      * the VM when it loads the library, and used by the VM to pass the correct
      * version of JNI to the native methods.
      */
-    static class NativeLibraryImpl implements NativeLibrary {
+    static class NativeLibraryImpl extends NativeLibrary {
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
         final Class<?> fromClass;
@@ -309,7 +309,7 @@ public final class NativeLibraries {
 
         @Override
         public long find(String name) {
-            return findEntry0(this, name);
+            return findEntry0(handle, name);
         }
 
         /*
@@ -534,10 +534,4 @@ public final class NativeLibraries {
      */
     private static native void unload(String name, boolean isBuiltin, long handle);
     private static native String findBuiltinLib(String name);
-
-    /*
-     * Returns the address of the named symbol defined in the given library.
-     * Returns 0 if not found.
-     */
-    static native long findEntry0(NativeLibrary lib, String name);
 }
