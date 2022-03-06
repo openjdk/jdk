@@ -59,7 +59,7 @@ public class InvalidObjectException extends ObjectStreamException {
      * @see ObjectInputValidation
      * @since 19
      */
-    public  InvalidObjectException(String reason, Throwable cause) {
+    public InvalidObjectException(String reason, Throwable cause) {
         super(reason, cause);
     }
 }
