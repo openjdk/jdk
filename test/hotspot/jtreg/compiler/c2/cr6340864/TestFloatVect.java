@@ -87,6 +87,7 @@ public class TestFloatVect {
       test_divv(a0, a1, -VALUE);
       test_diva(a0, a1, a3);
       test_negc(a0, a1);
+      test_signum(a0, a1);
       test_sqrt(a0, a1);
     }
     // Test and verify results
@@ -342,6 +343,18 @@ public class TestFloatVect {
         errn += verify("test_diva_n: ", i, a0[i], ((ADD_INIT+i)/(-VALUE)));
       }
 
+      test_signum(a0, a1);
+      errn += verify("test_signum: ", 0, a0[0], (Float.NaN));
+      errn += verify("test_signum: ", 1, a0[1],  1.0f);
+      errn += verify("test_signum: ", 2, a0[2], -1.0f);
+      errn += verify("test_signum: ", 3, a0[3],  1.0f);
+      errn += verify("test_signum: ", 4, a0[4],  1.0f);
+      errn += verify("test_signum: ", 5, a0[5],  1.0f);
+      for (int i=6; i<ARRLEN; i++) {
+        errn += verify("test_signum: ", i, a0[i], (((float)(ADD_INIT+i)) > 0.0f ? 1.0f : -1.0f));
+      }
+
+
       test_negc(a0, a1);
       errn += verify("test_negc: ", 0, a0[0], (Float.NaN));
       errn += verify("test_negc: ", 1, a0[1], (Float.NEGATIVE_INFINITY));
@@ -507,6 +520,13 @@ public class TestFloatVect {
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
+      test_signum(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_signum_n: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
       test_sqrt(a0, a1);
     }
     end = System.currentTimeMillis();
@@ -594,6 +614,12 @@ public class TestFloatVect {
   static void test_diva(float[] a0, float[] a1, float[] a2) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (a1[i]/a2[i]);
+    }
+  }
+
+  static void test_signum(float[] a0, float[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.signum(a1[i]);
     }
   }
 

@@ -1861,6 +1861,14 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_SignumVD:
+    case Op_SignumVF:
+      if (UseAVX < 1 ||
+          (size_in_bits == 512 && !VM_Version::supports_avx512dq()) ||
+          (size_in_bits == 256 && !VM_Version::supports_avx2())) {
+        return false;
+      }
+      break;
   }
   return true;  // Per default match rules are supported.
 }
@@ -6065,6 +6073,36 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_encode %{
     int opcode = this->ideal_Opcode();
     __ signum_fp(opcode, $dst$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister, $scratch$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1, vec xtmp2, vec xtmp3, rFlagsReg cr) %{
+  predicate(Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, KILL cr);
+  format %{ "vector_signum_avx $dst, $src\t! using $xtmp1, $xtmp2, and $xtmp3 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_avx(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                         $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, vec xtmp1, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
+  predicate(Matcher::vector_length_in_bytes(n) > 32);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP xtmp1, TEMP ktmp1, TEMP ktmp2, KILL cr);
+  format %{ "vector_signum_evex $dst, $src\t! using $xtmp1, $ktmp1 and $ktmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_evex(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                          $xtmp1$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister, vec_enc);
   %}
   ins_pipe( pipe_slow );
 %}

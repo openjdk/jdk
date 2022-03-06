@@ -2703,6 +2703,8 @@ private:
   void evpmovm2w(XMMRegister dst, KRegister src, int vector_len);
   void evpmovm2d(XMMRegister dst, KRegister src, int vector_len);
   void evpmovm2q(XMMRegister dst, KRegister src, int vector_len);
+  void evfpclassps(KRegister dst, XMMRegister src, int imm8, int vector_len);
+  void evfpclasspd(KRegister dst, XMMRegister src, int imm8, int vector_len);
 
   // Vector blends
   void blendvps(XMMRegister dst, XMMRegister src);
