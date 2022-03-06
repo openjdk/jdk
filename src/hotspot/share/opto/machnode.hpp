@@ -599,6 +599,10 @@ public:
     add_req(NULL);
     add_req(n);
   }
+
+  static constexpr uint mach_spill_copy_rule = 10000000;
+
+  virtual uint rule() const override { return mach_spill_copy_rule; }
   virtual uint size_of() const { return sizeof(*this); }
   void set_out_RegMask(const RegMask &out) { _out = &out; }
   void set_in_RegMask(const RegMask &in) { _in = &in; }

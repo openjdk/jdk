@@ -635,7 +635,7 @@ void PipeClassForm::output(FILE *fp) {         // Write info to output files
 //==============================Peephole Optimization==========================
 int Peephole::_peephole_counter = 0;
 //------------------------------Peephole---------------------------------------
-Peephole::Peephole() : _match(NULL), _constraint(NULL), _replace(NULL), _next(NULL) {
+Peephole::Peephole() : _predicate(NULL), _match(NULL), _constraint(NULL), _replace(NULL), _next(NULL) {
   _peephole_number = _peephole_counter++;
 }
 Peephole::~Peephole() {
@@ -648,6 +648,12 @@ void Peephole::append_peephole(Peephole *next_peephole) {
   } else {
     _next->append_peephole( next_peephole );
   }
+}
+
+// Add a predicate to this peephole rule
+void Peephole::add_predicate(PeepPredicate* predicate) {
+  assert( _predicate == NULL, "fatal()" );
+  _predicate = predicate;
 }
 
 // Store the components of this peephole rule
@@ -685,12 +691,29 @@ void Peephole::output(FILE *fp) {         // Write info to output files
   if( _next ) _next->output(fp);
 }
 
+//----------------------------PeepPredicate------------------------------------
+PeepPredicate::PeepPredicate(const char* rule) : _rule(rule) {
+}
+PeepPredicate::~PeepPredicate() {
+}
+
+const char* PeepPredicate::rule() const {
+  return _rule;
+}
+
+void PeepPredicate::dump() {
+  output(stderr);
+}
+
+void PeepPredicate::output(FILE* fp) {
+  fprintf(fp, "PeepPredicate\n");
+}
+
 //------------------------------PeepMatch--------------------------------------
 PeepMatch::PeepMatch(char *rule) : _max_position(0), _rule(rule) {
 }
 PeepMatch::~PeepMatch() {
 }
-
 
 // Insert info into the match-rule
 void  PeepMatch::add_instruction(int parent, int position, const char *name,

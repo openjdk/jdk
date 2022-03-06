@@ -13338,6 +13338,44 @@ instruct tlsLoadP(r15_RegP dst) %{
 // %}
 //
 
+// This instruction is not matched by the matcher but used by the peephole
+instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
+%{
+  match(Set dst (AddI src1 src2));
+
+  effect(KILL cr);
+  format %{ "peepholed-addl    $dst, $src1, $src2\t# int" %}
+  ins_encode %{
+    Register dst = $dst$$Register;
+    Register src1 = $src1$$Register;
+    Register src2 = $src2$$Register;
+    if (dst == src1) {
+      __ addl(dst, src2);
+    } else if (dst == src2) {
+      __ addl(dst, src1);
+    } else if (src1 != rbp && src1 != r13) {
+      __ leal(dst, Address(src1, src2, Address::times_1));
+    } else if (src2 != rbp && src2 != r13) {
+      __ leal(dst, Address(src2, src1, Address::times_1));
+    } else if (src1 == src2) {
+      __ leal(dst, Address(noreg, src1, Address::times_2));
+    } else {
+      // {src1, src2} == {rbp, r13} && src1 != src2, just give up
+      __ movl(dst, src1);
+      __ addl(dst, src2);
+    }
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addI_rReg MachSpillCopy);
+  peepconstraint (0.dst == 1.dst);
+  peepreplace (leaI_rReg_rReg(0.dst 0.src 1.src));
+%}
+
 peephole
 %{
   peepmatch (loadI storeI);

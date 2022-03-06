@@ -2046,14 +2046,16 @@ void ADLParser::peep_parse(void) {
         return;
       }
       // check for legal subsections of peephole rule
-      if (strcmp(token,"peepmatch")==0) {
+      if (strcmp(token,"peeppredicate")==0) {
+        peep_predicate_parse(*peep); }
+      else if (strcmp(token,"peepmatch")==0) {
         peep_match_parse(*peep); }
       else if (strcmp(token,"peepconstraint")==0) {
         peep_constraint_parse(*peep); }
       else if (strcmp(token,"peepreplace")==0) {
         peep_replace_parse(*peep); }
       else {
-        parse_err(SYNERR, "expected peepmatch, peepconstraint, or peepreplace for identifier %s.\n", token);
+        parse_err(SYNERR, "expected peeppreddicate, peepmatch, peepconstraint, or peepreplace for identifier %s.\n", token);
       }
       skipws();
     }
@@ -2505,7 +2507,7 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
     // This instruction is the parent of a sub-tree
     else if ((token = get_ident_dup()) != NULL) {
       const Form *form = _AD._globalNames[token];
-      if (form) {
+      if (form != NULL) {
         InstructForm *inst = form->is_instruction();
         // Record the first instruction at this level
         if( inst_seen == NULL ) {
@@ -2521,6 +2523,11 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
           return inst_seen;
         }
       }
+      else if (strcmp("MachSpillCopy", token) == 0) {
+        match.add_instruction(parent, position, token, input);
+        parent = position;
+        ++position;
+      }
       else {
         parse_err(SYNERR, "missing identifier in peepmatch rule.\n");
         return NULL;
@@ -2535,6 +2542,31 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
 
   assert( false, "ShouldNotReachHere();");
   return NULL;
+}
+
+//---------------------------peep-predicate-parse------------------------------
+// Syntax for a peeppredicate rule
+//
+// peeppredicate ( predicate );
+//
+void ADLParser::peep_predicate_parse(Peephole& peep) {
+
+  skipws();
+  char* rule = nullptr;
+  if ( (rule = get_paren_expr("pred expression", true)) == nullptr ) {
+    parse_err(SYNERR, "incorrect or missing expression for 'peeppredicate'\n");
+    return;
+  }
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' in peeppredicate definition\n");
+    return;
+  }
+  next_char();   // skip ';'
+  skipws();
+
+  // Construct PeepPredicate
+  PeepPredicate* predicate = new PeepPredicate(rule);
+  peep.add_predicate(predicate);
 }
 
 //------------------------------peep_match_parse-------------------------------
@@ -2629,7 +2661,7 @@ void ADLParser::peep_constraint_parse(Peephole &peep) {
 
     skipws();
     // Get information on the right instruction and its operand
-    int right_inst;        // Right-instructions's number
+    int right_inst;        // Right-instruction's number
     if( isdigit(_curchar) ) {
       right_inst = get_int();
       // Right-instruction's operand

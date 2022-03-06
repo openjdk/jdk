@@ -47,9 +47,6 @@ class ExpandRule;
 class RewriteRule;
 class ConstructRule;
 class FormatRule;
-class Peephole;
-class PeepMatch;
-class PeepConstraint;
 class EncClass;
 class Interface;
 class RegInterface;
@@ -67,6 +64,8 @@ class ResourceForm;
 class PipeClassForm;
 class PipeClassOperandForm;
 class PipeClassResourceForm;
+class Peephole;
+class PeepPredicate;
 class PeepMatch;
 class PeepConstraint;
 class PeepReplace;
@@ -526,6 +525,7 @@ class Peephole : public Form {
 private:
   static int      _peephole_counter;// Incremented by each peephole rule parsed
   int             _peephole_number;// Remember my order in architecture description
+  PeepPredicate  *_predicate;      // Predicate to apply peep rule
   PeepMatch      *_match;          // Instruction pattern to match
   PeepConstraint *_constraint;     // List of additional constraints
   PeepReplace    *_replace;        // Instruction pattern to substitute in
@@ -541,12 +541,14 @@ public:
   void append_peephole(Peephole *next_peephole);
 
   // Store the components of this peephole rule
+  void add_predicate(PeepPredicate *only_one_predicate);
   void add_match(PeepMatch *only_one_match);
   void append_constraint(PeepConstraint *next_constraint);
   void add_replace(PeepReplace *only_one_replacement);
 
   // Access the components of this peephole rule
   int             peephole_number() { return _peephole_number; }
+  PeepPredicate  *predicate()   { return _predicate; }
   PeepMatch      *match()       { return _match; }
   PeepConstraint *constraints() { return _constraint; }
   PeepReplace    *replacement() { return _replace; }
@@ -556,6 +558,19 @@ public:
   void output(FILE *fp);           // Write info to output files
 };
 
+class PeepPredicate : public Form {
+private:
+  const char* _rule;
+public:
+  // Public Methods
+  PeepPredicate(const char* rule);
+  ~PeepPredicate();
+
+  const char* rule() const;
+
+  void dump();
+  void output(FILE* fp);
+};
 
 class PeepMatch : public Form {
 private:
