@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,13 @@
 #define SHARE_GC_G1_G1CARDSETMEMORY_INLINE_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CardSetContainers.hpp"
+#include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/ostream.hpp"
 
-#include "gc/g1/g1CardSetContainers.inline.hpp"
-#include "utilities/globalCounter.inline.hpp"
-
-template <class Slot>
-Slot* G1CardSetAllocator<Slot>::allocate() {
-  Slot* slot = ::new (_free_slots_list.allocate()) Slot();
+inline void* G1CardSetAllocator::allocate() {
+  void* slot = _free_slots_list.allocate();
   assert(slot != nullptr, "must be");
   return slot;
 }
