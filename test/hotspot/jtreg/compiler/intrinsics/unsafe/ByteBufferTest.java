@@ -211,7 +211,7 @@ class MyByteBuffer {
 
     void ck(long x, long y) {
         if (x != y) {
-            throw new RuntimeException(" x = " + Long.toHexString(x) + ", y = " + Long.toHexString(y));
+            throw new RuntimeException("expect x == y: x = " + Long.toHexString(x) + ", y = " + Long.toHexString(y));
         }
     }
 
@@ -223,7 +223,8 @@ class MyByteBuffer {
         // Hence, we only use x != y, if both are not NaN.
         // Additionally, we also check if exactly one of them is NaN, via XOR (^).
         if ((!Double.isNaN(x) && !Double.isNaN(y) && x != y) || (Double.isNaN(x) ^ Double.isNaN(y))) {
-            throw new RuntimeException(" x = " + Double.toString(x) + ", y = " + Double.toString(y)
+            throw new RuntimeException("expect x == y:"
+                                    + "  x = " + Double.toString(x) + ", y = " + Double.toString(y)
                                     + " (x = " + Long.toHexString(Double.doubleToRawLongBits(x))
                                     + ", y = " + Long.toHexString(Double.doubleToRawLongBits(y)) + ")");
         }
