@@ -863,7 +863,7 @@ unsigned int C2_MacroAssembler::count_positives(Register result, Register src, R
   z_sll(ctr, log_unroll_factor);        // calculate # bytes not processed by unrolled loop
                                         // > 0 only if a negative byte was found
   z_lr(Z_R0, cnt);                      // calculate remainder bytes
-  z_nill(Z_R0, unroll_factor - 1);
+  z_nilf(Z_R0, unroll_factor - 1);
   z_ar(ctr, Z_R0);                      // remaining bytes
   z_brnh(allDone);                      // shortcut if nothing left to do
 
