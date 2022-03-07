@@ -60,7 +60,7 @@ list.  Changes are likely to be cautious and incremental, since HotSpot
 coders have been using these guidelines for years.
 
 Substantive changes are approved by
-[rough consensus](https://en.wikipedia.org/wiki/Rough_consensus) of
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
 the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
 
