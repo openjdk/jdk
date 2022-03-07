@@ -155,7 +155,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
                         ks.getAlgorithm(cs, algorithm));
             } catch (GeneralSecurityException gse) {
                 throw new SSLHandshakeException(
-                    "Could not generate secret", gse));
+                        "Could not generate secret", gse);
             }
         }
 
