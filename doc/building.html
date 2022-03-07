@@ -893,7 +893,7 @@ spawn failed</code></pre>
 <p>Currently, it is not possible to build OpenJDK fully reproducibly, but getting there is an ongoing effort.</p>
 <p>An absolute prerequisite for building reproducible is to speficy a fixed build time, since time stamps are embedded in many file formats. This is done by setting the <code>SOURCE_DATE_EPOCH</code> environment variable, which is an <a href="https://reproducible-builds.org/docs/source-date-epoch/">industry standard</a>, that many tools, such as gcc, recognize, and use in place of the current time when generating output.</p>
 <p>To generate reproducible builds, you must set <code>SOURCE_DATE_EPOCH</code> before running <code>configure</code>. The value in <code>SOURCE_DATE_EPOCH</code> will be stored in the configuration, and used by <code>make</code>. Setting <code>SOURCE_DATE_EPOCH</code> before running <code>make</code> will have no effect on the build.</p>
-<p>You must also make sure your build does not rely on <code>configure</code>'s default adhoc version strings. Default adhoc version strings <code>OPT</code> segment include user name, source directory and timestamp. You can either override just the <code>OPT</code> segment using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you can specify the entire version string using <code>--with-version-string=&lt;your version&gt;</code>.</p>
+<p>You must also make sure your build does not rely on <code>configure</code>'s default adhoc version strings. Default adhoc version strings <code>OPT</code> segment include user name and source directory. You can either override just the <code>OPT</code> segment using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you can specify the entire version string using <code>--with-version-string=&lt;your version&gt;</code>.</p>
 <p>This is a typical example of how to build the JDK in a reproducible way:</p>
 <pre><code>export SOURCE_DATE_EPOCH=946684800
 bash configure --with-version-opt=adhoc
@@ -902,7 +902,7 @@ make</code></pre>
 <p>There are several aspects of reproducible builds that can be individually adjusted by <code>configure</code> arguments. If any of these are given, they will override the value derived from <code>SOURCE_DATE_EPOCH</code>. These arguments are:</p>
 <ul>
 <li><p><code>--with-source-date</code></p>
-<p>This option controls how the JDK build sets SOURCE_DATE_ EPOCH when building. It can be set to a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
+<p>This option controls how the JDK build sets <code>SOURCE_DATE_EPOCH</code> when building. It can be set to a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
 <p>It can also be set to one of the special values <code>current</code>, <code>updated</code> or <code>version</code>. <code>current</code> means that the time of running <code>configure</code> will be used. <code>version</code> will use the nominal release date for the current JDK version. <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>. All choices, except for <code>updated</code>, will set a fixed value for the source date timestamp.</p>
 <p>When <code>SOURCE_DATE_EPOCH</code> is set, the default value for <code>--with-source-date</code> will be the value given by <code>SOURCE_DATE_EPOCH</code>. Otherwise, the default value is <code>updated</code>.</p></li>
 <li><p><code>--with-hotspot-build-time</code></p>

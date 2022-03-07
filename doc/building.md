@@ -1542,10 +1542,10 @@ configuration, and used by `make`. Setting `SOURCE_DATE_EPOCH` before running
 `make` will have no effect on the build.
 
 You must also make sure your build does not rely on `configure`'s default adhoc
-version strings. Default adhoc version strings `OPT` segment include user name,
-source directory and timestamp. You can either override just the `OPT` segment
-using `--with-version-opt=<any fixed string>`, or you can specify the entire
-version string using `--with-version-string=<your version>`.
+version strings. Default adhoc version strings `OPT` segment include user name
+and source directory. You can either override just the `OPT` segment using
+`--with-version-opt=<any fixed string>`, or you can specify the entire version
+string using `--with-version-string=<your version>`.
 
 This is a typical example of how to build the JDK in a reproducible way:
 
@@ -1567,7 +1567,7 @@ the value derived from `SOURCE_DATE_EPOCH`. These arguments are:
 
  * `--with-source-date`
 
-    This option controls how the JDK build sets SOURCE_DATE_ EPOCH when
+    This option controls how the JDK build sets `SOURCE_DATE_EPOCH` when
     building. It can be set to a value describing a date, either an epoch based
     timestamp as an integer, or a valid ISO-8601 date.
 
