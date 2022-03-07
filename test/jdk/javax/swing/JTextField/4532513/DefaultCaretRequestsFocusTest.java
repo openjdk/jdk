@@ -109,9 +109,6 @@ public class DefaultCaretRequestsFocusTest {
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-                robot.keyPress(KeyEvent.VK_ENTER);
-                robot.keyRelease(KeyEvent.VK_ENTER);
-
                 typeSomeText();
 
                 if (shouldYieldFocusCount == 1) {
@@ -126,7 +123,6 @@ public class DefaultCaretRequestsFocusTest {
                 SwingUtilities.invokeAndWait(DefaultCaretRequestsFocusTest::disposeFrame);
             }
         }
-
     }
 
     private static void typeSomeText() {
@@ -138,7 +134,6 @@ public class DefaultCaretRequestsFocusTest {
         robot.keyRelease(KeyEvent.VK_X);
         robot.keyPress(KeyEvent.VK_T);
         robot.keyRelease(KeyEvent.VK_T);
-
     }
 
     private static void createUI() {
