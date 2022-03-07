@@ -148,6 +148,17 @@ public enum ElementKind {
     }
 
     /**
+     * {@return {@code true} if this is a kind of declared type, a
+     * {@linkplain #isClass() class} or an {@linkplain #isInterface()
+     * interface}, and {@code false} otherwise}
+     *
+     * @since 19
+     */
+    public boolean isDeclaredType() {
+        return isClass() || isInterface();
+    }
+
+    /**
      * Returns {@code true} if this is a kind of field:
      * either {@code FIELD} or {@code ENUM_CONSTANT}.
      *
@@ -155,5 +166,51 @@ public enum ElementKind {
      */
     public boolean isField() {
         return this == FIELD || this == ENUM_CONSTANT;
+    }
+
+    /**
+     * Returns {@code true} if this is a kind of executable: either
+     * {@code METHOD} or {@code CONSTRUCTOR} or {@code STATIC_INIT} or
+     * {@code INSTANCE_INIT}.
+     *
+     * @return {@code true} if this is a kind of executable
+     * @since 19
+     */
+    public boolean isExecutable() {
+        return switch(this) {
+        case METHOD, CONSTRUCTOR, STATIC_INIT, INSTANCE_INIT -> true;
+        default -> false;
+        };
+    }
+
+    /**
+     * Returns {@code true} if this is a kind of initializer: either
+     * {@code STATIC_INIT} or {@code INSTANCE_INIT}.
+     *
+     * @return {@code true} if this is a kind of initializer
+     * @since 19
+     */
+    public boolean isInitializer() {
+        return switch(this) {
+        case STATIC_INIT, INSTANCE_INIT -> true;
+        default -> false;
+        };
+    }
+    /**
+     * Returns {@code true} if this is a kind of variable: including
+     * {@code ENUM_CONSTANT}, {@code FIELD}, {@code PARAMETER},
+     * {@code LOCAL_VARIABLE}, {@code EXCEPTION_PARAMETER},
+     * {@code RESOURCE_VARIABLE}, and {@code BINDING_VARIABLE}.
+     *
+     * @return {@code true} if this is a kind of variable
+     * @since 19
+     */
+    public boolean isVariable() {
+        return switch(this) {
+        case ENUM_CONSTANT, FIELD, PARAMETER,
+             LOCAL_VARIABLE, EXCEPTION_PARAMETER, RESOURCE_VARIABLE,
+             BINDING_VARIABLE -> true;
+        default -> false;
+        };
     }
 }

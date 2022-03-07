@@ -428,6 +428,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/StaticArchiveWithLambda.java \
  -runtime/cds/appcds/TestCombinedCompressedFlags.java \
  -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
+ -runtime/cds/appcds/TestParallelGCWithCDS.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/UnusedCPDuringDump.java \
