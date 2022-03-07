@@ -940,7 +940,8 @@ class os: AllStatic {
   // returns the previous state
   static WXMode current_thread_change_wx(WXMode new_state);
 
-  static void current_thread_reset_wx();
+  // initializes the WXMode to WXWrite, as writeable pages are the default here
+  static void current_thread_init_wx();
 
   static void current_thread_assert_wx_state(WXMode expected);
 

@@ -534,6 +534,7 @@ void os::verify_stack_alignment() {
 }
 #endif
 
+#ifdef __APPLE__
 static THREAD_LOCAL WXMode _wx_state = WXUnknown;
 int os::extra_bang_size_in_bytes() {
   // AArch64 does not require the additional stack bang.
@@ -542,24 +543,22 @@ int os::extra_bang_size_in_bytes() {
 
 WXMode os::current_thread_change_wx(WXMode new_state) {
   if (_wx_state == WXUnknown) {
-    pthread_jit_write_protect_np(false /* not executable but writable */);
-    _wx_state = WXWrite;
+    _wx_state = WXWrite; // No way to know but we assume the original state is "writable, not executable"
   }
   WXMode old = _wx_state;
-  if (_wx_state != new_state) {
-    _wx_state = new_state;
-    pthread_jit_write_protect_np(_wx_state == WXExec);
-  }
+  _wx_state = new_state;
+  pthread_jit_write_protect_np(_wx_state == WXExec);
   return old;
 }
 
-void os::current_thread_reset_wx() {
+void os::current_thread_init_wx() {
   current_thread_change_wx(WXWrite);
 }
 
 void os::current_thread_assert_wx_state(WXMode expected) {
   assert(_wx_state == expected, "wrong state");
 }
+#endif
 
 extern "C" {
   int SpinPause() {
