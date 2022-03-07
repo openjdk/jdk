@@ -772,18 +772,17 @@ public interface Chronology extends Comparable<Chronology> {
     }
 
     /**
-     * Checks if this chronology supports ISO based fields.
+     * Checks if this chronology is ISO based.
      * <p>
-     * The chronology that supports ISO based fields has the same basic
-     * structure of days and months as the ISO chronology, with month
-     * lengths generally aligned with those in the ISO January to December
-     * definitions.
+     * An ISO based chronology has the same basic structure of days and
+     * months as the ISO chronology, with month lengths generally aligned
+     * with those in the ISO January to December definitions.
      * For example, the Minguo, ThaiBuddhist and Japanese chronologies.
      *
      * @implSpec
      * The default implementation returns {@code false}.
      *
-     * @return true if the chronology supports ISO based fields
+     * @return true if the chronology is ISO based
      * @see IsoChronology
      * @see JapaneseChronology
      * @see MinguoChronology
@@ -791,7 +790,7 @@ public interface Chronology extends Comparable<Chronology> {
      * @see java.time.temporal.IsoFields
      * @since 19
      */
-    default boolean supportsIsoFields() {
+    default boolean isIsoBased() {
         return false;
     }
 

@@ -679,14 +679,14 @@ public final class IsoChronology extends AbstractChronology implements Serializa
 
     //-----------------------------------------------------------------------
     /**
-     * {@code IsoChronology} supports ISO based fields, such as
-     * {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
+     * {@code IsoChronology} is an ISO based chronology, which supports fields,
+     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
      * @implSpec The implementation always returns {@code true}.
      * @return {@code true}
      * @since 19
      */
     @Override
-    public boolean supportsIsoFields() {
+    public boolean isIsoBased() {
         return true;
     }
 

@@ -85,7 +85,7 @@ public class TestServiceLoader {
         }
         var coptic = chronos.get("Coptic");
         assertNotNull(coptic, "CopticChronology not found");
-        assertEquals(coptic.supportsIsoFields(), false);
+        assertEquals(coptic.isIsoBased(), false);
     }
 
 }

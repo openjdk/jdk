@@ -80,7 +80,7 @@ public class TCKTestServiceLoader {
         ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
         LocalDate ld = LocalDate.from(copticDate);
         assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
-        assertEquals(chrono.supportsIsoFields(), false);
+        assertEquals(chrono.isIsoBased(), false);
     }
 
 }

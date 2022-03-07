@@ -506,14 +506,14 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
 
     //-----------------------------------------------------------------------
     /**
-     * {@code JapaneseChronology} supports ISO based fields, such as
-     * {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
+     * {@code JapaneseChronology} is an ISO based chronology, which supports fields,
+     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
      * @implSpec The implementation always returns {@code true}.
      * @return {@code true}
      * @since 19
      */
     @Override
-    public boolean supportsIsoFields() {
+    public boolean isIsoBased() {
         return true;
     }
 

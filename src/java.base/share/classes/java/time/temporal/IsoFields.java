@@ -309,7 +309,7 @@ public final class IsoFields {
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
                 return temporal.isSupported(DAY_OF_YEAR) && temporal.isSupported(MONTH_OF_YEAR) &&
-                        temporal.isSupported(YEAR) && supportsIsoFields(temporal);
+                        temporal.isSupported(YEAR) && isIsoBased(temporal);
             }
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
@@ -355,7 +355,7 @@ public final class IsoFields {
                 }
                 int y = YEAR.checkValidIntValue(yearLong);  // always validate
                 long doq = fieldValues.get(DAY_OF_QUARTER);
-                ensureIsoLike(partialTemporal);
+                ensureIsoBased(partialTemporal);
                 LocalDate date;
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     date = LocalDate.of(y, 1, 1).plusMonths(Math.multiplyExact(Math.subtractExact(qoyLong, 1), 3));
@@ -397,7 +397,7 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(MONTH_OF_YEAR) && supportsIsoFields(temporal);
+                return temporal.isSupported(MONTH_OF_YEAR) && isIsoBased(temporal);
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
@@ -452,7 +452,7 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(EPOCH_DAY) && supportsIsoFields(temporal);
+                return temporal.isSupported(EPOCH_DAY) && isIsoBased(temporal);
             }
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
@@ -485,7 +485,7 @@ public final class IsoFields {
                 }
                 int wby = WEEK_BASED_YEAR.range().checkValidIntValue(wbyLong, WEEK_BASED_YEAR);  // always validate
                 long wowby = fieldValues.get(WEEK_OF_WEEK_BASED_YEAR);
-                ensureIsoLike(partialTemporal);
+                ensureIsoBased(partialTemporal);
                 LocalDate date = LocalDate.of(wby, 1, 4);
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     long dow = dowLong;  // unvalidated
@@ -533,7 +533,7 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(EPOCH_DAY) && supportsIsoFields(temporal);
+                return temporal.isSupported(EPOCH_DAY) && isIsoBased(temporal);
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
@@ -594,8 +594,8 @@ public final class IsoFields {
         private static final int[] QUARTER_DAYS = {0, 90, 181, 273, 0, 91, 182, 274};
 
 
-        private static void ensureIsoLike(TemporalAccessor temporal) {
-            if (!supportsIsoFields(temporal)) {
+        private static void ensureIsoBased(TemporalAccessor temporal) {
+            if (!isIsoBased(temporal)) {
                 throw new DateTimeException("Resolve requires ISO based chronology: " +
                         Chronology.from(temporal));
             }
@@ -701,7 +701,7 @@ public final class IsoFields {
 
         @Override
         public boolean isSupportedBy(Temporal temporal) {
-            return temporal.isSupported(EPOCH_DAY) && supportsIsoFields(temporal);
+            return temporal.isSupported(EPOCH_DAY) && isIsoBased(temporal);
         }
 
         @SuppressWarnings("unchecked")
@@ -735,7 +735,7 @@ public final class IsoFields {
         }
     }
 
-    static boolean supportsIsoFields(TemporalAccessor temporal) {
-        return Chronology.from(temporal).supportsIsoFields();
+    static boolean isIsoBased(TemporalAccessor temporal) {
+        return Chronology.from(temporal).isIsoBased();
     }
 }

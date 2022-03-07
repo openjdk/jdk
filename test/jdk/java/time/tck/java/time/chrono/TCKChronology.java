@@ -424,8 +424,8 @@ public class TCKChronology {
         chrono.epochSecond(y, m, d, h, min, s, offset);
     }
 
-    @DataProvider(name = "data_supportsIsoFields")
-    Object[][]  data_supportsIsoFields() {
+    @DataProvider(name = "data_isIsoBased")
+    Object[][]  data_isIsoBased() {
         return new Object[][] {
                 {IsoChronology.INSTANCE, true},
                 {JapaneseChronology.INSTANCE, true},
@@ -436,10 +436,10 @@ public class TCKChronology {
     }
 
     //-----------------------------------------------------------------------
-    // supportsIsoFields()
+    // isIsoBased()
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "data_supportsIsoFields")
-    public void test_supportsIsoFields(Chronology chrono, boolean expected) {
-        assertEquals(chrono.supportsIsoFields(), expected);
+    @Test(dataProvider = "data_isIsoBased")
+    public void test_isIsoBased(Chronology chrono, boolean expected) {
+        assertEquals(chrono.isIsoBased(), expected);
     }
 }

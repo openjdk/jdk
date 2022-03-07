@@ -337,14 +337,14 @@ public final class MinguoChronology extends AbstractChronology implements Serial
 
     //-----------------------------------------------------------------------
     /**
-     * {@code MinguoChronology} supports ISO based fields, such as
-     * {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
+     * {@code MinguoChronology} is an ISO based chronology, which supports fields,
+     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
      * @implSpec The implementation always returns {@code true}.
      * @return {@code true}
      * @since 19
      */
     @Override
-    public boolean supportsIsoFields() {
+    public boolean isIsoBased() {
         return true;
     }
 
