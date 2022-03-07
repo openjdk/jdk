@@ -64,8 +64,8 @@ typedef G1SegmentedArrayFreeList<mtGCCardSet> G1CardSetFreeList;
 
 // Arena-like allocator for (card set) heap memory objects.
 //
-// Allocation occurs from an internal free list of objects first, if the free list is
-// empty then tries to bump-allocate from the G1SegmentedArray.
+// Allocation occurs from an internal free list of objects first. If the free list is
+// empty then tries to allocate from the G1SegmentedArray.
 class G1CardSetAllocator {
   G1SegmentedArray<mtGCCardSet> _segmented_array;
   FreeListAllocator _free_slots_list;

@@ -55,9 +55,9 @@ void G1CardSetAllocator::drop_all() {
 }
 
 size_t G1CardSetAllocator::mem_size() const {
-  return  sizeof(*this) +
-          _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
-          _segmented_array.num_available_slots() * _segmented_array.slot_size();
+  return sizeof(*this) +
+         _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
+         _segmented_array.num_available_slots() * _segmented_array.slot_size();
 }
 
 size_t G1CardSetAllocator::wasted_mem_size() const {
