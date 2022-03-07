@@ -641,6 +641,15 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
+    if (can_reshape) {
+      // make sure the just created clones are taken care of if they now are dead
+      if (!forward_ctl->is_top()) {
+        phase->is_IterGVN()->_worklist.push(forward_mem);
+      }
+      if (!backward_mem->is_top()) {
+        phase->is_IterGVN()->_worklist.push(backward_mem);
+      }
+    }
     return NULL;
   }
 
