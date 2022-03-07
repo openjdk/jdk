@@ -1066,7 +1066,7 @@ namespace std;` to avoid needing to qualify Standard Library names.
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
 
-* Avoid namespace-scoped variables with non-constexpr initialization.
+* Avoid non-local variables with non-constexpr initialization.
 In particular, avoid variables with types requiring non-trivial
 initialization or destruction.  Initialization order problems can be
 difficult to deal with and lead to surprises, as can destruction
