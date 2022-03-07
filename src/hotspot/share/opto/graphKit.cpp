@@ -3919,7 +3919,6 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
       _gvn.transform(iff);
       RegionNode* region = new RegionNode(3);
       _gvn.set_type(region, Type::CONTROL);
-      assert(!lengthx->is_dead(), "do not leave me for dead please!");
       lengthx = new PhiNode(region, TypeLong::LONG);
       _gvn.set_type(lengthx, TypeLong::LONG);
 
