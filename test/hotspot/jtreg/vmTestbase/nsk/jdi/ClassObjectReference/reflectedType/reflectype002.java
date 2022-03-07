@@ -166,7 +166,7 @@ public class reflectype002 extends Log {
 
             print_log_on_verbose
                 ("--> reflectype002: getting ClassObjectReference object for loaded checked class...");
-            ClassObjectReference class_obj_ref = refType.classObject();;
+            ClassObjectReference class_obj_ref = refType.classObject();
             print_log_on_verbose("--> reflectype002: getting ClassObjectReference object - DONE!");
 
             print_log_on_verbose
