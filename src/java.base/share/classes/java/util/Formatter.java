@@ -2016,6 +2016,8 @@ public final class Formatter implements Closeable, Flushable {
         if (dfs != null && dfs.getLocale().equals(locale)) {
             return dfs;
         }
+        // Fetch a new local instance of DecimalFormatSymbols. Note that DFS are mutatble
+        // and this instance is reserved for Formatter.
         dfs = DecimalFormatSymbols.getInstance(locale);
         // Non-volatile here is acceptable heuristic.
         DFS = dfs;
