@@ -304,12 +304,7 @@ public class Utils {
         }.visit(e);
     }
 
-    /**
-     * An Enum implementation is almost identical, thus this method returns if
-     * this element represents a CLASS or an ENUM
-     * @param e element
-     * @return true if class or enum
-     */
+    // Note that e.getKind().isClass() is not the same as e.getKind() == CLASS
     public boolean isClass(Element e) {
         return e.getKind().isClass();
     }
@@ -326,6 +321,7 @@ public class Utils {
         return e.getKind() == FIELD;
     }
 
+    // Note that e.getKind().isInterface() is not the same as e.getKind() == INTERFACE
     public boolean isInterface(Element e) {
         return e.getKind() == INTERFACE;
     }
@@ -449,10 +445,7 @@ public class Utils {
     }
 
     public boolean isOrdinaryClass(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
-            return false;
-        }
-        return !isThrowable(te);
+        return te.getKind() == CLASS && !isThrowable(te);
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -462,32 +455,22 @@ public class Utils {
     }
 
     public boolean isThrowable(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
+        if (te.getKind() != CLASS) { // quick check
             return false;
         }
         return typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isExecutableElement(Element e) {
-        return switch (e.getKind()) {
-            case CONSTRUCTOR, METHOD, INSTANCE_INIT -> true;
-            default -> false;
-        };
+        return e.getKind().isExecutable();
     }
 
     public boolean isVariableElement(Element e) {
-        return switch (e.getKind()) {
-            case ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE,
-                    PARAMETER, RESOURCE_VARIABLE -> true;
-            default -> false;
-        };
+        return e.getKind().isVariable();
     }
 
     public boolean isTypeElement(Element e) {
-        return switch (e.getKind()) {
-            case CLASS, ENUM, INTERFACE, ANNOTATION_TYPE, RECORD -> true;
-            default -> false;
-        };
+        return e.getKind().isDeclaredType();
     }
 
     /**
