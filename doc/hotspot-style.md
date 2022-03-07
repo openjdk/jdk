@@ -629,7 +629,7 @@ Here are a few closely related example bugs:<br>
 ### enum
 
 Where appropriate, _scoped-enums_ should be used.
-([n2347](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf)) 
+([n2347](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf))
 
 Use of _unscoped-enums_ is permitted, though ordinary constants may be
 preferable when the automatic initializer feature isn't used.
@@ -649,10 +649,12 @@ integral constants.
 
 ### thread_local
 
-Do not use `thread_local`
+Avoid use of `thread_local`
 ([n2659](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm));
-instead, use the HotSpot macro `THREAD_LOCAL`.  The initializer must
-be a constant expression.
+and instead, use the HotSpot macro `THREAD_LOCAL`, for which the initializer must
+be a constant expression. When `thread_local` must be used, use the Hotspot macro
+`APPROVED_CPP_THREAD_LOCAL` to indicate that the use has been given appropriate
+consideration.
 
 As was discussed in the review for
 [JDK-8230877](https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html),
@@ -662,13 +664,16 @@ references to non-function-local `thread_local` variables defined in a
 different translation unit, even if they don't need dynamic
 initialization.  Dynamic initialization and destruction of
 namespace-scoped thread local variables also has the same ordering
-problems as for ordinary namespace-scoped variables.
+problems as for ordinary namespace-scoped variables. So we avoid use of
+`thread_local` in general, limiting its use to only those cases where dynamic
+initialization and destruction are essential. See [JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
+for further discussion.
 
 ### nullptr
 
 Prefer `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers. 
+to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
 
 For historical reasons there are widespread uses of both `NULL` and of
 integer 0 as a pointer value.
@@ -937,7 +942,7 @@ References:
 * Generalized lambda capture (init-capture) ([N3648])
 * Generic (polymorphic) lambda expressions ([N3649])
 
-[n2657]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm 
+[n2657]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm
 [n2927]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2009/n2927.pdf
 [N3648]: https://isocpp.org/files/papers/N3648.html
 [N3649]: https://isocpp.org/files/papers/N3649.html
@@ -978,7 +983,7 @@ References from C++23
 ### Additional Permitted Features
 
 * `constexpr`
-([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf)) 
+([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
 ([n3652](https://isocpp.org/files/papers/N3652.html))
 
 * Sized deallocation
@@ -1085,14 +1090,14 @@ in HotSpot code because of the "no implicit boolean" guideline.)
 
 * Avoid covariant return types.
 
-* Avoid `goto` statements. 
+* Avoid `goto` statements.
 
 ### Undecided Features
 
 This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.
 
-* Trailing return type syntax for functions 
+* Trailing return type syntax for functions
 ([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
 
 * Variable templates
@@ -1106,7 +1111,7 @@ features that have not yet been discussed.
 
 * Rvalue references and move semantics
 
-[ADL]: https://en.cppreference.com/w/cpp/language/adl 
+[ADL]: https://en.cppreference.com/w/cpp/language/adl
   "Argument Dependent Lookup"
 
 [ODR]: https://en.cppreference.com/w/cpp/language/definition
