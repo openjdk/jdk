@@ -44,8 +44,9 @@ public class VMDeprecatedOptions {
      * (true/false/n/string)}.
      */
     public static final String[][] DEPRECATED_OPTIONS;
-    public static final String[][] DEPRECATED_OPTIONS_LINUX;
     static {
+        // Use an ArrayList so platform-specific flags can be
+        // optionally added.
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
@@ -61,16 +62,11 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isLinux()) {
+            deprecated.add(new String[] {"UseContainerCpuShares",           "false"});
+            deprecated.add(new String[] {"PreferContainerQuotaForCPUCount", "true"});
+        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
-
-        ArrayList<String[]> deprecated_linux = new ArrayList(
-          Arrays.asList(new String[][] {
-            // deprecated non-alias flags:
-            {"UseContainerCpuShares",            "false"},
-            {"PreferContainerQuotaForCPUCount",  "true"},
-          }
-        ));
-        DEPRECATED_OPTIONS_LINUX = deprecated_linux.toArray(new String[][]{});
     };
 
     static String getDeprecationString(String optionName) {
@@ -124,8 +120,5 @@ public class VMDeprecatedOptions {
 
     public static void main(String[] args) throws Throwable {
         testDeprecated(DEPRECATED_OPTIONS);  // Make sure that each deprecated option is mentioned in the output.
-        if (Platform.isLinux()) {
-            testDeprecated(DEPRECATED_OPTIONS_LINUX);
-        }
     }
 }
