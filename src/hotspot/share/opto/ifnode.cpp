@@ -1159,6 +1159,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
           assert(init_n->Opcode() == Op_ConvI2L, "unexpected first node");
           // Create a new narrow ConvI2L node that is dependent on the range check
           Node* new_n = igvn->C->conv_I2X_index(igvn, l, array_size, fail);
+          Node* for_test = new_n;
 
           // The type of the ConvI2L may be widen and so the new
           // ConvI2L may not be better than an existing ConvI2L
@@ -1180,6 +1181,7 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
               igvn->_worklist.push(init_n);
             }
           }
+          assert(!for_test->is_dead(), "don't leave dead node behind!");
         }
       } else if (use->in(0) == NULL && (igvn->type(use)->isa_long() ||
                                         igvn->type(use)->isa_ptr())) {
