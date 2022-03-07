@@ -263,8 +263,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         } catch (BadPaddingException bpe) {
             throw bpe;
         } catch (GeneralSecurityException gse) {
-            throw (SSLProtocolException)(new SSLProtocolException(
-                    "Unexpected exception")).initCause(gse);
+            throw new SSLProtocolException("Unexpected exception", gse);
         }
 
         if (contentType != ContentType.HANDSHAKE.id &&

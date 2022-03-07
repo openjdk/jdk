@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,8 +160,7 @@ final class ECDHKeyExchange {
                 ka.doPhase(peerPublicKey, true);
                 return ka.generateSecret("TlsPremasterSecret");
             } catch (GeneralSecurityException e) {
-                throw (SSLHandshakeException) new SSLHandshakeException(
-                    "Could not generate secret").initCause(e);
+                throw new SSLHandshakeException("Could not generate secret", e);
             }
         }
 
@@ -177,8 +176,7 @@ final class ECDHKeyExchange {
                 PublicKey peerPublicKey = kf.generatePublic(spec);
                 return getAgreedSecret(peerPublicKey);
             } catch (GeneralSecurityException | java.io.IOException e) {
-                throw (SSLHandshakeException) new SSLHandshakeException(
-                    "Could not generate secret").initCause(e);
+                throw new SSLHandshakeException("Could not generate secret", e);
             }
         }
 
@@ -202,8 +200,8 @@ final class ECDHKeyExchange {
                         "ECPublicKey does not comply to algorithm constraints");
                 }
             } catch (GeneralSecurityException | java.io.IOException e) {
-                throw (SSLHandshakeException) new SSLHandshakeException(
-                        "Could not generate ECPublicKey").initCause(e);
+                throw new SSLHandshakeException(
+                        "Could not generate ECPublicKey", e);
             }
         }
 
