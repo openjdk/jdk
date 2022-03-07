@@ -216,8 +216,16 @@ class MyByteBuffer {
     }
 
     void ck(double x, double y) {
-        if (x == x && y == y && x != y) {
-            ck(x, y);
+        // Check if x and y have identical values.
+        // Remember: NaN == x is false for ANY x, including if x is NaN (IEEE standard).
+	// Therefore, if x and y are NaN, x != y would return true, which is not what we want.
+	// We do not want an Exception if both are NaN.
+	// Hence, we only use x != y, if both are not NaN.
+	// Additionally, we also check if exactly one of them is NaN, via XOR (^).
+	if ((!Double.isNaN(x) && !Double.isNaN(y) && x != y) || (Double.isNaN(x) ^ Double.isNaN(y))) {
+            throw new RuntimeException(" x = " + Double.toString(x) + ", y = " + Double.toString(y)
+                                    + " (x = " + Long.toHexString(Double.doubleToRawLongBits(x))
+                                    + ", y = " + Long.toHexString(Double.doubleToRawLongBits(y)) + ")");
         }
     }
 
