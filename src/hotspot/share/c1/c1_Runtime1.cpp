@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1267,7 +1267,7 @@ void Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_id) {
 
   // Enable WXWrite: the function is called by c1 stub as a runtime function
   // (see another implementation above).
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
 
   if (TracePatching) {
     tty->print_cr("Deoptimizing because patch is needed");

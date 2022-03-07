@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,7 @@ template<> struct BasicTypeToJni<T_DOUBLE>  { static const jdouble  jni_type; };
 template<int BType, typename JniType = decltype(BasicTypeToJni<BType>::jni_type)>
 JniType static_fast_get_field_wrapper(JNIEnv *env, jobject obj, jfieldID fieldID) {
   JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-  ThreadWXEnable wx(WXExec, thread);
+  ThreadWXEnable wx(WXExec);
   address get_field_addr = generated_fast_get_field[BType - T_BOOLEAN];
   return ((JniType(*)(JNIEnv *env, jobject obj, jfieldID fieldID))get_field_addr)(env, obj, fieldID);
 }

@@ -1463,7 +1463,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
 
   // Enable WXWrite: the function called directly by compiled code.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
 
   // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
   // This needs authenticating, but to do that here requires the fp of the previous frame.

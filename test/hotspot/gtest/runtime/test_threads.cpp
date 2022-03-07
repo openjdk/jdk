@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ TEST_VM(ThreadsTest, claim_overflow) {
 TEST_VM(ThreadsTest, fast_jni_in_vm) {
   JavaThread* current = JavaThread::current();
   JNIEnv* env = current->jni_environment();
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
 
   // DirectByteBuffer is an easy way to trigger GetIntField,
   // see JDK-8262896

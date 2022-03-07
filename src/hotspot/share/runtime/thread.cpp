@@ -1812,7 +1812,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
 
   SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcOb
   {
     GuardUnsafeAccess guard(thread);
     if (StubRoutines::unsafe_arraycopy() != NULL) {
-      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+      MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec));
       StubRoutines::UnsafeArrayCopy_stub()(src, dst, sz);
     } else {
       Copy::conjoint_memory_atomic(src, dst, sz);
@@ -434,14 +434,14 @@ UNSAFE_LEAF (void, Unsafe_WriteBack0(JNIEnv *env, jobject unsafe, jlong line)) {
   }
 #endif
 
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec));
   assert(StubRoutines::data_cache_writeback() != NULL, "sanity");
   (StubRoutines::DataCacheWriteback_stub())(addr_from_java(line));
 } UNSAFE_END
 
 static void doWriteBackSync0(bool is_pre)
 {
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec));
   assert(StubRoutines::data_cache_writeback_sync() != NULL, "sanity");
   (StubRoutines::DataCacheWritebackSync_stub())(is_pre);
 }

@@ -255,8 +255,7 @@ class VMNativeEntryWrapper {
 
 #define VM_LEAF_BASE(result_type, header)                            \
   debug_only(NoHandleMark __hm;)                                     \
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite,                    \
-                                         JavaThread::current()));    \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                  \
   os::verify_stack_alignment();                                      \
   /* begin of body */
 
@@ -280,7 +279,7 @@ class VMNativeEntryWrapper {
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
     assert(current == JavaThread::current(), "Must be");             \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                \
     ThreadInVMfromJava __tiv(current);                               \
     VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
@@ -308,7 +307,7 @@ class VMNativeEntryWrapper {
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
     assert(current == JavaThread::current(), "Must be");             \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                \
     ThreadInVMfromJava __tiv(current, false /* check asyncs */);     \
     VM_ENTRY_BASE(result_type, header, current)                      \
     debug_only(VMEntryWrapper __vew;)
@@ -318,7 +317,7 @@ class VMNativeEntryWrapper {
 #define JRT_BLOCK_ENTRY(result_type, header)                         \
   result_type header {                                               \
     assert(current == JavaThread::current(), "Must be");             \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current));       \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                \
     HandleMarkCleaner __hm(current);
 
 #define JRT_BLOCK                                                    \
@@ -355,7 +354,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert(thread == Thread::current(), "JNIEnv is only valid in same thread"); \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -380,7 +379,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)
@@ -390,7 +389,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread = JavaThread::current();                      \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));                \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ void ProgrammableInvoker::invoke_native(Stub stub, address buff, JavaThread* thr
   // We need WXExec because we are about to call a generated stub. Like in VM
   // entries, the thread state should be changed while we are still in WXWrite.
   // See JDK-8265292.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec));
   stub(buff);
 }
 

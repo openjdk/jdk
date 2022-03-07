@@ -108,7 +108,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 
 // Bring the JVMCI compiler thread into the VM state.
 #define JVMCI_VM_ENTRY_MARK                                       \
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));       \
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite));               \
   ThreadInVMfromNative __tiv(thread);                             \
   HandleMarkCleaner __hm(thread);                                 \
   JavaThread* THREAD = thread;                                        \

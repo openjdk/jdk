@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,13 @@
 // to be valid. If the load causes a fault, the error value is returned.
 inline int SafeFetch32(int* adr, int errValue) {
   assert(StubRoutines::SafeFetch32_stub(), "stub not yet generated");
-#if defined(__APPLE__) && defined(AARCH64)
-  ThreadWXEnable wx(WXExec, NULL);
-#endif // __APPLE__ && AARCH64
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec);)
   return StubRoutines::SafeFetch32_stub()(adr, errValue);
 }
 
 inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
   assert(StubRoutines::SafeFetchN_stub(), "stub not yet generated");
-#if defined(__APPLE__) && defined(AARCH64)
-  ThreadWXEnable wx(WXExec, NULL);
-#endif // __APPLE__ && AARCH64
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec);)
   return StubRoutines::SafeFetchN_stub()(adr, errValue);
 }
 

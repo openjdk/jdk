@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -205,7 +205,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
   // Enable WXWrite: this function is called by the signal handler at arbitrary
   // point of execution.
-  ThreadWXEnable wx(WXWrite, thread);
+  ThreadWXEnable wx(WXWrite);
 
   // decide if this trap can be handled by a stub
   address stub = NULL;

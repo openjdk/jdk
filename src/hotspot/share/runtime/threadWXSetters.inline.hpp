@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@
 class ThreadWXEnable  {
   WXMode _old_mode;
 public:
-  ThreadWXEnable(WXMode new_mode, Thread* thread) :
+  ThreadWXEnable(WXMode new_mode) :
     _old_mode(os::current_thread_change_wx(new_mode))
   { }
   ~ThreadWXEnable() {

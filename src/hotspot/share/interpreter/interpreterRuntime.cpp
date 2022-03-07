@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -983,7 +983,7 @@ JRT_END
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, address branch_bcp) {
   // Enable WXWrite: the function is called directly by interpreter.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
 
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(current, branch_bcp);
