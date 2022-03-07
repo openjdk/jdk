@@ -179,8 +179,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     public static final DecimalFormatSymbols getInstance(Locale locale) {
         // Copy cache to avoid race.
         DecimalFormatSymbols dfsyms = cache;
-         // Use cached value if same locale. Note: Locale.equals creates false positives.
-        if (dfsyms != null && dfsyms.locale == locale) {
+         // Use cached value if same locale.
+        if (dfsyms != null && dfsyms.locale.equals(locale)) {
             return dfsyms;
         }
         // Fetch DecimalFormatSymbols from provider.
