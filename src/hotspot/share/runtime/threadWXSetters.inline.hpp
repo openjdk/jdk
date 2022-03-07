@@ -30,7 +30,7 @@
 
 #if defined(__APPLE__) && defined(AARCH64)
 
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.inline.hpp" // dependencies require this include
 
 class ThreadWXEnable  {
   WXMode _old_mode;
