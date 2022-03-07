@@ -75,10 +75,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   if test "x$with_build_user" = xyes; then
     AC_MSG_ERROR([--with-build-user must have a value])
   elif test "x$with_build_user" = xno; then
-    # Interpret --without-* differently instead of the literal "no"
-    AC_MSG_WARN([--without-build-user was specified, as it is not possible to build without a user, this will be ignored])
-    # Outer [ ] to quote m4.
-    [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+    AC_MSG_ERROR([Cannot build without a username])
   elif test "x$with_build_user" != x; then
     USERNAME="$with_build_user"
   else
@@ -93,6 +90,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
        of MS Windows binaries. @<:@not specified@:>@])])
   if test "x$with_jdk_rc_name" = xyes; then
     AC_MSG_ERROR([--with-jdk-rc-name must have a value])
+  elif test "x$with_jdk_rc_name" = xno; then
+    AC_MSG_ERROR([Cannot build without an RC name])
   elif [ ! [[ $with_jdk_rc_name =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-jdk-rc-name contains non-printing characters: $with_jdk_rc_name])
   elif test "x$with_jdk_rc_name" != x; then
@@ -111,7 +110,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   if test "x$with_vendor_name" = xyes; then
     AC_MSG_ERROR([--with-vendor-name must have a value])
   elif test "x$with_vendor_name" = xno; then
-    # Interpret --without-* differently instead of the literal "no"
     AC_MSG_WARN([--without-vendor-name is the same as not passing --with-vendor-name to begin with])
   elif [ ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-name contains non-printing characters: $with_vendor_name])
@@ -128,7 +126,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   if test "x$with_vendor_url" = xyes; then
     AC_MSG_ERROR([--with-vendor-url must have a value])
   elif test "x$with_vendor_url" = xno; then
-    # Interpret --without-* differently instead of the literal "no"
     AC_MSG_WARN([--without-vendor-url is the same as not passing --with-vendor-url to begin with])
   elif [ ! [[ $with_vendor_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-url contains non-printing characters: $with_vendor_url])
@@ -145,7 +142,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   if test "x$with_vendor_bug_url" = xyes; then
     AC_MSG_ERROR([--with-vendor-bug-url must have a value])
   elif test "x$with_vendor_bug_url" = xno; then
-    # Interpret --without-* differently instead of the literal "no"
     AC_MSG_WARN([--without-vendor-bug-url is the same as not passing --with-vendor-bug-url to begin with])
   elif [ ! [[ $with_vendor_bug_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-bug-url contains non-printing characters: $with_vendor_bug_url])
@@ -161,8 +157,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Sets the bug URL which will be displayed when the VM crashes @<:@not specified@:>@])])
   if test "x$with_vendor_vm_bug_url" = xyes; then
     AC_MSG_ERROR([--with-vendor-vm-bug-url must have a value])
-  elif test "x$with_vendor_bug_url" = xno; then
-    # Interpret --without-* differently instead of the literal "no"
+  elif test "x$with_vendor_vm_bug_url" = xno; then
     AC_MSG_WARN([--without-vendor-vm-bug-url is the same as not passing --with-vendor-vm-bug-url to begin with])
   elif [ ! [[ $with_vendor_vm_bug_url =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-vendor-vm-bug-url contains non-printing characters: $with_vendor_vm_bug_url])
@@ -181,9 +176,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set version string @<:@calculated@:>@])])
   if test "x$with_version_string" = xyes; then
     AC_MSG_ERROR([--with-version-string must have a value])
-  elif test "x$with_version_string" = xno; then
-    # Interpret --without-* as a request for no explicitly passed version string instead of the literal "no"
-    AC_MSG_WARN([--without-version-string was specified, as it is not possible to build without a version string, this will be ignored])
   elif test "x$with_version_string" = xno; then
     AC_MSG_WARN([--without-version-string is the same as not passing --with-version-string to begin with])
   elif test "x$with_version_string" != x; then
@@ -319,6 +311,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   if test "x$with_version_feature_present" = xtrue; then
     if test "x$with_version_feature" = xyes; then
       AC_MSG_ERROR([--with-version-feature must have a value])
+    elif test "x$with_version_feature" = xno; then
+      AC_MSG_ERROR([Cannot build without a version feature])
     else
       JDKVER_CHECK_AND_SET_NUMBER(VERSION_FEATURE, $with_version_feature)
     fi
@@ -506,6 +500,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set version date @<:@current source value@:>@])])
   if test "x$with_version_date" = xyes; then
     AC_MSG_ERROR([--with-version-date must have a value])
+  elif test "x$with_version_date" = xno; then
+    AC_MSG_ERROR([Cannot build without a version date])
   elif test "x$with_version_date" != x; then
     if [ ! [[ $with_version_date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] ]; then
       AC_MSG_ERROR(["$with_version_date" is not a valid version date])
@@ -535,6 +531,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       @<:@not specified@:>@])])
   if test "x$with_macosx_bundle_name_base" = xyes; then
     AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
+  elif test "x$with_macosx_bundle_name_base" = xno; then
+    AC_MSG_ERROR([Cannot build without a bundle name base])
   elif [ ! [[ $with_macosx_bundle_name_base =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-macosx-bundle-name-base contains non-printing characters: $with_macosx_bundle_name_base])
   elif test "x$with_macosx_bundle_name_base" != x; then
@@ -549,6 +547,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       @<:@not specified@:>@])])
   if test "x$with_macosx_bundle_id_base" = xyes; then
     AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
+  elif test "x$with_macosx_bundle_id_base" = xno; then
+    AC_MSG_ERROR([Cannot build without a bundle ID base])
   elif [ ! [[ $with_macosx_bundle_id_base =~ ^[[:print:]]*$ ]] ]; then
     AC_MSG_ERROR([--with-macosx-bundle-id-base contains non-printing characters: $with_macosx_bundle_id_base])
   elif test "x$with_macosx_bundle_id_base" != x; then
@@ -570,6 +570,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       build version. Defaults to the build number.])])
   if test "x$with_macosx_bundle_build_version" = xyes; then
     AC_MSG_ERROR([--with-macosx-bundle-build-version must have a value])
+  elif test "x$with_macosx_bundle_build_version" = xno; then
+    AC_MSG_ERROR([Cannot build without a bundle build version])
   elif [ ! [[ $with_macosx_bundle_build_version =~ ^[0-9\.]*$ ]] ]; then
     AC_MSG_ERROR([--with-macosx-bundle-build-version contains non numbers and periods: $with_macosx_bundle_build_version])
   elif test "x$with_macosx_bundle_build_version" != x; then
