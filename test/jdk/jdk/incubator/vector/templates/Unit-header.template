@@ -257,10 +257,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         }
     }
 
-    static void assertInsertArraysEquals($type$[] r, $type$[] a, $type$ element, int index) {
-        int i = 0;
+    static void assertInsertArraysEquals($type$[] r, $type$[] a, $type$ element, int index, int start, int end) {
+        int i = start;
         try {
-            for (; i < a.length; i += 1) {
+            for (; i < end; i += 1) {
                 if(i%SPECIES.length() == index) {
                     Assert.assertEquals(r[i], element);
                 } else {
