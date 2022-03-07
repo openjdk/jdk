@@ -1598,6 +1598,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
         _has_contended_fields = true;
       }
     }
+    field->set_stable_for_enum_switch_map(name, sig, access_flags);
   }
 
   int index = length;

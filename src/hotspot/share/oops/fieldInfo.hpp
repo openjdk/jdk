@@ -164,6 +164,20 @@ class FieldInfo {
     if (z) _shorts[access_flags_offset] |=  JVM_ACC_FIELD_STABLE;
     else   _shorts[access_flags_offset] &= ~JVM_ACC_FIELD_STABLE;
   }
+  void set_stable_for_enum_switch_map(const Symbol *field_name,
+                                      const Symbol *field_sig,
+                                      AccessFlags field_access_flags) {
+    static const char *enum_switch_map_prefix = "$SwitchMap$";
+    static const char *enum_switch_map_sig = "[I";
+    static const jint required = JVM_ACC_SYNTHETIC | JVM_ACC_FINAL | JVM_ACC_STATIC;
+
+    if (field_access_flags.as_int() == required &&
+        field_name->starts_with(enum_switch_map_prefix) &&
+        field_sig->equals(enum_switch_map_sig)) {
+      // For enum switches, set mapping arrays stable so that constant folding works.
+      set_stable(true);
+    }
+  }
 
   Symbol* lookup_symbol(int symbol_index) const {
     assert(is_internal(), "only internal fields");
