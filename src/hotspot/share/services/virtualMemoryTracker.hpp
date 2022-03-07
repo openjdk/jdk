@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
 #define SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp" // For MetadataType
 #include "memory/metaspaceStats.hpp"
@@ -387,7 +385,9 @@ class VirtualMemoryTracker : AllStatic {
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);
 
-  static const bool snapshot_region_contains(void* p, ReservedMemoryRegion& region);
+  // If p is contained within a known memory region, print information about it to the
+  // given stream and return true; false otherwise.
+  static bool print_containing_region(const void* p, outputStream* st);
 
   // Snapshot current thread stacks
   static void snapshot_thread_stacks();
@@ -396,6 +396,5 @@ class VirtualMemoryTracker : AllStatic {
   static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
-#endif // INCLUDE_NMT
-
 #endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
+

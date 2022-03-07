@@ -1309,6 +1309,10 @@ public class Float128VectorTests extends AbstractVectorTest {
     }
 
 
+    static float firstNonZero(float a, float b) {
+        return Float.compare(a, (float) 0) != 0 ? a : b;
+    }
+
     @Test
     static void smokeTest1() {
         FloatVector three = FloatVector.broadcast(SPECIES, (byte)-3);
@@ -2287,7 +2291,7 @@ public class Float128VectorTests extends AbstractVectorTest {
     static float MINReduce(float[] a, int idx) {
         float res = Float.POSITIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (float)Math.min(res, a[i]);
+            res = (float) Math.min(res, a[i]);
         }
 
         return res;
@@ -2295,8 +2299,8 @@ public class Float128VectorTests extends AbstractVectorTest {
 
     static float MINReduceAll(float[] a) {
         float res = Float.POSITIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            res = (float)Math.min(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (float) Math.min(res, MINReduce(a, i));
         }
 
         return res;
@@ -2318,7 +2322,7 @@ public class Float128VectorTests extends AbstractVectorTest {
             ra = Float.POSITIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float)Math.min(ra, av.reduceLanes(VectorOperators.MIN));
+                ra = (float) Math.min(ra, av.reduceLanes(VectorOperators.MIN));
             }
         }
 
@@ -2328,8 +2332,8 @@ public class Float128VectorTests extends AbstractVectorTest {
     static float MINReduceMasked(float[] a, int idx, boolean[] mask) {
         float res = Float.POSITIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res = (float)Math.min(res, a[i]);
+            if (mask[i % SPECIES.length()])
+                res = (float) Math.min(res, a[i]);
         }
 
         return res;
@@ -2337,9 +2341,8 @@ public class Float128VectorTests extends AbstractVectorTest {
 
     static float MINReduceAllMasked(float[] a, boolean[] mask) {
         float res = Float.POSITIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            if(mask[i % SPECIES.length()])
-                res = (float)Math.min(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (float) Math.min(res, MINReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2363,7 +2366,7 @@ public class Float128VectorTests extends AbstractVectorTest {
             ra = Float.POSITIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float)Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                ra = (float) Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
             }
         }
 
@@ -2373,7 +2376,7 @@ public class Float128VectorTests extends AbstractVectorTest {
     static float MAXReduce(float[] a, int idx) {
         float res = Float.NEGATIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (float)Math.max(res, a[i]);
+            res = (float) Math.max(res, a[i]);
         }
 
         return res;
@@ -2381,8 +2384,8 @@ public class Float128VectorTests extends AbstractVectorTest {
 
     static float MAXReduceAll(float[] a) {
         float res = Float.NEGATIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            res = (float)Math.max(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (float) Math.max(res, MAXReduce(a, i));
         }
 
         return res;
@@ -2404,7 +2407,7 @@ public class Float128VectorTests extends AbstractVectorTest {
             ra = Float.NEGATIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float)Math.max(ra, av.reduceLanes(VectorOperators.MAX));
+                ra = (float) Math.max(ra, av.reduceLanes(VectorOperators.MAX));
             }
         }
 
@@ -2414,8 +2417,8 @@ public class Float128VectorTests extends AbstractVectorTest {
     static float MAXReduceMasked(float[] a, int idx, boolean[] mask) {
         float res = Float.NEGATIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res = (float)Math.max(res, a[i]);
+            if (mask[i % SPECIES.length()])
+                res = (float) Math.max(res, a[i]);
         }
 
         return res;
@@ -2423,9 +2426,8 @@ public class Float128VectorTests extends AbstractVectorTest {
 
     static float MAXReduceAllMasked(float[] a, boolean[] mask) {
         float res = Float.NEGATIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            if(mask[i % SPECIES.length()])
-                res = (float)Math.max(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (float) Math.max(res, MAXReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2449,12 +2451,97 @@ public class Float128VectorTests extends AbstractVectorTest {
             ra = Float.NEGATIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                ra = (float)Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                ra = (float) Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
             }
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
                 Float128VectorTests::MAXReduceMasked, Float128VectorTests::MAXReduceAllMasked);
+    }
+    static float FIRST_NONZEROReduce(float[] a, int idx) {
+        float res = (float) 0;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            res = firstNonZero(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static float FIRST_NONZEROReduceAll(float[] a) {
+        float res = (float) 0;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
+        }
+
+        return res;
+    }
+    @Test(dataProvider = "floatUnaryOpProvider")
+    static void FIRST_NONZEROReduceFloat128VectorTests(IntFunction<float[]> fa) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+        float ra = (float) 0;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = (float) 0;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+            }
+        }
+
+        assertReductionArraysEquals(r, ra, a,
+                Float128VectorTests::FIRST_NONZEROReduce, Float128VectorTests::FIRST_NONZEROReduceAll);
+    }
+    static float FIRST_NONZEROReduceMasked(float[] a, int idx, boolean[] mask) {
+        float res = (float) 0;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            if (mask[i % SPECIES.length()])
+                res = firstNonZero(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static float FIRST_NONZEROReduceAllMasked(float[] a, boolean[] mask) {
+        float res = (float) 0;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
+        }
+
+        return res;
+    }
+    @Test(dataProvider = "floatUnaryOpMaskProvider")
+    static void FIRST_NONZEROReduceFloat128VectorTestsMasked(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+        float ra = (float) 0;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = (float) 0;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+            }
+        }
+
+        assertReductionArraysEqualsMasked(r, ra, a, mask,
+                Float128VectorTests::FIRST_NONZEROReduceMasked, Float128VectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
 

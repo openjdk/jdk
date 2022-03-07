@@ -195,18 +195,15 @@ import java.util.stream.Stream;
 public sealed interface MemoryLayout extends Constable permits AbstractLayout, SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
 
     /**
-     * Returns an {@link Optional} containing the nominal descriptor for this
+     * {@return an {@link Optional} containing the nominal descriptor for this
      * layout, if one can be constructed, or an empty {@link Optional}
-     * if one cannot be constructed.
-     *
-     * @return An {@link Optional} containing the resulting nominal descriptor,
-     * or an empty {@link Optional} if one cannot be constructed.
+     * if one cannot be constructed}
      */
     @Override
     Optional<? extends DynamicConstantDesc<? extends MemoryLayout>> describeConstable();
 
     /**
-     * Does this layout have a specified size? A layout does not have a specified size if it is (or contains) a sequence layout whose
+     * Returns {@code true} if this layout has a specified size. A layout does not have a specified size if it is (or contains) a sequence layout whose
      * size is unspecified (see {@link SequenceLayout#elementCount()}).
      *
      * Value layouts (see {@link ValueLayout}) and padding layouts (see {@link MemoryLayout#paddingLayout(long)})
@@ -217,26 +214,20 @@ public sealed interface MemoryLayout extends Constable permits AbstractLayout, S
     boolean hasSize();
 
     /**
-     * Computes the layout size, in bits.
-     *
-     * @return the layout size, in bits.
+     * {@return the layout size, in bits}
      * @throws UnsupportedOperationException if the layout is, or contains, a sequence layout with unspecified size (see {@link SequenceLayout}).
      */
     long bitSize();
 
     /**
-     * Computes the layout size, in bytes.
-     *
-     * @return the layout size, in bytes.
+     * {@return the layout size, in bytes}
      * @throws UnsupportedOperationException if the layout is, or contains, a sequence layout with unspecified size (see {@link SequenceLayout}),
      * or if {@code bitSize()} is not a multiple of 8.
      */
     long byteSize();
 
     /**
-     * Return the <em>name</em> (if any) associated with this layout.
-     *
-     * @return the layout <em>name</em> (if any).
+     * {@return the <em>name</em> (if any) associated with this layout}
      * @see MemoryLayout#withName(String)
      */
     Optional<String> name();
@@ -534,8 +525,7 @@ public sealed interface MemoryLayout extends Constable permits AbstractLayout, S
     }
 
     /**
-     * Is this a {@linkplain #paddingLayout(long) padding layout} ?
-     * @return true, if this layout is a padding layout.
+     * {@return true, if this layout is a padding layout}
      */
     boolean isPadding();
 
@@ -651,16 +641,12 @@ public sealed interface MemoryLayout extends Constable permits AbstractLayout, S
     boolean equals(Object that);
 
     /**
-     * Returns the hash code value for this layout.
-     *
-     * @return the hash code value for this layout.
+     * {@return the hash code value for this layout}
      */
     int hashCode();
 
     /**
-     * Returns a string representation of this layout.
-     *
-     * @return a string representation of this layout.
+     * {@return the string representation of this layout}
      */
     @Override
     String toString();

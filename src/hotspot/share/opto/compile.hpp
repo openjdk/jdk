@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,7 +637,6 @@ class Compile : public Phase {
   bool          trace_opto_output() const       { return _trace_opto_output; }
   void          print_ideal_ir(const char* phase_name);
   bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
-  bool          should_print_ideal(uint level) const { return _directive->PrintIdealLevelOption >= level; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
@@ -654,10 +653,9 @@ class Compile : public Phase {
   void begin_method();
   void end_method();
   bool should_print_igv(int level);
+  bool should_print_phase(CompilerPhaseType cpt);
 
-  void print_method(CompilerPhaseType cpt, int level);
-  void print_method(CompilerPhaseType cpt, Node* n, int level);
-  void print_method_impl(CompilerPhaseType cpt, NOT_PRODUCT(const char* name COMMA) int level);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);

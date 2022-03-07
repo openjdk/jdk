@@ -176,6 +176,16 @@ of proxies.</P>
 	If HTTP keepalive is enabled (see above) this value determines the
 	maximum number of idle connections that will be simultaneously kept
 	alive, per destination.</P>
+	<LI><P><B>{@systemProperty http.keepAlive.time.server}</B> and
+        <B>{@systemProperty http.keepAlive.time.proxy}</B> </P>
+	<P>These properties modify the behavior of the HTTP keepalive cache in the case
+        where the server (or proxy) has not specified a keepalive time. If the
+        property is set in this case, then idle connections will be closed after the 
+        specified number of seconds. If the property is set, and the server does
+        specify a keepalive time in a "Keep-Alive" response header, then the time specified 
+        by the server is used. If the property is not set and also the server
+        does not specify a keepalive time, then connections are kept alive for an
+        implementation defined time, assuming {@code http.keepAlive} is {@code true}.</P>
 	<LI><P><B>{@systemProperty http.maxRedirects}</B> (default: {@code 20})<BR>
 	This integer value determines the maximum number, for a given request,
 	of HTTP redirects that will be automatically followed by the
@@ -214,6 +224,22 @@ of proxies.</P>
 	      property is defined, then its value will be used as the domain
 	      name.</P>
 	</OL>
+	<LI><P><B>{@systemProperty jdk.https.negotiate.cbt}</B> (default: &lt;never&gt;)<BR>
+	This controls the generation and sending of TLS channel binding tokens (CBT) when Kerberos 
+        or the Negotiate authentication scheme using Kerberos are employed over HTTPS with
+        {@code HttpsURLConnection}. There are three possible settings:</P>
+        <OL>
+          <LI><P>"never". This is also the default value if the property is not set. In this case,
+              CBTs are never sent.</P>
+          <LI><P>"always". CBTs are sent for all Kerberos authentication attempts over HTTPS.</P>
+          <LI><P>"domain:&lt;comma separated domain list&gt;" Each domain in the list specifies destination
+          host or hosts for which a CBT is sent. Domains can be single hosts like foo, or foo.com,
+          or literal IP addresses as specified in RFC 2732, or wildcards like *.foo.com which matches 
+          all hosts under foo.com and its sub-domains. CBTs are not sent to any destinations 
+          that don't match one of the list entries</P>
+	</OL>
+	<P>The channel binding tokens generated are of the type "tls-server-end-point" as defined in
+           RFC 5929.</P>
 </UL>
 <P>All these properties are checked only once at startup.</P>
 <a id="AddressCache"></a>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -847,20 +847,19 @@ public class CLDRConverter {
         "DateTimePatternChars",
         "PluralRules",
         "DayPeriodRules",
+        "DateFormatItem",
     };
 
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
         Map<String, Object> formatData = new LinkedHashMap<>();
         for (CalendarType calendarType : CalendarType.values()) {
-            if (calendarType == CalendarType.GENERIC) {
-                continue;
-            }
             String prefix = calendarType.keyElementName();
-            for (String element : FORMAT_DATA_ELEMENTS) {
-                String key = prefix + element;
-                copyIfPresent(map, "java.time." + key, formatData);
-                copyIfPresent(map, key, formatData);
-            }
+            Arrays.stream(FORMAT_DATA_ELEMENTS)
+                .flatMap(elem -> map.keySet().stream().filter(k -> k.startsWith(prefix + elem)))
+                .forEach(key -> {
+                    copyIfPresent(map, "java.time." + key, formatData);
+                    copyIfPresent(map, key, formatData);
+                });
         }
 
         for (String key : map.keySet()) {
@@ -868,9 +867,6 @@ public class CLDRConverter {
             if (key.startsWith(CLDRConverter.LOCALE_TYPE_PREFIX_CA)) {
                 String type = key.substring(CLDRConverter.LOCALE_TYPE_PREFIX_CA.length());
                 for (CalendarType calendarType : CalendarType.values()) {
-                    if (calendarType == CalendarType.GENERIC) {
-                        continue;
-                    }
                     if (type.equals(calendarType.lname())) {
                         Object value = map.get(key);
                         String dataKey = key.replace(LOCALE_TYPE_PREFIX_CA,

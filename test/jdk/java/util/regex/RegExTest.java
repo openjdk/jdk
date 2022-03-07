@@ -4570,15 +4570,23 @@ public class RegExTest {
         ArrayList<Boolean> results1 = new ArrayList<>();
         ArrayList<Boolean> results2 = new ArrayList<>();
 
-        while(matcher1.find()) {
+        while (matcher1.find()) {
             results1.add(matcher1.hitEnd());
         }
 
-        while(matcher2.find()) {
+        while (matcher2.find()) {
             results2.add(matcher2.hitEnd());
         }
 
         assertEquals(results1, results2);
+    }
 
+    //This test is for 8281315
+    @Test
+    public static void iOOBForCIBackrefs(){
+        String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
+        var pattern2 = Pattern.compile("(?i)(.)\\1{2,}");
+        assertTrue(pattern2.matcher(line).find());
     }
 }
+

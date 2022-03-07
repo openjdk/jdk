@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class methodHandle;
 
 // The ThreadShadow class is a helper class to access the _pending_exception
 // field of the Thread class w/o having access to the Thread's interface (for
-// include hierachy reasons).
+// include hierarchy reasons).
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;

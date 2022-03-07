@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,48 @@
  * questions.
  */
 
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
+
 /*
- *
- *
  * Shared static test method for StrictMath tests.
  */
-
 
 public class Tests {
     private Tests(){}
 
-    static int test(String testName,
-                    double input,
-                    double result,
-                    double expected) {
+    public static int test(String testName,
+                           double input,
+                           DoubleUnaryOperator func,
+                           double expected) {
+        return test(testName, input, func.applyAsDouble(input), expected);
+    }
+
+    public static int test(String testName,
+                           double input,
+                           double result,
+                           double expected) {
         if (Double.compare(expected, result ) != 0) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input "   + input    + "\t(" + Double.toHexString(input) + ")\n" +
                                "\texpected  " + expected + "\t(" + Double.toHexString(expected) + ")\n" +
                                "\tgot       " + result   + "\t(" + Double.toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
-    static int test(String testName, double input1,  double input2,
-                    double result, double expected) {
+    public static int test(String testName,
+                           double input1,
+                           double input2,
+                           DoubleBinaryOperator func,
+                           double expected) {
+        return test(testName, input1, input2, func.applyAsDouble(input1, input2), expected);
+    }
+
+    public static int test(String testName, double input1, double input2,
+                           double result, double expected) {
         if (Double.compare(expected, result ) != 0) {
             System.err.println("Failure for " + testName + ":\n" +
                                "\tFor input "   + input1   + "\t(" + Double.toHexString(input1) + "), " +
@@ -55,9 +70,9 @@ public class Tests {
                                "\texpected  " + expected + "\t(" + Double.toHexString(expected) + ")\n" +
                                "\tgot       " + result   + "\t(" + Double.toHexString(result) + ").");
             return 1;
-        }
-        else
+        } else {
             return 0;
+        }
     }
 
     /**

@@ -230,7 +230,7 @@ public final class String
      *
      * A String instance is written into an ObjectOutputStream according to
      * <a href="{@docRoot}/../specs/serialization/protocol.html#stream-elements">
-     * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
+     * <cite>Java Object Serialization Specification</cite>, Section 6.2, "Stream Elements"</a>
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
