@@ -2842,7 +2842,6 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
     loop->_body.push(safepoint->in(0));
     outer_loop_ilt->_tail = igvn->C->top();
   }
-  igvn->C->print_method(PHASE_DEBUG, 2);
 }
 
 void OuterStripMinedLoopNode::remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const {
