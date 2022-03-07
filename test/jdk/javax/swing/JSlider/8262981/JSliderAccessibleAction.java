@@ -78,7 +78,7 @@ public class JSliderAccessibleAction {
     private static final int VALID_INCREMENT = 0;
 
     private void createTestUI() {
-	jFrame = new JFrame("Test JSlider Accessible Action");
+        jFrame = new JFrame("Test JSlider Accessible Action");
         jSlider = new JSlider();
         AccessibleContext ac = jSlider.getAccessibleContext();
         ac.setAccessibleName("JSlider Accessible Test");
