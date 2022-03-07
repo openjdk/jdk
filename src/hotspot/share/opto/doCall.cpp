@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,13 +67,17 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor, ciKlass* speculative_receiver_type,
                                        bool allow_intrinsics) {
-  ciMethod*       caller   = jvms->method();
-  int             bci      = jvms->bci();
-  Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
-  guarantee(callee != NULL, "failed method resolution");
+  assert(callee != NULL, "failed method resolution");
+
+  ciMethod*       caller      = jvms->method();
+  int             bci         = jvms->bci();
+  Bytecodes::Code bytecode    = caller->java_code_at_bci(bci);
+  ciMethod*       orig_callee = caller->get_method_at_bci(bci);
 
   const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
-                                       (bytecode == Bytecodes::_invokeinterface);
+                                       (bytecode == Bytecodes::_invokeinterface) ||
+                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToVirtual) ||
+                                       (orig_callee->intrinsic_id() == vmIntrinsics::_linkToInterface);
 
   // Dtrace currently doesn't work unless all calls are vanilla
   if (env()->dtrace_method_probes()) {
