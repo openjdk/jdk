@@ -540,7 +540,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-WXMode os::current_thread_change_wx(WXMode new_state, Thread *thread) {
+WXMode os::current_thread_change_wx(WXMode new_state) {
   if (_wx_state == WXUnknown) {
     pthread_jit_write_protect_np(false /* not executable but writable */);
     _wx_state = WXWrite;
@@ -554,7 +554,7 @@ WXMode os::current_thread_change_wx(WXMode new_state, Thread *thread) {
 }
 
 void os::current_thread_reset_wx() {
-  current_thread_change_wx(WXWrite, NULL);
+  current_thread_change_wx(WXWrite);
 }
 
 void os::current_thread_assert_wx_state(WXMode expected) {

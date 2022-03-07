@@ -33,15 +33,13 @@
 #include "runtime/thread.inline.hpp"
 
 class ThreadWXEnable  {
-  Thread* _thread;
   WXMode _old_mode;
 public:
   ThreadWXEnable(WXMode new_mode, Thread* thread) :
-    _thread(thread),
-    _old_mode(os::current_thread_change_wx(new_mode, _thread))
+    _old_mode(os::current_thread_change_wx(new_mode))
   { }
   ~ThreadWXEnable() {
-    os::current_thread_change_wx(_old_mode, _thread);
+    os::current_thread_change_wx(_old_mode);
   }
 };
 #endif // __APPLE__ && AARCH64

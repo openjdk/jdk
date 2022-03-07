@@ -938,7 +938,7 @@ class os: AllStatic {
 
   // Enables write or execute access to writeable and executable pages.
   // returns the previous state
-  static WXMode current_thread_change_wx(WXMode new_state, Thread *thread);
+  static WXMode current_thread_change_wx(WXMode new_state);
 
   static void current_thread_reset_wx();
 

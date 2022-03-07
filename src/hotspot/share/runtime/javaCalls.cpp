@@ -96,14 +96,14 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
 
   assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to NULL");
 
-  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXExec, _thread));
+  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXExec));
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
 
-  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite, _thread));
+  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite));
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();

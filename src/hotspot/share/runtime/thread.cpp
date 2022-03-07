@@ -2679,7 +2679,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
-  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite, NULL));
+  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
