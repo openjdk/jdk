@@ -2008,30 +2008,32 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * @since 1.5
  */
 public final class Formatter implements Closeable, Flushable {
-    // Caching DecimalFormatSymbols
-    static DecimalFormatSymbols DFS = null;
-    static DecimalFormatSymbols getDecimalFormatSymbols(Locale locale) {
+    // Caching DecimalFormatSymbols. Non-volatile to avoid thread slamming.
+    private static DecimalFormatSymbols DFS = null;
+    private static DecimalFormatSymbols getDecimalFormatSymbols(Locale locale) {
+        // Capture local copy to avoid thread race.
         DecimalFormatSymbols dfs = DFS;
         if (dfs != null && dfs.getLocale().equals(locale)) {
             return dfs;
         }
         dfs = DecimalFormatSymbols.getInstance(locale);
+        // Non-volatile here is acceptable heuristic.
         DFS = dfs;
         return dfs;
     }
 
-    // Caching zero.
-    static char getZero(Locale locale) {
+    // Use zero from cached DecimalFormatSymbols.
+    private static char getZero(Locale locale) {
         return locale == null ? '0' : getDecimalFormatSymbols(locale).getZeroDigit();
     }
 
-    // Caching decimal separator.
-    static char getDecimalSeparator(Locale locale) {
+    // Use decimal separator from cached DecimalFormatSymbols.
+    private static char getDecimalSeparator(Locale locale) {
         return locale == null ? '.' : getDecimalFormatSymbols(locale).getDecimalSeparator();
     }
 
-    // Caching grouping separator.
-    static char getGroupingSeparator(Locale locale) {
+    // Use grouping separator from cached DecimalFormatSymbols.
+    private static char getGroupingSeparator(Locale locale) {
         return locale == null ? ',' : getDecimalFormatSymbols(locale).getGroupingSeparator();
     }
 

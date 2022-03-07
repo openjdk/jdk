@@ -189,9 +189,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     }
 
     /**
-     * Gets the locale used to create this instance.
-     *
-     * @return locale used to create this instance
+     * {@return locale used to create this instance}
      *
      * @since 19
      */
