@@ -2026,8 +2026,33 @@ const intx ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  develop(bool, TraceOptimizedUpcallStubs, false,                              \
-                "Trace optimized upcall stub generation")                      \
+  develop(bool, TraceOptimizedUpcallStubs, false,                           \
+                "Trace optimized upcall stub generation")                   \
+                                                                            \
+  develop(bool, TestFlagFor_bool, false,                                    \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  develop(int, TestFlagFor_int, 0,                                          \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  develop(uint, TestFlagFor_uint, 0,                                        \
+           "Used by VM internal regression tests only")                     \
+                                                                            \
+  develop(intx, TestFlagFor_intx, 0,                                        \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  develop(uintx, TestFlagFor_uintx, 0,                                      \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  develop(uint64_t, TestFlagFor_uint64_t, 0,                                \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  develop(size_t, TestFlagFor_size_t, 0,                                    \
+          "Used by VM internal regression tests only")                      \
+                                                                            \
+  develop(double, TestFlagFor_double, 0.0,                                  \
+          "Used by VM internal regression tests only")                      \
+
 
 // end of RUNTIME_FLAGS
 

@@ -742,30 +742,38 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 }
 #endif
 
-bool parse_integer(const char *s, char **endptr, int base, jint* result) {
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit 
+bool parse_integer(const char *s, char **endptr, int base, T* result) {
+  // Can't use strtol because it doesn't fail (at least on Linux/gcc) with overflowing
+  // input such as "0x123456789" or "-0x800000001"
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < min_jint || v > max_jint) {
     return false;
   }
-  *result = int(v);
+  *result = static_cast<T>(v);
   return true;
 }
 
-bool parse_integer(const char *s, char **endptr, int base, juint* result) {
+template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit 
+bool parse_integer(const char *s, char **endptr, int base, T* result) {
+  // Can't use strtoul because it doesn't fail (at least on Linux/gcc) with overflowing
+  // input such as "0x123456789"
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < 0 || v > max_juint) {
     return false;
   }
-  *result = uint(v);
+  *result = static_cast<T>(v);
   return true;
 }
 
-bool parse_integer(const char *s, char **endptr, int base, jlong* result) {
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit 
+bool parse_integer(const char *s, char **endptr, int base, T* result) {
   *result = strtoll(s, endptr, base);
   return true;
 }
 
-bool parse_integer(const char *s, char **endptr, int base, julong* result) {
+template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit 
+bool parse_integer(const char *s, char **endptr, int base, T* result) {
   if (s[0] == '-') {
     return false;
   }
@@ -774,10 +782,10 @@ bool parse_integer(const char *s, char **endptr, int base, julong* result) {
 }
 
 template<typename T>
-static bool _multiply(volatile T* result, T by) {
-  T n = * result;
+static bool multiply_and_check(volatile T* result, T by) {
+  T n = *result;
   *result = n * by;
-  if ((*result) / by != n) {
+  if ((*result) / by != n) { // overflow!
     return false;
   }
   return true;
@@ -786,10 +794,10 @@ static bool _multiply(volatile T* result, T by) {
 template<typename T>
 bool parse_integer(const char *s, volatile T* result) {
   T n = 0;
-
   bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
                 (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
   char* remainder;
+
   errno = 0; // errno is thread safe
   if (!parse_integer(s, &remainder, (is_hex ? 16 : 10), &n) || errno != 0) {
     return false;
@@ -799,77 +807,42 @@ bool parse_integer(const char *s, volatile T* result) {
   if (remainder == s || strlen(remainder) > 1) {
     return false;
   }
-  T g = (T)G;
-  T m = (T)M;
-  T k = (T)K;
-  *result = n;
+
+  T g = static_cast<T>(G);
+  T m = static_cast<T>(M);
+  T k = static_cast<T>(K);
+
   switch (*remainder) {
     case 'T': case 't':
-      if (!_multiply(result, g)) return false;
-      if (!_multiply(result, k)) return false;
-      return true;
+      if (!multiply_and_check(&n, g)) return false;
+      if (!multiply_and_check(&n, k)) return false;
+      break;
     case 'G': case 'g':
-      if (!_multiply(result, g)) return false;
-      return true;
+      if (!multiply_and_check(&n, g)) return false;
+      break;
     case 'M': case 'm':
-      if (!_multiply(result, m)) return false;
-      return true;
+      if (!multiply_and_check(&n, m)) return false;
+      break;
     case 'K': case 'k':
-      if (!_multiply(result, k)) return false;
-      return true;
+      if (!multiply_and_check(&n, k)) return false;
+      break;
     case '\0':
-      return true;
+      break;
     default:
       return false;
   }
+
+  *result = n;
+  return true;
 }
 
-// Parses a size specification string.
 bool Arguments::atojulong(const char *s, julong* result) {
-  julong n = 0;
-
   // First char must be a digit. Don't allow negative numbers or leading spaces.
   if (!isdigit(*s)) {
     return false;
   }
 
-  bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X'));
-  char* remainder;
-  errno = 0;
-  n = strtoull(s, &remainder, (is_hex ? 16 : 10));
-  if (errno != 0) {
-    return false;
-  }
-
-  // Fail if no number was read at all or if the remainder contains more than a single non-digit character.
-  if (remainder == s || strlen(remainder) > 1) {
-    return false;
-  }
-
-  switch (*remainder) {
-    case 'T': case 't':
-      *result = n * G * K;
-      // Check for overflow.
-      if (*result/((julong)G * K) != n) return false;
-      return true;
-    case 'G': case 'g':
-      *result = n * G;
-      if (*result/G != n) return false;
-      return true;
-    case 'M': case 'm':
-      *result = n * M;
-      if (*result/M != n) return false;
-      return true;
-    case 'K': case 'k':
-      *result = n * K;
-      if (*result/K != n) return false;
-      return true;
-    case '\0':
-      *result = n;
-      return true;
-    default:
-      return false;
-  }
+  return parse_integer(s, result);
 }
 
 Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size, julong max_size) {
@@ -1123,7 +1096,7 @@ bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
       return false;
     }
     JVMFlag* flag = JVMFlag::find_flag(real_name);
-    return (set_numeric_flag(flag, value, origin) == JVMFlag::SUCCESS);
+    return set_numeric_flag(flag, value, origin) == JVMFlag::SUCCESS;
   }
 
   return false;
@@ -2140,24 +2113,16 @@ static const char* system_assertion_options[] = {
 bool Arguments::parse_uintx(const char* value,
                             uintx* uintx_arg,
                             uintx min_size) {
-
-  // Check the sign first since atojulong() parses only unsigned values.
-  bool value_is_positive = !(*value == '-');
-
-  if (value_is_positive) {
-    julong n;
-    bool good_return = atojulong(value, &n);
-    if (good_return) {
-      bool above_minimum = n >= min_size;
-      bool value_is_too_large = n > max_uintx;
-
-      if (above_minimum && !value_is_too_large) {
-        *uintx_arg = n;
-        return true;
-      }
-    }
+  uintx n;
+  if (!parse_integer(value, &n)) {
+    return false;
   }
-  return false;
+  if (n >= min_size) {
+    *uintx_arg = n;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool Arguments::create_module_property(const char* prop_name, const char* prop_value, PropertyInternal internal) {
@@ -2208,7 +2173,7 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
                                                   julong* long_arg,
                                                   julong min_size,
                                                   julong max_size) {
-  if (!atojulong(s, long_arg)) return arg_unreadable;
+  if (!parse_integer(s, long_arg)) return arg_unreadable;
   return check_memory_size(*long_arg, min_size, max_size);
 }
 

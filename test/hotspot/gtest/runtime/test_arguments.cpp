@@ -25,6 +25,7 @@
 #include "jvm.h"
 #include "unittest.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -40,6 +41,16 @@ public:
 
   static jint parse_xss(const JavaVMOption* option, const char* tail, intx* out_ThreadStackSize) {
     return Arguments::parse_xss(option, tail, out_ThreadStackSize);
+  }
+
+  static bool parse_argument(const char* name, const char* value) {
+    char buf[1024];
+    int ret = jio_snprintf(buf, sizeof(buf), "%s=%s", name, value);
+    if (ret > 0) {
+      return Arguments::parse_argument(buf, JVMFlagOrigin::COMMAND_LINE);
+    } else {
+      return false;
+    }
   }
 };
 
@@ -200,4 +211,73 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
     EXPECT_EQ(parse_xss_inner(to_string(K),     JNI_OK), calc_expected(K));
     EXPECT_EQ(parse_xss_inner(to_string(K + 1), JNI_OK), calc_expected(K + 1));
   }
+}
+
+template <typename T>
+struct ValidArgument {
+  const char* str;
+  T expected_value;
+};
+
+template <typename T>
+void check_valid_args(JVMFlag* flag, T getvalue(JVMFlag* flag), ValidArgument<T>* valid_args, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    const char* str = valid_args[i].str;
+    ASSERT_TRUE(ArgumentsTest::parse_argument(flag->name(), str))
+        << "Valid string '" << str << "' did not parse.";
+    ASSERT_EQ(getvalue(flag), valid_args[i].expected_value);
+  }
+}
+
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit 
+void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
+  JVMFlag* flag = JVMFlag::find_flag(f);
+  if (flag == NULL) { // not available in product builds
+    return;
+  }
+
+  T g = static_cast<T>(G);
+  T m = static_cast<T>(M);
+  T k = static_cast<T>(K);
+
+  ValidArgument<T> valid_strings[] = {
+      { "0", 0 },
+      { "4711", 4711 },
+      { "1K", 1 * k },
+      { "1k", 1 * k },
+      { "2M", 2 * m },
+      { "2m", 2 * m },
+      { "1G", 1 * g },
+      { "-1K", -1 * k },
+      { "0x1K", 1 * k },
+      { "-0x1K", -1 * k },
+      { "0K", 0 },
+      { "0x7fffffff", 0x7fffffff},
+      { "-0x7fffffff", -2147483647},
+      { "-0x80000000", -2147483648},
+      //{ "0xcafebabe", 0xcafebabe },
+      //{ "0XCAFEBABE", 0xcafebabe },
+      //{ "0XCAFEbabe", 0xcafebabe },
+  };
+  check_valid_args(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
+
+#if 0
+  const char* invalid_strings[] = {
+    "", "-1", "-100", " 1", "2 ", "3 2", "1.0",
+    "0x4.5", "0x", "0x0x1" "0.001", "4e10", "e"
+    "K", "M", "G", "1MB", "1KM", "AA", "0B",
+    "18446744073709551615K", "17179869184G",
+    "999999999999999999999999999999"
+  };
+  for (uint i = 0; i < ARRAY_SIZE(invalid_strings); i++) {
+    ASSERT_FALSE(Arguments::atojulong(invalid_strings[i], &value))
+        << "Invalid string '" << invalid_strings[i] << "' parsed without error.";
+  }
+#endif
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_int) {
+  check_flag<int>("TestFlagFor_int", [] (JVMFlag* flag) {
+    return flag->get_int();
+  });
 }
