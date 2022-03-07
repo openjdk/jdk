@@ -206,15 +206,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     private static DecimalFormatSymbols cache = null;
 
     /**
-     * {@return locale used to create this instance}
-     *
-     * @since 19
-     */
-    public Locale getLocale() {
-        return locale;
-    }
-
-    /**
      * Gets the character used for zero. Different for Arabic, etc.
      *
      * @return the character used for zero
