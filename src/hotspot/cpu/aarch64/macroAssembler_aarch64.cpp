@@ -4372,10 +4372,11 @@ address MacroAssembler::count_positives(Register ary1, Register len, Register re
 
   BIND(END);
     ldr(rscratch1, Address(ary1));
-    sub(len, zr, len, LSL, 3); // LSL 3 is to get bits from bytes
-    lslv(rscratch1, rscratch1, len);
+    sub(rscratch2, zr, len, LSL, 3); // LSL 3 is to get bits from bytes
+    lslv(rscratch1, rscratch1, rscratch2);
     tst(rscratch1, UPPER_BIT_MASK);
-    b(SET_RESULT);
+    br(NE, SET_RESULT);
+    b(DONE);
 
   BIND(STUB);
     RuntimeAddress count_pos = RuntimeAddress(StubRoutines::aarch64::count_positives());
@@ -4400,7 +4401,9 @@ address MacroAssembler::count_positives(Register ary1, Register len, Register re
     b(DONE);
 
   BIND(SET_RESULT);
-    csel(result, zr, result, NE); // set len or 0
+
+    add(len, len, wordSize);
+    sub(result, result, len);
 
   BIND(DONE);
   postcond(pc() != badAddress);
