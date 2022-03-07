@@ -1443,7 +1443,7 @@ public final class String
      *         A {@code StringBuffer}
      */
     public String(StringBuffer buffer) {
-        this(buffer, null);
+        this(buffer.toString());
     }
 
     /**

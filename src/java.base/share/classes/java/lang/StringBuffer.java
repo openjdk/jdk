@@ -712,7 +712,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     @IntrinsicCandidate
     public synchronized String toString() {
         if (toStringCache == null) {
-            return toStringCache = new String(this);
+            return toStringCache = new String(this, null);
         }
         return new String(toStringCache);
     }
