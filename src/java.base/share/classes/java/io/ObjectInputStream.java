@@ -2214,8 +2214,7 @@ public class ObjectInputStream
                 result = en;
             } catch (IllegalArgumentException ex) {
                 throw new InvalidObjectException("enum constant " +
-                                                 name + " does not exist in " +
-                                                 cl, ex);
+                                                 name + " does not exist in " + cl, ex);
             }
             if (!unshared) {
                 handles.setObject(enumHandle, result);
