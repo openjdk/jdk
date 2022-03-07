@@ -56,12 +56,19 @@ can be pointed out here.
 
 Proposed changes should be discussed on the
 [HotSpot Developers](mailto:hotspot-dev@openjdk.java.net) mailing
-list, and approved by
+list.  Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.
+
+Substantive changes are approved by
 [rough consensus](https://en.wikipedia.org/wiki/Rough_consensus) of
 the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
-Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.
+
+Editorial changes (changes that only affect the description of HotSpot
+style, not its substance) do not require the full consensus gathering
+process.  The normal HotSpot pull request process may be used for
+editorial changes, with the additional requirement that the requisite
+reviewers are also HotSpot Group Members.
 
 ## Structure and Formatting
 

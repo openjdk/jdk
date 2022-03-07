@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import javax.tools.JavaFileObject.Kind;
  * should be interpreted as referring indirectly to the {@link #fileManager delegate file manager}.
  *
  * @param <M> the kind of file manager forwarded to by this object
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public class ForwardingJavaFileManager<M extends JavaFileManager> implements JavaFileManager {

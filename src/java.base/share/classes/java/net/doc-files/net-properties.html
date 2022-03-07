@@ -176,6 +176,16 @@ of proxies.</P>
 	If HTTP keepalive is enabled (see above) this value determines the
 	maximum number of idle connections that will be simultaneously kept
 	alive, per destination.</P>
+	<LI><P><B>{@systemProperty http.keepAlive.time.server}</B> and
+        <B>{@systemProperty http.keepAlive.time.proxy}</B> </P>
+	<P>These properties modify the behavior of the HTTP keepalive cache in the case
+        where the server (or proxy) has not specified a keepalive time. If the
+        property is set in this case, then idle connections will be closed after the 
+        specified number of seconds. If the property is set, and the server does
+        specify a keepalive time in a "Keep-Alive" response header, then the time specified 
+        by the server is used. If the property is not set and also the server
+        does not specify a keepalive time, then connections are kept alive for an
+        implementation defined time, assuming {@code http.keepAlive} is {@code true}.</P>
 	<LI><P><B>{@systemProperty http.maxRedirects}</B> (default: {@code 20})<BR>
 	This integer value determines the maximum number, for a given request,
 	of HTTP redirects that will be automatically followed by the

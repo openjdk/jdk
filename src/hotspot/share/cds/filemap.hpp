@@ -491,6 +491,7 @@ public:
   static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
+  bool check_module_paths();
   bool validate_shared_path_table();
   void validate_non_existent_class_paths();
   static void set_shared_path_table(FileMapInfo* info) {

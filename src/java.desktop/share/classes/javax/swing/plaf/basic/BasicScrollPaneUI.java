@@ -500,7 +500,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class ViewportChangeHandler implements ChangeListener
     {
         /**
@@ -534,7 +534,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class HSBChangeListener implements ChangeListener
     {
         /**
@@ -577,7 +577,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class VSBChangeListener implements ChangeListener
     {
         /**
@@ -786,7 +786,7 @@ public class BasicScrollPaneUI
      * All its functionality has been moved into Handler.
      * @deprecated
      */
-    @Deprecated(since = "17")
+    @Deprecated(since = "17", forRemoval = true)
     public class PropertyChangeHandler implements PropertyChangeListener
     {
         /**

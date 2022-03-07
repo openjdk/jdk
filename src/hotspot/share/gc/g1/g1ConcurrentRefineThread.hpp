@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
 #define SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "utilities/ticks.hpp"
+#include "memory/padded.hpp"
+#include "runtime/semaphore.hpp"
+#include "utilities/macros.hpp"
 
 // Forward Decl.
 class G1ConcurrentRefine;
@@ -45,36 +47,34 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
 
   uint _worker_id;
 
-  // _notifier and _should_notify form a single-reader / multi-writer
-  // notification mechanism.  The owning concurrent refinement thread is the
-  // single reader. The writers are (other) threads that call activate() on
-  // the thread.  The i-th concurrent refinement thread is responsible for
-  // activating thread i+1 if the number of buffers in the queue exceeds a
-  // threshold for that i+1th thread.  The 0th (primary) thread is activated
-  // by threads that add cards to the dirty card queue set when the primary
-  // thread's threshold is exceeded.  activate() is also used to wake up the
-  // threads during termination, so even the non-primary thread case is
-  // multi-writer.
-  Semaphore* _notifier;
-  volatile bool _should_notify;
+  G1ConcurrentRefine* _cr;
+
+  NONCOPYABLE(G1ConcurrentRefineThread);
+
+protected:
+  G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id);
+
+  // Returns !should_terminate().
+  // precondition: this is the current thread.
+  virtual bool wait_for_completed_buffers() = 0;
 
   // Called when no refinement work found for this thread.
   // Returns true if should deactivate.
-  bool maybe_deactivate(bool more_work);
+  // precondition: this is the current thread.
+  virtual bool maybe_deactivate() = 0;
 
-  G1ConcurrentRefine* _cr;
+  G1ConcurrentRefine* cr() const { return _cr; }
 
-  void wait_for_completed_buffers();
-
-  virtual void run_service();
-  virtual void stop_service();
+  void run_service() override;
+  void stop_service() override;
 
 public:
-  G1ConcurrentRefineThread(G1ConcurrentRefine* cg1r, uint worker_id);
+  static G1ConcurrentRefineThread* create(G1ConcurrentRefine* cr, uint worker_id);
   virtual ~G1ConcurrentRefineThread();
 
   // Activate this thread.
-  void activate();
+  // precondition: this is not the current thread.
+  virtual void activate() = 0;
 
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
@@ -82,6 +82,39 @@ public:
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }
+};
+
+// Singleton special refinement thread, registered with the dirty card queue.
+// This thread supports notification of increases to the number of cards in
+// the dirty card queue, which may trigger activation of this thread when it
+// is not already running.
+class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
+  // Support for activation.  The thread waits on this semaphore when idle.
+  // Calls to activate signal it to wake the thread.
+  Semaphore _notifier;
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  // Used as both the activation threshold and also the "is active" state.
+  // The value is SIZE_MAX when the thread is active, otherwise the threshold
+  // for signaling the semaphore.
+  volatile size_t _threshold;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+
+  bool wait_for_completed_buffers() override;
+  bool maybe_deactivate() override;
+
+  G1PrimaryConcurrentRefineThread(G1ConcurrentRefine* cr);
+
+  void stop_service() override;
+
+public:
+  static G1PrimaryConcurrentRefineThread* create(G1ConcurrentRefine* cr);
+
+  void activate() override;
+
+  // Used by the write barrier support to activate the thread if needed when
+  // there are new refinement buffers.
+  void notify(size_t num_cards);
+  void update_notify_threshold(size_t threshold);
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINETHREAD_HPP
