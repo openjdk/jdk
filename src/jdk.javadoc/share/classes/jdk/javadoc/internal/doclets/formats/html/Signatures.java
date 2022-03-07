@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class Signatures {
             if (utils.isRecord(typeElement)) {
                 content.add(getRecordComponents());
             }
-            if (!utils.isAnnotationType(typeElement)) {
+            if (!utils.isAnnotationInterface(typeElement)) {
                 Content extendsImplements = new HtmlTree(TagName.SPAN)
                         .setStyle(HtmlStyle.extendsImplements);
                 if (!utils.isInterface(typeElement)) {
@@ -508,7 +508,7 @@ public class Signatures {
             // interface methods and fields.
             if ((utils.isField(element) || utils.isMethod(element))) {
                 Element te = element.getEnclosingElement();
-                if (utils.isInterface(te) || utils.isAnnotationType(te)) {
+                if (utils.isInterface(te) || utils.isAnnotationInterface(te)) {
                     // Remove the implicit abstract and public modifiers
                     if (utils.isMethod(element)) {
                         set.remove(ABSTRACT);

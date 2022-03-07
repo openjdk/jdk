@@ -268,7 +268,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the package annotation elements will be added
      */
     protected void addPackageAnnotationList(Content contentTree) {
-        if (!utils.isAnnotationType(typeElement) ||
+        if (!utils.isAnnotationInterface(typeElement) ||
                 pkgToPackageAnnotations == null ||
                 pkgToPackageAnnotations.isEmpty()) {
             return;

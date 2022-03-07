@@ -330,7 +330,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case CONSTRUCTOR ->
                     "doclet.Constructor_for";
             case METHOD ->
-                    utils.isAnnotationType(enclosing) ? "doclet.Element_in"
+                    utils.isAnnotationInterface(enclosing) ? "doclet.Element_in"
                             : utils.isStatic(member) ? "doclet.Static_method_in" : "doclet.Method_in";
             case RECORD_COMPONENT ->
                     "doclet.Record_component_in";

@@ -407,8 +407,8 @@ public class VisibleMemberTable {
     }
 
     private void computeParents() {
-        // suppress parents of annotation types
-        if (utils.isAnnotationType(te)) {
+        // suppress parents of annotation interfaces
+        if (utils.isAnnotationInterface(te)) {
             return;
         }
 
@@ -777,7 +777,7 @@ public class VisibleMemberTable {
                         addMember(e, Kind.FIELDS);
                         break;
                     case METHOD:
-                        if (utils.isAnnotationType(te)) {
+                        if (utils.isAnnotationInterface(te)) {
                             ExecutableElement ee = (ExecutableElement) e;
                             addMember(e, Kind.ANNOTATION_TYPE_MEMBER);
                             addMember(e, ee.getDefaultValue() == null

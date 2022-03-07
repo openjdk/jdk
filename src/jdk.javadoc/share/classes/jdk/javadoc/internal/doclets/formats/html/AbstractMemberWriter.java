@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,8 +237,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             code.add(resources.getText("doclet.Package_private"));
             code.add(" ");
         }
-        boolean isAnnotatedTypeElement = utils.isAnnotationType(member.getEnclosingElement());
-        if (!isAnnotatedTypeElement && utils.isMethod(member)) {
+        if (!utils.isAnnotationInterface(member.getEnclosingElement()) && utils.isMethod(member)) {
             if (!utils.isInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
                 code.add("abstract ");
             }
@@ -324,7 +323,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                     && !utils.isConstructor(element)
                     && !utils.isClass(element)
                     && !utils.isInterface(element)
-                    && !utils.isAnnotationType(element)) {
+                    && !utils.isAnnotationInterface(element)) {
                 HtmlTree name = new HtmlTree(TagName.SPAN);
                 name.setStyle(HtmlStyle.typeNameLabel);
                 name.add(name(te) + ".");

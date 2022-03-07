@@ -256,7 +256,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 .addTab(contents.enums, utils::isEnum)
                 .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
                 .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
-                .addTab(contents.annotationTypes, utils::isAnnotationType);
+                .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
                 Content classLink = getLink(new HtmlLinkInfo(

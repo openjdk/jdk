@@ -285,23 +285,8 @@ public class Utils {
         return !e.getAnnotationMirrors().isEmpty();
     }
 
-    public boolean isAnnotationType(Element e) {
-        return new SimpleElementVisitor14<Boolean, Void>() {
-            @Override
-            public Boolean visitExecutable(ExecutableElement e, Void p) {
-                return visit(e.getEnclosingElement());
-            }
-
-            @Override
-            public Boolean visitUnknown(Element e, Void p) {
-                return false;
-            }
-
-            @Override
-            protected Boolean defaultAction(Element e, Void p) {
-                return e.getKind() == ANNOTATION_TYPE;
-            }
-        }.visit(e);
+    public boolean isAnnotationInterface(Element e) {
+        return e.getKind() == ANNOTATION_TYPE;
     }
 
     // Note that e.getKind().isClass() is not the same as e.getKind() == CLASS
@@ -1112,7 +1097,7 @@ public class Utils {
 
     private boolean checkType(TypeElement te) {
         return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType())
-                || isAnnotationType(te);
+                || isAnnotationInterface(te);
     }
 
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {
