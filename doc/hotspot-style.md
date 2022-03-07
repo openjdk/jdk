@@ -294,7 +294,9 @@ well.
 or consistency.  Gratuitous whitespace changes will make integrations
 and backports more difficult.
 
-* Use One-True-Brace-Style. The opening brace for a function or class
+* Use [One-True-Brace-Style](
+https://en.wikipedia.org/wiki/Indentation_style#Variant:_1TBS_(OTBS)).
+The opening brace for a function or class
 is normally at the end of the line; it is sometimes moved to the
 beginning of the next line for emphasis.  Substatements are enclosed
 in braces, even if there is only a single statement.  Extremely simple

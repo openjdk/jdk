@@ -216,10 +216,8 @@ class MyByteBuffer {
     }
 
     void ck(double x, double y) {
-        if (x != y) {
-            throw new RuntimeException(" x = " + Double.toString(x) + ", y = " + Double.toString(y)
-                                    + " (x = " + Long.toHexString(Double.doubleToRawLongBits(x))
-                                    + ", y = " + Long.toHexString(Double.doubleToRawLongBits(y)) + ")");
+        if (x == x && y == y && x != y) {
+            ck(x, y);
         }
     }
 
