@@ -177,6 +177,20 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance(Locale locale) {
+        // Copy cache to avoid race.
+        DecimalFormatSymbols dfsyms = cache;
+         // Use cached value if same locale.
+        if (dfsyms != null && dfsyms.locale.equals(locale)) {
+            return dfsyms;
+        }
+        // Fetch DecimalFormatSymbols from provider.
+        dfsyms = getInstanceFromProvider(locale);
+        // Update cache. Race collisions are benign.
+        cache = dfsyms;
+        return dfsyms;
+    }
+
+    private static final DecimalFormatSymbols getInstanceFromProvider(Locale locale) {
         LocaleProviderAdapter adapter;
         adapter = LocaleProviderAdapter.getAdapter(DecimalFormatSymbolsProvider.class, locale);
         DecimalFormatSymbolsProvider provider = adapter.getDecimalFormatSymbolsProvider();
@@ -187,6 +201,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         }
         return dfsyms;
     }
+
+    // Cache most recent use. Deliberately non-volatile heuristic.
+    private static DecimalFormatSymbols cache = null;
 
     /**
      * {@return locale used to create this instance}

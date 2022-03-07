@@ -2009,17 +2009,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  */
 public final class Formatter implements Closeable, Flushable {
     // Caching DecimalFormatSymbols. Non-volatile to avoid thread slamming.
-    private static DecimalFormatSymbols DFS = null;
     private static DecimalFormatSymbols getDecimalFormatSymbols(Locale locale) {
-        // Capture local copy to avoid thread race.
-        DecimalFormatSymbols dfs = DFS;
-        if (dfs != null && dfs.getLocale().equals(locale)) {
-            return dfs;
-        }
-        dfs = DecimalFormatSymbols.getInstance(locale);
-        // Non-volatile here is acceptable heuristic.
-        DFS = dfs;
-        return dfs;
+        return DecimalFormatSymbols.getInstance(locale);
     }
 
     // Use zero from cached DecimalFormatSymbols.
