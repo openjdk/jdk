@@ -1450,11 +1450,6 @@ const bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_SqrtVD:
     case Op_SqrtVF:
-    case Op_RoundVF:
-    case Op_RoundVD:
-      if (UseAVX < 2) { // enabled for AVX2 only
-        return false;
-      }
     case Op_VectorMaskCmp:
     case Op_VectorCastB2X:
     case Op_VectorCastS2X:
@@ -1467,6 +1462,16 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorUCastI2X:
       if (UseAVX < 1) { // enabled for AVX only
         return false;
+      }
+      break;
+    case Op_RoundVF:
+      if (UseAVX < 2) { // enabled for AVX2 only
+        return false;
+      }
+      break;
+    case Op_RoundVD:
+      if (UseAVX < 3) {
+        return false;  // enabled for AVX3 only
       }
       break;
     case Op_CompareAndSwapL:
