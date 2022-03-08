@@ -32,4 +32,4 @@
 
 $TESTJAVA/bin/java $TESTVMOPTS -cp $TESTCLASSES \
         -Dfile.encoding=UTF-16 \
-        PemEncoding $TESTSRC/../HostnameMatcher/cert5.crt
+        PemEncoding $TESTSRC/../HostnameChecker/cert5.crt
