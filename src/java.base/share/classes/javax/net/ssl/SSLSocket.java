@@ -174,7 +174,7 @@ import java.util.function.BiFunction;
  * @apiNote
  * When the connection is no longer needed, the client and server
  * applications should each close both sides of their respective connection.
- * This can be done either in one shot by calling {@link Socket#close()}},
+ * This can be done either in one shot by calling {@link Socket#close()},
  * or by closing each side individually using
  * {@link Socket#shutdownOutput()} / {@link Socket#shutdownInput()} which is
  * useful for protocol versions that can support half-closed connections.
@@ -185,7 +185,7 @@ import java.util.function.BiFunction;
  * before the peer's write closure notification has been received), exceptions
  * may be raised to indicate that an error has occurred.
  *
- * <P>Once an {@code SSLSocket} is closed, it is not reusable: a new
+ * <P> Once an {@code SSLSocket} is closed, it is not reusable: a new
  * {@code SSLSocket} must be created.
  *
  * @see java.net.Socket
