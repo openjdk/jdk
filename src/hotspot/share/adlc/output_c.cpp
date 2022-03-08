@@ -1144,8 +1144,9 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
         OpClassForm *right_opclass = globals[right_comp_type]->is_opclass();
         Form::InterfaceType right_interface_type = right_opclass->interface_type(globals);
         assert( right_interface_type == left_interface_type, "Both must be same interface");
+
       } else {                  // Else match register
-        assert( left_interface_type == Form::register_interface, "should be a register" );
+        // assert( false, "should be a register" );
       }
 
       //
@@ -1427,7 +1428,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
         fprintf(fp, ", inst%d", i);
       }
       fprintf(fp, ");\n");
-      // If substitution suceeded, delete the old node and return the new node
+      // If substitution succeeded, delete the old node and return the new node
       fprintf(fp, "      if (success) {\n");
       for (int i = 0; i <= max_position; i++) {
         fprintf(fp, "        inst%d->set_removed();\n", i);
