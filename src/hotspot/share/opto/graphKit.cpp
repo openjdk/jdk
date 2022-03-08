@@ -615,6 +615,13 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
       const TypeOopPtr* val_type = TypeOopPtr::make_from_klass(env()->String_klass());
       Node *store = access_store_at(ex_node, adr, adr_typ, null(), val_type, T_OBJECT, IN_HEAP);
 
+      if (!method()->has_exception_handlers()) {
+        // We don't need to preserve the stack if there's no handler as the entire frame is going to be popped anyway.
+        // This prevents issues with exception handling and late inlining.
+        set_sp(0);
+        clean_stack(0);
+      }
+
       add_exception_state(make_exception_state(ex_node));
       return;
     }
