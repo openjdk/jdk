@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,31 @@
  * questions.
  */
 
+
 /*
  * @test
- * @bug     4954546
- * @summary unverifiable code for method called from ?: expression with inferred
+ * @bug 8275775
+ * @summary Test jcmd VM.classes
+ * @library /test/lib
+ * @run main/othervm PrintClasses
  */
 
-public class T4954546 {
-    interface I {
-        void f();
-    }
-    interface J {
-        void g();
-    }
-    static class A implements I, J {
-        public void f() {}
-        public void g() {}
-    }
-    static class B implements J, I {
-        public void f() {}
-        public void g() {}
-    }
-    public static void main(String[] args) {
-        f(true, new A(), new B());
-    }
-    static void f(boolean cond, A a, B b) {
-        (cond?a:b).f();
-        (cond?a:b).g();
-    }
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
+
+public class PrintClasses {
+  public static void main(String args[]) throws Exception {
+    var pid = Long.toString(ProcessHandle.current().pid());
+    var pb = new ProcessBuilder();
+
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes"});
+    var output = new OutputAnalyzer(pb.start());
+    output.shouldNotContain("instance size");
+    output.shouldContain(PrintClasses.class.getSimpleName());
+
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.classes", "-verbose"});
+    output = new OutputAnalyzer(pb.start());
+    output.shouldContain("instance size");
+    output.shouldContain(PrintClasses.class.getSimpleName());
+  }
 }

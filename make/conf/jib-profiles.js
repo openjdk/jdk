@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,6 @@ var getJibProfilesCommon = function (input, data) {
     common.release_profile_base = {
         configure_args: [
             "--enable-reproducible-build",
-            "--with-source-date=current",
         ],
     };
     // Extra settings for debug profiles
@@ -1447,6 +1446,14 @@ var versionArgs = function(input, common) {
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
     }
+    var sourceDate
+    if (input.build_id_data && input.build_id_data.creationTime) {
+        sourceDate = Math.floor(Date.parse(input.build_id_data.creationTime)/1000);
+    } else {
+        sourceDate = "current";
+    }
+    args = concat(args, "--with-source-date=" + sourceDate);
+
     return args;
 }
 

@@ -42,6 +42,8 @@ import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
+import static jdk.vm.ci.meta.MetaUtil.internalNameToJava;
+import static jdk.vm.ci.meta.MetaUtil.toInternalName;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -163,16 +165,15 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
-    public void internalNameTest() {
-        // Verify that the last slash in lambda types are not replaced with a '.' as they
-        // are part of the type name.
+    public void lambdaInternalNameTest() {
+        // Verify that the last dot in lambda types is properly handled when transitioning from internal name to java
+        // name and vice versa.
         Supplier<Runnable> lambda = () -> () -> System.out.println("run");
         ResolvedJavaType lambdaType = metaAccess.lookupJavaType(lambda.getClass());
         String typeName = lambdaType.getName();
-        int typeNameLen = TestResolvedJavaType.class.getSimpleName().length();
-        int index = typeName.indexOf(TestResolvedJavaType.class.getSimpleName());
-        String suffix = typeName.substring(index + typeNameLen, typeName.length() - 1);
-        assertEquals(TestResolvedJavaType.class.getName() + suffix, lambdaType.toJavaName());
+        String javaName = lambda.getClass().getName();
+        assertEquals(typeName, toInternalName(javaName));
+        assertEquals(javaName, internalNameToJava(typeName, true, true));
     }
 
     @Test

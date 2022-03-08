@@ -265,7 +265,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 3);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>3] = (result[j>>3] << 8) | seed[j];
+            result[j>>3] = (result[j>>3] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
