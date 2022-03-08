@@ -326,7 +326,7 @@ public class HtmlDocletWriter {
             return;
         }
         HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
-        if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
+        if (utils.isMethod(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
         Content output = getBlockTagOutput(e);

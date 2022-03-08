@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                     configuration.cmtUtils.updatePropertyMethodComment(ee, property);
                 }
                 List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
-                if (utils.isExecutableElement(member) && firstSentenceTags.isEmpty()) {
+                if (utils.isMethod(member) && firstSentenceTags.isEmpty()) {
                     //Inherit comments from overridden or implemented method if
                     //necessary.
                     DocFinder.Output inheritedDoc =

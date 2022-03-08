@@ -243,7 +243,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
                         ch.getParameterName(dt), result.isEmpty()));
-            } else if (writer.configuration().utils.isExecutableElement(e)) {
+            } else if (writer.configuration().utils.isMethod(e)) {
                 result.add(getInheritedTagletOutput(kind, e, writer,
                         formalParameters.get(i), i, result.isEmpty()));
             }
