@@ -349,13 +349,13 @@ public class SSLSocketSSLEngineTemplate {
         } finally {
             if (serverException != null) {
                 if (clientException != null) {
-                    serverException.initCause(clientException);
+                    serverException.setCause(clientException);
                 }
                 throw serverException;
             }
             if (clientException != null) {
                 if (serverException != null) {
-                    clientException.initCause(serverException);
+                    clientException.setCause(serverException);
                 }
                 throw clientException;
             }
