@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,15 +259,6 @@ JNU_GetStaticFieldByName(JNIEnv *env,
         }                                       \
     } while (0)                                 \
 
-#define JNU_CHECK_EXCEPTION_AND_CLEANUP(env, code) \
-    do {                                        \
-        if ((env)->ExceptionCheck()) {          \
-            code;                               \
-            return;                             \
-        }                                       \
-    } while (0)                                 \
-
-
 #define JNU_CHECK_EXCEPTION_RETURN(env, y)      \
     do {                                        \
         if ((env)->ExceptionCheck()) {          \
@@ -281,15 +272,6 @@ JNU_GetStaticFieldByName(JNIEnv *env,
             return;                             \
         }                                       \
     } while (0)                                 \
-
-#define JNU_CHECK_EXCEPTION_AND_CLEANUP(env, code) \
-    do {                                        \
-        if ((*env)->ExceptionCheck(env)) {      \
-            code;                               \
-            return;                             \
-        }                                       \
-    } while (0)                                 \
-
 
 #define JNU_CHECK_EXCEPTION_RETURN(env, y)      \
     do {                                        \

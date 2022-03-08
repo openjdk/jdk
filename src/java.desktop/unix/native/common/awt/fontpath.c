@@ -935,8 +935,10 @@ Java_sun_font_FontConfigManager_getFontConfig
         if (cacheDirs != NULL) {
             while ((cnt < max) && (cacheDir = (*FcStrListNext)(cacheDirs))) {
                 jstr = (*env)->NewStringUTF(env, (const char*)cacheDir);
-                JNU_CHECK_EXCEPTION_AND_CLEANUP(env, (*FcStrListDone)(cacheDirs));
-
+                if (IS_NULL(jstr)) {
+                    (*FcStrListDone)(cacheDirs);
+                    return;
+                }
                 (*env)->SetObjectArrayElement(env, cacheDirArray, cnt++, jstr);
                 (*env)->DeleteLocalRef(env, jstr);
             }
