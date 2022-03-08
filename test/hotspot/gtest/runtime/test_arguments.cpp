@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,71 +213,241 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
   }
 }
 
-template <typename T>
-struct ValidArgument {
-  const char* str;
-  T expected_value;
-};
+struct Dummy {};
+static Dummy BAD;
 
 template <typename T>
-void check_valid_args(JVMFlag* flag, T getvalue(JVMFlag* flag), ValidArgument<T>* valid_args, size_t n) {
-  for (size_t i = 0; i < n; i++) {
-    const char* str = valid_args[i].str;
-    ASSERT_TRUE(ArgumentsTest::parse_argument(flag->name(), str))
-        << "Valid string '" << str << "' did not parse.";
-    ASSERT_EQ(getvalue(flag), valid_args[i].expected_value);
+struct NumericArgument {
+  bool bad;
+  const char* str;
+  T expected_value;
+
+  NumericArgument(const char* s, T v) :           bad(false), str(s), expected_value(v) {}
+  NumericArgument(const char* s, Dummy & dummy) : bad(true),  str(s), expected_value(0) {}
+};
+
+static void check_invalid_numeric_string(JVMFlag* flag,  const char** invalid_strings) {
+  for (uint i = 0; ; i++) {
+    const char* str = invalid_strings[i];
+    if (str == NULL) {
+      return;
+    }
+    ASSERT_FALSE(ArgumentsTest::parse_argument(flag->name(), str))
+        << "Invalid string '" << str
+        << "' parsed without error for type " << flag->type_string() << ".";
   }
 }
 
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit 
+template <typename T>
+void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
+                        NumericArgument<T>* valid_args, size_t n,
+                        bool is_double = false) {
+  for (size_t i = 0; i < n; i++) {
+    NumericArgument<T>* info = &valid_args[i];
+    const char* str = info->str;
+    if (info->bad) {
+      ASSERT_FALSE(ArgumentsTest::parse_argument(flag->name(), str))
+        << "Invalid string '" << str
+        << "' parsed without error for type " << flag->type_string() << ".";
+    } else {
+      ASSERT_TRUE(ArgumentsTest::parse_argument(flag->name(), str))
+        << "Valid string '" <<
+        str << "' did not parse for type " << flag->type_string() << ".";
+      ASSERT_EQ(getvalue(flag), info->expected_value)
+        << "Valid string '" << str
+        << "' did not parse to the correct value for type "
+        << flag->type_string() << ".";
+    }
+  }
+
+  {
+    // Invalid strings for *any* type of integer VM arguments
+    const char* invalid_strings[] = {
+      "", " 1", "2 ", "3 2",
+      "0x", "0x0x1" "e"
+      "K", "M", "G", "1MB", "1KM", "AA", "0B",
+      "18446744073709551615K", "17179869184G",
+      "999999999999999999999999999999",
+      "0x10000000000000000", "18446744073709551616",
+      "-0x10000000000000000", "-18446744073709551616",
+      "-0x8000000000000001", "-9223372036854775809",
+      "0x8000000t", "0x800000000g",
+      "0x800000000000m", "0x800000000000000k",
+      NULL,
+    };
+    check_invalid_numeric_string(flag, invalid_strings);
+  }
+
+  if (!is_double) {
+    const char* invalid_strings_for_integers[] = {
+      "1.0", "0x4.5", "0.001", "4e10",
+      NULL,
+    };
+    check_invalid_numeric_string(flag, invalid_strings_for_integers);
+  }
+}
+
+#define INTEGER_TEST_TABLE(f) \
+  /*input                      i32           u32           i64                      u64 */ \
+  f("0",                       0,            0,            0,                       0                        ) \
+  f("-0",                      0,            BAD,          0,                       BAD                      ) \
+  f("-1",                     -1,            BAD,         -1,                       BAD                      ) \
+  f("0x1",                     1,            1,            1,                       1                        ) \
+  f("-0x1",                   -1,            BAD,         -1,                       BAD                      ) \
+  f("4711",                    4711,         4711,         4711,                    4711                     ) \
+  f("1K",                      1024,         1024,         1024,                    1024                     ) \
+  f("1k",                      1024,         1024,         1024,                    1024                     ) \
+  f("2M",                      2097152,      2097152,      2097152,                 2097152                  ) \
+  f("2m",                      2097152,      2097152,      2097152,                 2097152                  ) \
+  f("1G",                      1073741824,   1073741824,   1073741824,              1073741824               ) \
+  f("2G",                      BAD,          0x80000000,   2147483648LL,            2147483648ULL            ) \
+  f("1T",                      BAD,          BAD,          1099511627776LL,         1099511627776ULL         ) \
+  f("1t",                      BAD,          BAD,          1099511627776LL,         1099511627776ULL         ) \
+  f("-1K",                    -1024,         BAD,         -1024,                    BAD                      ) \
+  f("0x1K",                    1024,         1024,         1024,                    1024                     ) \
+  f("-0x1K",                  -1024,         BAD,         -1024,                    BAD                      ) \
+  f("0K",                      0,            0,            0,                       0                        ) \
+  f("0x1000000k",              BAD,          BAD,          17179869184LL,           17179869184ULL           ) \
+  f("0x800000m",               BAD,          BAD,          0x80000000000LL,         0x80000000000ULL         ) \
+  f("0x8000g",                 BAD,          BAD,          0x200000000000LL,        0x200000000000ULL        ) \
+  f("0x8000t",                 BAD,          BAD,          0x80000000000000LL,      0x80000000000000ULL      ) \
+  f("0x7fffffff",              0x7fffffff,   0x7fffffff,   0x7fffffff,              0x7fffffff               ) \
+  f("0xffffffff",              BAD,          0xffffffff,   0xffffffff,              0xffffffff               ) \
+  f("0x80000000",              BAD,          0x80000000,   0x80000000,              0x80000000               ) \
+  f("-0x7fffffff",            -2147483647,   BAD,         -2147483647LL,            BAD                      ) \
+  f("-0x80000000",            -2147483648,   BAD,         -2147483648LL,            BAD                      ) \
+  f("-0x80000001",             BAD,          BAD,         -2147483649LL,            BAD                      ) \
+  f("0x100000000",             BAD,          BAD,          0x100000000LL,           0x100000000ULL           ) \
+  f("0xcafebabe",              BAD,          0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
+  f("0XCAFEBABE",              BAD,          0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
+  f("0XCAFEbabe",              BAD,          0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
+  f("0xcafebabe1",             BAD,          BAD,          0xcafebabe1,             0xcafebabe1              ) \
+  f("0x7fffffffffffffff",      BAD,          BAD,          max_jlong,               9223372036854775807ULL   ) \
+  f("0x8000000000000000",      BAD,          BAD,          BAD,                     9223372036854775808ULL   ) \
+  f("0xffffffffffffffff",      BAD,          BAD,          BAD,                     max_julong               ) \
+  f("9223372036854775807",     BAD,          BAD,          9223372036854775807LL,   9223372036854775807ULL   ) \
+  f("9223372036854775808",     BAD,          BAD,          BAD,                     9223372036854775808ULL   ) \
+  f("-9223372036854775808",    BAD,          BAD,          min_jlong,               BAD                      ) \
+  f("18446744073709551615",    BAD,          BAD,          BAD,                     max_julong               ) \
+
+#define INTEGER_TEST_i32(s, i32, u32, i64, u64) NumericArgument<T>(s, i32),
+#define INTEGER_TEST_u32(s, i32, u32, i64, u64) NumericArgument<T>(s, u32),
+#define INTEGER_TEST_i64(s, i32, u32, i64, u64) NumericArgument<T>(s, i64),
+#define INTEGER_TEST_u64(s, i32, u32, i64, u64) NumericArgument<T>(s, u64),
+
+// signed 32-bit 
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
   if (flag == NULL) { // not available in product builds
     return;
   }
 
-  T g = static_cast<T>(G);
-  T m = static_cast<T>(M);
-  T k = static_cast<T>(K);
-
-  ValidArgument<T> valid_strings[] = {
-      { "0", 0 },
-      { "4711", 4711 },
-      { "1K", 1 * k },
-      { "1k", 1 * k },
-      { "2M", 2 * m },
-      { "2m", 2 * m },
-      { "1G", 1 * g },
-      { "-1K", -1 * k },
-      { "0x1K", 1 * k },
-      { "-0x1K", -1 * k },
-      { "0K", 0 },
-      { "0x7fffffff", 0x7fffffff},
-      { "-0x7fffffff", -2147483647},
-      { "-0x80000000", -2147483648},
-      //{ "0xcafebabe", 0xcafebabe },
-      //{ "0XCAFEBABE", 0xcafebabe },
-      //{ "0XCAFEbabe", 0xcafebabe },
-  };
-  check_valid_args(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
-
-#if 0
-  const char* invalid_strings[] = {
-    "", "-1", "-100", " 1", "2 ", "3 2", "1.0",
-    "0x4.5", "0x", "0x0x1" "0.001", "4e10", "e"
-    "K", "M", "G", "1MB", "1KM", "AA", "0B",
-    "18446744073709551615K", "17179869184G",
-    "999999999999999999999999999999"
-  };
-  for (uint i = 0; i < ARRAY_SIZE(invalid_strings); i++) {
-    ASSERT_FALSE(Arguments::atojulong(invalid_strings[i], &value))
-        << "Invalid string '" << invalid_strings[i] << "' parsed without error.";
-  }
-#endif
+  NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_i32) };
+  check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
+
+// unsigned 32-bit 
+template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)>
+void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
+  JVMFlag* flag = JVMFlag::find_flag(f);
+  if (flag == NULL) { // not available in product builds
+    return;
+  }
+
+  NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_u32) };
+  check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
+}
+
+// signed 64-bit 
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)>
+void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
+  JVMFlag* flag = JVMFlag::find_flag(f);
+  if (flag == NULL) { // not available in product builds
+    return;
+  }
+
+  NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_i64) };
+  check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
+}
+
+// unsigned 64-bit 
+template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)>
+void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
+  JVMFlag* flag = JVMFlag::find_flag(f);
+  if (flag == NULL) { // not available in product builds
+    return;
+  }
+
+  NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_u64) };
+  check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
+}
+
+// Testing the parsing of -XX:<SomeFlag>=<an integer value>
+//
+// All of the integral types that can be used for command line options:
+//   int, uint, intx, uintx, uint64_t, size_t
+//
+// In all supported platforms, these types can be mapped to only 4 native types:
+//    {signed, unsigned} x {32-bit, 64-bit}
+//
+// We use SFINAE to pick the correct column in the INTEGER_TEST_TABLE for each type.
 
 TEST_VM_F(ArgumentsTest, set_numeric_flag_int) {
   check_flag<int>("TestFlagFor_int", [] (JVMFlag* flag) {
     return flag->get_int();
   });
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_uint) {
+  check_flag<uint>("TestFlagFor_uint", [] (JVMFlag* flag) {
+    return flag->get_uint();
+  });
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_intx) {
+  check_flag<intx>("TestFlagFor_intx", [] (JVMFlag* flag) {
+    return flag->get_intx();
+  });
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_uintx) {
+  check_flag<uintx>("TestFlagFor_uintx", [] (JVMFlag* flag) {
+    return flag->get_uintx();
+  });
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_uint64_t) {
+  check_flag<uint64_t>("TestFlagFor_uint64_t", [] (JVMFlag* flag) {
+    return flag->get_uint64_t();
+  });
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_size_t) {
+  check_flag<size_t>("TestFlagFor_size_t", [] (JVMFlag* flag) {
+    return flag->get_size_t();
+  });
+}
+
+TEST_VM_F(ArgumentsTest, set_numeric_flag_double) {
+  JVMFlag* flag = JVMFlag::find_flag("TestFlagFor_double");
+  if (flag == NULL) { // not available in product builds
+    return;
+  }
+
+  // TODO -- JDK-8282774
+  // Need to add more test input that have a fractional part like "4.2".
+  NumericArgument<double> valid_strings[] = {
+    NumericArgument<double>("0",   0.0),
+    NumericArgument<double>("1",   1.0),
+    NumericArgument<double>("-0", -0.0),
+    NumericArgument<double>("-1", -1.0),
+  };
+
+  auto getvalue = [] (JVMFlag* flag) {
+    return flag->get_double();
+  };
+
+  check_numeric_flag<double>(flag, getvalue, valid_strings,
+                             ARRAY_SIZE(valid_strings), /*is_double=*/true);
 }

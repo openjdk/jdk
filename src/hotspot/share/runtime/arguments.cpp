@@ -743,9 +743,10 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 #endif
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit 
-bool parse_integer(const char *s, char **endptr, int base, T* result) {
-  // Can't use strtol because it doesn't fail (at least on Linux/gcc) with overflowing
+bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+  // Can't use strtol because it doesn't detect (at least on Linux/gcc) overflowing
   // input such as "0x123456789" or "-0x800000001"
+  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < min_jint || v > max_jint) {
     return false;
@@ -755,11 +756,15 @@ bool parse_integer(const char *s, char **endptr, int base, T* result) {
 }
 
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit 
-bool parse_integer(const char *s, char **endptr, int base, T* result) {
-  // Can't use strtoul because it doesn't fail (at least on Linux/gcc) with overflowing
+bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+  if (s[0] == '-') {
+    return false;
+  }
+  // Can't use strtoul because it doesn't detect (at least on Linux/gcc) overflowing
   // input such as "0x123456789"
-  long long v = strtoll(s, endptr, base);
-  if (errno != 0 || v < 0 || v > max_juint) {
+  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
+  unsigned long long v = strtoull(s, endptr, base);
+  if (errno != 0 || v > max_juint) {
     return false;
   }
   *result = static_cast<T>(v);
@@ -767,13 +772,13 @@ bool parse_integer(const char *s, char **endptr, int base, T* result) {
 }
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit 
-bool parse_integer(const char *s, char **endptr, int base, T* result) {
+bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   *result = strtoll(s, endptr, base);
   return true;
 }
 
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit 
-bool parse_integer(const char *s, char **endptr, int base, T* result) {
+bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   if (s[0] == '-') {
     return false;
   }
@@ -791,6 +796,13 @@ static bool multiply_and_check(volatile T* result, T by) {
   return true;
 }
 
+// All of the integral types that can be used for command line options:
+//   int, uint, intx, uintx, uint64_t, size_t
+//
+// In all supported platforms, these types can be mapped to only 4 native types:
+//    {signed, unsigned} x {32-bit, 64-bit}
+//
+// We use SFINAE to pick the correct parse_integer_impl() function
 template<typename T>
 bool parse_integer(const char *s, volatile T* result) {
   T n = 0;
@@ -799,7 +811,7 @@ bool parse_integer(const char *s, volatile T* result) {
   char* remainder;
 
   errno = 0; // errno is thread safe
-  if (!parse_integer(s, &remainder, (is_hex ? 16 : 10), &n) || errno != 0) {
+  if (!parse_integer_impl(s, &remainder, (is_hex ? 16 : 10), &n) || errno != 0) {
     return false;
   }
 
@@ -893,7 +905,7 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin
 
 static JVMFlag::Error set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
   if (flag == NULL) {
-    return JVMFlag::WRONG_FORMAT;
+    return JVMFlag::INVALID_FLAG;
   }
 
   if (flag->is_int()) {
@@ -930,6 +942,9 @@ static JVMFlag::Error set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin
     jlong v;
     if (parse_integer(value, &v)) {
       double double_v = (double) v;
+      if (value[0] == '-' && v == 0) { // special case: 0.0 is different than -0.0.
+        double_v = -0.0;
+      }
       return JVMFlagAccess::set_double(flag, &double_v, origin);
     }
   }
