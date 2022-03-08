@@ -26,13 +26,16 @@
  * @bug 4514108 7192189
  * @summary Verify host name matching behaves as defined in RFC2818 and RFC6125.
  * @library /test/lib
- * @modules java.base/sun.security.util
+ * @modules java.base/sun.security.util java.base/sun.security.x509
  */
 
 import java.security.cert.*;
+import java.util.Collection;
+import java.util.List;
 
 import jdk.test.lib.security.CertUtils;
 import sun.security.util.*;
+import sun.security.x509.X509CertImpl;
 
 /**
  * Certificate 1:
@@ -193,9 +196,17 @@ public class TestHostnameChecker {
         check(checker, "altfoo2.com", cert3, true);
         check(checker, "5.6.7.8", cert3, true);
         check(checker, "foo.bar.com", cert4, true);
+        check(checker, "altfoo.bar.com", cert4, false);
         check(checker, "2001:db8:3c4d:15::1a2f:1a2b", cert5, true);
         check(checker, "2001:0db8:3c4d:0015:0000:0000:1a2f:1a2b", cert5, true);
         check(checker, "2002:db8:3c4d:15::1a2f:1a2b", cert5, false);
+        check(checker, "foo.bar.example.net", mock("foo.*.example.net"), false);
+        check(checker, "baz1.example.net", mock("baz*.example.net"), true);
+        check(checker, "foobaz.example.net", mock("*baz.example.net"), true);
+        check(checker, "buzz.example.net", mock("b*z.example.net"), true);
+        check(checker, "公司.example.net", mock("xn--5*.example.net"), false);
+        check(checker, "公司.江利子.example.net",
+                       mock("*.xn--kcry6tjko.example.net"), true);
 
         checker = HostnameChecker.getInstance(
                                 HostnameChecker.TYPE_LDAP);
@@ -213,6 +224,15 @@ public class TestHostnameChecker {
         check(checker, "altfoo.bar.com", cert4, false);
     }
 
+    private static X509Certificate mock(String domain) {
+        return new X509CertImpl() {
+            @Override
+            public Collection<List<?>> getSubjectAlternativeNames() {
+                return List.of(List.of(2, domain));
+            }
+        };
+    }
+
     private static void check(HostnameChecker checker, String name,
                  X509Certificate cert, boolean expectedResult)
                  throws Exception {
@@ -223,7 +243,7 @@ public class TestHostnameChecker {
             }
         } catch (CertificateException e) {
             if (expectedResult == true) {
-                throw e;
+                throw new Exception("Failed valid test: " + name, e);
             }
         }
         System.out.println("OK: " + name);
