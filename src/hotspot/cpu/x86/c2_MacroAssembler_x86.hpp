@@ -318,7 +318,7 @@ public:
                   bool merge, BasicType bt, int vlen_enc);
 
   void vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
-                         XMMRegister xtmp1, XMMRegister xtmp2, int vec_enc);
+                         XMMRegister xtmp1, int vec_enc);
 
   void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
                           KRegister ktmp1, int vec_enc);

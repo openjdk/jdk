@@ -1863,9 +1863,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_SignumVD:
     case Op_SignumVF:
-      if (UseAVX < 1 ||
-          (size_in_bits == 512 && !VM_Version::supports_avx512dq()) ||
-          (size_in_bits == 256 && !VM_Version::supports_avx2())) {
+      if (UseAVX < 1) {
         return false;
       }
       break;
@@ -6087,7 +6085,7 @@ instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1, vec xtm
     int opcode = this->ideal_Opcode();
     int vec_enc = vector_length_encoding(this);
     __ vector_signum_avx(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
-                         $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vec_enc);
+                         $xtmp1$$XMMRegister, vec_enc);
   %}
   ins_pipe( pipe_slow );
 %}
