@@ -544,7 +544,7 @@ public class SSLSocketTemplate {
          */
         if ((local != null) && (remote != null)) {
             // If both failed, return the curthread's exception.
-            local.setCause(remote);
+            local.addSuppressed(remote);
             exception = local;
         } else if (local != null) {
             exception = local;
