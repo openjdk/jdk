@@ -41,6 +41,7 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
     private FontMetrics fontMetrics;
     private LayoutManager subManager;
     private LayoutManager manager;
+    private Set<Cluster> clusters;
 
     public HierarchicalCFGLayoutManager() {
         // Anticipate block label sizes to dimension blocks appropriately.
@@ -57,21 +58,21 @@ public class HierarchicalCFGLayoutManager implements LayoutManager {
         this.manager = manager;
     }
 
+    public void setClusters(Set<Cluster> clusters) {
+        this.clusters = clusters;
+    }
+
     public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
         doLayout(graph);
     }
 
     public void doLayout(LayoutGraph graph) {
 
-        // Create set of clusters.
-        SortedSet<Cluster> clusters = new TreeSet<Cluster>();
         // Map from "primitive" cluster edges to their corresponding input
         // links. Used when writing back edge coordinates into the input links.
-        Map<AbstractMap.SimpleEntry<Cluster,Cluster>, Link> inputLink = new HashMap<>();
+        Map<AbstractMap.SimpleEntry<Cluster, Cluster>, Link> inputLink = new HashMap<>();
         for (Link l : graph.getLinks()) {
-            clusters.add(l.getFromCluster());
-            clusters.add(l.getToCluster());
-            inputLink.put(new AbstractMap.SimpleEntry<Cluster,Cluster>(l.getFromCluster(), l.getToCluster()), l);
+            inputLink.put(new AbstractMap.SimpleEntry<Cluster, Cluster>(l.getFromCluster(), l.getToCluster()), l);
         }
 
         // Create cluster nodes.

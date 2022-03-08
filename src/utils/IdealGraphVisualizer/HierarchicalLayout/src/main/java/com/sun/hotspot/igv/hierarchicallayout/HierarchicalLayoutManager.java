@@ -1797,7 +1797,12 @@ public class HierarchicalLayoutManager implements LayoutManager {
         protected void run() {
             // Set up nodes
             List<Vertex> vertices = new ArrayList<>(graph.getVertices());
-            Collections.sort(vertices);
+            // Order roots first to create more natural layer assignments.
+            Collections.sort(vertices,
+                             (Vertex a, Vertex b) ->
+                             a.isRoot() == b.isRoot() ?
+                             a.compareTo(b) :
+                             Boolean.compare(b.isRoot(), a.isRoot()));
 
             for (Vertex v : vertices) {
                 LayoutNode node = new LayoutNode();

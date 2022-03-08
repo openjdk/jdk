@@ -680,6 +680,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             // Add connections for CFG edges.
             edges.addAll(diagram.getBlockConnections());
             m.setSubManager(new LinearLayoutManager(figureRank));
+            m.setClusters(new HashSet<>(diagram.getBlocks()));
             m.doLayout(new LayoutGraph(edges, figures));
         } else if (getModel().getShowSea()) {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);

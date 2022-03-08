@@ -1,0 +1,18 @@
+// Hide exception blocks.
+
+var f = new RemoveBlockFilter("Hide exception blocks");
+f.addRule(
+  new RemoveBlockFilter.RemoveBlockRule(
+    new AnySelector(
+      new OrSelector(
+        new MatcherSelector(
+          new Properties.StringPropertyMatcher("name", "Rethrow")
+        ),
+        new MatcherSelector(
+          new Properties.StringPropertyMatcher("name", "RethrowException")
+        )
+      )
+    )
+  )
+);
+f.apply(graph);

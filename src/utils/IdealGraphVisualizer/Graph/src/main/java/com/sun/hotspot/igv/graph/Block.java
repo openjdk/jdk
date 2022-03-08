@@ -56,7 +56,9 @@ public class Block implements Cluster {
     public Set<? extends Cluster> getSuccessors() {
         Set<Block> succs = new HashSet<Block>();
         for (InputBlock b : inputBlock.getSuccessors()) {
-            succs.add(diagram.getBlock(b));
+            if (diagram.hasBlock(b)) {
+                succs.add(diagram.getBlock(b));
+            }
         }
         return succs;
     }

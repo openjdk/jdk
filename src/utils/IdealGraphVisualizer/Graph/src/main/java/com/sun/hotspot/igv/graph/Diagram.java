@@ -91,6 +91,10 @@ public class Diagram {
         return blocks.get(b);
     }
 
+    public boolean hasBlock(InputBlock b) {
+        return blocks.containsKey(b);
+    }
+
     public String getNodeText() {
         return nodeText;
     }
@@ -227,6 +231,21 @@ public class Diagram {
         return d;
     }
 
+    public void removeAllBlocks(Set<Block> blocksToRemove) {
+        Set<Figure> figuresToRemove = new HashSet<>();
+        for (Block b : blocksToRemove) {
+            for (Figure f : getFigures()) {
+                if (f.getBlock() == b.getInputBlock()) {
+                    figuresToRemove.add(f);
+                }
+            }
+        }
+        removeAllFigures(figuresToRemove);
+        for (Block b : blocksToRemove) {
+            blocks.remove(b.getInputBlock());
+        }
+    }
+
     public void removeAllFigures(Set<Figure> figuresToRemove) {
         for (Figure f : figuresToRemove) {
             freeFigure(f);
@@ -288,8 +307,14 @@ public class Diagram {
     }
 
     public Set<BlockConnection> getBlockConnections() {
-        assert (cfg);
-        return blockConnections;
+        Set<BlockConnection> connections = new HashSet<>();
+        for (BlockConnection bc : blockConnections) {
+            if (blocks.containsKey(bc.getFromCluster().getInputBlock()) &&
+                blocks.containsKey(bc.getToCluster().getInputBlock())) {
+                connections.add(bc);
+            }
+        }
+        return connections;
     }
 
     public Figure getRootFigure() {
