@@ -54,10 +54,13 @@ public class Main {
         System.loadLibrary(NativeLibrariesTest.LIB_NAME);
 
         // expect NativeLibraries to succeed even the library has been loaded by System::loadLibrary
-        test.load(true);
+        test.loadTestLibrary();
 
         // load zip library from JDK
-        test.load(System.mapLibraryName("zip"));
+        test.load(System.mapLibraryName("zip"), true /* succeed */);
+
+        // load non-existent library
+        test.load(System.mapLibraryName("NotExist"), false /* fail to load */);
     }
     /*
      * move p/Test.class out from classpath to the scratch directory

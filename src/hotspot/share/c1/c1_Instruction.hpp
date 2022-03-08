@@ -1779,8 +1779,11 @@ LEAF(BlockBegin, StateSplit)
   int  loop_index() const                        { return _loop_index;      }
 
   // merging
-  bool try_merge(ValueStack* state);             // try to merge states at block begin
-  void merge(ValueStack* state)                  { bool b = try_merge(state); assert(b, "merge failed"); }
+  bool try_merge(ValueStack* state, bool has_irreducible_loops);  // try to merge states at block begin
+  void merge(ValueStack* state, bool has_irreducible_loops) {
+    bool b = try_merge(state, has_irreducible_loops);
+    assert(b, "merge failed");
+  }
 
   // debugging
   void print_block()                             PRODUCT_RETURN;
