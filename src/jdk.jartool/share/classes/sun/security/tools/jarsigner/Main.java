@@ -125,6 +125,7 @@ public class Main {
     static final int NOT_ALIAS = 0x04;          // alias list is NOT empty and
     // signer is not in alias list
     static final int SIGNED_BY_ALIAS = 0x08;    // signer is in alias list
+    static final int NOT_ALL_ENTRIES_SIGNED_BY_ALIAS_IN_KEYSTORE = 0x10;
 
     static final JavaUtilZipFileAccess JUZFA = SharedSecrets.getJavaUtilZipFileAccess();
 
@@ -221,6 +222,7 @@ public class Main {
     private boolean badExtendedKeyUsage = false;
     private boolean badNetscapeCertType = false;
     private boolean signerSelfSigned = false;
+    private boolean not_all_entries_signed_by_alias_in_keystore = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -853,6 +855,8 @@ public class Main {
                         aliasNotInStore |= isSigned && !inStore;
                     }
 
+                    not_all_entries_signed_by_alias_in_keystore =
+                        (inStoreWithAlias & NOT_ALL_ENTRIES_SIGNED_BY_ALIAS_IN_KEYSTORE) != 0;
                     // Only used when -verbose provided
                     StringBuilder sb = null;
                     if (verbose != null) {
@@ -1194,7 +1198,7 @@ public class Main {
         }
 
         // only in verifying
-        if (aliasNotInStore) {
+        if (not_all_entries_signed_by_alias_in_keystore) {
             errors.add(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
         }
 
@@ -1727,6 +1731,7 @@ public class Main {
         }
 
         int result = 0;
+        boolean all_aliases_found = true;
         if (store != null) {
             try {
                 List<? extends Certificate> certs =
@@ -1737,6 +1742,8 @@ public class Main {
                         alias = store.getCertificateAlias(c);
                         if (alias != null) {
                             storeHash.put(c, alias);
+                        } else {
+                            all_aliases_found = false;
                         }
                     }
                     if (alias != null) {
@@ -1755,6 +1762,9 @@ public class Main {
             } catch (KeyStoreException kse) {
                 // never happens, because keystore has been loaded
             }
+        }
+        if (!all_aliases_found) {
+            result |= NOT_ALL_ENTRIES_SIGNED_BY_ALIAS_IN_KEYSTORE;
         }
         cacheForInKS.put(signer, result);
         return result;
