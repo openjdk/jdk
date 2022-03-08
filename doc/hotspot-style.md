@@ -463,8 +463,9 @@ worthwhile, given the alternatives.
 ### Memory Allocation
 
 Do not use the standard global allocation and deallocation functions
-(operator new and related functions).  Use of these functions by HotSpot
-code is disabled for some platforms.
+(operator new and related functions). Typically, uses of the global
+operator new are inadvertent and therefore often associated with memory
+leaks. Use of these functions by HotSpot code is disabled for some platforms.
 
 Rationale: HotSpot often uses "resource" or "arena" allocation.  Even
 where heap allocation is used, the standard global functions are
@@ -666,7 +667,8 @@ initialization.  Dynamic initialization and destruction of
 namespace-scoped thread local variables also has the same ordering
 problems as for ordinary namespace-scoped variables. So we avoid use of
 `thread_local` in general, limiting its use to only those cases where dynamic
-initialization and destruction are essential. See [JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
+initialization and destruction are essential. See
+[JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
 for further discussion.
 
 ### nullptr
