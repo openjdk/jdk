@@ -220,9 +220,9 @@ class MyByteBuffer {
         // Remember: NaN == x is false for ANY x, including if x is NaN (IEEE standard).
         // Therefore, if x and y are NaN, x != y would return true, which is not what we want.
         // We do not want an Exception if both are NaN.
-        // Hence, we only use x != y, if both are not NaN.
-        // Additionally, we also check if exactly one of them is NaN, via XOR (^).
-        if ((!Double.isNaN(x) && !Double.isNaN(y) && x != y) || (Double.isNaN(x) ^ Double.isNaN(y))) {
+        // Double.compare takes care of these special cases
+        // including NaNs, and comparing -0.0 to 0.0
+        if (Double.compare(x,y) != 0) {
             throw new RuntimeException("expect x == y:"
                                     + "  x = " + Double.toString(x) + ", y = " + Double.toString(y)
                                     + " (x = " + Long.toHexString(Double.doubleToRawLongBits(x))
