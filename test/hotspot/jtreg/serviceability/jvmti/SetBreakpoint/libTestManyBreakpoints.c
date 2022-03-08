@@ -26,7 +26,7 @@
 
 #include "jvmti.h"
 
-#define SUBCLASS_NAME "Lserviceability/jvmti/SetBreakpoint/TestManyBreakpoints$Target"
+#define TARGET_CLASS_NAME "LTarget;"
 
 static jvmtiEnv *jvmti = NULL;
 
@@ -45,7 +45,7 @@ void JNICALL classprepare(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread, 
     err = (*jvmti)->GetClassSignature(jvmti, klass, &buf, NULL);
     check_jvmti_status(jni_env, err, "classprepare: GetClassSignature error");
 
-    if (strncmp(buf, SUBCLASS_NAME, strlen(SUBCLASS_NAME)) == 0) {
+    if (strncmp(buf, TARGET_CLASS_NAME, strlen(TARGET_CLASS_NAME)) == 0) {
         jint nMethods;
         jmethodID* methods;
         int i;
