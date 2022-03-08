@@ -6076,7 +6076,7 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
 %}
 
 instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1, vec xtmp2, rFlagsReg cr) %{
-  predicate(Matcher::vector_length_in_bytes(n) <= 32);
+  predicate(!VM_Version::supports_avx512vl() && MaxVectorSize <= 32);
   match(Set dst (SignumVF src (Binary zero one)));
   match(Set dst (SignumVD src (Binary zero one)));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, KILL cr);
@@ -6091,7 +6091,7 @@ instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1, vec xtm
 %}
 
 instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1, rFlagsReg cr) %{
-  predicate(Matcher::vector_length_in_bytes(n) > 32);
+  predicate(VM_Version::supports_avx512vl() || MaxVectorSize == 64);
   match(Set dst (SignumVF src (Binary zero one)));
   match(Set dst (SignumVD src (Binary zero one)));
   effect(TEMP dst, TEMP ktmp1, KILL cr);
