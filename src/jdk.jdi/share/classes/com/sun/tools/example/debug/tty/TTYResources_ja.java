@@ -222,7 +222,6 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
         {"No local variables", "\u30ED\u30FC\u30AB\u30EB\u5909\u6570\u304C\u3042\u308A\u307E\u305B\u3093"},
         {"No method in", "{1}\u306B\u30E1\u30BD\u30C3\u30C9{0}\u304C\u3042\u308A\u307E\u305B\u3093"},
         {"No method specified.", "\u30E1\u30BD\u30C3\u30C9\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
-        {"No modules specified.", "No modules specified."},
         {"No monitor numbered:", "\u756A\u53F7\u4ED8\u3051\u3055\u308C\u3066\u3044\u308B\u30E2\u30CB\u30BF\u30FC\u304C\u3042\u308A\u307E\u305B\u3093: {0}"},
         {"No monitors owned", "  \u6240\u6709\u3055\u308C\u3066\u3044\u308B\u30E2\u30CB\u30BF\u30FC\u304C\u3042\u308A\u307E\u305B\u3093"},
         {"No object specified.", "\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},

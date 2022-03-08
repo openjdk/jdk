@@ -989,11 +989,12 @@ public class TTY implements EventNotifier {
                    token.equals("-verify") ||
                    token.equals("-verifyremote") ||
                    token.equals("-verbosegc") ||
-                   token.equals("--enable-preview") ||
                    token.startsWith("-ms") || token.startsWith("-mx") ||
                    token.startsWith("-ss") || token.startsWith("-oss") ) {
 
                 javaArgs = addArgument(javaArgs, token);
+            } else if (token.startsWith("-R")) {
+                javaArgs = addArgument(javaArgs, token.substring(2));
             } else if (token.equals("-tclassic")) {
                 usageError("Classic VM no longer supported.");
                 return;
@@ -1012,13 +1013,6 @@ public class TTY implements EventNotifier {
             } else if (token.equals("-classpath")) {
                 if (i == (argv.length - 1)) {
                     usageError("No classpath specified.");
-                    return;
-                }
-                javaArgs = addArgument(javaArgs, token);
-                javaArgs = addArgument(javaArgs, argv[++i]);
-            } else if (token.equals("--add-modules")) {
-                if (i == (argv.length - 1)) {
-                    usageError("No modules specified.");
                     return;
                 }
                 javaArgs = addArgument(javaArgs, token);

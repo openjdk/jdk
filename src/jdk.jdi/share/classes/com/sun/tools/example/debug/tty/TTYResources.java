@@ -222,7 +222,6 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"No local variables", "No local variables"},
         {"No method in", "No method {0} in {1}"},
         {"No method specified.", "No method specified."},
-        {"No modules specified.", "No modules specified."},
         {"No monitor numbered:", "No monitor numbered: {0}"},
         {"No monitors owned", "  No monitors owned"},
         {"No object specified.", "No object specified."},
@@ -478,17 +477,15 @@ public class TTYResources extends java.util.ListResourceBundle {
              "    -dbgtrace [flags] print info for debugging {0}\n" +
              "    -tclient          run the application in the HotSpot(TM) Client Compiler\n" +
              "    -tserver          run the application in the HotSpot(TM) Server Compiler\n" +
+             "    -R<option>        Forward <option> to debuggee process\n" +
              "\n" +
-             "options forwarded to debuggee process:\n" +
+             "options forwarded to debuggee process (shorthand instead of using -R):\n" +
              "    -v -verbose[:class|gc|jni]\n" +
              "                      turn on verbose mode\n" +
              "    -D<name>=<value>  set a system property\n" +
              "    -classpath <directories separated by \"{1}\">\n" +
              "                      list directories in which to look for classes\n" +
              "    -X<option>        non-standard target VM option\n" +
-             "    --add-modules <module name>[,<module name>...]\n" +
-             "                      root modules to resolve in addition to the initial module\n" +
-             "    --enable-preview  allow debuggee to depend on preview features of this release\n" +
              "\n" +
              "<class> is the name of the class to begin debugging\n" +
              "<arguments> are the arguments passed to the main() method of <class>\n" +
