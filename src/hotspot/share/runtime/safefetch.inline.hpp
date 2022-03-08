@@ -27,8 +27,8 @@
 
 // No safefetch.hpp
 
-#include "runtime/stubRoutines.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stubRoutines.hpp"
 
 // Safefetch allows to load a value from a location that's not known
 // to be valid. If the load causes a fault, the error value is returned.

@@ -535,16 +535,15 @@ void os::verify_stack_alignment() {
 #endif
 
 #ifdef __APPLE__
-static THREAD_LOCAL os::WXMode _wx_state = os::WXUnknown;
+
+static THREAD_LOCAL os::WXMode _wx_state = os::WXWrite;
+
 int os::extra_bang_size_in_bytes() {
   // AArch64 does not require the additional stack bang.
   return 0;
 }
 
 os::WXMode os::current_thread_change_wx(WXMode new_state) {
-  if (_wx_state == WXUnknown) {
-    _wx_state = os::WXWrite; // No way to know but we assume the original state is "writable, not executable"
-  }
   WXMode old = _wx_state;
   _wx_state = new_state;
   pthread_jit_write_protect_np(_wx_state == os::WXExec);

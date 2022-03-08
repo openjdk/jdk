@@ -388,7 +388,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread = JavaThread::current();                      \
-    MACOS_AARCH64_ONLY(os::ThreadWXEnable __wx(os::WXWrite))         \
+    MACOS_AARCH64_ONLY(os::ThreadWXEnable __wx(os::WXWrite);)        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
     VM_ENTRY_BASE(result_type, header, thread)

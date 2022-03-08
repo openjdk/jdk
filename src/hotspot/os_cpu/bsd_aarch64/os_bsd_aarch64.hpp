@@ -42,7 +42,6 @@
 
   #ifdef __APPLE__
   enum WXMode {
-    WXUnknown,
     WXWrite,
     WXExec
   };
