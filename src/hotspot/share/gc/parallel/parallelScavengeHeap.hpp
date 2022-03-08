@@ -184,8 +184,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool is_in_reserved(const void* p) const;
 
-  bool is_in_young(oop p);  // reserved part
-  bool is_in_old(oop p);    // reserved part
+  bool is_in_young(const oop p) const;
 
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }

@@ -966,7 +966,7 @@ public class RepaintManager
         tmp.setBounds(dirtyComponents.get(dirtyComponent));
 
         // System.out.println("Collect dirty component for bound " + tmp +
-        //                                   "component bounds is " + cBounds);;
+        //                                   "component bounds is " + cBounds);
         SwingUtilities.computeIntersection(0,0,w,h,tmp);
 
         if (tmp.isEmpty()) {

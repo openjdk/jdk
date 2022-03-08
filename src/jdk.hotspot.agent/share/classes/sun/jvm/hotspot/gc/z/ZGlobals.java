@@ -78,7 +78,7 @@ public class ZGlobals {
         ZPageSizeMediumShift = db.lookupLongConstant("ZPageSizeMediumShift").longValue();
 
         ZObjectAlignmentMediumShift = db.lookupIntConstant("ZObjectAlignmentMediumShift").intValue();
-        ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();;
+        ZObjectAlignmentLargeShift = db.lookupIntConstant("ZObjectAlignmentLargeShift").intValue();
 
         ZAddressOffsetShift = db.lookupLongConstant("ZAddressOffsetShift").longValue();
 

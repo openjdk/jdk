@@ -60,7 +60,7 @@ list.  Changes are likely to be cautious and incremental, since HotSpot
 coders have been using these guidelines for years.
 
 Substantive changes are approved by
-[rough consensus](https://en.wikipedia.org/wiki/Rough_consensus) of
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
 the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
 
@@ -294,7 +294,9 @@ well.
 or consistency.  Gratuitous whitespace changes will make integrations
 and backports more difficult.
 
-* Use One-True-Brace-Style. The opening brace for a function or class
+* Use [One-True-Brace-Style](
+https://en.wikipedia.org/wiki/Indentation_style#Variant:_1TBS_(OTBS)).
+The opening brace for a function or class
 is normally at the end of the line; it is sometimes moved to the
 beginning of the next line for emphasis.  Substatements are enclosed
 in braces, even if there is only a single statement.  Extremely simple
@@ -1064,7 +1066,7 @@ namespace std;` to avoid needing to qualify Standard Library names.
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
 
-* Avoid namespace-scoped variables with non-constexpr initialization.
+* Avoid non-local variables with non-constexpr initialization.
 In particular, avoid variables with types requiring non-trivial
 initialization or destruction.  Initialization order problems can be
 difficult to deal with and lead to surprises, as can destruction

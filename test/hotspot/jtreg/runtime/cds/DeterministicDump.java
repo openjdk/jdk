@@ -54,6 +54,11 @@ public class DeterministicDump {
         baseArgs.add("-Xmx128M");
 
         if (Platform.is64bit()) {
+            if (!compressed) {
+                System.out.println("CDS archives with uncompressed oops are still non-deterministic");
+                System.out.println("See https://bugs.openjdk.java.net/browse/JDK-8282828");
+                return;
+            }
             // These options are available only on 64-bit.
             String sign = (compressed) ?  "+" : "-";
             baseArgs.add("-XX:" + sign + "UseCompressedOops");

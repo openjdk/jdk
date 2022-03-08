@@ -2875,7 +2875,7 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // the code in the main Java thread (which is NOT started here) that
     // creates the module graph, etc. It's safe to not start the other
     // threads which are launched by class static initializers
-    // (ReferenceHandler and FinalizerThread).
+    // (ReferenceHandler, FinalizerThread and CleanerImpl).
     if (log_is_enabled(Info, cds)) {
       ResourceMark rm;
       oop t = JNIHandles::resolve_non_null(jthread);

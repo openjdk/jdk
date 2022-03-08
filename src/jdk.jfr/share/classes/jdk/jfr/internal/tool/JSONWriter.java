@@ -63,7 +63,7 @@ final class JSONWriter extends EventPrintWriter {
 
     @Override
     protected void printEnd() {
-        printArrayEnd();;
+        printArrayEnd();
         printObjectEnd();
         printObjectEnd();
     }
