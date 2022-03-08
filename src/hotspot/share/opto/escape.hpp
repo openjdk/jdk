@@ -347,14 +347,14 @@ private:
 
 public:
   JavaObjectNode* phantom_obj; // Unknown object
+
+private:
   // Address of an element in _nodes.  Used when the element is to be modified
   PointsToNode* ptnode_adr(int idx) const {
     // There should be no new ideal nodes during ConnectionGraph build,
     // growableArray::at() will throw assert otherwise.
     return _nodes.at(idx);
   }
-
-private:
   uint nodes_size() const { return _nodes.length(); } 
 
   uint next_pidx() { return _next_pidx++; }
@@ -600,7 +600,7 @@ public:
   static bool has_candidates(Compile *C);
 
   // Perform escape analysis
-  static bool do_analysis(Compile *C, PhaseIterGVN *igvn);
+  static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   bool not_global_escape(Node *n);
 

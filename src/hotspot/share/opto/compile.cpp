@@ -2177,7 +2177,7 @@ void Compile::Optimize() {
     }
     bool progress;
     do {
-      bool has_nonescaping_objs = ConnectionGraph::do_analysis(this, &igvn);
+      ConnectionGraph::do_analysis(this, &igvn);
       if (failing())  return;
 
       int mcount = macro_count(); // Record number of allocations and locks before IGVN
@@ -2188,7 +2188,7 @@ void Compile::Optimize() {
 
       if (failing())  return;
 
-      if (has_nonescaping_objs && macro_count() > 0) {
+      if (congraph() != NULL && macro_count() > 0) {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         // here is where we have scalar replacement statistics 

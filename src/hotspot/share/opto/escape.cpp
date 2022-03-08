@@ -91,10 +91,10 @@ bool ConnectionGraph::has_candidates(Compile *C) {
   return false;
 }
 
-bool ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
+void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
-  
   ResourceMark rm;
+
   #ifndef PRODUCT
     elapsedTimer et;
     et.start();
@@ -103,16 +103,16 @@ bool ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
   // to create space for them in ConnectionGraph::_nodes[].
   Node* oop_null = igvn->zerocon(T_OBJECT);
   Node* noop_null = igvn->zerocon(T_NARROWOOP);
-  bool has_non_escaping_obj = false;
   int invocation = 0;
   if (C->congraph() != NULL) {
     invocation = C->congraph()->_invocation + 1;
   }
   ConnectionGraph* congraph = new(C->comp_arena()) ConnectionGraph(C, igvn, invocation);
   // Perform escape analysis
-  has_non_escaping_obj = congraph->compute_escape();
-  // There are non escaping objects.
-  C->set_congraph(congraph);
+  if (congraph->compute_escape()) {
+    // There are non escaping objects.
+    C->set_congraph(congraph);
+  }
   // Cleanup.
   if (oop_null->outcnt() == 0) {
     igvn->hash_delete(oop_null);
@@ -125,8 +125,6 @@ bool ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
     et.stop();
     ConnectionGraph::_time_elapsed += et.seconds();
   #endif
-
-  return has_non_escaping_obj;
 }
 
 bool ConnectionGraph::compute_escape() {
@@ -401,7 +399,7 @@ bool ConnectionGraph::compute_escape() {
       }
     }
   }
-  
+
   #ifndef PRODUCT
     escape_state_statistics(java_objects_worklist);
   #endif
