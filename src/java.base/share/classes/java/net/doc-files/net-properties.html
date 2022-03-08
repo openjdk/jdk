@@ -224,10 +224,11 @@ of proxies.</P>
 	      property is defined, then its value will be used as the domain
 	      name.</P>
 	</OL>
-	<LI><P><B>{@systemProperty http.auth.digest.reEnabledAlgs}</B> (default: &lt;none&gt;)<BR>
+	<LI><P><B>{@systemProperty http.auth.digest.enabledAlgorithms}</B> (default: &lt;none&gt;)<BR>
         By default, certain message digest algorithms are disabled for use in HTTP Digest
-        authentication due to their proven security limitations. Currently, this list only
-        includes {@code MD5} but other algorithms may be added in future. If it is still
+        authentication due to their proven security limitations. This default list is specified
+        in a property in the {@code java.security} properties file and currently comprises
+        {@code MD5} and {@code SHA-1}. If it is still
         required to use one of these algorithms, then they can be re-enabled by setting
         this property to a comma separated list of the algorithm names.</P>
 	<LI><P><B>{@systemProperty jdk.https.negotiate.cbt}</B> (default: &lt;never&gt;)<BR>

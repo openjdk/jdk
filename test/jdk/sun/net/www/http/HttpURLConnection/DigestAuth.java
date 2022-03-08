@@ -47,20 +47,20 @@ import java.util.List;
  *          the testcases run in a separate JVM to avoid cache hits
  * @modules jdk.httpserver
  * @run main/othervm DigestAuth bad
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth good
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth only_nonce
- * @run main/othervm DigestAuth sha1
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth good
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth only_nonce
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=SHA1 DigestAuth sha1-good
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth sha1-bad
  * @run main/othervm DigestAuth sha256
  * @run main/othervm DigestAuth sha512
  * @run main/othervm DigestAuth sha256-userhash
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth sha1
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth sha256
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth no_header
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth no_nonce
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth no_qop
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth invalid_alg
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth validate_server
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgs=MD5 DigestAuth validate_server_no_qop
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth sha256
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth no_header
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth no_nonce
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth no_qop
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth invalid_alg
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth validate_server
+ * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth validate_server_no_qop
  */
 public class DigestAuth {
 
@@ -244,10 +244,16 @@ public class DigestAuth {
                         success = false;
                     }
                     break;
-                case "sha1":
+                case "sha1-good":
                     // server returns a good WWW-Authenticate header with SHA-1
                     server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA1);
                     success = testAuth(url, auth, EXPECT_DIGEST);
+                    break;
+                case "sha1-bad":
+                    // server returns a WWW-Authenticate header with SHA-1
+                    // but SHA-1 disabled
+                    server.setWWWAuthHeader(WWW_AUTH_HEADER_SHA1);
+                    success = testAuth(url, auth, EXPECT_FAILURE);
                     break;
                 case "sha256":
                     // server returns a good WWW-Authenticate header with SHA-256
