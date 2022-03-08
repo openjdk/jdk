@@ -29,10 +29,8 @@
  *                          -Xlog:gc+metaspace
  *                          -Xint
  *                          -XX:MetaspaceSize=16K -XX:MaxMetaspaceSize=64M
- *                          serviceability.jvmti.SetBreakpoint.TestManyBreakpoints
+ *                          TestManyBreakpoints
  */
-
-package serviceability.jvmti.SetBreakpoint;
 
 import java.net.URL;
 import java.net.URLClassLoader;
