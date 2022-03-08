@@ -36,7 +36,7 @@
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
  * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
  * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753 8276694
- *
+ * 8280403 8264160 8281315
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
  * @build jdk.test.lib.RandomFactory
@@ -4554,6 +4554,7 @@ public class RegExTest {
     }
 
     //This test is for 8264160
+    @Test
     public static void wordBoundaryInconsistencies() {
         Pattern basicWordCharPattern = Pattern.compile("\\w");
         Pattern basicWordCharBoundaryPattern =
@@ -4607,7 +4608,7 @@ public class RegExTest {
         }
     }
 
-        //This test is for 8281315
+    //This test is for 8281315
     @Test
     public static void iOOBForCIBackrefs(){
         String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
