@@ -29,7 +29,7 @@
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "logging/log.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
+#include "runtime/os.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
@@ -41,7 +41,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite));
 
   if (nm->is_unloading()) {
     // We don't need to take the lock when unlinking nmethods from

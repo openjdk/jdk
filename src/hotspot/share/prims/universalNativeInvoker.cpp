@@ -32,10 +32,10 @@ ProgrammableInvoker::Generator::Generator(CodeBuffer* code, const ABIDescriptor*
 
 void ProgrammableInvoker::invoke_native(Stub stub, address buff, JavaThread* thread) {
   ThreadToNativeFromVM ttnfvm(thread);
-  // We need WXExec because we are about to call a generated stub. Like in VM
-  // entries, the thread state should be changed while we are still in WXWrite.
+  // We need os::WXExec because we are about to call a generated stub. Like in VM
+  // entries, the thread state should be changed while we are still in os::WXWrite.
   // See JDK-8265292.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec));
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXExec));
   stub(buff);
 }
 

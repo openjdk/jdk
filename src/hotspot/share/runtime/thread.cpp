@@ -107,7 +107,6 @@
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -965,7 +964,7 @@ void JavaThread::check_possible_safepoint() {
   // happens in practice, making such issues hard to find and reproduce.
 #if defined(__APPLE__) && defined(AARCH64)
   if (AssertWXAtThreadSync) {
-    os::current_thread_assert_wx_state(WXWrite);
+    os::current_thread_assert_wx_state(os::WXWrite);
   }
 #endif
 }
@@ -1812,7 +1811,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite));
 
   SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
 
@@ -2679,7 +2678,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
-  MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::current_thread_change_wx(os::WXWrite));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;

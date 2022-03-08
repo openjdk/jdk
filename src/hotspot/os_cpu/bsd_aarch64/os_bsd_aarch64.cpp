@@ -205,7 +205,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
   // Enable WXWrite: this function is called by the signal handler at arbitrary
   // point of execution.
-  ThreadWXEnable wx(WXWrite);
+  os::ThreadWXEnable wx(os::WXWrite);
 
   // decide if this trap can be handled by a stub
   address stub = NULL;
@@ -535,24 +535,24 @@ void os::verify_stack_alignment() {
 #endif
 
 #ifdef __APPLE__
-static THREAD_LOCAL WXMode _wx_state = WXUnknown;
+static THREAD_LOCAL os::WXMode _wx_state = os::WXUnknown;
 int os::extra_bang_size_in_bytes() {
   // AArch64 does not require the additional stack bang.
   return 0;
 }
 
-WXMode os::current_thread_change_wx(WXMode new_state) {
+os::WXMode os::current_thread_change_wx(WXMode new_state) {
   if (_wx_state == WXUnknown) {
-    _wx_state = WXWrite; // No way to know but we assume the original state is "writable, not executable"
+    _wx_state = os::WXWrite; // No way to know but we assume the original state is "writable, not executable"
   }
   WXMode old = _wx_state;
   _wx_state = new_state;
-  pthread_jit_write_protect_np(_wx_state == WXExec);
+  pthread_jit_write_protect_np(_wx_state == os::WXExec);
   return old;
 }
 
 void os::current_thread_init_wx() {
-  current_thread_change_wx(WXWrite);
+  current_thread_change_wx(os::WXWrite);
 }
 
 void os::current_thread_assert_wx_state(WXMode expected) {

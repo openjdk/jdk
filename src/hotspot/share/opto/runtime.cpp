@@ -68,11 +68,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threadCritical.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -1463,7 +1463,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
 
   // Enable WXWrite: the function called directly by compiled code.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite));
 
   // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
   // This needs authenticating, but to do that here requires the fp of the previous frame.

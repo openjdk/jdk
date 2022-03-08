@@ -65,7 +65,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
@@ -757,7 +756,7 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: the function is called implicitly from java code.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite));
 
   if (log_is_enabled(Info, safepoint, stats)) {
     Atomic::inc(&_nof_threads_hit_polling_page);

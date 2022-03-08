@@ -40,4 +40,31 @@
     *(jlong *) dst = *(const jlong *) src;
   }
 
+  #ifdef __APPLE__
+  enum WXMode {
+    WXUnknown,
+    WXWrite,
+    WXExec
+  };
+
+  // Enables write or execute access to writeable and executable pages.
+  // returns the previous state
+  static WXMode current_thread_change_wx(WXMode new_state);
+
+  // initializes the WXMode to WXWrite, as writeable pages are the default here
+  static void current_thread_init_wx();
+
+  static void current_thread_assert_wx_state(WXMode expected);
+
+  class ThreadWXEnable  {
+    WXMode _old_mode;
+  public:
+    ThreadWXEnable(WXMode new_mode) :
+      _old_mode(os::current_thread_change_wx(new_mode))
+    { }
+    ~ThreadWXEnable() {
+      os::current_thread_change_wx(_old_mode);
+    }
+  };
+  #endif // __APPLE__
 #endif // OS_CPU_BSD_AARCH64_OS_BSD_AARCH64_HPP

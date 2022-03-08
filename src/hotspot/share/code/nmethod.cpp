@@ -67,7 +67,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/sweeper.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -2881,7 +2880,7 @@ void nmethod::decode2(outputStream* ost) const {
 #endif
 
   // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite);)
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite);)
 
   st->cr();
   this->print(st);

@@ -94,9 +94,9 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   int ret = JNI_CreateJavaVM(jvm_ptr, (void**)&env, &args);
   if (ret == JNI_OK) {
     // CreateJavaVM leaves WXExec context, while gtests
-    // calls internal functions assuming running in WXWwrite.
+    // calls internal functions assuming running in WXWrite.
     // Switch to WXWrite once for all test cases.
-    MACOS_AARCH64_ONLY(os::current_thread_change_wx(WXWrite));
+    MACOS_AARCH64_ONLY(os::current_thread_change_wx(os::WXWrite));
   }
   return ret;
 }

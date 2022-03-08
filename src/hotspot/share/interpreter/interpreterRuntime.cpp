@@ -983,7 +983,7 @@ JRT_END
 
 nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* current, address branch_bcp) {
   // Enable WXWrite: the function is called directly by interpreter.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite));
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite));
 
   // frequency_counter_overflow_inner can throw async exception.
   nmethod* nm = frequency_counter_overflow_inner(current, branch_bcp);

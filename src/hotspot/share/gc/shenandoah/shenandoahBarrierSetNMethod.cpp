@@ -33,7 +33,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
+#include "runtime/os.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ShenandoahReentrantLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
@@ -46,7 +46,7 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite);)
+  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite);)
 
   if (nm->is_unloading()) {
     // We don't need to take the lock when unlinking nmethods from
