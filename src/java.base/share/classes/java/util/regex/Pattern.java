@@ -180,7 +180,7 @@ import jdk.internal.util.ArraysSupport;
  *     <td headers="matches predef non_vert_white">A non-vertical whitespace character: {@code [^\v]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word">{@code \w}</th>
  *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
- *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>. <a href="#Uni"</td></tr>
+ *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>. </td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word">{@code \W}</th>
  *     <td headers="matches predef non_word">A non-word character: {@code [^\w]}</td></tr>
  *
