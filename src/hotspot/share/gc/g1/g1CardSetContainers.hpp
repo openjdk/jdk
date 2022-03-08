@@ -144,7 +144,7 @@ public:
 // All but inline pointers are of this kind. For those, card entries are stored
 // directly in the CardSetPtr of the ConcurrentHashTable node.
 class G1CardSetContainer {
-    uintptr_t _ref_count;
+  uintptr_t _ref_count;
 protected:
   ~G1CardSetContainer() = default;
 public:
