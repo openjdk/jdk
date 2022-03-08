@@ -4595,9 +4595,8 @@ public class RegExTest {
         String cpString;
         if (Character.isBmpCodePoint(cp)) {
             cpString = "" + ((char) cp);
-        }
-        else {
-            cpString = "" + Character.highSurrogate(cp) + 
+        } else {
+            cpString = "" + Character.highSurrogate(cp) +
                     Character.lowSurrogate(cp);
         }
 
@@ -4606,5 +4605,14 @@ public class RegExTest {
         } else {
             return p.matcher(cpString).matches();
         }
+    }
+
+        //This test is for 8281315
+    @Test
+    public static void iOOBForCIBackrefs(){
+        String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
+        var pattern2 = Pattern.compile("(?i)(.)\\1{2,}");
+        assertTrue(pattern2.matcher(line).find());
+
     }
 }

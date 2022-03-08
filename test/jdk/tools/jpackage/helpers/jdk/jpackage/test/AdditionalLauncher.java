@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -84,6 +85,18 @@ public class AdditionalLauncher {
             Collection<Map.Entry<String, String>> v) {
         rawProperties.addAll(v);
         return this;
+    }
+
+    final public String getRawPropertyValue(
+            String key, Supplier<String> getDefault) {
+        return rawProperties.stream()
+                .filter(item -> item.getKey().equals(key))
+                .map(e -> e.getValue()).findAny().orElseGet(getDefault);
+    }
+
+    private String getDesciption(JPackageCommand cmd) {
+        return getRawPropertyValue("description", () -> cmd.getArgumentValue(
+                "--description", unused -> cmd.name()));
     }
 
     final public AdditionalLauncher setShortcuts(boolean menu, boolean shortcut) {
@@ -281,9 +294,30 @@ public class AdditionalLauncher {
         }
     }
 
+    private void verifyDescription(JPackageCommand cmd) throws IOException {
+        if (TKit.isWindows()) {
+            String expectedDescription = getDesciption(cmd);
+            Path launcherPath = cmd.appLauncherPath(name);
+            String actualDescription =
+                    WindowsHelper.getExecutableDesciption(launcherPath);
+            TKit.assertEquals(expectedDescription, actualDescription,
+                    String.format("Check file description of [%s]", launcherPath));
+        } else if (TKit.isLinux() && !cmd.isImagePackageType()) {
+            String expectedDescription = getDesciption(cmd);
+            Path desktopFile = LinuxHelper.getDesktopFile(cmd, name);
+            if (Files.exists(desktopFile)) {
+                TKit.assertTextStream("Comment=" + expectedDescription)
+                        .label(String.format("[%s] file", desktopFile))
+                        .predicate(String::equals)
+                        .apply(Files.readAllLines(desktopFile).stream());
+            }
+        }
+    }
+
     protected void verify(JPackageCommand cmd) throws IOException {
         verifyIcon(cmd);
         verifyShortcuts(cmd);
+        verifyDescription(cmd);
 
         Path launcherPath = cmd.appLauncherPath(name);
 
