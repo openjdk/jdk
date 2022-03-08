@@ -176,6 +176,7 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
+class C2_MacroAssembler;
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -1115,10 +1116,10 @@ public:
   virtual JVMState* jvms() const;
 
   // Print as assembly
-  virtual void format( PhaseRegAlloc *, outputStream* st = tty ) const;
+  virtual void format(PhaseRegAlloc *, outputStream* st = tty) const;
   // Emit bytes starting at parameter 'ptr'
   // Bump 'ptr' by the number of output bytes
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const;
   // Size of instruction in bytes
   virtual uint size(PhaseRegAlloc *ra_) const;
 

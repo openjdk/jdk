@@ -29,6 +29,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.
@@ -338,7 +339,7 @@ class StaticCallInfo {
 class CompiledStaticCall : public ResourceObj {
  public:
   // Code
-  static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = NULL);
+  static address emit_to_interp_stub(C2_MacroAssembler &masm, address mark = NULL);
   static int to_interp_stub_size();
   static int to_trampoline_stub_size();
   static int reloc_to_interp_stub();

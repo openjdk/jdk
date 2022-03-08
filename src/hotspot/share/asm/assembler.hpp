@@ -347,6 +347,12 @@ class AbstractAssembler : public ResourceObj  {
   void relocate(   relocInfo::relocType rtype, int format = 0) {
     code_section()->relocate(code_section()->end(), rtype, format);
   }
+  void relocate(address addr, relocInfo::relocType rtype, int format = 0) {
+    code_section()->relocate(addr, rtype, format);
+  }
+  void relocate(address addr, RelocationHolder const& rspec, int format = 0) {
+    code_section()->relocate(addr, rspec, format);
+  }
 
   static int code_fill_byte();         // used to pad out odd-sized code buffers
 

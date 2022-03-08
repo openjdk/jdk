@@ -338,7 +338,7 @@ source %{
 #define   RELOC_IMM64    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
-#define __ _masm.
+#define __ masm.
 
 RegMask _ANY_REG_mask;
 RegMask _PTR_REG_mask;
@@ -503,63 +503,63 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 }
 
 // EMIT_RM()
-void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
+void emit_rm(C2_MacroAssembler &masm, int f1, int f2, int f3) {
   unsigned char c = (unsigned char) ((f1 << 6) | (f2 << 3) | f3);
-  cbuf.insts()->emit_int8(c);
+  masm.emit_int8(c);
 }
 
 // EMIT_CC()
-void emit_cc(CodeBuffer &cbuf, int f1, int f2) {
+void emit_cc(C2_MacroAssembler &masm, int f1, int f2) {
   unsigned char c = (unsigned char) (f1 | f2);
-  cbuf.insts()->emit_int8(c);
+  masm.emit_int8(c);
 }
 
 // EMIT_OPCODE()
-void emit_opcode(CodeBuffer &cbuf, int code) {
-  cbuf.insts()->emit_int8((unsigned char) code);
+void emit_opcode(C2_MacroAssembler &masm, int code) {
+  masm.emit_int8((unsigned char) code);
 }
 
 // EMIT_OPCODE() w/ relocation information
-void emit_opcode(CodeBuffer &cbuf,
+void emit_opcode(C2_MacroAssembler &masm,
                  int code, relocInfo::relocType reloc, int offset, int format)
 {
-  cbuf.relocate(cbuf.insts_mark() + offset, reloc, format);
-  emit_opcode(cbuf, code);
+  masm.relocate(masm.inst_mark() + offset, reloc, format);
+  emit_opcode(masm, code);
 }
 
 // EMIT_D8()
-void emit_d8(CodeBuffer &cbuf, int d8) {
-  cbuf.insts()->emit_int8((unsigned char) d8);
+void emit_d8(C2_MacroAssembler &masm, int d8) {
+  masm.emit_int8((unsigned char) d8);
 }
 
 // EMIT_D16()
-void emit_d16(CodeBuffer &cbuf, int d16) {
-  cbuf.insts()->emit_int16(d16);
+void emit_d16(C2_MacroAssembler &masm, int d16) {
+  masm.emit_int16(d16);
 }
 
 // EMIT_D32()
-void emit_d32(CodeBuffer &cbuf, int d32) {
-  cbuf.insts()->emit_int32(d32);
+void emit_d32(C2_MacroAssembler &masm, int d32) {
+  masm.emit_int32(d32);
 }
 
 // EMIT_D64()
-void emit_d64(CodeBuffer &cbuf, int64_t d64) {
-  cbuf.insts()->emit_int64(d64);
+void emit_d64(C2_MacroAssembler &masm, int64_t d64) {
+  masm.emit_int64(d64);
 }
 
 // emit 32 bit value and construct relocation entry from relocInfo::relocType
-void emit_d32_reloc(CodeBuffer& cbuf,
+void emit_d32_reloc(C2_MacroAssembler &masm,
                     int d32,
                     relocInfo::relocType reloc,
                     int format)
 {
   assert(reloc != relocInfo::external_word_type, "use 2-arg emit_d32_reloc");
-  cbuf.relocate(cbuf.insts_mark(), reloc, format);
-  cbuf.insts()->emit_int32(d32);
+  masm.relocate(masm.inst_mark(), reloc, format);
+  masm.emit_int32(d32);
 }
 
 // emit 32 bit value and construct relocation entry from RelocationHolder
-void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, int format) {
+void emit_d32_reloc(C2_MacroAssembler &masm, int d32, RelocationHolder const& rspec, int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
@@ -567,26 +567,25 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
     assert(oopDesc::is_oop(cast_to_oop((intptr_t)d32)), "cannot embed broken oops in code");
   }
 #endif
-  cbuf.relocate(cbuf.insts_mark(), rspec, format);
-  cbuf.insts()->emit_int32(d32);
+  masm.relocate(masm.inst_mark(), rspec, format);
+  masm.emit_int32(d32);
 }
 
-void emit_d32_reloc(CodeBuffer& cbuf, address addr) {
-  address next_ip = cbuf.insts_end() + 4;
-  emit_d32_reloc(cbuf, (int) (addr - next_ip),
+void emit_d32_reloc(C2_MacroAssembler &masm, address addr) {
+  address next_ip = masm.pc() + 4;
+  emit_d32_reloc(masm, (int) (addr - next_ip),
                  external_word_Relocation::spec(addr),
                  RELOC_DISP32);
 }
 
-
 // emit 64 bit value and construct relocation entry from relocInfo::relocType
-void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, relocInfo::relocType reloc, int format) {
-  cbuf.relocate(cbuf.insts_mark(), reloc, format);
-  cbuf.insts()->emit_int64(d64);
+void emit_d64_reloc(C2_MacroAssembler &masm, int64_t d64, relocInfo::relocType reloc, int format) {
+  masm.relocate(masm.inst_mark(), reloc, format);
+  masm.emit_int64(d64);
 }
 
 // emit 64 bit value and construct relocation entry from RelocationHolder
-void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec, int format) {
+void emit_d64_reloc(C2_MacroAssembler &masm, int64_t d64, RelocationHolder const& rspec, int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
@@ -594,27 +593,27 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
     assert(oopDesc::is_oop(cast_to_oop(d64)), "cannot embed broken oops in code");
   }
 #endif
-  cbuf.relocate(cbuf.insts_mark(), rspec, format);
-  cbuf.insts()->emit_int64(d64);
+  masm.relocate(masm.inst_mark(), rspec, format);
+  masm.emit_int64(d64);
 }
 
 // Access stack slot for load or store
-void store_to_stackslot(CodeBuffer &cbuf, int opcode, int rm_field, int disp)
+void store_to_stackslot(C2_MacroAssembler &masm, int opcode, int rm_field, int disp)
 {
-  emit_opcode(cbuf, opcode);                  // (e.g., FILD   [RSP+src])
+  emit_opcode(masm, opcode);                  // (e.g., FILD   [RSP+src])
   if (-0x80 <= disp && disp < 0x80) {
-    emit_rm(cbuf, 0x01, rm_field, RSP_enc);   // R/M byte
-    emit_rm(cbuf, 0x00, RSP_enc, RSP_enc);    // SIB byte
-    emit_d8(cbuf, disp);     // Displacement  // R/M byte
+    emit_rm(masm, 0x01, rm_field, RSP_enc);   // R/M byte
+    emit_rm(masm, 0x00, RSP_enc, RSP_enc);    // SIB byte
+    emit_d8(masm, disp);     // Displacement  // R/M byte
   } else {
-    emit_rm(cbuf, 0x02, rm_field, RSP_enc);   // R/M byte
-    emit_rm(cbuf, 0x00, RSP_enc, RSP_enc);    // SIB byte
-    emit_d32(cbuf, disp);     // Displacement // R/M byte
+    emit_rm(masm, 0x02, rm_field, RSP_enc);   // R/M byte
+    emit_rm(masm, 0x00, RSP_enc, RSP_enc);    // SIB byte
+    emit_d32(masm, disp);     // Displacement // R/M byte
   }
 }
 
    // rRegI ereg, memory mem) %{    // emit_reg_mem
-void encode_RegMem(CodeBuffer &cbuf,
+void encode_RegMem(C2_MacroAssembler &masm,
                    int reg,
                    int base, int index, int scale, int disp, relocInfo::relocType disp_reloc)
 {
@@ -627,27 +626,27 @@ void encode_RegMem(CodeBuffer &cbuf,
   if (index == 0x4 && scale == 0 && base != RSP_enc && base != R12_enc) {
     // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
     if (disp == 0 && base != RBP_enc && base != R13_enc) {
-      emit_rm(cbuf, 0x0, regenc, baseenc); // *
+      emit_rm(masm, 0x0, regenc, baseenc); // *
     } else if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
       // If 8-bit displacement, mode 0x1
-      emit_rm(cbuf, 0x1, regenc, baseenc); // *
-      emit_d8(cbuf, disp);
+      emit_rm(masm, 0x1, regenc, baseenc); // *
+      emit_d8(masm, disp);
     } else {
       // If 32-bit displacement
       if (base == -1) { // Special flag for absolute address
-        emit_rm(cbuf, 0x0, regenc, 0x5); // *
+        emit_rm(masm, 0x0, regenc, 0x5); // *
         if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
+          emit_d32_reloc(masm, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
-          emit_d32(cbuf, disp);
+          emit_d32(masm, disp);
         }
       } else {
         // Normal base + offset
-        emit_rm(cbuf, 0x2, regenc, baseenc); // *
+        emit_rm(masm, 0x2, regenc, baseenc); // *
         if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
+          emit_d32_reloc(masm, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
-          emit_d32(cbuf, disp);
+          emit_d32(masm, disp);
         }
       }
     }
@@ -656,27 +655,27 @@ void encode_RegMem(CodeBuffer &cbuf,
     // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
     if (disp == 0 && base != RBP_enc && base != R13_enc) {
       // If no displacement
-      emit_rm(cbuf, 0x0, regenc, 0x4); // *
-      emit_rm(cbuf, scale, indexenc, baseenc);
+      emit_rm(masm, 0x0, regenc, 0x4); // *
+      emit_rm(masm, scale, indexenc, baseenc);
     } else {
       if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
         // If 8-bit displacement, mode 0x1
-        emit_rm(cbuf, 0x1, regenc, 0x4); // *
-        emit_rm(cbuf, scale, indexenc, baseenc);
-        emit_d8(cbuf, disp);
+        emit_rm(masm, 0x1, regenc, 0x4); // *
+        emit_rm(masm, scale, indexenc, baseenc);
+        emit_d8(masm, disp);
       } else {
         // If 32-bit displacement
         if (base == 0x04 ) {
-          emit_rm(cbuf, 0x2, regenc, 0x4);
-          emit_rm(cbuf, scale, indexenc, 0x04); // XXX is this valid???
+          emit_rm(masm, 0x2, regenc, 0x4);
+          emit_rm(masm, scale, indexenc, 0x04); // XXX is this valid???
         } else {
-          emit_rm(cbuf, 0x2, regenc, 0x4);
-          emit_rm(cbuf, scale, indexenc, baseenc); // *
+          emit_rm(masm, 0x2, regenc, 0x4);
+          emit_rm(masm, scale, indexenc, baseenc); // *
         }
         if (disp_reloc != relocInfo::none) {
-          emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
+          emit_d32_reloc(masm, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
-          emit_d32(cbuf, disp);
+          emit_d32(masm, disp);
         }
       }
     }
@@ -684,10 +683,10 @@ void encode_RegMem(CodeBuffer &cbuf,
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
-void emit_cmpfp_fixup(MacroAssembler& _masm) {
+void emit_cmpfp_fixup(MacroAssembler& masm) {
   Label exit;
-  __ jccb(Assembler::noParity, exit);
-  __ pushf();
+  masm.jccb(Assembler::noParity, exit);
+  masm.pushf();
   //
   // comiss/ucomiss instructions set ZF,PF,CF flags and
   // zero OF,AF,SF for NaN values.
@@ -699,19 +698,19 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   //   |S|Z|r|A|r|P|r|C|  (r - reserved bit)
   //    0 0 1 0 1 0 1 1   (0x2B)
   //
-  __ andq(Address(rsp, 0), 0xffffff2b);
-  __ popf();
-  __ bind(exit);
+  masm.andq(Address(rsp, 0), 0xffffff2b);
+  masm.popf();
+  masm.bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+void emit_cmpfp3(MacroAssembler& masm, Register dst) {
   Label done;
-  __ movl(dst, -1);
-  __ jcc(Assembler::parity, done);
-  __ jcc(Assembler::below, done);
-  __ setb(Assembler::notEqual, dst);
-  __ movzbl(dst, dst);
-  __ bind(done);
+  masm.movl(dst, -1);
+  masm.jcc(Assembler::parity, done);
+  masm.jcc(Assembler::below, done);
+  masm.setb(Assembler::notEqual, dst);
+  masm.movzbl(dst, dst);
+  masm.bind(done);
 }
 
 // Math.min()    # Math.max()
@@ -723,7 +722,7 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 // je            #
 // |-jz -> a | b # a & b
 // |    -> a     #
-void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
+void emit_fp_min_max(MacroAssembler& masm, XMMRegister dst,
                      XMMRegister a, XMMRegister b,
                      XMMRegister xmmt, Register rt,
                      bool min, bool single) {
@@ -808,7 +807,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -884,9 +883,8 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -898,17 +896,17 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label L_skip_barrier;
     Register klass = rscratch1;
 
-    __ mov_metadata(klass, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
+    masm.mov_metadata(klass, C->method()->holder()->constant_encoding());
+    masm.clinit_barrier(klass, r15_thread, &L_skip_barrier /*L_fast_path*/);
 
-    __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
+    masm.jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub())); // slow path
 
-    __ bind(L_skip_barrier);
+    masm.bind(L_skip_barrier);
   }
 
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != NULL);
+  masm.verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != NULL);
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(masm.offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -960,15 +958,14 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachEpilogNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc* ra_) const
 {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
 
   if (generate_vzeroupper(C)) {
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    __ vzeroupper();
+    masm.vzeroupper();
   }
 
   int framesize = C->output()->frame_size_in_bytes();
@@ -980,34 +977,33 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   // Note that VerifyStackAtCalls' Majik cookie does not change the frame size popped here
 
   if (framesize) {
-    emit_opcode(cbuf, Assembler::REX_W);
+    emit_opcode(masm, Assembler::REX_W);
     if (framesize < 0x80) {
-      emit_opcode(cbuf, 0x83); // addq rsp, #framesize
-      emit_rm(cbuf, 0x3, 0x00, RSP_enc);
-      emit_d8(cbuf, framesize);
+      emit_opcode(masm, 0x83); // addq rsp, #framesize
+      emit_rm(masm, 0x3, 0x00, RSP_enc);
+      emit_d8(masm, framesize);
     } else {
-      emit_opcode(cbuf, 0x81); // addq rsp, #framesize
-      emit_rm(cbuf, 0x3, 0x00, RSP_enc);
-      emit_d32(cbuf, framesize);
+      emit_opcode(masm, 0x81); // addq rsp, #framesize
+      emit_rm(masm, 0x3, 0x00, RSP_enc);
+      emit_d32(masm, framesize);
     }
   }
 
   // popq rbp
-  emit_opcode(cbuf, 0x58 | RBP_enc);
+  emit_opcode(masm, 0x58 | RBP_enc);
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
-    __ reserved_stack_check();
+    masm.reserved_stack_check();
   }
 
   if (do_polling() && C->is_method_compilation()) {
-    MacroAssembler _masm(&cbuf);
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
       code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
     }
-    __ relocate(relocInfo::poll_return_type);
-    __ safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
+    masm.relocate(relocInfo::poll_return_type);
+    masm.safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
   }
 }
 
@@ -1054,44 +1050,43 @@ static enum RC rc_class(OptoReg::Name reg)
 }
 
 // Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st);
 
-static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
+static void vec_stack_to_stack_helper(C2_MacroAssembler *masm, int src_offset,
                                       int dst_offset, uint ireg, outputStream* st) {
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS:
-      __ movq(Address(rsp, -8), rax);
-      __ movl(rax, Address(rsp, src_offset));
-      __ movl(Address(rsp, dst_offset), rax);
-      __ movq(rax, Address(rsp, -8));
+      masm->movq(Address(rsp, -8), rax);
+      masm->movl(rax, Address(rsp, src_offset));
+      masm->movl(Address(rsp, dst_offset), rax);
+      masm->movq(rax, Address(rsp, -8));
       break;
     case Op_VecD:
-      __ pushq(Address(rsp, src_offset));
-      __ popq (Address(rsp, dst_offset));
+      masm->pushq(Address(rsp, src_offset));
+      masm->popq (Address(rsp, dst_offset));
       break;
     case Op_VecX:
-      __ pushq(Address(rsp, src_offset));
-      __ popq (Address(rsp, dst_offset));
-      __ pushq(Address(rsp, src_offset+8));
-      __ popq (Address(rsp, dst_offset+8));
+      masm->pushq(Address(rsp, src_offset));
+      masm->popq (Address(rsp, dst_offset));
+      masm->pushq(Address(rsp, src_offset+8));
+      masm->popq (Address(rsp, dst_offset+8));
       break;
     case Op_VecY:
-      __ vmovdqu(Address(rsp, -32), xmm0);
-      __ vmovdqu(xmm0, Address(rsp, src_offset));
-      __ vmovdqu(Address(rsp, dst_offset), xmm0);
-      __ vmovdqu(xmm0, Address(rsp, -32));
+      masm->vmovdqu(Address(rsp, -32), xmm0);
+      masm->vmovdqu(xmm0, Address(rsp, src_offset));
+      masm->vmovdqu(Address(rsp, dst_offset), xmm0);
+      masm->vmovdqu(xmm0, Address(rsp, -32));
       break;
     case Op_VecZ:
-      __ evmovdquq(Address(rsp, -64), xmm0, 2);
-      __ evmovdquq(xmm0, Address(rsp, src_offset), 2);
-      __ evmovdquq(Address(rsp, dst_offset), xmm0, 2);
-      __ evmovdquq(xmm0, Address(rsp, -64), 2);
+      masm->evmovdquq(Address(rsp, -64), xmm0, 2);
+      masm->evmovdquq(xmm0, Address(rsp, src_offset), 2);
+      masm->evmovdquq(Address(rsp, dst_offset), xmm0, 2);
+      masm->evmovdquq(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -1139,11 +1134,11 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
   }
 }
 
-uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
+uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm,
                                        PhaseRegAlloc* ra_,
                                        bool do_size,
                                        outputStream* st) const {
-  assert(cbuf != NULL || st  != NULL, "sanity");
+  assert(masm != NULL || st  != NULL, "sanity");
   // Get registers to move
   OptoReg::Name src_second = ra_->get_reg_second(in(1));
   OptoReg::Name src_first = ra_->get_reg_first(in(1));
@@ -1170,15 +1165,15 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
       int dst_offset = ra_->reg2offset(dst_first);
-      vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
+      vec_stack_to_stack_helper(masm, src_offset, dst_offset, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_float ) {
-      vec_mov_helper(cbuf, src_first, dst_first, src_second, dst_second, ireg, st);
+      vec_mov_helper(masm, src_first, dst_first, src_second, dst_second, ireg, st);
     } else if (src_first_rc == rc_float && dst_first_rc == rc_stack ) {
       int stack_offset = ra_->reg2offset(dst_first);
-      vec_spill_helper(cbuf, false, stack_offset, src_first, ireg, st);
+      vec_spill_helper(masm, false, stack_offset, src_first, ireg, st);
     } else if (src_first_rc == rc_stack && dst_first_rc == rc_float ) {
       int stack_offset = ra_->reg2offset(src_first);
-      vec_spill_helper(cbuf, true,  stack_offset, dst_first, ireg, st);
+      vec_spill_helper(masm, true,  stack_offset, dst_first, ireg, st);
     } else {
       ShouldNotReachHere();
     }
@@ -1194,10 +1189,9 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ pushq(Address(rsp, src_offset));
-          __ popq (Address(rsp, dst_offset));
+        if (masm) {
+          masm->pushq(Address(rsp, src_offset));
+          masm->popq (Address(rsp, dst_offset));
 #ifndef PRODUCT
         } else {
           st->print("pushq   [rsp + #%d]\t# 64-bit mem-mem spill\n\t"
@@ -1212,12 +1206,11 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // No pushl/popl, so:
         int src_offset = ra_->reg2offset(src_first);
         int dst_offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movq(Address(rsp, -8), rax);
-          __ movl(rax, Address(rsp, src_offset));
-          __ movl(Address(rsp, dst_offset), rax);
-          __ movq(rax, Address(rsp, -8));
+        if (masm) {
+          masm->movq(Address(rsp, -8), rax);
+          masm->movl(rax, Address(rsp, src_offset));
+          masm->movl(Address(rsp, dst_offset), rax);
+          masm->movq(rax, Address(rsp, -8));
 #ifndef PRODUCT
         } else {
           st->print("movq    [rsp - #8], rax\t# 32-bit mem-mem spill\n\t"
@@ -1235,9 +1228,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movq(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+        if (masm) {
+          masm->movq(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
           st->print("movq    %s, [rsp + #%d]\t# spill",
@@ -1250,9 +1242,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movl(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+        if (masm) {
+          masm->movl(as_Register(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
           st->print("movl    %s, [rsp + #%d]\t# spill",
@@ -1268,9 +1259,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+        if (masm) {
+          masm->movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
           st->print("%s  %s, [rsp + #%d]\t# spill",
@@ -1284,9 +1274,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+        if (masm) {
+          masm->movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
           st->print("movss   %s, [rsp + #%d]\t# spill",
@@ -1302,9 +1291,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(src_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+        if (masm) {
+          masm->kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else {
           st->print("kmovq   %s, [rsp + #%d]\t# spill",
@@ -1323,9 +1311,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movq(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movq(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movq    [rsp + #%d], %s\t# spill",
@@ -1338,9 +1325,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movl(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movl(Address(rsp, offset), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movl    [rsp + #%d], %s\t# spill",
@@ -1355,9 +1341,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movq(as_Register(Matcher::_regEncode[dst_first]),
+        if (masm) {
+          masm->movq(as_Register(Matcher::_regEncode[dst_first]),
                   as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1371,9 +1356,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movl(as_Register(Matcher::_regEncode[dst_first]),
+        if (masm) {
+          masm->movl(as_Register(Matcher::_regEncode[dst_first]),
                   as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
@@ -1389,9 +1373,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdq( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movdq( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movdq   %s, %s\t# spill",
@@ -1403,9 +1386,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movdl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movdl   %s, %s\t# spill",
@@ -1419,9 +1401,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
   #ifndef PRODUCT
         } else {
            st->print("kmovq   %s, %s\t# spill",
@@ -1441,9 +1422,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdbl( Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movdbl( Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movsd   [rsp + #%d], %s\t# spill",
@@ -1456,9 +1436,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movss   [rsp + #%d], %s\t# spill",
@@ -1473,9 +1452,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdq( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movdq( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movdq   %s, %s\t# spill",
@@ -1487,9 +1465,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdl( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movdl( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("movdl   %s, %s\t# spill",
@@ -1504,9 +1481,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("%s  %s, %s\t# spill",
@@ -1519,9 +1495,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("%s  %s, %s\t# spill",
@@ -1543,9 +1518,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
           st->print("kmovq   [rsp + #%d] , %s\t# spill",
@@ -1559,9 +1533,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ kmov(as_Register(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->kmov(as_Register(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
          st->print("kmovq   %s, %s\t# spill",
@@ -1576,9 +1549,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
       if ((src_first & 1) == 0 && src_first + 1 == src_second &&
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
-        if (cbuf) {
-          MacroAssembler _masm(cbuf);
-          __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+        if (masm) {
+          masm->kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else {
          st->print("kmovq   %s, %s\t# spill",
@@ -1605,8 +1577,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+void MachSpillCopyNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  implementation(&masm, ra_, false, NULL);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1624,22 +1596,22 @@ void BoxLockNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void BoxLockNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc* ra_) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
   if (offset >= 0x80) {
-    emit_opcode(cbuf, reg < 8 ? Assembler::REX_W : Assembler::REX_WR);
-    emit_opcode(cbuf, 0x8D); // LEA  reg,[SP+offset]
-    emit_rm(cbuf, 0x2, reg & 7, 0x04);
-    emit_rm(cbuf, 0x0, 0x04, RSP_enc);
-    emit_d32(cbuf, offset);
+    emit_opcode(masm, reg < 8 ? Assembler::REX_W : Assembler::REX_WR);
+    emit_opcode(masm, 0x8D); // LEA  reg,[SP+offset]
+    emit_rm(masm, 0x2, reg & 7, 0x04);
+    emit_rm(masm, 0x0, 0x04, RSP_enc);
+    emit_d32(masm, offset);
   } else {
-    emit_opcode(cbuf, reg < 8 ? Assembler::REX_W : Assembler::REX_WR);
-    emit_opcode(cbuf, 0x8D); // LEA  reg,[SP+offset]
-    emit_rm(cbuf, 0x1, reg & 7, 0x04);
-    emit_rm(cbuf, 0x0, 0x04, RSP_enc);
-    emit_d8(cbuf, offset);
+    emit_opcode(masm, reg < 8 ? Assembler::REX_W : Assembler::REX_WR);
+    emit_opcode(masm, 0x8D); // LEA  reg,[SP+offset]
+    emit_rm(masm, 0x1, reg & 7, 0x04);
+    emit_rm(masm, 0x0, 0x04, RSP_enc);
+    emit_d8(masm, offset);
   }
 }
 
@@ -1666,10 +1638,9 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachUEPNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc* ra_) const
 {
-  MacroAssembler masm(&cbuf);
-  uint insts_size = cbuf.insts_size();
+  uint insts_size = masm.offset();
   if (UseCompressedClassPointers) {
     masm.load_klass(rscratch1, j_rarg0, rscratch2);
     masm.cmpptr(rax, rscratch1);
@@ -1681,7 +1652,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
   /* WARNING these NOPs are critical so that verified entry point is properly
      4 bytes aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 4 - ((cbuf.insts_size() - insts_size) & 0x3);
+  int nops_cnt = 4 - ((masm.offset() - insts_size) & 0x3);
   if (OptoBreakpoint) {
     // Leave space for int3
     nops_cnt -= 1;
@@ -1850,47 +1821,47 @@ encode %{
   // Emit primary opcode
   enc_class OpcP
   %{
-    emit_opcode(cbuf, $primary);
+    emit_opcode(masm, $primary);
   %}
 
   // Emit secondary opcode
   enc_class OpcS
   %{
-    emit_opcode(cbuf, $secondary);
+    emit_opcode(masm, $secondary);
   %}
 
   // Emit tertiary opcode
   enc_class OpcT
   %{
-    emit_opcode(cbuf, $tertiary);
+    emit_opcode(masm, $tertiary);
   %}
 
   // Emit opcode directly
   enc_class Opcode(immI d8)
   %{
-    emit_opcode(cbuf, $d8$$constant);
+    emit_opcode(masm, $d8$$constant);
   %}
 
   // Emit size prefix
   enc_class SizePrefix
   %{
-    emit_opcode(cbuf, 0x66);
+    emit_opcode(masm, 0x66);
   %}
 
   enc_class reg(rRegI reg)
   %{
-    emit_rm(cbuf, 0x3, 0, $reg$$reg & 7);
+    emit_rm(masm, 0x3, 0, $reg$$reg & 7);
   %}
 
   enc_class reg_reg(rRegI dst, rRegI src)
   %{
-    emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
+    emit_rm(masm, 0x3, $dst$$reg & 7, $src$$reg & 7);
   %}
 
   enc_class opc_reg_reg(immI opcode, rRegI dst, rRegI src)
   %{
-    emit_opcode(cbuf, $opcode$$constant);
-    emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
+    emit_opcode(masm, $opcode$$constant);
+    emit_rm(masm, 0x3, $dst$$reg & 7, $src$$reg & 7);
   %}
 
   enc_class cdql_enc(no_rax_rdx_RegI div)
@@ -1921,7 +1892,6 @@ encode %{
     //  [REX_B]
     //    f:   f7 f9                   idiv   $div
     // 0000000000000011 <done>:
-    MacroAssembler _masm(&cbuf);
     Label normal;
     Label done;
 
@@ -1977,7 +1947,6 @@ encode %{
     //   17:   48 99                   cqto
     //   19:   48 f7 f9                idiv   $div
     // 000000000000001c <done>:
-    MacroAssembler _masm(&cbuf);
     Label normal;
     Label done;
 
@@ -2016,10 +1985,10 @@ encode %{
     // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      emit_opcode(cbuf, $primary | 0x02);
+      emit_opcode(masm, $primary | 0x02);
     } else {
       // 32-bit immediate
-      emit_opcode(cbuf, $primary);
+      emit_opcode(masm, $primary);
     }
   %}
 
@@ -2028,19 +1997,19 @@ encode %{
     // OpcSEr/m
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     }
     // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      emit_opcode(cbuf, $primary | 0x02);
+      emit_opcode(masm, $primary | 0x02);
     } else {
       // 32-bit immediate
-      emit_opcode(cbuf, $primary);
+      emit_opcode(masm, $primary);
     }
     // Emit r/m byte with secondary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $secondary, dstenc);
+    emit_rm(masm, 0x3, $secondary, dstenc);
   %}
 
   enc_class OpcSErm_wide(rRegL dst, immI imm)
@@ -2048,21 +2017,21 @@ encode %{
     // OpcSEr/m
     int dstenc = $dst$$reg;
     if (dstenc < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
       dstenc -= 8;
     }
     // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     if (-0x80 <= $imm$$constant && $imm$$constant < 0x80) {
-      emit_opcode(cbuf, $primary | 0x02);
+      emit_opcode(masm, $primary | 0x02);
     } else {
       // 32-bit immediate
-      emit_opcode(cbuf, $primary);
+      emit_opcode(masm, $primary);
     }
     // Emit r/m byte with secondary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $secondary, dstenc);
+    emit_rm(masm, 0x3, $secondary, dstenc);
   %}
 
   enc_class Con8or32(immI imm)
@@ -2079,26 +2048,26 @@ encode %{
   enc_class opc2_reg(rRegI dst)
   %{
     // BSWAP
-    emit_cc(cbuf, $secondary, $dst$$reg);
+    emit_cc(masm, $secondary, $dst$$reg);
   %}
 
   enc_class opc3_reg(rRegI dst)
   %{
     // BSWAP
-    emit_cc(cbuf, $tertiary, $dst$$reg);
+    emit_cc(masm, $tertiary, $dst$$reg);
   %}
 
   enc_class reg_opc(rRegI div)
   %{
     // INC, DEC, IDIV, IMOD, JMP indirect, ...
-    emit_rm(cbuf, 0x3, $secondary, $div$$reg & 7);
+    emit_rm(masm, 0x3, $secondary, $div$$reg & 7);
   %}
 
   enc_class enc_cmov(cmpOp cop)
   %{
     // CMOV
     $$$emit8$primary;
-    emit_cc(cbuf, $secondary, $cop$$cmpcode);
+    emit_cc(masm, $secondary, $cop$$cmpcode);
   %}
 
   enc_class enc_PartialSubtypeCheck()
@@ -2110,7 +2079,6 @@ encode %{
     Label miss;
     const bool set_cond_codes = true;
 
-    MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
                                      NULL, &miss,
                                      /*set_cond_codes:*/ true);
@@ -2121,21 +2089,19 @@ encode %{
   %}
 
   enc_class clear_avx %{
-    debug_only(int off0 = cbuf.insts_size());
+    debug_only(int off0 = masm.offset());
     if (generate_vzeroupper(Compile::current())) {
       // Clear upper bits of YMM registers to avoid AVX <-> SSE transition penalty
       // Clear upper bits of YMM registers when current compiled code uses
       // wide vectors to avoid AVX <-> SSE transition penalty during call.
-      MacroAssembler _masm(&cbuf);
       __ vzeroupper();
     }
-    debug_only(int off1 = cbuf.insts_size());
+    debug_only(int off1 = masm.offset());
     assert(off1 - off0 == clear_avx_size(), "correct size prediction");
   %}
 
   enc_class Java_To_Runtime(method meth) %{
     // No relocation needed
-    MacroAssembler _masm(&cbuf);
     __ mov64(r10, (int64_t) $meth$$method);
     __ call(r10);
   %}
@@ -2144,11 +2110,11 @@ encode %{
   %{
     // CALL Java_To_Interpreter
     // This is the instruction starting address for relocation info.
-    cbuf.set_insts_mark();
+    masm.set_inst_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
-    emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
+    emit_d32_reloc(masm,
+                   (int) ($meth$$method - ((intptr_t) masm.pc()) - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
   %}
@@ -2158,22 +2124,22 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
-    cbuf.set_insts_mark();
+    masm.set_inst_mark();
     $$$emit8$primary;
 
     if (!_method) {
-      emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
+      emit_d32_reloc(masm, (int) ($meth$$method - ((intptr_t) masm.pc()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
+      emit_d32_reloc(masm, (int) ($meth$$method - ((intptr_t) masm.pc()) - 4),
                      rspec, RELOC_DISP32);
       // Emit stubs for static call.
-      address mark = cbuf.insts_mark();
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+      address mark = masm.inst_mark();
+      address stub = CompiledStaticCall::emit_to_interp_stub(masm, mark);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2182,8 +2148,7 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call(method meth) %{
-    MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ ic_call((address)$meth$$method, resolved_method_index(masm));
   %}
 
   enc_class Java_Compiled_Call(method meth)
@@ -2195,14 +2160,14 @@ encode %{
     // assert(-0x80 <= disp && disp < 0x80, "compiled_code_offset isn't small");
 
     // callq *disp(%rax)
-    cbuf.set_insts_mark();
+    masm.set_inst_mark();
     $$$emit8$primary;
     if (disp < 0x80) {
-      emit_rm(cbuf, 0x01, $secondary, RAX_enc); // R/M byte
-      emit_d8(cbuf, disp); // Displacement
+      emit_rm(masm, 0x01, $secondary, RAX_enc); // R/M byte
+      emit_d8(masm, disp); // Displacement
     } else {
-      emit_rm(cbuf, 0x02, $secondary, RAX_enc); // R/M byte
-      emit_d32(cbuf, disp); // Displacement
+      emit_rm(masm, 0x02, $secondary, RAX_enc); // R/M byte
+      emit_d32(masm, disp); // Displacement
     }
   %}
 
@@ -2211,11 +2176,11 @@ encode %{
     // SAL, SAR, SHR
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     }
     $$$emit8$primary;
-    emit_rm(cbuf, 0x3, $secondary, dstenc);
+    emit_rm(masm, 0x3, $secondary, dstenc);
     $$$emit8$shift$$constant;
   %}
 
@@ -2224,13 +2189,13 @@ encode %{
     // SAL, SAR, SHR
     int dstenc = $dst$$reg;
     if (dstenc < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
       dstenc -= 8;
     }
     $$$emit8$primary;
-    emit_rm(cbuf, 0x3, $secondary, dstenc);
+    emit_rm(masm, 0x3, $secondary, dstenc);
     $$$emit8$shift$$constant;
   %}
 
@@ -2238,10 +2203,10 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     }
-    emit_opcode(cbuf, 0xB8 | dstenc);
+    emit_opcode(masm, 0xB8 | dstenc);
     $$$emit32$src$$constant;
   %}
 
@@ -2249,13 +2214,13 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     if (dstenc < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
       dstenc -= 8;
     }
-    emit_opcode(cbuf, 0xB8 | dstenc);
-    emit_d64(cbuf, $src$$constant);
+    emit_opcode(masm, 0xB8 | dstenc);
+    emit_d64(masm, $src$$constant);
   %}
 
   enc_class load_immUL32(rRegL dst, immUL32 src)
@@ -2263,10 +2228,10 @@ encode %{
     // same as load_immI, but this time we care about zeroes in the high word
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     }
-    emit_opcode(cbuf, 0xB8 | dstenc);
+    emit_opcode(masm, 0xB8 | dstenc);
     $$$emit32$src$$constant;
   %}
 
@@ -2274,13 +2239,13 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     if (dstenc < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
       dstenc -= 8;
     }
-    emit_opcode(cbuf, 0xC7);
-    emit_rm(cbuf, 0x03, 0x00, dstenc);
+    emit_opcode(masm, 0xC7);
+    emit_rm(masm, 0x03, 0x00, dstenc);
     $$$emit32$src$$constant;
   %}
 
@@ -2289,10 +2254,10 @@ encode %{
     // same as load_immI, but this time we care about zeroes in the high word
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     }
-    emit_opcode(cbuf, 0xB8 | dstenc);
+    emit_opcode(masm, 0xB8 | dstenc);
     $$$emit32$src$$constant;
   %}
 
@@ -2300,17 +2265,17 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     if (dstenc < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
       dstenc -= 8;
     }
-    emit_opcode(cbuf, 0xB8 | dstenc);
+    emit_opcode(masm, 0xB8 | dstenc);
     // This next line should be generated from ADLC
     if ($src->constant_reloc() != relocInfo::none) {
-      emit_d64_reloc(cbuf, $src$$constant, $src->constant_reloc(), RELOC_IMM64);
+      emit_d64_reloc(masm, $src$$constant, $src->constant_reloc(), RELOC_IMM64);
     } else {
-      emit_d64(cbuf, $src$$constant);
+      emit_d64(masm, $src$$constant);
     }
   %}
 
@@ -2325,7 +2290,7 @@ encode %{
     // Output Float immediate bits
     jfloat jf = $src$$constant;
     jint jf_as_bits = jint_cast(jf);
-    emit_d32(cbuf, jf_as_bits);
+    emit_d32(masm, jf_as_bits);
   %}
 
   enc_class Con16(immI src)
@@ -2337,31 +2302,31 @@ encode %{
   // How is this different from Con32??? XXX
   enc_class Con_d32(immI src)
   %{
-    emit_d32(cbuf,$src$$constant);
+    emit_d32(masm,$src$$constant);
   %}
 
   enc_class conmemref (rRegP t1) %{    // Con32(storeImmI)
     // Output immediate memory reference
-    emit_rm(cbuf, 0x00, $t1$$reg, 0x05 );
-    emit_d32(cbuf, 0x00);
+    emit_rm(masm, 0x00, $t1$$reg, 0x05 );
+    emit_d32(masm, 0x00);
   %}
 
   enc_class lock_prefix()
   %{
-    emit_opcode(cbuf, 0xF0); // lock
+    emit_opcode(masm, 0xF0); // lock
   %}
 
   enc_class REX_mem(memory mem)
   %{
     if ($mem$$base >= 8) {
       if ($mem$$index < 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
+        emit_opcode(masm, Assembler::REX_B);
       } else {
-        emit_opcode(cbuf, Assembler::REX_XB);
+        emit_opcode(masm, Assembler::REX_XB);
       }
     } else {
       if ($mem$$index >= 8) {
-        emit_opcode(cbuf, Assembler::REX_X);
+        emit_opcode(masm, Assembler::REX_X);
       }
     }
   %}
@@ -2370,15 +2335,15 @@ encode %{
   %{
     if ($mem$$base >= 8) {
       if ($mem$$index < 8) {
-        emit_opcode(cbuf, Assembler::REX_WB);
+        emit_opcode(masm, Assembler::REX_WB);
       } else {
-        emit_opcode(cbuf, Assembler::REX_WXB);
+        emit_opcode(masm, Assembler::REX_WXB);
       }
     } else {
       if ($mem$$index < 8) {
-        emit_opcode(cbuf, Assembler::REX_W);
+        emit_opcode(masm, Assembler::REX_W);
       } else {
-        emit_opcode(cbuf, Assembler::REX_WX);
+        emit_opcode(masm, Assembler::REX_WX);
       }
     }
   %}
@@ -2387,7 +2352,7 @@ encode %{
   enc_class REX_breg(rRegI reg)
   %{
     if ($reg$$reg >= 4) {
-      emit_opcode(cbuf, $reg$$reg < 8 ? Assembler::REX : Assembler::REX_B);
+      emit_opcode(masm, $reg$$reg < 8 ? Assembler::REX : Assembler::REX_B);
     }
   %}
 
@@ -2396,13 +2361,13 @@ encode %{
   %{
     if ($dst$$reg < 8) {
       if ($src$$reg >= 4) {
-        emit_opcode(cbuf, $src$$reg < 8 ? Assembler::REX : Assembler::REX_B);
+        emit_opcode(masm, $src$$reg < 8 ? Assembler::REX : Assembler::REX_B);
       }
     } else {
       if ($src$$reg < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
+        emit_opcode(masm, Assembler::REX_R);
       } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
+        emit_opcode(masm, Assembler::REX_RB);
       }
     }
   %}
@@ -2413,29 +2378,29 @@ encode %{
     if ($reg$$reg < 8) {
       if ($mem$$base < 8) {
         if ($mem$$index >= 8) {
-          emit_opcode(cbuf, Assembler::REX_X);
+          emit_opcode(masm, Assembler::REX_X);
         } else if ($reg$$reg >= 4) {
-          emit_opcode(cbuf, Assembler::REX);
+          emit_opcode(masm, Assembler::REX);
         }
       } else {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_B);
+          emit_opcode(masm, Assembler::REX_B);
         } else {
-          emit_opcode(cbuf, Assembler::REX_XB);
+          emit_opcode(masm, Assembler::REX_XB);
         }
       }
     } else {
       if ($mem$$base < 8) {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_R);
+          emit_opcode(masm, Assembler::REX_R);
         } else {
-          emit_opcode(cbuf, Assembler::REX_RX);
+          emit_opcode(masm, Assembler::REX_RX);
         }
       } else {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_RB);
+          emit_opcode(masm, Assembler::REX_RB);
         } else {
-          emit_opcode(cbuf, Assembler::REX_RXB);
+          emit_opcode(masm, Assembler::REX_RXB);
         }
       }
     }
@@ -2444,16 +2409,16 @@ encode %{
   enc_class REX_reg(rRegI reg)
   %{
     if ($reg$$reg >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
     }
   %}
 
   enc_class REX_reg_wide(rRegI reg)
   %{
     if ($reg$$reg < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
     }
   %}
 
@@ -2461,13 +2426,13 @@ encode %{
   %{
     if ($dst$$reg < 8) {
       if ($src$$reg >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
+        emit_opcode(masm, Assembler::REX_B);
       }
     } else {
       if ($src$$reg < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
+        emit_opcode(masm, Assembler::REX_R);
       } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
+        emit_opcode(masm, Assembler::REX_RB);
       }
     }
   %}
@@ -2476,15 +2441,15 @@ encode %{
   %{
     if ($dst$$reg < 8) {
       if ($src$$reg < 8) {
-        emit_opcode(cbuf, Assembler::REX_W);
+        emit_opcode(masm, Assembler::REX_W);
       } else {
-        emit_opcode(cbuf, Assembler::REX_WB);
+        emit_opcode(masm, Assembler::REX_WB);
       }
     } else {
       if ($src$$reg < 8) {
-        emit_opcode(cbuf, Assembler::REX_WR);
+        emit_opcode(masm, Assembler::REX_WR);
       } else {
-        emit_opcode(cbuf, Assembler::REX_WRB);
+        emit_opcode(masm, Assembler::REX_WRB);
       }
     }
   %}
@@ -2494,27 +2459,27 @@ encode %{
     if ($reg$$reg < 8) {
       if ($mem$$base < 8) {
         if ($mem$$index >= 8) {
-          emit_opcode(cbuf, Assembler::REX_X);
+          emit_opcode(masm, Assembler::REX_X);
         }
       } else {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_B);
+          emit_opcode(masm, Assembler::REX_B);
         } else {
-          emit_opcode(cbuf, Assembler::REX_XB);
+          emit_opcode(masm, Assembler::REX_XB);
         }
       }
     } else {
       if ($mem$$base < 8) {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_R);
+          emit_opcode(masm, Assembler::REX_R);
         } else {
-          emit_opcode(cbuf, Assembler::REX_RX);
+          emit_opcode(masm, Assembler::REX_RX);
         }
       } else {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_RB);
+          emit_opcode(masm, Assembler::REX_RB);
         } else {
-          emit_opcode(cbuf, Assembler::REX_RXB);
+          emit_opcode(masm, Assembler::REX_RXB);
         }
       }
     }
@@ -2525,29 +2490,29 @@ encode %{
     if ($reg$$reg < 8) {
       if ($mem$$base < 8) {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_W);
+          emit_opcode(masm, Assembler::REX_W);
         } else {
-          emit_opcode(cbuf, Assembler::REX_WX);
+          emit_opcode(masm, Assembler::REX_WX);
         }
       } else {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_WB);
+          emit_opcode(masm, Assembler::REX_WB);
         } else {
-          emit_opcode(cbuf, Assembler::REX_WXB);
+          emit_opcode(masm, Assembler::REX_WXB);
         }
       }
     } else {
       if ($mem$$base < 8) {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_WR);
+          emit_opcode(masm, Assembler::REX_WR);
         } else {
-          emit_opcode(cbuf, Assembler::REX_WRX);
+          emit_opcode(masm, Assembler::REX_WRX);
         }
       } else {
         if ($mem$$index < 8) {
-          emit_opcode(cbuf, Assembler::REX_WRB);
+          emit_opcode(masm, Assembler::REX_WRB);
         } else {
-          emit_opcode(cbuf, Assembler::REX_WRXB);
+          emit_opcode(masm, Assembler::REX_WRXB);
         }
       }
     }
@@ -2563,7 +2528,7 @@ encode %{
     int disp = $mem$$disp;
     relocInfo::relocType disp_reloc = $mem->disp_reloc();
 
-    encode_RegMem(cbuf, reg, base, index, scale, disp, disp_reloc);
+    encode_RegMem(masm, reg, base, index, scale, disp, disp_reloc);
   %}
 
   enc_class RM_opc_mem(immI rm_opcode, memory mem)
@@ -2579,7 +2544,7 @@ encode %{
     relocInfo::relocType disp_reloc = $mem->disp_reloc();       // disp-as-oop when
                                             // working with static
                                             // globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace,
+    encode_RegMem(masm, rm_byte_opcode, base, index, scale, displace,
                   disp_reloc);
   %}
 
@@ -2591,7 +2556,7 @@ encode %{
     int scale        = 0x00;            // 0x00 indicates no scale
     int displace     = $src1$$constant; // 0x00 indicates no displacement
     relocInfo::relocType disp_reloc = relocInfo::none;
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace,
+    encode_RegMem(masm, reg_encoding, base, index, scale, displace,
                   disp_reloc);
   %}
 
@@ -2599,56 +2564,56 @@ encode %{
   %{
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     }
     // NEG $dst
-    emit_opcode(cbuf, 0xF7);
-    emit_rm(cbuf, 0x3, 0x03, dstenc);
+    emit_opcode(masm, 0xF7);
+    emit_rm(masm, 0x3, 0x03, dstenc);
   %}
 
   enc_class neg_reg_wide(rRegI dst)
   %{
     int dstenc = $dst$$reg;
     if (dstenc < 8) {
-      emit_opcode(cbuf, Assembler::REX_W);
+      emit_opcode(masm, Assembler::REX_W);
     } else {
-      emit_opcode(cbuf, Assembler::REX_WB);
+      emit_opcode(masm, Assembler::REX_WB);
       dstenc -= 8;
     }
     // NEG $dst
-    emit_opcode(cbuf, 0xF7);
-    emit_rm(cbuf, 0x3, 0x03, dstenc);
+    emit_opcode(masm, 0xF7);
+    emit_rm(masm, 0x3, 0x03, dstenc);
   %}
 
   enc_class setLT_reg(rRegI dst)
   %{
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     } else if (dstenc >= 4) {
-      emit_opcode(cbuf, Assembler::REX);
+      emit_opcode(masm, Assembler::REX);
     }
     // SETLT $dst
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x9C);
-    emit_rm(cbuf, 0x3, 0x0, dstenc);
+    emit_opcode(masm, 0x0F);
+    emit_opcode(masm, 0x9C);
+    emit_rm(masm, 0x3, 0x0, dstenc);
   %}
 
   enc_class setNZ_reg(rRegI dst)
   %{
     int dstenc = $dst$$reg;
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
       dstenc -= 8;
     } else if (dstenc >= 4) {
-      emit_opcode(cbuf, Assembler::REX);
+      emit_opcode(masm, Assembler::REX);
     }
     // SETNZ $dst
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x95);
-    emit_rm(cbuf, 0x3, 0x0, dstenc);
+    emit_opcode(masm, 0x0F);
+    emit_opcode(masm, 0x95);
+    emit_rm(masm, 0x3, 0x0, dstenc);
   %}
 
 
@@ -2662,69 +2627,66 @@ encode %{
     // cmpq $src1, $src2
     if (src1enc < 8) {
       if (src2enc < 8) {
-        emit_opcode(cbuf, Assembler::REX_W);
+        emit_opcode(masm, Assembler::REX_W);
       } else {
-        emit_opcode(cbuf, Assembler::REX_WB);
+        emit_opcode(masm, Assembler::REX_WB);
       }
     } else {
       if (src2enc < 8) {
-        emit_opcode(cbuf, Assembler::REX_WR);
+        emit_opcode(masm, Assembler::REX_WR);
       } else {
-        emit_opcode(cbuf, Assembler::REX_WRB);
+        emit_opcode(masm, Assembler::REX_WRB);
       }
     }
-    emit_opcode(cbuf, 0x3B);
-    emit_rm(cbuf, 0x3, src1enc & 7, src2enc & 7);
+    emit_opcode(masm, 0x3B);
+    emit_rm(masm, 0x3, src1enc & 7, src2enc & 7);
 
     // movl $dst, -1
     if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
+      emit_opcode(masm, Assembler::REX_B);
     }
-    emit_opcode(cbuf, 0xB8 | (dstenc & 7));
-    emit_d32(cbuf, -1);
+    emit_opcode(masm, 0xB8 | (dstenc & 7));
+    emit_d32(masm, -1);
 
     // jl,s done
-    emit_opcode(cbuf, 0x7C);
-    emit_d8(cbuf, dstenc < 4 ? 0x06 : 0x08);
+    emit_opcode(masm, 0x7C);
+    emit_d8(masm, dstenc < 4 ? 0x06 : 0x08);
 
     // setne $dst
     if (dstenc >= 4) {
-      emit_opcode(cbuf, dstenc < 8 ? Assembler::REX : Assembler::REX_B);
+      emit_opcode(masm, dstenc < 8 ? Assembler::REX : Assembler::REX_B);
     }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x95);
-    emit_opcode(cbuf, 0xC0 | (dstenc & 7));
+    emit_opcode(masm, 0x0F);
+    emit_opcode(masm, 0x95);
+    emit_opcode(masm, 0xC0 | (dstenc & 7));
 
     // movzbl $dst, $dst
     if (dstenc >= 4) {
-      emit_opcode(cbuf, dstenc < 8 ? Assembler::REX : Assembler::REX_RB);
+      emit_opcode(masm, dstenc < 8 ? Assembler::REX : Assembler::REX_RB);
     }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0xB6);
-    emit_rm(cbuf, 0x3, dstenc & 7, dstenc & 7);
+    emit_opcode(masm, 0x0F);
+    emit_opcode(masm, 0xB6);
+    emit_rm(masm, 0x3, dstenc & 7, dstenc & 7);
   %}
 
   enc_class Push_ResultXD(regD dst) %{
-    MacroAssembler _masm(&cbuf);
     __ fstp_d(Address(rsp, 0));
     __ movdbl($dst$$XMMRegister, Address(rsp, 0));
     __ addptr(rsp, 8);
   %}
 
   enc_class Push_SrcXD(regD src) %{
-    MacroAssembler _masm(&cbuf);
     __ subptr(rsp, 8);
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
   %}
 
-
   enc_class enc_rethrow()
   %{
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xE9); // jmp entry
-    emit_d32_reloc(cbuf,
-                   (int) (OptoRuntime::rethrow_stub() - cbuf.insts_end() - 4),
+    masm.set_inst_mark();
+    emit_opcode(masm, 0xE9); // jmp entry
+    emit_d32_reloc(masm,
+                   (int) (OptoRuntime::rethrow_stub() - masm.pc() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
   %}
@@ -5379,7 +5341,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
   format %{ "$dst = max($a, $b)\t# intrinsic (float)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     false /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -5415,7 +5377,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
   format %{ "$dst = max($a, $b)\t# intrinsic (double)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     false /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -5451,7 +5413,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
   format %{ "$dst = min($a, $b)\t# intrinsic (float)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     true /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -5487,7 +5449,7 @@ instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
   format %{ "$dst = min($a, $b)\t# intrinsic (double)" %}
   ins_encode %{
-    emit_fp_min_max(_masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
                     true /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -10331,7 +10293,7 @@ instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
     "exit:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10360,7 +10322,7 @@ instruct cmpF_cc_mem(rFlagsRegU cr, regF src1, memory src2)
     "exit:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10388,7 +10350,7 @@ instruct cmpF_cc_imm(rFlagsRegU cr, regF src, immF con) %{
     "exit:" %}
   ins_encode %{
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10416,7 +10378,7 @@ instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
     "exit:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10445,7 +10407,7 @@ instruct cmpD_cc_mem(rFlagsRegU cr, regD src1, memory src2)
     "exit:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10473,7 +10435,7 @@ instruct cmpD_cc_imm(rFlagsRegU cr, regD src, immD con) %{
     "exit:" %}
   ins_encode %{
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10504,7 +10466,7 @@ instruct cmpF_reg(rRegI dst, regF src1, regF src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10525,7 +10487,7 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10545,7 +10507,7 @@ instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10566,7 +10528,7 @@ instruct cmpD_reg(rRegI dst, regD src1, regD src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10587,7 +10549,7 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10607,7 +10569,7 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
