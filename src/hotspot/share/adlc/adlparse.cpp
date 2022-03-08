@@ -2050,6 +2050,8 @@ void ADLParser::peep_parse(void) {
         peep_predicate_parse(*peep); }
       else if (strcmp(token,"peepmatch")==0) {
         peep_match_parse(*peep); }
+      else if (strcmp(token, "peepprocedure")==0) {
+        peep_procedure_parse(*peep); }
       else if (strcmp(token,"peepconstraint")==0) {
         peep_constraint_parse(*peep); }
       else if (strcmp(token,"peepreplace")==0) {
@@ -2613,6 +2615,46 @@ void ADLParser::peep_match_parse(Peephole &peep) {
   // Store match into peep, and store peep into instruction
   peep.add_match(match);
   root->append_peephole(&peep);
+}
+
+//---------------------------peep-procedure-parse------------------------------
+// Syntax for a peepprocedure rule
+//
+// peeppredicate ( function_name );
+//
+void ADLParser::peep_procedure_parse(Peephole& peep) {
+
+  skipws();
+  // Check for open paren
+  if (_curchar != '(') {
+    parse_err(SYNERR, "missing '(' at start of peepprocedure rule.\n");
+    return;
+  }
+  next_char();   // skip '('
+  skipws();
+
+  char* name = nullptr;
+  if ( (name = get_ident_dup()) == nullptr ) {
+    parse_err(SYNERR, "incorrect or missing expression for 'peepprocedure'\n");
+    return;
+  }
+
+  skipws();
+  if (_curchar != ')') {
+    parse_err(SYNERR, "peepprocedure should contain a single identifier only\n");
+    return;
+  }
+  next_char();   // skip ')'
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' in peepprocedure definition\n");
+    return;
+  }
+  next_char();   // skip ';'
+  skipws();
+
+  // Construct PeepProcedure
+  PeepProcedure* procedure = new PeepProcedure(name);
+  peep.add_procedure(procedure);
 }
 
 //------------------------------peep_constraint_parse--------------------------

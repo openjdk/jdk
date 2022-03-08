@@ -67,6 +67,7 @@ class PipeClassResourceForm;
 class Peephole;
 class PeepPredicate;
 class PeepMatch;
+class PeepProcedure;
 class PeepConstraint;
 class PeepReplace;
 class MatchList;
@@ -527,6 +528,7 @@ private:
   int             _peephole_number;// Remember my order in architecture description
   PeepPredicate  *_predicate;      // Predicate to apply peep rule
   PeepMatch      *_match;          // Instruction pattern to match
+  PeepProcedure  *_procedure;      // The detailed procedure to perform the rule
   PeepConstraint *_constraint;     // List of additional constraints
   PeepReplace    *_replace;        // Instruction pattern to substitute in
 
@@ -543,6 +545,7 @@ public:
   // Store the components of this peephole rule
   void add_predicate(PeepPredicate *only_one_predicate);
   void add_match(PeepMatch *only_one_match);
+  void add_procedure(PeepProcedure *only_one_procedure);
   void append_constraint(PeepConstraint *next_constraint);
   void add_replace(PeepReplace *only_one_replacement);
 
@@ -550,6 +553,7 @@ public:
   int             peephole_number() { return _peephole_number; }
   PeepPredicate  *predicate()   { return _predicate; }
   PeepMatch      *match()       { return _match; }
+  PeepProcedure  *procedure()   { return _procedure; }
   PeepConstraint *constraints() { return _constraint; }
   PeepReplace    *replacement() { return _replace; }
   Peephole       *next()        { return _next; }
@@ -603,6 +607,19 @@ public:
   void output(FILE *fp);
 };
 
+class PeepProcedure : public Form {
+private:
+  const char* _name;
+public:
+  // Public Methods
+  PeepProcedure(const char* name);
+  ~PeepProcedure();
+
+  const char* name() const;
+
+  void dump();
+  void output(FILE* fp);
+};
 
 class PeepConstraint : public Form {
 private:

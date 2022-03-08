@@ -1012,7 +1012,7 @@ static void print_block_index(FILE *fp, int inst_position) {
 }
 
 // Scan the peepmatch and output a test for each instruction
-static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, PeepConstraint *pconstraint) {
+static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch) {
   int         parent        = -1;
   int         inst_position = 0;
   const char* inst_name     = NULL;
@@ -1043,17 +1043,10 @@ static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, Pe
                   inst_position, inst_position, inst_name);
         }
         else {
-          fprintf(fp, "  matches = matches && (inst%d != NULL) && (inst%d->rule() == MachSpillCopyNode::mach_spill_copy_rule);\n",
+          fprintf(fp, "  matches = matches && (inst%d != NULL) && (inst%d->is_MachSpillCopy());\n",
                   inst_position, inst_position);
-          // Only support reg-reg mov for now
-          fprintf(fp, "  matches = matches && OptoReg::as_VMReg(ra_->get_reg_first(inst%d))->is_Register();\n", inst_position);
-          fprintf(fp, "  matches = matches && OptoReg::as_VMReg(ra_->get_reg_first(inst%d->in(1)))->is_Register();\n", inst_position);
         }
       }
-    } else {
-      // Check that user did not try to constrain a placeholder
-      assert( ! pconstraint->constrains_instruction(inst_position),
-              "fatal(): Can not constrain a placeholder instruction");
     }
   }
 }
@@ -1072,16 +1065,13 @@ static void build_instruction_index_mapping( FILE *fp, FormDict &globals, PeepMa
     // If this is not a placeholder
     if( ! pmatch->is_placeholder() ) {
       // Define temporaries 'inst#', based on self's inst_position
-      const Form* form = globals[inst_name];
-      if (form != NULL) {
-        InstructForm* inst = form->is_instruction();
-        if( inst != NULL ) {
-          char inst_prefix[]  = "instXXXX_";
-          sprintf(inst_prefix, "inst%d_",   inst_position);
-          char receiver[]     = "instXXXX->";
-          sprintf(receiver,    "inst%d->", inst_position);
-          inst->index_temps( fp, globals, inst_prefix, receiver );
-        }
+      InstructForm *inst = globals[inst_name]->is_instruction();
+      if( inst != NULL ) {
+        char inst_prefix[]  = "instXXXX_";
+        sprintf(inst_prefix, "inst%d_",   inst_position);
+        char receiver[]     = "instXXXX->";
+        sprintf(receiver,    "inst%d->", inst_position);
+        inst->index_temps( fp, globals, inst_prefix, receiver );
       }
     }
   }
@@ -1110,71 +1100,50 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
       }
 
       // LEFT
-      int left_op_index    = -1;
       int left_index       = pconstraint->_left_inst;
       const char *left_op  = pconstraint->_left_op;
       // Access info on the instructions whose operands are compared
-      Form::InterfaceType left_interface_type;
-      const char* left_inst_name = pmatch->instruction_name(left_index);
-      const Form* left_form = globals[left_inst_name];
-      bool left_spill_copy = strcmp("MachSpillCopy", left_inst_name) == 0;
-      if (left_form != NULL) {
-        InstructForm *inst_left = left_form->is_instruction();
-        assert( inst_left, "Parser should guaranty this is an instruction");
-        int left_op_base  = inst_left->oper_input_base(globals);
-        // Access info on the operands being compared
-        left_op_index  = inst_left->operand_position(left_op, Component::USE);
+      InstructForm *inst_left = globals[pmatch->instruction_name(left_index)]->is_instruction();
+      assert( inst_left, "Parser should guaranty this is an instruction");
+      int left_op_base  = inst_left->oper_input_base(globals);
+      // Access info on the operands being compared
+      int left_op_index  = inst_left->operand_position(left_op, Component::USE);
+      if( left_op_index == -1 ) {
+        left_op_index = inst_left->operand_position(left_op, Component::DEF);
         if( left_op_index == -1 ) {
-          left_op_index = inst_left->operand_position(left_op, Component::DEF);
-          if( left_op_index == -1 ) {
-            left_op_index = inst_left->operand_position(left_op, Component::USE_DEF);
-          }
+          left_op_index = inst_left->operand_position(left_op, Component::USE_DEF);
         }
-        assert( left_op_index  != NameList::Not_in_list, "Did not find operand in instruction");
-        ComponentList components_left = inst_left->_components;
-        const char *left_comp_type = components_left.at(left_op_index)->_type;
-        OpClassForm *left_opclass = globals[left_comp_type]->is_opclass();
-        left_interface_type = left_opclass->interface_type(globals);
-      } else if (left_spill_copy) {
-        left_interface_type = Form::register_interface;
-      } else {
-        assert(false, "Unrecognized instruct");
       }
+      assert( left_op_index  != NameList::Not_in_list, "Did not find operand in instruction");
+      ComponentList components_left = inst_left->_components;
+      const char *left_comp_type = components_left.at(left_op_index)->_type;
+      OpClassForm *left_opclass = globals[left_comp_type]->is_opclass();
+      Form::InterfaceType left_interface_type = left_opclass->interface_type(globals);
+
 
       // RIGHT
-      int right_op_index    = -1;
-      int right_index       = pconstraint->_right_inst;
-      const char *right_op  = pconstraint->_right_op;
-      const Form* right_form = NULL;
-      bool right_spill_copy = false;
+      int right_op_index = -1;
+      int right_index      = pconstraint->_right_inst;
+      const char *right_op = pconstraint->_right_op;
       if( right_index != -1 ) { // Match operand
         // Access info on the instructions whose operands are compared
-        const char* right_inst_name = pmatch->instruction_name(right_index);
-        right_form = globals[right_inst_name];
-        right_spill_copy = strcmp("MachSpillCopy", right_inst_name) == 0;
-        if (right_form != NULL) {
-          InstructForm *inst_right = right_form->is_instruction();
-          assert( inst_right, "Parser should guaranty this is an instruction");
-          int right_op_base = inst_right->oper_input_base(globals);
-          // Access info on the operands being compared
-          right_op_index = inst_right->operand_position(right_op, Component::USE);
+        InstructForm *inst_right = globals[pmatch->instruction_name(right_index)]->is_instruction();
+        assert( inst_right, "Parser should guaranty this is an instruction");
+        int right_op_base = inst_right->oper_input_base(globals);
+        // Access info on the operands being compared
+        right_op_index = inst_right->operand_position(right_op, Component::USE);
+        if( right_op_index == -1 ) {
+          right_op_index = inst_right->operand_position(right_op, Component::DEF);
           if( right_op_index == -1 ) {
-            right_op_index = inst_right->operand_position(right_op, Component::DEF);
-            if( right_op_index == -1 ) {
-              right_op_index = inst_right->operand_position(right_op, Component::USE_DEF);
-            }
+            right_op_index = inst_right->operand_position(right_op, Component::USE_DEF);
           }
-          assert( right_op_index != NameList::Not_in_list, "Did not find operand in instruction");
-          ComponentList components_right = inst_right->_components;
-          const char *right_comp_type = components_right.at(right_op_index)->_type;
-          OpClassForm *right_opclass = globals[right_comp_type]->is_opclass();
-          Form::InterfaceType right_interface_type = right_opclass->interface_type(globals);
-          assert( right_interface_type == left_interface_type, "Both must be same interface");
-        } else if (right_spill_copy) {
-          assert( left_interface_type == Form::register_interface, "Both must be same interface");
-        } else {
-          assert( false, "Unrecognized instruct");
         }
+        assert( right_op_index != NameList::Not_in_list, "Did not find operand in instruction");
+        ComponentList components_right = inst_right->_components;
+        const char *right_comp_type = components_right.at(right_op_index)->_type;
+        OpClassForm *right_opclass = globals[right_comp_type]->is_opclass();
+        Form::InterfaceType right_interface_type = right_opclass->interface_type(globals);
+        assert( right_interface_type == left_interface_type, "Both must be same interface");
       } else {                  // Else match register
         assert( left_interface_type == Form::register_interface, "should be a register" );
       }
@@ -1191,25 +1160,19 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
       case Form::register_interface: {
         // Check that they are allocated to the same register
         // Need parameter for index position if not result operand
-        if (left_form != NULL) {
-          char left_reg_index[] = ",instXXXX_idxXXXX";
-          if( left_op_index != 0 ) {
-            assert( (left_index <= 9999) && (left_op_index <= 9999), "exceed string size");
-            // Must have index into operands
-            sprintf(left_reg_index,",inst%d_idx%d", (int)left_index, left_op_index);
-          } else {
-            strcpy(left_reg_index, "");
-          }
-          fprintf(fp, "(inst%d->_opnds[%d]->reg(ra_,inst%d%s)  /* %d.%s */",
-                  left_index,  left_op_index, left_index, left_reg_index, left_index, left_op );
-        } else if (left_spill_copy) {
-          fprintf(fp, "ra_->get_encode(inst%d%s)", left_index,
-                  strcmp("dst", left_op) == 0 ? "" : "->in(1)");
+        char left_reg_index[] = ",instXXXX_idxXXXX";
+        if( left_op_index != 0 ) {
+          assert( (left_index <= 9999) && (left_op_index <= 9999), "exceed string size");
+          // Must have index into operands
+          sprintf(left_reg_index,",inst%d_idx%d", (int)left_index, left_op_index);
+        } else {
+          strcpy(left_reg_index, "");
         }
-
+        fprintf(fp, "(inst%d->_opnds[%d]->reg(ra_,inst%d%s)  /* %d.%s */",
+                left_index,  left_op_index, left_index, left_reg_index, left_index, left_op );
         fprintf(fp, " == ");
 
-        if( right_index != -1 && right_form != NULL ) {
+        if( right_index != -1 ) {
           char right_reg_index[18] = ",instXXXX_idxXXXX";
           if( right_op_index != 0 ) {
             assert( (right_index <= 9999) && (right_op_index <= 9999), "exceed string size");
@@ -1220,9 +1183,6 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
           }
           fprintf(fp, "/* %d.%s */ inst%d->_opnds[%d]->reg(ra_,inst%d%s)",
                   right_index, right_op, right_index, right_op_index, right_index, right_reg_index );
-        } else if (right_spill_copy) {
-          fprintf(fp, "ra_->get_encode(inst%d%s)", right_index,
-                  strcmp("dst", right_op) == 0 ? "" : "->in(1)");
         } else {
           fprintf(fp, "%s_enc", right_op );
         }
@@ -1329,66 +1289,56 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
     for( preplace->next_operand( inst_num, op_name );
          op_name != NULL;
          preplace->next_operand( inst_num, op_name ) ) {
-      const char* inst_name = pmatch->instruction_name(inst_num);
-      const Form* form = globals[inst_name];
-      if (form != NULL) {
-        InstructForm *inst_form = form->is_instruction();
-        assert( inst_form != NULL, "Parser should guarantee this is an instruction");
-        int inst_op_num = inst_form->operand_position(op_name, Component::USE);
-        if( inst_op_num == NameList::Not_in_list )
-          inst_op_num = inst_form->operand_position(op_name, Component::USE_DEF);
-        assert( inst_op_num != NameList::Not_in_list, "Did not find operand as USE");
-        // find the name of the OperandForm from the local name
-        const Form *form   = inst_form->_localNames[op_name];
-        OperandForm  *op_form = form->is_operand();
-        if( opnds_index == 0 ) {
-          // Initial setup of new instruction
-          fprintf(fp, "        // ----- Initial setup -----\n");
-          //
-          // Add control edge for this node
-          fprintf(fp, "        root->add_req(_in[0]);                // control edge\n");
-          // Add unmatched edges from root of match tree
-          int op_base = root_form->oper_input_base(globals);
-          for( int unmatched_edge = 1; unmatched_edge < op_base; ++unmatched_edge ) {
-            fprintf(fp, "        root->add_req(inst%d->in(%d));        // unmatched ideal edge\n",
-                                            inst_num, unmatched_edge);
-          }
-          // If new instruction captures bottom type
-          if( root_form->captures_bottom_type(globals) ) {
-            // Get bottom type from instruction whose result we are replacing
-            fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
-          }
-          // Define result register and result operand
-          fprintf(fp, "        ra_->add_reference(root, inst%d);\n", inst_num);
-          fprintf(fp, "        ra_->set_oop (root, ra_->is_oop(inst%d));\n", inst_num);
-          fprintf(fp, "        ra_->set_pair(root->_idx, ra_->get_reg_second(inst%d), ra_->get_reg_first(inst%d));\n", inst_num, inst_num);
-          fprintf(fp, "        root->_opnds[0] = inst%d->_opnds[0]->clone(); // result\n", inst_num);
-          fprintf(fp, "        // ----- Done with initial setup -----\n");
-        } else {
-          if( (op_form == NULL) || (op_form->is_base_constant(globals) == Form::none) ) {
-            // Do not have ideal edges for constants after matching
-            fprintf(fp, "        for( unsigned x%d = inst%d_idx%d; x%d < inst%d_idx%d; x%d++ )\n",
-                    inst_op_num, inst_num, inst_op_num,
-                    inst_op_num, inst_num, inst_op_num+1, inst_op_num );
-            fprintf(fp, "          root->add_req( inst%d->in(x%d) );\n",
-                    inst_num, inst_op_num );
-          } else {
-            fprintf(fp, "        // no ideal edge for constants after matching\n");
-          }
-          fprintf(fp, "        root->_opnds[%d] = inst%d->_opnds[%d]->clone();\n",
-                  opnds_index, inst_num, inst_op_num );
+      InstructForm *inst_form;
+      inst_form  = globals[pmatch->instruction_name(inst_num)]->is_instruction();
+      assert( inst_form, "Parser should guaranty this is an instruction");
+      int inst_op_num = inst_form->operand_position(op_name, Component::USE);
+      if( inst_op_num == NameList::Not_in_list )
+        inst_op_num = inst_form->operand_position(op_name, Component::USE_DEF);
+      assert( inst_op_num != NameList::Not_in_list, "Did not find operand as USE");
+      // find the name of the OperandForm from the local name
+      const Form *form   = inst_form->_localNames[op_name];
+      OperandForm  *op_form = form->is_operand();
+      if( opnds_index == 0 ) {
+        // Initial setup of new instruction
+        fprintf(fp, "        // ----- Initial setup -----\n");
+        //
+        // Add control edge for this node
+        fprintf(fp, "        root->add_req(_in[0]);                // control edge\n");
+        // Add unmatched edges from root of match tree
+        int op_base = root_form->oper_input_base(globals);
+        for( int unmatched_edge = 1; unmatched_edge < op_base; ++unmatched_edge ) {
+          fprintf(fp, "        root->add_req(inst%d->in(%d));        // unmatched ideal edge\n",
+                                          inst_num, unmatched_edge);
         }
-      } else if (strcmp("MachSpillCopy", inst_name) == 0){
-        assert(inst_num != 0 && opnds_index != 0, "");
-        assert(strcmp("src", op_name) == 0, "Don't use MachSpillCopy.dst in peepreplace");
-        fprintf(fp, "        root->add_req(inst%d->in(1));\n", inst_num);
-        fprintf(fp, "        root->_opnds[%d] = inst%d->in(1)->as_Mach()->_opnds[0]->clone();\n", opnds_index, inst_num);
+        // If new instruction captures bottom type
+        if( root_form->captures_bottom_type(globals) ) {
+          // Get bottom type from instruction whose result we are replacing
+          fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
+        }
+        // Define result register and result operand
+        fprintf(fp, "        ra_->add_reference(root, inst%d);\n", inst_num);
+        fprintf(fp, "        ra_->set_oop (root, ra_->is_oop(inst%d));\n", inst_num);
+        fprintf(fp, "        ra_->set_pair(root->_idx, ra_->get_reg_second(inst%d), ra_->get_reg_first(inst%d));\n", inst_num, inst_num);
+        fprintf(fp, "        root->_opnds[0] = inst%d->_opnds[0]->clone(); // result\n", inst_num);
+        fprintf(fp, "        // ----- Done with initial setup -----\n");
       } else {
-        assert(false, "Unrecognized instruct");
+        if( (op_form == NULL) || (op_form->is_base_constant(globals) == Form::none) ) {
+          // Do not have ideal edges for constants after matching
+          fprintf(fp, "        for( unsigned x%d = inst%d_idx%d; x%d < inst%d_idx%d; x%d++ )\n",
+                  inst_op_num, inst_num, inst_op_num,
+                  inst_op_num, inst_num, inst_op_num+1, inst_op_num );
+          fprintf(fp, "          root->add_req( inst%d->in(x%d) );\n",
+                  inst_num, inst_op_num );
+        } else {
+          fprintf(fp, "        // no ideal edge for constants after matching\n");
+        }
+        fprintf(fp, "        root->_opnds[%d] = inst%d->_opnds[%d]->clone();\n",
+                opnds_index, inst_num, inst_op_num );
       }
       ++opnds_index;
     }
-  } else {
+  }else {
     // Replacing subtree with empty-tree
     assert( false, "ShouldNotReachHere();");
   }
@@ -1397,7 +1347,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
     fprintf(fp, "        inst%d->set_removed();\n", i);
   }
   // Return the new sub-tree
-  fprintf(fp, "        deleted = %d;\n", max_position+1 /*zero to one based*/);
+  fprintf(fp, "        deleted += %d;\n", max_position+1 /*zero to one based*/);
   fprintf(fp, "        return root;  // return new root;\n");
   fprintf(fp, "      }\n");
 }
@@ -1408,6 +1358,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Generate Peephole function header
   fprintf(fp, "MachNode *%sNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {\n", node->_ident);
   fprintf(fp, "  bool  matches = true;\n");
+  fprintf(fp, "  deleted = 0;\n");
 
   // Identify the maximum instruction position,
   // generate temporaries that hold current instruction
@@ -1439,6 +1390,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
     int         peephole_number = peep->peephole_number();
     PeepPredicate  *ppredicate  = peep->predicate();
     PeepMatch      *pmatch      = peep->match();
+    PeepProcedure  *pprocedure  = peep->procedure();
     PeepConstraint *pconstraint = peep->constraints();
     PeepReplace    *preplace    = peep->replacement();
 
@@ -1451,17 +1403,42 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
             peephole_number, ppredicate != NULL ? ppredicate->rule() : "true");
     fprintf(fp, "    matches = true;\n");
     // Scan the peepmatch and output a test for each instruction
-    check_peepmatch_instruction_sequence( fp, pmatch, pconstraint );
+    check_peepmatch_instruction_sequence( fp, pmatch );
 
     // Check constraints and build replacement inside scope
     fprintf(fp, "    // If instruction subtree matches\n");
     fprintf(fp, "    if( matches ) {\n");
 
-    // Generate tests for the constraints
-    check_peepconstraints( fp, _globalNames, pmatch, pconstraint );
+    if (pprocedure == NULL) {
+      // Generate tests for the constraints
+      check_peepconstraints( fp, _globalNames, pmatch, pconstraint );
 
-    // Construct the new sub-tree
-    generate_peepreplace( fp, _globalNames, pmatch, pconstraint, preplace, max_position );
+      // Construct the new sub-tree
+      generate_peepreplace( fp, _globalNames, pmatch, pconstraint, preplace, max_position );
+    } else {
+      assert(preplace != NULL, "Null peepreplace");
+      const char* replace_inst = NULL;
+      preplace->next_instruction(replace_inst);
+      // Generate the target instruction
+      fprintf(fp, "      %sNode *replacement = new %sNode();\n", replace_inst, replace_inst);
+      // Call the precedure
+      fprintf(fp, "      bool success = Peephole::%s(ra_, replacement", pprocedure->name());
+      for (int i = 0; i <= max_position; i++) {
+        fprintf(fp, ", inst%d", i);
+      }
+      fprintf(fp, ");\n");
+      // If substitution suceeded, delete the old node and return the new node
+      fprintf(fp, "      if (success) {\n");
+      for (int i = 0; i <= max_position; i++) {
+        fprintf(fp, "        inst%d->set_removed();\n", i);
+      }
+      fprintf(fp, "        deleted += %d;\n", max_position + 1);
+      // Else remove the new node
+      fprintf(fp, "      } else {\n");
+      fprintf(fp, "        replacement->set_removed();\n");
+      fprintf(fp, "        deleted += 1;\n");
+      fprintf(fp, "      }\n");
+    }
 
     // End of scope for this peephole's constraints
     fprintf(fp, "    }\n");

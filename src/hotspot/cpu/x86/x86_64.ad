@@ -13338,22 +13338,19 @@ instruct tlsLoadP(r15_RegP dst) %{
 // %}
 //
 
-// This instruction is not matched by the matcher but used by the peephole
+// These instructions is not matched by the matcher but used by the peephole
 instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   match(Set dst (AddI src1 src2));
 
   effect(KILL cr);
-  format %{ "peepholed-addl    $dst, $src1, $src2\t# int" %}
+  format %{ "peephole-addl    $dst, $src1, $src2\t# int" %}
   ins_encode %{
     Register dst = $dst$$Register;
     Register src1 = $src1$$Register;
     Register src2 = $src2$$Register;
-    if (dst == src1) {
-      __ addl(dst, src2);
-    } else if (dst == src2) {
-      __ addl(dst, src1);
-    } else if (src1 != rbp && src1 != r13) {
+    assert(dst != src1 && dst != src2, "");
+    if (src1 != rbp && src1 != r13) {
       __ leal(dst, Address(src1, src2, Address::times_1));
     } else if (src2 != rbp && src2 != r13) {
       __ leal(dst, Address(src2, src1, Address::times_1));
@@ -13368,12 +13365,116 @@ instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct leaI_rReg_immI_peep(rRegI dst, rRegI src1, immI src2)
+%{
+  match(Set dst (AddI src1 src2));
+
+  format %{ "leal    $dst, [$src1 + $src2]\t# int" %}
+  ins_encode %{
+    __ leal($dst$$Register, Address($src1$$Register, $src2$$constant));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct addL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
+%{
+  match(Set dst (AddL src1 src2));
+
+  effect(KILL cr);
+  format %{ "peephole-addq    $dst, $src1, $src2\t# long" %}
+  ins_encode %{
+    Register dst = $dst$$Register;
+    Register src1 = $src1$$Register;
+    Register src2 = $src2$$Register;
+    assert(dst != src1 && dst != src2, "");
+    if (src1 != rbp && src1 != r13) {
+      __ leaq(dst, Address(src1, src2, Address::times_1));
+    } else if (src2 != rbp && src2 != r13) {
+      __ leaq(dst, Address(src2, src1, Address::times_1));
+    } else if (src1 == src2) {
+      __ leaq(dst, Address(noreg, src1, Address::times_2));
+    } else {
+      // {src1, src2} == {rbp, r13} && src1 != src2, just give up
+      __ movq(dst, src1);
+      __ addq(dst, src2);
+    }
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct leaL_rReg_immL32_peep(rRegL dst, rRegL src1, immL32 src2)
+%{
+  match(Set dst (AddL src1 src2));
+
+  format %{ "leaq    $dst, [$src1 + $src2]\t# long" %}
+  ins_encode %{
+    __ leaq($dst$$Register, Address($src1$$Register, $src2$$constant));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addI_rReg MachSpillCopy);
-  peepconstraint (0.dst == 1.dst);
-  peepreplace (leaI_rReg_rReg(0.dst 0.src 1.src));
+  peepprocedure (leaCoalesce);
+  peepreplace (addI_rReg_rReg_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addI_rReg_imm MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (leaI_rReg_immI_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (incI_rReg MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (leaI_rReg_immI_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (decI_rReg MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (leaI_rReg_immI_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addL_rReg MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (addL_rReg_rReg_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addL_rReg_imm MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (leaL_rReg_immL32_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (incL_rReg MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (leaL_rReg_immL32_peep());
+%}
+
+peephole
+%{
+  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (decL_rReg MachSpillCopy);
+  peepprocedure (leaCoalesce);
+  peepreplace (leaL_rReg_immL32_peep());
 %}
 
 peephole

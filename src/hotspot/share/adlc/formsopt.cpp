@@ -635,7 +635,8 @@ void PipeClassForm::output(FILE *fp) {         // Write info to output files
 //==============================Peephole Optimization==========================
 int Peephole::_peephole_counter = 0;
 //------------------------------Peephole---------------------------------------
-Peephole::Peephole() : _predicate(NULL), _match(NULL), _constraint(NULL), _replace(NULL), _next(NULL) {
+Peephole::Peephole() : _predicate(NULL), _match(NULL), _procedure(NULL),
+                       _constraint(NULL), _replace(NULL), _next(NULL) {
   _peephole_number = _peephole_counter++;
 }
 Peephole::~Peephole() {
@@ -660,6 +661,12 @@ void Peephole::add_predicate(PeepPredicate* predicate) {
 void Peephole::add_match(PeepMatch *match) {
   assert( _match == NULL, "fatal()" );
   _match = match;
+}
+
+// Add a procedure to this peephole rule
+void Peephole::add_procedure(PeepProcedure* procedure) {
+  assert( _procedure == NULL, "fatal()" );
+  _procedure = procedure;
 }
 
 void Peephole::append_constraint(PeepConstraint *next_constraint) {
@@ -762,6 +769,24 @@ void PeepMatch::dump() {
 
 void PeepMatch::output(FILE *fp) {        // Write info to output files
   fprintf(fp,"PeepMatch:\n");
+}
+
+//----------------------------PeepProcedure------------------------------------
+PeepProcedure::PeepProcedure(const char* name) : _name(name) {
+}
+PeepProcedure::~PeepProcedure() {
+}
+
+const char* PeepProcedure::name() const {
+  return _name;
+}
+
+void PeepProcedure::dump() {
+  output(stderr);
+}
+
+void PeepProcedure::output(FILE* fp) {
+  fprintf(fp, "PeepProcedure\n");
 }
 
 //------------------------------PeepConstraint---------------------------------

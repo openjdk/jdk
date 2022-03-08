@@ -260,6 +260,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_MISC_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._CPP_PEEPHOLE_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_PEEPHOLE_file, "adfiles", get_basename(AD._HPP_file._name));
+  AD.addInclude(AD._CPP_PEEPHOLE_file, "opto/peephole.hpp");
   AD.addInclude(AD._CPP_PIPELINE_file, "precompiled.hpp");
   AD.addInclude(AD._CPP_PIPELINE_file, "adfiles", get_basename(AD._HPP_file._name));
   AD.addInclude(AD._DFA_file, "precompiled.hpp");

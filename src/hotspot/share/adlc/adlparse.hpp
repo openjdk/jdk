@@ -64,6 +64,7 @@ class RegList;
 // ***** Peephole Section *****
 class PeepPredicate;
 class PeepMatch;
+class PeepPrecedure;
 class PeepConstraint;
 class PeepReplace;
 
@@ -139,6 +140,7 @@ protected:
   // Parse components of a peephole rule
   void peep_predicate_parse(Peephole &peep); // Parse the peephole predicate
   void peep_match_parse(Peephole &peep);     // Parse the peephole match rule
+  void peep_procedure_parse(Peephole &peep); // Parse the peephole procedure
   void peep_constraint_parse(Peephole &peep);// Parse the peephole constraints
   void peep_replace_parse(Peephole &peep);   // Parse peephole replacement rule
 
