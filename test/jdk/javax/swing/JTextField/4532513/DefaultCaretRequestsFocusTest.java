@@ -115,8 +115,8 @@ public class DefaultCaretRequestsFocusTest {
                     System.out.println("Test passed for " + laf);
                 } else {
                     throw new RuntimeException("Test failed for " + laf
-                            + " as InputVerifier.shouldYieldFocus() getting called " + shouldYieldFocusCount
-                            + " times on jTextField2, but it is expected to call only once.");
+                            + " as InputVerifier.shouldYieldFocus() was called " + shouldYieldFocusCount
+                            + " times on jTextField2, but it is expected to be called only once.");
                 }
 
             } finally {
