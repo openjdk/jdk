@@ -4303,43 +4303,43 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister
 #endif
 
 void C2_MacroAssembler::vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
-                                           XMMRegister xtmp1, KRegister ktmp1, KRegister ktmp2, int vec_enc) {
+                                           KRegister ktmp1, int vec_enc) {
   if (opcode == Op_SignumVD) {
-    evfpclasspd(ktmp1, src, 0x7, vec_enc);
-    evpmovq2m(ktmp2, src, vec_enc);
-    evsubpd(xtmp1, k0, zero, one, true, vec_enc);
     evmovdquq(dst, k0, one, true, vec_enc);
-    evmovdquq(dst, ktmp2, xtmp1, true, vec_enc);
+    evfpclasspd(ktmp1, src, 0x50, vec_enc);
+    evsubpd(dst, ktmp1, zero, one, true, vec_enc);
+    evfpclasspd(ktmp1, src, 0x7, vec_enc);
     evblendmpd(dst, ktmp1, dst, src, true, vec_enc);
   } else {
     assert(opcode == Op_SignumVF, "");
-    evfpclassps(ktmp1, src, 0x7, vec_enc);
-    evpmovd2m(ktmp2, src, vec_enc);
-    evsubps(xtmp1, k0, zero, one, true, vec_enc);
     evmovdqul(dst, k0, one, true, vec_enc);
-    evmovdqul(dst, ktmp2, xtmp1, true, vec_enc);
+    evfpclassps(ktmp1, src, 0x50, vec_enc);
+    evsubps(dst, ktmp1, zero, one, true, vec_enc);
+    evfpclassps(ktmp1, src, 0x7, vec_enc);
     evblendmps(dst, ktmp1, dst, src, true, vec_enc);
   }
 }
 
 void C2_MacroAssembler::vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
-                                          XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vec_enc) {
+                                          XMMRegister xtmp1, XMMRegister xtmp2, int vec_enc) {
   if (opcode == Op_SignumVD) {
+    vmovdqu(dst, one);
+    vcmppd(xtmp1, zero, src, Assembler::LT_OQ, vec_enc);
+    vsubpd(xtmp2, zero, one, vec_enc);
+    vblendvpd(dst, xtmp2, one, xtmp1, vec_enc);
     vcmppd(xtmp1, src, src, Assembler::UNORD_Q, vec_enc);
     vcmppd(xtmp2, src, zero, Assembler::EQ_OQ, vec_enc);
     vpor(xtmp1, xtmp1, xtmp2, vec_enc);
-    vcmppd(xtmp2, zero, src, Assembler::LT_OS, vec_enc);
-    vsubpd(xtmp3, zero, one, vec_enc);
-    vblendvpd(dst, xtmp3, one, xtmp2, vec_enc);
     vblendvpd(dst, dst, src, xtmp1, vec_enc);
   } else {
     assert(opcode == Op_SignumVF, "");
+    vmovdqu(dst, one);
+    vcmpps(xtmp1, zero, src, Assembler::LT_OQ, vec_enc);
+    vsubps(xtmp2, zero, one, vec_enc);
+    vblendvps(dst, xtmp2, one, xtmp1, vec_enc);
     vcmpps(xtmp1, src, src, Assembler::UNORD_Q, vec_enc);
     vcmpps(xtmp2, src, zero, Assembler::EQ_OQ, vec_enc);
     vpor(xtmp1, xtmp1, xtmp2, vec_enc);
-    vcmpps(xtmp2, zero, src, Assembler::LT_OS, vec_enc);
-    vsubps(xtmp3, zero, one, vec_enc);
-    vblendvps(dst, xtmp3, one, xtmp2, vec_enc);
     vblendvps(dst, dst, src, xtmp1, vec_enc);
   }
 }

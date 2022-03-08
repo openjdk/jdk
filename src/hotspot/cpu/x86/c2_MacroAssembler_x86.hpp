@@ -318,9 +318,9 @@ public:
                   bool merge, BasicType bt, int vlen_enc);
 
   void vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
-                         XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vec_enc);
+                         XMMRegister xtmp1, XMMRegister xtmp2, int vec_enc);
 
   void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
-                          XMMRegister xtmp1, KRegister ktmp1, KRegister ktmp2, int vec_enc);
+                          KRegister ktmp1, int vec_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

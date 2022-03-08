@@ -343,17 +343,6 @@ public class TestFloatVect {
         errn += verify("test_diva_n: ", i, a0[i], ((ADD_INIT+i)/(-VALUE)));
       }
 
-      test_signum(a0, a1);
-      errn += verify("test_signum: ", 0, a0[0], (Float.NaN));
-      errn += verify("test_signum: ", 1, a0[1],  1.0f);
-      errn += verify("test_signum: ", 2, a0[2], -1.0f);
-      errn += verify("test_signum: ", 3, a0[3],  1.0f);
-      errn += verify("test_signum: ", 4, a0[4],  1.0f);
-      errn += verify("test_signum: ", 5, a0[5],  1.0f);
-      for (int i=6; i<ARRLEN; i++) {
-        errn += verify("test_signum: ", i, a0[i], (((float)(ADD_INIT+i)) > 0.0f ? 1.0f : -1.0f));
-      }
-
 
       test_negc(a0, a1);
       errn += verify("test_negc: ", 0, a0[0], (Float.NaN));
@@ -380,6 +369,19 @@ public class TestFloatVect {
       errn += verify("test_sqrt: ", 7, a0[7], (float)-0.0);
       for (int i=8; i<ARRLEN; i++) {
         errn += verify("test_sqrt: ", i, a0[i], (float)(Math.sqrt((double)(ADD_INIT+i))));
+      }
+
+      test_signum(a0, a1);
+      errn += verify("test_signum: ", 0, a0[0], (Float.NaN));
+      errn += verify("test_signum: ", 1, a0[1],  1.0f);
+      errn += verify("test_signum: ", 2, a0[2], -1.0f);
+      errn += verify("test_signum: ", 3, a0[3],  1.0f);
+      errn += verify("test_signum: ", 4, a0[4],  1.0f);
+      errn += verify("test_signum: ", 5, a0[5],  1.0f);
+      errn += verify("test_signum: ", 6, a0[6],  0.0f);
+      errn += verify("test_signum: ", 7, a0[7], -0.0f);
+      for (int i=8; i<ARRLEN; i++) {
+        errn += verify("test_signum: ", i, a0[i], (((float)(ADD_INIT+i)) > 0.0f ? 1.0f : -1.0f));
       }
 
     }
