@@ -13417,7 +13417,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addI_rReg MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_reg);
   peepreplace (addI_rReg_rReg_peep());
 %}
 
@@ -13425,7 +13425,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addI_rReg_imm MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
 %}
 
@@ -13433,7 +13433,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (incI_rReg MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
 %}
 
@@ -13441,7 +13441,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (decI_rReg MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
 %}
 
@@ -13449,7 +13449,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addL_rReg MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_reg);
   peepreplace (addL_rReg_rReg_peep());
 %}
 
@@ -13457,7 +13457,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addL_rReg_imm MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
 %}
 
@@ -13465,7 +13465,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (incL_rReg MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
 %}
 
@@ -13473,7 +13473,7 @@ peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (decL_rReg MachSpillCopy);
-  peepprocedure (leaCoalesce);
+  peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
 %}
 

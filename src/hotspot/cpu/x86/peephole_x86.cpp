@@ -24,25 +24,36 @@
 
 #include "opto/peephole.hpp"
 
-bool Peephole::leaCoalesce(PhaseRegAlloc* ra_, MachNode* root, MachNode* inst0, MachNode* inst1) {
+MachNode* lea_coalesce_helper(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1, bool imm) {
   // root is an appropriate lea while inst0 is a add node following inst1 which is a
   // MachSpillCopy
-  // both inputs and outputs of inst1 are general purpose registers
+  // both input and output of inst1 are general purpose registers
   OptoReg::Name dst = ra_->get_reg_first(inst1);
   OptoReg::Name src1 = ra_->get_reg_first(inst1->in(1));
   bool matches = OptoReg::is_reg(dst) && OptoReg::is_reg(src1) &&
                  OptoReg::as_VMReg(dst)->is_Register() && OptoReg::as_VMReg(src1)->is_Register();
   matches = matches && ra_->get_encode(inst0->in(1)) == ra_->get_encode(inst1);
   if (matches) {
+    MachNode* root = new_root();
     ra_->add_reference(root, inst0);
     ra_->set_oop(root, ra_->is_oop(inst0));
-    ra_->set_pair(root->_idx, ra_->get_reg_first(inst0), ra_->get_reg_second(inst0));
+    ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
     root->add_req(inst0->in(0));
     root->add_req(inst1->in(1));
-    root->add_req(inst0->in(2));
+    if (!imm) { root->add_req(inst0->in(2)); } // No input for constant after matching
     root->_opnds[0] = inst0->_opnds[0]->clone();
     root->_opnds[1] = inst0->_opnds[1]->clone();
     root->_opnds[2] = inst0->_opnds[2]->clone();
+    return root;
+  } else {
+    return nullptr;
   }
-  return matches;
+}
+
+MachNode* Peephole::lea_coalesce_reg(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1) {
+  return lea_coalesce_helper(ra_, new_root, inst0, inst1, false);
+}
+
+MachNode* Peephole::lea_coalesce_imm(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1) {
+  return lea_coalesce_helper(ra_, new_root, inst0, inst1, true);
 }

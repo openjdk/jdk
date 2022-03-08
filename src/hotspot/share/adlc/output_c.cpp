@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1348,7 +1348,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
     fprintf(fp, "        inst%d->set_removed();\n", i);
   }
   // Return the new sub-tree
-  fprintf(fp, "        deleted += %d;\n", max_position+1 /*zero to one based*/);
+  fprintf(fp, "        deleted = %d;\n", max_position+1 /*zero to one based*/);
   fprintf(fp, "        return root;  // return new root;\n");
   fprintf(fp, "      }\n");
 }
@@ -1359,7 +1359,6 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Generate Peephole function header
   fprintf(fp, "MachNode *%sNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {\n", node->_ident);
   fprintf(fp, "  bool  matches = true;\n");
-  fprintf(fp, "  deleted = 0;\n");
 
   // Identify the maximum instruction position,
   // generate temporaries that hold current instruction
@@ -1421,23 +1420,20 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       const char* replace_inst = NULL;
       preplace->next_instruction(replace_inst);
       // Generate the target instruction
-      fprintf(fp, "      %sNode *replacement = new %sNode();\n", replace_inst, replace_inst);
+      fprintf(fp, "      auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
       // Call the precedure
-      fprintf(fp, "      bool success = Peephole::%s(ra_, replacement", pprocedure->name());
+      fprintf(fp, "      MachNode* replacement = Peephole::%s(ra_, replacing", pprocedure->name());
       for (int i = 0; i <= max_position; i++) {
         fprintf(fp, ", inst%d", i);
       }
       fprintf(fp, ");\n");
       // If substitution succeeded, delete the old node and return the new node
-      fprintf(fp, "      if (success) {\n");
+      fprintf(fp, "      if (replacement != nullptr) {\n");
       for (int i = 0; i <= max_position; i++) {
         fprintf(fp, "        inst%d->set_removed();\n", i);
       }
-      fprintf(fp, "        deleted += %d;\n", max_position + 1);
-      // Else remove the new node
-      fprintf(fp, "      } else {\n");
-      fprintf(fp, "        replacement->set_removed();\n");
-      fprintf(fp, "        deleted += 1;\n");
+      fprintf(fp, "        deleted = %d;\n", max_position + 1);
+      fprintf(fp, "        return replacement;\n");
       fprintf(fp, "      }\n");
     }
 
