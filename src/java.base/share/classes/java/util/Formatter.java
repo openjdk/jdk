@@ -4547,7 +4547,7 @@ public final class Formatter implements Closeable, Flushable {
                 grpSep = getGroupingSeparator(l);
 
                 if (l == null || l.equals(Locale.US)) {
-                     grpSize = 3;
+                    grpSize = 3;
                 } else {
                     DecimalFormat df = null;
                     NumberFormat nf = NumberFormat.getNumberInstance(l);
