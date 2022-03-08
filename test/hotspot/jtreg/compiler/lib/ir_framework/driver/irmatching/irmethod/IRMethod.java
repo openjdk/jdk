@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,34 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper class to store information about a method that needs to be IR matched.
  */
-class IRMethod {
+public class IRMethod {
     private final Method method;
-    private final int[] ruleIds;
-    private final IR[] irAnnos;
+    private final List<IRRule> irRules;
     private final StringBuilder outputBuilder;
     private String output;
     private String idealOutput;
     private String optoAssemblyOutput;
-    private boolean needsIdeal;
-    private boolean needsOptoAssembly;
 
     public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
         this.method = method;
-        this.ruleIds = ruleIds;
-        this.irAnnos = irAnnos;
+        this.irRules = new ArrayList<>();
+        for (int i : ruleIds) {
+            irRules.add(new IRRule(this, i, irAnnos[i - 1]));
+        }
         this.outputBuilder = new StringBuilder();
         this.output = "";
         this.idealOutput = "";
@@ -55,13 +59,6 @@ class IRMethod {
         return method;
     }
 
-    public int[] getRuleIds() {
-        return ruleIds;
-    }
-
-    public IR getIrAnno(int idx) {
-        return irAnnos[idx];
-    }
 
     /**
      * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
@@ -94,24 +91,26 @@ class IRMethod {
         return optoAssemblyOutput;
     }
 
-    public void needsAllOutput() {
-        needsIdeal();
-        needsOptoAssembly();
+    /**
+     * Apply all IR rules of this IR method.
+     */
+    public IRMethodMatchResult applyIRRules() {
+        TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
+        List<IRRuleMatchResult> results = new ArrayList<>();
+        if (!output.isEmpty()) {
+            return getNormalMatchResult(results);
+        } else {
+            return new MissingCompilationResult(this, irRules.size());
+        }
     }
 
-    public void needsIdeal() {
-        needsIdeal = true;
-    }
-
-    public boolean usesIdeal() {
-        return needsIdeal;
-    }
-
-    public void needsOptoAssembly() {
-        needsOptoAssembly = true;
-    }
-
-    public boolean usesOptoAssembly() {
-        return needsOptoAssembly;
+    private NormalMatchResult getNormalMatchResult(List<IRRuleMatchResult> results) {
+        for (IRRule irRule : irRules) {
+            IRRuleMatchResult result = irRule.applyCheckAttribute();
+            if (result.fail()) {
+                results.add(result);
+            }
+        }
+        return new NormalMatchResult(this, results);
     }
 }

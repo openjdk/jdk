@@ -493,7 +493,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private class NameServiceIterator extends ServiceIterator {
-        private Map<String, Processor> namedProcessorsMap = new HashMap<>();;
+        private Map<String, Processor> namedProcessorsMap = new HashMap<>();
         private Iterator<String> processorNames = null;
         private Processor nextProc = null;
 

@@ -297,7 +297,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <tr><th scope="row">W</th>       <td>week-of-month</td>               <td>number</td>            <td>4</td>
  *   <tr><th scope="row">E</th>       <td>day-of-week</td>                 <td>text</td>              <td>Tue; Tuesday; T</td>
  *   <tr><th scope="row">e/c</th>     <td>localized day-of-week</td>       <td>number/text</td>       <td>2; 02; Tue; Tuesday; T</td>
- *   <tr><th scope="row">F</th>       <td>day-of-week-in-month</td>        <td>number</td>            <td>3</td>
+ *   <tr><th scope="row">F</th>       <td>aligned-week-of-month</td>       <td>number</td>            <td>3</td>
  *
  *   <tr><th scope="row">a</th>       <td>am-pm-of-day</td>                <td>text</td>              <td>PM</td>
  *   <tr><th scope="row">B</th>       <td>period-of-day</td>               <td>text</td>              <td>in the morning</td>
