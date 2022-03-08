@@ -2207,42 +2207,6 @@ void Compile::Optimize() {
       // by removing some allocations and/or locks.
     } while (progress);
 
-    #ifndef PRODUCT
-    // look over IR for number of Java Objects in each state (NoEscape/ArgEscape/GloablEscape)
-    // ideal_nodes.map(live_nodes(), NULL)
-    Unique_Node_List ideal_nodes; 
-    ideal_nodes.push(root());
-
-    tty->print_cr("HELLOOOOO");
-
-    for(uint next = 0; next < ideal_nodes.size(); ++next) {
-      Node* n = ideal_nodes.at(next);
-      PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
-
-      if (ptn != NULL && ptn->is_JavaObject()) {
-        if(ptn->escape_state() == PointsToNode::NoEscape) {
-          ConnectionGraph::_no_escape_counter++;
-        }
-        else if(ptn->escape_state() == PointsToNode::ArgEscape) {
-          ConnectionGraph::_arg_escape_counter++;
-        }
-        else if(ptn->escape_state() == PointsToNode::GlobalEscape) {
-          ConnectionGraph::_global_escape_counter++;
-        }
-        else {
-          assert(false, "Unexpected Escape State");
-        }
-      }
-
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* m = n->fast_out(i);
-        if (not_a_node(m)) {
-          continue;
-        }
-        ideal_nodes.push(m);
-      }
-    }
-    #endif
   }
   else{
     //counter for number of non-candidates

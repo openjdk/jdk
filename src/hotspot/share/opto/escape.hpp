@@ -355,7 +355,7 @@ public:
   }
 
 private:
-  uint nodes_size() const { return _nodes.length(); }
+  uint nodes_size() const { return _nodes.length(); } 
 
   uint next_pidx() { return _next_pidx++; }
 
@@ -640,8 +640,12 @@ public:
   static int _arg_escape_counter;
   static int _global_escape_counter;
   static double _time_elapsed;
+  static int _monitor_objects_removed_counter;
+  static int _GC_barriers_removed;
+  static int _memory_barriers_removed;
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
   static void print_statistics();
+  void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
 #endif
 };
 

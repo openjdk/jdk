@@ -2352,12 +2352,16 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
+        // if success incremement _number_of_objects_scalar_replaced
         break;
       case Node::Class_CallStaticJava:
         success = eliminate_boxing_node(n->as_CallStaticJava());
+        // if success increment boxing counter
         break;
       case Node::Class_Lock:
+        // monitor objects
       case Node::Class_Unlock:
+        // monitor objects
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         _has_locks = true;
         break;
