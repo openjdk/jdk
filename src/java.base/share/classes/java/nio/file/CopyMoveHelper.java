@@ -158,11 +158,6 @@ class CopyMoveHelper {
                 if (srcAttrs instanceof PosixFileAttributes srcPosixAttrs &&
                     dstView instanceof PosixFileAttributeView dstPosixView) {
                     dstPosixView.setPermissions(srcPosixAttrs.permissions());
-                    try {
-                        dstPosixView.setOwner(srcPosixAttrs.owner());
-                        dstPosixView.setGroup(srcPosixAttrs.group());
-                    } catch (ProviderMismatchException ignore) {
-                    }
                 }
             } catch (Throwable x) {
                 // rollback
