@@ -4564,8 +4564,8 @@ public class RegExTest {
         var pat1 = "(a+|1+)";
         var pat2 = "([a]+|[1]+)";
 
-        var matcher1 = Pattern.compile(pat1).matcher(testInput);
-        var matcher2 = Pattern.compile(pat2).matcher(testInput);
+        var matcher1 = Pattern.compile(pat1, Pattern.CANON_EQ).matcher(testInput);
+        var matcher2 = Pattern.compile(pat2, Pattern.CANON_EQ).matcher(testInput);
 
         ArrayList<Boolean> results1 = new ArrayList<>();
         ArrayList<Boolean> results2 = new ArrayList<>();
