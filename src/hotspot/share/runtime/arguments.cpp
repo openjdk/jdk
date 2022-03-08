@@ -538,6 +538,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
 #endif
   { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -862,14 +864,29 @@ static bool set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
     if (is_neg) {
       int_v = -int_v;
     }
+    if ((!is_neg && v > max_jint) || (is_neg && -(intx)v < min_jint)) {
+      return false;
+    }
     return JVMFlagAccess::set_int(flag, &int_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uint()) {
+    if (v > max_juint) {
+      return false;
+    }
     uint uint_v = (uint) v;
     return JVMFlagAccess::set_uint(flag, &uint_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_intx()) {
     intx_v = (intx) v;
     if (is_neg) {
-      intx_v = -intx_v;
+      if (intx_v != min_intx) {
+        intx_v = - intx_v;
+        if (intx_v > 0) {
+          return false; // underflow
+        }
+      }
+    } else {
+      if (intx_v < 0) {
+        return false; // overflow
+      }
     }
     return JVMFlagAccess::set_intx(flag, &intx_v, origin) == JVMFlag::SUCCESS;
   } else if (flag->is_uintx()) {
@@ -2905,6 +2922,18 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
 #else // defined(DTRACE_ENABLED)
       jio_fprintf(defaultStream::error_stream(),
                   "ExtendedDTraceProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMethodProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMethodProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceAllocProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceAllocProbes flag is not applicable for this configuration\n");
+      return JNI_EINVAL;
+    } else if (match_option(option, "-XX:+DTraceMonitorProbes")) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "DTraceMonitorProbes flag is not applicable for this configuration\n");
       return JNI_EINVAL;
 #endif // defined(DTRACE_ENABLED)
 #ifdef ASSERT

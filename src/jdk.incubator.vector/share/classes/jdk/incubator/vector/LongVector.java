@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1767,12 +1767,11 @@ public abstract class LongVector extends AbstractVector<Long> {
     M testTemplate(Class<M> maskType, Test op) {
         LongSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            LongVector bits = this.viewAsIntegralLanes();
             VectorMask<Long> m;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (long) 0);
+                m = compare(EQ, (long) 0);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (long) 0);
+                m = compare(LT, (long) 0);
             }
             else {
                 throw new AssertionError(op);
@@ -1787,11 +1786,31 @@ public abstract class LongVector extends AbstractVector<Long> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Long> test(VectorOperators.Test op,
-                                  VectorMask<Long> m) {
-        return test(op).and(m);
+                                  VectorMask<Long> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Long>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        LongSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            VectorMask<Long> m = mask;
+            if (op == IS_DEFAULT) {
+                m = compare(EQ, (long) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = compare(LT, (long) 0, m);
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m);
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**

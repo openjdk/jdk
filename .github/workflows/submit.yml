@@ -12,6 +12,10 @@ on:
         required: true
         default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prerequisites:
     name: Prerequisites

@@ -237,6 +237,7 @@ class Arguments : AllStatic {
   friend class JvmtiExport;
   friend class CodeCacheExtensions;
   friend class ArgumentsTest;
+  friend class LargeOptionsTest;
  public:
   // Operation modi
   enum Mode {

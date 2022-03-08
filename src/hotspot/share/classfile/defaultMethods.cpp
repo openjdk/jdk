@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -900,7 +900,7 @@ static Method* new_method(
 
   Method* m = Method::allocate(cp->pool_holder()->class_loader_data(),
                                code_length, flags, &sizes,
-                               mt, CHECK_NULL);
+                               mt, name, CHECK_NULL);
 
   m->set_constants(NULL); // This will get filled in later
   m->set_name_index(cp->utf8(name));

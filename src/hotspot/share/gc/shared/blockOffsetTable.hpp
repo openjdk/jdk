@@ -279,14 +279,6 @@ class Space;
 class BlockOffsetArray: public BlockOffsetTable {
   friend class VMStructs;
  protected:
-  // The following enums are used by do_block_internal() below
-  enum Action {
-    Action_single,      // BOT records a single block (see single_block())
-    Action_mark,        // BOT marks the start of a block (see mark_block())
-    Action_check        // Check that BOT records block correctly
-                        // (see verify_single_block()).
-  };
-
   // The shared array, which is shared with other BlockOffsetArray's
   // corresponding to different spaces within a generation or span of
   // memory.
@@ -315,7 +307,7 @@ class BlockOffsetArray: public BlockOffsetTable {
   void set_remainder_to_point_to_start_incl(size_t start, size_t end, bool reducing = false);
 
   // A helper function for BOT adjustment/verification work
-  void do_block_internal(HeapWord* blk_start, HeapWord* blk_end, Action action, bool reducing = false);
+  void do_block_internal(HeapWord* blk_start, HeapWord* blk_end, bool reducing = false);
 
  public:
   // The space may not have its bottom and top set yet, which is why the
