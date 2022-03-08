@@ -2880,7 +2880,7 @@ void nmethod::decode2(outputStream* ost) const {
 #endif
 
   // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
-  MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite);)
+  MACOS_AARCH64_ONLY(os::current_thread_wx::Enable wx(os::current_thread_wx::Write);)
 
   st->cr();
   this->print(st);

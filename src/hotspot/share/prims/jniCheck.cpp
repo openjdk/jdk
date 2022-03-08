@@ -104,7 +104,7 @@ extern "C" {                                                             \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
     }                                                                    \
-    MACOS_AARCH64_ONLY(os::ThreadWXEnable __wx(os::WXWrite));                    \
+    MACOS_AARCH64_ONLY(os::current_thread_wx::Enable __wx(os::current_thread_wx::Write));                    \
     VM_ENTRY_BASE(result_type, header, thr)
 
 

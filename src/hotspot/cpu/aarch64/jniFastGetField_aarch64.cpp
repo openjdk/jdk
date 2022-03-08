@@ -75,7 +75,7 @@ template<> struct BasicTypeToJni<T_DOUBLE>  { static const jdouble  jni_type; };
 template<int BType, typename JniType = decltype(BasicTypeToJni<BType>::jni_type)>
 JniType static_fast_get_field_wrapper(JNIEnv *env, jobject obj, jfieldID fieldID) {
   JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-  os::ThreadWXEnable wx(os::WXExec);
+  os::current_thread_wx::Enable wx(os::current_thread_wx::Exec);
   address get_field_addr = generated_fast_get_field[BType - T_BOOLEAN];
   return ((JniType(*)(JNIEnv *env, jobject obj, jfieldID fieldID))get_field_addr)(env, obj, fieldID);
 }

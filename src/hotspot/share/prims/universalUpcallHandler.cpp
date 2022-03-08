@@ -103,7 +103,7 @@ JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* c
   debug_only(thread->inc_java_call_counter());
   thread->set_active_handles(context->new_handles);     // install new handle block and reset Java frame linkage
 
-  MACOS_AARCH64_ONLY(os::current_thread_change_wx(os::WXExec));
+  MACOS_AARCH64_ONLY(os::current_thread_wx::change(os::current_thread_wx::Exec));
 
   return thread;
 }
@@ -113,7 +113,7 @@ void ProgrammableUpcallHandler::on_exit(OptimizedEntryBlob::FrameData* context) 
   JavaThread* thread = context->thread;
   assert(thread == JavaThread::current(), "must still be the same thread");
 
-  MACOS_AARCH64_ONLY(os::current_thread_change_wx(os::WXWrite));
+  MACOS_AARCH64_ONLY(os::current_thread_wx::change(os::current_thread_wx::Write));
 
   // restore previous handle block
   thread->set_active_handles(context->old_handles);
@@ -143,7 +143,7 @@ void ProgrammableUpcallHandler::attach_thread_and_do_upcall(jobject rec, address
   JavaThread* thread = maybe_attach_and_get_thread(&should_detach);
 
   {
-    MACOS_AARCH64_ONLY(os::ThreadWXEnable wx(os::WXWrite));
+    MACOS_AARCH64_ONLY(os::current_thread_wx::Enable wx(os::current_thread_wx::Write));
     upcall_helper(thread, rec, buff);
   }
 

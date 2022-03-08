@@ -41,29 +41,36 @@
   }
 
   #ifdef __APPLE__
-  enum WXMode {
-    WXWrite,
-    WXExec
-  };
 
-  // Enables write or execute access to writeable and executable pages.
-  // returns the previous state
-  static WXMode current_thread_change_wx(WXMode new_state);
-
-  // initializes the WXMode to WXWrite, as writeable pages are the default here
-  static void current_thread_init_wx();
-
-  static void current_thread_assert_wx_state(WXMode expected);
-
-  class ThreadWXEnable  {
-    WXMode _old_mode;
+  class current_thread_wx {
   public:
-    ThreadWXEnable(WXMode new_mode) :
-      _old_mode(os::current_thread_change_wx(new_mode))
-    { }
-    ~ThreadWXEnable() {
-      os::current_thread_change_wx(_old_mode);
-    }
+
+    enum WXMode {
+      Write,
+      Exec
+    };
+
+    // Enables write or execute access to writeable and executable pages.
+    // returns the previous state
+    static WXMode change(WXMode new_state);
+
+    // initializes the WXMode to WXWrite, as writeable pages are the default here
+    static void init();
+
+    static void assert_wx(WXMode expected);
+
+    // RAII object to set a specific WXMode and reset it to the previous mode
+    // on destruction
+    class Enable  {
+      WXMode _old_mode;
+    public:
+      Enable(WXMode new_mode) :
+        _old_mode(change(new_mode))
+      { }
+      ~Enable() {
+        change(_old_mode);
+      }
+    };
   };
   #endif // __APPLE__
 #endif // OS_CPU_BSD_AARCH64_OS_BSD_AARCH64_HPP
