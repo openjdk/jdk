@@ -186,7 +186,7 @@ class UnixCopyFile {
                 }
                 if (sfd >= 0) {
                     source.getFileSystem().copyNonPosixAttributes(sfd, dfd);
-                    close(sfd, null);
+                    close(sfd, e -> null);
                 }
             }
             // copy time stamps last
