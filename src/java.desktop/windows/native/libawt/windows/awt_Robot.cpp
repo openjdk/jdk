@@ -27,7 +27,6 @@
 #include "java_awt_event_InputEvent.h"
 #include "awt_Component.h"
 #include <winuser.h>
-#include <stdlib.h>
 
 static void MouseMove(jint x, jint y)
 {
