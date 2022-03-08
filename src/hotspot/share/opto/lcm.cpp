@@ -526,18 +526,47 @@ Node* PhaseCFG::select(
     // of induction variable increments to after the other
     // uses of the phi are scheduled.
     Node *n = worklist[i];      // Get Node on worklist
-
     int iop = n->is_Mach() ? n->as_Mach()->ideal_Opcode() : 0;
-    if (n->is_Proj()) {         // Projections always win
+
+    // TODO: Pre-schedule CreateEx and Constants, if the latter do not conflict
+    // with projections (e.g. after Root).
+
+    // TODO: Update method comments that refer to the priority of projection
+    // nodes.
+
+    // CreateEx must be the first instruction in a block (after Phi and Parm
+    // nodes which are pre-scheduled). If there is a CreateEx instruction in the
+    // worklist, select it right away.
+    if (iop == Op_CreateEx) {
       worklist.map(i,worklist.pop());
       return n;
     }
 
-    // These nodes must be scheduled at the beginning of the block, set highest
-    // choice but keep iterating (in case a top-priority projection is found).
-    if (n->Opcode()== Op_Con ||
-        iop == Op_CreateEx ||
-        iop == Op_CheckCastPP) {
+    // TODO: do not continue, use n_choice instead and general priority
+    // comparison at the end of the block.
+
+    // Constants follow CreateEx at the start of the block, give the highest
+    // choice value but keep iterating, in case a CreateEx node is found.
+    if (n->Opcode() == Op_Con) {
+      choice  = 6;
+      latency = 0;
+      score   = 0;
+      idx     = i;
+      continue;
+    }
+
+    // Projections should follow their parents, give a high choice value but
+    // Keep iterating, in case a higher-priority node is also in the worklist.
+    if (n->is_Proj() && choice < 5) {
+      choice  = 5;
+      latency = 0;
+      score   = 0;
+      idx     = i;
+      continue;
+    }
+
+    // TODO: motivate.
+    if (iop == Op_CheckCastPP && choice < 4) {
       choice  = 4;
       latency = 0;
       score   = 0;
