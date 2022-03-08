@@ -31,7 +31,7 @@ import org.ietf.jgss.GSSCredential;
 /**
  * The extending point of basic JGSS-API.
  * <p>
- * If a module wants to extend basic JGSS-API classes, it should extends this
+ * If a module wants to extend basic JGSS-API classes, it should extend this
  * class and register itself as "the extender" using the setExtender method.
  * When various GSSManager.createXXX methods are called, they will call
  * "the extender"'s wrap methods to create objects of extended types

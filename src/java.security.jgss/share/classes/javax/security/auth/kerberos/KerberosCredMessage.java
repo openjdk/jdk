@@ -178,11 +178,10 @@ public final class KerberosCredMessage implements Destroyable {
             return true;
         }
 
-        if (! (other instanceof KerberosCredMessage)) {
+        if (! (other instanceof KerberosCredMessage otherMessage)) {
             return false;
         }
 
-        KerberosCredMessage otherMessage = ((KerberosCredMessage) other);
         if (isDestroyed() || otherMessage.isDestroyed()) {
             return false;
         }

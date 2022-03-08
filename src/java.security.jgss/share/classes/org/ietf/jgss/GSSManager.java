@@ -276,7 +276,7 @@ public abstract class GSSManager {
      *    {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *    {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public abstract GSSName createName(byte name[], Oid nameType)
+    public abstract GSSName createName(byte[] name, Oid nameType)
         throws GSSException;
 
     /**
@@ -339,7 +339,7 @@ public abstract class GSSManager {
      *    {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *    {@link GSSException#FAILURE GSSException.FAILURE}
      */
-    public abstract GSSName createName(byte name[], Oid nameType, Oid mech)
+    public abstract GSSName createName(byte[] name, Oid nameType, Oid mech)
         throws GSSException;
 
     /**
@@ -482,7 +482,7 @@ public abstract class GSSManager {
      *    {@link GSSException#FAILURE GSSException.FAILURE}
      */
     public abstract GSSCredential createCredential(GSSName name,
-                                      int lifetime, Oid mechs[], int usage)
+                                                   int lifetime, Oid[] mechs, int usage)
         throws GSSException;
 
     /**
@@ -674,7 +674,7 @@ public abstract class GSSManager {
      *
      * Calling this method repeatedly preserves the older settings but
      * raises them above newer ones in preference thus forming an ordered
-     * list of providers and Oid pairs that grows at the bottom. Thus the
+     * list of providers and Oid pairs that grows at the bottom. Thus, the
      * older provider settings will be utilized first before this one is.<p>
      *
      * If there are any previously existing preferences that conflict with

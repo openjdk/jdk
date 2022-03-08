@@ -30,7 +30,6 @@
 
 package sun.security.krb5.internal.ccache;
 
-import sun.security.krb5.*;
 import java.io.ByteArrayOutputStream;
 
 /**
@@ -63,10 +62,10 @@ public class Tag{
         os.write(tag);
         os.write(tagLen);
         if (time_offset != null) {
-            os.write(time_offset.intValue());
+            os.write(time_offset);
         }
         if (usec_offset != null) {
-            os.write(usec_offset.intValue());
+            os.write(usec_offset);
         }
         return os.toByteArray();
     }

@@ -68,7 +68,7 @@ abstract class InitialToken extends Krb5Token {
 
     protected class OverloadedChecksum {
 
-        private byte[] checksumBytes = null;
+        private final byte[] checksumBytes;
         private Credentials delegCreds = null;
         private int flags = 0;
 
@@ -88,24 +88,24 @@ abstract class InitialToken extends Krb5Token {
 
             if (!tgt.isForwardable()) {
                 context.setCredDelegState(false);
-                context.setDelegPolicyState(false);
+                context.setDelegPolicyState();
             } else if (context.getCredDelegState()) {
                 if (context.getDelegPolicyState()) {
                     if (!serviceTicket.checkDelegate()) {
                         // delegation not permitted by server policy, mark it
-                        context.setDelegPolicyState(false);
+                        context.setDelegPolicyState();
                     }
                 }
             } else if (context.getDelegPolicyState()) {
                 if (serviceTicket.checkDelegate()) {
                     context.setCredDelegState(true);
                 } else {
-                    context.setDelegPolicyState(false);
+                    context.setDelegPolicyState();
                 }
             }
 
             if (context.getCredDelegState()) {
-                KrbCred krbCred = null;
+                KrbCred krbCred;
                 CipherHelper cipherHelper =
                     context.getCipherHelper(serviceTicket.getSessionKey());
                 if (useNullKey(cipherHelper)) {
@@ -217,8 +217,6 @@ abstract class InitialToken extends Krb5Token {
                                   EncryptionKey key, EncryptionKey subKey)
             throws GSSException, KrbException, IOException {
 
-            int pos = 0;
-
             if (checksum == null) {
                 GSSException ge = new GSSException(GSSException.FAILURE, -1,
                         "No cksum in AP_REQ's authenticator");
@@ -296,12 +294,8 @@ abstract class InitialToken extends Krb5Token {
 
         // check if KRB-CRED message should use NULL_KEY for encryption
         private boolean useNullKey(CipherHelper ch) {
-            boolean flag = true;
             // for "newer" etypes and RC4-HMAC do not use NULL KEY
-            if ((ch.getProto() == 1) || ch.isArcFour()) {
-                flag = false;
-            }
-            return flag;
+            return (ch.getProto() != 1) && !ch.isArcFour();
         }
 
         public Checksum getChecksum() throws KrbException {
@@ -319,19 +313,19 @@ abstract class InitialToken extends Krb5Token {
                 context.setCredDelegState(true);
                 // default for the following are true
             if ((flags & CHECKSUM_MUTUAL_FLAG) == 0) {
-                context.setMutualAuthState(false);
+                context.setMutualAuthState();
             }
             if ((flags & CHECKSUM_REPLAY_FLAG) == 0) {
-                context.setReplayDetState(false);
+                context.setReplayDetState();
             }
             if ((flags & CHECKSUM_SEQUENCE_FLAG) == 0) {
-                context.setSequenceDetState(false);
+                context.setSequenceDetState();
             }
             if ((flags & CHECKSUM_CONF_FLAG) == 0) {
-                context.setConfState(false);
+                context.setConfState();
             }
             if ((flags & CHECKSUM_INTEG_FLAG) == 0) {
-                context.setIntegState(false);
+                context.setIntegState();
             }
         }
     }

@@ -25,6 +25,7 @@
 
 package javax.security.auth.kerberos;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.crypto.SecretKey;
@@ -48,6 +49,7 @@ import javax.security.auth.DestroyFailedException;
  */
 public final class EncryptionKey implements SecretKey {
 
+    @Serial
     private static final long serialVersionUID = 9L;
 
    /**
@@ -168,7 +170,7 @@ public final class EncryptionKey implements SecretKey {
         if (destroyed) {
             return "Destroyed EncryptionKey";
         }
-        return "key "  + key.toString();
+        return "key "  + key;
     }
 
     /**
@@ -205,11 +207,10 @@ public final class EncryptionKey implements SecretKey {
         if (other == this)
             return true;
 
-        if (! (other instanceof EncryptionKey)) {
+        if (! (other instanceof EncryptionKey otherKey)) {
             return false;
         }
 
-        EncryptionKey otherKey = ((EncryptionKey) other);
         if (isDestroyed() || otherKey.isDestroyed()) {
             return false;
         }

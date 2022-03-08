@@ -64,7 +64,7 @@ import java.lang.reflect.Modifier;
  * from its peer in order to continue the context establishment phase. A
  * return code of COMPLETE signals that the local end of the context is
  * established. This may still require that a token be sent to the peer,
- * depending if one is produced by GSS-API. The isEstablished method can
+ * depending on if one is produced by GSS-API. The isEstablished method can
  * also be used to determine if the local end of the context has been
  * fully established. During the context establishment phase, the
  * isProtReady method may be called to determine if the context can be
@@ -145,7 +145,7 @@ public class GSSContextImpl implements GSSContext {
     public GSSContextImpl(GSSManagerImpl gssManager, GSSName peer, Oid mech,
                           GSSCredential myCred, int lifetime)
         throws GSSException {
-        if ((peer == null) || !(peer instanceof GSSNameImpl)) {
+        if (!(peer instanceof GSSNameImpl)) {
             throw new GSSException(GSSException.BAD_NAME);
         }
         if (mech == null) mech = ProviderList.DEFAULT_MECH_OID;
@@ -161,8 +161,7 @@ public class GSSContextImpl implements GSSContext {
     /**
      * Creates a GSSContextImpl on the context acceptor's side.
      */
-    public GSSContextImpl(GSSManagerImpl gssManager, GSSCredential myCred)
-        throws GSSException {
+    public GSSContextImpl(GSSManagerImpl gssManager, GSSCredential myCred) {
         this.gssManager = gssManager;
         this.myCred = (GSSCredentialImpl) myCred; // XXX Check first
         initiator = false;
@@ -182,7 +181,7 @@ public class GSSContextImpl implements GSSContext {
         this.mechOid = mechCtxt.getMech();
     }
 
-    public byte[] initSecContext(byte inputBuf[], int offset, int len)
+    public byte[] initSecContext(byte[] inputBuf, int offset, int len)
         throws GSSException {
         /*
          * Size of ByteArrayOutputStream will double each time that extra
@@ -206,7 +205,7 @@ public class GSSContextImpl implements GSSContext {
                                    "Illegal call to initSecContext");
         }
 
-        GSSHeader gssHeader = null;
+        GSSHeader gssHeader;
         int inTokenLen = -1;
         GSSCredentialSpi credElement = null;
         boolean firstToken = false;
@@ -292,7 +291,7 @@ public class GSSContextImpl implements GSSContext {
         }
     }
 
-    public byte[] acceptSecContext(byte inTok[], int offset, int len)
+    public byte[] acceptSecContext(byte[] inTok, int offset, int len)
         throws GSSException {
 
         /*
@@ -315,7 +314,7 @@ public class GSSContextImpl implements GSSContext {
                                        "Illegal call to acceptSecContext");
         }
 
-        GSSHeader gssHeader = null;
+        GSSHeader gssHeader;
         int inTokenLen = -1;
         GSSCredentialSpi credElement = null;
 
@@ -361,14 +360,13 @@ public class GSSContextImpl implements GSSContext {
             byte[] obuf = mechCtxt.acceptSecContext(inStream, inTokenLen);
 
             if (obuf != null) {
-                int retVal = obuf.length;
                 if (mechCtxt.getProvider().getName().equals("SunNativeGSS") ||
                     (GSSUtil.isSpNegoMech(mechOid))) {
                     // do not add GSS header for native provider and SPNEGO
                 } else {
                     // add GSS header
                     gssHeader = new GSSHeader(objId, obuf.length);
-                    retVal += gssHeader.encode(outStream);
+                    gssHeader.encode(outStream);
                 }
                 outStream.write(obuf);
             }
@@ -398,7 +396,7 @@ public class GSSContextImpl implements GSSContext {
                                   "No mechanism context yet!");
     }
 
-    public byte[] wrap(byte inBuf[], int offset, int len,
+    public byte[] wrap(byte[] inBuf, int offset, int len,
                        MessageProp msgProp) throws GSSException {
         if (mechCtxt != null)
             return mechCtxt.wrap(inBuf, offset, len, msgProp);

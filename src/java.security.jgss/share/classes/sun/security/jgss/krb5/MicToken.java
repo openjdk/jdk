@@ -25,12 +25,12 @@
 
 package sun.security.jgss.krb5;
 
-import org.ietf.jgss.*;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.MessageProp;
+
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 class MicToken extends MessageToken {
 
@@ -54,7 +54,7 @@ class MicToken extends MessageToken {
   }
 
   public void verify(InputStream data) throws GSSException {
-    byte[] dataBytes = null;
+    byte[] dataBytes;
     try {
       dataBytes = new byte[data.available()];
       data.read(dataBytes);

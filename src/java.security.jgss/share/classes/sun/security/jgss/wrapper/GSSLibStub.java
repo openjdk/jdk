@@ -25,13 +25,12 @@
 
 package sun.security.jgss.wrapper;
 
-import java.util.Hashtable;
-import org.ietf.jgss.Oid;
-import org.ietf.jgss.GSSName;
 import org.ietf.jgss.ChannelBinding;
-import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.GSSException;
-import sun.security.jgss.GSSUtil;
+import org.ietf.jgss.MessageProp;
+import org.ietf.jgss.Oid;
+
+import java.util.Hashtable;
 
 /**
  * This class is essentially a JNI calling stub for all wrapper classes.
@@ -42,8 +41,7 @@ import sun.security.jgss.GSSUtil;
 
 class GSSLibStub {
 
-    private Oid mech;
-    private long pMech; // Warning: used by NativeUtil.c
+    private final Oid mech;
 
     /**
      * Initialization routine to dynamically load function pointers.
@@ -94,8 +92,8 @@ class GSSLibStub {
     native byte[] wrap(long pContext, byte[] msg, MessageProp prop);
     native byte[] unwrap(long pContext, byte[] msgToken, MessageProp prop);
 
-    private static Hashtable<Oid, GSSLibStub>
-        table = new Hashtable<Oid, GSSLibStub>(5);
+    private static final Hashtable<Oid, GSSLibStub>
+        table = new Hashtable<>(5);
 
     static GSSLibStub getInstance(Oid mech) throws GSSException {
         GSSLibStub s = table.get(mech);
@@ -108,7 +106,8 @@ class GSSLibStub {
     private GSSLibStub(Oid mech) throws GSSException {
         SunNativeProvider.debug("Created GSSLibStub for mech " + mech);
         this.mech = mech;
-        this.pMech = getMechPtr(mech.getDER());
+        // Warning: used by NativeUtil.c
+        long pMech = getMechPtr(mech.getDER());
     }
     public boolean equals(Object obj) {
         if (obj == this) return true;

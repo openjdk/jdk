@@ -25,6 +25,7 @@
 
 package sun.security.jgss;
 
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
@@ -69,14 +70,10 @@ public class LoginConfigImpl extends Configuration {
         if (mech.equals(GSSUtil.GSS_KRB5_MECH_OID)) {
             mechName = "krb5";
         } else {
-            throw new IllegalArgumentException(mech.toString() + " not supported");
+            throw new IllegalArgumentException(mech + " not supported");
         }
         config = java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedAction <Configuration> () {
-            public Configuration run() {
-                return Configuration.getConfiguration();
-            }
-        });
+                ((PrivilegedAction<Configuration>) Configuration::getConfiguration);
     }
 
     /**
@@ -166,7 +163,7 @@ public class LoginConfigImpl extends Configuration {
      * the system-wide Configuration object.
      */
     private AppConfigurationEntry[] getDefaultConfigurationEntry() {
-        HashMap <String, String> options = new HashMap <String, String> (2);
+        HashMap <String, String> options = new HashMap<>(2);
 
         if (mechName == null || mechName.equals("krb5")) {
             if (isServerSide(caller)) {

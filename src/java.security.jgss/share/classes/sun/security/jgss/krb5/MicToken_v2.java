@@ -62,7 +62,7 @@ class MicToken_v2 extends MessageToken_v2 {
     }
 
     public void verify(InputStream data) throws GSSException {
-        byte[] dataBytes = null;
+        byte[] dataBytes;
         try {
             dataBytes = new byte[data.available()];
             data.read(dataBytes);

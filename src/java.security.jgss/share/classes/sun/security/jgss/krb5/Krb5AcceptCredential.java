@@ -64,15 +64,12 @@ public class Krb5AcceptCredential
         final String serverPrinc = (name == null? null:
             name.getKrb5PrincipalName().getName());
 
-        ServiceCreds creds = null;
+        ServiceCreds creds;
         try {
             creds = AccessController.doPrivilegedWithCombiner(
-                        new PrivilegedExceptionAction<ServiceCreds>() {
-                public ServiceCreds run() throws Exception {
-                    return Krb5Util.getServiceCreds(
+                    (PrivilegedExceptionAction<ServiceCreds>) () -> Krb5Util.getServiceCreds(
                         caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
-                        serverPrinc);
-                }});
+                        serverPrinc));
         } catch (PrivilegedActionException e) {
             GSSException ge =
                 new GSSException(GSSException.NO_CRED, -1,
@@ -178,7 +175,7 @@ public class Krb5AcceptCredential
 
     /**
      * Impersonation is only available on the initiator side. The
-     * service must starts as an initiator to get an initial TGT to complete
+     * service must start as an initiator to get an initial TGT to complete
      * the S4U2self protocol.
      */
     @Override

@@ -37,13 +37,12 @@ import java.util.List;
 import java.io.IOException;
 
 /**
- * CredentialsCache stores credentials(tickets, session keys, etc) in a semi-permanent store
+ * CredentialsCache stores credentials(tickets, session keys, etc.) in a semi-permanent store
  * for later use by different program.
  *
  * @author Yanni Zhang
  */
 public abstract class CredentialsCache {
-    static CredentialsCache singleton = null;
     static String cacheName;
 
     public static CredentialsCache getInstance(PrincipalName principal) {

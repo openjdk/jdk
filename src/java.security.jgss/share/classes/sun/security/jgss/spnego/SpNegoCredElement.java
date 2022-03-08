@@ -40,7 +40,7 @@ import sun.security.jgss.spi.GSSCredentialSpi;
  */
 public class SpNegoCredElement implements GSSCredentialSpi {
 
-    private GSSCredentialSpi cred = null;
+    private final GSSCredentialSpi cred;
 
     public SpNegoCredElement(GSSCredentialSpi cred) throws GSSException {
         this.cred = cred;

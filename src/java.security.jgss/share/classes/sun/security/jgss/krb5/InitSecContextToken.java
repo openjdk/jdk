@@ -39,7 +39,7 @@ class InitSecContextToken extends InitialToken {
 
     // If non-mutual authentication is requested, there is no AP-REP message.
     // The acceptor thus has no chance to send the seq-number field to the
-    // initiator. In this case, the initiator and acceptor should has an
+    // initiator. In this case, the initiator and acceptor should have an
     // agreement to derive acceptor's initial seq-number if the acceptor wishes
     // to send messages to the initiator.
 
@@ -64,7 +64,7 @@ class InitSecContextToken extends InitialToken {
         }
     }
 
-    private KrbApReq apReq = null;
+    private final KrbApReq apReq;
 
     /**
      * For the context initiator to call. It constructs a new
@@ -98,7 +98,7 @@ class InitSecContextToken extends InitialToken {
                              useSequenceNumber,
                              checksum);
 
-        context.resetMySequenceNumber(apReq.getSeqNumber().intValue());
+        context.resetMySequenceNumber(apReq.getSeqNumber());
 
         EncryptionKey subKey = apReq.getSubKey();
         if (subKey != null)
@@ -109,7 +109,7 @@ class InitSecContextToken extends InitialToken {
         if (!mutualRequired)
             context.resetPeerSequenceNumber(
                     ACCEPTOR_USE_INITIATOR_SEQNUM
-                    ? apReq.getSeqNumber().intValue()
+                    ? apReq.getSeqNumber()
                     : 0);
     }
 
@@ -172,7 +172,7 @@ class InitSecContextToken extends InitialToken {
 
         Integer apReqSeqNumber = apReq.getSeqNumber();
         int peerSeqNumber = (apReqSeqNumber != null ?
-                             apReqSeqNumber.intValue() :
+                apReqSeqNumber :
                              0);
         context.resetPeerSequenceNumber(peerSeqNumber);
         if (!context.getMutualAuthState()) {

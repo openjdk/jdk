@@ -41,15 +41,10 @@ import sun.security.util.*;
 public final class KerberosPrincipal
     implements java.security.Principal, java.io.Serializable {
 
+    @Serial
     private static final long serialVersionUID = -7374788026156829911L;
 
     //name types
-
-    /**
-     * unknown name type.
-     */
-
-    public static final int KRB_NT_UNKNOWN =   0;
 
     /**
      * user principal name type.
@@ -67,25 +62,6 @@ public final class KerberosPrincipal
      */
 
     public static final int KRB_NT_SRV_HST =   3;
-
-    /**
-     * service with host as remaining components name type.
-     */
-
-    public static final int KRB_NT_SRV_XHST =  4;
-
-    /**
-     * unique ID name type.
-     */
-
-    public static final int KRB_NT_UID = 5;
-
-    /**
-     * Enterprise name (alias)
-     *
-     * @since 13
-     */
-    public static final int KRB_NT_ENTERPRISE = 10;
 
     private transient String fullName;
 
@@ -190,7 +166,7 @@ public final class KerberosPrincipal
 
     public KerberosPrincipal(String name, int nameType) {
 
-        PrincipalName krb5Principal = null;
+        PrincipalName krb5Principal;
 
         try {
             // Appends the default realm if it is missing
@@ -274,6 +250,7 @@ public final class KerberosPrincipal
      *          Realm in their DER-encoded form as specified in Section 5.2.2 of
      *          <a href=http://www.ietf.org/rfc/rfc4120.txt> RFC4120</a>.
      */
+    @Serial
     private void writeObject(ObjectOutputStream oos)
             throws IOException {
 
@@ -294,6 +271,7 @@ public final class KerberosPrincipal
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+    @Serial
     private void readObject(ObjectInputStream ois)
             throws IOException, ClassNotFoundException {
         byte[] asn1EncPrincipal = (byte [])ois.readObject();

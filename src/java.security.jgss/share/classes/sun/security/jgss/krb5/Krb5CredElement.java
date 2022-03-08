@@ -25,10 +25,7 @@
 
 package sun.security.jgss.krb5;
 
-import org.ietf.jgss.*;
-import sun.security.jgss.spi.*;
-import sun.security.krb5.*;
-import java.security.Provider;
+import sun.security.jgss.spi.GSSCredentialSpi;
 
 /**
  * Provides type safety for Krb5 credential elements.

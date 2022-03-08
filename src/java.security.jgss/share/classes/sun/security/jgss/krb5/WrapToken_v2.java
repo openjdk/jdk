@@ -220,7 +220,7 @@ class WrapToken_v2 extends MessageToken_v2 {
         return token.length;
     }
 
-    // This implementation is way to conservative. And it certainly
+    // This implementation is way too conservative. And it certainly
     // doesn't return the maximum limit.
     static int getSizeLimit(int qop, boolean confReq, int maxTokenSize,
         CipherHelper ch) throws GSSException {

@@ -65,7 +65,7 @@
  * mechanism will search for the required INITIATE and ACCEPT credentials
  * ({@link javax.security.auth.kerberos.KerberosTicket KerberosTicket} and
  * {@link javax.security.auth.kerberos.KerberosKey KerberosKey}) in
- * the private credential set where as some other mechanism might look
+ * the private credential set whereas some other mechanism might look
  * in the public set or in both.  If the desired credential is not
  * present in the appropriate sets of the current Subject, the GSS-API
  * call must fail.<p>

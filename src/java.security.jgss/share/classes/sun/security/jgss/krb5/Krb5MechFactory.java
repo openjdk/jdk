@@ -54,7 +54,7 @@ public final class Krb5MechFactory implements MechanismFactory {
     static final Oid NT_GSS_KRB5_PRINCIPAL =
         createOid("1.2.840.113554.1.2.2.1");
 
-    private static Oid[] nameTypes =
+    private static final Oid[] nameTypes =
         new Oid[] { GSSName.NT_USER_NAME,
                         GSSName.NT_HOSTBASED_SERVICE,
                         GSSName.NT_EXPORT_NAME,
@@ -147,7 +147,7 @@ public final class Krb5MechFactory implements MechanismFactory {
         if (sm != null) {
             String realm = (name.getKrb5PrincipalName()).getRealmAsString();
             String tgsPrincipal =
-                new String("krbtgt/" + realm + '@' + realm);
+                    "krbtgt/" + realm + '@' + realm;
             ServicePermission perm =
                 new ServicePermission(tgsPrincipal, "initiate");
             try {
@@ -215,7 +215,7 @@ public final class Krb5MechFactory implements MechanismFactory {
     }
 
 
-    public final Oid getMechanismOid() {
+    public Oid getMechanismOid() {
         return GSS_KRB5_MECH_OID;
     }
 

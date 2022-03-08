@@ -289,17 +289,13 @@ public final class KeyTab {
                         principal,
                         keys[i].getBytes(),
                         keys[i].getEType(),
-                        tmp == null ? 0 : tmp.intValue());
+                        tmp == null ? 0 : tmp);
                 keys[i].destroy();
             }
             return kks;
         } catch (RealmException re) {
             return new KerberosKey[0];
         }
-    }
-
-    EncryptionKey[] getEncryptionKeys(PrincipalName principal) {
-        return takeSnapshot().readServiceKeys(principal);
     }
 
     /**
@@ -349,11 +345,10 @@ public final class KeyTab {
         if (other == this)
             return true;
 
-        if (! (other instanceof KeyTab)) {
+        if (! (other instanceof KeyTab otherKtab)) {
             return false;
         }
 
-        KeyTab otherKtab = (KeyTab) other;
         return Objects.equals(otherKtab.princ, princ) &&
                 Objects.equals(otherKtab.file, file) &&
                 bound == otherKtab.bound;

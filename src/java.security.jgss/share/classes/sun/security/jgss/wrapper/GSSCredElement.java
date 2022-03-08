@@ -38,10 +38,10 @@ import sun.security.jgss.spi.GSSNameSpi;
  */
 public class GSSCredElement implements GSSCredentialSpi {
 
-    private int usage;
+    private final int usage;
     long pCred; // Pointer to the gss_cred_id_t structure
-    private GSSNameElement name = null;
-    private GSSLibStub cStub;
+    private GSSNameElement name;
+    private final GSSLibStub cStub;
 
     // Perform the necessary ServicePermission check on this cred
     @SuppressWarnings("removal")

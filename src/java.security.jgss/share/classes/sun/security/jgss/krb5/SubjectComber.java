@@ -86,7 +86,7 @@ class SubjectComber {
         if (subject == null) {
             return null;
         } else {
-            List<T> answer = (oneOnly ? null : new ArrayList<T>());
+            List<T> answer = (oneOnly ? null : new ArrayList<>());
 
             if (credClass == KeyTab.class) {
                 Iterator<KeyTab> iterator =
@@ -151,11 +151,9 @@ class SubjectComber {
                     Iterator<Object> iterator = pcs.iterator();
                     while (iterator.hasNext()) {
                         Object obj = iterator.next();
-                        if (!(obj instanceof KerberosTicket)) {
+                        if (!(obj instanceof @SuppressWarnings("unchecked")KerberosTicket ticket)) {
                             continue;
                         }
-                        @SuppressWarnings("unchecked")
-                        KerberosTicket ticket = (KerberosTicket)obj;
                         if (DEBUG) {
                             System.out.println("Found ticket for "
                                                 + ticket.getClient()
@@ -181,7 +179,7 @@ class SubjectComber {
                                 } catch (DestroyFailedException dfe) {
                                     if (DEBUG) {
                                         System.out.println("Expired ticket not" +
-                                                " detroyed successfully. " + dfe);
+                                                " destroyed successfully. " + dfe);
                                     }
                                 }
                             }

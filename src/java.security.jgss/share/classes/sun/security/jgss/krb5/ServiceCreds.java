@@ -36,6 +36,7 @@ import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import sun.security.krb5.*;
@@ -201,11 +202,9 @@ public final class ServiceCreds {
                     continue;   // skip this legacy bound keytab
                 }
             }
-            for (KerberosKey k: ktab.getKeys(princ)) {
-                keys.add(k);
-            }
+            Collections.addAll(keys, ktab.getKeys(princ));
         }
-        return keys.toArray(new KerberosKey[keys.size()]);
+        return keys.toArray(new KerberosKey[0]);
     }
 
     /**

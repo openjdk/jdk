@@ -27,6 +27,8 @@ package sun.security.jgss;
 
 import org.ietf.jgss.*;
 
+import java.io.Serial;
+
 /**
  * This class helps overcome a limitation of the org.ietf.jgss.GSSException
  * class that does not allow the thrower to set a string corresponding to
@@ -34,6 +36,7 @@ import org.ietf.jgss.*;
  */
 public class GSSExceptionImpl extends GSSException {
 
+    @Serial
     private static final long serialVersionUID = 4251197939069005575L;
 
     private String majorMessage;

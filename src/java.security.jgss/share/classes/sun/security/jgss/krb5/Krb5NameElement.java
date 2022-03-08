@@ -47,10 +47,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Krb5NameElement
     implements GSSNameSpi {
 
-    private PrincipalName krb5PrincipalName;
+    private final PrincipalName krb5PrincipalName;
 
-    private String gssNameStr = null;
-    private Oid gssNameType = null;
+    private final String gssNameStr;
+    private final Oid gssNameType;
 
     private Krb5NameElement(PrincipalName principalName,
                             String gssNameStr,
@@ -63,7 +63,7 @@ public class Krb5NameElement
     /**
      * Instantiates a new Krb5NameElement object. Internally it stores the
      * information provided by the input parameters so that they may later
-     * be used for output when a printable representaion of this name is
+     * be used for output when a printable representation of this name is
      * needed in GSS-API format rather than in Kerberos format.
      *
      */
@@ -82,7 +82,7 @@ public class Krb5NameElement
                 !gssNameType.equals(Krb5MechFactory.NT_GSS_KRB5_PRINCIPAL) &&
                 !gssNameType.equals(GSSName.NT_EXPORT_NAME))
                 throw new GSSException(GSSException.BAD_NAMETYPE, -1,
-                                       gssNameType.toString()
+                                       gssNameType
                                        +" is an unsupported nametype");
 
         PrincipalName principalName;
@@ -158,7 +158,7 @@ public class Krb5NameElement
 
         // Look for @ as in service@host
         // Assumes host name will not have an escaped '@'
-        int separatorPos = gssNameStr.lastIndexOf('@', gssNameStr.length());
+        int separatorPos = gssNameStr.lastIndexOf('@');
 
         // Not really a separator if it is escaped. Then this is just part
         // of the principal name or service name
@@ -185,7 +185,7 @@ public class Krb5NameElement
     private static String getHostBasedInstance(String serviceName,
                                                String hostName)
         throws GSSException {
-            StringBuffer temp = new StringBuffer(serviceName);
+            StringBuilder temp = new StringBuilder(serviceName);
 
             try {
                 // A lack of "@" defaults to the service being on the local
@@ -199,8 +199,8 @@ public class Krb5NameElement
             }
             hostName = hostName.toLowerCase(Locale.ENGLISH);
 
-            temp = temp.append('/').append(hostName);
-            return temp.toString();
+        temp.append('/').append(hostName);
+        return temp.toString();
     }
 
     public final PrincipalName getKrb5PrincipalName() {
@@ -222,9 +222,8 @@ public class Krb5NameElement
         if (other == this)
             return true;
 
-        if (other instanceof Krb5NameElement) {
-                Krb5NameElement that = (Krb5NameElement) other;
-                return (this.krb5PrincipalName.getName().equals(
+        if (other instanceof Krb5NameElement that) {
+            return (this.krb5PrincipalName.getName().equals(
                             that.krb5PrincipalName.getName()));
         }
         return false;

@@ -56,7 +56,7 @@ class AcceptSecContextToken extends InitialToken {
         }
         apRep = new KrbApRep(apReq, useSequenceNumber, subKey);
 
-        context.resetMySequenceNumber(apRep.getSeqNumber().intValue());
+        context.resetMySequenceNumber(apRep.getSeqNumber());
 
         /*
          * Note: The acceptor side context key was set when the
@@ -99,7 +99,7 @@ class AcceptSecContextToken extends InitialToken {
 
         Integer apRepSeqNumber = apRep.getSeqNumber();
         int peerSeqNumber = (apRepSeqNumber != null ?
-                             apRepSeqNumber.intValue() :
+                apRepSeqNumber :
                              0);
         context.resetPeerSequenceNumber(peerSeqNumber);
     }

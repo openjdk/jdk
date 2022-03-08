@@ -54,7 +54,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * mechanisms are required to be handed out. (Generally, other GSS
  * classes like GSSContext and GSSCredential request specific
  * elements depending on the mechanisms that they are dealing with.)
- * Assume that getting a mechanism to parse the applciation specified
+ * Assume that getting a mechanism to parse the application specified
  * bytes is an expensive call.
  *
  * When a GSSName is canonicalized wrt some mechanism, it is supposed
@@ -131,7 +131,7 @@ public class GSSNameImpl implements GSSName {
     private GSSNameSpi mechElement = null;
 
     static GSSNameImpl wrapElement(GSSManagerImpl gssManager,
-        GSSNameSpi mechElement) throws GSSException {
+        GSSNameSpi mechElement) {
         return (mechElement == null ?
             null : new GSSNameImpl(gssManager, mechElement));
     }
@@ -225,7 +225,7 @@ public class GSSNameImpl implements GSSName {
         throws GSSException {
 
         int pos = 0;
-        byte[] bytes = null;
+        byte[] bytes;
 
         if (appName instanceof String) {
             bytes = ((String) appName).getBytes(UTF_8);
@@ -240,7 +240,7 @@ public class GSSNameImpl implements GSSName {
 
         int oidLen  = (((0xFF & bytes[pos++]) << 8) |
                        (0xFF & bytes[pos++]));
-        ObjectIdentifier temp = null;
+        ObjectIdentifier temp;
         try {
             DerInputStream din = new DerInputStream(bytes, pos,
                                                     oidLen);
@@ -285,7 +285,7 @@ public class GSSNameImpl implements GSSName {
         if (other == this)
             return true;
 
-        if (! (other instanceof GSSNameImpl))
+        if (! (other instanceof GSSNameImpl that))
             return equals(gssManager.createName(other.toString(),
                                                 other.getStringNameType()));
 
@@ -293,8 +293,6 @@ public class GSSNameImpl implements GSSName {
          * XXX Do a comparison of the appNameStr/appNameBytes if
          * available. If that fails, then proceed with this test.
          */
-
-        GSSNameImpl that = (GSSNameImpl) other;
 
         GSSNameSpi myElement = this.mechElement;
         GSSNameSpi element = that.mechElement;
@@ -399,8 +397,8 @@ public class GSSNameImpl implements GSSName {
         }
 
         byte[] mechPortion = mechElement.export();
-        byte[] oidBytes = null;
-        ObjectIdentifier oid = null;
+        byte[] oidBytes;
+        ObjectIdentifier oid;
 
         try {
             oid = ObjectIdentifier.of
@@ -415,7 +413,7 @@ public class GSSNameImpl implements GSSName {
         } catch (IOException e) {
             throw new GSSExceptionImpl(GSSException.FAILURE,
                                    "Could not ASN.1 Encode "
-                                   + oid.toString());
+                                   + oid);
         }
         oidBytes = dout.toByteArray();
 

@@ -79,8 +79,8 @@ import java.util.Arrays;
  */
 public class ChannelBinding {
 
-    private InetAddress initiator;
-    private InetAddress acceptor;
+    private final InetAddress initiator;
+    private final InetAddress acceptor;
     private  byte[] appData;
 
     /**
@@ -172,10 +172,8 @@ public class ChannelBinding {
         if (this == obj)
             return true;
 
-        if (! (obj instanceof ChannelBinding))
+        if (! (obj instanceof ChannelBinding cb))
             return false;
-
-        ChannelBinding cb = (ChannelBinding) obj;
 
         if ((initiator != null && cb.initiator == null) ||
             (initiator == null && cb.initiator != null))

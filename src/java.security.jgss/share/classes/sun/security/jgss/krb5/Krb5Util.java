@@ -144,7 +144,7 @@ public class Krb5Util {
                             serverAlias.getName(), serverAlias.getNameType()));
         }
         return kt;
-    };
+    }
 
     public static Credentials ticketToCreds(KerberosTicket kerbTicket)
             throws KrbException, IOException {

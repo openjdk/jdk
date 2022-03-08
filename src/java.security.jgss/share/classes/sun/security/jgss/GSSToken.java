@@ -25,11 +25,10 @@
 
 package sun.security.jgss;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
-import java.io.EOFException;
-import sun.security.util.*;
 
 /**
  * Utilities for processing GSS Tokens.
@@ -45,7 +44,7 @@ public abstract class GSSToken {
      * is assumed that the array will be large enough to hold the 4 bytes of
      * the integer.
      */
-    public static final void writeLittleEndian(int value, byte[] array) {
+    public static void writeLittleEndian(int value, byte[] array) {
         writeLittleEndian(value, array, 0);
     }
 
@@ -57,20 +56,20 @@ public abstract class GSSToken {
      * the integer.
      * @param pos the position at which to start writing
      */
-    public static final void writeLittleEndian(int value, byte[] array,
-                                               int pos) {
+    public static void writeLittleEndian(int value, byte[] array,
+                                         int pos) {
         array[pos++] = (byte)(value);
         array[pos++] = (byte)((value>>>8));
         array[pos++] = (byte)((value>>>16));
         array[pos++] = (byte)((value>>>24));
     }
 
-    public static final void writeBigEndian(int value, byte[] array) {
+    public static void writeBigEndian(int value, byte[] array) {
         writeBigEndian(value, array, 0);
     }
 
-    public static final void writeBigEndian(int value, byte[] array,
-                                               int pos) {
+    public static void writeBigEndian(int value, byte[] array,
+                                      int pos) {
         array[pos++] = (byte)((value>>>24));
         array[pos++] = (byte)((value>>>16));
         array[pos++] = (byte)((value>>>8));
@@ -87,7 +86,7 @@ public abstract class GSSToken {
      * @param size the number of bytes to read from the array.
      * @return the integer value
      */
-    public static final int readLittleEndian(byte[] data, int pos, int size) {
+    public static int readLittleEndian(byte[] data, int pos, int size) {
         int retVal = 0;
         int shifter = 0;
         while (size > 0) {
@@ -99,7 +98,7 @@ public abstract class GSSToken {
         return retVal;
     }
 
-    public static final int readBigEndian(byte[] data, int pos, int size) {
+    public static int readBigEndian(byte[] data, int pos, int size) {
         int retVal = 0;
         int shifter = (size-1)*8;
         while (size > 0) {
@@ -118,7 +117,7 @@ public abstract class GSSToken {
      * @param os the OutputStream to write to
      * @throws IOException if an error occurs while writing to the OutputStream
      */
-    public static final void writeInt(int val, OutputStream os)
+    public static void writeInt(int val, OutputStream os)
         throws IOException {
         os.write(val>>>8);
         os.write(val);
@@ -131,7 +130,7 @@ public abstract class GSSToken {
      * @param dest the byte array to write to
      * @param pos the offset to start writing to
      */
-    public static final int writeInt(int val, byte[] dest, int pos) {
+    public static int writeInt(int val, byte[] dest, int pos) {
         dest[pos++] = (byte)(val>>>8);
         dest[pos++] = (byte)val;
         return pos;
@@ -145,7 +144,7 @@ public abstract class GSSToken {
      * @throws IOException if some errors occurs while reading the integer
      * bytes.
      */
-    public static final int readInt(InputStream is) throws IOException {
+    public static int readInt(InputStream is) throws IOException {
         return (((0xFF & is.read()) << 8)
                  | (0xFF & is.read()));
     }
@@ -153,11 +152,11 @@ public abstract class GSSToken {
     /**
      * Reads a two byte integer value from a byte array.
      *
-     * @param src the byte arra to read from
+     * @param src the byte array to read from
      * @param pos the offset to start reading from
      * @return the integer value
      */
-    public static final int readInt(byte[] src, int pos) {
+    public static int readInt(byte[] src, int pos) {
         return ((0xFF & src[pos])<<8 | (0xFF & src[pos+1]));
     }
 
@@ -171,7 +170,7 @@ public abstract class GSSToken {
      *         read.
      * @throws IOException is an error occurs while reading
      */
-    public static final void readFully(InputStream is, byte[] buffer)
+    public static void readFully(InputStream is, byte[] buffer)
         throws IOException {
         readFully(is, buffer, 0, buffer.length);
     }
@@ -188,8 +187,8 @@ public abstract class GSSToken {
      *         read.
      * @throws IOException is an error occurs while reading
      */
-    public static final void readFully(InputStream is,
-                                       byte[] buffer, int offset, int len)
+    public static void readFully(InputStream is,
+                                 byte[] buffer, int offset, int len)
         throws IOException {
         int temp;
         while (len > 0) {
@@ -203,19 +202,19 @@ public abstract class GSSToken {
         }
     }
 
-    public static final void debug(String str) {
+    public static void debug(String str) {
         System.err.print(str);
     }
 
-    public static final  String getHexBytes(byte[] bytes) {
+    public static String getHexBytes(byte[] bytes) {
         return getHexBytes(bytes, 0, bytes.length);
     }
 
-    public static final  String getHexBytes(byte[] bytes, int len) {
+    public static String getHexBytes(byte[] bytes, int len) {
         return getHexBytes(bytes, 0, len);
     }
 
-    public static final String getHexBytes(byte[] bytes, int pos, int len) {
+    public static String getHexBytes(byte[] bytes, int pos, int len) {
         StringBuilder sb = new StringBuilder();
         for (int i = pos; i < (pos+len); i++) {
             int b1 = (bytes[i]>>4) & 0x0f;

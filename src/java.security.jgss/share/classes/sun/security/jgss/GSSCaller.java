@@ -35,7 +35,7 @@ public class GSSCaller {
     public static final GSSCaller CALLER_INITIATE = new GSSCaller("INITIATE");
     public static final GSSCaller CALLER_ACCEPT = new GSSCaller("ACCEPT");
 
-    private String name;
+    private final String name;
     GSSCaller(String s) {
         name = s;
     }
