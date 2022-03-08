@@ -58,7 +58,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right) {
+        return addBlockEdge(left, right, null);
+    }
+
+    public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right, String label) {
         InputBlockEdge edge = new InputBlockEdge(left, right);
+        edge.setLabel(label);
         blockEdges.add(edge);
         left.addSuccessor(right);
         return edge;

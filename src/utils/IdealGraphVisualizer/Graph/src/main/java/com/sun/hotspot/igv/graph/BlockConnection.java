@@ -72,8 +72,13 @@ public class BlockConnection implements Connection {
 
     @Override
     public String getToolTipText() {
-        return "B" + sourceBlock.getInputBlock().getName() + " → " +
-               "B" + destinationBlock.getInputBlock().getName();
+        StringBuilder builder = new StringBuilder();
+        builder.append("B" + sourceBlock.getInputBlock().getName() + " → " +
+                       "B" + destinationBlock.getInputBlock().getName());
+        if (label != null) {
+            builder.append(": ").append(label);
+        }
+        return builder.toString();
     }
 
     @Override

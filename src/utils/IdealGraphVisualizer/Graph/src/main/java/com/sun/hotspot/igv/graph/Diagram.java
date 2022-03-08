@@ -24,6 +24,7 @@
 package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputBlockEdge;
 import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
@@ -217,15 +218,13 @@ public class Diagram {
             }
         }
 
-        // Create block connections for all blocks.
-        for (Block b : d.getBlocks()) {
-            for (InputBlock s : b.getInputBlock().getSuccessors()) {
-                Block bs = d.getBlock(s);
-                BlockConnection c = new BlockConnection(b, bs, b + "->" + bs);
-                c.setStyle(Connection.ConnectionStyle.BOLD);
-                c.setColor(Color.BLUE);
-                d.blockConnections.add(c);
-            }
+        for (InputBlockEdge e : graph.getBlockEdges()) {
+            Block p = d.getBlock(e.getFrom());
+            Block s = d.getBlock(e.getTo());
+            BlockConnection c = new BlockConnection(p, s, e.getLabel());
+            c.setStyle(Connection.ConnectionStyle.BOLD);
+            c.setColor(Color.BLUE);
+            d.blockConnections.add(c);
         }
 
         return d;

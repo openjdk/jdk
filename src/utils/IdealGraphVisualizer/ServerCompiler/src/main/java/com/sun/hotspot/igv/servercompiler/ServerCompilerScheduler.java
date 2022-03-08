@@ -190,7 +190,18 @@ public class ServerCompilerScheduler implements Scheduler {
                 }
             }
             for (Node s : uniqueSuccs) {
-                graph.addBlockEdge(terms.getKey(), s.block);
+                // Label the block edge with the short name of the corresponding
+                // control projection, if any.
+                String label = null;
+                if (terms.getValue().size() > 1) {
+                    for (Node t : terms.getValue()) {
+                        if (s.preds.contains(t)) {
+                            label = t.inputNode.getProperties().get("short_name");
+                            break;
+                        }
+                    }
+                }
+                graph.addBlockEdge(terms.getKey(), s.block, label);
             }
         }
 
