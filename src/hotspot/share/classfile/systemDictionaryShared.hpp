@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,9 @@ private:
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
+  static bool has_archived_enum_objs(InstanceKlass* ik);
+  static void set_has_archived_enum_objs(InstanceKlass* ik);
+
   static InstanceKlass* find_builtin_class(Symbol* class_name);
 
   static const RunTimeClassInfo* find_record(RunTimeSharedDictionary* static_dict,
@@ -243,6 +246,7 @@ public:
                   bool from_is_array, bool from_is_object) NOT_CDS_RETURN_(false);
   static void check_verification_constraints(InstanceKlass* klass,
                                              TRAPS) NOT_CDS_RETURN;
+  static void add_enum_klass_static_field(InstanceKlass* ik, int root_index);
   static void set_class_has_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN;
   static bool has_class_failed_verification(InstanceKlass* ik) NOT_CDS_RETURN_(false);
   static void add_lambda_proxy_class(InstanceKlass* caller_ik,

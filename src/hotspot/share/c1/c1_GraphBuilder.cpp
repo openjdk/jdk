@@ -59,7 +59,7 @@ class BlockListBuilder {
   // fields used by mark_loops
   ResourceBitMap _active;              // for iteration of control flow graph
   ResourceBitMap _visited;             // for iteration of control flow graph
-  intArray       _loop_map;            // caches the information if a block is contained in a loop
+  GrowableArray<ResourceBitMap> _loop_map; // caches the information if a block is contained in a loop
   int            _next_loop_index;     // next free loop number
   int            _next_block_number;   // for reverse postorder numbering of blocks
 
@@ -84,7 +84,7 @@ class BlockListBuilder {
 
   void make_loop_header(BlockBegin* block);
   void mark_loops();
-  int  mark_loops(BlockBegin* b, bool in_subroutine);
+  BitMap& mark_loops(BlockBegin* b, bool in_subroutine);
 
   // debugging
 #ifndef PRODUCT
@@ -376,17 +376,36 @@ void BlockListBuilder::mark_loops() {
 
   _active.initialize(BlockBegin::number_of_blocks());
   _visited.initialize(BlockBegin::number_of_blocks());
-  _loop_map = intArray(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), 0);
+  _loop_map = GrowableArray<ResourceBitMap>(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), ResourceBitMap());
+  for (int i = 0; i < BlockBegin::number_of_blocks(); i++) {
+    _loop_map.at(i).initialize(BlockBegin::number_of_blocks());
+  }
   _next_loop_index = 0;
   _next_block_number = _blocks.length();
 
-  // recursively iterate the control flow graph
-  mark_loops(_bci2block->at(0), false);
+  // The loop detection algorithm works as follows:
+  // - We maintain the _loop_map, where for each block we have a bitmap indicating which loops contain this block.
+  // - The CFG is recursively traversed (depth-first) and if we detect a loop, we assign the loop a unique number that is stored
+  // in the bitmap associated with the loop header block. Until we return back through that loop header the bitmap contains
+  // only a single bit corresponding to the loop number.
+  // -  The bit is then propagated for all the blocks in the loop after we exit them (post-order). There could be multiple bits
+  // of course in case of nested loops.
+  // -  When we exit the loop header we remove that single bit and assign the real loop state for it.
+  // -  Now, the tricky part here is how we detect irriducible loops. In the algorithm above the loop state bits
+  // are propagated to the predecessors. If we encounter an irreducible loop (a loop with multiple heads) we would see
+  // a node with some loop bit set that would then propagate back and be never cleared because we would
+  // never go back through the original loop header. Therefore if there are any irreducible loops the bits in the states
+  // for these loops are going to propagate back to the root.
+  BitMap& loop_state = mark_loops(_bci2block->at(0), false);
+  if (!loop_state.is_empty()) {
+    compilation()->set_has_irreducible_loops(true);
+  }
   assert(_next_block_number >= 0, "invalid block numbers");
 
   // Remove dangling Resource pointers before the ResourceMark goes out-of-scope.
   _active.resize(0);
   _visited.resize(0);
+  _loop_map.clear();
 }
 
 void BlockListBuilder::make_loop_header(BlockBegin* block) {
@@ -398,19 +417,17 @@ void BlockListBuilder::make_loop_header(BlockBegin* block) {
   if (!block->is_set(BlockBegin::parser_loop_header_flag)) {
     block->set(BlockBegin::parser_loop_header_flag);
 
-    assert(_loop_map.at(block->block_id()) == 0, "must not be set yet");
-    assert(0 <= _next_loop_index && _next_loop_index < BitsPerInt, "_next_loop_index is used as a bit-index in integer");
-    _loop_map.at_put(block->block_id(), 1 << _next_loop_index);
-    if (_next_loop_index < 31) _next_loop_index++;
+    assert(_loop_map.at(block->block_id()).is_empty(), "must not be set yet");
+    assert(0 <= _next_loop_index && _next_loop_index < BlockBegin::number_of_blocks(), "_next_loop_index is too large");
+    _loop_map.at(block->block_id()).set_bit(_next_loop_index++);
   } else {
     // block already marked as loop header
-    assert(is_power_of_2((unsigned int)_loop_map.at(block->block_id())), "exactly one bit must be set");
+    assert(_loop_map.at(block->block_id()).count_one_bits() == 1, "exactly one bit must be set");
   }
 }
 
-int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
+BitMap& BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   int block_id = block->block_id();
-
   if (_visited.at(block_id)) {
     if (_active.at(block_id)) {
       // reached block via backward branch
@@ -428,10 +445,11 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   _visited.set_bit(block_id);
   _active.set_bit(block_id);
 
-  intptr_t loop_state = 0;
+  ResourceMark rm;
+  ResourceBitMap loop_state(BlockBegin::number_of_blocks());
   for (int i = number_of_successors(block) - 1; i >= 0; i--) {
     // recursively process all successors
-    loop_state |= mark_loops(successor_at(block, i), in_subroutine);
+    loop_state.set_union(mark_loops(successor_at(block, i), in_subroutine));
   }
 
   // clear active-bit after all successors are processed
@@ -441,26 +459,22 @@ int BlockListBuilder::mark_loops(BlockBegin* block, bool in_subroutine) {
   block->set_depth_first_number(_next_block_number);
   _next_block_number--;
 
-  if (loop_state != 0 || in_subroutine ) {
+  if (!loop_state.is_empty() || in_subroutine ) {
     // block is contained at least in one loop, so phi functions are necessary
     // phi functions are also necessary for all locals stored in a subroutine
     scope()->requires_phi_function().set_union(block->stores_to_locals());
   }
 
   if (block->is_set(BlockBegin::parser_loop_header_flag)) {
-    int header_loop_state = _loop_map.at(block_id);
-    assert(is_power_of_2((unsigned)header_loop_state), "exactly one bit must be set");
-
-    // If the highest bit is set (i.e. when integer value is negative), the method
-    // has 32 or more loops. This bit is never cleared because it is used for multiple loops
-    if (header_loop_state >= 0) {
-      clear_bits(loop_state, header_loop_state);
-    }
+    BitMap& header_loop_state = _loop_map.at(block_id);
+    assert(header_loop_state.count_one_bits() == 1, "exactly one bit must be set");
+    // remove the bit with the loop number for the state (header is outside of the loop)
+    loop_state.set_difference(header_loop_state);
   }
 
   // cache and return loop information for this block
-  _loop_map.at_put(block_id, loop_state);
-  return loop_state;
+  _loop_map.at(block_id).set_from(loop_state);
+  return _loop_map.at(block_id);
 }
 
 inline int BlockListBuilder::number_of_successors(BlockBegin* block)
@@ -2496,7 +2510,7 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
         // The only test case we've seen so far which exhibits this
         // problem is caught by the infinite recursion test in
         // GraphBuilder::jsr() if the join doesn't work.
-        if (!entry->try_merge(cur_state)) {
+        if (!entry->try_merge(cur_state, compilation()->has_irreducible_loops())) {
           BAILOUT_("error while joining with exception handler, prob. due to complicated jsr/rets", exception_handlers);
         }
 
@@ -2982,7 +2996,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
     BlockBegin* sux = end->sux_at(i);
     assert(sux->is_predecessor(block()), "predecessor missing");
     // be careful, bailout if bytecodes are strange
-    if (!sux->try_merge(end->state())) BAILOUT_("block join failed", NULL);
+    if (!sux->try_merge(end->state(), compilation()->has_irreducible_loops())) BAILOUT_("block join failed", NULL);
     scope_data()->add_to_work_list(end->sux_at(i));
   }
 
@@ -3136,7 +3150,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
 
   if (base->std_entry()->state() == NULL) {
     // setup states for header blocks
-    base->std_entry()->merge(state);
+    base->std_entry()->merge(state, compilation()->has_irreducible_loops());
   }
 
   assert(base->std_entry()->state() != NULL, "");
@@ -3219,7 +3233,7 @@ void GraphBuilder::setup_osr_entry_block() {
   Goto* g = new Goto(target, false);
   append(g);
   _osr_entry->set_end(g);
-  target->merge(_osr_entry->end()->state());
+  target->merge(_osr_entry->end()->state(), compilation()->has_irreducible_loops());
 
   scope_data()->set_stream(NULL);
 }
@@ -3278,7 +3292,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
 
   // setup state for std entry
   _initial_state = state_at_entry();
-  start_block->merge(_initial_state);
+  start_block->merge(_initial_state, compilation->has_irreducible_loops());
 
   // End nulls still exist here
 
@@ -4029,7 +4043,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
     // the entry bci for the callee instead of the call site bci.
     append_with_bci(goto_callee, 0);
     _block->set_end(goto_callee);
-    callee_start_block->merge(callee_state);
+    callee_start_block->merge(callee_state, compilation()->has_irreducible_loops());
 
     _last = _block = callee_start_block;
 

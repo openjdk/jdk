@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,23 @@
  * questions.
  */
 
-package q;
+package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
-public class Hello {
-    public static void hello() {
-        System.out.println("hello");
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+
+import java.util.List;
+
+/**
+ * Base class to build the failure message output for an IR method.
+ *
+ * @see IRMethodMatchResult
+ */
+abstract class FailureMessageBuilder {
+    protected final IRMethod irMethod;
+
+    public FailureMessageBuilder(IRMethod irMethod) {
+        this.irMethod = irMethod;
     }
+
+    abstract public String build();
 }

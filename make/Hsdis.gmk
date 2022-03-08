@@ -35,18 +35,12 @@ include JdkNativeCompilation.gmk
 ################################################################################
 
 HSDIS_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/hsdis
+REAL_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
+BUILT_HSDIS_LIB := $(HSDIS_OUTPUT_DIR)/$(REAL_HSDIS_NAME)
 
 HSDIS_TOOLCHAIN := TOOLCHAIN_DEFAULT
 HSDIS_TOOLCHAIN_CFLAGS := $(CFLAGS_JDKLIB)
 HSDIS_TOOLCHAIN_LDFLAGS := $(LDFLAGS_JDKLIB)
-
-ifeq ($(call isTargetOs, windows), true)
-  INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/bin
-  IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/bin
-else
-  INSTALLED_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
-  IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/lib
-endif
 
 ifeq ($(HSDIS_BACKEND), capstone)
   ifeq ($(call isTargetCpuArch, x86), true)
@@ -162,25 +156,44 @@ $(eval $(call SetupJdkLibrary, BUILD_HSDIS, \
     LIBS := $(HSDIS_LIBS) $(HSDIS_TOOLCHAIN_LIBS), \
 ))
 
-build: $(BUILD_HSDIS)
+$(BUILT_HSDIS_LIB): $(BUILD_HSDIS_TARGET)
+	$(install-file)
+
+build: $(BUILD_HSDIS) $(BUILT_HSDIS_LIB)
 
 TARGETS += build
 
-INSTALLED_HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
+ifeq ($(ENABLE_HSDIS_BUNDLING), false)
 
-INSTALLED_HSDIS := $(INSTALLED_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
-INSTALLED_HSDIS_IMAGE := $(IMAGE_HSDIS_DIR)/$(INSTALLED_HSDIS_NAME)
+  ifeq ($(call isTargetOs, windows), true)
+    JDK_HSDIS_DIR := $(JDK_OUTPUTDIR)/bin
+    IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/bin
+  else
+    JDK_HSDIS_DIR := $(JDK_OUTPUTDIR)/lib
+    IMAGE_HSDIS_DIR := $(JDK_IMAGE_DIR)/lib
+  endif
 
-$(INSTALLED_HSDIS): $(BUILD_HSDIS_TARGET)
-        ifeq ($(HSDIS_BACKEND), binutils)
-	  $(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distributing.)
-        endif
+
+  INSTALLED_HSDIS_JDK := $(JDK_HSDIS_DIR)/$(REAL_HSDIS_NAME)
+  INSTALLED_HSDIS_IMAGE := $(IMAGE_HSDIS_DIR)/$(REAL_HSDIS_NAME)
+
+  $(INSTALLED_HSDIS_JDK): $(BUILT_HSDIS_LIB)
+          ifeq ($(HSDIS_BACKEND), binutils)
+	    $(call LogWarn, NOTE: The resulting build might not be redistributable. Seek legal advice before distributing.)
+          endif
 	$(install-file)
 
-$(INSTALLED_HSDIS_IMAGE): $(INSTALLED_HSDIS)
+  $(INSTALLED_HSDIS_IMAGE): $(BUILT_HSDIS_LIB)
 	$(install-file)
 
-install: $(INSTALLED_HSDIS_IMAGE)
+  install: $(INSTALLED_HSDIS_JDK) $(INSTALLED_HSDIS_IMAGE)
+
+else
+
+  install:
+	$(ECHO) NOTE: make install-hsdis is a no-op with --enable-hsdis-bundling
+
+endif
 
 TARGETS += install
 
