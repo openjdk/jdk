@@ -239,7 +239,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg DSA -keysize 1024 -alias ca1 -dname CN=CA1 " +
                 "-keypass ca1keypass -signer ca -signerkeypass cakeypass")
-                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA256withRSA) issued by <ca> with a validity of 90 days")
+                .shouldContain("Generating 1,024 bit DSA key pair and a certificate (SHA384withRSA) issued by <ca> with a validity of 90 days")
                 .shouldContain("for: CN=CA1")
                 .shouldContain("The generated certificate #1 of 2 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #2 of 2 uses a 1024-bit RSA key which is considered a security risk")
@@ -249,7 +249,7 @@ public class GenKeyPairSigner {
         SecurityTools.keytool("-keystore ksjks -storepass changeit -storetype jks " +
                 "-genkeypair -keyalg XDH -alias e1 -dname CN=E1 " +
                 "-keypass e1keypass -signer ca1 -signerkeypass ca1keypass")
-                .shouldContain("Generating 255 bit XDH key pair and a certificate (SHA256withDSA) issued by <ca1> with a validity of 90 days")
+                .shouldContain("Generating 255 bit XDH key pair and a certificate (SHA384withDSA) issued by <ca1> with a validity of 90 days")
                 .shouldContain("for: CN=E1")
                 .shouldContain("The generated certificate #2 of 3 uses a 1024-bit DSA key which is considered a security risk")
                 .shouldContain("The generated certificate #3 of 3 uses a 1024-bit RSA key which is considered a security risk")
@@ -265,7 +265,7 @@ public class GenKeyPairSigner {
         }
 
         sigName = cert.getSigAlgName();
-        if (sigName != "SHA256withDSA") {
+        if (sigName != "SHA384withDSA") {
             throw new Exception("Signature algorithm name is in error");
         }
 
@@ -284,7 +284,7 @@ public class GenKeyPairSigner {
                 "-list -v")
                 .shouldContain("Alias name: e1")
                 .shouldContain("Certificate chain length: 3")
-                .shouldContain("Signature algorithm name: SHA256withDSA")
+                .shouldContain("Signature algorithm name: SHA384withDSA")
                 .shouldContain("Subject Public Key Algorithm: 255-bit XDH key")
                 .shouldHaveExitValue(0);
     }

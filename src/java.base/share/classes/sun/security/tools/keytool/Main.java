@@ -1857,8 +1857,6 @@ public final class Main {
                     keysize = 56;
                 } else if ("DESede".equalsIgnoreCase(keyAlgName)) {
                     keysize = 168;
-                } else if ("AES".equalsIgnoreCase(keyAlgName)) {
-                    keysize = SecurityProviderConstants.getDefAESKeySize();
                 } else {
                     throw new Exception(rb.getString
                         ("Please.provide.keysize.for.secret.key.generation"));

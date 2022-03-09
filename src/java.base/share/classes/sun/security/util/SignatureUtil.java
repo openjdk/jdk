@@ -491,7 +491,8 @@ public class SignatureUtil {
     public static String getDefaultSigAlgForKey(PrivateKey k) {
         String kAlg = k.getAlgorithm();
         return switch (kAlg.toUpperCase(Locale.ENGLISH)) {
-            case "DSA", "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k))
+            case "DSA" -> "SHA384with" + kAlg;
+            case "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k))
                     + "with" + kAlg;
             case "EC" -> ecStrength(KeyUtil.getKeySize(k))
                     + "withECDSA";
@@ -546,18 +547,19 @@ public class SignatureUtil {
     /**
      * Return the default message digest algorithm based on both the
      * security strength of the specified IFC/FFC key size and the
-     * recommendation from NIST CNSA, e.g. use SHA-384 for 3072-bit.
+     * recommendation from NIST CNSA, e.g. use SHA-384 and min 3072-bit.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
     private static String ifcFfcStrength (int bitLength) {
-        if (bitLength >= 7680) { // 192 bits
+        if (bitLength > 7680) { // 256 bits security strength
             return "SHA512";
-        } else if (bitLength >= 3072) {  // 128 bits
-            return "SHA384";
-        } else  { // 128 bits and less
+        } else if (bitLength < 624) { // too short for SHA384withRSA signature
             return "SHA256";
+        } else {
+            // per CNSA
+            return "SHA384";
         }
     }
 }

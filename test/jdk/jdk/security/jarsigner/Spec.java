@@ -186,13 +186,13 @@ public class Spec {
         kpg.initialize(1024);
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
-                    .equals("SHA256withRSA"));
+                    .equals("SHA384withRSA"));
 
         kpg = KeyPairGenerator.getInstance("DSA");
         kpg.initialize(1024);
         assertTrue(JarSigner.Builder
                 .getDefaultSignatureAlgorithm(kpg.generateKeyPair().getPrivate())
-                .equals("SHA256withDSA"));
+                .equals("SHA384withDSA"));
 
         kpg = KeyPairGenerator.getInstance("EC");
         kpg.initialize(256);

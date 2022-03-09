@@ -119,7 +119,7 @@ public class CheckSignerCertChain {
                 JAVA_SECURITY_FILE +
                 " a.jar ee")
                 .shouldNotContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA256withRSA, 2048-bit key")
+                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit key")
                 .shouldNotContain("Invalid certificate chain: Algorithm constraints check failed on signature algorithm: MD5withRSA")
                 .shouldHaveExitValue(0);
 
@@ -135,7 +135,7 @@ public class CheckSignerCertChain {
                 JAVA_SECURITY_FILE +
                 " a.jar ee")
                 .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA256withRSA, 2048-bit key")
+                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit key")
                 .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
 
@@ -145,7 +145,7 @@ public class CheckSignerCertChain {
         SecurityTools.jarsigner("-verify -certs signeda.jar " +
                 "-keystore caks1 -storepass changeit -verbose -debug")
                 .shouldContain("Signature algorithm: MD5withRSA (disabled), 2048-bit key")
-                .shouldContain("Signature algorithm: SHA256withRSA, 2048-bit key")
+                .shouldContain("Signature algorithm: SHA384withRSA, 2048-bit key")
                 .shouldContain("Invalid certificate chain: Algorithm constraints check failed on disabled algorithm: MD5 used with certificate: CN=EE")
                 .shouldHaveExitValue(0);
     }

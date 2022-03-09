@@ -46,11 +46,13 @@ public class DefaultSignatureAlgorithm {
     static int pos = 0;
 
     public static void main(String[] args) throws Exception {
-        check("RSA", 1024, null, "SHA256withRSA");
+        check("RSA", 1024, null, "SHA384withRSA");
         check("RSA", 3072, null, "SHA384withRSA");
-        check("RSA", 7680, null, "SHA512withRSA");
+        check("RSA", 3073, null, "SHA384withRSA");
+        check("RSA", 7680, null, "SHA384withRSA");
+        check("RSA", 7681, null, "SHA512withRSA");
 
-        check("DSA", 1024, null, "SHA256withDSA");
+        check("DSA", 1024, null, "SHA384withDSA");
         check("DSA", 3072, null, "SHA384withDSA");
 
         check("EC", 384, null, "SHA384withECDSA");

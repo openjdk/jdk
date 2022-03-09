@@ -66,7 +66,7 @@ public class PSS {
                 AlgorithmId.SHA384_oid);
 
         check((X509Certificate)ks.getCertificate("a"), "RSA",
-                AlgorithmId.SHA256_oid);
+                AlgorithmId.SHA384_oid);
 
         check((X509Certificate)ks.getCertificate("b"), "RSA",
                 AlgorithmId.SHA384_oid);
