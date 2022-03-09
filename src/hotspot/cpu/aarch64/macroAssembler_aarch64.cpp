@@ -417,10 +417,11 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   }
 }
 
-void MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp, bool fixed_size) {
+int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
+  address start = pc();
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
@@ -432,12 +433,8 @@ void MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp, boo
   } else {
     if (cbuf) cbuf->set_insts_mark();
     b(entry);
-    if (codecache_branch_needs_far_jump() && fixed_size) {
-      // ic_buffer case: jump code size is not expected to vary depending on target address
-      nop();
-      nop();
-    }
   }
+  return pc() - start;
 }
 
 void MacroAssembler::reserved_stack_check() {

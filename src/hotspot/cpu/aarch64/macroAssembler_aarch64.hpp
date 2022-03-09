@@ -1084,7 +1084,7 @@ public:
 
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1, bool fixed_size = false);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
   static int far_codestub_branch_size() {
     if (codestub_branch_needs_far_jump()) {

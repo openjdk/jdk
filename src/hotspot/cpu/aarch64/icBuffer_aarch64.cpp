@@ -52,8 +52,12 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached
   address start = __ pc();
   Label l;
   __ ldr(rscratch2, l);
-  __ far_jump(ExternalAddress(entry_point), NULL, rscratch1, true);
-  __ align(wordSize);
+  int jump_code_size = __ far_jump(ExternalAddress(entry_point));
+  // IC stub code size is not expected to vary depending on target address.
+  // We use NOPs to make the ldr+far_jump+int64 size equal to ic_stub_code_size.
+  for (int i = jump_code_size; i < ic_stub_code_size() - 12; i += 4) {
+    __ nop();
+  }
   __ bind(l);
   __ emit_int64((int64_t)cached_value);
   // Only need to invalidate the 1st two instructions - not the whole ic stub
