@@ -22,9 +22,6 @@
  * questions.
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -40,12 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -54,27 +52,28 @@ import static org.testng.Assert.assertNull;
  * @test
  * @bug 8210280 8281631
  * @modules java.base/java.util:open
- * @summary White box tests for HashMap internals around table resize
+ * @summary White box tests for HashMap-related internals around table sizing
  * @run testng WhiteBoxResizeTest
  * @key randomness
  */
 public class WhiteBoxResizeTest {
-    final ThreadLocalRandom rnd = ThreadLocalRandom.current();
     final MethodHandle TABLE_SIZE_FOR;
-    final VarHandle TABLE;
+    final VarHandle HM_TABLE;
     final VarHandle WHM_TABLE;
 
     public WhiteBoxResizeTest() throws ReflectiveOperationException {
         MethodHandles.Lookup hmlookup = MethodHandles.privateLookupIn(HashMap.class, MethodHandles.lookup());
         TABLE_SIZE_FOR = hmlookup.findStatic(
             HashMap.class, "tableSizeFor", MethodType.methodType(int.class, int.class));
-        TABLE = hmlookup.unreflectVarHandle(HashMap.class.getDeclaredField("table"));
+        HM_TABLE = hmlookup.unreflectVarHandle(HashMap.class.getDeclaredField("table"));
 
         MethodHandles.Lookup whmlookup = MethodHandles.privateLookupIn(WeakHashMap.class, MethodHandles.lookup());
         WHM_TABLE = whmlookup.unreflectVarHandle(WeakHashMap.class.getDeclaredField("table"));
     }
 
-    // utility methods
+    /*
+     * utility methods
+     */
 
     int tableSizeFor(int n) {
         try {
@@ -84,10 +83,8 @@ public class WhiteBoxResizeTest {
 
     Object[] table(Map<?,?> map) {
         try {
-            if (map instanceof WeakHashMap)
-                return (Object[]) WHM_TABLE.get(map);
-            else
-                return (Object[]) TABLE.get(map);
+            VarHandle vh = map instanceof WeakHashMap ? WHM_TABLE : HM_TABLE;
+            return (Object[]) vh.get(map);
         } catch (Throwable t) { throw new AssertionError(t); }
     }
 
@@ -95,12 +92,15 @@ public class WhiteBoxResizeTest {
         return table(map).length;
     }
 
-    Map<Integer, Integer> makeMap(int size) { // TODO UNUSED
+    // creates a map with size mappings
+    Map<Integer, Integer> makeMap(int size) {
         return IntStream.range(0, size)
                         .boxed()
                         .collect(Collectors.toUnmodifiableMap(i -> i, i -> i));
     }
 
+    // creates a "fake" map: size() returns the given size, but
+    // the entrySet iterator returns only one entry
     Map<Integer, Integer> fakeMap(int size) {
         return new AbstractMap<>() {
             public Set<Map.Entry<Integer,Integer>> entrySet() {
@@ -114,13 +114,14 @@ public class WhiteBoxResizeTest {
         };
     }
 
-
     void putN(Map<Integer, Integer> map, int n) {
         for (int i = 0; i < n; i++)
             map.put(i, i);
     }
 
-    // tableSizeFor
+    /*
+     * tests of tableSizeFor
+     */
 
     @DataProvider(name="tableSizeFor")
     public Object[][] tableSizeForCases() {
@@ -148,12 +149,15 @@ public class WhiteBoxResizeTest {
         assertEquals(tableSizeFor(arg), expected);
     }
 
-    // lazy table allocation
+    /*
+     * tests for lazy table allocation
+     */
 
     @DataProvider(name="lazy")
     public Object[][] lazyTableAllocationCases() {
         return new Object[][] {
             { new HashMap<>() },
+         // { new WeakHashMap<>() }, // WHM doesn't allocate lazily
             { new LinkedHashMap<>() }
         };
     }
@@ -163,7 +167,9 @@ public class WhiteBoxResizeTest {
         assertNull(table(map));
     }
 
-    // default capacity
+    /*
+     * tests for default capacity (no-arg constructor)
+     */
 
     @DataProvider(name="defaultCapacity")
     public Object[][] defaultCapacityCases() {
@@ -181,7 +187,9 @@ public class WhiteBoxResizeTest {
         assertEquals(capacity(map), 16);
     }
 
-    // requested capacity
+    /*
+     * tests for requested capacity (int and int+float constructors)
+     */
 
     @DataProvider(name="requestedCapacity")
     public Iterator<Object[]> requestedCapacityCases() {
@@ -205,8 +213,17 @@ public class WhiteBoxResizeTest {
         assertEquals(capacity(map), tableSizeFor(cap));
     }
 
-    // populated capacity
+    /*
+     * Tests for capacity after map is populated with a given number N of mappings.
+     * Maps are populated using a copy constructor on a map with N mappings,
+     * other constructors followed by N put() calls, and other constructors followed
+     * by putAll() on a map with N mappings.
+     *
+     * String labels encode the test case for ease of diagnosis if one of the test cases fails.
+     * For example, "plm2pn" is "populated LinkedHashMap, 2-arg constructor, followed by putN".
+     */
 
+    // helper method for one populated capacity case, to provide target types for lambdas
     Object[] pcc(String label,
                  int size,
                  int expectedCapacity,
@@ -256,10 +273,13 @@ public class WhiteBoxResizeTest {
             pcc("flm2pa", size, cap, () -> new LinkedHashMap<>(cap, 0.75f),    map -> { map.putAll(fakeMap(size)); }),
 
             pcc("fwmcpy", size, cap, () -> new WeakHashMap<>(fakeMap(size)),   map -> { }),
-         // pcc("fwm0pa", size, cap, () -> new WeakHashMap<>(),                map -> { map.putAll(fakeMap(size)); }),
+         // pcc("fwm0pa", size, cap, () -> new WeakHashMap<>(),                map -> { map.putAll(fakeMap(size)); }), // see note
             pcc("fwm1pa", size, cap, () -> new WeakHashMap<>(cap),             map -> { map.putAll(fakeMap(size)); }),
             pcc("fwm2pa", size, cap, () -> new WeakHashMap<>(cap, 0.75f),      map -> { map.putAll(fakeMap(size)); })
         );
+
+        // Test case "fwm0pa" is commented out because WeakHashMap uses a different allocation
+        // policy from the other map implementations: it deliberately under-allocates in this case.
     }
 
     @DataProvider(name="populatedCapacity")
@@ -269,15 +289,19 @@ public class WhiteBoxResizeTest {
         cases.addAll(genPopulatedCapacityCases(12,  16));
         cases.addAll(genPopulatedCapacityCases(13,  32));
         cases.addAll(genPopulatedCapacityCases(64, 128));
+
+        // numbers in this range are truncated by a float computation with 0.75f
+        // but can get an exact result with a double computation with 0.75d
         cases.addAll(genFakePopulatedCapacityCases(25165824, 33554432));
         cases.addAll(genFakePopulatedCapacityCases(25165825, 67108864));
         cases.addAll(genFakePopulatedCapacityCases(25165826, 67108864));
+
         return cases.iterator();
     }
 
     @Test(dataProvider="populatedCapacity")
-    public void populatedCapacity(String label, // unused
-                                  int size,     // unused
+    public void populatedCapacity(String label, // unused, included for diagnostics
+                                  int size,     // unused, included for diagnostics
                                   int expectedCapacity,
                                   Supplier<Map<Integer,Integer>> s,
                                   Consumer<Map<Integer,Integer>> c) {
@@ -285,6 +309,4 @@ public class WhiteBoxResizeTest {
         c.accept(map);
         assertEquals(capacity(map), expectedCapacity);
     }
-
-    // TODO comment sections and re-examine everything
 }
