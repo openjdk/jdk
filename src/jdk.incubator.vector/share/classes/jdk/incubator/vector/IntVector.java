@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1854,12 +1854,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     M testTemplate(Class<M> maskType, Test op) {
         IntSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            IntVector bits = this.viewAsIntegralLanes();
             VectorMask<Integer> m;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (int) 0);
+                m = compare(EQ, (int) 0);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (int) 0);
+                m = compare(LT, (int) 0);
             }
             else {
                 throw new AssertionError(op);
@@ -1874,11 +1873,31 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Integer> test(VectorOperators.Test op,
-                                  VectorMask<Integer> m) {
-        return test(op).and(m);
+                                  VectorMask<Integer> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Integer>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        IntSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            VectorMask<Integer> m = mask;
+            if (op == IS_DEFAULT) {
+                m = compare(EQ, (int) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = compare(LT, (int) 0, m);
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m);
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -2594,7 +2613,8 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                VectorMask<Integer> m) {
         m.check(maskClass, this);
         if (op == FIRST_NONZERO) {
-            IntVector v = reduceIdentityVector(op).blend(this, m);
+            // FIXME:  The JIT should handle this.
+            IntVector v = broadcast((int) 0).blend(this, m);
             return v.reduceLanesTemplate(op);
         }
         int opc = opCode(op);
@@ -2609,10 +2629,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     int reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<Integer> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, (int) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : (int) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
@@ -2644,34 +2665,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
             default: return null;
         }
     }
-
-    private
-    @ForceInline
-    IntVector reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<IntVector> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-                case VECTOR_OP_OR:
-                case VECTOR_OP_XOR:
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-                case VECTOR_OP_AND:
-                    return v -> v.broadcast(-1);
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
-    private static final
-    ImplCache<Associative,UnaryOperator<IntVector>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, IntVector.class);
 
     private static final int MIN_OR_INF = Integer.MIN_VALUE;
     private static final int MAX_OR_INF = Integer.MAX_VALUE;

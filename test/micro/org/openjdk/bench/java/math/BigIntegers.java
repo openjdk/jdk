@@ -207,4 +207,15 @@ public class BigIntegers {
             bh.consume(tmp);
         }
     }
+
+    /** Invokes the gcd method of BigInteger with different values. */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testGcd(Blackhole bh) {
+        for (int i = 0; i < TESTSIZE; i++) {
+            BigInteger i1 = shiftArray[TESTSIZE - i - 1];
+            BigInteger i2 = shiftArray[i];
+            bh.consume(i2.gcd(i1));
+        }
+    }
 }

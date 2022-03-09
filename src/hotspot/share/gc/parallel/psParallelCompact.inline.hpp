@@ -126,9 +126,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
 
 class PCAdjustPointerClosure: public BasicOopIterateClosure {
 public:
-  PCAdjustPointerClosure(ParCompactionManager* cm) {
-    verify_cm(cm);
-    _cm = cm;
+  PCAdjustPointerClosure(ParCompactionManager* cm) : _cm(cm) {
   }
   template <typename T> void do_oop_nv(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
   virtual void do_oop(oop* p)                { do_oop_nv(p); }
@@ -137,8 +135,6 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:
   ParCompactionManager* _cm;
-
-  static void verify_cm(ParCompactionManager* cm) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP

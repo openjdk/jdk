@@ -1040,7 +1040,7 @@ public class WeakHashMap<K,V>
         Objects.requireNonNull(function);
         int expectedModCount = modCount;
 
-        Entry<K, V>[] tab = getTable();;
+        Entry<K, V>[] tab = getTable();
         for (Entry<K, V> entry : tab) {
             while (entry != null) {
                 Object key = entry.get();

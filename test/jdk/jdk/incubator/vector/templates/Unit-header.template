@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1450,6 +1450,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
         return $Boxtype$.compareUnsigned(a, b) >= 0;
     }
 #end[!FP]
+
+    static $type$ firstNonZero($type$ a, $type$ b) {
+        return $Boxtype$.compare(a, ($type$) 0) != 0 ? a : b;
+    }
 
     @Test
     static void smokeTest1() {

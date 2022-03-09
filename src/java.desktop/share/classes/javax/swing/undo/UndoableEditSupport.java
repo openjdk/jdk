@@ -33,7 +33,6 @@ import java.util.*;
  *
  * @author Ray Ryan
  */
-@SuppressWarnings("doclint:missing")
 public class UndoableEditSupport {
     /**
      * The update level.
@@ -148,7 +147,7 @@ public class UndoableEditSupport {
     }
 
     /**
-     *
+     * Starts a compound edit update.
      */
     public synchronized void beginUpdate() {
         if (updateLevel == 0) {

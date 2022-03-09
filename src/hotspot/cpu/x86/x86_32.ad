@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -7825,9 +7825,9 @@ instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
 %}
 
 // Divide Register Long
-instruct divL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (DivL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -7873,9 +7873,9 @@ instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
 %}
 
 // Remainder Register Long
-instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (ModL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"

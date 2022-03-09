@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,11 +198,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if _MSC_VER == 1600
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 10.0 (VS2010)"
-      #elif _MSC_VER == 1700
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 11.0 (VS2012)"
-      #elif _MSC_VER == 1800
+      #if _MSC_VER == 1800
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
       #elif _MSC_VER == 1900
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 14.0 (VS2015)"
@@ -238,6 +234,10 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.8 / 16.9 (VS2019)"
       #elif _MSC_VER == 1929
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.10 / 16.11 (VS2019)"
+      #elif _MSC_VER == 1930
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.0 (VS2022)"
+      #elif _MSC_VER == 1931
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.1 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

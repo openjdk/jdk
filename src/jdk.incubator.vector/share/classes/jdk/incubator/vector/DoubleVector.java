@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1715,7 +1715,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -1725,11 +1725,48 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Double> test(VectorOperators.Test op,
-                                  VectorMask<Double> m) {
-        return test(op).and(m);
+                                  VectorMask<Double> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Double>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        DoubleSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            LongVector bits = this.viewAsIntegralLanes();
+            VectorMask<Long> m = mask.cast(LongVector.species(shape()));
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (long) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (long) 0, m);
+            }
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and(Long.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                long infbits = (long) toBits(Double.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, m);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, m);
+                } else {
+                    m = bits.compare(EQ, infbits, m);
+                }
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m.cast(vsp));
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -2419,7 +2456,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                VectorMask<Double> m) {
         m.check(maskClass, this);
         if (op == FIRST_NONZERO) {
-            DoubleVector v = reduceIdentityVector(op).blend(this, m);
+            // FIXME:  The JIT should handle this.
+            DoubleVector v = broadcast((double) 0).blend(this, m);
             return v.reduceLanesTemplate(op);
         }
         int opc = opCode(op);
@@ -2434,10 +2472,11 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     final
     double reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<Long> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, (long) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : (double) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
@@ -2463,30 +2502,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             default: return null;
         }
     }
-
-    private
-    @ForceInline
-    DoubleVector reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<DoubleVector> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
-    private static final
-    ImplCache<Associative,UnaryOperator<DoubleVector>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, DoubleVector.class);
 
     private static final double MIN_OR_INF = Double.NEGATIVE_INFINITY;
     private static final double MAX_OR_INF = Double.POSITIVE_INFINITY;
