@@ -2865,6 +2865,7 @@ static void thread_entry(JavaThread* thread, TRAPS) {
 
 
 JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
+#if INCLUDE_CDS
   if (DumpSharedSpaces) {
     // During java -Xshare:dump, if we allow multiple Java threads to
     // execute in parallel, symbols and classes may be loaded in
@@ -2883,6 +2884,7 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     }
     return;
   }
+#endif
   JavaThread *native_thread = NULL;
 
   // We cannot hold the Threads_lock when we throw an exception,
