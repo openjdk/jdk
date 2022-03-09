@@ -1828,6 +1828,8 @@ public class Check {
             return;
         }
 
+        checkPreview(tree.pos(), m, other);
+
         Type mt = types.memberType(origin.type, m);
         Type ot = types.memberType(origin.type, other);
         // Error if overriding result type is different
