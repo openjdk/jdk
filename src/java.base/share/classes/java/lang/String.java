@@ -4512,7 +4512,7 @@ public final class String
             this.value = Arrays.copyOfRange(val, 0, length);
         } else {
             // only try to compress val if some characters were deleted.
-            if (COMPACT_STRINGS && !asb.isGrowOnly()) {
+            if (COMPACT_STRINGS && asb.maybeLatin1) {
                 byte[] buf = StringUTF16.compress(val, 0, length);
                 if (buf != null) {
                     this.coder = LATIN1;

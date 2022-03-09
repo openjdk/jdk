@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,11 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     byte coder;
 
     /**
-     *  The attribute indicates {@code value} has been deleted partially.
+     *  The attribute indicates {@code value} is in UTF16 but may be compressible.
+     *  An inflated byte array becomes compressible only when those non-latin1 chars are deleted.
+     *  Therefore, sett this attribute in all methods that delete chars.
      */
-    boolean growOnly = true;
+    boolean maybeLatin1 = false;
 
     /**
      * The count is the number of characters used.
@@ -136,8 +138,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
         final byte initCoder;
         if (COMPACT_STRINGS) {
-            if (seq instanceof AbstractStringBuilder) {
-                initCoder = ((AbstractStringBuilder)seq).getCoder();
+            if (seq instanceof AbstractStringBuilder asb) {
+                initCoder = asb.getCoder();
+                maybeLatin1 |= asb.maybeLatin1;
             } else if (seq instanceof String) {
                 initCoder = ((String)seq).coder();
             } else {
@@ -196,14 +199,6 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     public int capacity() {
         return value.length >> coder;
-    }
-
-    /**
-     * Return true if value has been deleted partially. coder may not be accurate.
-     * @return the attribute growOnly.
-     */
-    boolean isGrowOnly() {
-        return growOnly;
     }
 
     /**
@@ -332,7 +327,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 StringUTF16.fillNull(value, count, newLength);
             }
         } else if (count > newLength) {
-            growOnly = false;
+            maybeLatin1 = true;
         }
         count = newLength;
     }
@@ -542,8 +537,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 inflate();
             }
             StringUTF16.putCharSB(value, index, ch);
+            maybeLatin1 = true;
         }
-        growOnly = false;
     }
 
     /**
@@ -612,6 +607,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         inflateIfNeededFor(asb);
         asb.getBytes(value, count, coder);
         count += len;
+        maybeLatin1 |= asb.maybeLatin1;
         return this;
     }
 
@@ -922,7 +918,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (len > 0) {
             shift(end, -len);
             this.count = count - len;
-            growOnly = false;
+            maybeLatin1 = true;
         }
         return this;
     }
@@ -974,7 +970,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         checkIndex(index, count);
         shift(index + 1, -1);
         count--;
-        growOnly = false;
+        maybeLatin1 = true;
         return this;
     }
 
@@ -1010,7 +1006,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         this.count = newCount;
         putStringAt(start, str);
         if (end - start > 0) {
-            growOnly = false;
+            maybeLatin1 = true;
         }
         return this;
     }
