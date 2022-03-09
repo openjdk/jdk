@@ -1260,21 +1260,23 @@ public final class String
     }
 
     private static byte[] encodeUTF8(byte coder, byte[] val, boolean doReplace) {
-        if (coder == UTF16)
+        if (coder == UTF16) {
             return encodeUTF8_UTF16(val, doReplace);
-
-        int len = val.length;
-        int dp = StringCoding.countPositives(val, 0, len);
-        if (dp == len) {
-            return Arrays.copyOf(val, len);
         }
-
-        int i = dp;
-        byte[] dst = new byte[dp + ((len - dp) << 1)];
-        if (dp > 0)
+        final int len = val.length;
+        int dp = StringCoding.countPositives(val, 0, len);
+        byte[] dst;
+        if (dp > 0) {
+            if (dp == len) {
+                return Arrays.copyOf(val, len);
+            }
+            dst = new byte[dp + ((len - dp) << 1)];
             System.arraycopy(val, 0, dst, 0, dp);
-        while (i < len) {
-            byte c = val[i++];
+        } else {
+            dst = new byte[len << 1];
+        }
+        for (int i = dp; i < len; i++) {
+            byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
                 dst[dp++] = (byte) (0x80 | (c & 0x3f));
@@ -1282,8 +1284,9 @@ public final class String
                 dst[dp++] = c;
             }
         }
-        if (dp == dst.length)
+        if (dp == dst.length) {
             return dst;
+        }
         return Arrays.copyOf(dst, dp);
     }
 
