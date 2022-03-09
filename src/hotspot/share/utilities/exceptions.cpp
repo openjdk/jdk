@@ -538,7 +538,11 @@ void Exceptions::debug_check_abort(const char *value_string, const char* message
       strstr(value_string, AbortVMOnException)) {
     if (AbortVMOnExceptionMessage == NULL || (message != NULL &&
         strstr(message, AbortVMOnExceptionMessage))) {
-      fatal("Saw %s, aborting", value_string);
+      if (message == NULL) {
+        fatal("Saw %s, aborting", value_string);
+      } else {
+        fatal("Saw %s: %s, aborting", value_string, message);
+      }
     }
   }
 }
