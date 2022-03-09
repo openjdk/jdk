@@ -1565,9 +1565,8 @@ public abstract class ResourceBundle {
      * module will be used.
      */
     private static Module getCallerModule(Class<?> caller) {
-        Module callerModule = (caller != null) ? caller.getModule()
+        return  (caller != null) ? caller.getModule()
                 : ClassLoader.getSystemClassLoader().getUnnamedModule();
-        return callerModule;
     }
 
     /**
