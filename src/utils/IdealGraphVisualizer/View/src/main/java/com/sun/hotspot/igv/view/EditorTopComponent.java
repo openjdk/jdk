@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
@@ -527,6 +528,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             }
         }
 
+        setSelectedFigures(list);
+    }
+
+    public void setSelectedNodes(InputBlock b) {
+        List<Figure> list = new ArrayList<>();
+        for (Figure f : getModel().getDiagramToView().getFigures()) {
+            if (f.getBlock() == b) {
+                list.add(f);
+            }
+        }
         setSelectedFigures(list);
     }
 

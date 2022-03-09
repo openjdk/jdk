@@ -82,6 +82,11 @@
             <attr name="position" intvalue="0"/>
             <file name="com-sun-hotspot-igv-view-NodeQuickSearch.instance"/>
         </folder>
+        <folder name="Blocks">
+            <attr name="command" stringvalue="n"/>
+            <attr name="position" intvalue="1"/>
+            <file name="com-sun-hotspot-igv-view-BlockQuickSearch.instance"/>
+        </folder>
         <file name="Projects_hidden"/>
     </folder>
     
