@@ -3913,12 +3913,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
      */
     static FloatSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return (FloatSpecies) SPECIES_64;
-            case S_128_BIT: return (FloatSpecies) SPECIES_128;
-            case S_256_BIT: return (FloatSpecies) SPECIES_256;
-            case S_512_BIT: return (FloatSpecies) SPECIES_512;
-            case S_Max_BIT: return (FloatSpecies) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return (FloatSpecies) SPECIES_64;
+            case VectorShape.SK_128_BIT: return (FloatSpecies) SPECIES_128;
+            case VectorShape.SK_256_BIT: return (FloatSpecies) SPECIES_256;
+            case VectorShape.SK_512_BIT: return (FloatSpecies) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return (FloatSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }

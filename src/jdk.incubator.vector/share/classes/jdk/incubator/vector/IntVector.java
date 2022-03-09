@@ -4061,12 +4061,12 @@ public abstract class IntVector extends AbstractVector<Integer> {
      */
     static IntSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return (IntSpecies) SPECIES_64;
-            case S_128_BIT: return (IntSpecies) SPECIES_128;
-            case S_256_BIT: return (IntSpecies) SPECIES_256;
-            case S_512_BIT: return (IntSpecies) SPECIES_512;
-            case S_Max_BIT: return (IntSpecies) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return (IntSpecies) SPECIES_64;
+            case VectorShape.SK_128_BIT: return (IntSpecies) SPECIES_128;
+            case VectorShape.SK_256_BIT: return (IntSpecies) SPECIES_256;
+            case VectorShape.SK_512_BIT: return (IntSpecies) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return (IntSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
