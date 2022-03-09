@@ -24,14 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/ptrQueue.hpp"
-#include "logging/log.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/globalCounter.inline.hpp"
 
 #include <new>
 
@@ -45,178 +38,42 @@ PtrQueue::~PtrQueue() {
   assert(_buf == NULL, "queue must be flushed before delete");
 }
 
-BufferNode* BufferNode::allocate(size_t size) {
-  size_t byte_size = size * sizeof(void*);
-  void* data = NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
-  return new (data) BufferNode;
+BufferNode::AllocatorConfig::AllocatorConfig(size_t size) : _buffer_size(size) {}
+
+void* BufferNode::AllocatorConfig::allocate() {
+  size_t byte_size = _buffer_size * sizeof(void*);
+  return NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
 }
 
-void BufferNode::deallocate(BufferNode* node) {
-  node->~BufferNode();
+void BufferNode::AllocatorConfig::deallocate(void* node) {
+  assert(node != nullptr, "precondition");
   FREE_C_HEAP_ARRAY(char, node);
 }
 
-BufferNode::Allocator::PendingList::PendingList() :
-  _tail(nullptr), _head(nullptr), _count(0) {}
-
-BufferNode::Allocator::PendingList::~PendingList() {
-  delete_list(Atomic::load(&_head));
-}
-
-size_t BufferNode::Allocator::PendingList::add(BufferNode* node) {
-  assert(node->next() == nullptr, "precondition");
-  BufferNode* old_head = Atomic::xchg(&_head, node);
-  if (old_head != nullptr) {
-    node->set_next(old_head);
-  } else {
-    assert(_tail == nullptr, "invariant");
-    _tail = node;
-  }
-  return Atomic::add(&_count, size_t(1));
-}
-
-BufferNodeList BufferNode::Allocator::PendingList::take_all() {
-  BufferNodeList result{Atomic::load(&_head), _tail, Atomic::load(&_count)};
-  Atomic::store(&_head, (BufferNode*)nullptr);
-  _tail = nullptr;
-  Atomic::store(&_count, size_t(0));
-  return result;
-}
-
 BufferNode::Allocator::Allocator(const char* name, size_t buffer_size) :
-  _buffer_size(buffer_size),
-  _pending_lists(),
-  _active_pending_list(0),
-  _free_list(),
-  _free_count(0),
-  _transfer_lock(false)
+  _config(buffer_size),
+  _free_list(name, &_config)
 {
-  strncpy(_name, name, sizeof(_name) - 1);
-  _name[sizeof(_name) - 1] = '\0';
-}
 
-BufferNode::Allocator::~Allocator() {
-  delete_list(_free_list.pop_all());
-}
-
-void BufferNode::Allocator::delete_list(BufferNode* list) {
-  while (list != NULL) {
-    BufferNode* next = list->next();
-    DEBUG_ONLY(list->set_next(NULL);)
-    BufferNode::deallocate(list);
-    list = next;
-  }
 }
 
 size_t BufferNode::Allocator::free_count() const {
-  return Atomic::load(&_free_count);
+  return _free_list.free_count();
 }
 
 BufferNode* BufferNode::Allocator::allocate() {
-  BufferNode* node;
-  {
-    // Protect against ABA; see release().
-    GlobalCounter::CriticalSection cs(Thread::current());
-    node = _free_list.pop();
-  }
-  if (node == NULL) {
-    node = BufferNode::allocate(_buffer_size);
-  } else {
-    // Decrement count after getting buffer from free list.  This, along
-    // with incrementing count before adding to free list, ensures count
-    // never underflows.
-    size_t count = Atomic::sub(&_free_count, 1u);
-    assert((count + 1) != 0, "_free_count underflow");
-  }
-  return node;
+  return ::new (_free_list.allocate()) BufferNode();
 }
 
-// To solve the ABA problem for lock-free stack pop, allocate does the
-// pop inside a critical section, and release synchronizes on the
-// critical sections before adding to the _free_list.  But we don't
-// want to make every release have to do a synchronize.  Instead, we
-// initially place released nodes on the pending list, and transfer
-// them to the _free_list in batches.  Only one transfer at a time is
-// permitted, with a lock bit to control access to that phase.  While
-// a transfer is in progress, other threads might be adding other nodes
-// to the pending list, to be dealt with by some later transfer.
 void BufferNode::Allocator::release(BufferNode* node) {
   assert(node != NULL, "precondition");
   assert(node->next() == NULL, "precondition");
-
-  // Desired minimum transfer batch size.  There is relatively little
-  // importance to the specific number.  It shouldn't be too big, else
-  // we're wasting space when the release rate is low.  If the release
-  // rate is high, we might accumulate more than this before being
-  // able to start a new transfer, but that's okay.  Also note that
-  // the allocation rate and the release rate are going to be fairly
-  // similar, due to how the buffers are used.
-  const size_t trigger_transfer = 10;
-
-  // The pending list is double-buffered.  Add node to the currently active
-  // pending list, within a critical section so a transfer will wait until
-  // we're done with what might be the pending list to be transferred.
-  {
-    GlobalCounter::CriticalSection cs(Thread::current());
-    uint index = Atomic::load_acquire(&_active_pending_list);
-    size_t count = _pending_lists[index].add(node);
-    if (count <= trigger_transfer) return;
-  }
-  // Attempt transfer when number pending exceeds the transfer threshold.
-  try_transfer_pending();
-}
-
-// Try to transfer nodes from the pending list to _free_list, with a
-// synchronization delay for any in-progress pops from the _free_list,
-// to solve ABA there.  Return true if performed a (possibly empty)
-// transfer, false if blocked from doing so by some other thread's
-// in-progress transfer.
-bool BufferNode::Allocator::try_transfer_pending() {
-  // Attempt to claim the lock.
-  if (Atomic::load(&_transfer_lock) || // Skip CAS if likely to fail.
-      Atomic::cmpxchg(&_transfer_lock, false, true)) {
-    return false;
-  }
-  // Have the lock; perform the transfer.
-
-  // Change which pending list is active.  Don't need an atomic RMW since
-  // we have the lock and we're the only writer.
-  uint index = Atomic::load(&_active_pending_list);
-  uint new_active = (index + 1) % ARRAY_SIZE(_pending_lists);
-  Atomic::release_store(&_active_pending_list, new_active);
-
-  // Wait for all critical sections in the buffer life-cycle to complete.
-  // This includes _free_list pops and adding to the now inactive pending
-  // list.
-  GlobalCounter::write_synchronize();
-
-  // Transfer the inactive pending list to _free_list.
-  BufferNodeList transfer_list = _pending_lists[index].take_all();
-  size_t count = transfer_list._entry_count;
-  if (count > 0) {
-    // Update count first so no underflow in allocate().
-    Atomic::add(&_free_count, count);
-    _free_list.prepend(*transfer_list._head, *transfer_list._tail);
-    log_trace(gc, ptrqueue, freelist)
-             ("Transferred %s pending to free: %zu", name(), count);
-  }
-  Atomic::release_store(&_transfer_lock, false);
-  return true;
+  node->~BufferNode();
+  _free_list.release(node);
 }
 
 size_t BufferNode::Allocator::reduce_free_list(size_t remove_goal) {
-  try_transfer_pending();
-  size_t removed = 0;
-  for ( ; removed < remove_goal; ++removed) {
-    BufferNode* node = _free_list.pop();
-    if (node == NULL) break;
-    BufferNode::deallocate(node);
-  }
-  size_t new_count = Atomic::sub(&_free_count, removed);
-  log_debug(gc, ptrqueue, freelist)
-           ("Reduced %s free list by " SIZE_FORMAT " to " SIZE_FORMAT,
-            name(), removed, new_count);
-  return removed;
+  return _free_list.reduce_free_list(remove_goal);
 }
 
 PtrQueueSet::PtrQueueSet(BufferNode::Allocator* allocator) :

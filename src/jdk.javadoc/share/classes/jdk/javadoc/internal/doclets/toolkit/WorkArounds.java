@@ -39,6 +39,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -46,7 +47,6 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager.Location;
 
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
@@ -55,6 +55,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -201,30 +202,38 @@ public class WorkArounds {
     // TODO:  need to re-implement this using j.l.m. correctly!, this has
     //        implications on testInterface, the note here is that javac's supertype
     //        does the right thing returning Parameters in scope.
-    /**
-     * Return the type containing the method that this method overrides.
-     * It may be a <code>TypeElement</code> or a <code>TypeParameterElement</code>.
-     * @param method target
-     * @return a type
+    /*
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
+     *
+     *   - overridden by the specified method, and
+     *   - is not itself a *simple* override
+     *
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         if (utils.isStatic(method)) {
             return null;
         }
         MethodSymbol sym = (MethodSymbol) method;
         ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (com.sun.tools.javac.code.Type t = javacTypes.supertype(origin.type);
-                t.hasTag(TypeTag.CLASS);
-                t = javacTypes.supertype(t)) {
+        for (Type t = javacTypes.supertype(origin.type);
+             t.hasTag(TypeTag.CLASS);
+             t = javacTypes.supertype(t)) {
             ClassSymbol c = (ClassSymbol) t.tsym;
-            for (com.sun.tools.javac.code.Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
+            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
                 if (sym.overrides(sym2, origin, javacTypes, true)) {
                     // Ignore those methods that may be a simple override
                     // and allow the real API method to be found.
                     if (utils.isSimpleOverride((MethodSymbol)sym2)) {
                         continue;
                     }
-                    return t;
+                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
+                    return (Type.ClassType) t;
                 }
             }
         }

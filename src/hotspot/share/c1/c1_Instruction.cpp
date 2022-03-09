@@ -719,7 +719,7 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
 #endif
 
 
-bool BlockBegin::try_merge(ValueStack* new_state) {
+bool BlockBegin::try_merge(ValueStack* new_state, bool has_irreducible_loops) {
   TRACE_PHI(tty->print_cr("********** try_merge for block B%d", block_id()));
 
   // local variables used for state iteration
@@ -760,10 +760,9 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
       }
 
       BitMap& requires_phi_function = new_state->scope()->requires_phi_function();
-
       for_each_local_value(new_state, index, new_value) {
         bool requires_phi = requires_phi_function.at(index) || (new_value->type()->is_double_word() && requires_phi_function.at(index + 1));
-        if (requires_phi || !SelectivePhiFunctions) {
+        if (requires_phi || !SelectivePhiFunctions || has_irreducible_loops) {
           new_state->setup_phi_for_local(this, index);
           TRACE_PHI(tty->print_cr("creating phi-function %c%d for local %d", new_state->local_at(index)->type()->tchar(), new_state->local_at(index)->id(), index));
         }

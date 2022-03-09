@@ -535,6 +535,7 @@ ifneq ($(HSDIS_BACKEND), none)
   $(eval $(call SetupTarget, install-hsdis, \
       MAKEFILE := Hsdis, \
       TARGET := install, \
+      DEPS := jdk-image, \
   ))
 endif
 
@@ -860,6 +861,10 @@ else
   # Declare dependencies from all other <module>-lib to java.base-lib
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
+
+  ifeq ($(ENABLE_HSDIS_BUNDLING), true)
+    java.base-copy: build-hsdis
+  endif
 
   # jdk.accessibility depends on java.desktop
   jdk.accessibility-libs: java.desktop-libs
