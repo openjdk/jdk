@@ -44,12 +44,16 @@ import jdk.internal.org.objectweb.asm.Type;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
- * This  class is used to create objects that have number and types of
+ * This  class is used to create anonymous objects that have number and types of
  * components determined at runtime.
+ *
+ * @implNote The strategy for storing components is deliberately left ambiguous
+ * so that future improvements will not be hampered by issues of backward
+ * compatability.
  *
  * @since 19
  */
-public final class Carrier {
+final class Carrier {
     /**
      * Class file version.
      */
@@ -125,7 +129,13 @@ public final class Carrier {
             Type.getDescriptor(Object.class);
 
     /**
-     * Factory for carriers that are backed by an Object[].
+     * Factory for carriers that are backed by an Object[]. This strategy is used when
+     * the number of components exceeds {@link Carrier#MAX_OBJECT_COMPONENTS}. The
+     * object returned by the carrier constructor is the backing Object[].
+     * <p>
+     * Each element of the Object[] corresponds directly, via index, to each component.
+     * If the component is a primitive value then the constructor boxes the value before
+     * inserting into the array, and the carrier component getter unboxes.
      */
     private static class CarrierArrayFactory {
         /**
@@ -184,7 +194,20 @@ public final class Carrier {
     }
 
     /**
-     * Factory for object based carrier.
+     * Factory for object based carrier. This strategy is used when the number of
+     * components is less than equal {@link Carrier#MAX_OBJECT_COMPONENTS}. The factory
+     * constructs an anonymous class that provides a shape that  matches the
+     * number of longs, ints and objects required by the {@link CarrierShape}. The
+     * factory caches and reuses anonymous classes when looking for a match.
+     * <p>
+     * The anonymous class that is constructed contains the number of long fields then
+     * int fields then object fields required by the {@link CarrierShape}. The order
+     * of fields is reordered by the component getter {@link MethodHandles}. So a
+     * carrier requiring an int and then object will use the same anonymous class as
+     * a carrier requiring an object then int.
+     * <p>
+     * The carrier constructor recasts/translates values that are not long, int or
+     * object. The component getters reverse the effect of the recasts/translates.
      */
     private static class CarrierObjectFactory {
         /**
