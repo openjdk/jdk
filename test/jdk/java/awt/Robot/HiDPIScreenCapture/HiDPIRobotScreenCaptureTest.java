@@ -63,7 +63,7 @@ public class HiDPIRobotScreenCaptureTest {
         }
 
         Frame frame = new Frame();
-        frame.setBounds(83, 97, 400, 300);
+        frame.setBounds(83, 97, 100, 100);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());
