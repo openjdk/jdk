@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Changes.the.store.password.of.a.keystore",
                 "\u66F4\u6539\u5BC6\u94A5\u5E93\u7684\u5B58\u50A8\u53E3\u4EE4"}, //-storepasswd
         {"showinfo.command.help", "\u663E\u793A\u5B89\u5168\u76F8\u5173\u4FE1\u606F"},
+        {"Prints.the.program.version", "\u8F93\u51FA\u7A0B\u5E8F\u7248\u672C"},
 
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
@@ -159,6 +160,10 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u4EE5 RFC \u6837\u5F0F\u8F93\u51FA"}, //-rfc
         {"signature.algorithm.name",
                 "\u7B7E\u540D\u7B97\u6CD5\u540D\u79F0"}, //-sigalg
+        {"signer.alias",
+                "\u7B7E\u540D\u8005\u522B\u540D"}, //-signer
+        {"signer.key.password",
+                "\u7B7E\u540D\u8005\u5BC6\u94A5\u5BC6\u7801"}, //-signerkeypass
         {"source.alias",
                 "\u6E90\u522B\u540D"}, //-srcalias
         {"source.key.password",
@@ -299,6 +304,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u672A\u751F\u6210\u5BC6\u94A5\u5BF9, \u522B\u540D <{0}> \u5DF2\u7ECF\u5B58\u5728"},
         {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
                 "\u6B63\u5728\u4E3A\u4EE5\u4E0B\u5BF9\u8C61\u751F\u6210 {0} \u4F4D{1}\u5BC6\u94A5\u5BF9\u548C\u81EA\u7B7E\u540D\u8BC1\u4E66 ({2}) (\u6709\u6548\u671F\u4E3A {3} \u5929):\n\t {4}"},
+        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
+                "\u6B63\u5728\u4E3A\u4EE5\u4E0B\u5BF9\u8C61\u751F\u6210 {0} \u4F4D {1} \u5BC6\u94A5\u5BF9\u548C\u7531 <{3}> \u9881\u53D1\u7684\u8BC1\u4E66 ({2})\uFF08\u6709\u6548\u671F\u4E3A {4} \u5929\uFF09\uFF1A\n\t {5}"},
         {"Enter.key.password.for.alias.", "\u8F93\u5165 <{0}> \u7684\u5BC6\u94A5\u53E3\u4EE4"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(\u5982\u679C\u548C\u5BC6\u94A5\u5E93\u53E3\u4EE4\u76F8\u540C, \u6309\u56DE\u8F66):  "},
@@ -387,8 +394,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {".WARNING.WARNING.WARNING.",
             "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "\u7B7E\u540D\u8005 #%d:"},
+        {"Certificate.d.", "\u8BC1\u4E66 #%d\uFF1A"},
         {"Timestamp.", "\u65F6\u95F4\u6233:"},
-        {"Signature.", "\u7B7E\u540D:"},
         {"Certificate.owner.", "\u8BC1\u4E66\u6240\u6709\u8005: "},
         {"Not.a.signed.jar.file", "\u4E0D\u662F\u5DF2\u7B7E\u540D\u7684 jar \u6587\u4EF6"},
         {"No.certificate.from.the.SSL.server",
@@ -451,6 +458,9 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"the.input", "\u8F93\u5165"},
         {"reply", "\u56DE\u590D"},
         {"one.in.many", "%1$s #%2$d/%3$d"},
+        {"one.in.many1", "%1$s #%2$d"},
+        {"one.in.many2", "\u7B7E\u540D\u8005 #%2$d \u7684 %1$s"},
+        {"one.in.many3", "\u7B7E\u540D\u8005 #%3$d \u7684 %1$s #%2$d"},
         {"alias.in.cacerts", "cacerts \u4E2D\u7684\u53D1\u5E03\u8005 <%s>"},
         {"alias.in.keystore", "\u53D1\u5E03\u8005 <%s>"},
         {"with.weak", "%s (\u5F31)"},
@@ -473,7 +483,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"backup.keystore.warning", "\u5DF2\u5C06\u539F\u59CB\u5BC6\u94A5\u5E93 \"%1$s\" \u5907\u4EFD\u4E3A \"%3$s\"..."},
         {"importing.keystore.status", "\u6B63\u5728\u5C06\u5BC6\u94A5\u5E93 %1$s \u5BFC\u5165\u5230 %2$s..."},
         {"keyalg.option.missing.error", "\u5FC5\u987B\u6307\u5B9A -keyalg \u9009\u9879\u3002"},
-
         {"showinfo.no.option", "-showinfo \u7F3A\u5C11\u9009\u9879\u3002\u8BF7\u5C1D\u8BD5\u4F7F\u7528 \"keytool -showinfo -tls\"\u3002"},
     };
 

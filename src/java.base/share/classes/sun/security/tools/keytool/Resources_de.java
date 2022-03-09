@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,15 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"option.1.set.twice", "Die Option %s wurde mehrmals angegeben. Alle Angaben bis auf die letzte werden ignoriert."},
         {"multiple.commands.1.2", "Nur ein Befehl ist zul\u00E4ssig: Sowohl %1$s als auch %2$s wurden angegeben."},
         {"Use.keytool.help.for.all.available.commands",
-                 "\"keytool -help\" f\u00FCr alle verf\u00FCgbaren Befehle verwenden"},
+                 "Verwenden Sie \"keytool -?, -h, or --help\" f\u00FCr diese Hilfemeldung"},
         {"Key.and.Certificate.Management.Tool",
                  "Schl\u00FCssel- und Zertifikatsverwaltungstool"},
         {"Commands.", "Befehle:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "Verwenden Sie \"keytool -command_name -help\" f\u00FCr die Verwendung von command_name.\nVerwenden Sie die Option -conf <url>, um eine vorkonfigurierte Optionsdatei anzugeben."},
+                "Verwenden Sie \"keytool -command_name --help\" f\u00FCr die Verwendung von command_name.\nVerwenden Sie die Option -conf <url>, um eine vorkonfigurierte Optionsdatei anzugeben."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
-                "Generiert eine Zertifikatanforderung"}, //-certreq
+                "Generiert eine Zertifikatsanforderung"}, //-certreq
         {"Changes.an.entry.s.alias",
                 "\u00C4ndert den Alias eines Eintrags"}, //-changealias
         {"Deletes.an.entry",
@@ -65,7 +65,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Generates.a.secret.key",
                 "Generiert einen Secret Key"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
-                "Generiert ein Zertifikat aus einer Zertifikatanforderung"}, //-gencert
+                "Generiert ein Zertifikat aus einer Zertifikatsanforderung"}, //-gencert
         {"Generates.CRL", "Generiert eine CRL"}, //-gencrl
         {"Generated.keyAlgName.secret.key",
                 "{0} Secret Key generiert"}, //-genseckey
@@ -88,20 +88,25 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Prints.the.content.of.a.certificate",
                 "Druckt den Content eines Zertifikats"}, //-printcert
         {"Prints.the.content.of.a.certificate.request",
-                "Druckt den Content einer Zertifikatanforderung"}, //-printcertreq
+                "Druckt den Content einer Zertifikatsanforderung"}, //-printcertreq
         {"Prints.the.content.of.a.CRL.file",
                 "Druckt den Content einer CRL-Datei"}, //-printcrl
         {"Generates.a.self.signed.certificate",
                 "Generiert ein selbst signiertes Zertifikat"}, //-selfcert
         {"Changes.the.store.password.of.a.keystore",
                 "\u00C4ndert das Speicherkennwort eines Keystores"}, //-storepasswd
+        {"showinfo.command.help", "Zeigt sicherheitsbezogene Informationen an"},
+        {"Prints.the.program.version", "Gibt die Programmversion aus"},
+
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
                 "Aliasname des zu verarbeitenden Eintrags"}, //-alias
+        {"groupname.option.help",
+                "Gruppenname. Beispiel: der Name der elliptischen Kurve."}, //-groupname
         {"destination.alias",
                 "Zielalias"}, //-destalias
         {"destination.key.password",
-                "Zielschl\u00FCssel-Kennwort"}, //-destkeypass
+                "Zielschl\u00FCsselkennwort"}, //-destkeypass
         {"destination.keystore.name",
                 "Ziel-Keystore-Name"}, //-destkeystore
         {"destination.keystore.password.protected",
@@ -138,6 +143,7 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Kein Prompt"}, //-noprompt
         {"password.through.protected.mechanism",
                 "Kennwort \u00FCber gesch\u00FCtzten Mechanismus"}, //-protected
+        {"tls.option.help", "Zeigt TLS-Konfigurationsinformationen an"},
 
         // The following 2 values should span 2 lines, the first for the
         // option itself, the second for its -providerArg value.
@@ -154,10 +160,14 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Ausgabe in RFC-Stil"}, //-rfc
         {"signature.algorithm.name",
                 "Signaturalgorithmusname"}, //-sigalg
+        {"signer.alias",
+                "Signaturgeberalias"}, //-signer
+        {"signer.key.password",
+                "Signaturgeber-Schl\u00FCsselkennwort"}, //-signerkeypass
         {"source.alias",
                 "Quellalias"}, //-srcalias
         {"source.key.password",
-                "Quellschl\u00FCssel-Kennwort"}, //-srckeypass
+                "Quellschl\u00FCsselkennwort"}, //-srckeypass
         {"source.keystore.name",
                 "Quell-Keystore-Name"}, //-srckeystore
         {"source.keystore.password.protected",
@@ -173,7 +183,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"signed.jar.file",
                 "Signierte JAR-Datei"}, //=jarfile
         {"certificate.validity.start.date.time",
-                "Anfangsdatum/-zeit f\u00FCr Zertifikatsg\u00FCltigkeit"}, //-startdate
+                "Startdatum/-zeit f\u00FCr Zertifikatsg\u00FCltigkeit"}, //-startdate
         {"keystore.password",
                 "Keystore-Kennwort"}, //-storepass
         {"keystore.type",
@@ -188,8 +198,8 @@ public class Resources_de extends java.util.ListResourceBundle {
                  "Serielle ID des zu entziehenden Certs"}, //-id
         // keytool: Running part
         {"keytool.error.", "Keytool-Fehler: "},
-        {"Illegal.option.", "Ung\u00FCltige Option:  "},
-        {"Illegal.value.", "Ung\u00FCltiger Wert: "},
+        {"Illegal.option.", "Unzul\u00E4ssige Option:  "},
+        {"Illegal.value.", "Unzul\u00E4ssiger Wert: "},
         {"Unknown.password.type.", "Unbekannter Kennworttyp: "},
         {"Cannot.find.environment.variable.",
                 "Umgebungsvariable kann nicht gefunden werden: "},
@@ -217,7 +227,7 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Wenn der Keystore nicht kennwortgesch\u00FCtzt ist, d\u00FCrfen -storepass, -keypass und -new nicht angegeben werden"},
         {"if.source.keystore.is.not.password.protected.then.srcstorepass.and.srckeypass.must.not.be.specified",
                 "Wenn der Quell-Keystore nicht kennwortgesch\u00FCtzt ist, d\u00FCrfen -srcstorepass und -srckeypass nicht angegeben werden"},
-        {"Illegal.startdate.value", "Ung\u00FCltiger Wert f\u00FCr Anfangsdatum"},
+        {"Illegal.startdate.value", "Unzul\u00E4ssiger Wert f\u00FCr Startdatum"},
         {"Validity.must.be.greater.than.zero",
                 "G\u00FCltigkeit muss gr\u00F6\u00DFer als null sein"},
         {"provclass.not.a.provider", "%s kein Provider"},
@@ -248,7 +258,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Keystore.password.is.too.short.must.be.at.least.6.characters",
          "Keystore-Kennwort ist zu kurz. Es muss mindestens sechs Zeichen lang sein"},
         {"Unknown.Entry.Type", "Unbekannter Eintragstyp"},
-        {"Too.many.failures.Alias.not.changed", "Zu viele Fehler. Alias nicht ge\u00E4ndert"},
         {"Entry.for.alias.alias.successfully.imported.",
                  "Eintrag f\u00FCr Alias {0} erfolgreich importiert."},
         {"Entry.for.alias.alias.not.imported.", "Eintrag f\u00FCr Alias {0} nicht importiert."},
@@ -271,9 +280,9 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Certificate.stored.in.file.filename.",
                 "Zertifikat in Datei <{0}> gespeichert"},
         {"Certificate.reply.was.installed.in.keystore",
-                "Zertifikatantwort wurde in Keystore installiert"},
+                "Zertifikatsantwort wurde in Keystore installiert"},
         {"Certificate.reply.was.not.installed.in.keystore",
-                "Zertifikatantwort wurde nicht in Keystore installiert"},
+                "Zertifikatsantwort wurde nicht in Keystore installiert"},
         {"Certificate.was.added.to.keystore",
                 "Zertifikat wurde Keystore hinzugef\u00FCgt"},
         {"Certificate.was.not.added.to.keystore",
@@ -287,10 +296,16 @@ public class Resources_de extends java.util.ListResourceBundle {
                 "Alias <{0}> ist nicht vorhanden"},
         {"Alias.alias.has.no.certificate",
                 "Alias <{0}> hat kein Zertifikat"},
+        {"groupname.keysize.coexist",
+                "Es k\u00F6nnen nicht sowohl -groupname als auch -keysize angegeben werden"},
+        {"deprecate.keysize.for.ec",
+                "Das Angeben von -keysize zum Generieren von EC-Schl\u00FCsseln ist veraltet. Verwenden Sie stattdessen \"-groupname %s\"."},
         {"Key.pair.not.generated.alias.alias.already.exists",
                 "Schl\u00FCsselpaar wurde nicht generiert. Alias <{0}> ist bereits vorhanden"},
         {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
                 "Generieren von Schl\u00FCsselpaar (Typ {1}, {0} Bit) und selbst signiertem Zertifikat ({2}) mit einer G\u00FCltigkeit von {3} Tagen\n\tf\u00FCr: {4}"},
+        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
+                "Generieren von Schl\u00FCsselpaar (Typ {1}, {0} Bit) und Zertifikat ({2}), ausgestellt von <{3}>, mit einer G\u00FCltigkeit von {4} Tagen\n\tf\u00FCr: {5}"},
         {"Enter.key.password.for.alias.", "Schl\u00FCsselkennwort f\u00FCr <{0}> eingeben"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(RETURN, wenn identisch mit Keystore-Kennwort):  "},
@@ -303,12 +318,8 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Password.is.too.short.must.be.at.least.6.characters",
                 "Kennwort ist zu kurz. Es muss mindestens sechs Zeichen lang sein"},
         {"Too.many.failures.Key.entry.not.cloned",
-                "Zu viele Fehler. Schl\u00FCsseleintrag wurde nicht geclont"},
+                "Zu viele Fehler. Schl\u00FCsseleintrag wurde nicht geklont"},
         {"key.password.for.alias.", "Schl\u00FCsselkennwort f\u00FCr <{0}>"},
-        {"Keystore.entry.for.id.getName.already.exists",
-                "Keystore-Eintrag f\u00FCr <{0}> bereits vorhanden"},
-        {"Creating.keystore.entry.for.id.getName.",
-                "Keystore-Eintrag f\u00FCr <{0}> wird erstellt..."},
         {"No.entries.from.identity.database.added",
                 "Keine Eintr\u00E4ge aus Identity-Datenbank hinzugef\u00FCgt"},
         {"Alias.name.alias", "Aliasname: {0}"},
@@ -346,7 +357,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Do.you.still.want.to.add.it.to.your.own.keystore.no.",
                 "M\u00F6chten Sie es trotzdem zu Ihrem eigenen Keystore hinzuf\u00FCgen? [Nein]:  "},
         {"Trust.this.certificate.no.", "Diesem Zertifikat vertrauen? [Nein]:  "},
-        {"YES", "JA"},
         {"New.prompt.", "Neues {0}: "},
         {"Passwords.must.differ", "Kennw\u00F6rter m\u00FCssen sich unterscheiden"},
         {"Re.enter.new.prompt.", "Neues {0} erneut eingeben: "},
@@ -379,15 +389,14 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Alias.alias.has.no.key",
                 "Alias <{0}> verf\u00FCgt \u00FCber keinen Schl\u00FCssel"},
         {"Alias.alias.references.an.entry.type.that.is.not.a.private.key.entry.The.keyclone.command.only.supports.cloning.of.private.key",
-                 "Alias <{0}> verweist auf einen Eintragstyp, der kein Private Key-Eintrag ist. Der Befehl -keyclone unterst\u00FCtzt nur das Klonen von Private Key-Eintr\u00E4gen"},
+                 "Alias <{0}> verweist auf einen Eintragstyp, der kein Private-Key-Eintrag ist. Der Befehl -keyclone unterst\u00FCtzt nur das Klonen von Private-Key-Eintr\u00E4gen"},
 
         {".WARNING.WARNING.WARNING.",
             "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Signaturgeber #%d:"},
+        {"Certificate.d.", "Zertifikat #%d:"},
         {"Timestamp.", "Zeitstempel:"},
-        {"Signature.", "Signatur:"},
-        {"CRLs.", "CRLs:"},
-        {"Certificate.owner.", "Zertifikateigent\u00FCmer: "},
+        {"Certificate.owner.", "Zertifikatseigent\u00FCmer: "},
         {"Not.a.signed.jar.file", "Keine signierte JAR-Datei"},
         {"No.certificate.from.the.SSL.server",
                 "Kein Zertifikat vom SSL-Server"},
@@ -398,20 +407,17 @@ public class Resources_de extends java.util.ListResourceBundle {
             "* Die Integrit\u00E4t der Informationen, die in Ihrem Srckeystore gespeichert sind, *\n* wurde NICHT gepr\u00FCft. Um die Integrit\u00E4t zu pr\u00FCfen, *\n* m\u00FCssen Sie Ihr Srckeystore-Kennwort angeben.                  *"},
 
         {"Certificate.reply.does.not.contain.public.key.for.alias.",
-                "Zertifikatantwort enth\u00E4lt keinen Public Key f\u00FCr <{0}>"},
+                "Zertifikatsantwort enth\u00E4lt keinen Public Key f\u00FCr <{0}>"},
         {"Incomplete.certificate.chain.in.reply",
                 "Unvollst\u00E4ndige Zertifikatskette in Antwort"},
-        {"Certificate.chain.in.reply.does.not.verify.",
-                "Zertifikatskette in Antwort verifiziert nicht: "},
         {"Top.level.certificate.in.reply.",
                 "Zertifikat der obersten Ebene in Antwort:\n"},
         {".is.not.trusted.", "... ist nicht vertrauensw\u00FCrdig. "},
         {"Install.reply.anyway.no.", "Antwort trotzdem installieren? [Nein]:  "},
-        {"NO", "NEIN"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Public Keys in Antwort und Keystore stimmen nicht \u00FCberein"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
-                "Zertifikatantwort und Zertifikat in Keystore sind identisch"},
+                "Zertifikatsantwort und Zertifikat in Keystore sind identisch"},
         {"Failed.to.establish.chain.from.reply",
                 "Kette konnte der Antwort nicht entnommen werden"},
         {"n", "N"},
@@ -419,10 +425,12 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Secret.key.not.generated.alias.alias.already.exists",
                 "Secret Key wurde nicht generiert. Alias <{0}> ist bereits vorhanden"},
         {"Please.provide.keysize.for.secret.key.generation",
-                "Geben Sie -keysize zum Erstellen eines Secret Keys an"},
+                "Geben Sie -keysize zum Erstellen eines Secret Key an"},
 
         {"warning.not.verified.make.sure.keystore.is.correct",
             "WARNUNG: Nicht gepr\u00FCft. Stellen Sie sicher, dass -keystore korrekt ist."},
+        {"warning.not.verified.make.sure.keystore.is.correct.or.specify.trustcacerts",
+            "Warnung: Nicht gepr\u00FCft. Stellen Sie sicher, dass -keystore korrekt ist, oder geben Sie -trustcacerts an."},
 
         {"Extensions.", "Erweiterungen: "},
         {".Empty.value.", "(Leerer Wert)"},
@@ -439,34 +447,43 @@ public class Resources_de extends java.util.ListResourceBundle {
 
         // 8171319: keytool should print out warnings when reading or
         // generating cert/cert req using weak algorithms
-        {"the.certificate.request", "Die Zertifikatanforderung"},
+        {"the.certificate.request", "Die Zertifikatsanforderung"},
         {"the.issuer", "Der Aussteller"},
         {"the.generated.certificate", "Das generierte Zertifikat"},
         {"the.generated.crl", "Die generierte CRL"},
-        {"the.generated.certificate.request", "Die generierte Zertifikatanforderung"},
+        {"the.generated.certificate.request", "Die generierte Zertifikatsanforderung"},
         {"the.certificate", "Das Zertifikat"},
         {"the.crl", "Die CRL"},
         {"the.tsa.certificate", "Das TSA-Zertifikat"},
         {"the.input", "Die Eingabe"},
         {"reply", "Antwort"},
         {"one.in.many", "%1$s #%2$d von %3$d"},
+        {"one.in.many1", "%1$s #%2$d"},
+        {"one.in.many2", "%1$s von Signaturgeber #%2$d"},
+        {"one.in.many3", "%1$s #%2$d von Signaturgeber #%3$d"},
         {"alias.in.cacerts", "Aussteller <%s> in cacerts"},
         {"alias.in.keystore", "Aussteller <%s>"},
         {"with.weak", "%s (schwach)"},
+        {"with.disabled", "%s (deaktiviert)"},
         {"key.bit", "%1$d-Bit-%2$s-Schl\u00FCssel"},
         {"key.bit.weak", "%1$d-Bit-%2$s-Schl\u00FCssel (schwach)"},
-        {"unknown.size.1", "unbekannte Gr\u00F6\u00DFe: %s-Schl\u00FCssel"},
+        {"key.bit.disabled", "%1$d-Bit-%2$s-Schl\u00FCssel (deaktiviert)"},
+        {"unknown.size.1", "%s-Schl\u00FCssel mit unbekannter Gr\u00F6\u00DFe"},
         {".PATTERN.printX509Cert.with.weak",
-                "Eigent\u00FCmer: {0}\nAussteller: {1}\nSeriennummer: {2}\nG\u00FCltig von: {3} bis: {4}\nZertifikatsfingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgorithmusname: {7}\nPublic Key-Algorithmus von Subject: {8}\nVersion: {9}"},
+                "Eigent\u00FCmer: {0}\nAussteller: {1}\nSeriennummer: {2}\nG\u00FCltig von: {3} bis: {4}\nZertifikatsfingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignaturalgorithmusname: {7}\nPublic-Key-Algorithmus von Subject: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",
-                "PKCS #10-Zertifikatanforderung (Version 1.0)\nSubject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignaturalgorithmus: %4$s\n"},
+                "PKCS #10-Zertifikatsanforderung (Version 1.0)\nSubject: %1$s\nFormat: %2$s\nPublic Key: %3$s\nSignaturalgorithmus: %4$s\n"},
         {"verified.by.s.in.s.weak", "Von %1$s in %2$s mit %3$s verifiziert"},
-        {"whose.sigalg.risk", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko."},
-        {"whose.key.risk", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko."},
+        {"whose.sigalg.disabled", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
+        {"whose.sigalg.weak", "%1$s verwendet den Signaturalgorithmus %2$s. Dies gilt als Sicherheitsrisiko. Dieser Algorithmus wird in einem zuk\u00FCnftigen Update deaktiviert."},
+        {"whose.key.disabled", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko und ist deaktiviert."},
+        {"whose.key.weak", "%1$s verwendet %2$s. Dies gilt als Sicherheitsrisiko. Diese Schl\u00FCsselgr\u00F6\u00DFe wird in einem zuk\u00FCnftigen Update deaktiviert."},
         {"jks.storetype.warning", "Der %1$s-Keystore verwendet ein propriet\u00E4res Format. Es wird empfohlen, auf PKCS12 zu migrieren, das ein Industriestandardformat mit \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\" ist."},
         {"migrate.keystore.warning", "\"%1$s\" zu %4$s migriert. Der %2$s-Keystore wurde als \"%3$s\" gesichert."},
         {"backup.keystore.warning", "Der urspr\u00FCngliche Keystore \"%1$s\" wird als \"%3$s\" gesichert..."},
         {"importing.keystore.status", "Keystore %1$s wird in %2$s importiert..."},
+        {"keyalg.option.missing.error", "Die Option -keyalg muss angegeben werden."},
+        {"showinfo.no.option", "Fehlende Option f\u00FCr -showinfo. Verwenden Sie keytool -showinfo -tls."},
     };
 
 

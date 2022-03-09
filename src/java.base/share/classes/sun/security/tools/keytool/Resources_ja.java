@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Changes.the.store.password.of.a.keystore",
                 "\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30B9\u30C8\u30A2\u30FB\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5909\u66F4\u3057\u307E\u3059"}, //-storepasswd
         {"showinfo.command.help", "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u95A2\u9023\u60C5\u5831\u3092\u8868\u793A\u3057\u307E\u3059"},
+        {"Prints.the.program.version", "\u30D7\u30ED\u30B0\u30E9\u30E0\u30FB\u30D0\u30FC\u30B8\u30E7\u30F3\u3092\u51FA\u529B\u3057\u307E\u3059"},
 
         // keytool: help: options
         {"alias.name.of.the.entry.to.process",
@@ -159,6 +160,10 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "RFC\u30B9\u30BF\u30A4\u30EB\u306E\u51FA\u529B"}, //-rfc
         {"signature.algorithm.name",
                 "\u7F72\u540D\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u540D"}, //-sigalg
+        {"signer.alias",
+                "\u7F72\u540D\u8005\u306E\u5225\u540D"}, //-signer
+        {"signer.key.password",
+                "\u7F72\u540D\u8005\u306E\u30AD\u30FC\u306E\u30D1\u30B9\u30EF\u30FC\u30C9"}, //-signerkeypass
         {"source.alias",
                 "\u30BD\u30FC\u30B9\u5225\u540D"}, //-srcalias
         {"source.key.password",
@@ -299,6 +304,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "\u30AD\u30FC\u30FB\u30DA\u30A2\u306F\u751F\u6210\u3055\u308C\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u5225\u540D<{0}>\u306F\u3059\u3067\u306B\u5B58\u5728\u3057\u307E\u3059"},
         {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
                 "{3}\u65E5\u9593\u6709\u52B9\u306A{0}\u30D3\u30C3\u30C8\u306E{1}\u306E\u30AD\u30FC\u30FB\u30DA\u30A2\u3068\u81EA\u5DF1\u7F72\u540D\u578B\u8A3C\u660E\u66F8({2})\u3092\u751F\u6210\u3057\u3066\u3044\u307E\u3059\n\t\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA\u540D: {4}"},
+        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
+                "{4}\u65E5\u9593\u6709\u52B9\u306A{0}\u30D3\u30C3\u30C8\u306E{1}\u30AD\u30FC\u30FB\u30DA\u30A2\u3068<{3}>\u306B\u3088\u3063\u3066\u767A\u884C\u3055\u308C\u308B\u8A3C\u660E\u66F8({2})\u3092\u751F\u6210\u3057\u3066\u3044\u307E\u3059\n\t\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA\u540D: {5}"},
         {"Enter.key.password.for.alias.", "<{0}>\u306E\u30AD\u30FC\u30FB\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3068\u540C\u3058\u5834\u5408\u306FRETURN\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044):  "},
@@ -387,8 +394,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {".WARNING.WARNING.WARNING.",
             "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "\u7F72\u540D\u8005\u756A\u53F7%d:"},
+        {"Certificate.d.", "\u8A3C\u660E\u66F8#%d:"},
         {"Timestamp.", "\u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7:"},
-        {"Signature.", "\u7F72\u540D:"},
         {"Certificate.owner.", "\u8A3C\u660E\u66F8\u306E\u6240\u6709\u8005: "},
         {"Not.a.signed.jar.file", "\u7F72\u540D\u4ED8\u304DJAR\u30D5\u30A1\u30A4\u30EB\u3067\u306F\u3042\u308A\u307E\u305B\u3093"},
         {"No.certificate.from.the.SSL.server",
@@ -451,6 +458,9 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"the.input", "\u5165\u529B"},
         {"reply", "\u5FDC\u7B54"},
         {"one.in.many", "%1$s #%2$d / %3$d"},
+        {"one.in.many1", "%1$s #%2$d"},
+        {"one.in.many2", "\u7F72\u540D\u8005\u306E%1$s #%2$d"},
+        {"one.in.many3", "\u7F72\u540D\u8005\u306E%1$s #%2$d #%3$d"},
         {"alias.in.cacerts", "cacerts\u5185\u306E\u767A\u884C\u8005<%s>"},
         {"alias.in.keystore", "\u767A\u884C\u8005<%s>"},
         {"with.weak", "%s (\u5F31)"},
@@ -473,7 +483,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"backup.keystore.warning", "\u5143\u306E\u30AD\u30FC\u30B9\u30C8\u30A2\"%1$s\"\u306F\"%3$s\"\u3068\u3057\u3066\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3055\u308C\u307E\u3059..."},
         {"importing.keystore.status", "\u30AD\u30FC\u30B9\u30C8\u30A2%1$s\u3092%2$s\u306B\u30A4\u30F3\u30DD\u30FC\u30C8\u3057\u3066\u3044\u307E\u3059..."},
         {"keyalg.option.missing.error", "-keyalg\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u6307\u5B9A\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059\u3002"},
-
         {"showinfo.no.option", "-showinfo\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u304C\u3042\u308A\u307E\u305B\u3093\u3002\"keytool -showinfo -tls\"\u3092\u8A66\u3057\u3066\u304F\u3060\u3055\u3044\u3002"},
     };
 
