@@ -1011,7 +1011,7 @@ public class XPathParser extends lr_parser {
 
             if (axis == Axis.NAMESPACE) {
                 nodeType = (name.toString().equals("*")) ? -1
-                        : _xsltc.registerNamespacePrefix(name);;
+                        : _xsltc.registerNamespacePrefix(name);
             } else {
                 final String uri = name.getNamespace();
                 final String local = name.getLocalPart();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1727,7 +1727,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -1737,11 +1737,48 @@ public abstract class FloatVector extends AbstractVector<Float> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Float> test(VectorOperators.Test op,
-                                  VectorMask<Float> m) {
-        return test(op).and(m);
+                                  VectorMask<Float> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        FloatSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            IntVector bits = this.viewAsIntegralLanes();
+            VectorMask<Integer> m = mask.cast(IntVector.species(shape()));
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (int) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (int) 0, m);
+            }
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and(Integer.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                int infbits = (int) toBits(Float.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, m);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, m);
+                } else {
+                    m = bits.compare(EQ, infbits, m);
+                }
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m.cast(vsp));
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**

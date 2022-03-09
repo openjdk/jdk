@@ -81,7 +81,7 @@ public class EmbeddedFrameGrabTest {
                 = clazz.getConstructor(new Class[]{long.class});
         final Frame embedded_frame
                 = (Frame) constructor.newInstance(new Object[]{
-                    new Long(hwnd)});;
+                    new Long(hwnd)});
         final JComboBox<String> combo = new JComboBox<>(new String[]{
             "Item 1", "Item 2"
         });

@@ -213,7 +213,7 @@ public class GenStubs {
             long prevClassMods = currClassMods;
             currClassMods = tree.mods.flags;
             try {
-                super.visitClassDef(tree);;
+                super.visitClassDef(tree);
             } finally {
                 currClassMods = prevClassMods;
             }
