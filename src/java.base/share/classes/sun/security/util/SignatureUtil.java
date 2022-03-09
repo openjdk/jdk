@@ -325,7 +325,7 @@ public class SignatureUtil {
                     return spec;
                 }
             }
-            switch (ifcFfcStrength(KeyUtil.getKeySize(k))) {
+            switch (ifcFfcStrength(KeyUtil.getKeySize(k), false)) {
                 case "SHA256":
                     return PSSParamsHolder.PSS_256_SPEC;
                 case "SHA384":
@@ -489,11 +489,10 @@ public class SignatureUtil {
      * @return the default alg, might be null if unsupported
      */
     public static String getDefaultSigAlgForKey(PrivateKey k) {
-        String kAlg = k.getAlgorithm();
-        return switch (kAlg.toUpperCase(Locale.ENGLISH)) {
-            case "DSA" -> "SHA384with" + kAlg;
-            case "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k))
-                    + "with" + kAlg;
+        String kAlg = k.getAlgorithm().toUpperCase(Locale.ENGLISH);
+        return switch (kAlg) {
+            case "DSA", "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k),
+                    kAlg.equals("DSA")) + "with" + kAlg;
             case "EC" -> ecStrength(KeyUtil.getKeySize(k))
                     + "withECDSA";
             case "EDDSA" -> k instanceof EdECPrivateKey
@@ -552,14 +551,12 @@ public class SignatureUtil {
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
-    private static String ifcFfcStrength (int bitLength) {
+    private static String ifcFfcStrength (int bitLength, boolean isDSA) {
         if (bitLength > 7680) { // 256 bits security strength
             return "SHA512";
-        } else if (bitLength < 624) { // too short for SHA384withRSA signature
-            return "SHA256";
         } else {
-            // per CNSA
-            return "SHA384";
+            // per CNSA, use SHA-384 unless keysize is too small
+            return (isDSA || bitLength >= 624 ? "SHA384" : "SHA256");
         }
     }
 }

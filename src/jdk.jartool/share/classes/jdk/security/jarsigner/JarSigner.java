@@ -428,7 +428,7 @@ public final class JarSigner {
 
         /**
          * Gets the default signature algorithm for a private key.
-         * For example, SHA256withRSA for a 2048-bit RSA key, and
+         * For example, SHA384withRSA for a 3072-bit RSA key, and
          * SHA384withECDSA for a 384-bit EC key.
          *
          * @implNote This implementation makes use of comparable strengths
@@ -437,10 +437,10 @@ public final class JarSigner {
          * Specifically, if a DSA or RSA key with a key size no less than 7680
          * bits, or an EC key with a key size no less than 512 bits,
          * SHA-512 will be used as the hash function for the signature.
-         * If a DSA or RSA key has a key size no less than 3072 bits, or an
-         * EC key has a key size greater than or equal to 384 bits, SHA-384 will
-         * be used. Otherwise, SHA-256 will be used. The value may
-         * change in the future.
+         * Otherwise, SHA-384 will be used unless the key size is too small
+         * for resulting signature algorithm. For example, an RSA 512-bit key
+         * is too short for SHA384withRSA signature. For such keys, SHA-256
+         * will be used. The value may change in the future.
          *
          * @param key the private key.
          * @return the default signature algorithm. Returns null if a default
