@@ -125,7 +125,7 @@ classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
         }
         if (tag != NOT_TAGGED) {
             // If tagged, the old tag better be the same as the new.
-          char* oldSignature = (char*)jlong_to_ptr(tag);
+            char* oldSignature = (char*)jlong_to_ptr(tag);
             JDI_ASSERT(strcmp(signature, oldSignature) == 0);
             jvmtiDeallocate(signature);
             return;
