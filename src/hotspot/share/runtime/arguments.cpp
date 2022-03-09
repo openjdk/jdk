@@ -742,7 +742,7 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 }
 #endif
 
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit 
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
 bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   // Can't use strtol because it doesn't detect (at least on Linux/gcc) overflowing
   // input such as "0x123456789" or "-0x800000001"
@@ -755,7 +755,7 @@ bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   return true;
 }
 
-template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit 
+template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit
 bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   if (s[0] == '-') {
     return false;
@@ -771,13 +771,13 @@ bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   return true;
 }
 
-template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit 
+template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit
 bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   *result = strtoll(s, endptr, base);
   return true;
 }
 
-template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit 
+template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit
 bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   if (s[0] == '-') {
     return false;
@@ -787,13 +787,15 @@ bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
 }
 
 template<typename T>
-static bool multiply_and_check(volatile T* result, T by) {
-  T n = *result;
-  *result = n * by;
-  if ((*result) / by != n) { // overflow!
+static bool multiply_by_1k(T& n) {
+  T a = n << 10;
+  T b = a >> 10;
+  if (n == b) {
+    n = a;
+    return true;
+  } else {
     return false;
   }
-  return true;
 }
 
 // All of the integral types that can be used for command line options:
@@ -804,7 +806,7 @@ static bool multiply_and_check(volatile T* result, T by) {
 //
 // We use SFINAE to pick the correct parse_integer_impl() function
 template<typename T>
-bool parse_integer(const char *s, volatile T* result) {
+bool parse_integer(const char *s, T* result) {
   T n = 0;
   bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
                 (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
@@ -820,23 +822,18 @@ bool parse_integer(const char *s, volatile T* result) {
     return false;
   }
 
-  T g = static_cast<T>(G);
-  T m = static_cast<T>(M);
-  T k = static_cast<T>(K);
-
   switch (*remainder) {
     case 'T': case 't':
-      if (!multiply_and_check(&n, g)) return false;
-      if (!multiply_and_check(&n, k)) return false;
-      break;
+      if (!multiply_by_1k(n)) return false;
+      // fall-through
     case 'G': case 'g':
-      if (!multiply_and_check(&n, g)) return false;
-      break;
+      if (!multiply_by_1k(n)) return false;
+      // fall-through
     case 'M': case 'm':
-      if (!multiply_and_check(&n, m)) return false;
-      break;
+      if (!multiply_by_1k(n)) return false;
+      // fall-through
     case 'K': case 'k':
-      if (!multiply_and_check(&n, k)) return false;
+      if (!multiply_by_1k(n)) return false;
       break;
     case '\0':
       break;

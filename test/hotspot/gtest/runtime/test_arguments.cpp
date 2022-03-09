@@ -273,6 +273,8 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
       "-0x8000000000000001", "-9223372036854775809",
       "0x8000000t", "0x800000000g",
       "0x800000000000m", "0x800000000000000k",
+      "-0x8000000t", "-0x800000000g",
+      "-0x800000000000m", "-0x800000000000000k",
       NULL,
     };
     check_invalid_numeric_string(flag, invalid_strings);
@@ -311,6 +313,10 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
   f("0x800000m",               BAD,          BAD,          0x80000000000LL,         0x80000000000ULL         ) \
   f("0x8000g",                 BAD,          BAD,          0x200000000000LL,        0x200000000000ULL        ) \
   f("0x8000t",                 BAD,          BAD,          0x80000000000000LL,      0x80000000000000ULL      ) \
+  f("-0x1000000k",             BAD,          BAD,         -17179869184LL,           BAD                      ) \
+  f("-0x800000m",              BAD,          BAD,         -0x80000000000LL,         BAD                      ) \
+  f("-0x8000g",                BAD,          BAD,         -0x200000000000LL,        BAD                      ) \
+  f("-0x8000t",                BAD,          BAD,         -0x80000000000000LL,      BAD                      ) \
   f("0x7fffffff",              0x7fffffff,   0x7fffffff,   0x7fffffff,              0x7fffffff               ) \
   f("0xffffffff",              BAD,          0xffffffff,   0xffffffff,              0xffffffff               ) \
   f("0x80000000",              BAD,          0x80000000,   0x80000000,              0x80000000               ) \
@@ -335,7 +341,7 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
 #define INTEGER_TEST_i64(s, i32, u32, i64, u64) NumericArgument<T>(s, i64),
 #define INTEGER_TEST_u64(s, i32, u32, i64, u64) NumericArgument<T>(s, u64),
 
-// signed 32-bit 
+// signed 32-bit
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
@@ -347,7 +353,7 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
 
-// unsigned 32-bit 
+// unsigned 32-bit
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
@@ -359,7 +365,7 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
 
-// signed 64-bit 
+// signed 64-bit
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
@@ -371,7 +377,7 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
 
-// unsigned 64-bit 
+// unsigned 64-bit
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)>
 void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
   JVMFlag* flag = JVMFlag::find_flag(f);
