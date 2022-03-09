@@ -1788,7 +1788,8 @@ void Arguments::set_heap_size() {
   // If the minimum or initial heap_size have not been set or requested to be set
   // ergonomically, set them accordingly.
   if (InitialHeapSize == 0 || MinHeapSize == 0) {
-    julong reasonable_minimum = (julong)(OldSize + NewSize);
+    julong reasonable_minimum = MAX2((julong)(OldSize + NewSize),
+                                     (julong)((phys_mem * MinRAMPercentage) / 100));
 
     reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
 
