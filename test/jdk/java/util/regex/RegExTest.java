@@ -62,7 +62,6 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
@@ -4499,6 +4498,8 @@ public class RegExTest {
     }
 
     //This test is for 8037397
+    //Ensure we don't drop nested interior character classes to the right of an
+    //intersection operator.
     @Test
     public static void droppedClassesWithIntersection() {
         String rx = "[A-Z&&[A-Z]0-9]";
@@ -4526,6 +4527,9 @@ public class RegExTest {
     }
 
     //This test is for 8269753
+    //This is for ensuring that the caret doesn't point at the wrong character
+    //in a syntax exception message because we previously didn't compensate for
+    //tabs when rendering the offending string that contained tab characters.
     @Test
     public static void errorMessageCaretIndentation() {
         String pattern = "\t**";
@@ -4536,6 +4540,8 @@ public class RegExTest {
     }
 
     //This test is for 8276694
+    //Ensure our error message indicates we have an unescaped backslash when we
+    //encounter one.
     @Test
     public static void unescapedBackslash() {
         String pattern = "\\";
@@ -4545,6 +4551,7 @@ public class RegExTest {
     }
 
     //This test is for 8280403
+    //Given bad intersection syntax, we should throw a PatternSyntaxException.
     @Test
     public static void badIntersectionSyntax() {
         String pattern = "[˜\\H +F&&]";
@@ -4554,6 +4561,11 @@ public class RegExTest {
     }
 
     //This test is for 8264160
+    //Here we check for inconsistencies between the behavior of \w and the
+    //behavior of \b. Prior to this fix, the two flags did not behave in a
+    //consistent way ie \b would recognize non-\w characters as part of a word
+    //in some cases. This test verifies that the two behave consistently
+    //for all codepoints we support.
     @Test
     public static void wordBoundaryInconsistencies() {
         Pattern basicWordCharPattern = Pattern.compile("\\w");
@@ -4609,6 +4621,9 @@ public class RegExTest {
     }
 
     //This test is for 8281560
+    //Checks that when the Canonical Equivalence flag is set, the behavior for
+    //Matcher::hitEnd is equivalent for these similar, patterns that saw
+    //inconsistencies.
     @Test
     public static void prematureHitEndInNFCCharProperty() {
         var testInput = "a1a1";
@@ -4633,6 +4648,8 @@ public class RegExTest {
     }
 
     //This test is for 8281315
+    //Checks that we are able to correctly match this case with a backref
+    //without encountering an IndexOutOfBoundsException.
     @Test
     public static void iOOBForCIBackrefs(){
         String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
