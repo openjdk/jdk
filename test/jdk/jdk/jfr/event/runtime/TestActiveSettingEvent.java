@@ -58,8 +58,8 @@ public final class TestActiveSettingEvent {
     private static final String ACTIVE_SETTING_EVENT_NAME = EventNames.ActiveSetting;
 
     public static void main(String[] args) throws Throwable {
-        testDefaultSettings();;
-        testProfileSettings();;
+        testDefaultSettings();
+        testProfileSettings();
         testNewSettings();
         testChangedSetting();
         testUnregistered();

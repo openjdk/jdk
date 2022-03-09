@@ -1311,6 +1311,9 @@ public:
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
 
+  // Assert that the given node is not a variable shift.
+  bool assert_not_var_shift(const Node* n);
+
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
 %}
@@ -1722,6 +1725,12 @@ bool needs_acquiring_load_exclusive(const Node *n)
   }
 
   // so we can just return true here
+  return true;
+}
+
+// Assert that the given node is not a variable shift.
+bool assert_not_var_shift(const Node* n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
   return true;
 }
 
