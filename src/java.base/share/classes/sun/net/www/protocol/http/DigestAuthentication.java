@@ -82,7 +82,8 @@ class DigestAuthentication extends AuthenticationInfo {
             new PrivilegedAction<>() {
                 public String run() {
                     return Security.getProperty(secPropName)
-                                   .replaceAll("\\s", "");
+                                   .replaceAll("\\s", "")
+                                   .toUpperCase();
                 }
             }
         );
@@ -107,15 +108,14 @@ class DigestAuthentication extends AuthenticationInfo {
 
     static {
         @SuppressWarnings("removal")
-        boolean flag = AccessController.doPrivileged(
+        Boolean b = AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public Boolean run() {
-                    Boolean b = NetProperties.getBoolean(compatPropName);
-                    return (b == null) ? false : b.booleanValue();
+                    return NetProperties.getBoolean(compatPropName);
                 }
             }
         );
-        delimCompatFlag = flag;
+        delimCompatFlag = (b == null) ? false : b.booleanValue();
 
         disabledAlgs.addAll(defDisabledAlgs);
         @SuppressWarnings("removal")
@@ -123,7 +123,8 @@ class DigestAuthentication extends AuthenticationInfo {
             new PrivilegedAction<>() {
                 public String run() {
                     String s = NetProperties.get(enabledAlgPropName);
-                    return s == null ? "" : s;
+                    return s == null
+                        ? "" : s.replaceAll("\\s", "").toUpperCase();
                 }
             }
         );
@@ -274,11 +275,7 @@ class DigestAuthentication extends AuthenticationInfo {
         }
 
         synchronized String getAlgorithm () { return algorithm;}
-
-        synchronized void setAlgorithm (String s) {
-            algorithm = s;
-        }
-
+        synchronized void setAlgorithm (String s) { algorithm=s;}
     }
 
     Parameters params;
