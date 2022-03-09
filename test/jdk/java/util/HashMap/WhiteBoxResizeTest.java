@@ -54,7 +54,6 @@ import static org.testng.Assert.assertNull;
  * @modules java.base/java.util:open
  * @summary White box tests for HashMap-related internals around table sizing
  * @run testng WhiteBoxResizeTest
- * @key randomness
  */
 public class WhiteBoxResizeTest {
     final MethodHandle TABLE_SIZE_FOR;
