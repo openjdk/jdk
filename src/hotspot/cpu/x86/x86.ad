@@ -2371,7 +2371,7 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 }
 
 // Helper methods for MachSpillCopyNode::implementation().
-static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
+static void vec_mov_helper(MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
   assert(ireg == Op_VecS || // 32bit vector
          (src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
@@ -2428,7 +2428,7 @@ static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
   }
 }
 
-void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
+void vec_spill_helper(MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st) {
   if (masm) {
     if (is_load) {
