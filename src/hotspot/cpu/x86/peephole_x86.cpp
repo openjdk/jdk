@@ -22,12 +22,18 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "opto/peephole.hpp"
 
+// This function transform the shape
+// mov d, s1; add d, s2 into
+// lea d, [s1 + s2] and
+// mov d, s1; shl d, s2 into
+// lea d, [s1 << s2] with s2 = 1, 2, 3
 MachNode* lea_coalesce_helper(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1, bool imm) {
-  // root is an appropriate lea while inst0 is a add node following inst1 which is a
+  // root is an appropriate lea while inst0 is a add or shift node following inst1 which is a
   // MachSpillCopy
-  // both input and output of inst1 are general purpose registers
+  // both input and output of inst1 must be general purpose registers
   OptoReg::Name dst = ra_->get_reg_first(inst1);
   OptoReg::Name src1 = ra_->get_reg_first(inst1->in(1));
   bool matches = OptoReg::is_reg(dst) && OptoReg::is_reg(src1) &&

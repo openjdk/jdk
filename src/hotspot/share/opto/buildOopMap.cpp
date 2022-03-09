@@ -453,7 +453,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
         // GEN use'd bits
         for( uint l=1; l<n->req(); l++ ) {
           Node *def = n->in(l);
-          assert(def != 0, "input edge required, %d", l);
+          assert(def != 0, "input edge required");
           int first = regalloc->get_reg_first(def);
           int second = regalloc->get_reg_second(def);
           //If peephole had removed the node,do not set live bit for it.

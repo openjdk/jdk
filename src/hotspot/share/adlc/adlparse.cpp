@@ -2057,7 +2057,9 @@ void ADLParser::peep_parse(void) {
       else if (strcmp(token,"peepreplace")==0) {
         peep_replace_parse(*peep); }
       else {
-        parse_err(SYNERR, "expected peeppreddicate, peepmatch, peepconstraint, or peepreplace for identifier %s.\n", token);
+        parse_err(SYNERR,
+            "expected peeppreddicate, peepmatch, peepprocedure, peepconstraint, peepreplace, received %s.\n",
+            token);
       }
       skipws();
     }
