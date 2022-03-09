@@ -25,7 +25,10 @@
  * @test
  * @bug 8260716
  * @summary Test for correct code generation by the JIT
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*ClearArrayTest.test -XX:+UnlockDiagnosticVMOptions -XX:-IdealizeClearArrayNode compiler.codegen.ClearArrayTest
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*ClearArrayTest.test
+ *                   -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:-IdealizeClearArrayNode
+ *                   compiler.codegen.ClearArrayTest
  */
 
 package compiler.codegen;
