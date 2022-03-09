@@ -42,7 +42,7 @@
 
   #ifdef __APPLE__
 
-  class current_thread_wx {
+  class ThreadWX {
   public:
 
     enum WXMode {

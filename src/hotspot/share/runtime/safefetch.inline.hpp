@@ -34,13 +34,13 @@
 // to be valid. If the load causes a fault, the error value is returned.
 inline int SafeFetch32(int* adr, int errValue) {
   assert(StubRoutines::SafeFetch32_stub(), "stub not yet generated");
-  MACOS_AARCH64_ONLY(os::current_thread_wx::Enable wx(os::current_thread_wx::Exec);)
+  MACOS_AARCH64_ONLY(os::ThreadWX::Enable wx(os::ThreadWX::Exec);)
   return StubRoutines::SafeFetch32_stub()(adr, errValue);
 }
 
 inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
   assert(StubRoutines::SafeFetchN_stub(), "stub not yet generated");
-  MACOS_AARCH64_ONLY(os::current_thread_wx::Enable wx(os::current_thread_wx::Exec);)
+  MACOS_AARCH64_ONLY(os::ThreadWX::Enable wx(os::ThreadWX::Exec);)
   return StubRoutines::SafeFetchN_stub()(adr, errValue);
 }
 

@@ -176,7 +176,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // other than the current thread is required we need to transition
     // from native so as to resolve the jthread.
 
-    MACOS_AARCH64_ONLY(os::current_thread_wx::Enable __wx(os::current_thread_wx::Write));
+    MACOS_AARCH64_ONLY(os::ThreadWX::Enable __wx(os::ThreadWX::Write));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
@@ -3137,7 +3137,7 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
   } else {
     Thread* thread = Thread::current();
     // 8266889: raw_enter changes Java thread state, needs WXWrite
-    MACOS_AARCH64_ONLY(os::current_thread_wx::Enable __wx(os::current_thread_wx::Write));
+    MACOS_AARCH64_ONLY(os::ThreadWX::Enable __wx(os::ThreadWX::Write));
     rmonitor->raw_enter(thread);
   }
   return JVMTI_ERROR_NONE;
@@ -3171,7 +3171,7 @@ jvmtiError
 JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
   Thread* thread = Thread::current();
   // 8266889: raw_wait changes Java thread state, needs WXWrite
-  MACOS_AARCH64_ONLY(os::current_thread_wx::Enable __wx(os::current_thread_wx::Write));
+  MACOS_AARCH64_ONLY(os::ThreadWX::Enable __wx(os::ThreadWX::Write));
   int r = rmonitor->raw_wait(millis, thread);
 
   switch (r) {

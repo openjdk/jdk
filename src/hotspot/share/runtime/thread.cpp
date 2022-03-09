@@ -275,7 +275,7 @@ Thread::Thread() {
     assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
   }
 
-  MACOS_AARCH64_ONLY(DEBUG_ONLY(os::current_thread_wx::init();))
+  MACOS_AARCH64_ONLY(DEBUG_ONLY(os::ThreadWX::init();))
 }
 
 void Thread::initialize_tlab() {
@@ -337,7 +337,7 @@ void Thread::call_run() {
 
   register_thread_stack_with_NMT();
 
-  MACOS_AARCH64_ONLY(os::current_thread_wx::init());
+  MACOS_AARCH64_ONLY(os::ThreadWX::init());
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -964,7 +964,7 @@ void JavaThread::check_possible_safepoint() {
   // happens in practice, making such issues hard to find and reproduce.
 #if defined(__APPLE__) && defined(AARCH64)
   if (AssertWXAtThreadSync) {
-    os::current_thread_wx::assert_wx(os::current_thread_wx::Write);
+    os::ThreadWX::assert_wx(os::ThreadWX::Write);
   }
 #endif
 }
@@ -1811,7 +1811,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(os::current_thread_wx::Enable wx(os::current_thread_wx::Write));
+  MACOS_AARCH64_ONLY(os::ThreadWX::Enable wx(os::ThreadWX::Write));
 
   SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
 
@@ -2678,7 +2678,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module
   os::init();
 
-  MACOS_AARCH64_ONLY(os::current_thread_wx::change(os::current_thread_wx::Write));
+  MACOS_AARCH64_ONLY(os::ThreadWX::change(os::ThreadWX::Write));
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -2786,7 +2786,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
-  MACOS_AARCH64_ONLY(os::current_thread_wx::init());
+  MACOS_AARCH64_ONLY(os::ThreadWX::init());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(

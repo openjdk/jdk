@@ -41,7 +41,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
-  MACOS_AARCH64_ONLY(os::current_thread_wx::Enable wx(os::current_thread_wx::Write));
+  MACOS_AARCH64_ONLY(os::ThreadWX::Enable wx(os::ThreadWX::Write));
 
   if (nm->is_unloading()) {
     // We don't need to take the lock when unlinking nmethods from
