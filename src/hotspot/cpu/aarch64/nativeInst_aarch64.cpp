@@ -530,7 +530,7 @@ address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
   MacroAssembler a(&cbuf);
   address stub = NULL;
 
-  if (a.trampoline_needs_far_jump()
+  if (a.is_trampoline_needed()
       && ! is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
     stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
   }

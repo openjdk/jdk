@@ -213,7 +213,7 @@ class CodeCache : AllStatic {
 
   static double reverse_free_ratio();
 
-  static size_t max_distance_to_codestub();
+  static size_t max_distance_to_non_nmethod();
   static bool is_non_nmethod(address addr);
 
   static void clear_inline_caches();                  // clear all inline caches

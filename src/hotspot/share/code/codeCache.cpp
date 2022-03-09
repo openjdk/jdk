@@ -895,7 +895,7 @@ bool CodeCache::is_non_nmethod(address addr) {
   return blob->contains(addr);
 }
 
-size_t CodeCache::max_distance_to_codestub() {
+size_t CodeCache::max_distance_to_non_nmethod() {
   if (!SegmentedCodeCache) {
     return ReservedCodeCacheSize;
   } else {
