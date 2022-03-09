@@ -1780,6 +1780,11 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["uzp2",    "__ sve_uzp2(p0, __ D, p0, p1);",                     "uzp2\tp0.d, p0.d, p1.d"],
                         ["punpklo", "__ sve_punpklo(p1, p0);",                            "punpklo\tp1.h, p0.b"],
                         ["punpkhi", "__ sve_punpkhi(p1, p0);",                            "punpkhi\tp1.h, p0.b"],
+                        # SVE2 instructions
+                        ["bext",    "__ sve_bext(z16, __ B, z16, z17);",                  "bext\tz16.b, z16.b, z17.b"],
+                        ["bext",    "__ sve_bext(z16, __ H, z16, z17);",                  "bext\tz16.h, z16.h, z17.h"],
+                        ["bext",    "__ sve_bext(z16, __ S, z16, z17);",                  "bext\tz16.s, z16.s, z17.s"],
+                        ["bext",    "__ sve_bext(z16, __ D, z16, z17);",                  "bext\tz16.d, z16.d, z17.d"],
 ])
 
 print "\n// FloatImmediateOp"
@@ -1872,8 +1877,9 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.3 and sha3 because of SHA3 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.3-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with armv9-a+sha3+sve2-bitperm because of SHA3 crypto extension and SVE2 bitperm instructions.
+# armv9-a enables sve and sve2 by default.
+subprocess.check_call([AARCH64_AS, "-march=armv9-a+sha3+sve2-bitperm", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

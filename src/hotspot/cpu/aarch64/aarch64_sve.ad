@@ -149,6 +149,8 @@ source %{
       case Op_LoadVector:
       case Op_StoreVector:
         return Matcher::vector_size_supported(bt, vlen);
+      case Op_VectorMaskToLong:
+        if (vlen > 64) return false;
       default:
         break;
     }
@@ -5274,8 +5276,7 @@ instruct vmask_lasttrue(iRegINoSp dst, pReg src, pReg ptmp) %{
 %}
 
 instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2, pRegGov pgtmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            n->in(1)->bottom_type()->is_vect()->length() <= 64);
+  predicate(UseSVE > 0 && !VM_Version::supports_svebitperm());
   match(Set dst (VectorMaskToLong src));
   effect(TEMP vtmp1, TEMP vtmp2, TEMP pgtmp, KILL cr);
   ins_cost(13 * SVE_COST);
@@ -5286,6 +5287,23 @@ instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2, pRegGov p
                         Matcher::vector_length(this, $src),
                         as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg),
                         as_PRegister($pgtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong_sve2(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2) %{
+  predicate(UseSVE == 2 && VM_Version::supports_svebitperm());
+  match(Set dst (VectorMaskToLong src));
+  effect(TEMP vtmp1, TEMP vtmp2);
+  ins_cost(9 * SVE_COST);
+  format %{ "vmask_tolong $dst, $src\t# vector mask tolong (sve2)" %}
+  ins_encode %{
+    __ sve_vmask_tolong(as_Register($dst$$reg), as_PRegister($src$$reg),
+                        Matcher::vector_element_basic_type(this, $src),
+                        Matcher::vector_length(this, $src),
+                        as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg),
+                        /* no tmp preg required for sve2 */ pnoreg);
+
   %}
   ins_pipe(pipe_slow);
 %}
