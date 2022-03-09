@@ -5491,29 +5491,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         class AccessibleBooleanRenderer extends JCheckBox.AccessibleJCheckBox {
-            private JTable table;
-            private int row;
-            private int column;
-
             @Override
-            public boolean doAccessibleAction(int i) {
-                boolean oldSelectedState = isSelected();
-                boolean res = super.doAccessibleAction(i);
-                boolean newSelectedState = isSelected();
-
-                if ((oldSelectedState != newSelectedState) &&
-                    (table != null) && table.isEnabled() &&
-                    table.isCellEditable(row, column)) {
-                    table.setValueAt(Boolean.valueOf(newSelectedState),
-                        row, column);
-                }
-                return res;
-            }
-
-            void setCellToDoActionOn(JTable table, int row, int column) {
-                this.table = table;
-                this.row = row;
-                this.column = column;
+            public AccessibleAction getAccessibleAction() {
+                return null;
             }
         }
     }
@@ -8433,10 +8413,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             public AccessibleAction getAccessibleAction() {
                 AccessibleContext ac = getCurrentAccessibleContext();
                 if (ac != null) {
-                    if (ac instanceof BooleanRenderer.AccessibleBooleanRenderer) {
-                        ((BooleanRenderer.AccessibleBooleanRenderer) ac)
-                            .setCellToDoActionOn(parent, row, column);
-                    }
                     return ac.getAccessibleAction();
                 }
                 return null;

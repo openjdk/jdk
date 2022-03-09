@@ -24,8 +24,8 @@
 /* @test
    @bug 8277922
    @key headful
-   @summary Execution of AccessibleAction of AccessibleContext of JTable cell
-            with JCheckBox does not lead to change of the cell value and view.
+   @summary TableCellRenderer of JTable cell with Boolean data should not
+            support any AccessibleAction.
  */
 
 import java.awt.AWTException;
@@ -43,15 +43,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
-public class JCheckBoxInJTableCannotBeClickedTest {
+public class BooleanRendererHasAccessibleActionTest {
     private volatile JFrame frame;
     private volatile JTable table;
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException, AWTException {
-        final JCheckBoxInJTableCannotBeClickedTest test =
-            new JCheckBoxInJTableCannotBeClickedTest();
+        final BooleanRendererHasAccessibleActionTest test =
+            new BooleanRendererHasAccessibleActionTest();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -80,7 +81,7 @@ public class JCheckBoxInJTableCannotBeClickedTest {
     }
 
     private void createGUI() {
-        frame = new JFrame("JCheckBoxInJTableCannotBeClickedTest");
+        frame = new JFrame("BooleanRendererHasAccessibleActionTest");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         Container content = frame.getContentPane();
         content.setLayout(new BorderLayout());
@@ -88,22 +89,13 @@ public class JCheckBoxInJTableCannotBeClickedTest {
         String[] tblColNames = {"Column 1", "Column 2", "Column 3"};
         Object[][] tblData = {
             {Boolean.TRUE, "Text 1", Boolean.FALSE},
-            {Boolean.FALSE, "Text 2", Boolean.TRUE},
-            {Boolean.TRUE, "Text 3", Boolean.FALSE}
+            {Boolean.FALSE, "Text 2", Boolean.TRUE}
         };
         final DefaultTableModel tblModel = new DefaultTableModel(
                 tblData, tblColNames) {
             @Override
             public Class<?> getColumnClass(int column) {
                 return getValueAt(0, column).getClass();
-            }
-
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                if (column == 0) {
-                    return false;
-                }
-                return true;
             }
         };
         table = new JTable(tblModel);
@@ -133,39 +125,50 @@ public class JCheckBoxInJTableCannotBeClickedTest {
             throw new RuntimeException("'table' should not be null");
         }
 
-        testDoAccessibleActionInCell(0, 2, 0, true);
-        testDoAccessibleActionInCell(0, 2, 0, true);
-        testDoAccessibleActionInCell(1, 2, 0, true);
-        testDoAccessibleActionInCell(1, 2, 0, true);
-        testDoAccessibleActionInCell(0, 0, 0, false);
-        testDoAccessibleActionInCell(1, 0, 0, false);
-        testDoAccessibleActionInCell(2, 0, 0, false);
+        testAccessibleActionInCellRenderer(0, 0, true);
+        testAccessibleActionInCellRenderer(1, 0, true);
+        testAccessibleActionInCellRenderer(0, 2, true);
+        testAccessibleActionInCellRenderer(1, 2, true);
 
-        System.out.println("Disabling the table...");
-        table.setEnabled(false);
-        testDoAccessibleActionInCell(0, 2, 0, false);
-        testDoAccessibleActionInCell(1, 2, 0, false);
-        testDoAccessibleActionInCell(2, 2, 0, false);
-
-        System.out.println("Enabling the table...");
-        table.setEnabled(true);
-        testDoAccessibleActionInCell(0, 2, 0, true);
-        testDoAccessibleActionInCell(1, 2, 0, true);
-        testDoAccessibleActionInCell(2, 2, 0, true);
+        testAccessibleActionInCell(0, 0, true);
+        testAccessibleActionInCell(1, 0, true);
+        testAccessibleActionInCell(0, 2, true);
+        testAccessibleActionInCell(1, 2, true);
 
         System.out.println("Test passed.");
     }
 
-    private void testDoAccessibleActionInCell(int row, int column,
-            int actionIndex, boolean expectCellValChange) {
-        System.out.println(String.format("testDoAccessibleActionInCell():" +
-                    " row='%d', column='%d', actionIndex='%d'" +
-                    ", expectCellValChange='%b'",
-                row, column, actionIndex, expectCellValChange));
+    private void testAccessibleActionInCellRenderer(int row, int column,
+            boolean shouldBeNull) {
+        System.out.println(String.format(
+                "testAccessibleActionInCellRenderer():" +
+                    " row='%d', column='%d', shouldBeNull='%b'",
+                row, column, shouldBeNull));
 
-        if (table == null) {
-            throw new RuntimeException("'table' should not be null");
+        TableCellRenderer cellRenderer = table.getCellRenderer(row, column);
+        if (!(cellRenderer instanceof Accessible)) {
+            throw new RuntimeException("'cellRenderer' is not Accessible");
         }
+
+        AccessibleContext cellRendererAc =
+            ((Accessible) cellRenderer).getAccessibleContext();
+        if (cellRendererAc == null) {
+            throw new RuntimeException("'cellRendererAc' should not be null");
+        }
+
+        AccessibleAction cellRendererAa = cellRendererAc.getAccessibleAction();
+        if ((shouldBeNull && (cellRendererAa != null)) ||
+            (!shouldBeNull && (cellRendererAa == null))) {
+            throw new RuntimeException(
+                "Test failed. 'cellRendererAa' is not as should be");
+        }
+    }
+
+    private void testAccessibleActionInCell(int row, int column,
+            boolean shouldBeNull) {
+        System.out.println(String.format("testAccessibleActionInCell():" +
+                    " row='%d', column='%d', shouldBeNull='%b'",
+                row, column, shouldBeNull));
 
         AccessibleContext tblAc = table.getAccessibleContext();
         AccessibleTable accessibleTbl = tblAc.getAccessibleTable();
@@ -180,23 +183,10 @@ public class JCheckBoxInJTableCannotBeClickedTest {
         }
 
         AccessibleAction cellAa = cellAc.getAccessibleAction();
-        if (cellAa == null) {
-            throw new RuntimeException("'cellAa' should not be null");
-        }
-        if (cellAa.getAccessibleActionCount() <= actionIndex) {
+        if ((shouldBeNull && (cellAa != null)) ||
+            (!shouldBeNull && (cellAa == null))) {
             throw new RuntimeException(
-                "cellAa.getAccessibleActionCount() <= actionIndex");
-        }
-
-        Object oldCellVal = table.getValueAt(row, column);
-        cellAa.doAccessibleAction(actionIndex);
-        Object newCellVal = table.getValueAt(row, column);
-
-        boolean cellValChanged = oldCellVal != newCellVal;
-        if ((expectCellValChange && !cellValChanged) ||
-            (!expectCellValChange && cellValChanged)) {
-            throw new RuntimeException(String.format(
-                    "Test failed. cellValChanged='%b'", cellValChanged));
+                "Test failed. 'cellAa' is not as should be");
         }
     }
 }
