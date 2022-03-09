@@ -794,7 +794,8 @@ public class JViewport extends JComponent implements Accessible
             backingStoreImage = createScaledImage(width, height,
                                                   scaledWidth, scaledHeight);
             Rectangle clip = g.getClipBounds();
-            if (clip.width != width || clip.height != height) {
+          //  if (clip.width != width || clip.height != height) {
+            if (clip.height != height) {
                 if (!isOpaque()) {
                     g.setClip(0, 0, Math.min(viewBounds.width, width),
                               Math.min(viewBounds.height, height));
