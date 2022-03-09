@@ -39,6 +39,8 @@ import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.DerValue;
 
@@ -575,8 +577,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         // We can also generate the first block (or blocks if intrinsics
         // are capable of doing multiple blocks at a time) of keystream.
         finalCounterValue = counter + MAX_UINT32;
-        startState[12] = (int)counter;
-        this.keyStrLimit = chaCha20Block(startState, keyStream);
+        this.keyStrLimit = chaCha20Block(startState, counter, keyStream);
         this.keyStrOffset = 0;
         this.counter += (keyStrLimit / KS_BLK_SIZE);
         direction = opmode;
@@ -833,7 +834,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 ((keyBytes[i + 3] << 24) & 0xFF000000);
         }
 
-        startState[12] = (int)counter;
+        startState[12] = 0;
 
         // The final integers for the state are from the nonce
         // interpreted as 3 little endian integers
@@ -843,6 +844,17 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 ((nonce[i + 2] << 16) & 0x00FF0000) |
                 ((nonce[i + 3] << 24) & 0xFF000000);
         }
+    }
+
+    @ForceInline
+    private static int chaCha20Block(int[] initState, long counter, byte[] result) {
+        if (initState.length != KS_SIZE_INTS || result.length != KS_MAX_LEN) {
+            throw new IllegalArgumentException("Illegal state or keystream buffer length");
+        }
+
+        // Set the counter value before sending into the underlying private block method
+        initState[12] = (int)counter;
+        return _chaCha20Block(initState, result);
     }
 
     /**
@@ -858,7 +870,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *      in a single call and therefore may be a larger multiple of 64.
      */
     @IntrinsicCandidate
-    private static int chaCha20Block(int[] initState, byte[] result) {
+    private static int _chaCha20Block(int[] initState, byte[] result) {
         // Create an initial state and clone a working copy
         int ws00 = STATE_CONST_0;
         int ws01 = STATE_CONST_1;
@@ -1021,8 +1033,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
                     // stream reuse, we adjust the key stream limit to only the
                     // key stream length that is calculated from unique
                     // counter values.
-                    startState[12] = (int)counter;
-                    keyStrLimit = chaCha20Block(startState, keyStream);
+                    keyStrLimit = chaCha20Block(startState, counter, keyStream);
                     counter += (keyStrLimit / KS_BLK_SIZE);
                     if (counter > finalCounterValue) {
                         keyStrLimit -= (counter - finalCounterValue) * 64;
@@ -1074,10 +1085,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private void initAuthenticator() throws InvalidKeyException {
         authenticator = new Poly1305();
 
-        // Derive the Poly1305 key from the starting state
+        // Derive the Poly1305 key from the starting state with the counter
+        // value forced to zero.
         byte[] serializedKey = new byte[KS_MAX_LEN];
-        startState[12] = 0;     // Set the state's counter value to 0;
-        chaCha20Block(startState, serializedKey);
+        chaCha20Block(startState, 0L, serializedKey);
 
         authenticator.engineInit(new SecretKeySpec(serializedKey, 0, 32,
                 authAlgName), null);

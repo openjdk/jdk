@@ -484,7 +484,7 @@ class methodHandle;
   /* support for com.sun.crypto.provider.ChaCha20Cipher */                                                              \
   do_class(com_sun_crypto_provider_chacha20cipher,      "com/sun/crypto/provider/ChaCha20Cipher")                       \
   do_intrinsic(_chacha20Block, com_sun_crypto_provider_chacha20cipher, chacha20Block_name, chacha20Block_signature, F_S) \
-   do_name(chacha20Block_name,                                 "chaCha20Block")                                         \
+   do_name(chacha20Block_name,                                 "_chaCha20Block")                                         \
    do_signature(chacha20Block_signature, "([I[B)I")                                                                    \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
