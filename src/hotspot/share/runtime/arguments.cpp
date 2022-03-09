@@ -748,6 +748,7 @@ static bool parse_integer_impl(const char *s, char **endptr, int base, T* result
   // Can't use strtol because it doesn't detect (at least on Linux/gcc) overflowing
   // input such as "0x123456789" or "-0x800000001"
   STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
+  errno = 0; // errno is thread safe
   long long v = strtoll(s, endptr, base);
   if (errno != 0 || v < min_jint || v > max_jint) {
     return false;
@@ -764,6 +765,7 @@ static bool parse_integer_impl(const char *s, char **endptr, int base, T* result
   // Can't use strtoul because it doesn't detect (at least on Linux/gcc) overflowing
   // input such as "0x123456789"
   STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
+  errno = 0; // errno is thread safe
   unsigned long long v = strtoull(s, endptr, base);
   if (errno != 0 || v > max_juint) {
     return false;
@@ -774,8 +776,9 @@ static bool parse_integer_impl(const char *s, char **endptr, int base, T* result
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit
 static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+  errno = 0; // errno is thread safe
   *result = strtoll(s, endptr, base);
-  return true;
+  return errno == 0;
 }
 
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit
@@ -783,8 +786,9 @@ static bool parse_integer_impl(const char *s, char **endptr, int base, T* result
   if (s[0] == '-') {
     return false;
   }
+  errno = 0; // errno is thread safe
   *result = strtoull(s, endptr, base);
-  return true;
+  return errno == 0;
 }
 
 template<typename T>
@@ -817,8 +821,7 @@ static bool parse_integer(const char *s, T* result) {
                 (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
   char* remainder;
 
-  errno = 0; // errno is thread safe
-  if (!parse_integer_impl(s, &remainder, (is_hex ? 16 : 10), &n) || errno != 0) {
+  if (!parse_integer_impl(s, &remainder, (is_hex ? 16 : 10), &n)) {
     return false;
   }
 
