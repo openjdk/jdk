@@ -121,13 +121,16 @@ public class DTLSSignatureSchemes extends DTLSOverDatagram {
                 serverSignatureSchemes, clientSignatureSchemes);
         try {
             testCase.runTest(testCase);
-            if (exceptionExpected) {
-                throw new RuntimeException("Unexpected success!");
-            }
         } catch (Exception e) {
             if (!exceptionExpected) {
                 throw e;
+            } else { // Otherwise, swallow the expected exception and return.
+                return;
             }
+        }
+
+        if (exceptionExpected) {
+            throw new RuntimeException("Unexpected success!");
         }
     }
 }

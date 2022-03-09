@@ -561,7 +561,7 @@ enum SignatureScheme {
     private static List<SignatureScheme> namesOfAvailable(
                 String[] signatureSchemes) {
 
-        if (signatureSchemes == null ||  signatureSchemes.length == 0) {
+        if (signatureSchemes == null || signatureSchemes.length == 0) {
             return Collections.emptyList();
         }
 

@@ -77,13 +77,16 @@ public class SignatureSchemes extends SSLSocketTemplate {
     protected void runClientApplication(SSLSocket sslSocket) throws Exception {
         try {
             super.runClientApplication(sslSocket);
-            if (exceptionExpected) {
-                throw new RuntimeException("Unexpected success!");
-            }
         } catch (Exception ex) {
             if (!exceptionExpected) {
                 throw ex;
+            } else {  // Otherwise, swallow the exception and return.
+                return;
             }
+        }
+
+        if (exceptionExpected) {
+            throw new RuntimeException("Unexpected success!");
         }
     }
 

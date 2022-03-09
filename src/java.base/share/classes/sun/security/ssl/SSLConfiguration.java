@@ -497,8 +497,6 @@ final class SSLConfiguration implements Cloneable {
                 }
             }
 
-            // Note that if the System Property value is not defined (JDK
-            // default value) or empty, the provider-specific default is used.
             if (!signatureSchemes.isEmpty()) {
                 return signatureSchemes.toArray(new String[0]);
             }
