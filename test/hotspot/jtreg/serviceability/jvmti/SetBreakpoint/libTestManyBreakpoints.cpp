@@ -34,7 +34,7 @@ static void
 check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
   if (err != JVMTI_ERROR_NONE) {
     printf("check_jvmti_status: %s, JVMTI function returned error: %d\n", msg, err);
-    (*jni)->FatalError(jni, msg);
+    jni->FatalError(msg);
   }
 }
 
@@ -42,7 +42,7 @@ void JNICALL classprepare(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread, 
     char* buf;
     jvmtiError err;
 
-    err = (*jvmti)->GetClassSignature(jvmti, klass, &buf, NULL);
+    err = jvmti->GetClassSignature(klass, &buf, NULL);
     check_jvmti_status(jni_env, err, "classprepare: GetClassSignature error");
 
     if (strncmp(buf, TARGET_CLASS_NAME, strlen(TARGET_CLASS_NAME)) == 0) {
@@ -50,12 +50,12 @@ void JNICALL classprepare(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread, 
         jmethodID* methods;
         int i;
 
-        err = (*jvmti)->GetClassMethods(jvmti, klass, &nMethods, &methods);
+        err = jvmti->GetClassMethods(klass, &nMethods, &methods);
         check_jvmti_status(jni_env, err, "classprepare: GetClassMethods error");
         printf("Setting breakpoints in %s\n", buf);
         fflush(stdout);
         for (i = 0; i < nMethods; i++) {
-            err = (*jvmti)->SetBreakpoint(jvmti, methods[i], 0);
+            err = jvmti->SetBreakpoint(methods[i], 0);
             check_jvmti_status(jni_env, err, "classprepare: SetBreakpoint error");
         }
     }
@@ -68,10 +68,10 @@ void JNICALL breakpoint(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread, jm
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     jvmtiCapabilities capa;
-    jvmtiEventCallbacks cbs = {0};
+    jvmtiEventCallbacks cbs;
     jint err;
 
-    err = (*vm)->GetEnv(vm, (void**)&jvmti, JVMTI_VERSION_1_0);
+    err = vm->GetEnv((void**)&jvmti, JVMTI_VERSION_1_0);
     if (err != JNI_OK) {
         printf("Agent_OnLoad: GetEnv error\n");
         return JNI_ERR;
@@ -80,27 +80,28 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     memset(&capa, 0, sizeof(capa));
     capa.can_generate_breakpoint_events = 1;
     capa.can_generate_single_step_events = 1;
-    err = (*jvmti)->AddCapabilities(jvmti, &capa);
+    err = jvmti->AddCapabilities(&capa);
     if (err != JNI_OK) {
         printf("Agent_OnLoad: AddCapabilities error\n");
         return JNI_ERR;
     }
 
+    memset(&cbs, 0, sizeof(cbs));
     cbs.ClassPrepare = classprepare;
     cbs.Breakpoint = breakpoint;
-    err = (*jvmti)->SetEventCallbacks(jvmti, &cbs, sizeof(cbs));
+    err = jvmti->SetEventCallbacks(&cbs, sizeof(cbs));
     if (err != JNI_OK) {
         printf("Agent_OnLoad: SetEventCallbacks error\n");
         return JNI_ERR;
     }
 
-    err = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
     if (err != JNI_OK) {
         printf("Agent_OnLoad: SetEventNotificationMode CLASS_PREPARE error\n");
         return JNI_ERR;
     }
 
-    err = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
     if (err != JNI_OK) {
         printf("Agent_OnLoad: SetEventNotificationMode BREAKPOINT error\n");
         return JNI_ERR;
