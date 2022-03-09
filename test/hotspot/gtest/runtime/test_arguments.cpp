@@ -335,6 +335,20 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
   f("9223372036854775808",     BAD,          BAD,          BAD,                     9223372036854775808ULL   ) \
   f("-9223372036854775808",    BAD,          BAD,          min_jlong,               BAD                      ) \
   f("18446744073709551615",    BAD,          BAD,          BAD,                     max_julong               ) \
+                                                                                                               \
+  /* boundary cases for overflow checks in multiply_by_1k() */                                                 \
+  f("0x7ffm",                  0x7ff00000,   0x7ff00000,   0x7ff00000LL,            0x7ff00000ULL            ) \
+  f("0x800m",                  BAD,          0x80000000,   0x80000000LL,            0x80000000ULL            ) \
+  f("0xfffm",                  BAD,          0xfff00000,   0xfff00000LL,            0xfff00000ULL            ) \
+  f("0x1000m",                 BAD,          BAD,          0x100000000LL,           0x100000000ULL           ) \
+  f("-0x800m",                 min_jint,     BAD,         -2147483648LL,            BAD                      ) \
+  f("-0x801m",                 BAD,          BAD,         -2148532224LL,            BAD                      ) \
+  f("0x7ffffffffffm",          BAD,          BAD,          0x7ffffffffff00000LL,    0x7ffffffffff00000ULL    ) \
+  f("0x80000000000m",          BAD,          BAD,          BAD,                     0x8000000000000000ULL    ) \
+  f("0xfffffffffffm",          BAD,          BAD,          BAD,                     0xfffffffffff00000ULL    ) \
+  f("0x100000000000m",         BAD,          BAD,          BAD,                     BAD                      ) \
+  f("-0x80000000000m",         BAD,          BAD,          min_jlong,               BAD                      ) \
+  f("-0x80000000001m",         BAD,          BAD,          BAD,                     BAD                      ) \
 
 #define INTEGER_TEST_i32(s, i32, u32, i64, u64) NumericArgument<T>(s, i32),
 #define INTEGER_TEST_u32(s, i32, u32, i64, u64) NumericArgument<T>(s, u32),

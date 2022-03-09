@@ -743,7 +743,7 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 #endif
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
-bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   // Can't use strtol because it doesn't detect (at least on Linux/gcc) overflowing
   // input such as "0x123456789" or "-0x800000001"
   STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
@@ -756,7 +756,7 @@ bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
 }
 
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // unsigned 32-bit
-bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   if (s[0] == '-') {
     return false;
   }
@@ -772,13 +772,13 @@ bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
 }
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // signed 64-bit
-bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   *result = strtoll(s, endptr, base);
   return true;
 }
 
 template <typename T, ENABLE_IF(!std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 8)> // unsigned 64-bit
-bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
+static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
   if (s[0] == '-') {
     return false;
   }
@@ -788,10 +788,9 @@ bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
 
 template<typename T>
 static bool multiply_by_1k(T& n) {
-  T a = n << 10;
-  T b = a >> 10;
-  if (n == b) {
-    n = a;
+  if (n >= std::numeric_limits<T>::min() / 1024 &&
+      n <= std::numeric_limits<T>::max() / 1024) {
+    n *= 1024;
     return true;
   } else {
     return false;
@@ -806,7 +805,12 @@ static bool multiply_by_1k(T& n) {
 //
 // We use SFINAE to pick the correct parse_integer_impl() function
 template<typename T>
-bool parse_integer(const char *s, T* result) {
+static bool parse_integer(const char *s, T* result) {
+  if (!isdigit(s[0]) && s[0] != '-') {
+    // strtoll/strtoull may allow leading spaces. Forbid it.
+    return false;
+  }
+
   T n = 0;
   bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) ||
                 (s[0] == '-' && s[1] == '0' && (s[2] == 'x' || s[3] == 'X'));
@@ -846,11 +850,6 @@ bool parse_integer(const char *s, T* result) {
 }
 
 bool Arguments::atojulong(const char *s, julong* result) {
-  // First char must be a digit. Don't allow negative numbers or leading spaces.
-  if (!isdigit(*s)) {
-    return false;
-  }
-
   return parse_integer(s, result);
 }
 
