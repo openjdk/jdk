@@ -333,9 +333,12 @@ class WinNTFileSystem extends FileSystem {
         // is a ":" at position 1 and the first character is not a letter
         String pathname = f.getPath();
         int lastColon = pathname.lastIndexOf(":");
-        if (lastColon > 1 ||
-            (lastColon == 1 && !isLetter(pathname.charAt(0))))
-            return true;
+
+        // Valid if there is no ":" present or if the last ":" present is
+        // at index 1 and the first character is a latter
+        if (lastColon < 0 ||
+            (lastColon == 1 && isLetter(pathname.charAt(0))))
+            return false;
 
         // Invalid if path creation fails
         Path path = null;
