@@ -498,7 +498,7 @@ class Http1AsyncReceiver {
         if (debug.on())
             debug.log("recorded " + t + "\n\t delegate: " + delegate
                       + "\n\t queue.isEmpty: " + queue.isEmpty()
-                      + " stopRequested: " + stopRequested, ex);
+                      + "\n\tstopRequested: " + stopRequested, ex);
         if (Log.errors()) {
             Log.logError("HTTP/1 read subscriber recorded error: {0} - {1}", describe(), t);
         }

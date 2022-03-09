@@ -643,8 +643,8 @@ class Http1Response<T> {
         public final void onReadError(Throwable t) {
             BodyParser parser = bodyParser;
             if (t instanceof EOFException && parser != null &&
-                    parser instanceof UnknownLengthBodyParser) {
-                ((UnknownLengthBodyParser)parser).complete();
+                    parser instanceof UnknownLengthBodyParser ulBodyParser) {
+                ulBodyParser.complete();
                 return;
             }
             t = wrapWithExtraDetail(t, parser::currentStateMessage);
@@ -725,7 +725,7 @@ class Http1Response<T> {
                     parser.onError(error);
                 } else {
                     if (debug.on()) {
-                        debug.log("no parser");
+                        debug.log("no parser - error not propagated: " + error);
                     }
                 }
             }
