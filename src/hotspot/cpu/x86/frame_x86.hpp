@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,8 @@
     interpreter_frame_mirror_offset                  = interpreter_frame_method_offset - 1,
     interpreter_frame_mdp_offset                     = interpreter_frame_mirror_offset - 1,
     interpreter_frame_cache_offset                   = interpreter_frame_mdp_offset - 1,
-    interpreter_frame_locals_offset                  = interpreter_frame_cache_offset - 1,
+    interpreter_frame_raw_locals_offset              = interpreter_frame_cache_offset - 1,
+    interpreter_frame_locals_offset                  = interpreter_frame_raw_locals_offset - 1,
     interpreter_frame_bcp_offset                     = interpreter_frame_locals_offset - 1,
     interpreter_frame_initial_sp_offset              = interpreter_frame_bcp_offset - 1,
 

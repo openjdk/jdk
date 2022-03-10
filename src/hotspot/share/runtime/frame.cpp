@@ -323,7 +323,8 @@ frame frame::real_sender(RegisterMap* map) const {
 
 void frame::interpreter_frame_set_locals(intptr_t* locs)  {
   assert(is_interpreted_frame(), "Not an interpreted frame");
-  *interpreter_frame_locals_addr() = locs;
+  intptr_t* relative_locals = (intptr_t*)((char*)locs - (char*)fp());
+  *interpreter_frame_locals_addr() = relative_locals;
 }
 
 Method* frame::interpreter_frame_method() const {
@@ -395,7 +396,9 @@ BasicObjectLock* frame::previous_monitor_in_interpreter_frame(BasicObjectLock* c
 
 intptr_t* frame::interpreter_frame_local_at(int index) const {
   const int n = Interpreter::local_offset_in_bytes(index)/wordSize;
-  return &((*interpreter_frame_locals_addr())[n]);
+  // interpreter_frame_locals is fp relative
+  intptr_t* first = (intptr_t*)(((char*)fp()) + (intptr_t)*interpreter_frame_locals_addr());
+  return &(first[n]);
 }
 
 intptr_t* frame::interpreter_frame_expression_stack_at(jint offset) const {

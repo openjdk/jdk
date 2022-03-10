@@ -640,7 +640,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
   __ movptr(rdx, Address(rdx, ConstantPool::cache_offset_in_bytes()));
   __ push(rdx); // set constant pool cache
-  __ push(rlocals); // set locals pointer
+  __ push(rlocals);
+  __ mov(rax, rlocals);
+  __ subptr(rax, rbp);
+  __ push(rax); // set relative locals pointer (rlocals - rbp)
   if (native_call) {
     __ push(0); // no bcp
   } else {

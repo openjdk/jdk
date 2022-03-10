@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,9 +588,8 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (MetaspaceObj::is_valid(cp) == false) return false;
 
   // validate locals
-
-  address locals =  (address) *interpreter_frame_locals_addr();
-  return thread->is_in_stack_range_incl(locals, (address)fp());
+  intptr_t* locals = fp() + (intptr_t)*interpreter_frame_locals_addr();
+  return thread->is_in_stack_range_incl((address)locals, (address)fp());
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {
