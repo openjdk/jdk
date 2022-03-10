@@ -747,12 +747,11 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
 static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  // Can't use strtol because it doesn't detect (at least on Linux/gcc) overflowing
-  // input such as "0x123456789" or "-0x800000001"
-  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
+  STATIC_ASSERT(sizeof(long) >= 4); // need to have enough bits
   errno = 0; // errno is thread safe
-  long long v = strtoll(s, endptr, base);
-  if (errno != 0 || v < min_jint || v > max_jint) {
+  long v = strtol(s, endptr, base);
+  if (errno != 0 LP64_ONLY(|| v < min_jint || v > max_jint)) {
+    // long is 64-bit on LP64, so we need explicit range check.
     return false;
   }
   *result = static_cast<T>(v);
@@ -764,12 +763,11 @@ static bool parse_integer_impl(const char *s, char **endptr, int base, T* result
   if (s[0] == '-') {
     return false;
   }
-  // Can't use strtoul because it doesn't detect (at least on Linux/gcc) overflowing
-  // input such as "0x123456789"
-  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
+  STATIC_ASSERT(sizeof(unsigned long) >= 4); // need to have enough bits
   errno = 0; // errno is thread safe
-  unsigned long long v = strtoull(s, endptr, base);
-  if (errno != 0 || v > max_juint) {
+  unsigned long v = strtoul(s, endptr, base);
+  if (errno != 0 LP64_ONLY(|| v > max_juint)) {
+    // unsigned long is 64-bit on LP64, so we need explicit range check.
     return false;
   }
   *result = static_cast<T>(v);
@@ -941,6 +939,10 @@ static JVMFlag::Error set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin
       return JVMFlagAccess::set_size_t(flag, &v, origin);
     }
   } else if (flag->is_double()) {
+    // This function parses only input strings without a decimal
+    // point character (.)
+    // If a string looks like a FP number, it would be parsed by
+    // set_fp_numeric_flag(). See Arguments::parse_argument().
     jlong v;
     if (parse_integer(value, &v)) {
       double double_v = (double) v;

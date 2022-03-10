@@ -336,6 +336,27 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
   f("-9223372036854775808",    BAD,          BAD,          min_jlong,               BAD                      ) \
   f("18446744073709551615",    BAD,          BAD,          BAD,                     max_julong               ) \
                                                                                                                \
+  /* All edge cases without a k/m/g/t suffix */                                                                \
+  f("0x7ffffffe",              max_jint-1,   0x7ffffffe,   0x7ffffffeLL,            0x7ffffffeULL            ) \
+  f("0x7fffffff",              max_jint,     0x7fffffff,   0x7fffffffLL,            0x7fffffffULL            ) \
+  f("0x80000000",              BAD,          0x80000000,   0x80000000LL,            0x80000000ULL            ) \
+  f("0xfffffffe",              BAD,          max_juint-1,  0xfffffffeLL,            0xfffffffeULL            ) \
+  f("0xffffffff",              BAD,          max_juint,    0xffffffffLL,            0xffffffffULL            ) \
+  f("0x100000000",             BAD,          BAD,          0x100000000LL,           0x100000000ULL           ) \
+  f("-0x7fffffff",             min_jint+1,   BAD,         -0x7fffffffLL,            BAD                      ) \
+  f("-0x80000000",             min_jint,     BAD,         -0x80000000LL,            BAD                      ) \
+  f("-0x80000001",             BAD,          BAD,         -0x80000001LL,            BAD                      ) \
+                                                                                                               \
+  f("0x7ffffffffffffffe",      BAD,          BAD,          max_jlong-1,             0x7ffffffffffffffeULL    ) \
+  f("0x7fffffffffffffff",      BAD,          BAD,          max_jlong,               0x7fffffffffffffffULL    ) \
+  f("0x8000000000000000",      BAD,          BAD,          BAD,                     0x8000000000000000ULL    ) \
+  f("0xfffffffffffffffe",      BAD,          BAD,          BAD,                     max_julong-1             ) \
+  f("0xffffffffffffffff",      BAD,          BAD,          BAD,                     max_julong               ) \
+  f("0x10000000000000000",     BAD,          BAD,          BAD,                     BAD                      ) \
+  f("-0x7fffffffffffffff",     BAD,          BAD,          min_jlong+1,             BAD                      ) \
+  f("-0x8000000000000000",     BAD,          BAD,          min_jlong,               BAD                      ) \
+  f("-0x8000000000000001",     BAD,          BAD,          BAD,                     BAD                      ) \
+                                                                                                               \
   /* boundary cases for overflow checks in multiply_by_1k() */                                                 \
   f("0x7ffm",                  0x7ff00000,   0x7ff00000,   0x7ff00000LL,            0x7ff00000ULL            ) \
   f("0x800m",                  BAD,          0x80000000,   0x80000000LL,            0x80000000ULL            ) \
