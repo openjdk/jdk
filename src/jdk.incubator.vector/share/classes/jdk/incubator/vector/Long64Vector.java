@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,6 +363,12 @@ final class Long64Vector extends LongVector {
     @ForceInline
     public final Long64Mask test(Test op) {
         return super.testTemplate(Long64Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Long64Mask test(Test op, VectorMask<Long> m) {
+        return super.testTemplate(Long64Mask.class, op, (Long64Mask) m);  // specialize
     }
 
     // Specialized comparisons
