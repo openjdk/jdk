@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ class UnixCopyFile {
                 }
                 if (sfd >= 0) {
                     source.getFileSystem().copyNonPosixAttributes(sfd, dfd);
-                    close(sfd);
+                    close(sfd, e -> null);
                 }
             }
             // copy time stamps last
@@ -210,7 +210,7 @@ class UnixCopyFile {
             done = true;
         } finally {
             if (dfd >= 0)
-                close(dfd);
+                close(dfd, e -> null);
             if (!done) {
                 // rollback
                 try { rmdir(target); } catch (UnixException ignore) { }
@@ -288,7 +288,7 @@ class UnixCopyFile {
                 }
                 complete = true;
             } finally {
-                close(fo);
+                close(fo, e -> null);
 
                 // copy of file or attributes failed so rollback
                 if (!complete) {
@@ -298,7 +298,7 @@ class UnixCopyFile {
                 }
             }
         } finally {
-            close(fi);
+            close(fi, e -> null);
         }
     }
 
