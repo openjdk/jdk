@@ -501,7 +501,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-vendor-version-string must have a value])
   elif [ ! [[ $with_vendor_version_string =~ ^[[:graph:]]*$ ]] ]; then
     AC_MSG_ERROR([--with--vendor-version-string contains non-graphical characters: $with_vendor_version_string])
-  elif test "x$with_vendor_version_string" != xno
+  elif test "x$with_vendor_version_string" != xno; then
     # Set vendor version string if --without is not passed
     # Check not required if an empty value is passed, since VENDOR_VERSION_STRING
     # would then be set to ""
@@ -549,7 +549,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       build version. Defaults to the build number.])])
   if test "x$with_macosx_bundle_build_version" = xyes; then
     AC_MSG_ERROR([--with-macosx-bundle-build-version must have a value])
-  elif test "x$with_macosx_bundle_build_version" != xno;
+  elif test "x$with_macosx_bundle_build_version" = xno; then
     # Interpret --without-* as empty string instead of the literal "no"
     MACOSX_BUNDLE_BUILD_VERSION=
   elif [ ! [[ $with_macosx_bundle_build_version =~ ^[0-9\.]*$ ]] ]; then
