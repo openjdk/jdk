@@ -57,6 +57,8 @@
  *          -Djdk.https.negotiate.cbt=domain:*.web.domain HttpsCB true true
  * @run main/othervm -Djdk.net.hosts.file=TestHosts
  *          -Djdk.https.negotiate.cbt=domain:*.WEB.Domain HttpsCB true true
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts
+ *          -Djdk.https.negotiate.cbt=domain:*.Invalid,*.WEB.Domain HttpsCB true true
  */
 
 import com.sun.net.httpserver.Headers;
