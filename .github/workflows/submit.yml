@@ -660,10 +660,10 @@ jobs:
       - name: Persist test bundles
         uses: actions/upload-artifact@v2
         with:
-          name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          name: transient_jdk-alpine-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
-            jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin${{ matrix.artifact }}.tar.gz
-            jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin-tests${{ matrix.artifact }}.tar.gz
+            jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal_linux-x64-musl_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal_linux-x64-musl_bin-tests${{ matrix.artifact }}.tar.gz
 
   linux_x86_build:
     name: Linux x86
