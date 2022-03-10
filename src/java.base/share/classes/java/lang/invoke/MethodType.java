@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -959,7 +959,7 @@ class MethodType
         int myLen = ptypes.length, fullLen = fullList.size();
         if (skipPos > myLen || myLen - skipPos > fullLen)
             return false;
-        List<Class<?>> myList = List.of(ptypes);
+        List<Class<?>> myList = Arrays.asList(ptypes);
         if (skipPos != 0) {
             myList = myList.subList(skipPos, myLen);
             myLen -= skipPos;
