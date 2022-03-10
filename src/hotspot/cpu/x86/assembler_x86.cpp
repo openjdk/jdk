@@ -9864,12 +9864,12 @@ void Assembler::vpbroadcastq(XMMRegister dst, Address src, int vector_len) {
 
 void Assembler::evbroadcasti32x4(XMMRegister dst, Address src, int vector_len) {
   assert(vector_len != Assembler::AVX_128bit, "");
-  assert(VM_Version::supports_avx512dq(), "");
+  assert(VM_Version::supports_evex(), "");
   assert(dst != xnoreg, "sanity");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   attributes.set_rex_vex_w_reverted();
-  attributes.set_address_attributes(/* tuple_type */ EVEX_T2, /* input_size_in_bits */ EVEX_64bit);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_T4, /* input_size_in_bits */ EVEX_32bit);
   // swap src<->dst for encoding
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x5A);

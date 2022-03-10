@@ -296,6 +296,13 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
   printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
+  if test "x$SOURCE_DATE" != xupdated; then
+    source_date_info="$SOURCE_DATE ($SOURCE_DATE_ISO_8601)"
+  else
+    source_date_info="Determined at build time"
+  fi
+  printf "* Source date:    $source_date_info\n"
+
   printf "\n"
   printf "Tools summary:\n"
   if test "x$OPENJDK_BUILD_OS" = "xwindows"; then

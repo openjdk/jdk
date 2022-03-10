@@ -340,7 +340,7 @@ public class VariablesTest extends KullaTesting {
         //assertEquals(getState().source(snippet), src);
         //assertEquals(snippet, undefKey);
         assertEquals(getState().status(undefKey), RECOVERABLE_NOT_DEFINED);
-        List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey).collect(toList());;
+        List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey).collect(toList());
         assertEquals(unr.size(), 1);
         assertEquals(unr.get(0), "class undefined");
         assertVariables(variable("undefined", "d"));
