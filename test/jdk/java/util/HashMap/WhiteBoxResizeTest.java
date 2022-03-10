@@ -113,9 +113,25 @@ public class WhiteBoxResizeTest {
         };
     }
 
+    private static final Integer[] INTEGER_CONSTANTS = buildIntegerConstants();
+
+    private static final int INTEGER_CONSTANTS_LENGTH = 256;
+
+    private static Integer[] buildIntegerConstants() {
+        Integer[] integerArray = new Integer[INTEGER_CONSTANTS_LENGTH];
+        for (int i = 0; i < INTEGER_CONSTANTS_LENGTH; ++i) {
+            integerArray[i] = i;
+        }
+        return integerArray;
+    }
+
     void putN(Map<Integer, Integer> map, int n) {
-        for (int i = 0; i < n; i++)
-            map.put(i, i);
+        if (n < 0 || n > INTEGER_CONSTANTS_LENGTH) {
+            throw new IllegalArgumentException("n not legal : " + n);
+        }
+        for (int i = 0; i < n; i++) {
+            map.put(INTEGER_CONSTANTS[i], INTEGER_CONSTANTS[i]);
+        }
     }
 
     /*
