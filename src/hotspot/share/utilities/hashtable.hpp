@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,11 @@ template <MEMFLAGS F> class BasicHashtableEntry {
 private:
   unsigned int         _hash;           // 32-bit hash for item
 
-  LP64_ONLY(unsigned int _gap;)
-
   // Link to next element in the linked list for this bucket.
   BasicHashtableEntry<F>* _next;
 
 public:
-  BasicHashtableEntry(unsigned int hashValue) : _hash(hashValue),  LP64_ONLY(_gap(0) COMMA) _next(nullptr) {}
+  BasicHashtableEntry(unsigned int hashValue) : _hash(hashValue), _next(nullptr) {}
   // Still should not call this. Entries are placement new allocated, so are
   // deleted with free_entry.
   ~BasicHashtableEntry() { ShouldNotReachHere(); }

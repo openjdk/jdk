@@ -660,7 +660,10 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-
+  if (DumpSharedSpaces) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset(inner_ptr, 0, size);
+  }
   return inner_ptr;
 }
 
