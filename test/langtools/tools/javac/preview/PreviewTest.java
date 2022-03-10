@@ -68,9 +68,23 @@ public class PreviewTest extends TestRunner {
         tb.writeJavaFiles(apiSrc,
                           """
                           package preview.api;
-                          public class Outer {
+                          public class OuterClass {
                               @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
                               public void test() {}
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public interface OuterIntf {
+                              @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                              public void test();
+                          }
+                          """,
+                          """
+                          package preview.api;
+                          public interface OuterIntfDef {
+                              @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
+                              public default void test() {};
                           }
                           """);
         Path apiClasses = base.resolve("api-classes");
@@ -85,21 +99,38 @@ public class PreviewTest extends TestRunner {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        checkPreviewClassfile(apiClasses.resolve("preview").resolve("api").resolve("Outer.class"),
-                              false);
-
         Path testSrc = base.resolve("test-src");
         tb.writeJavaFiles(testSrc,
                           """
                           package test;
-                          import preview.api.Outer;
-                          public class Use1 extends Outer {
+                          import preview.api.OuterClass;
+                          public class UseClass1 extends OuterClass {
                           }
                           """,
                           """
                           package test;
-                          import preview.api.Outer;
-                          public class Use2 extends Outer {
+                          import preview.api.OuterClass;
+                          public class UseClass2 extends OuterClass {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntf;
+                          public class UseIntf2 implements OuterIntf {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntfDef;
+                          public class UseIntfDef1 implements OuterIntfDef {
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntfDef;
+                          public class UseIntfDef2 implements OuterIntfDef {
                               public void test() {}
                           }
                           """);
@@ -115,8 +146,10 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
-                List.of("Use2.java:4:17: compiler.err.is.preview: test()",
-                        "1 error");
+                List.of("UseClass2.java:4:17: compiler.err.is.preview: test()",
+                        "UseIntf2.java:3:8: compiler.err.is.preview: test()",
+                        "UseIntfDef2.java:3:8: compiler.err.is.preview: test()",
+                        "3 errors");
 
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
@@ -135,15 +168,23 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected =
-                List.of("Use2.java:4:17: compiler.warn.is.preview: test()",
-                        "1 warning");
+                List.of("UseClass2.java:4:17: compiler.warn.is.preview: test()",
+                        "UseIntf2.java:3:8: compiler.warn.is.preview: test()",
+                        "UseIntfDef2.java:3:8: compiler.warn.is.preview: test()",
+                        "3 warnings");
 
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
 
-        checkPreviewClassfile(testClasses.resolve("test").resolve("Use1.class"),
+        checkPreviewClassfile(testClasses.resolve("test").resolve("UseClass1.class"),
                               false);
-        checkPreviewClassfile(testClasses.resolve("test").resolve("Use2.class"),
+        checkPreviewClassfile(testClasses.resolve("test").resolve("UseClass2.class"),
+                              true);
+        checkPreviewClassfile(testClasses.resolve("test").resolve("UseIntf2.class"),
+                              true);
+        checkPreviewClassfile(testClasses.resolve("test").resolve("UseIntfDef1.class"),
+                              false);
+        checkPreviewClassfile(testClasses.resolve("test").resolve("UseIntfDef2.class"),
                               true);
     }
 
