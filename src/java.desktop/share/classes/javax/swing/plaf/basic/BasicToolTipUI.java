@@ -37,7 +37,6 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ToolTipUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
-import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.text.View;
 
 
