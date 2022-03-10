@@ -1935,9 +1935,9 @@ class ParsedSynthStyle extends DefaultSynthStyle {
         }
 
         public void paintTabbedPaneTabBackground(SynthContext context,
-                     Graphics g, int x, int y, int w, int h, int direction) {
+                     Graphics g, int x, int y, int w, int h, int tabIndex) {
             getPainter(context, "tabbedpanetabbackground", -1).
-                paintTabbedPaneTabBackground(context, g, x, y, w, h, direction);
+                paintTabbedPaneTabBackground(context, g, x, y, w, h, tabIndex);
         }
 
         public void paintTabbedPaneTabBackground(SynthContext context,
