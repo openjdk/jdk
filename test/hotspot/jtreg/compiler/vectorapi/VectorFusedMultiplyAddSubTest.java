@@ -23,6 +23,8 @@
 
 package compiler.vectorapi;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 import jdk.incubator.vector.ByteVector;
@@ -34,20 +36,19 @@ import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
-import jdk.test.lib.Utils;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /**
  * @test
  * @bug 8282431
  * @key randomness
- * @library /test/lib
+ * @library /test/lib /
  * @summary AArch64: Add optimized rules for masked vector multiply-add/sub for SVE
  * @modules jdk.incubator.vector
  *
- * @run testng/othervm -XX:-TieredCompilation -XX:CompileThreshold=100 compiler.vectorapi.VectorFusedMultiplyAddSubTest
+ * @run driver compiler.vectorapi.VectorFusedMultiplyAddSubTest
  */
 
 public class VectorFusedMultiplyAddSubTest {
@@ -58,7 +59,6 @@ public class VectorFusedMultiplyAddSubTest {
     private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_MAX;
     private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_MAX;
 
-    private static final int NUM_ITER = 1000;
     private static int LENGTH = 1024;
     private static final Random RD = Utils.getRandomInstance();
 
@@ -88,7 +88,7 @@ public class VectorFusedMultiplyAddSubTest {
     private static double[] dr;
     private static boolean[] m;
 
-    private static void init() {
+    static {
         ba = new byte[LENGTH];
         bb = new byte[LENGTH];
         bc = new byte[LENGTH];
@@ -165,9 +165,9 @@ public class VectorFusedMultiplyAddSubTest {
     private static void assertArrayEquals(byte[] r, byte[] a, byte[] b, byte[] c, boolean[] m, BTenOp f) {
        for (int i = 0; i < LENGTH; i++) {
            if (m[i % B_SPECIES.length()]) {
-               Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+               Asserts.assertEquals(f.apply(a[i], b[i], c[i]), r[i]);
            } else {
-               Assert.assertEquals(r[i], a[i]);
+               Asserts.assertEquals(a[i], r[i]);
            }
        }
     }
@@ -175,9 +175,9 @@ public class VectorFusedMultiplyAddSubTest {
     private static void assertArrayEquals(short[] r, short[] a, short[] b, short[] c, boolean[] m, STenOp f) {
        for (int i = 0; i < LENGTH; i++) {
            if (m[i % S_SPECIES.length()]) {
-               Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+               Asserts.assertEquals(f.apply(a[i], b[i], c[i]), r[i]);
            } else {
-               Assert.assertEquals(r[i], a[i]);
+               Asserts.assertEquals(a[i], r[i]);
            }
        }
     }
@@ -185,9 +185,9 @@ public class VectorFusedMultiplyAddSubTest {
     private static void assertArrayEquals(int[] r, int[] a, int[] b, int[] c, boolean[] m, ITenOp f) {
        for (int i = 0; i < LENGTH; i++) {
            if (m[i % I_SPECIES.length()]) {
-               Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+               Asserts.assertEquals(f.apply(a[i], b[i], c[i]), r[i]);
            } else {
-               Assert.assertEquals(r[i], a[i]);
+               Asserts.assertEquals(a[i], r[i]);
            }
        }
     }
@@ -195,9 +195,9 @@ public class VectorFusedMultiplyAddSubTest {
     private static void assertArrayEquals(long[] r, long[] a, long[] b, long[] c, boolean[] m, LTenOp f) {
        for (int i = 0; i < LENGTH; i++) {
            if (m[i % L_SPECIES.length()]) {
-               Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+               Asserts.assertEquals(f.apply(a[i], b[i], c[i]), r[i]);
            } else {
-               Assert.assertEquals(r[i], a[i]);
+               Asserts.assertEquals(a[i], r[i]);
            }
        }
     }
@@ -205,9 +205,9 @@ public class VectorFusedMultiplyAddSubTest {
     private static void assertArrayEquals(float[] r, float[] a, float[] b, float[] c, boolean[] m, FTenOp f) {
        for (int i = 0; i < LENGTH; i++) {
            if (m[i % F_SPECIES.length()]) {
-               Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+               Asserts.assertEquals(f.apply(a[i], b[i], c[i]), r[i]);
            } else {
-               Assert.assertEquals(r[i], a[i]);
+               Asserts.assertEquals(a[i], r[i]);
            }
        }
     }
@@ -215,14 +215,16 @@ public class VectorFusedMultiplyAddSubTest {
     private static void assertArrayEquals(double[] r, double[] a, double[] b, double[] c, boolean[] m, DTenOp f) {
        for (int i = 0; i < LENGTH; i++) {
            if (m[i % D_SPECIES.length()]) {
-               Assert.assertEquals(r[i], f.apply(a[i], b[i], c[i]));
+               Asserts.assertEquals(f.apply(a[i], b[i], c[i]), r[i]);
            } else {
-               Assert.assertEquals(r[i], a[i]);
+               Asserts.assertEquals(a[i], r[i]);
            }
        }
     }
 
-    private static void testByteMultiplyAddMasked() {
+    @Test
+    @IR(failOn = { "sve_add", "sve_mul" })
+    public static void testByteMultiplyAddMasked() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
             ByteVector av = ByteVector.fromArray(B_SPECIES, ba, i);
@@ -233,7 +235,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(br, ba, bb, bc, m, (a, b, c) -> (byte) (a + b * c));
     }
 
-    private static void testByteMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_sub", "sve_mul" })
+    public static void testByteMultiplySubMasked() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
             ByteVector av = ByteVector.fromArray(B_SPECIES, ba, i);
@@ -244,7 +248,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(br, ba, bb, bc, m, (a, b, c) -> (byte) (a - b * c));
     }
 
-    private static void testShortMultiplyAddMasked() {
+    @Test
+    @IR(failOn = { "sve_add", "sve_mul" })
+    public static void testShortMultiplyAddMasked() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
             ShortVector av = ShortVector.fromArray(S_SPECIES, sa, i);
@@ -255,7 +261,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(sr, sa, sb, sc, m, (a, b, c) -> (short) (a + b * c));
     }
 
-    private static void testShortMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_sub", "sve_mul" })
+    public static void testShortMultiplySubMasked() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
             ShortVector av = ShortVector.fromArray(S_SPECIES, sa, i);
@@ -266,7 +274,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(sr, sa, sb, sc, m, (a, b, c) -> (short) (a - b * c));
     }
 
-    private static void testIntMultiplyAddMasked() {
+    @Test
+    @IR(failOn = { "sve_add", "sve_mul" })
+    public static void testIntMultiplyAddMasked() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
@@ -277,7 +287,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(ir, ia, ib, ic, m, (a, b, c) -> (int) (a + b * c));
     }
 
-    private static void testIntMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_sub", "sve_mul" })
+    public static void testIntMultiplySubMasked() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             IntVector av = IntVector.fromArray(I_SPECIES, ia, i);
@@ -288,7 +300,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(ir, ia, ib, ic, m, (a, b, c) -> (int) (a - b * c));
     }
 
-    private static void testLongMultiplyAddMasked() {
+    @Test
+    @IR(failOn = { "sve_add", "sve_mul" })
+    public static void testLongMultiplyAddMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             LongVector av = LongVector.fromArray(L_SPECIES, la, i);
@@ -299,7 +313,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(lr, la, lb, lc, m, (a, b, c) -> (long) (a + b * c));
     }
 
-    private static void testLongMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_sub", "sve_mul" })
+    public static void testLongMultiplySubMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             LongVector av = LongVector.fromArray(L_SPECIES, la, i);
@@ -310,7 +326,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(lr, la, lb, lc, m, (a, b, c) -> (long) (a - b * c));
     }
 
-    private static void testFloatMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_fneg", "sve_fmad" })
+    public static void testFloatMultiplySubMasked() {
         VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
             FloatVector av = FloatVector.fromArray(F_SPECIES, fa, i);
@@ -321,7 +339,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(fr, fa, fb, fc, m, (a, b, c) -> (float) Math.fma(a, -b, c));
     }
 
-    private static void testFloatNegatedMultiplyAddMasked() {
+    @Test
+    @IR(failOn = { "sve_fneg", "sve_fmad" })
+    public static void testFloatNegatedMultiplyAddMasked() {
         VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
             FloatVector av = FloatVector.fromArray(F_SPECIES, fa, i);
@@ -332,7 +352,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(fr, fa, fb, fc, m, (a, b, c) -> (float) Math.fma(a, -b, -c));
     }
 
-    private static void testFloatNegatedMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_fneg", "sve_fmad" })
+    public static void testFloatNegatedMultiplySubMasked() {
         VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
             FloatVector av = FloatVector.fromArray(F_SPECIES, fa, i);
@@ -343,7 +365,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(fr, fa, fb, fc, m, (a, b, c) -> (float) Math.fma(a, b, -c));
     }
 
-    private static void testDoubleMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_fneg", "sve_fmad" })
+    public static void testDoubleMultiplySubMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
             DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, i);
@@ -354,7 +378,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(dr, da, db, dc, m, (a, b, c) -> (double) Math.fma(a, -b, c));
     }
 
-    private static void testDoubleNegatedMultiplyAddMasked() {
+    @Test
+    @IR(failOn = { "sve_fneg", "sve_fmad" })
+    public static void testDoubleNegatedMultiplyAddMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
             DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, i);
@@ -365,7 +391,9 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(dr, da, db, dc, m, (a, b, c) -> (double) Math.fma(a, -b, -c));
     }
 
-    private static void testDoubleNegatedMultiplySubMasked() {
+    @Test
+    @IR(failOn = { "sve_fneg", "sve_fmad" })
+    public static void testDoubleNegatedMultiplySubMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
             DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, i);
@@ -376,35 +404,7 @@ public class VectorFusedMultiplyAddSubTest {
         assertArrayEquals(dr, da, db, dc, m, (a, b, c) -> (double) Math.fma(a, b, -c));
     }
 
-    @Test
-    public static void test() {
-        init();
-        for (int i = 0; i < NUM_ITER; i++) {
-            // byte
-            testByteMultiplyAddMasked();
-            testByteMultiplySubMasked();
-
-            // short
-            testShortMultiplyAddMasked();
-            testShortMultiplySubMasked();
-
-            // int
-            testIntMultiplyAddMasked();
-            testIntMultiplySubMasked();
-
-            // long
-            testLongMultiplyAddMasked();
-            testLongMultiplySubMasked();
-
-            // float
-            testFloatMultiplySubMasked();
-            testFloatNegatedMultiplyAddMasked();
-            testFloatNegatedMultiplySubMasked();
-
-            // double
-            testDoubleMultiplySubMasked();
-            testDoubleNegatedMultiplyAddMasked();
-            testDoubleNegatedMultiplySubMasked();
-        }
+    public static void main(String[] args) {
+        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
     }
 }
