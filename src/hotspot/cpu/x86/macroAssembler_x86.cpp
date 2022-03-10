@@ -8915,7 +8915,6 @@ void MacroAssembler::generate_fill_avx3(BasicType type, Register to, Register va
 void MacroAssembler::convert_f2i(Register dst, XMMRegister src) {
   Label done;
   cvttss2sil(dst, src);
-
   // Conversion instructions do not match JLS for overflow, underflow and NaN -> fixup in stub
   cmpl(dst, 0x80000000); // float_sign_flip
   jccb(Assembler::notEqual, done);
@@ -9028,7 +9027,6 @@ void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, 
 void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
   Label done;
   cvttsd2siq(dst, src);
-
   cmp64(dst, ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
   jccb(Assembler::notEqual, done);
   subptr(rsp, 8);
