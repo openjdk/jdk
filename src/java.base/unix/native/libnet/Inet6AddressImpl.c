@@ -220,7 +220,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         JNU_ThrowNullPointerException(env, "host argument is null");
         return NULL;
     }
-    hostname = JNU_GETSTRINGPLATFORMCHARS(ENV, HOST, NULL);
+    hostname = JNU_GetStringPlatformChars(env, host, NULL);
     CHECK_NULL_RETURN(hostname, NULL);
 
     // try once, with our static buffer
