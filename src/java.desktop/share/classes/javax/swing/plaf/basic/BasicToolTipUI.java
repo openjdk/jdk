@@ -27,6 +27,7 @@ package javax.swing.plaf.basic;
 
 import sun.swing.SwingUtilities2;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
@@ -36,6 +37,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.ToolTipUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.text.View;
 
 
@@ -46,7 +48,15 @@ import javax.swing.text.View;
  */
 public class BasicToolTipUI extends ToolTipUI
 {
+    /**
+     * The space between strings.
+     */
+    public static final int padSpaceBetweenStrings = 12;
+    private String acceleratorDelimiter;
+
     static BasicToolTipUI sharedInstance = new BasicToolTipUI();
+    private Font smallFont;
+    private JToolTip tip;
     /**
      * Global <code>PropertyChangeListener</code> that
      * <code>createPropertyChangeListener</code> returns.
@@ -76,6 +86,11 @@ public class BasicToolTipUI extends ToolTipUI
         installDefaults(c);
         installComponents(c);
         installListeners(c);
+        Font f = c.getFont();
+        tip = (JToolTip)c;
+        smallFont = new Font( f.getName(), f.getStyle(), f.getSize() - 2 );
+        acceleratorDelimiter = UIManager.getString( "MenuItem.acceleratorDelimiter" );
+        if ( acceleratorDelimiter == null ) { acceleratorDelimiter = "-"; }
     }
 
     public void uninstallUI(JComponent c) {
@@ -83,6 +98,7 @@ public class BasicToolTipUI extends ToolTipUI
         uninstallDefaults(c);
         uninstallComponents(c);
         uninstallListeners(c);
+        tip = null;
     }
 
     /**
@@ -152,8 +168,10 @@ public class BasicToolTipUI extends ToolTipUI
 
     public void paint(Graphics g, JComponent c) {
         Font font = c.getFont();
+        JToolTip tip = (JToolTip)c;
         FontMetrics metrics = SwingUtilities2.getFontMetrics(c, g, font);
         Dimension size = c.getSize();
+        int accelBL;
 
         g.setColor(c.getForeground());
         // fix for bug 4153892
@@ -162,19 +180,42 @@ public class BasicToolTipUI extends ToolTipUI
             tipText = "";
         }
 
-        Insets insets = c.getInsets();
+        String accelString = getAcceleratorString(tip);
+        FontMetrics accelMetrics = SwingUtilities2.getFontMetrics(c, g, smallFont);
+        int accelSpacing = calcAccelSpacing(c, accelMetrics, accelString);
+
+        Insets insets = ((JToolTip)c).getInsets();
         Rectangle paintTextR = new Rectangle(
-            insets.left + 3,
-            insets.top,
-            size.width - (insets.left + insets.right) - 6,
-            size.height - (insets.top + insets.bottom));
+                insets.left + 3,
+                insets.top,
+                size.width - (insets.left + insets.right) - 6 - accelSpacing,
+                size.height - (insets.top + insets.bottom));
+
+        if (paintTextR.width <= 0 || paintTextR.height <= 0) {
+            return;
+        }
+
         View v = (View) c.getClientProperty(BasicHTML.propertyKey);
         if (v != null) {
             v.paint(g, paintTextR);
+            accelBL = BasicHTML.getHTMLBaseline(v, paintTextR.width,
+                    paintTextR.height);
         } else {
             g.setFont(font);
             SwingUtilities2.drawString(c, g, tipText, paintTextR.x,
-                                  paintTextR.y + metrics.getAscent());
+                    paintTextR.y + metrics.getAscent());
+            accelBL = metrics.getAscent();
+        }
+
+        if (!accelString.isEmpty()) {
+            g.setFont(smallFont);
+            g.setColor( MetalLookAndFeel.getPrimaryControlDarkShadow() );
+            SwingUtilities2.drawString(tip, g, accelString,
+                    tip.getWidth() - 1 - insets.right
+                            - accelSpacing
+                            + padSpaceBetweenStrings
+                            - 3,
+                    paintTextR.y + accelBL);
         }
     }
 
@@ -184,7 +225,7 @@ public class BasicToolTipUI extends ToolTipUI
         Insets insets = c.getInsets();
 
         Dimension prefSize = new Dimension(insets.left+insets.right,
-                                           insets.top+insets.bottom);
+                insets.top+insets.bottom);
         String text = ((JToolTip)c).getTipText();
 
         if (text == null) {
@@ -200,7 +241,80 @@ public class BasicToolTipUI extends ToolTipUI
                 prefSize.height += fm.getHeight();
             }
         }
+
+        String key = getAcceleratorString((JToolTip)c);
+        if (!key.isEmpty()) {
+            prefSize.width += calcAccelSpacing(c, c.getFontMetrics(smallFont), key);
+        }
+
         return prefSize;
+    }
+
+    private int calcAccelSpacing(JComponent c, FontMetrics fm, String accel) {
+        return accel.isEmpty()
+                ? 0
+                : padSpaceBetweenStrings +
+                SwingUtilities2.stringWidth(c, fm, accel);
+    }
+
+
+    /**
+     * If the accelerator is hidden, the method returns {@code true},
+     * otherwise, returns {@code false}.
+     *
+     * @return {@code true} if the accelerator is hidden.
+     */
+    protected boolean isAcceleratorHidden() {
+        Boolean b = (Boolean)UIManager.get("ToolTip.hideAccelerator");
+        return b != null && b.booleanValue();
+    }
+
+    private String getAcceleratorString(JToolTip tip) {
+        this.tip = tip;
+
+        String retValue = getAcceleratorString();
+
+        this.tip = null;
+        return retValue;
+    }
+
+    /**
+     * Returns the accelerator string.
+     *
+     * @return the accelerator string.
+     */
+    // NOTE: This requires the tip field to be set before this is invoked.
+    // As MetalToolTipUI is shared between all JToolTips the tip field is
+    // set appropriately before this is invoked. Unfortunately this means
+    // that subclasses that randomly invoke this method will see varying
+    // results. If this becomes an issue, MetalToolTipUI should no longer be
+    // shared.
+    @SuppressWarnings("deprecation")
+    public String getAcceleratorString() {
+        if (tip == null || isAcceleratorHidden()) {
+            return "";
+        }
+        JComponent comp = tip.getComponent();
+        if (!(comp instanceof AbstractButton)) {
+            return "";
+        }
+
+        KeyStroke[] keys = comp.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).keys();
+        if (keys == null) {
+            return "";
+        }
+
+        String controlKeyStr = "";
+
+        for (int i = 0; i < keys.length; i++) {
+            int mod = keys[i].getModifiers();
+            controlKeyStr = KeyEvent.getKeyModifiersText(mod) +
+                    acceleratorDelimiter +
+                    KeyEvent.getKeyText(keys[i].getKeyCode());
+            break;
+        }
+
+        return controlKeyStr;
     }
 
     public Dimension getMinimumSize(JComponent c) {
@@ -242,26 +356,26 @@ public class BasicToolTipUI extends ToolTipUI
             }
             if (UIManager.getColor("ToolTip.backgroundInactive") != null) {
                 LookAndFeel.installColors(c,"ToolTip.backgroundInactive",
-                                          "ToolTip.foregroundInactive");
+                        "ToolTip.foregroundInactive");
             }
             else {
                 LookAndFeel.installColors(c,"ToolTip.background",
-                                          "ToolTip.foreground");
+                        "ToolTip.foreground");
             }
         } else {
             LookAndFeel.installBorder(c, "ToolTip.border");
             LookAndFeel.installColors(c, "ToolTip.background",
-                                      "ToolTip.foreground");
+                    "ToolTip.foreground");
         }
     }
 
 
     private static class PropertyChangeHandler implements
-                                 PropertyChangeListener {
+            PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent e) {
             String name = e.getPropertyName();
             if (name.equals("tiptext") || "foreground".equals(name)
-                || "font".equals(name) || SwingUtilities2.isScaleChanged(e)) {
+                    || "font".equals(name) || SwingUtilities2.isScaleChanged(e)) {
                 // remove the old html view client property if one
                 // existed, and install a new one if the text installed
                 // into the JLabel is html source.
