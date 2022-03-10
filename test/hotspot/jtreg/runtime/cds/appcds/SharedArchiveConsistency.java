@@ -31,7 +31,8 @@
  * @build sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency on
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency auto
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
@@ -69,6 +70,9 @@ public class SharedArchiveConsistency {
     public static int int_size;        // size of int
     public static long alignment;      // MetaspaceShared::core_region_alignment
 
+    public static boolean shareAuto;       // true  == -Xshare:auto
+                                           // false == -Xshare:on
+
     // The following should be consistent with the enum in the C++ MetaspaceShared class
     public static String[] shared_region_name = {
         "rw",          // ReadWrite
@@ -79,6 +83,8 @@ public class SharedArchiveConsistency {
         "first_open_archive",
         "last_open_archive"
     };
+
+    public static final String HELLO_WORLD = "Hello World";
 
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
@@ -339,7 +345,7 @@ public class SharedArchiveConsistency {
     }
 
     public static void testAndCheck(String[] execArgs) throws Exception {
-        OutputAnalyzer output = TestCommon.execCommon(execArgs);
+        OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         String stdtxt = output.getOutput();
         System.out.println("Note: this test may fail in very rare occasions due to CRC32 checksum collision");
         for (String message : matchMessages) {
@@ -361,6 +367,14 @@ public class SharedArchiveConsistency {
     //   6) insert bytes in data begining
     //   7) randomly corrupt data in each region specified by shared_region_name[]
     public static void main(String... args) throws Exception {
+        if (args.length != 1) {
+            throw new RuntimeException("One arg of 'on' or 'auto' to run the test");
+        }
+        if (!args[0].equals("on") && !args[0].equals("auto")) {
+            throw new RuntimeException("Arg must be 'on' or 'auto'");
+        }
+        shareAuto = args[0].equals("auto");
+
         // must call to get offset info first!!!
         getFileOffsetInfo();
         Path currentRelativePath = Paths.get("");
@@ -380,10 +394,10 @@ public class SharedArchiveConsistency {
         // VerifySharedSpaces enabled to detect inconsistencies
         String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
 
-        OutputAnalyzer output = TestCommon.execCommon(execArgs);
+        OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
 
         try {
-            TestCommon.checkExecReturn(output, 0, true, "Hello World");
+            TestCommon.checkExecReturn(output, 0, true, HELLO_WORLD);
         } catch (Exception e) {
             TestCommon.checkExecReturn(output, 1, true, matchMessages[0]);
         }
@@ -397,36 +411,42 @@ public class SharedArchiveConsistency {
         // modify jsa header, test should fail
         System.out.println("\n2. Corrupt header, should fail\n");
         modifyJsaHeader(copyFile(orgJsaFile, "corrupt-header"));
-        output = TestCommon.execCommon(execArgs);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
 
         // modify _jvm_ident, test should fail
         System.out.println("\n2a. Corrupt _jvm_ident, should fail\n");
         modifyJvmIdent(copyFile(orgJsaFile, "modify-jvm-ident"));
-        output = TestCommon.execCommon(execArgs);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
         output.shouldNotContain("Checksum verification failed");
-
-        // use the same archive as above, but run with -Xshare:auto
-        System.out.println("\n2b. Corrupt _jvm_ident run with -Xshare:auto\n");
-        output = TestCommon.execAuto(execArgs);
-        output.shouldContain("The shared archive file was created by a different version or build of HotSpot");
-        output.shouldContain("Hello World");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
 
         // modify _magic, test should fail
         System.out.println("\n2c. Corrupt _magic, should fail\n");
         modifyHeaderIntField(copyFile(orgJsaFile, "modify-magic"), offset_magic, 0x00000000);
-        output = TestCommon.execCommon(execArgs);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
 
         // modify _version, test should fail
         System.out.println("\n2d. Corrupt _version, should fail\n");
         modifyHeaderIntField(copyFile(orgJsaFile, "modify-version"), offset_version, 0x00000000);
-        output = TestCommon.execCommon(execArgs);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has the wrong version");
         output.shouldNotContain("Checksum verification failed");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
 
         // modify content inside regions
         System.out.println("\n3. Corrupt Content, should fail\n");
@@ -442,9 +462,12 @@ public class SharedArchiveConsistency {
         File newJsaFile = copyFile(orgJsaFile, "header-and-content");
         modifyJsaHeader(newJsaFile);
         modifyJsaContent(0, newJsaFile);  // this will not be reached since failed on header change first
-        output = TestCommon.execCommon(execArgs);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         output.shouldContain("The shared archive file has a bad magic number");
         output.shouldNotContain("Checksum verification failed");
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
 
         // delete bytes in data section
         System.out.println("\n5. Delete bytes at beginning of data section, should fail\n");
