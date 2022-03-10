@@ -103,9 +103,8 @@ public final class MTGetData {
                     icc.setData(tag, data1);
                     icc.setData(tag, data2);
                 }
-            } catch (CMMException cmmEx) {
-                System.err.println("Ignoring " + cmmEx);
             } catch (IllegalArgumentException ignored) {
+                System.err.println("Ignoring " + ignored);
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 failed = true;
@@ -118,8 +117,6 @@ public final class MTGetData {
                     icc.getData(tag);
                     icc.getData();
                 }
-            } catch (CMMException cmmEx) {
-                System.err.println("Ignoring " + cmmEx);
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 failed = true;
