@@ -463,14 +463,15 @@ worthwhile, given the alternatives.
 ### Memory Allocation
 
 Do not use the standard global allocation and deallocation functions
-(operator new and related functions). Typically, uses of the global
-operator new are inadvertent and therefore often associated with memory
-leaks. Use of these functions by HotSpot code is disabled for some platforms.
+(operator new and related functions).  Use of these functions by HotSpot
+code is disabled for some platforms.
 
 Rationale: HotSpot often uses "resource" or "arena" allocation.  Even
 where heap allocation is used, the standard global functions are
 avoided in favor of wrappers around malloc and free that support the
-VM's Native Memory Tracking (NMT) feature.
+VM's Native Memory Tracking (NMT) feature.  Typically, uses of the global
+operator new are inadvertent and therefore often associated with memory
+leaks.
 
 Native memory allocation failures are often treated as non-recoverable.
 The place where "out of memory" is (first) detected may be an innocent
