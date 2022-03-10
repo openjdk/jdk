@@ -55,7 +55,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @since 19
  */
 /*non-public*/
-final class Carrier {
+public final class Carrier {
     /**
      * Class file version.
      */
