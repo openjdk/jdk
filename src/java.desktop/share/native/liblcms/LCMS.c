@@ -742,7 +742,6 @@ static cmsHPROFILE _writeCookedTag(const cmsHPROFILE pfTarget,
             if (cmsSaveProfileToMem(p, buf, &pfSize)) {
                 pfSanity = cmsOpenProfileFromMem(buf, pfSize);
             }
-            //free(buf);
         }
     }
 
