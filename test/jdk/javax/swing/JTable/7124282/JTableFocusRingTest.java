@@ -43,11 +43,10 @@ public class JTableFocusRingTest {
 
         try {
                 UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                UnsupportedLookAndFeelException e) {
+        } catch (ClassNotFoundException | InstantiationException |
+                IllegalAccessException | UnsupportedLookAndFeelException e) {
                 throw new RuntimeException("Unsupported Look&Feel Class");
         }
-
         SwingUtilities.invokeAndWait(() -> {
 
             float[] bckRGB = new float[3];
@@ -58,22 +57,25 @@ public class JTableFocusRingTest {
             Color originalFocusRingColor = null;
             Color brighterFocusRingColor = null;
 
-            if (UIManager.getDefaults().get("Table.selectionBackground") != null &&
-                    UIManager.getDefaults().get("Table.selectionBackground") instanceof Color) {
+            if (UIManager.getDefaults().get("Table.selectionBackground") != null
+                    && UIManager.getDefaults().get("Table.selectionBackground") instanceof Color) {
                 selectionBackground = (Color) UIManager.getDefaults().get("Table.selectionBackground");
             }
-            if (UIManager.getDefaults().get("Focus.color") != null &&
-                    UIManager.getDefaults().get("Focus.color") instanceof Color) {
+            if (UIManager.getDefaults().get("Focus.color") != null
+                    && UIManager.getDefaults().get("Focus.color") instanceof Color) {
                originalFocusRingColor = (Color) UIManager.getDefaults().get("Focus.color");
             }
 
-            if (UIManager.getDefaults().get("Table.focusCellHighlightBorder") != null &&
-                    UIManager.getDefaults().get("Table.focusCellHighlightBorder") instanceof LineBorderUIResource) {
-                LineBorderUIResource cellFocusBorderObj = (LineBorderUIResource) UIManager.getDefaults().get("Table.focusCellHighlightBorder");
+            if (UIManager.getDefaults().get("Table.focusCellHighlightBorder") != null
+                    && UIManager.getDefaults().get("Table.focusCellHighlightBorder")
+                    instanceof LineBorderUIResource) {
+                LineBorderUIResource cellFocusBorderObj = (LineBorderUIResource)
+                        UIManager.getDefaults().get("Table.focusCellHighlightBorder");
                 brighterFocusRingColor = cellFocusBorderObj.getLineColor();
             }
 
-            if (selectionBackground == null || originalFocusRingColor == null || brighterFocusRingColor == null) {
+            if (selectionBackground == null || originalFocusRingColor == null ||
+                    brighterFocusRingColor == null) {
                 throw new RuntimeException("One or more color values are null");
             }
             System.out.println(UIManager.getLookAndFeel().toString());
@@ -85,21 +87,25 @@ public class JTableFocusRingTest {
             int greenValue = selectionBackground.getGreen();
             int blueValue = selectionBackground.getBlue();
 
-            if ((selectionBackground.equals(Color.BLACK) || selectionBackground.equals(Color.WHITE)) && brighterFocusRingColor.equals(Color.GRAY)) {
-                System.out.println("Condition- Background Color: WHITE/BLACK, Focus Ring Color: GRAY");
+            if ((selectionBackground.equals(Color.BLACK) || selectionBackground.equals(Color.WHITE))
+                    && brighterFocusRingColor.equals(Color.GRAY)) {
+                System.out.println("Condition-Background Color: WHITE/BLACK, " +
+                        "Focus Ring Color: GRAY");
                 System.out.println("Test case passed");
                 return;
             }
             if (redValue == greenValue && redValue == blueValue) {
                 //towards white
                 if (redValue >= 128 && brighterFocusRingColor.equals(Color.BLACK)) {
-                    System.out.println("Condition- Background Color: Shade of GRAY (Red==Green==Blue) and towards white, Focus Ring Color: BLACK");
+                    System.out.println("Condition-Background Color: Shade of GRAY " +
+                            "(Red==Green==Blue) and towards white, Focus Ring Color: BLACK");
                     System.out.println("Test case passed");
                     return;
                 }
                 //towards black
                 if (redValue < 128 && brighterFocusRingColor.equals(Color.WHITE)) {
-                    System.out.println("Condition- Background Color: Shade of GRAY (Red==Green==Blue) and towards black, Focus Ring Color: WHITE");
+                    System.out.println("Condition-Background Color: Shade of GRAY " +
+                            "(Red==Green==Blue) and towards black, Focus Ring Color: WHITE");
                     System.out.println("Test case passed");
                     return;
                 }
