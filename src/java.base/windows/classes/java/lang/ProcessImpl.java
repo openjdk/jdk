@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,9 +292,7 @@ final class ProcessImpl extends Process {
     }
 
     /**
-     * Return the argument without quotes (1st and last) if properly quoted, else the arg.
-     * A properly quoted string has first and last characters as quote and
-     * the last quote is not escaped.
+     * Return the argument without quotes (first and last) if quoted, otherwise the arg.
      * @param str a string
      * @return the string without quotes
      */
