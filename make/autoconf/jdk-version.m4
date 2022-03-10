@@ -547,11 +547,8 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       [Set the MacOSX Bundle CFBundleVersion field. This key is a machine-readable
       string composed of one to three period-separated integers and should represent the
       build version. Defaults to the build number.])])
-  if test "x$with_macosx_bundle_build_version" = xyes; then
+  if test "x$with_macosx_bundle_build_version" = xyes || test "x$with_macosx_bundle_build_version" = xno; then
     AC_MSG_ERROR([--with-macosx-bundle-build-version must have a value])
-  elif test "x$with_macosx_bundle_build_version" = xno; then
-    # Interpret --without-* as empty string instead of the literal "no"
-    MACOSX_BUNDLE_BUILD_VERSION=
   elif [ ! [[ $with_macosx_bundle_build_version =~ ^[0-9\.]*$ ]] ]; then
     AC_MSG_ERROR([--with-macosx-bundle-build-version contains non numbers and periods: $with_macosx_bundle_build_version])
   elif test "x$with_macosx_bundle_build_version" != x; then
