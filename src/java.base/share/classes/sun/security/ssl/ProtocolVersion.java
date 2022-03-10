@@ -290,7 +290,7 @@ enum ProtocolVersion {
             ProtocolVersion pv = ProtocolVersion.nameOf(pn);
             if (pv == null) {
                 throw new IllegalArgumentException(
-                        "Unsupported protocol " + pn);
+                        "Unsupported protocol: " + pn);
             }
 
             pvs.add(pv);
