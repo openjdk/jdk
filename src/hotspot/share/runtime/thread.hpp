@@ -1323,14 +1323,15 @@ class JavaThread: public Thread {
   // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
     JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
-    // We can't get here in a thread that has completed its execution and so
-    // "is_terminated", but a thread is also considered terminated if the VM
+    // We can't normally get here in a thread that has completed its
+    // execution and so "is_terminated", except when the call is from
+    // AsyncGetCallTrace, which can be triggered by a signal at any point in
+    // a thread's lifecycle. A thread is also considered terminated if the VM
     // has exited, so we have to check this and block in case this is a daemon
     // thread returning to the VM (the JNI DirectBuffer entry points rely on
     // this).
     if (current->is_terminated()) {
       current->block_if_vm_exited();
-      ShouldNotReachHere();
     }
     return current;
   }

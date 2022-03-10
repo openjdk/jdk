@@ -83,6 +83,7 @@ public class JSpinnerMouseAndKeyPressTest {
         panel.add(spinner);
         frame.add(panel);
         frame.setUndecorated(true);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
@@ -103,6 +104,7 @@ public class JSpinnerMouseAndKeyPressTest {
                     setLookAndFeel(laf);
                     createUI();
                 });
+                robot.waitForIdle();
 
                 SwingUtilities.invokeAndWait(() -> {
                     Point loc = spinner.getLocationOnScreen();

@@ -303,7 +303,8 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       }
 
       assert(*dirty_l != clean_card, "inv");
-      assert(*dirty_r == clean_card || dirty_r == iter_limit_r, "inv");
+      assert(*dirty_r == clean_card || dirty_r >= clear_limit_r,
+             "clean card or belonging to next stripe");
 
       // Process this non-empty dirty chunk in two steps:
       {
