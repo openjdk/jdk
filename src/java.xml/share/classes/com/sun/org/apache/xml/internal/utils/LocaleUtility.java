@@ -78,9 +78,12 @@ public class LocaleUtility {
             variant = EMPTY_STRING;
         }
 
-        return new Locale(language, country, variant );
-    }
-
-
-
+        return Locale.forLanguageTag(
+             (language.isEmpty() ? "und" : language) +
+             (country.isEmpty() ? "" : "-" + country) +
+             (variant.isEmpty() ? "" : "-x-lvariant-" + variant));
  }
+
+
+
+}

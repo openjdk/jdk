@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,15 @@ import java.util.Locale;
 
 public class bug6277243 {
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         Locale root = new Locale("", "", "");
         if (!Locale.ROOT.equals(root)) {
-            throw new RuntimeException("Locale.ROOT is not equal to Locale(\"\", \"\", \"\")");
+            throw new RuntimeException("Locale.ROOT is not equal to new Locale(\"\", \"\", \"\")");
+        }
+        root = Locale.forLanguageTag("");
+        if (!Locale.ROOT.equals(root)) {
+            throw new RuntimeException("Locale.ROOT is not equal to Locale.forLanguageTag(\"\")");
         }
     }
 }

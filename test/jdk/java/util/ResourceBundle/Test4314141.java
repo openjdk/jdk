@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ public class Test4314141 {
         doTestCandidateOmission("de", "DE", "", new String[] {"_de", ""});
         doTestCandidateOmission("de", "", "EURO", new String[] {"_de", ""});
         doTestCandidateOmission("de", "", "", new String[] {"_de", ""});
-        doTestCandidateOmission("", "DE", "EURO", new String[] {"__DE", ""});
-        doTestCandidateOmission("", "DE", "", new String[] {"__DE", ""});
-        doTestCandidateOmission("", "", "EURO", new String[] {"___EURO", ""});
-        doTestCandidateOmission("", "", "", new String[] {""});
+        doTestCandidateOmission("und", "DE", "EURO", new String[] {"__DE", ""});
+        doTestCandidateOmission("und", "DE", "", new String[] {"__DE", ""});
+        doTestCandidateOmission("und", "", "EURO", new String[] {"___EURO", ""});
+        doTestCandidateOmission("und", "", "", new String[] {""});
     }
 
     static void doTestCandidateOmission(String language, String country, String variant,
@@ -72,7 +72,7 @@ public class Test4314141 {
      * Verifies the example from the getBundle specification.
      */
     static void testExample() {
-        Locale.setDefault(new Locale("en", "UK"));
+        Locale.setDefault(Locale.UK);
         doTestExample("fr", "CH", new String[] {"_fr_CH.class", "_fr.properties", ".class"});
         doTestExample("fr", "FR", new String[] {"_fr.properties", ".class"});
         doTestExample("de", "DE", new String[] {"_en.properties", ".class"});
@@ -87,7 +87,10 @@ public class Test4314141 {
     static void doTest(String baseName, String language, String country, String variant,
             String[] expectedSuffixes) {
         System.out.print("Looking for " + baseName + " \"" + language + "\", \"" + country + "\", \"" + variant + "\"");
-        ResourceBundle bundle = ResourceBundle.getBundle(baseName, new Locale(language, country, variant));
+        ResourceBundle bundle = ResourceBundle.getBundle(baseName, Locale.forLanguageTag(
+                (language.isEmpty() ? "und" : language) +
+                (country.isEmpty() ? "" : "-" + country) +
+                (variant.isEmpty() ? "" : "-x-lvariant-" + variant)));
         System.out.print(" => got ");
         String previousName = null;
         int nameCount = 0;

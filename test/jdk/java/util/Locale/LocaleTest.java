@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,10 @@ public class LocaleTest extends IntlTest {
 
     public void TestBasicGetters() {
         for (int i = 0; i <= MAX_LOCALES; i++) {
-            Locale testLocale = new Locale(dataTable[LANG][i], dataTable[CTRY][i], dataTable[VAR][i]);
+            Locale testLocale = Locale.forLanguageTag(
+                    (dataTable[LANG][i].isEmpty() ? "und" : dataTable[LANG][i]) +
+                    (dataTable[CTRY][i].isEmpty() ? "" : "-" + dataTable[CTRY][i]) +
+                    (dataTable[VAR][i].isEmpty() ? "" : "-x-lvariant-" + dataTable[VAR][i]));
             logln("Testing " + testLocale + "...");
 
             if (!testLocale.getLanguage().equals(dataTable[LANG][i])) {
@@ -217,7 +220,9 @@ public class LocaleTest extends IntlTest {
 
         logln("Same thing without variant codes...");
         for (int i = 0; i <= MAX_LOCALES; i++) {
-            Locale testLocale = new Locale(dataTable[LANG][i], dataTable[CTRY][i]);
+            Locale testLocale = Locale.forLanguageTag(
+                    (dataTable[LANG][i].isEmpty() ? "und" : dataTable[LANG][i]) +
+                    (dataTable[CTRY][i].isEmpty() ? "" : "-" + dataTable[CTRY][i]));
             logln("Testing " + testLocale + "...");
 
             if (!testLocale.getLanguage().equals(dataTable[LANG][i])) {
@@ -240,7 +245,10 @@ public class LocaleTest extends IntlTest {
                 continue;
             }
 
-            Locale testLocale = new Locale(dataTable[LANG][i], dataTable[CTRY][i], dataTable[VAR][i]);
+            Locale testLocale = Locale.forLanguageTag(
+                    (dataTable[LANG][i].isEmpty() ? "und" : dataTable[LANG][i]) +
+                    (dataTable[CTRY][i].isEmpty() ? "" : "-" + dataTable[CTRY][i]) +
+                    (dataTable[VAR][i].isEmpty() ? "" : "-x-lvariant-" + dataTable[VAR][i]));
             logln("Testing " + testLocale + "...");
 
             if (!testLocale.getISO3Language().equals(dataTable[LANG3][i])) {
@@ -268,10 +276,10 @@ public class LocaleTest extends IntlTest {
      */
     public void TestDisplayNames() {
         Locale saveDefault = Locale.getDefault();
-        Locale english = new Locale("en", "US");
-        Locale french = new Locale("fr", "FR");
-        Locale croatian = new Locale("hr", "HR");
-        Locale greek = new Locale("el", "GR");
+        Locale english = Locale.US;
+        Locale french = Locale.FRANCE;
+        Locale croatian = Locale.forLanguageTag("hr-HR");
+        Locale greek = Locale.forLanguageTag("el-GR");
 
         Locale.setDefault(english);
         logln("With default = en_US...");
@@ -312,7 +320,10 @@ public class LocaleTest extends IntlTest {
         }
 
         for (int i = 0; i <= MAX_LOCALES; i++) {
-            Locale testLocale = new Locale(dataTable[LANG][i], dataTable[CTRY][i], dataTable[VAR][i]);
+            Locale testLocale = Locale.forLanguageTag(
+                    (dataTable[LANG][i].isEmpty() ? "und" : dataTable[LANG][i]) +
+                    (dataTable[CTRY][i].isEmpty() ? "" : "-" + dataTable[CTRY][i]) +
+                    (dataTable[VAR][i].isEmpty() ? "" : "-x-lvariant-" + dataTable[VAR][i]));
             logln("  Testing " + testLocale + "...");
 
             String testLang;
@@ -385,12 +396,12 @@ public class LocaleTest extends IntlTest {
     }
 
     public void TestSimpleObjectStuff() {
-        Locale test1 = new Locale("aa", "AA");
-        Locale test2 = new Locale("aa", "AA");
+        Locale test1 = Locale.forLanguageTag("aa-AA");
+        Locale test2 = Locale.forLanguageTag("aa-AA");
         Locale test3 = (Locale) test1.clone();
-        Locale test4 = new Locale("zz", "ZZ");
+        Locale test4 = Locale.forLanguageTag("zz-ZZ");
 
-        if (test1 == test2 || test1 == test3 || test1 == test4 || test2 == test3) {
+        if (test1 != test2 || test1 == test3 || test1 == test4 || test2 == test3) {
             errln("Some of the test variables point to the same locale!");
         }
 
@@ -419,7 +430,7 @@ public class LocaleTest extends IntlTest {
      * @bug 4011756 4011380
      */
     public void TestISO3Fallback() {
-        Locale test = new Locale("xx", "YY", "");
+        Locale test = Locale.forLanguageTag("xx-YY");
         boolean gotException = false;
         String result = "";
 
@@ -612,7 +623,7 @@ test commented out pending API-change approval
         obstream = new ByteArrayOutputStream();
         ostream = new ObjectOutputStream(obstream);
 
-        Locale test1 = new Locale("zh", "TW", "");
+        Locale test1 = Locale.forLanguageTag("zh-TW");
         int dummy = test1.hashCode();   // fill in the cached hash-code value
         ostream.writeObject(test1);
 
@@ -640,7 +651,7 @@ test commented out pending API-change approval
             "Zhuang"};
 
         for (int i = 0; i < languageCodes.length; i++) {
-            String test = (new Locale(languageCodes[i], "", "")).getDisplayLanguage(Locale.US);
+            String test = (Locale.forLanguageTag(languageCodes[i])).getDisplayLanguage(Locale.US);
             if (!test.equals(languageNames[i])) {
                 errln("Got wrong display name for " + languageCodes[i] + ": Expected \""
                         + languageNames[i] + "\", got \"" + test + "\".");
@@ -658,7 +669,7 @@ test commented out pending API-change approval
         String[] iso3Languages = {"amh", "bak", "fry", "mar", "run", "ssw", "twi", "zul"};
 
         for (int i = 0; i < iso2Languages.length; i++) {
-            String test = (new Locale(iso2Languages[i], "", "")).getISO3Language();
+            String test = (Locale.forLanguageTag(iso2Languages[i])).getISO3Language();
             if (!test.equals(iso3Languages[i])) {
                 errln("Got wrong ISO3 code for " + iso2Languages[i] + ": Expected \""
                         + iso3Languages[i] + "\", got \"" + test + "\".");
@@ -669,7 +680,7 @@ test commented out pending API-change approval
         String[] iso3Countries = {"AFG", "BWA", "KAZ", "MAC", "MNG", "SLB", "TCA", "ZWE"};
 
         for (int i = 0; i < iso2Countries.length; i++) {
-            String test = (new Locale("", iso2Countries[i], "")).getISO3Country();
+            String test = (Locale.forLanguageTag("und" + "-" + iso2Countries[i])).getISO3Country();
             if (!test.equals(iso3Countries[i])) {
                 errln("Got wrong ISO3 code for " + iso2Countries[i] + ": Expected \""
                         + iso3Countries[i] + "\", got \"" + test + "\".");
@@ -681,12 +692,12 @@ test commented out pending API-change approval
      * @bug 4052404 4778440 8263202
      */
     public void TestChangedISO639Codes() {
-        Locale hebrewOld = new Locale("iw", "IL", "");
-        Locale hebrewNew = new Locale("he", "IL", "");
-        Locale yiddishOld = new Locale("ji", "IL", "");
-        Locale yiddishNew = new Locale("yi", "IL", "");
-        Locale indonesianOld = new Locale("in", "", "");
-        Locale indonesianNew = new Locale("id", "", "");
+        Locale hebrewOld = Locale.forLanguageTag("iw-IL");
+        Locale hebrewNew = Locale.forLanguageTag("he-IL");
+        Locale yiddishOld = Locale.forLanguageTag("ji-IL");
+        Locale yiddishNew = Locale.forLanguageTag("yi-IL");
+        Locale indonesianOld = Locale.forLanguageTag("in");
+        Locale indonesianNew = Locale.forLanguageTag("id");
 
         if ("true".equalsIgnoreCase(System.getProperty("java.locale.useOldISOCodes"))) {
             if (!hebrewNew.getLanguage().equals("iw")) {
@@ -736,15 +747,15 @@ test commented out pending API-change approval
      *
      */
     public void TestAtypicalLocales() {
-        Locale[] localesToTest = { new Locale("de", "CA"),
-                                   new Locale("ja", "ZA"),
-                                   new Locale("ru", "MX"),
-                                   new Locale("en", "FR"),
-                                   new Locale("es", "DE"),
-                                   new Locale("", "HR"),
-                                   new Locale("", "SE"),
-                                   new Locale("", "DO"),
-                                   new Locale("", "BE") };
+        Locale[] localesToTest = { Locale.forLanguageTag("de-CA"),
+                                   Locale.forLanguageTag("ja-ZA"),
+                                   Locale.forLanguageTag("ru-MX"),
+                                   Locale.forLanguageTag("en-FR"),
+                                   Locale.forLanguageTag("es-DE"),
+                                   Locale.forLanguageTag("und" + "-" + "HR"),
+                                   Locale.forLanguageTag("und" + "-" + "SE"),
+                                   Locale.forLanguageTag("und" + "-" + "DO"),
+                                   Locale.forLanguageTag("und" + "-" + "BE") };
         String[] englishDisplayNames = { "German (Canada)",
                                          "Japanese (South Africa)",
                                          "Russian (Mexico)",
@@ -788,7 +799,7 @@ test commented out pending API-change approval
         }
 
         for (int i = 0; i < localesToTest.length; i++) {
-            String name = localesToTest[i].getDisplayName(new Locale("es", "ES"));
+            String name = localesToTest[i].getDisplayName(Locale.forLanguageTag("es-ES"));
             logln(name);
             if (!name.equals(spanishDisplayNames[i])) {
                 errln("Lookup in Spanish failed: expected \"" + spanishDisplayNames[i]
@@ -837,7 +848,7 @@ test commented out pending API-change approval
      */
     public void TestThaiCurrencyFormat() {
         DecimalFormat thaiCurrency = (DecimalFormat) NumberFormat.getCurrencyInstance(
-                new Locale("th", "TH"));
+                Locale.forLanguageTag("th-TH"));
         if (!thaiCurrency.getPositivePrefix().equals("\u0e3f")) {
             errln("Thai currency prefix wrong: expected \"\u0e3f\", got \""
                     + thaiCurrency.getPositivePrefix() + "\"");
@@ -892,13 +903,13 @@ test commented out pending API-change approval
      */
     public void TestToString() {
         Object[] DATA = {
-            new Locale("xx", "", ""), "xx",
-            new Locale("", "YY", ""), "_YY",
-            new Locale("", "", "ZZ"), "",
-            new Locale("xx", "YY", ""), "xx_YY",
-            new Locale("xx", "", "ZZ"), "xx__ZZ",
-            new Locale("", "YY", "ZZ"), "_YY_ZZ",
-            new Locale("xx", "YY", "ZZ"), "xx_YY_ZZ",
+            Locale.forLanguageTag("xx"), "xx",
+            Locale.forLanguageTag("und-YY"), "_YY",
+            Locale.forLanguageTag("und-x-lvariant-ZZ"), "",
+            Locale.forLanguageTag("xx-YY"), "xx_YY",
+            Locale.forLanguageTag("xx-x-lvariant-ZZ"), "xx__ZZ",
+            Locale.forLanguageTag("und-YY-x-lvariant-ZZ"), "_YY_ZZ",
+            Locale.forLanguageTag("xx-YY-x-lvariant-ZZ"), "xx_YY_ZZ",
         };
         for (int i = 0; i < DATA.length; i += 2) {
             Locale loc = (Locale) DATA[i];
@@ -915,8 +926,8 @@ test commented out pending API-change approval
      * end to test the whole pipe.
      */
     public void Test4105828() {
-        Locale[] LOC = {Locale.CHINESE, new Locale("zh", "CN", ""),
-            new Locale("zh", "TW", ""), new Locale("zh", "HK", "")};
+        Locale[] LOC = {Locale.CHINESE, Locale.forLanguageTag("zh-CN"),
+            Locale.forLanguageTag("zh-TW"), Locale.forLanguageTag("zh-HK")};
         for (int i = 0; i < LOC.length; ++i) {
             NumberFormat fmt = NumberFormat.getPercentInstance(LOC[i]);
             String result = fmt.format(1);
@@ -943,7 +954,7 @@ test commented out pending API-change approval
      * test that here.
      */
     public void Test4139940() {
-        Locale mylocale = new Locale("hu", "", "");
+        Locale mylocale = Locale.forLanguageTag("hu");
         @SuppressWarnings("deprecation")
         Date mydate = new Date(98, 3, 13); // A Monday
         DateFormat df_full = new SimpleDateFormat("EEEE", mylocale);
@@ -960,7 +971,7 @@ test commented out pending API-change approval
      * Russian first day of week should be Monday. Confirmed.
      */
     public void Test4143951() {
-        Calendar cal = Calendar.getInstance(new Locale("ru", "", ""));
+        Calendar cal = Calendar.getInstance(Locale.forLanguageTag("ru"));
         if (cal.getFirstDayOfWeek() != Calendar.MONDAY) {
             errln("Fail: First day of week in Russia should be Monday");
         }
@@ -974,7 +985,7 @@ test commented out pending API-change approval
     public void Test4147315() {
         // Try with codes that are the wrong length but happen to match text
         // at a valid offset in the mapping table
-        Locale locale = new Locale("aaa", "CCC");
+        Locale locale = Locale.forLanguageTag("aaa-XX");
 
         try {
             String result = locale.getISO3Country();
@@ -994,7 +1005,7 @@ test commented out pending API-change approval
     public void Test4147317() {
         // Try a three letter language code, and check whether it is
         // returned as is.
-        Locale locale = new Locale("aaa", "CCC");
+        Locale locale = Locale.forLanguageTag("aaa-CC");
 
         String result = locale.getISO3Language();
         if (!result.equals("aaa")) {
@@ -1004,7 +1015,7 @@ test commented out pending API-change approval
 
         // Try an invalid two letter language code, and check whether it
         // throws a MissingResourceException.
-        locale = new Locale("zz", "CCC");
+        locale = Locale.forLanguageTag("zz-CC");
 
         try {
             result = locale.getISO3Language();
@@ -1019,9 +1030,9 @@ test commented out pending API-change approval
      * @bug 4147552 4778440 8030696
      */
     public void Test4147552() {
-        Locale[] locales = {new Locale("no", "NO"), new Locale("no", "NO", "B"),
-            new Locale("no", "NO", "NY"), new Locale("nb", "NO"),
-            new Locale("nn", "NO")};
+        Locale[] locales = {Locale.forLanguageTag("no-NO"), Locale.forLanguageTag("no-NO-x-lvariant-B"),
+            Locale.forLanguageTag("no-NO-x-lvariant-NY"), Locale.forLanguageTag("nb-NO"),
+            Locale.forLanguageTag("nn-NO")};
         String[] englishDisplayNames = {"Norwegian (Norway)",
             "Norwegian (Norway,Bokm\u00e5l)",
             "Norwegian (Norway,Nynorsk)",
@@ -1050,8 +1061,8 @@ test commented out pending API-change approval
      */
     public void Test8030696() {
         List<Locale> av = Arrays.asList(Locale.getAvailableLocales());
-        if (!av.contains(new Locale("nb", "NO"))
-                || !av.contains(new Locale("nn", "NO"))) {
+        if (!av.contains(Locale.forLanguageTag("nb-NO"))
+                || !av.contains(Locale.forLanguageTag("nn-NO"))) {
             errln("\"nb-NO\" and/or \"nn-NO\" locale(s) not returned from getAvailableLocales().");
         }
     }

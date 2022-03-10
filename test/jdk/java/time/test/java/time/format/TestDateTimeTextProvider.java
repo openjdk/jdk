@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,56 +79,54 @@ import org.testng.annotations.Test;
 @Test
 public class TestDateTimeTextProvider extends AbstractTestPrinterParser {
 
-    Locale enUS = new Locale("en", "US");
-
     //-----------------------------------------------------------------------
     @DataProvider(name = "Text")
     Object[][] data_text() {
         return new Object[][] {
-            {DAY_OF_WEEK, 1, TextStyle.SHORT, enUS, "Mon"},
-            {DAY_OF_WEEK, 2, TextStyle.SHORT, enUS, "Tue"},
-            {DAY_OF_WEEK, 3, TextStyle.SHORT, enUS, "Wed"},
-            {DAY_OF_WEEK, 4, TextStyle.SHORT, enUS, "Thu"},
-            {DAY_OF_WEEK, 5, TextStyle.SHORT, enUS, "Fri"},
-            {DAY_OF_WEEK, 6, TextStyle.SHORT, enUS, "Sat"},
-            {DAY_OF_WEEK, 7, TextStyle.SHORT, enUS, "Sun"},
+            {DAY_OF_WEEK, 1, TextStyle.SHORT, Locale.US, "Mon"},
+            {DAY_OF_WEEK, 2, TextStyle.SHORT, Locale.US, "Tue"},
+            {DAY_OF_WEEK, 3, TextStyle.SHORT, Locale.US, "Wed"},
+            {DAY_OF_WEEK, 4, TextStyle.SHORT, Locale.US, "Thu"},
+            {DAY_OF_WEEK, 5, TextStyle.SHORT, Locale.US, "Fri"},
+            {DAY_OF_WEEK, 6, TextStyle.SHORT, Locale.US, "Sat"},
+            {DAY_OF_WEEK, 7, TextStyle.SHORT, Locale.US, "Sun"},
 
-            {DAY_OF_WEEK, 1, TextStyle.FULL, enUS, "Monday"},
-            {DAY_OF_WEEK, 2, TextStyle.FULL, enUS, "Tuesday"},
-            {DAY_OF_WEEK, 3, TextStyle.FULL, enUS, "Wednesday"},
-            {DAY_OF_WEEK, 4, TextStyle.FULL, enUS, "Thursday"},
-            {DAY_OF_WEEK, 5, TextStyle.FULL, enUS, "Friday"},
-            {DAY_OF_WEEK, 6, TextStyle.FULL, enUS, "Saturday"},
-            {DAY_OF_WEEK, 7, TextStyle.FULL, enUS, "Sunday"},
+            {DAY_OF_WEEK, 1, TextStyle.FULL, Locale.US, "Monday"},
+            {DAY_OF_WEEK, 2, TextStyle.FULL, Locale.US, "Tuesday"},
+            {DAY_OF_WEEK, 3, TextStyle.FULL, Locale.US, "Wednesday"},
+            {DAY_OF_WEEK, 4, TextStyle.FULL, Locale.US, "Thursday"},
+            {DAY_OF_WEEK, 5, TextStyle.FULL, Locale.US, "Friday"},
+            {DAY_OF_WEEK, 6, TextStyle.FULL, Locale.US, "Saturday"},
+            {DAY_OF_WEEK, 7, TextStyle.FULL, Locale.US, "Sunday"},
 
-            {MONTH_OF_YEAR, 1, TextStyle.SHORT, enUS, "Jan"},
-            {MONTH_OF_YEAR, 2, TextStyle.SHORT, enUS, "Feb"},
-            {MONTH_OF_YEAR, 3, TextStyle.SHORT, enUS, "Mar"},
-            {MONTH_OF_YEAR, 4, TextStyle.SHORT, enUS, "Apr"},
-            {MONTH_OF_YEAR, 5, TextStyle.SHORT, enUS, "May"},
-            {MONTH_OF_YEAR, 6, TextStyle.SHORT, enUS, "Jun"},
-            {MONTH_OF_YEAR, 7, TextStyle.SHORT, enUS, "Jul"},
-            {MONTH_OF_YEAR, 8, TextStyle.SHORT, enUS, "Aug"},
-            {MONTH_OF_YEAR, 9, TextStyle.SHORT, enUS, "Sep"},
-            {MONTH_OF_YEAR, 10, TextStyle.SHORT, enUS, "Oct"},
-            {MONTH_OF_YEAR, 11, TextStyle.SHORT, enUS, "Nov"},
-            {MONTH_OF_YEAR, 12, TextStyle.SHORT, enUS, "Dec"},
+            {MONTH_OF_YEAR, 1, TextStyle.SHORT, Locale.US, "Jan"},
+            {MONTH_OF_YEAR, 2, TextStyle.SHORT, Locale.US, "Feb"},
+            {MONTH_OF_YEAR, 3, TextStyle.SHORT, Locale.US, "Mar"},
+            {MONTH_OF_YEAR, 4, TextStyle.SHORT, Locale.US, "Apr"},
+            {MONTH_OF_YEAR, 5, TextStyle.SHORT, Locale.US, "May"},
+            {MONTH_OF_YEAR, 6, TextStyle.SHORT, Locale.US, "Jun"},
+            {MONTH_OF_YEAR, 7, TextStyle.SHORT, Locale.US, "Jul"},
+            {MONTH_OF_YEAR, 8, TextStyle.SHORT, Locale.US, "Aug"},
+            {MONTH_OF_YEAR, 9, TextStyle.SHORT, Locale.US, "Sep"},
+            {MONTH_OF_YEAR, 10, TextStyle.SHORT, Locale.US, "Oct"},
+            {MONTH_OF_YEAR, 11, TextStyle.SHORT, Locale.US, "Nov"},
+            {MONTH_OF_YEAR, 12, TextStyle.SHORT, Locale.US, "Dec"},
 
-            {MONTH_OF_YEAR, 1, TextStyle.FULL, enUS, "January"},
-            {MONTH_OF_YEAR, 2, TextStyle.FULL, enUS, "February"},
-            {MONTH_OF_YEAR, 3, TextStyle.FULL, enUS, "March"},
-            {MONTH_OF_YEAR, 4, TextStyle.FULL, enUS, "April"},
-            {MONTH_OF_YEAR, 5, TextStyle.FULL, enUS, "May"},
-            {MONTH_OF_YEAR, 6, TextStyle.FULL, enUS, "June"},
-            {MONTH_OF_YEAR, 7, TextStyle.FULL, enUS, "July"},
-            {MONTH_OF_YEAR, 8, TextStyle.FULL, enUS, "August"},
-            {MONTH_OF_YEAR, 9, TextStyle.FULL, enUS, "September"},
-            {MONTH_OF_YEAR, 10, TextStyle.FULL, enUS, "October"},
-            {MONTH_OF_YEAR, 11, TextStyle.FULL, enUS, "November"},
-            {MONTH_OF_YEAR, 12, TextStyle.FULL, enUS, "December"},
+            {MONTH_OF_YEAR, 1, TextStyle.FULL, Locale.US, "January"},
+            {MONTH_OF_YEAR, 2, TextStyle.FULL, Locale.US, "February"},
+            {MONTH_OF_YEAR, 3, TextStyle.FULL, Locale.US, "March"},
+            {MONTH_OF_YEAR, 4, TextStyle.FULL, Locale.US, "April"},
+            {MONTH_OF_YEAR, 5, TextStyle.FULL, Locale.US, "May"},
+            {MONTH_OF_YEAR, 6, TextStyle.FULL, Locale.US, "June"},
+            {MONTH_OF_YEAR, 7, TextStyle.FULL, Locale.US, "July"},
+            {MONTH_OF_YEAR, 8, TextStyle.FULL, Locale.US, "August"},
+            {MONTH_OF_YEAR, 9, TextStyle.FULL, Locale.US, "September"},
+            {MONTH_OF_YEAR, 10, TextStyle.FULL, Locale.US, "October"},
+            {MONTH_OF_YEAR, 11, TextStyle.FULL, Locale.US, "November"},
+            {MONTH_OF_YEAR, 12, TextStyle.FULL, Locale.US, "December"},
 
-            {AMPM_OF_DAY, 0, TextStyle.SHORT, enUS, "AM"},
-            {AMPM_OF_DAY, 1, TextStyle.SHORT, enUS, "PM"},
+            {AMPM_OF_DAY, 0, TextStyle.SHORT, Locale.US, "AM"},
+            {AMPM_OF_DAY, 1, TextStyle.SHORT, Locale.US, "PM"},
 
         };
     }

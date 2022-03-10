@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,9 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
     private static final String jaJPJPTag = "ja-JP-JP";
     private static final String noNONYTag = "no-NO-NY";
     private static final String thTHTHTag = "th-TH-TH";
-    private static final Locale jaJPJP = new Locale("ja", "JP", "JP");
-    private static final Locale noNONY = new Locale("no", "NO", "NY");
-    private static final Locale thTHTH = new Locale("th", "TH", "TH");
+    private static final Locale jaJPJP = Locale.forLanguageTag("ja-JP-x-lvariant-JP");
+    private static final Locale noNONY = Locale.forLanguageTag("no-NO-x-lvariant-NY");
+    private static final Locale thTHTH = Locale.forLanguageTag("th-TH-x-lvariant-TH");
 
     public IncludeLocalesPlugin() {
         super("include-locales");

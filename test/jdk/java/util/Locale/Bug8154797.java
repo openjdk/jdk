@@ -87,7 +87,7 @@ public class Bug8154797 {
 
     public static void main(String args[]) {
         Bug8154797.generateExpectedValues();
-        Locale[] locArr = {new Locale("hi", "IN"), Locale.UK, new Locale("fi", "FI"),
+        Locale[] locArr = {Locale.forLanguageTag("hi-IN"), Locale.UK, Locale.forLanguageTag("fi-FI"),
                            Locale.ROOT, Locale.GERMAN, Locale.JAPANESE,
                            Locale.ENGLISH, Locale.FRANCE};
         for (Locale loc : locArr) {

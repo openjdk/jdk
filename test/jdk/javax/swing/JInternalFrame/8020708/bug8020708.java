@@ -47,16 +47,16 @@ public class bug8020708 {
 
     private static final Locale[] SUPPORTED_LOCALES = {
         Locale.ENGLISH,
-        new Locale("de"),
-        new Locale("es"),
-        new Locale("fr"),
-        new Locale("it"),
-        new Locale("ja"),
-        new Locale("ko"),
-        new Locale("pt", "BR"),
-        new Locale("sv"),
-        new Locale("zh", "CN"),
-        new Locale("zh", "TW")
+        Locale.GERMAN,
+        Locale.forLanguageTag("es"),
+        Locale.FRENCH,
+        Locale.ITALIAN,
+        Locale.JAPANESE,
+        Locale.KOREAN,
+        Locale.forLanguageTag("pt-BR"),
+        Locale.forLanguageTag("sv"),
+        Locale.SIMPLIFIED_CHINESE,
+        Locale.TRADITIONAL_CHINESE
     };
     private static final String[] LOOK_AND_FEELS = {
         "Nimbus",

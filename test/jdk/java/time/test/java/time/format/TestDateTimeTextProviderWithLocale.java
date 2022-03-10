@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@
 
 package test.java.time.format;
 
-import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.testng.Assert.assertEquals;
@@ -86,8 +85,7 @@ import org.testng.annotations.Test;
 @Test
 public class TestDateTimeTextProviderWithLocale extends AbstractTestPrinterParser {
 
-    Locale enUS = new Locale("en", "US");
-    Locale ptBR = new Locale("pt", "BR");
+    Locale ptBR = Locale.forLanguageTag("pt-BR");
 
     //-----------------------------------------------------------------------
     @DataProvider(name = "Text")

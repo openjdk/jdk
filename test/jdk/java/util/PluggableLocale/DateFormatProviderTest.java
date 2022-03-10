@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,9 +149,9 @@ public class DateFormatProviderTest extends ProviderTest {
     // Check that fallback correctly occurs with locales with variant including '_'s
     // This test assumes that the provider supports the ja_JP_osaka locale, and JRE does not.
     void extendedVariantTest() {
-        Locale[] testlocs = {new Locale("ja", "JP", "osaka_extended"),
-                             new Locale("ja", "JP", "osaka_extended_further"),
-                             new Locale("ja", "JP", "osaka_")};
+        Locale[] testlocs = {Locale.forLanguageTag("ja-JP-x-lvariant-osaka-extended"),
+                             Locale.forLanguageTag("ja-JP-x-lvariant-osaka-extended-further"),
+                             Locale.forLanguageTag("ja-JP-x-lvariant-osaka-")};
         for (Locale test: testlocs) {
             DateFormat df = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, test);
             DateFormat provider = dfp.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, test);

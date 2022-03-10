@@ -341,7 +341,10 @@ public class LocaleDataTest
             if (use_tag) {
                 locale = Locale.forLanguageTag(localeName);
             } else {
-                locale = new Locale(language, country, variant);
+                locale = Locale.forLanguageTag(
+                    (language.isEmpty() ? "und" : language) +
+                    (country.isEmpty() ? "" : "-" + country) +
+                    (variant.isEmpty() ? "" : "-x-lvariant-" + variant));
             }
             ResourceBundle bundle = LocaleData.getBundle(fullName, locale);
             resource = bundle.getObject(resTag);
