@@ -549,7 +549,12 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   elif test "x$with_macosx_bundle_build_version" != x; then
     MACOSX_BUNDLE_BUILD_VERSION="$with_macosx_bundle_build_version"
   else
-    MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
+    if test "x$VERSION_BUILD" != x; then
+      MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
+    else
+      MACOSX_BUNDLE_BUILD_VERSION=0
+    fi
+
     # If VERSION_OPT consists of only numbers and periods, add it.
     if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
       MACOSX_BUNDLE_BUILD_VERSION="$MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"

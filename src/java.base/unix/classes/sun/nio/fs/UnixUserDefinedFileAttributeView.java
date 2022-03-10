@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get list of extended attributes: " +
                 x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -157,7 +157,7 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get size of extended attribute '" + name +
                 "': " + x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -221,7 +221,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error reading extended attribute '" + name + "': " + msg);
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -283,7 +283,7 @@ abstract class UnixUserDefinedFileAttributeView
                     null, "Error writing extended attribute '" + name + "': " +
                     x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
@@ -305,7 +305,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
