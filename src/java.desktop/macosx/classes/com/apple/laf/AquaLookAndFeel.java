@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -889,7 +889,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.gridColor", white, // grid line color
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
-            "Table.focusCellHighlightBorder", focusCellHighlightBorder,
+            "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(deriveContrastFocusRing(selectionBackground), 2),
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1121,5 +1121,67 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "ViewportUI", basicPackageName + "BasicViewportUI",
         };
         table.putDefaults(uiDefaults);
+    }
+
+    /**
+     * Returns a brighter JTable Cell Focus Ring color for a given
+     * selection background color.
+     *
+     * If {@param selectedBackgroundColor} is equal to Color.WHITE or
+     * Color.BLACK, the returned focus ring color is Color.GRAY. If
+     * {@param selectedBackgroundColor} is any shade of GRAY then, the
+     * returned focus ring color is white/black depending on the rgb
+     * values. For other values of rgb, a brighter color is returned.
+     *
+     * @param selectedBackgroundColor - the {@code Color} object
+     * @return the {@code Color} object corresponding to new HSB values
+     */
+    private Color deriveContrastFocusRing(Color selectedBackgroundColor) {
+
+        //define constants
+        float hueFactor = 0.0278f; //approx. 10 degree offset to the original hue
+        float hueMaxValue = 1; //corresponds to 360 deg.
+        float saturationThreshold = 0.5f;
+        float satLowerValue = 0.30f;
+        float satUpperValue = 1.0f;
+        float brightnessValue = 1.0f;
+
+        float[] hsbValues = new float[3];
+
+        int redValue = selectedBackgroundColor.getRed();
+        int greenValue = selectedBackgroundColor.getGreen();
+        int blueValue = selectedBackgroundColor.getBlue();
+
+        if (selectedBackgroundColor.equals(Color.WHITE) || selectedBackgroundColor.equals(Color.BLACK)) {
+            return Color.GRAY;
+        }
+
+        //if background is any shade of grey (red == green == blue)
+        if (redValue == greenValue && redValue == blueValue) {
+
+            //towards white
+            if (redValue >= 128) {
+                return Color.BLACK;
+            }
+            //towards black
+            else {
+                return Color.WHITE;
+            }
+        }
+
+        //if background color other than white, black or grey compute a brighter color using HSB components
+        Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
+
+        //hue adjustment - present value increased by hueFactor
+        hsbValues[0] = (hsbValues[0] + hueFactor) >= hueMaxValue ? (hsbValues[0] + hueFactor) - hueMaxValue : hsbValues[0] + hueFactor;
+
+        //saturation adjustment - saturation set to either lower or upper saturation value based on current saturation level
+        hsbValues[1] = hsbValues[1] >= saturationThreshold ? satLowerValue : satUpperValue;
+
+        //brightness adjustment - brightness set to 100%
+        hsbValues[2] = brightnessValue;
+
+        //create and return Color corresponding to new hsbValues
+        return Color.getHSBColor(hsbValues[0], hsbValues[1], hsbValues[2]);
     }
 }
