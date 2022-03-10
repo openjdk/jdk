@@ -85,9 +85,8 @@ public class BasicToolTipUI extends ToolTipUI
         installDefaults(c);
         installComponents(c);
         installListeners(c);
-        Font f = c.getFont();
+
         tip = (JToolTip)c;
-        smallFont = new Font( f.getName(), f.getStyle(), f.getSize() - 2 );
         acceleratorDelimiter = UIManager.getString( "MenuItem.acceleratorDelimiter" );
         if ( acceleratorDelimiter == null ) { acceleratorDelimiter = "-"; }
     }
@@ -180,7 +179,7 @@ public class BasicToolTipUI extends ToolTipUI
         }
 
         String accelString = getAcceleratorString(tip);
-        FontMetrics accelMetrics = SwingUtilities2.getFontMetrics(c, g, smallFont);
+        FontMetrics accelMetrics = SwingUtilities2.getFontMetrics(c, g, font);
         int accelSpacing = calcAccelSpacing(c, accelMetrics, accelString);
 
         Insets insets = ((JToolTip)c).getInsets();
@@ -207,8 +206,7 @@ public class BasicToolTipUI extends ToolTipUI
         }
 
         if (!accelString.isEmpty()) {
-            g.setFont(smallFont);
-            g.setColor( MetalLookAndFeel.getPrimaryControlDarkShadow() );
+            g.setFont(font);
             SwingUtilities2.drawString(tip, g, accelString,
                     tip.getWidth() - 1 - insets.right
                             - accelSpacing
@@ -243,7 +241,7 @@ public class BasicToolTipUI extends ToolTipUI
 
         String key = getAcceleratorString((JToolTip)c);
         if (!key.isEmpty()) {
-            prefSize.width += calcAccelSpacing(c, c.getFontMetrics(smallFont), key);
+            prefSize.width += calcAccelSpacing(c, c.getFontMetrics(font), key);
         }
 
         return prefSize;
