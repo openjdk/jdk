@@ -321,6 +321,7 @@ class Http1Response<T> {
                 // to prevent the SelectorManager thread from exiting until
                 // the body is fully read.
                 acquired = refCountTracker.acquire();
+                assert acquired == true;
                 bodyParser = content.getBodyParser(
                     (t) -> {
                         try {
