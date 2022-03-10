@@ -10,7 +10,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64"
+        default: "Linux additional (hotspot only), Linux x64, Linux x86, Alpine-Linux x64, Windows aarch64, Windows x64, macOS x64"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,6 +26,7 @@ jobs:
       platform_linux_additional: ${{ steps.check_platforms.outputs.platform_linux_additional }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
+      platform_alpine_linux_x64: ${{ steps.check_platforms.outputs.platform_alpine-linux_x64 }}
       platform_windows_aarch64: ${{ steps.check_platforms.outputs.platform_windows_aarch64 }}
       platform_windows_x64: ${{ steps.check_platforms.outputs.platform_windows_x64 }}
       platform_macos_x64: ${{ steps.check_platforms.outputs.platform_macos_x64 }}
@@ -43,6 +44,7 @@ jobs:
           echo "::set-output name=platform_linux_additional::${{ contains(github.event.inputs.platforms, 'linux additional (hotspot only)') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux additional (hotspot only)'))) }}"
           echo "::set-output name=platform_linux_x64::${{ contains(github.event.inputs.platforms, 'linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x64'))) }}"
           echo "::set-output name=platform_linux_x86::${{ contains(github.event.inputs.platforms, 'linux x86') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'linux x86'))) }}"
+          echo "::set-output name=platform_alpine::${{ contains(github.event.inputs.platforms, 'alpine-linux x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'alpine-linux x64'))) }}"
           echo "::set-output name=platform_windows_aarch64::${{ contains(github.event.inputs.platforms, 'windows aarch64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows aarch64'))) }}"
           echo "::set-output name=platform_windows_x64::${{ contains(github.event.inputs.platforms, 'windows x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'windows x64'))) }}"
           echo "::set-output name=platform_macos_x64::${{ contains(github.event.inputs.platforms, 'macos x64') || (github.event.inputs.platforms == '' && (secrets.JDK_SUBMIT_PLATFORMS == '' || contains(secrets.JDK_SUBMIT_PLATFORMS, 'macos x64'))) }}"
@@ -562,6 +564,106 @@ jobs:
       - name: Build
         run: make CONF_NAME=linux-${{ matrix.gnu-arch }}-hotspot
         working-directory: jdk
+
+  alpine-linux_x64_build:
+    name: Alpine Linux x64
+    runs-on: "ubuntu-20.04"
+    container:
+      image: alpine
+    needs: prerequisites
+    if: needs.prerequisites.outputs.should_run != 'false' && needs.prerequisites.outputs.platform_alpine-linux_x64 != 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor:
+          - build release
+          - build debug
+        include:
+          - flavor: build debug
+            flags: --enable-debug
+            artifact: -debug
+
+    env:
+      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
+      BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).ALPINE_LINUX_X64_BOOT_JDK_FILENAME }}"
+      BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).ALPINE_LINUX_X64_BOOT_JDK_URL }}"
+      BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).ALPINE_LINUX_X64_BOOT_JDK_SHA256 }}"
+
+    steps:
+      - name: Checkout the source
+        uses: actions/checkout@v2
+        with:
+          path: jdk
+
+      - name: Restore boot JDK from cache
+        id: bootjdk
+        uses: actions/cache@v2
+        with:
+          path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
+          key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
+
+      - name: Download boot JDK
+        run: |
+          mkdir -p "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          wget -O "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" "${BOOT_JDK_URL}"
+          echo "${BOOT_JDK_SHA256} ${HOME}/bootjdk/${BOOT_JDK_FILENAME}" | sha256sum -c >/dev/null -
+          tar -xf "${HOME}/bootjdk/${BOOT_JDK_FILENAME}" -C "${HOME}/bootjdk/${BOOT_JDK_VERSION}"
+          mv "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"*/* "${HOME}/bootjdk/${BOOT_JDK_VERSION}/"
+        if: steps.bootjdk.outputs.cache-hit != 'true'
+
+      - name: Restore jtreg artifact
+        id: jtreg_restore
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        continue-on-error: true
+
+      - name: Restore jtreg artifact (retry)
+        uses: actions/download-artifact@v2
+        with:
+          name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
+          path: ~/jtreg/
+        if: steps.jtreg_restore.outcome == 'failure'
+
+      - name: Checkout gtest sources
+        uses: actions/checkout@v2
+        with:
+          repository: "google/googletest"
+          ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
+          path: gtest
+
+      - name: Install dependencies
+        run: |
+          apk update
+          apk add alpine-sdk alsa-lib-dev autoconf bash cups-dev cups-libs fontconfig-dev freetype-dev grep libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev linux-headers zip
+
+      - name: Configure
+        run: >
+          bash configure
+          --with-conf-name=linux-x64
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-boot-jdk=${HOME}/bootjdk/${BOOT_JDK_VERSION}
+          --with-jtreg=${HOME}/jtreg
+          --with-gtest=${GITHUB_WORKSPACE}/gtest
+          --with-default-make-target="product-bundles test-bundles"
+          --with-zlib=system
+          --enable-jtreg-failure-handler
+        working-directory: jdk
+
+      - name: Build
+        run: make CONF_NAME=linux-x64
+        working-directory: jdk
+
+      - name: Persist test bundles
+        uses: actions/upload-artifact@v2
+        with:
+          name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
+          path: |
+            jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin${{ matrix.artifact }}.tar.gz
+            jdk/build/linux-x64/bundles/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin-tests${{ matrix.artifact }}.tar.gz
 
   linux_x86_build:
     name: Linux x86

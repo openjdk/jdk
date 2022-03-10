@@ -34,6 +34,10 @@ LINUX_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_linux-x64_bin.tar.gz
 LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz
 LINUX_X64_BOOT_JDK_SHA256=1c0a73cbb863aad579b967316bf17673b8f98a9bb938602a140ba2e5c38f880a
 
+ALPINE_LINUX_X64_BOOT_JDK_FILENAME=OpenJDK17U-jdk_x64_alpine-linux_hotspot_17.0.1_12.tar.gz
+ALPINE_LINUX_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.1%2B12/OpenJDK17U-jdk_x64_alpine-linux_hotspot_17.0.1_12.tar.gz
+ALPINE_LINUX_X64_BOOT_JDK_SHA256=da4845987b3348da14338a0620ef7db25870e27670e82baebcc367fa9d17c7de
+
 WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_windows-x64_bin.zip
 WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_windows-x64_bin.zip
 WINDOWS_X64_BOOT_JDK_SHA256=329900a6673b237b502bdcf77bc334da34bc91355c5fd2d457fc00f53fd71ef1
