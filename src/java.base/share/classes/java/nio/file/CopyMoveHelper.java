@@ -106,11 +106,11 @@ class CopyMoveHelper {
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
 
         // retrieve source posix view, null if unsupported
-        final PosixFileAttributeView srcPosixView =
+        final PosixFileAttributeView sourcePosixView =
             Files.getFileAttributeView(source, PosixFileAttributeView.class);
 
         // attributes of source file
-        BasicFileAttributes srcAttrs = srcPosixView != null ?
+        BasicFileAttributes sourceAttrs = sourcePosixView != null ?
             Files.readAttributes(source,
                                  PosixFileAttributes.class,
                                  linkOptions) :
@@ -118,7 +118,7 @@ class CopyMoveHelper {
                                  BasicFileAttributes.class,
                                  linkOptions);
 
-        if (srcAttrs.isSymbolicLink())
+        if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
         // delete target if it exists and REPLACE_EXISTING is specified
@@ -128,7 +128,7 @@ class CopyMoveHelper {
             throw new FileAlreadyExistsException(target.toString());
 
         // create directory or copy file
-        if (srcAttrs.isDirectory()) {
+        if (sourceAttrs.isDirectory()) {
             Files.createDirectory(target);
         } else {
             try (InputStream in = Files.newInputStream(source)) {
@@ -138,26 +138,26 @@ class CopyMoveHelper {
 
         // copy basic and, if supported, POSIX attributes to target
         if (opts.copyAttributes) {
-            BasicFileAttributeView dstView = null;
-            if (srcPosixView != null) {
-                dstView = Files.getFileAttributeView(target,
+            BasicFileAttributeView targetView = null;
+            if (sourcePosixView != null) {
+                targetView = Files.getFileAttributeView(target,
                                                      PosixFileAttributeView.class);
             }
 
             // target might not support posix even if source does
-            if (dstView == null) {
-                dstView = Files.getFileAttributeView(target,
+            if (targetView == null) {
+                targetView = Files.getFileAttributeView(target,
                                                      BasicFileAttributeView.class);
             }
 
             try {
-                dstView.setTimes(srcAttrs.lastModifiedTime(),
-                                 srcAttrs.lastAccessTime(),
-                                 srcAttrs.creationTime());
+                targetView.setTimes(sourceAttrs.lastModifiedTime(),
+                                 sourceAttrs.lastAccessTime(),
+                                 sourceAttrs.creationTime());
 
-                if (srcAttrs instanceof PosixFileAttributes srcPosixAttrs &&
-                    dstView instanceof PosixFileAttributeView dstPosixView) {
-                    dstPosixView.setPermissions(srcPosixAttrs.permissions());
+                if (sourceAttrs instanceof PosixFileAttributes sourcePosixAttrs &&
+                    targetView instanceof PosixFileAttributeView targetPosixView) {
+                    targetPosixView.setPermissions(sourcePosixAttrs.permissions());
                 }
             } catch (Throwable x) {
                 // rollback
