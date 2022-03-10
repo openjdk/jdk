@@ -1124,14 +1124,16 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns a brighter JTable Cell Focus Ring color for a given
-     * selection background color.
+     * Returns a more visible JTable Cell Focus Ring color
+     * by manipulating hue, saturation and brightness for a
+     * given selection background color.
      *
-     * If {@param selectedBackgroundColor} is equal to Color.WHITE or
-     * Color.BLACK, the returned focus ring color is Color.GRAY. If
-     * {@param selectedBackgroundColor} is any shade of GRAY then, the
-     * returned focus ring color is white/black depending on the rgb
-     * values. For other values of rgb, a brighter color is returned.
+     * If selectedBackgroundColor is equal to white or
+     * black, the returned focus ring color is Gray. If the
+     * selectedBackgroundColor is any shade of Gray then, the
+     * returned focus ring color is White/Black depending on
+     * the rgb values. For all other values of rgb, a more
+     * prominent and visible color is returned.
      *
      * @param selectedBackgroundColor - the {@code Color} object
      * @return the {@code Color} object corresponding to new HSB values
@@ -1152,7 +1154,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         int greenValue = selectedBackgroundColor.getGreen();
         int blueValue = selectedBackgroundColor.getBlue();
 
-        if (selectedBackgroundColor.equals(Color.WHITE) || selectedBackgroundColor.equals(Color.BLACK)) {
+        if (selectedBackgroundColor.equals(Color.WHITE) ||
+                selectedBackgroundColor.equals(Color.BLACK)) {
             return Color.GRAY;
         }
 
@@ -1169,14 +1172,18 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             }
         }
 
-        //if background color other than white, black or grey compute a brighter color using HSB components
+        //if background color other than white, black or grey compute a
+        // brighter color using HSB components
         Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
 
         //hue adjustment - present value increased by hueFactor
-        hsbValues[0] = (hsbValues[0] + hueFactor) >= hueMaxValue ? (hsbValues[0] + hueFactor) - hueMaxValue : hsbValues[0] + hueFactor;
+        hsbValues[0] = (hsbValues[0] + hueFactor) >= hueMaxValue ?
+                (hsbValues[0] + hueFactor) - hueMaxValue : hsbValues[0] + hueFactor;
 
-        //saturation adjustment - saturation set to either lower or upper saturation value based on current saturation level
-        hsbValues[1] = hsbValues[1] >= saturationThreshold ? satLowerValue : satUpperValue;
+        //saturation adjustment - saturation set to either lower or
+        // upper saturation value based on current saturation level
+        hsbValues[1] = hsbValues[1] >= saturationThreshold ?
+                satLowerValue : satUpperValue;
 
         //brightness adjustment - brightness set to 100%
         hsbValues[2] = brightnessValue;
