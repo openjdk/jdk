@@ -250,7 +250,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_line">{@code $}</th>
  *     <td headers="matches bounds end_line">The end of a line</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word_boundary">{@code \b}</th>
- *     <td headers="matches bounds word_boundary">A word boundary: {@code (?:(?<=\w)(?=\W)|(?<=\W)(?=\w))}</td></tr>
+ *     <td headers="matches bounds word_boundary">A word boundary: {@code (?:(?<=\w)(?=\W)|(?<=\W)(?=\w))} (the location
+ *     where a non-word character abuts a word character)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_cluster_boundary">{@code \b{g}}</th>
  *     <td headers="matches bounds grapheme_cluster_boundary">A Unicode extended grapheme cluster boundary</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word_boundary">{@code \B}</th>
