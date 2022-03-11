@@ -387,11 +387,9 @@ public final class Carrier {
             }
 
             /**
-             * Return long value at index.
+             * {@return long value at index}
              *
              * @param i  array index
-             *
-             * @return long value at index
              */
             private long getLong(int i) {
                 return primitives[i];
@@ -412,9 +410,9 @@ public final class Carrier {
             }
 
             /**
-             * @param i  array index
+             * {@return int value at index}
              *
-             * {}@return int value at index}
+             * @param i  array index
              */
             private int getInteger(int i) {
                 return UNSAFE.getInt(primitives, offset(i));
@@ -435,11 +433,9 @@ public final class Carrier {
             }
 
             /**
-             * Return object value at index.
+             * {@return Object value at index}
              *
              * @param i  array index
-             *
-             * @return object value at index
              */
             private Object getObject(int i) {
                 return objects[i];
