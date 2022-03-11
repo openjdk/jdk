@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,6 +290,9 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @param   columnIndex     the index of the column desired
      * @return  the <code>TableColumn</code> object for the column
      *                          at <code>columnIndex</code>
+     * @throws  ArrayIndexOutOfBoundsException if <code>columnIndex</code>
+     *             is out of range:
+     *             (<code>columnIndex &lt; 0 || columnIndex &gt;= getColumnCount()</code>)
      */
     public TableColumn getColumn(int columnIndex) {
         return tableColumns.elementAt(columnIndex);

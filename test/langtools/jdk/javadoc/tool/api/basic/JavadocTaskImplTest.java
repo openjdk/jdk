@@ -104,7 +104,7 @@ public class JavadocTaskImplTest extends APITest {
             File outDir = getOutDir();
             fm.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(outDir));
             try {
-                DocumentationTask t = new JavadocTaskImpl(c, null, null, files);;
+                DocumentationTask t = new JavadocTaskImpl(c, null, null, files);
                 error("getTask succeeded, no exception thrown");
             } catch (NullPointerException e) {
                 System.err.println("exception caught as expected: " + e);

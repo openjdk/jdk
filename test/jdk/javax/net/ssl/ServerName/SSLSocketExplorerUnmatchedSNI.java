@@ -130,7 +130,7 @@ public class SSLSocketExplorerUnmatchedSNI {
             position += n;
         }
 
-        capabilities = SSLExplorer.explore(buffer, 0, recordLength);;
+        capabilities = SSLExplorer.explore(buffer, 0, recordLength);
         if (capabilities != null) {
             System.out.println("Record version: " +
                     capabilities.getRecordVersion());
