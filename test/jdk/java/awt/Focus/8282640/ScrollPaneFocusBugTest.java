@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 4740761
  * @key headful
  * @summary Focus stays with the ScrollPane despite it being removed from the Parent
  * @run main ScrollPaneFocusBugTest
