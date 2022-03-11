@@ -23,8 +23,8 @@
 
 /**
  * @test
+ * @bug 8282008
  * @requires (os.family == "windows")
- * @library /test/lib
  * @run main/othervm ArgCheck
  * @summary Check invocation of exe and non-exe programs using ProcessBuilder
  *      and arguments with spaces, backslashes, and simple quoting.
@@ -36,13 +36,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.concurrent.Callable;
 
 /**
  * Class to check invocation of java, .cmd, and vbs scripts with arguments and various quote cases.
@@ -50,9 +51,9 @@ import java.util.concurrent.Callable;
  */
 public class ArgCheck {
 
-    private static final Path SRC_DIR = Path.of(System.getProperty("test.src", "."));
-    private static final Path WORK_DIR = Path.of(System.getProperty("user.dir", "."));
-    private static final Path TEST_CLASSES = Path.of(System.getProperty("test.classes", "."));
+    private static final Path SRC_DIR = Paths.get(System.getProperty("test.src", "."));
+    private static final Path WORK_DIR = Paths.get(System.getProperty("user.dir", "."));
+    private static final Path TEST_CLASSES = Paths.get(System.getProperty("test.classes", "."));
 
     private static final String ECHO_CMD_PATH = WORK_DIR.resolve("EchoArguments.cmd").toString();
     private static final String ECHO_VBS_PATH = WORK_DIR.resolve("EchoArguments.vbs").toString();
@@ -61,21 +62,23 @@ public class ArgCheck {
     // Depending on the mode the final backslash may act as an escape that may turn an added quote to a literal quote
     private static final String SPACE_AND_BACKSLASH = "SPACE AND BACKSLASH\\";
     private static final char DOUBLE_QUOTE = '"';
+    private static final char NEWLINE = '\n';
+    private static final char BACKSLASH = '\\';
 
     private static final String AMBIGUOUS_PROP_NAME = "jdk.lang.Process.allowAmbiguousCommands";
     private static final String AMBIGUOUS_PROP_VALUE = System.getProperty(AMBIGUOUS_PROP_NAME);
     private static final Boolean AMBIGUOUS_PROP_BOOLEAN = AMBIGUOUS_PROP_VALUE == null ? null :
                                                           Boolean.valueOf(!"false".equals(AMBIGUOUS_PROP_VALUE));
 
-    private static final List<String> ECHO_JAVA_ARGS = List.of("java", "-classpath", TEST_CLASSES.toString(), "ArgCheck");
-    private static final List<String> ECHO_CMD_ARGS = List.of(ECHO_CMD_PATH);
-    private static final List<String> ECHO_VBS_ARGS = List.of("CScript", "/b", ECHO_VBS_PATH);
+    private static final List<String> ECHO_JAVA_ARGS = Arrays.asList("java", "-classpath", TEST_CLASSES.toString(), "ArgCheck");
+    private static final List<String> ECHO_CMD_ARGS = Arrays.asList(ECHO_CMD_PATH);
+    private static final List<String> ECHO_VBS_ARGS = Arrays.asList("CScript", "/b", ECHO_VBS_PATH);
 
     /**
      * If zero arguments are supplied, run the test cases.
      * If there are arguments, echo them to Stdout.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length > 0) {
             // Echo supplied arguments and exit
             for (String arg : args)
@@ -83,20 +86,20 @@ public class ArgCheck {
             return;
         }
 
-        System.out.println("Java Version: " + Runtime.getRuntime().version());
+        System.out.println("Java Version: " + System.getProperty("java.version"));
+
+        createFiles();
 
         int errors = 0;
         int success = 0;
 
-        ArgCheck ac = new ArgCheck();
-        ac.setup();
         for (CMD cmd : CASES) {
             // If System property jdk.lang.process.allowAmbiguousCommands matches the case, test it
             // If undefined, test them all
             if (AMBIGUOUS_PROP_BOOLEAN == null ||
                     AMBIGUOUS_PROP_BOOLEAN.booleanValue() == cmd.allowAmbiguous) {
                 try {
-                    ac.testQuoteCases(cmd);
+                    testCommand(cmd);
                     success++;
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -118,164 +121,160 @@ public class ArgCheck {
     static class CMD {
         /**
          * Construct a test case.
-         *
+         * @param allowAmbiguous  true/false to set property jdk.lang.Process.allowAmbiguousCommands
          * @param command list of command parameters to invoke the executable or script
          * @param arguments list of arguments (appended to the command)
-         * @param allowAmbiguous  true/false to set property jdk.lang.Process.allowAmbiguousCommands
          * @param expected    expected lines of output from invoked command
          */
-        CMD(List<String> command, List<String> arguments, boolean allowAmbiguous, String expected) {
+        CMD(boolean allowAmbiguous, List<String> command, List<String> arguments, List<String> expected) {
+            this.allowAmbiguous = allowAmbiguous;
             this.command = command;
             this.arguments = arguments;
-            this.allowAmbiguous = allowAmbiguous;
-            this.result = expected.indent(0);
+            this.expected = expected;
         }
 
+        final boolean allowAmbiguous;
         final List<String> command;
         final List<String> arguments;
-        final boolean allowAmbiguous;
-        final String result;
+        final List<String> expected;
     }
 
     /**
      * List of cases with the command, arguments, allowAmbiguous setting, and the expected results
      */
-    static final List<CMD> CASES = List.of(
+    static final List<CMD> CASES = Arrays.asList(
 
             // allowAmbiguousCommands = false, without application supplied double-quotes.
             // The space in the argument requires it to be quoted, the final backslash
             // must not be allowed to turn the quote that is added into a literal
             // instead of closing the quote.
-            new CMD(ECHO_JAVA_ARGS,
-                    List.of(SPACE_AND_BACKSLASH, "ARG_1"),
-                    false,
-                    "SPACE AND BACKSLASH\\\n" +
-                            "ARG_1"),
-            new CMD(ECHO_CMD_ARGS,
-                    List.of(SPACE_AND_BACKSLASH, "ARG_2"),
-                    false,
-                    "\"SPACE AND BACKSLASH\\\"\n" +
-                            "ARG_2"),
-            new CMD(ECHO_VBS_ARGS,
-                    List.of(SPACE_AND_BACKSLASH, "ARG_3"),
-                    false,
-                    "SPACE AND BACKSLASH\\\\\n" +
-                            "ARG_3"),
+            new CMD(false,
+                    ECHO_JAVA_ARGS,
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_1"),
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_1")),
+            new CMD(false,
+                    ECHO_CMD_ARGS,
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_2"),
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_2")),
+            new CMD(false,
+                    ECHO_VBS_ARGS,
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_3"),
+                    Arrays.asList(SPACE_AND_BACKSLASH + BACKSLASH, "ARG_3")),
 
             // allowAmbiguousCommands = false, WITH application supplied double-quotes around the argument
             // The argument has surrounding quotes so does not need further quoting.
             // However, for exe commands, the final backslash must not be allowed to turn the quote
             // into a literal instead of closing the quote.
-            new CMD(ECHO_JAVA_ARGS,
-                    List.of(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_11"),
-                    false,
-                    "SPACE AND BACKSLASH\\\n" +
-                            "ARG_11"),
-            new CMD(ECHO_CMD_ARGS,
-                    List.of(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_12"),
-                    false,
-                    "\"SPACE AND BACKSLASH\\\"\n" +
-                            "ARG_12"),
-            new CMD(ECHO_VBS_ARGS,
-                    List.of(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_13"),
-                    false,
-                    "SPACE AND BACKSLASH\\\\\n" +
-                            "ARG_13"),
+            new CMD(false,
+                    ECHO_JAVA_ARGS,
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_11"),
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_11")),
+            new CMD(false,
+                    ECHO_CMD_ARGS,
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_12"),
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_12")),
+            new CMD(false,
+                    ECHO_VBS_ARGS,
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_13"),
+                    Arrays.asList(SPACE_AND_BACKSLASH + BACKSLASH, "ARG_13")),
 
             // Legacy mode tests; allowAmbiguousCommands = true; no application supplied quotes
             // The space in the argument requires it to be quoted, the final backslash
             // must not be allowed to turn the quote that is added into a literal
             // instead of closing the quote.
-            new CMD(ECHO_JAVA_ARGS,
-                    List.of(SPACE_AND_BACKSLASH, "ARG_21"),
-                    true,
-                    "SPACE AND BACKSLASH\\\n" +
-                            "ARG_21"),
-            new CMD(ECHO_CMD_ARGS,
-                    List.of(SPACE_AND_BACKSLASH, "ARG_22"),
-                    true,
-                    "\"SPACE AND BACKSLASH\\\\\"\n" +
-                            "ARG_22"),
-            new CMD(ECHO_VBS_ARGS,
-                    List.of(SPACE_AND_BACKSLASH, "ARG_23"),
-                    true,
-                    "SPACE AND BACKSLASH\\\\\n" +
-                            "ARG_23"),
+            new CMD(true,
+                    ECHO_JAVA_ARGS,
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_21"),
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_21")),
+            new CMD(true,
+                    ECHO_CMD_ARGS,
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_22"),
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + BACKSLASH + DOUBLE_QUOTE, "ARG_22")),
+            new CMD(true,
+                    ECHO_VBS_ARGS,
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_23"),
+                    Arrays.asList(SPACE_AND_BACKSLASH + BACKSLASH, "ARG_23")),
 
             // allowAmbiguousCommands = true, WITH application supplied double-quotes around the argument
             // The argument has surrounding quotes so does not need further quoting.
             // The backslash before the final quote is ignored and is interpreted differently for each command.
-            new CMD(ECHO_JAVA_ARGS,
-                    List.of(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_31"),
-                    true,
-                    "SPACE AND BACKSLASH\" ARG_31"),
-            new CMD(ECHO_CMD_ARGS,
-                    List.of(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_32"),
-                    true,
-                    "\"SPACE AND BACKSLASH\\\"\n" +
-                            "ARG_32"),
-            new CMD(ECHO_VBS_ARGS,
-                    List.of(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_33"),
-                    true,
-                    "SPACE AND BACKSLASH\\\n" +
-                            "ARG_33")
+            new CMD(true,
+                    ECHO_JAVA_ARGS,
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_31"),
+                    Arrays.asList("SPACE AND BACKSLASH\" ARG_31")),
+            new CMD(true,
+                    ECHO_CMD_ARGS,
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_32"),
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_32")),
+            new CMD(true,
+                    ECHO_VBS_ARGS,
+                    Arrays.asList(DOUBLE_QUOTE + SPACE_AND_BACKSLASH + DOUBLE_QUOTE, "ARG_33"),
+                    Arrays.asList(SPACE_AND_BACKSLASH, "ARG_33"))
     );
-
-    /**
-     * Test various commands and arguments invoking non-exe (.cmd) scripts with lenient argument checking.
-     *
-     * @param commands A {@literal List<String>} of command arguents.
-     * @param expected an expected result, either the class of an expected exception or an Integer exit value
-     */
-    void testQuoteCases(CMD cmd) throws Exception {
-        List<String> args = new ArrayList<>(cmd.command);
-        args.addAll(cmd.arguments);
-        testCommand(() -> new ProcessBuilder(args).start(), args, cmd.allowAmbiguous, cmd.result);
-    }
 
     /**
      * Common function to Invoke a process with the commands and check the result.
      *
-     * @param callable a callable to create the Process
-     * @param arguments a list of command strings
-     * @param allowAmbiguous true/false to set the value of system property jdk.lang.Process.allowAmbiguousCommands
-     * @param expected   expected stdout
+     * @param cmd a CMD test case with arguments, allowAmbiguousCommands mode, and expected output
      */
-    private static void testCommand(Callable<Process> callable, List<String> arguments,
-                                    boolean allowAmbiguous, String expected) throws Exception {
-        System.setProperty(AMBIGUOUS_PROP_NAME, Boolean.toString(allowAmbiguous));
-        String actual = "";
+    private static void testCommand(CMD cmd) throws Exception {
+        System.setProperty(AMBIGUOUS_PROP_NAME, Boolean.toString(cmd.allowAmbiguous));
+        List<String> actual = null;
+        List<String> arguments = new ArrayList<>(cmd.command);
+        arguments.addAll(cmd.arguments);
         try {
             // Launch the process and wait for termination
-            Process process = callable.call();
+            ProcessBuilder pb = new ProcessBuilder(arguments);
+            Process process = pb.start();
             try (InputStream is = process.getInputStream()) {
-                byte[] bytes = is.readAllBytes();
-                actual = new String(bytes, Charset.defaultCharset()).indent(0);
+                String str = readAllBytesAsString(is);
+                str = str.replace("\r", "");
+                actual = Arrays.asList(str.split("\n"));
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe.getMessage(), ioe);
             }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                throw new RuntimeException("exitCode: " + exitCode);
+                actual = new ArrayList(actual);
+                actual.add("Exit code: " + exitCode);
             }
         } catch (IOException ioe) {
-            actual = ioe.getMessage();
-            actual = actual.replace(arguments.get(0), "CMD");
-            ioe.printStackTrace();
+            actual = Arrays.asList(ioe.getMessage().replace(arguments.get(0), "CMD"));
         } catch (Exception ex) {
-            actual = ex.getMessage();       // Use exception message as output
+            actual = Arrays.asList(ex.getMessage());       // Use exception message as output
         }
-        if (expected != null) {
-            if (!Objects.equals(actual, expected)) {
-                System.out.println("Invoking(" + allowAmbiguous + "): " + arguments);
-                System.out.print("Actual:   " + actual);
-                System.out.print("Expected: " + expected);
-                System.out.println();
-                throw new RuntimeException("Unexpected output");
+        if (!Objects.equals(actual, cmd.expected)) {
+            System.out.println("Invoking(" + cmd.allowAmbiguous + "): " + arguments);
+            if (actual.size() != cmd.expected.size()) {
+                System.out.println("Args Length: actual: " + actual.size() + " expected: " + cmd.expected.size());
             }
-        } else {
-            System.out.println("out: " + actual);
+            System.out.println("Actual:   " + actual);
+            System.out.println("Expected: " + cmd.expected);
+            System.out.println();
+            throw new RuntimeException("Unexpected output");
         }
+    }
+
+    /**
+     * Private method to readAllBytes as a String.
+     * (InputStream.readAllBytes is not supported by the JDK until 9)
+     * @param is an InputStream
+     * @return a String with the contents
+     * @throws IOException if an error occurs
+     */
+    private static String readAllBytesAsString(InputStream is) throws IOException {
+        final int BUF_SIZE = 8192;
+        byte[] bytes = new byte[BUF_SIZE];
+        int off = 0;
+        int len;
+        while ((len = is.read(bytes, off, bytes.length - off)) > 0) {
+            off += len;
+            if (off >= bytes.length) {
+                // no space in buffer, reallocate larger
+                bytes = Arrays.copyOf(bytes, bytes.length + BUF_SIZE);
+            }
+        }
+        return new String(bytes, 0, off, Charset.defaultCharset());
     }
 
     /**
@@ -283,17 +282,13 @@ public class ArgCheck {
      *
      * @throws Error if an exception occurs
      */
-    private static void setup() {
-        try {
-            Files.writeString(Path.of(ECHO_CMD_PATH), EchoArgumentsCmd);
-            Files.writeString(Path.of(ECHO_VBS_PATH), EchoArgumentsVbs);
-        } catch (IOException e) {
-            throw new Error(e.getMessage());
-        }
+    private static void createFiles() throws IOException {
+        Files.write(Paths.get(ECHO_CMD_PATH), EchoArgumentsCmd.getBytes(StandardCharsets.UTF_8));
+        Files.write(Paths.get(ECHO_VBS_PATH), EchoArgumentsVbs.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
-     * Self contained .cmd to echo each arg on a separate line.
+     * Self contained .cmd to echo each argument on a separate line.
      */
     static final String EchoArgumentsCmd = "@echo off\n" +
             "set p1=\n" +
@@ -309,7 +304,7 @@ public class ArgCheck {
 
 
     /**
-     * Self contained .vbs to echo each arg on a separate line.
+     * Self contained .vbs to echo each argument on a separate line.
      */
     static final String EchoArgumentsVbs = "Option Explicit\n" +
             "Dim arg\n" +
