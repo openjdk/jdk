@@ -45,8 +45,11 @@ import jdk.internal.org.objectweb.asm.Type;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
- * This  class is used to create anonymous objects that have number and types of
- * components determined at runtime.
+ * A <em>carrier</em> is an opaque object that can be used to store component values
+ * while avoiding primitive boxing associated with collection objects. Component values
+ * can be primitive or Object. Clients can create new carrier instances by describing a
+ * carrier <em>shape</em>, that is, a MethodType whose parameter types describe the
+ * types of the carrier component values.
  *
  * @implNote The strategy for storing components is deliberately left ambiguous
  * so that future improvements will not be hampered by backward compatability
@@ -54,6 +57,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  *
  * @since 19
  */
+
 /*non-public*/
 public final class Carrier {
     /**
@@ -341,9 +345,9 @@ public final class Carrier {
          */
         private static class CarrierArray {
             /**
-             * Carrier for longs and integers.
+             * Carrier for primitive values.
              */
-            private final int[] integers;
+            private final long[] primitives;
 
             /**
              * Carrier for objects;
@@ -353,43 +357,41 @@ public final class Carrier {
             /**
              * Constructor.
              *
-             * @param intCount     slot count required for longs and integers
-             * @param objectCount  slot count required for objects
+             * @param primitiveCount  slot count required for primitives
+             * @param objectCount     slot count required for objects
              */
-            CarrierArray(int intCount, int objectCount) {
-                this.integers = new int[intCount];
+            CarrierArray(int primitiveCount, int objectCount) {
+                this.primitives = new long[primitiveCount];
                 this.objects = new Object[objectCount];
             }
 
             /**
-             * Check index and compute offset for unsafe long access.
+             * Check index and compute offset for unsafe access.
              *
-             * @param i  index in int[]
+             * @param i  index in primitive[]
              *
-             * @return offset for unsafe long access
+             * @return offset for unsafe access
              */
-            private long longOffset(int i) {
-                if (i < 0 || integers.length <= i) {
-                    throw new RuntimeException("long index out of range: " + i);
+            private long offset(int i) {
+                if (i < 0 || primitive.length <= i) {
+                    throw new RuntimeException("primitive index out of range: " + i);
                 }
 
-                return Unsafe.ARRAY_INT_BASE_OFFSET +
+                return Unsafe.ARRAY_LONG_BASE_OFFSET +
                         (long)i * Unsafe.ARRAY_INT_INDEX_SCALE;
             }
 
             /**
-             * Get a long value from the int[].
-             *
              * @param i  array index
              *
-             * @return long value at that index.
+             * {@return long value at that index.}
              */
             private long getLong(int i) {
-                return UNSAFE.getLong(integers, longOffset(i));
+                return primitives[i];
             }
 
             /**
-             * Put a long value into the int[].
+             * Put a long value into the primitive[].
              *
              * @param i      array index
              * @param value  long value to store
@@ -397,20 +399,18 @@ public final class Carrier {
              * @return this object
              */
             private CarrierArray putLong(int i, long value) {
-                UNSAFE.putLong(integers, longOffset(i), value);
+                primitives[i] = value;
 
                 return this;
             }
 
             /**
-             * Get a int value from the int[].
-             *
              * @param i  array index
              *
-             * @return int value at that index.
+             * {@return int value at that index.}
              */
             private int getInteger(int i) {
-                return integers[i];
+                return UNSAFE.getInt(primitives, offset(i));
             }
 
             /**
@@ -422,17 +422,15 @@ public final class Carrier {
              * @return this object
              */
             private CarrierArray putInteger(int i, int value) {
-                integers[i] = value;
+                UNSAFE.putInt(primitives, offset(i), value);
 
                 return this;
             }
 
             /**
-             * Get an object value from the objects[].
-             *
              * @param i  array index
              *
-             * @return object value at that index.
+             * {@return object value at that index.}
              */
             private Object getObject(int i) {
                 return objects[i];
@@ -464,18 +462,20 @@ public final class Carrier {
             int longCount = carrierShape.longCount();
             int intCount = carrierShape.intCount();
             int objectCount = carrierShape.objectCount();
-            int intSlots = longCount * LONG_SLOTS + intCount;
+            int primitiveSlots = longCount * LONG_SLOTS + intCount;
 
             MethodHandle constructor = MethodHandles.insertArguments(CONSTRUCTOR,
-                    0, intSlots, objectCount);
+                    0, primitiveSlots, objectCount);
 
+            // long array index
             int index = 0;
             for (int i = 0; i < longCount; i++) {
-                MethodHandle put = MethodHandles.insertArguments(PUT_LONG, 1, index);
-                index += LONG_SLOTS;
+                MethodHandle put = MethodHandles.insertArguments(PUT_LONG, 1, index++);
                 constructor = MethodHandles.collectArguments(put, 0, constructor);
             }
 
+            // int array index (double number of longs)
+            index *= LONG_SLOTS;
             for (int i = 0; i < intCount; i++) {
                 MethodHandle put = MethodHandles.insertArguments(PUT_INTEGER, 1, index++);
                 constructor = MethodHandles.collectArguments(put, 0, constructor);
@@ -503,12 +503,14 @@ public final class Carrier {
             MethodHandle[] components =
                     new MethodHandle[carrierShape.ptypes().length];
 
-            int index = 0, j = 0;
+            // long array index
+            int index = 0;
             for (int i = 0; i < longCount; i++) {
-                components[j++] = MethodHandles.insertArguments(GET_LONG, 1, index);
-                index += LONG_SLOTS;
+                components[j++] = MethodHandles.insertArguments(GET_LONG, 1, index++);
             }
 
+            // int array index (double number of longs)
+            index *= LONG_SLOTS;
             for (int i = 0; i < intCount; i++) {
                 components[j++] = MethodHandles.insertArguments(GET_INTEGER, 1, index++);
             }
@@ -716,9 +718,7 @@ public final class Carrier {
         }
 
         /**
-         * Returns the constructor method type.
-         *
-         * @return the constructor method type.
+         * {@return the constructor method type.}
          */
         private static MethodType constructorMethodType(CarrierShape carrierShape) {
             int longCount = carrierShape.longCount();
@@ -968,18 +968,14 @@ public final class Carrier {
         }
 
         /**
-         * Returns total number of components.
-         *
-         * @return total number of components
+         * {@return total number of components}
          */
         private int count() {
             return longCount + intCount + objectCount;
         }
 
         /**
-         * Returns total number of slots.
-         *
-         * @return total number of slots
+         * {@return total number of slots}
          */
         private int slotCount() {
             return longCount * LONG_SLOTS + intCount + objectCount;
@@ -1014,45 +1010,35 @@ public final class Carrier {
         }
 
         /**
-         * Return supplied methodType.
-         *
-         * @return supplied methodType
+         * {@return supplied methodType}
          */
         private MethodType methodType() {
             return methodType;
         }
 
         /**
-         * Return the number of long fields needed.
-         *
-         * @return number of long fields needed
+         * {@return number of long fields needed}
          */
         private int longCount() {
             return counts.longCount();
         }
 
         /**
-         * Return the number of int fields needed.
-         *
-         * @return number of int fields needed
+         * {@return number of int fields needed}
          */
         private int intCount() {
             return counts.intCount();
         }
 
         /**
-         * Return the number of object fields needed.
-         *
-         * @return number of object fields needed
+         * {@return number of object fields needed}
          */
         private int objectCount() {
             return counts.objectCount();
         }
 
         /**
-         * Return parameter types.
-         *
-         * @return array of parameter types
+         * {@return array of parameter types}
          */
         private Class<?>[] ptypes() {
             return methodType.parameterArray();
@@ -1066,36 +1052,28 @@ public final class Carrier {
         }
 
         /**
-         * Total number of slots used in a {@link CarrierClass} instance.
-         *
-         * @return number of slots used
+         * {@return number of slots used}
          */
         private int slotCount() {
             return counts.slotCount();
         }
 
         /**
-         * Returns index of first long component.
-         *
-         * @return index of first long component
+         * {@return index of first long component}
          */
         private int longOffset() {
             return 0;
         }
 
         /**
-         * Returns index of first int component.
-         *
-         * @return index of first int component
+         * {@return index of first int component}
          */
         private int intOffset() {
             return longCount();
         }
 
         /**
-         * Returns index of first object component.
-         *
-         * @return index of first object component
+         * {@return index of first object component}
          */
         private int objectOffset() {
             return longCount() + intCount();
