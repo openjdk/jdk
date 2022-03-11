@@ -43,7 +43,7 @@ final class Enquoter {
                 .setEnquotePredicate(QUOTE_IF_WHITESPACES)
                 .setEscaper(PREPEND_BACKSLASH);
     }
-    
+
     static Enquoter forShellLiterals() {
         return forShellLiterals('\'');
     }
