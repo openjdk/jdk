@@ -3271,18 +3271,17 @@ uint PhaseOutput::scratch_emit_size(const Node* n) {
   buf.stubs()->set_scratch_emit();
 
   // Do the emission.
+  C2_MacroAssembler masm(&buf);
 
   Label fakeL; // Fake label for branch instructions.
   Label*   saveL = NULL;
   uint save_bnum = 0;
   bool is_branch = n->is_MachBranch();
   if (is_branch) {
-    MacroAssembler masm(&buf);
     masm.bind(fakeL);
     n->as_MachBranch()->save_label(&saveL, &save_bnum);
     n->as_MachBranch()->label_set(&fakeL, 0);
   }
-  C2_MacroAssembler masm(&buf);
   n->emit(masm, C->regalloc());
 
   // Emitting into the scratch buffer should not fail
