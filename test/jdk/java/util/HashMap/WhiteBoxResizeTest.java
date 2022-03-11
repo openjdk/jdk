@@ -89,7 +89,8 @@ public class WhiteBoxResizeTest {
     }
 
     private static void putMap(Map<KeyStructure, KeyStructure> map, int i) {
-        putMap(map, i);
+        KeyStructure keyStructure = new KeyStructure(i);
+        map.put(keyStructure, keyStructure);
     }
 
     final MethodHandle TABLE_SIZE_FOR;
