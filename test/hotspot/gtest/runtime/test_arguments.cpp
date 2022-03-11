@@ -357,19 +357,78 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
   f("-0x8000000000000000",     BAD,          BAD,          min_jlong,               BAD                      ) \
   f("-0x8000000000000001",     BAD,          BAD,          BAD,                     BAD                      ) \
                                                                                                                \
-  /* boundary cases for overflow checks in multiply_by_1k() */                                                 \
-  f("0x7ffm",                  0x7ff00000,   0x7ff00000,   0x7ff00000LL,            0x7ff00000ULL            ) \
-  f("0x800m",                  BAD,          0x80000000,   0x80000000LL,            0x80000000ULL            ) \
-  f("0xfffm",                  BAD,          0xfff00000,   0xfff00000LL,            0xfff00000ULL            ) \
-  f("0x1000m",                 BAD,          BAD,          0x100000000LL,           0x100000000ULL           ) \
-  f("-0x800m",                 min_jint,     BAD,         -2147483648LL,            BAD                      ) \
-  f("-0x801m",                 BAD,          BAD,         -2148532224LL,            BAD                      ) \
-  f("0x7ffffffffffm",          BAD,          BAD,          0x7ffffffffff00000LL,    0x7ffffffffff00000ULL    ) \
-  f("0x80000000000m",          BAD,          BAD,          BAD,                     0x8000000000000000ULL    ) \
-  f("0xfffffffffffm",          BAD,          BAD,          BAD,                     0xfffffffffff00000ULL    ) \
+  /* edge cases for suffix: K */                                                                               \
+  f("0x1ffffek",               0x1ffffe * k, 0x1ffffeU * k,0x1ffffeLL * k,          0x1ffffeULL * k          ) \
+  f("0x1fffffk",               0x1fffff * k, 0x1fffffU * k,0x1fffffLL * k,          0x1fffffULL * k          ) \
+  f("0x200000k",               BAD,          0x200000U * k,0x200000LL * k,          0x200000ULL * k          ) \
+  f("0x3ffffek",               BAD,          0x3ffffeU * k,0x3ffffeLL * k,          0x3ffffeULL * k          ) \
+  f("0x3fffffk",               BAD,          0x3fffffU * k,0x3fffffLL * k,          0x3fffffULL * k          ) \
+  f("0x400000k",               BAD,          BAD,          0x400000LL * k,          0x400000ULL * k          ) \
+  f("-0x1fffffk",             -0x1fffff * k, BAD,         -0x1fffffLL * k,          BAD                      ) \
+  f("-0x200000k",             -0x200000 * k, BAD,         -0x200000LL * k,          BAD                      ) \
+  f("-0x200001k",              BAD,          BAD,         -0x200001LL * k,          BAD                      ) \
+                                                                                                               \
+  f("0x1ffffffffffffek",       BAD,          BAD,          0x1ffffffffffffeLL * k,  0x1ffffffffffffeULL * k  ) \
+  f("0x1fffffffffffffk",       BAD,          BAD,          0x1fffffffffffffLL * k,  0x1fffffffffffffULL * k  ) \
+  f("0x20000000000000k",       BAD,          BAD,          BAD,                     0x20000000000000ULL * k  ) \
+  f("0x3ffffffffffffek",       BAD,          BAD,          BAD,                     0x3ffffffffffffeULL * k  ) \
+  f("0x3fffffffffffffk",       BAD,          BAD,          BAD,                     0x3fffffffffffffULL * k  ) \
+  f("0x40000000000000k",       BAD,          BAD,          BAD,                     BAD                      ) \
+  f("-0x1fffffffffffffk",      BAD,          BAD,         -0x1fffffffffffffLL * k,  BAD                      ) \
+  f("-0x20000000000000k",      BAD,          BAD,         -0x20000000000000LL * k,  BAD                      ) \
+  f("-0x20000000000001k",      BAD,          BAD,          BAD,                     BAD                      ) \
+                                                                                                               \
+  /* edge cases for suffix: M */                                                                               \
+  f("0x7fem",                  0x7fe * m,    0x7feU * m,   0x7feLL * m,             0x7feULL * m             ) \
+  f("0x7ffm",                  0x7ff * m,    0x7ffU * m,   0x7ffLL * m,             0x7ffULL * m             ) \
+  f("0x800m",                  BAD,          0x800U * m,   0x800LL * m,             0x800ULL * m             ) \
+  f("0xffem",                  BAD,          0xffeU * m,   0xffeLL * m,             0xffeULL * m             ) \
+  f("0xfffm",                  BAD,          0xfffU * m,   0xfffLL * m,             0xfffULL * m             ) \
+  f("0x1000m",                 BAD,          BAD,          0x1000LL * m,            0x1000ULL * m            ) \
+  f("-0x7ffm",                -0x7ff * m,    BAD,         -0x7ffLL * m,             BAD                      ) \
+  f("-0x800m",                -0x800 * m,    BAD,         -0x800LL * m,             BAD                      ) \
+  f("-0x801m",                 BAD,          BAD,         -0x801LL * m,             BAD                      ) \
+                                                                                                               \
+  f("0x7fffffffffem",          BAD,          BAD,          0x7fffffffffeLL * m,     0x7fffffffffeULL * m     ) \
+  f("0x7ffffffffffm",          BAD,          BAD,          0x7ffffffffffLL * m,     0x7ffffffffffULL * m     ) \
+  f("0x80000000000m",          BAD,          BAD,          BAD,                     0x80000000000ULL * m     ) \
+  f("0xffffffffffem",          BAD,          BAD,          BAD,                     0xffffffffffeULL * m     ) \
+  f("0xfffffffffffm",          BAD,          BAD,          BAD,                     0xfffffffffffULL * m     ) \
   f("0x100000000000m",         BAD,          BAD,          BAD,                     BAD                      ) \
-  f("-0x80000000000m",         BAD,          BAD,          min_jlong,               BAD                      ) \
+  f("-0x7ffffffffffm",         BAD,          BAD,         -0x7ffffffffffLL * m,     BAD                      ) \
+  f("-0x80000000000m",         BAD,          BAD,         -0x80000000000LL * m,     BAD                      ) \
   f("-0x80000000001m",         BAD,          BAD,          BAD,                     BAD                      ) \
+                                                                                                               \
+  /* edge cases for suffix: G */                                                                               \
+  f("0x0g",                    0x0 * g,      0x0U * g,     0x0LL * g,               0x0ULL * g               ) \
+  f("0x1g",                    0x1 * g,      0x1U * g,     0x1LL * g,               0x1ULL * g               ) \
+  f("0x2g",                    BAD,          0x2U * g,     0x2LL * g,               0x2ULL * g               ) \
+  f("0x3g",                    BAD,          0x3U * g,     0x3LL * g,               0x3ULL * g               ) \
+  f("0x4g",                    BAD,          BAD,          0x4LL * g,               0x4ULL * g               ) \
+  f("-0x1g",                  -0x1 * g,      BAD,         -0x1LL * g,               BAD                      ) \
+  f("-0x2g",                  -0x2 * g,      BAD,         -0x2LL * g,               BAD                      ) \
+  f("-0x3g",                   BAD,          BAD,         -0x3LL * g,               BAD                      ) \
+                                                                                                               \
+  f("0x1fffffffeg",            BAD,          BAD,          0x1fffffffeLL * g,       0x1fffffffeULL * g       ) \
+  f("0x1ffffffffg",            BAD,          BAD,          0x1ffffffffLL * g,       0x1ffffffffULL * g       ) \
+  f("0x200000000g",            BAD,          BAD,          BAD,                     0x200000000ULL * g       ) \
+  f("0x3fffffffeg",            BAD,          BAD,          BAD,                     0x3fffffffeULL * g       ) \
+  f("0x3ffffffffg",            BAD,          BAD,          BAD,                     0x3ffffffffULL * g       ) \
+  f("0x400000000g",            BAD,          BAD,          BAD,                     BAD                      ) \
+  f("-0x1ffffffffg",           BAD,          BAD,         -0x1ffffffffLL * g,       BAD                      ) \
+  f("-0x200000000g",           BAD,          BAD,         -0x200000000LL * g,       BAD                      ) \
+  f("-0x200000001g",           BAD,          BAD,          BAD,                     BAD                      ) \
+                                                                                                               \
+  /* edge cases for suffix: T */                                                                               \
+  f("0x7ffffet",               BAD,          BAD,          0x7ffffeLL * t,          0x7ffffeULL * t          ) \
+  f("0x7ffffft",               BAD,          BAD,          0x7fffffLL * t,          0x7fffffULL * t          ) \
+  f("0x800000t",               BAD,          BAD,          BAD,                     0x800000ULL * t          ) \
+  f("0xfffffet",               BAD,          BAD,          BAD,                     0xfffffeULL * t          ) \
+  f("0xfffffft",               BAD,          BAD,          BAD,                     0xffffffULL * t          ) \
+  f("0x1000000t",              BAD,          BAD,          BAD,                     BAD                      ) \
+  f("-0x7ffffft",              BAD,          BAD,         -0x7fffffLL * t,          BAD                      ) \
+  f("-0x800000t",              BAD,          BAD,         -0x800000LL * t,          BAD                      ) \
+  f("-0x800001t",              BAD,          BAD,          BAD,                     BAD                      )
 
 #define INTEGER_TEST_i32(s, i32, u32, i64, u64) NumericArgument<T>(s, i32),
 #define INTEGER_TEST_u32(s, i32, u32, i64, u64) NumericArgument<T>(s, u32),
@@ -384,6 +443,9 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
     return;
   }
 
+  T k = static_cast<T>(K);
+  T m = static_cast<T>(M);
+  T g = static_cast<T>(G);
   NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_i32) };
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
@@ -396,6 +458,9 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
     return;
   }
 
+  T k = static_cast<T>(K);
+  T m = static_cast<T>(M);
+  T g = static_cast<T>(G);
   NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_u32) };
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
@@ -408,6 +473,10 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
     return;
   }
 
+  T k = static_cast<T>(K);
+  T m = static_cast<T>(M);
+  T g = static_cast<T>(G);
+  T t = static_cast<T>(G) * k;
   NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_i64) };
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
@@ -420,6 +489,10 @@ void check_flag(const char* f, T getvalue(JVMFlag* flag)) {
     return;
   }
 
+  T k = static_cast<T>(K);
+  T m = static_cast<T>(M);
+  T g = static_cast<T>(G);
+  T t = static_cast<T>(G) * k;
   NumericArgument<T> valid_strings[] = { INTEGER_TEST_TABLE(INTEGER_TEST_u64) };
   check_numeric_flag(flag, getvalue, valid_strings, ARRAY_SIZE(valid_strings));
 }
