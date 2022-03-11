@@ -665,10 +665,10 @@ semantics.  However, that support requires a run-time penalty for
 references to non-function-local `thread_local` variables defined in a
 different translation unit, even if they don't need dynamic
 initialization.  Dynamic initialization and destruction of
-namespace-scoped thread local variables also has the same ordering
-problems as for ordinary namespace-scoped variables. So we avoid use of
+non-local `thread_local` variables also has the same ordering
+problems as for ordinary non-local variables. So we avoid use of
 `thread_local` in general, limiting its use to only those cases where dynamic
-initialization and destruction are essential. See
+initialization or destruction are essential. See
 [JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
 for further discussion.
 
