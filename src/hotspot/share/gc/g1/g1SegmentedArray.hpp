@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
 #define SHARE_GC_G1_G1SEGMENTEDARRAY_HPP
 
+#include "gc/shared/freeListAllocator.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/lockFreeStack.hpp"
 
@@ -180,8 +181,8 @@ public:
 // The class also manages a few counters for statistics using atomic operations.
 // Their values are only consistent within each other with extra global
 // synchronization.
-template <class Slot, MEMFLAGS flag>
-class G1SegmentedArray {
+template <MEMFLAGS flag>
+class G1SegmentedArray : public FreeListConfig  {
   // G1SegmentedArrayAllocOptions provides parameters for allocation segment
   // sizing and expansion.
   const G1SegmentedArrayAllocOptions* _alloc_options;
@@ -222,7 +223,10 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
-  inline Slot* allocate();
+  inline void* allocate() override;
+
+  // We do not deallocate individual slots
+  inline void deallocate(void* node) override { ShouldNotReachHere(); }
 
   inline uint num_segments() const;
 

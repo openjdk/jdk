@@ -385,32 +385,6 @@ void CardTable::dirty(MemRegion mr) {
   memset(first, dirty_card, last-first);
 }
 
-// Unlike several other card table methods, dirty_card_iterate()
-// iterates over dirty cards ranges in increasing address order.
-void CardTable::dirty_card_iterate(MemRegion mr, MemRegionClosure* cl) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) {
-      CardValue *cur_entry, *next_entry, *limit;
-      for (cur_entry = byte_for(mri.start()), limit = byte_for(mri.last());
-           cur_entry <= limit;
-           cur_entry  = next_entry) {
-        next_entry = cur_entry + 1;
-        if (*cur_entry == dirty_card) {
-          size_t dirty_cards;
-          // Accumulate maximal dirty card range, starting at cur_entry
-          for (dirty_cards = 1;
-               next_entry <= limit && *next_entry == dirty_card;
-               dirty_cards++, next_entry++);
-          MemRegion cur_cards(addr_for(cur_entry),
-                              dirty_cards*_card_size_in_words);
-          cl->do_MemRegion(cur_cards);
-        }
-      }
-    }
-  }
-}
-
 MemRegion CardTable::dirty_card_range_after_reset(MemRegion mr,
                                                   bool reset,
                                                   int reset_val) {

@@ -580,7 +580,6 @@ class PartialArrayScanTask {
   oop _src;
 
 public:
-  PartialArrayScanTask() : _src() {}
   explicit PartialArrayScanTask(oop src_array) : _src(src_array) {}
   // Trivially copyable.
 

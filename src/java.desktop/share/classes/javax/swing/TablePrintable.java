@@ -395,11 +395,14 @@ class TablePrintable implements Printable {
         // draw a box around the table
         g2d.setColor(Color.BLACK);
 
+        Rectangle bounds = table.getBounds();
+        bounds.x = bounds.y = 0;
+
         // compute the visible portion of table and draw the rect around it
-        Rectangle visibleBounds = clip.intersection(table.getBounds());
+        Rectangle visibleBounds = clip.intersection(bounds);
         Point upperLeft = visibleBounds.getLocation();
-        Point lowerRight = new Point(visibleBounds.x + visibleBounds.width,
-                                     visibleBounds.y + visibleBounds.height);
+        Point lowerRight = new Point(visibleBounds.x + visibleBounds.width - 1,
+                                     visibleBounds.y + visibleBounds.height - 1);
 
         int rMin = table.rowAtPoint(upperLeft);
         int rMax = table.rowAtPoint(lowerRight);
@@ -410,7 +413,7 @@ class TablePrintable implements Printable {
             rMax = table.getRowCount();
         }
         int rowHeight = 0;
-        for(int visrow = rMin; visrow < rMax; visrow++) {
+        for(int visrow = rMin; visrow <= rMax; visrow++) {
             rowHeight += table.getRowHeight(visrow);
         }
         // If PrintMode is FIT_WIDTH, then draw rect for entire column width while

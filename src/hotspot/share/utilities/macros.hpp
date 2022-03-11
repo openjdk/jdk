@@ -512,7 +512,7 @@
 
 // Note: There are two ARM ports. They set the following in the makefiles:
 // 1. 32-bit port:   -DARM -DARM32 -DTARGET_ARCH_arm
-// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
+// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
@@ -535,6 +535,12 @@
 #else
 #define AARCH64_ONLY(code)
 #define NOT_AARCH64(code) code
+#endif
+
+#ifdef TARGET_ARCH_aarch64
+#define AARCH64_PORT_ONLY(code) code
+#else
+#define AARCH64_PORT_ONLY(code)
 #endif
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))

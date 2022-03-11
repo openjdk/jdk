@@ -308,6 +308,9 @@ public:
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                            Register scratch, int vec_enc);
 
+  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                            BasicType from_elem_bt, BasicType to_elem_bt);
+
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                   bool merge, BasicType bt, int vlen_enc);
 

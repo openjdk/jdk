@@ -755,8 +755,8 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
     __ bang_stack_with_offset(p*page_size);
   }
 
-  // Record a new watermark, unless the update is above the safe limit.
-  // Otherwise, the next time around a check above would pass the safe limit.
+  // Record the new watermark, but only if update is above the safe limit.
+  // Otherwise, the next time around the check above would pass the safe limit.
   __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
   __ jccb(Assembler::belowEqual, L_done);
   __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
@@ -1738,21 +1738,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 #ifndef _LP64
   fep = __ pc();     // ftos entry point
       __ push(ftos);
-      __ jmp(L);
+      __ jmpb(L);
   dep = __ pc();     // dtos entry point
       __ push(dtos);
-      __ jmp(L);
+      __ jmpb(L);
 #else
   fep = __ pc();     // ftos entry point
       __ push_f(xmm0);
-      __ jmp(L);
+      __ jmpb(L);
   dep = __ pc();     // dtos entry point
       __ push_d(xmm0);
-      __ jmp(L);
+      __ jmpb(L);
 #endif // _LP64
   lep = __ pc();     // ltos entry point
       __ push_l();
-      __ jmp(L);
+      __ jmpb(L);
   aep = bep = cep = sep = iep = __ pc();      // [abcsi]tos entry point
       __ push_i_or_ptr();
   vep = __ pc();    // vtos entry point

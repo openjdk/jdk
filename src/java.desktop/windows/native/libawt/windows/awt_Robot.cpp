@@ -28,20 +28,33 @@
 #include "awt_Component.h"
 #include <winuser.h>
 
-static int signum(int i) {
-  // special version of signum which returns 1 when value is 0
-  return i >= 0 ? 1 : -1;
-}
-
 static void MouseMove(jint x, jint y)
 {
     INPUT mouseInput = {0};
     mouseInput.type = INPUT_MOUSE;
     mouseInput.mi.time = 0;
-    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
-    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
-    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+
+    // The following calculations take into account a multi-monitor setup using
+    // a virtual screen for all monitors combined.
+    // More details from Microsoft are here --
+    // https://docs.microsoft.com/en-us/windows/win32/gdi/the-virtual-screen
+
+    x -= ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+    y -= ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE |
+                            MOUSEEVENTF_VIRTUALDESK;
+
+    int scW = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int scH = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    // The following calculation to deduce mouse coordinates is based on
+    // empirical data
+    mouseInput.mi.dx = (x * 65536 + scW - 1) / scW;
+    mouseInput.mi.dy = (y * 65536 + scH - 1) / scH;
+
     ::SendInput(1, &mouseInput, sizeof(mouseInput));
+
 }
 
 static void MousePress(jint buttonMask)

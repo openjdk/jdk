@@ -28,7 +28,7 @@
 #include "gc/g1/g1CardSet.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/bitMap.inline.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/spinYield.hpp"
 

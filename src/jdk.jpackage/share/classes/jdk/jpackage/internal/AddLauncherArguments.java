@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
  * The add-launcher properties file may have any of:
  *
  * appVersion
+ * description
  * module
  * main-jar
  * main-class
@@ -110,6 +111,9 @@ class AddLauncherArguments {
 
         Arguments.putUnlessNull(bundleParams, CLIOptions.VERSION.getId(),
                 getOptionValue(CLIOptions.VERSION));
+
+        Arguments.putUnlessNull(bundleParams, CLIOptions.DESCRIPTION.getId(),
+                getOptionValue(CLIOptions.DESCRIPTION));
 
         Arguments.putUnlessNull(bundleParams, CLIOptions.RELEASE.getId(),
                 getOptionValue(CLIOptions.RELEASE));

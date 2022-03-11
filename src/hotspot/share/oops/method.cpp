@@ -83,6 +83,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                          AccessFlags access_flags,
                          InlineTableSizes* sizes,
                          ConstMethod::MethodType method_type,
+                         Symbol* name,
                          TRAPS) {
   assert(!access_flags.is_native() || byte_code_size == 0,
          "native methods should not contain byte codes");
@@ -92,10 +93,10 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           method_type,
                                           CHECK_NULL);
   int size = Method::size(access_flags.is_native());
-  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags);
+  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags, name);
 }
 
-Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
+Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
@@ -119,6 +120,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
+  // Name is very useful for debugging.
+  NOT_PRODUCT(_name = name;)
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -393,6 +396,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   }
   it->push(&_method_data);
   it->push(&_method_counters);
+  NOT_PRODUCT(it->push(&_name);)
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -1446,7 +1450,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
     InlineTableSizes sizes;
     Method* m_oop = Method::allocate(loader_data, 0,
                                      accessFlags_from(flags_bits), &sizes,
-                                     ConstMethod::NORMAL, CHECK_(empty));
+                                     ConstMethod::NORMAL,
+                                     name,
+                                     CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1526,6 +1532,7 @@ methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code
                                       flags,
                                       &sizes,
                                       m->method_type(),
+                                      m->name(),
                                       CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
 
