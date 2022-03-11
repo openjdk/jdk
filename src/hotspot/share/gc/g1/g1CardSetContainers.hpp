@@ -30,11 +30,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/spinYield.hpp"
-
-#include "logging/log.hpp"
-
-#include "runtime/thread.inline.hpp"
 
 // A helper class to encode a few card indexes within a CardSetPtr.
 //
@@ -143,18 +138,12 @@ public:
 // To maintain these constraints, live objects should have ((_ref_count & 0x1) == 1),
 // which requires that we increment the reference counts by 2 starting at _ref_count = 3.
 //
-// When such an object is on a free list, we reuse the same field for linking
-// together those free objects.
-//
 // All but inline pointers are of this kind. For those, card entries are stored
 // directly in the CardSetPtr of the ConcurrentHashTable node.
 class G1CardSetContainer {
-private:
-  union {
-    G1CardSetContainer* _next;
-    uintptr_t _ref_count;
-  };
-
+  uintptr_t _ref_count;
+protected:
+  ~G1CardSetContainer() = default;
 public:
   G1CardSetContainer() : _ref_count(3) { }
 
@@ -165,18 +154,6 @@ public:
   // Decrement refcount potentially while racing increment, so we need
   // to check the value after attempting to decrement.
   uintptr_t decrement_refcount();
-
-  G1CardSetContainer* next() {
-    return _next;
-  }
-
-  G1CardSetContainer** next_addr() {
-    return &_next;
-  }
-
-  void set_next(G1CardSetContainer* next) {
-    _next = next;
-  }
 
   // Log of largest card index that can be stored in any G1CardSetContainer
   static uint LogCardsPerRegionLimit;
