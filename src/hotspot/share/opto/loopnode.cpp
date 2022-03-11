@@ -4511,6 +4511,7 @@ void PhaseIdealLoop::build_and_optimize() {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
         if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
+          assert(PostLoopMultiversioning, "multiversioning must be enabled");
           // Check that the rce'd post loop is encountered first, multiversion after all
           // major main loop optimization are concluded
           if (!C->major_progress()) {
