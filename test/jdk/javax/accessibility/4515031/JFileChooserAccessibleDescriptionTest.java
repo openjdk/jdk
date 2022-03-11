@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 4515031
  * @key headful
  * @summary The JFileChooser Dialog itself has no accessible description.
  * @run main JFileChooserAccessibleDescriptionTest
