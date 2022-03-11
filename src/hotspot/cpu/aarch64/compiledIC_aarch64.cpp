@@ -34,10 +34,9 @@
 
 // ----------------------------------------------------------------------------
 
-#define __ _masm.
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
-  precond(cbuf.stubs()->start() != badAddress);
-  precond(cbuf.stubs()->end() != badAddress);
+address CompiledStaticCall::emit_to_interp_stub(C2_MacroAssembler &masm, address mark) {
+  precond(masm.code()->stubs()->start() != badAddress);
+  precond(masm->code()->stubs()->end() != badAddress);
 
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
@@ -45,30 +44,25 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
   // jmp -4 # to self
 
   if (mark == NULL) {
-    mark = cbuf.insts_mark();  // Get mark within main instrs section.
+    mark = masm.inst_mark();  // Get mark within main instrs section.
   }
 
-  // Note that the code buffer's insts_mark is always relative to insts.
-  // That's why we must use the macroassembler to generate a stub.
-  MacroAssembler _masm(&cbuf);
-
-  address base = __ start_a_stub(to_interp_stub_size());
-  int offset = __ offset();
+  address base = masm.start_a_stub(to_interp_stub_size());
+  int offset = masm.offset();
   if (base == NULL) {
     return NULL;  // CodeBuffer::expand failed
   }
   // static stub relocation stores the instruction address of the call
-  __ relocate(static_stub_Relocation::spec(mark));
+  masm.relocate(static_stub_Relocation::spec(mark));
 
   {
-    __ emit_static_call_stub();
+    masm.emit_static_call_stub();
   }
 
-  assert((__ offset() - offset) <= (int)to_interp_stub_size(), "stub too big");
-  __ end_a_stub();
+  assert((masm.offset() - offset) <= (int)to_interp_stub_size(), "stub too big");
+  masm.end_a_stub();
   return base;
 }
-#undef __
 
 int CompiledStaticCall::to_interp_stub_size() {
   // isb; movk; movz; movz; movk; movz; movz; br

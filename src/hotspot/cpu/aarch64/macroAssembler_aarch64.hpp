@@ -1066,7 +1066,7 @@ private:
 public:
   // Calls
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  address trampoline_call(Address entry, MacroAssembler* masm = NULL);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;

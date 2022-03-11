@@ -1275,8 +1275,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler &masm);
+  static int emit_deopt_handler(C2_MacroAssembler &masm);
 
   static uint size_exception_handler() {
     return MacroAssembler::far_branch_size();
@@ -1725,7 +1725,7 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
-#define __ _masm.
+#define __ masm.
 
 // advance declarations for helper functions to convert register
 // indices to register objects
@@ -1790,8 +1790,7 @@ void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
+void MachBreakpointNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   __ brk(0);
 }
 
@@ -1807,8 +1806,7 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   }
 #endif
 
-  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachNopNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc*) const {
     for (int i = 0; i < _count; i++) {
       __ nop();
     }
@@ -1830,7 +1828,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler& masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -1884,9 +1882,8 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
 
   // n.b. frame size includes space for return pc and rfp
   const int framesize = C->output()->frame_size_in_bytes();
@@ -1918,14 +1915,14 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(&_masm);
+    bs->nmethod_entry_barrier(&masm);
   }
 
   if (VerifyStackAtCalls) {
     Unimplemented();
   }
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(masm.offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -1979,9 +1976,8 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachEpilogNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
   int framesize = C->output()->frame_slots() << LogBytesPerInt;
 
   __ remove_frame(framesize);
@@ -2051,7 +2047,7 @@ static enum RC rc_class(OptoReg::Name reg) {
   return rc_stack;
 }
 
-uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
+uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
   Compile* C = ra_->C;
 
   // Get registers to move.
@@ -2084,129 +2080,125 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
     uint ireg = ideal_reg();
-    if (ireg == Op_VecA && cbuf) {
-      C2_MacroAssembler _masm(cbuf);
+    if (ireg == Op_VecA && masm) {
       int sve_vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack->stack
-        __ spill_copy_sve_vector_stack_to_stack(src_offset, dst_offset,
+        masm->spill_copy_sve_vector_stack_to_stack(src_offset, dst_offset,
                                                 sve_vector_reg_size_in_bytes);
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
-        __ spill_sve_vector(as_FloatRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo),
+        masm->spill_sve_vector(as_FloatRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo),
                             sve_vector_reg_size_in_bytes);
       } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_float) {
-        __ unspill_sve_vector(as_FloatRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
+        masm->unspill_sve_vector(as_FloatRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
                               sve_vector_reg_size_in_bytes);
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        __ sve_orr(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+        masm->sve_orr(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                    as_FloatRegister(Matcher::_regEncode[src_lo]),
                    as_FloatRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
-    } else if (cbuf) {
+    } else if (masm) {
       assert(ireg == Op_VecD || ireg == Op_VecX, "must be 64 bit or 128 bit vector");
-      C2_MacroAssembler _masm(cbuf);
       assert((src_lo_rc != rc_int && dst_lo_rc != rc_int), "sanity");
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack->stack
         assert((src_offset & 7) == 0 && (dst_offset & 7) == 0, "unaligned stack offset");
         if (ireg == Op_VecD) {
-          __ unspill(rscratch1, true, src_offset);
-          __ spill(rscratch1, true, dst_offset);
+          masm->unspill(rscratch1, true, src_offset);
+          masm->spill(rscratch1, true, dst_offset);
         } else {
-          __ spill_copy128(src_offset, dst_offset);
+          masm->spill_copy128(src_offset, dst_offset);
         }
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_float) {
-        __ mov(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-               ireg == Op_VecD ? __ T8B : __ T16B,
+        masm->mov(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+               ireg == Op_VecD ? masm->T8B : masm->T16B,
                as_FloatRegister(Matcher::_regEncode[src_lo]));
       } else if (src_lo_rc == rc_float && dst_lo_rc == rc_stack) {
-        __ spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
-                 ireg == Op_VecD ? __ D : __ Q,
+        masm->spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
+                 ireg == Op_VecD ? masm->D : masm->Q,
                  ra_->reg2offset(dst_lo));
       } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_float) {
-        __ unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                   ireg == Op_VecD ? __ D : __ Q,
+        masm->unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+                   ireg == Op_VecD ? masm->D : masm->Q,
                    ra_->reg2offset(src_lo));
       } else {
         ShouldNotReachHere();
       }
     }
-  } else if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  } else if (masm) {
     switch (src_lo_rc) {
     case rc_int:
       if (dst_lo_rc == rc_int) {  // gpr --> gpr copy
         if (is64) {
-            __ mov(as_Register(Matcher::_regEncode[dst_lo]),
+            masm->mov(as_Register(Matcher::_regEncode[dst_lo]),
                    as_Register(Matcher::_regEncode[src_lo]));
         } else {
-            C2_MacroAssembler _masm(cbuf);
-            __ movw(as_Register(Matcher::_regEncode[dst_lo]),
+            masm->movw(as_Register(Matcher::_regEncode[dst_lo]),
                     as_Register(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // gpr --> fpr copy
         if (is64) {
-            __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_Register(Matcher::_regEncode[src_lo]));
         } else {
-            __ fmovs(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmovs(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_Register(Matcher::_regEncode[src_lo]));
         }
       } else {                    // gpr --> stack spill
         assert(dst_lo_rc == rc_stack, "spill to bad register class");
-        __ spill(as_Register(Matcher::_regEncode[src_lo]), is64, dst_offset);
+        masm->spill(as_Register(Matcher::_regEncode[src_lo]), is64, dst_offset);
       }
       break;
     case rc_float:
       if (dst_lo_rc == rc_int) {  // fpr --> gpr copy
         if (is64) {
-            __ fmovd(as_Register(Matcher::_regEncode[dst_lo]),
+            masm->fmovd(as_Register(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {
-            __ fmovs(as_Register(Matcher::_regEncode[dst_lo]),
+            masm->fmovs(as_Register(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
         if (is64) {
-            __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {
-            __ fmovs(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmovs(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else {                    // fpr --> stack spill
         assert(dst_lo_rc == rc_stack, "spill to bad register class");
-        __ spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
-                 is64 ? __ D : __ S, dst_offset);
+        masm->spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
+                 is64 ? masm->D : masm->S, dst_offset);
       }
       break;
     case rc_stack:
       if (dst_lo_rc == rc_int) {  // stack --> gpr load
-        __ unspill(as_Register(Matcher::_regEncode[dst_lo]), is64, src_offset);
+        masm->unspill(as_Register(Matcher::_regEncode[dst_lo]), is64, src_offset);
       } else if (dst_lo_rc == rc_float) { // stack --> fpr load
-        __ unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
-                   is64 ? __ D : __ S, src_offset);
+        masm->unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+                   is64 ? masm->D : masm->S, src_offset);
       } else if (dst_lo_rc == rc_predicate) {
-        __ unspill_sve_predicate(as_PRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
+        masm->unspill_sve_predicate(as_PRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
                                  Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
       } else {                    // stack --> stack copy
         assert(dst_lo_rc == rc_stack, "spill to bad register class");
         if (ideal_reg() == Op_RegVectMask) {
-          __ spill_copy_sve_predicate_stack_to_stack(src_offset, dst_offset,
+          masm->spill_copy_sve_predicate_stack_to_stack(src_offset, dst_offset,
                                                      Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
         } else {
-          __ unspill(rscratch1, is64, src_offset);
-          __ spill(rscratch1, is64, dst_offset);
+          masm->unspill(rscratch1, is64, src_offset);
+          masm->spill(rscratch1, is64, dst_offset);
         }
       }
       break;
     case rc_predicate:
       if (dst_lo_rc == rc_predicate) {
-        __ sve_mov(as_PRegister(Matcher::_regEncode[dst_lo]), as_PRegister(Matcher::_regEncode[src_lo]));
+        masm->sve_mov(as_PRegister(Matcher::_regEncode[dst_lo]), as_PRegister(Matcher::_regEncode[src_lo]));
       } else if (dst_lo_rc == rc_stack) {
-        __ spill_sve_predicate(as_PRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo),
+        masm->spill_sve_predicate(as_PRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo),
                                Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
       } else {
         assert(false, "bad src and dst rc_class combination.");
@@ -2270,8 +2262,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+void MachSpillCopyNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  implementation(&masm, ra_, false, NULL);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -2289,9 +2281,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
-
+void BoxLockNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg    = ra_->get_encode(this);
 
@@ -2330,11 +2320,8 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachUEPNode::emit(C2_MacroAssembler& masm, PhaseRegAlloc* ra_) const
 {
-  // This is the unverified entry point.
-  C2_MacroAssembler _masm(&cbuf);
-
   __ cmp_klass(j_rarg0, rscratch2, rscratch1);
   Label skip;
   // TODO
@@ -2354,13 +2341,12 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 // Emit exception handler code.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler& masm)
 {
   // mov rscratch1 #exception_blob_entry_point
   // br rscratch1
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
   if (base == NULL) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -2374,11 +2360,10 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
 }
 
 // Emit deopt handler code.
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler& masm)
 {
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
   if (base == NULL) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -2788,7 +2773,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
 }
 
 #define MOV_VOLATILE(REG, BASE, INDEX, SCALE, DISP, SCRATCH, INSN)      \
-  C2_MacroAssembler _masm(&cbuf);                                       \
   {                                                                     \
     guarantee(INDEX == -1, "mode not permitted for volatile");          \
     guarantee(DISP == 0, "mode not permitted for volatile");            \
@@ -2936,7 +2920,6 @@ encode %{
 
   // catch all for unimplemented encodings
   enc_class enc_unimplemented %{
-    C2_MacroAssembler _masm(&cbuf);
     __ unimplemented("C2 catch all");
   %}
 
@@ -2946,7 +2929,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsbw(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrsbw, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrsbw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
@@ -2954,7 +2937,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsb(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrsb, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrsb, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
@@ -2962,7 +2945,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrb(iRegI dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrb, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrb, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
@@ -2970,7 +2953,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrb(iRegL dst, memory1 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrb, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrb, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
@@ -2978,7 +2961,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrshw(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrshw, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrshw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
@@ -2986,7 +2969,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsh(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrsh, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrsh, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
@@ -2994,7 +2977,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrh(iRegI dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrh, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrh, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
@@ -3002,7 +2985,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrh(iRegL dst, memory2 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrh, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrh, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
@@ -3010,7 +2993,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrw(iRegI dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrw, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
@@ -3018,7 +3001,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrw(iRegL dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrw, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
@@ -3026,7 +3009,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrsw(iRegL dst, memory4 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrsw, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrsw, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
@@ -3034,7 +3017,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldr(iRegL dst, memory8 mem) %{
     Register dst_reg = as_Register($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldr, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
@@ -3042,7 +3025,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrs(vRegF dst, memory4 mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrs, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
@@ -3050,7 +3033,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_ldrd(vRegD dst, memory8 mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, dst_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrd, dst_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
@@ -3058,15 +3041,14 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb(iRegI src, memory1 mem) %{
     Register src_reg = as_Register($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strb, src_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::strb, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0(memory1 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    loadStore(_masm, &MacroAssembler::strb, zr, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
@@ -3074,15 +3056,15 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strh(iRegI src, memory2 mem) %{
     Register src_reg = as_Register($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strh, src_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::strh, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strh0(memory2 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    loadStore(_masm, &MacroAssembler::strh, zr, $mem->opcode(),
+
+    loadStore(masm, &MacroAssembler::strh, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 2);
   %}
 
@@ -3090,15 +3072,15 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strw(iRegI src, memory4 mem) %{
     Register src_reg = as_Register($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strw, src_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::strw, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strw0(memory4 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    loadStore(_masm, &MacroAssembler::strw, zr, $mem->opcode(),
+
+    loadStore(masm, &MacroAssembler::strw, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
@@ -3109,20 +3091,20 @@ encode %{
     // we sometimes get asked to store the stack pointer into the
     // current thread -- we cannot do that directly on AArch64
     if (src_reg == r31_sp) {
-      C2_MacroAssembler _masm(&cbuf);
+
       assert(as_Register($mem$$base) == rthread, "unexpected store for sp");
       __ mov(rscratch2, sp);
       src_reg = rscratch2;
     }
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::str, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_str0(memory8 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    loadStore(_masm, &MacroAssembler::str, zr, $mem->opcode(),
+
+    loadStore(masm, &MacroAssembler::str, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
@@ -3130,7 +3112,7 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strs(vRegF src, memory4 mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strs, src_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::strs, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
   %}
 
@@ -3138,16 +3120,16 @@ encode %{
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strd(vRegD src, memory8 mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::strd, src_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::strd, src_reg, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
   %}
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
-      C2_MacroAssembler _masm(&cbuf);
+
       __ membar(Assembler::StoreStore);
-      loadStore(_masm, &MacroAssembler::strb, zr, $mem->opcode(),
+      loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
 
@@ -3156,49 +3138,49 @@ encode %{
   // Vector loads and stores
   enc_class aarch64_enc_ldrvH(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::H,
+    loadStore(masm, &MacroAssembler::ldr, dst_reg, MacroAssembler::H,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_ldrvS(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::S,
+    loadStore(masm, &MacroAssembler::ldr, dst_reg, MacroAssembler::S,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_ldrvD(vecD dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::D,
+    loadStore(masm, &MacroAssembler::ldr, dst_reg, MacroAssembler::D,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_ldrvQ(vecX dst, memory mem) %{
     FloatRegister dst_reg = as_FloatRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldr, dst_reg, MacroAssembler::Q,
+    loadStore(masm, &MacroAssembler::ldr, dst_reg, MacroAssembler::Q,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_strvH(vecD src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::H,
+    loadStore(masm, &MacroAssembler::str, src_reg, MacroAssembler::H,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_strvS(vecD src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::S,
+    loadStore(masm, &MacroAssembler::str, src_reg, MacroAssembler::S,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_strvD(vecD src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::D,
+    loadStore(masm, &MacroAssembler::str, src_reg, MacroAssembler::D,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
   enc_class aarch64_enc_strvQ(vecX src, memory mem) %{
     FloatRegister src_reg = as_FloatRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::str, src_reg, MacroAssembler::Q,
+    loadStore(masm, &MacroAssembler::str, src_reg, MacroAssembler::Q,
        $mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
 
@@ -3314,7 +3296,7 @@ encode %{
     // we sometimes get asked to store the stack pointer into the
     // current thread -- we cannot do that directly on AArch64
     if (src_reg == r31_sp) {
-      C2_MacroAssembler _masm(&cbuf);
+
       assert(as_Register($mem$$base) == rthread, "unexpected store for sp");
       __ mov(rscratch2, sp);
       src_reg = rscratch2;
@@ -3330,7 +3312,7 @@ encode %{
 
   enc_class aarch64_enc_fstlrs(vRegF src, memory mem) %{
     {
-      C2_MacroAssembler _masm(&cbuf);
+
       FloatRegister src_reg = as_FloatRegister($src$$reg);
       __ fmovs(rscratch2, src_reg);
     }
@@ -3340,7 +3322,7 @@ encode %{
 
   enc_class aarch64_enc_fstlrd(vRegD src, memory mem) %{
     {
-      C2_MacroAssembler _masm(&cbuf);
+
       FloatRegister src_reg = as_FloatRegister($src$$reg);
       __ fmovd(rscratch2, src_reg);
     }
@@ -3351,7 +3333,7 @@ encode %{
   // synchronized read/update encodings
 
   enc_class aarch64_enc_ldaxr(iRegL dst, memory8 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     Register base = as_Register($mem$$base);
     int index = $mem$$index;
@@ -3380,7 +3362,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_stlxr(iRegLNoSp src, memory8 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register src_reg = as_Register($src$$reg);
     Register base = as_Register($mem$$base);
     int index = $mem$$index;
@@ -3410,7 +3392,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchg(memory mem, iRegLNoSp oldval, iRegLNoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::xword, /*acquire*/ false, /*release*/ true,
@@ -3418,7 +3400,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchgw(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::word, /*acquire*/ false, /*release*/ true,
@@ -3426,7 +3408,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchgs(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, /*acquire*/ false, /*release*/ true,
@@ -3434,7 +3416,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchgb(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ false, /*release*/ true,
@@ -3447,7 +3429,7 @@ encode %{
   // CompareAndSwap sequence to serve as a barrier on acquiring a
   // lock.
   enc_class aarch64_enc_cmpxchg_acq(memory mem, iRegLNoSp oldval, iRegLNoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::xword, /*acquire*/ true, /*release*/ true,
@@ -3455,7 +3437,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchgw_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::word, /*acquire*/ true, /*release*/ true,
@@ -3463,7 +3445,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchgs_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, /*acquire*/ true, /*release*/ true,
@@ -3471,7 +3453,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpxchgb_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ true, /*release*/ true,
@@ -3480,7 +3462,7 @@ encode %{
 
   // auxiliary used for CompareAndSwapX to set result register
   enc_class aarch64_enc_cset_eq(iRegINoSp res) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register res_reg = as_Register($res$$reg);
     __ cset(res_reg, Assembler::EQ);
   %}
@@ -3488,7 +3470,7 @@ encode %{
   // prefetch encodings
 
   enc_class aarch64_enc_prefetchw(memory mem) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register base = as_Register($mem$$base);
     int index = $mem$$index;
     int scale = $mem$$scale;
@@ -3509,7 +3491,7 @@ encode %{
   /// mov envcodings
 
   enc_class aarch64_enc_movw_imm(iRegI dst, immI src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     uint32_t con = (uint32_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
     if (con == 0) {
@@ -3520,7 +3502,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_mov_imm(iRegL dst, immL src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     uint64_t con = (uint64_t)$src$$constant;
     if (con == 0) {
@@ -3531,7 +3513,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_mov_p(iRegP dst, immP src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
     if (con == NULL || con == (address)1) {
@@ -3556,24 +3538,24 @@ encode %{
   %}
 
   enc_class aarch64_enc_mov_p0(iRegP dst, immP0 src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     __ mov(dst_reg, zr);
   %}
 
   enc_class aarch64_enc_mov_p1(iRegP dst, immP_1 src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     __ mov(dst_reg, (uint64_t)1);
   %}
 
   enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     __ load_byte_map_base($dst$$Register);
   %}
 
   enc_class aarch64_enc_mov_n(iRegN dst, immN src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
     if (con == NULL) {
@@ -3586,13 +3568,13 @@ encode %{
   %}
 
   enc_class aarch64_enc_mov_n0(iRegN dst, immN0 src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     __ mov(dst_reg, zr);
   %}
 
   enc_class aarch64_enc_mov_nk(iRegN dst, immNKlass src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
     if (con == NULL) {
@@ -3607,7 +3589,7 @@ encode %{
   // arithmetic encodings
 
   enc_class aarch64_enc_addsubw_imm(iRegI dst, iRegI src1, immIAddSub src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     Register src_reg = as_Register($src1$$reg);
     int32_t con = (int32_t)$src2$$constant;
@@ -3621,7 +3603,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_addsub_imm(iRegL dst, iRegL src1, immLAddSub src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register dst_reg = as_Register($dst$$reg);
     Register src_reg = as_Register($src1$$reg);
     int32_t con = (int32_t)$src2$$constant;
@@ -3635,7 +3617,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_divw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
    Register dst_reg = as_Register($dst$$reg);
    Register src1_reg = as_Register($src1$$reg);
    Register src2_reg = as_Register($src2$$reg);
@@ -3643,7 +3625,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
    Register dst_reg = as_Register($dst$$reg);
    Register src1_reg = as_Register($src1$$reg);
    Register src2_reg = as_Register($src2$$reg);
@@ -3651,7 +3633,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
    Register dst_reg = as_Register($dst$$reg);
    Register src1_reg = as_Register($src1$$reg);
    Register src2_reg = as_Register($src2$$reg);
@@ -3659,7 +3641,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
    Register dst_reg = as_Register($dst$$reg);
    Register src1_reg = as_Register($src1$$reg);
    Register src2_reg = as_Register($src2$$reg);
@@ -3669,14 +3651,14 @@ encode %{
   // compare instruction encodings
 
   enc_class aarch64_enc_cmpw(iRegI src1, iRegI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg1 = as_Register($src1$$reg);
     Register reg2 = as_Register($src2$$reg);
     __ cmpw(reg1, reg2);
   %}
 
   enc_class aarch64_enc_cmpw_imm_addsub(iRegI src1, immIAddSub src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg = as_Register($src1$$reg);
     int32_t val = $src2$$constant;
     if (val >= 0) {
@@ -3687,7 +3669,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpw_imm(iRegI src1, immI src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg1 = as_Register($src1$$reg);
     uint32_t val = (uint32_t)$src2$$constant;
     __ movw(rscratch1, val);
@@ -3695,14 +3677,14 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmp(iRegL src1, iRegL src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg1 = as_Register($src1$$reg);
     Register reg2 = as_Register($src2$$reg);
     __ cmp(reg1, reg2);
   %}
 
   enc_class aarch64_enc_cmp_imm_addsub(iRegL src1, immL12 src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg = as_Register($src1$$reg);
     int64_t val = $src2$$constant;
     if (val >= 0) {
@@ -3717,7 +3699,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmp_imm(iRegL src1, immL src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg1 = as_Register($src1$$reg);
     uint64_t val = (uint64_t)$src2$$constant;
     __ mov(rscratch1, val);
@@ -3725,45 +3707,45 @@ encode %{
   %}
 
   enc_class aarch64_enc_cmpp(iRegP src1, iRegP src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg1 = as_Register($src1$$reg);
     Register reg2 = as_Register($src2$$reg);
     __ cmp(reg1, reg2);
   %}
 
   enc_class aarch64_enc_cmpn(iRegN src1, iRegN src2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg1 = as_Register($src1$$reg);
     Register reg2 = as_Register($src2$$reg);
     __ cmpw(reg1, reg2);
   %}
 
   enc_class aarch64_enc_testp(iRegP src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg = as_Register($src$$reg);
     __ cmp(reg, zr);
   %}
 
   enc_class aarch64_enc_testn(iRegN src) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register reg = as_Register($src$$reg);
     __ cmpw(reg, zr);
   %}
 
   enc_class aarch64_enc_b(label lbl) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Label *L = $lbl$$label;
     __ b(*L);
   %}
 
   enc_class aarch64_enc_br_con(cmpOp cmp, label lbl) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Label *L = $lbl$$label;
     __ br ((Assembler::Condition)$cmp$$cmpcode, *L);
   %}
 
   enc_class aarch64_enc_br_conU(cmpOpU cmp, label lbl) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Label *L = $lbl$$label;
     __ br ((Assembler::Condition)$cmp$$cmpcode, *L);
   %}
@@ -3776,7 +3758,7 @@ encode %{
      Register result_reg = as_Register($result$$reg);
 
      Label miss;
-     C2_MacroAssembler _masm(&cbuf);
+
      __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
                                      NULL, &miss,
                                      /*set_cond_codes:*/ true);
@@ -3787,28 +3769,26 @@ encode %{
   %}
 
   enc_class aarch64_enc_java_static_call(method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
-
     address addr = (address)$meth$$method;
     address call;
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &masm);
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ trampoline_call(Address(addr, rspec), &cbuf);
+      call = __ trampoline_call(Address(addr, rspec), &masm);
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
       // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(masm);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3822,8 +3802,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_java_dynamic_call(method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
-    int method_index = resolved_method_index(cbuf);
+    int method_index = resolved_method_index(masm);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
@@ -3834,7 +3813,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_call_epilog() %{
-    C2_MacroAssembler _masm(&cbuf);
+
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       __ call_Unimplemented();
@@ -3842,7 +3821,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_java_to_runtime(method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
+
 
     // some calls to generated routines (arraycopy code) are scheduled
     // by C2 as runtime calls. if so we can call them using a br (they
@@ -3872,12 +3851,12 @@ encode %{
   %}
 
   enc_class aarch64_enc_rethrow() %{
-    C2_MacroAssembler _masm(&cbuf);
+
     __ far_jump(RuntimeAddress(OptoRuntime::rethrow_stub()));
   %}
 
   enc_class aarch64_enc_ret() %{
-    C2_MacroAssembler _masm(&cbuf);
+
 #ifdef ASSERT
     if (Compile::current()->max_vector_size() > 0) {
       __ verify_ptrue();
@@ -3887,13 +3866,13 @@ encode %{
   %}
 
   enc_class aarch64_enc_tail_call(iRegP jump_target) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register target_reg = as_Register($jump_target$$reg);
     __ br(target_reg);
   %}
 
   enc_class aarch64_enc_tail_jmp(iRegP jump_target) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register target_reg = as_Register($jump_target$$reg);
     // exception oop should be in r0
     // ret addr has been popped into lr
@@ -3903,7 +3882,7 @@ encode %{
   %}
 
   enc_class aarch64_enc_fast_lock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
+
     Register oop = as_Register($object$$reg);
     Register box = as_Register($box$$reg);
     Register disp_hdr = as_Register($tmp$$reg);
@@ -3996,7 +3975,6 @@ encode %{
   %}
 
   enc_class aarch64_enc_fast_unlock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register oop = as_Register($object$$reg);
     Register box = as_Register($box$$reg);
     Register disp_hdr = as_Register($tmp$$reg);
@@ -8661,7 +8639,7 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
     FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, tmp_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrs, tmp_reg, $mem->opcode(),
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
@@ -8704,7 +8682,7 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
     FloatRegister tmp_reg = as_FloatRegister($tmp$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, tmp_reg, $mem->opcode(),
+    loadStore(masm, &MacroAssembler::ldrd, tmp_reg, $mem->opcode(),
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
