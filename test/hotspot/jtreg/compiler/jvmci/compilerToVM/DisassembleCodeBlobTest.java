@@ -117,9 +117,9 @@ public class DisassembleCodeBlobTest {
         int foundEntryPointLine = -1;
         for (; l < strLines.length; ++l) {
             String line = strLines[l];
-            if (line.equals("[Disassembly]")) {
+            if (line.equals("[Disassembly]") || line.equals("[MachCode]")) {
                 Asserts.assertTrue(foundDisassemblyLine == -1,
-                    testCase + " : [Disassembly] found at lines " + foundDisassemblyLine + " and " + l);
+                    testCase + " : Duplicate disassembly section markers found at lines " + foundDisassemblyLine + " and " + l);
                 foundDisassemblyLine = l;
             }
             if (line.equals("[Entry Point]") || line.equals("[Verified Entry Point]")) {
@@ -129,7 +129,7 @@ public class DisassembleCodeBlobTest {
                 break;
             }
         }
-        Asserts.assertTrue(foundDisassemblyLine != -1, testCase + " : Disassembly section found");
+        Asserts.assertTrue(foundDisassemblyLine != -1, testCase + " : no disassembly section found");
         Asserts.assertTrue(foundEntryPointLine != -1, testCase + " : no entry point found");
     }
 }
