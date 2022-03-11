@@ -175,7 +175,6 @@ public class WhiteBoxResizeTest {
         final int MAX = 1 << 30;
         return new Object[][]{
                 // tableSizeFor(arg), expected
-                {0, 1},
                 {1, 1},
                 {2, 2},
                 {3, 4},
@@ -509,23 +508,7 @@ public class WhiteBoxResizeTest {
     @DataProvider(name = "populatedCapacity")
     public Iterator<Object[]> populatedCapacityCases() {
         ArrayList<Object[]> cases = new ArrayList<>();
-        cases.addAll(genPopulatedCapacityCases(0, 1));
-        cases.addAll(genPopulatedCapacityCases(1, 1));
-        cases.addAll(genPopulatedCapacityCases(2, 2));
-        cases.addAll(genPopulatedCapacityCases(3, 4));
-        cases.addAll(genPopulatedCapacityCases(4, 4));
-        cases.addAll(genPopulatedCapacityCases(5, 8));
-        cases.addAll(genPopulatedCapacityCases(6, 8));
-        cases.addAll(genPopulatedCapacityCases(7, 8));
-        cases.addAll(genPopulatedCapacityCases(8, 8));
-        cases.addAll(genPopulatedCapacityCases(9, 16));
-        cases.addAll(genPopulatedCapacityCases(10, 16));
-        cases.addAll(genPopulatedCapacityCases(11, 16));
-        cases.addAll(genPopulatedCapacityCases(12, 16));
-        cases.addAll(genPopulatedCapacityCases(13, 16));
-        cases.addAll(genPopulatedCapacityCases(14, 16));
-        cases.addAll(genPopulatedCapacityCases(15, 16));
-        cases.addAll(genPopulatedCapacityCases(16, 16));
+        cases.addAll(genPopulatedCapacityCases(16, 32));
         cases.addAll(genPopulatedCapacityCases(17, 32));
         cases.addAll(genPopulatedCapacityCases(18, 32));
         cases.addAll(genPopulatedCapacityCases(19, 32));
@@ -534,14 +517,14 @@ public class WhiteBoxResizeTest {
         cases.addAll(genPopulatedCapacityCases(22, 32));
         cases.addAll(genPopulatedCapacityCases(23, 32));
         cases.addAll(genPopulatedCapacityCases(24, 32));
-        cases.addAll(genPopulatedCapacityCases(25, 32));
-        cases.addAll(genPopulatedCapacityCases(26, 32));
-        cases.addAll(genPopulatedCapacityCases(27, 32));
-        cases.addAll(genPopulatedCapacityCases(28, 32));
-        cases.addAll(genPopulatedCapacityCases(29, 32));
-        cases.addAll(genPopulatedCapacityCases(30, 32));
-        cases.addAll(genPopulatedCapacityCases(31, 32));
-        cases.addAll(genPopulatedCapacityCases(32, 32));
+        cases.addAll(genPopulatedCapacityCases(25, 64));
+        cases.addAll(genPopulatedCapacityCases(26, 64));
+        cases.addAll(genPopulatedCapacityCases(27, 64));
+        cases.addAll(genPopulatedCapacityCases(28, 64));
+        cases.addAll(genPopulatedCapacityCases(29, 64));
+        cases.addAll(genPopulatedCapacityCases(30, 64));
+        cases.addAll(genPopulatedCapacityCases(31, 64));
+        cases.addAll(genPopulatedCapacityCases(32, 64));
         cases.addAll(genPopulatedCapacityCases(33, 64));
         cases.addAll(genPopulatedCapacityCases(34, 64));
         cases.addAll(genPopulatedCapacityCases(35, 64));
@@ -558,22 +541,22 @@ public class WhiteBoxResizeTest {
         cases.addAll(genPopulatedCapacityCases(46, 64));
         cases.addAll(genPopulatedCapacityCases(47, 64));
         cases.addAll(genPopulatedCapacityCases(48, 64));
-        cases.addAll(genPopulatedCapacityCases(49, 64));
-        cases.addAll(genPopulatedCapacityCases(50, 64));
-        cases.addAll(genPopulatedCapacityCases(51, 64));
-        cases.addAll(genPopulatedCapacityCases(52, 64));
-        cases.addAll(genPopulatedCapacityCases(53, 64));
-        cases.addAll(genPopulatedCapacityCases(54, 64));
-        cases.addAll(genPopulatedCapacityCases(55, 64));
-        cases.addAll(genPopulatedCapacityCases(56, 64));
-        cases.addAll(genPopulatedCapacityCases(57, 64));
-        cases.addAll(genPopulatedCapacityCases(58, 64));
-        cases.addAll(genPopulatedCapacityCases(59, 64));
-        cases.addAll(genPopulatedCapacityCases(60, 64));
-        cases.addAll(genPopulatedCapacityCases(61, 64));
-        cases.addAll(genPopulatedCapacityCases(62, 64));
-        cases.addAll(genPopulatedCapacityCases(63, 64));
-        cases.addAll(genPopulatedCapacityCases(64, 64));
+        cases.addAll(genPopulatedCapacityCases(49, 128));
+        cases.addAll(genPopulatedCapacityCases(50, 128));
+        cases.addAll(genPopulatedCapacityCases(51, 128));
+        cases.addAll(genPopulatedCapacityCases(52, 128));
+        cases.addAll(genPopulatedCapacityCases(53, 128));
+        cases.addAll(genPopulatedCapacityCases(54, 128));
+        cases.addAll(genPopulatedCapacityCases(55, 128));
+        cases.addAll(genPopulatedCapacityCases(56, 128));
+        cases.addAll(genPopulatedCapacityCases(57, 128));
+        cases.addAll(genPopulatedCapacityCases(58, 128));
+        cases.addAll(genPopulatedCapacityCases(59, 128));
+        cases.addAll(genPopulatedCapacityCases(60, 128));
+        cases.addAll(genPopulatedCapacityCases(61, 128));
+        cases.addAll(genPopulatedCapacityCases(62, 128));
+        cases.addAll(genPopulatedCapacityCases(63, 128));
+        cases.addAll(genPopulatedCapacityCases(64, 128));
         cases.addAll(genPopulatedCapacityCases(65, 128));
         cases.addAll(genPopulatedCapacityCases(66, 128));
         cases.addAll(genPopulatedCapacityCases(67, 128));
@@ -606,37 +589,37 @@ public class WhiteBoxResizeTest {
         cases.addAll(genPopulatedCapacityCases(94, 128));
         cases.addAll(genPopulatedCapacityCases(95, 128));
         cases.addAll(genPopulatedCapacityCases(96, 128));
-        cases.addAll(genPopulatedCapacityCases(97, 128));
-        cases.addAll(genPopulatedCapacityCases(98, 128));
-        cases.addAll(genPopulatedCapacityCases(99, 128));
-        cases.addAll(genPopulatedCapacityCases(100, 128));
-        cases.addAll(genPopulatedCapacityCases(101, 128));
-        cases.addAll(genPopulatedCapacityCases(102, 128));
-        cases.addAll(genPopulatedCapacityCases(103, 128));
-        cases.addAll(genPopulatedCapacityCases(104, 128));
-        cases.addAll(genPopulatedCapacityCases(105, 128));
-        cases.addAll(genPopulatedCapacityCases(106, 128));
-        cases.addAll(genPopulatedCapacityCases(107, 128));
-        cases.addAll(genPopulatedCapacityCases(108, 128));
-        cases.addAll(genPopulatedCapacityCases(109, 128));
-        cases.addAll(genPopulatedCapacityCases(110, 128));
-        cases.addAll(genPopulatedCapacityCases(111, 128));
-        cases.addAll(genPopulatedCapacityCases(112, 128));
-        cases.addAll(genPopulatedCapacityCases(113, 128));
-        cases.addAll(genPopulatedCapacityCases(114, 128));
-        cases.addAll(genPopulatedCapacityCases(115, 128));
-        cases.addAll(genPopulatedCapacityCases(116, 128));
-        cases.addAll(genPopulatedCapacityCases(117, 128));
-        cases.addAll(genPopulatedCapacityCases(118, 128));
-        cases.addAll(genPopulatedCapacityCases(119, 128));
-        cases.addAll(genPopulatedCapacityCases(120, 128));
-        cases.addAll(genPopulatedCapacityCases(121, 128));
-        cases.addAll(genPopulatedCapacityCases(122, 128));
-        cases.addAll(genPopulatedCapacityCases(123, 128));
-        cases.addAll(genPopulatedCapacityCases(124, 128));
-        cases.addAll(genPopulatedCapacityCases(125, 128));
-        cases.addAll(genPopulatedCapacityCases(126, 128));
-        cases.addAll(genPopulatedCapacityCases(127, 128));
+        cases.addAll(genPopulatedCapacityCases(97, 256));
+        cases.addAll(genPopulatedCapacityCases(98, 256));
+        cases.addAll(genPopulatedCapacityCases(99, 256));
+        cases.addAll(genPopulatedCapacityCases(100, 256));
+        cases.addAll(genPopulatedCapacityCases(101, 256));
+        cases.addAll(genPopulatedCapacityCases(102, 256));
+        cases.addAll(genPopulatedCapacityCases(103, 256));
+        cases.addAll(genPopulatedCapacityCases(104, 256));
+        cases.addAll(genPopulatedCapacityCases(105, 256));
+        cases.addAll(genPopulatedCapacityCases(106, 256));
+        cases.addAll(genPopulatedCapacityCases(107, 256));
+        cases.addAll(genPopulatedCapacityCases(108, 256));
+        cases.addAll(genPopulatedCapacityCases(109, 256));
+        cases.addAll(genPopulatedCapacityCases(110, 256));
+        cases.addAll(genPopulatedCapacityCases(111, 256));
+        cases.addAll(genPopulatedCapacityCases(112, 256));
+        cases.addAll(genPopulatedCapacityCases(113, 256));
+        cases.addAll(genPopulatedCapacityCases(114, 256));
+        cases.addAll(genPopulatedCapacityCases(115, 256));
+        cases.addAll(genPopulatedCapacityCases(116, 256));
+        cases.addAll(genPopulatedCapacityCases(117, 256));
+        cases.addAll(genPopulatedCapacityCases(118, 256));
+        cases.addAll(genPopulatedCapacityCases(119, 256));
+        cases.addAll(genPopulatedCapacityCases(120, 256));
+        cases.addAll(genPopulatedCapacityCases(121, 256));
+        cases.addAll(genPopulatedCapacityCases(122, 256));
+        cases.addAll(genPopulatedCapacityCases(123, 256));
+        cases.addAll(genPopulatedCapacityCases(124, 256));
+        cases.addAll(genPopulatedCapacityCases(125, 256));
+        cases.addAll(genPopulatedCapacityCases(126, 256));
+        cases.addAll(genPopulatedCapacityCases(127, 256));
 
         // numbers in this range are truncated by a float computation with 0.75f
         // but can get an exact result with a double computation with 0.75d
