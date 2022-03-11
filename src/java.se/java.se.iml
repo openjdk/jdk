@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/share/classes" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="java.xml.crypto" />
+    <orderEntry type="module" module-name="java.security.sasl" />
+    <orderEntry type="module" module-name="java.compiler" />
+    <orderEntry type="module" module-name="java.management.rmi" />
+    <orderEntry type="module" module-name="java.rmi" />
+    <orderEntry type="module" module-name="java.transaction.xa" />
+    <orderEntry type="module" module-name="java.management" />
+    <orderEntry type="module" module-name="java.logging" />
+    <orderEntry type="module" module-name="java.security.jgss" />
+    <orderEntry type="module" module-name="java.scripting" />
+    <orderEntry type="module" module-name="java.prefs" />
+    <orderEntry type="module" module-name="java.datatransfer" />
+    <orderEntry type="module" module-name="java.desktop" />
+    <orderEntry type="module" module-name="java.xml" />
+    <orderEntry type="module" module-name="java.sql" />
+    <orderEntry type="module" module-name="java.net.http" />
+    <orderEntry type="module" module-name="java.naming" />
+    <orderEntry type="module" module-name="java.instrument" />
+    <orderEntry type="module" module-name="java.sql.rowset" />
+  </component>
+</module>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/DeviceIdentificationTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LocationRelativeToTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/MouseEventTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/MultiScreenInsetsTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/MultiScreenLocationTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TranslucencyThrowsExceptionWhenFullScreen" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/UpdateGCTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/WPanelPeerPerf" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/WindowGCChangeTest" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

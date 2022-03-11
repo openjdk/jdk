@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/ActionAfterRemove" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ActionEventTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/EmptyListEventTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/FirstItemRemoveTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/FocusEmptyListTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ItemEventTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KeyEventsTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ListFlickers" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ListGarbageCollectionTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ListMultipleSelectTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ListPeer" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/MouseDraggedOutCauseScrollingTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/NofocusListDblClickTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ScrollOutside" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SetBackgroundTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SetFontTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SingleModeDeselect" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="windows1" />
+    <orderEntry type="module" module-name="macosx4" />
+    <orderEntry type="module" module-name="aix1" />
+    <orderEntry type="module" module-name="unix1" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

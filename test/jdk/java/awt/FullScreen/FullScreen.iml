@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/8013581" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/AllFramesMaximize" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/AltTabCrashTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/BufferStrategyExceptionTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CurrentDisplayModeTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DisplayChangeVITest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/FullScreenInsets" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/FullscreenWindowProps" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/MultimonFullscreenTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/NoResizeEventOnDMChangeTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/NonExistentDisplayModeTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SetFSWindow" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TranslucentWindow" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/UninitializedDisplayModeChangeTest" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="patches" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

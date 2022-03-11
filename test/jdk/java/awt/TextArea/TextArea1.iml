@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/AutoScrollOnSelectAndAppend" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DisposeTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Mixing" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/MouseOverScrollbarWhenTyping" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/OverScrollTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ScrollbarIntersectionTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SelectionVisible" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TextAreaCaretVisibilityTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TextAreaCursorTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TextAreaEditing" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TextAreaScrolling" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TextAreaTwicePack" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/UsingWithMouse" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="windows1" />
+    <orderEntry type="module" module-name="macosx4" />
+    <orderEntry type="module" module-name="aix1" />
+    <orderEntry type="module" module-name="unix1" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

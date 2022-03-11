@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/Lock" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LockSupport" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ReentrantLock" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ReentrantReadWriteLock" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/StampedLock" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="test4" />
+  </component>
+</module>

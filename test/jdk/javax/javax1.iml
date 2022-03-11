@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/imageio" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/print" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/script" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/smartcardio" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/swing" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/swing/JToolTip/5047379" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/swing/regtesthelpers" isTestSource="true" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="windows1" />
+    <orderEntry type="module" module-name="common1" />
+    <orderEntry type="module" module-name="macosx4" />
+    <orderEntry type="module" module-name="aix1" />
+    <orderEntry type="module" module-name="unix1" />
+    <orderEntry type="module" module-name="macosx3" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

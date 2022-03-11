@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/CodePointIM" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/FileChooserDemo" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Font2DTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/J2Ddemo" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Metalworks" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Notepad" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SampleTree" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Stylepad" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SwingSet2" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TableExample" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/TransparentRuler" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="patches" />
+    <orderEntry type="module" module-name="macosx3" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/changeHostName" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/exportObject" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/keepAliveDuringCall" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/marshalAfterUnexport" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/serialFilter" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/unexportObject" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/useDynamicProxies" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="macosx3" />
+    <orderEntry type="module" module-name="test4" />
+  </component>
+</module>

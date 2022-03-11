@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/AttributedString" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Bidi" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/BreakIterator" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CharacterIterator" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Collator" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Normalizer" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/testlib" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="patches" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

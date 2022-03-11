@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/AudioFileFormat" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/AudioFormat" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/AudioInputStream" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/AudioSystem" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Clip" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Controls" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DataLine" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DirectAudio" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/FileTypeExtension" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LineEvent" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Lines" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LinuxBlock" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LinuxCrash" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Mixers" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Recording" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ReverbType" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>

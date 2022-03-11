@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/Cipher" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CipherSpi" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CryptoPermission" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CryptoPermissions" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/EncryptedPrivateKeyInfo" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/JceSecurity" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KeyGenerator" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Mac" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/NullCipher" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SealedObject" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SecretKeyFactory" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="SecretKeyFactory" level="project" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="closed" />
+    <orderEntry type="module" module-name="patches" />
+    <orderEntry type="module" module-name="test4" />
+  </component>
+</module>

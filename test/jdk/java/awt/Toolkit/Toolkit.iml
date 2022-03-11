@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/BadDisplayTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DesktopProperties" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DisplayChangesException" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DynamicLayout" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/GetImage" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/GetMulticlickTime" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/GetScreenInsetsCustomGC" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/GetSizeTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Headless" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/HeadlessTray" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/IsToolkitUseTheMainScreen" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LoadAWTCrashTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LockingKeyStateTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/RealSync" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ScreenInsetsDPIVariation" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ScreenInsetsTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SecurityTest" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SunDesktopProperty" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ToolkitPropertyTest" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="test3" />
+    <orderEntry type="module" module-name="windows3" />
+    <orderEntry type="module" module-name="unix5" />
+    <orderEntry type="module" module-name="windows1" />
+    <orderEntry type="module" module-name="macosx4" />
+    <orderEntry type="module" module-name="aix1" />
+    <orderEntry type="module" module-name="unix1" />
+    <orderEntry type="module" module-name="macosx3" />
+    <orderEntry type="module" module-name="test4" />
+    <orderEntry type="module" module-name="patchlib" />
+  </component>
+</module>
