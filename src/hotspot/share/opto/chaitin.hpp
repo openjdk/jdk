@@ -705,7 +705,7 @@ private:
 
   // Split uncolorable live ranges
   // Return new number of live ranges
-  uint Split(uint maxlrg, ResourceArea* split_arena, Block_List blocks);
+  uint Split(uint maxlrg, ResourceArea* split_arena, Block_List blocks, uint region);
 
   // Set the 'spilled_once' or 'spilled_twice' flag on a node.
   void set_was_spilled( Node *n );

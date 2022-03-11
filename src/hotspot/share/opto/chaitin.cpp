@@ -529,7 +529,7 @@ void PhaseChaitin::Register_Allocate() {
         return;
       }
 
-      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, blocks);  // Split spilling LRG everywhere
+      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, blocks, region);  // Split spilling LRG everywhere
       _lrg_map.set_max_lrg_id(new_max_lrg_id);
       // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
       // or we failed to split
@@ -601,7 +601,7 @@ void PhaseChaitin::Register_Allocate() {
       if (!_lrg_map.max_lrg_id()) {
         return;
       }
-      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, blocks);  // Split spilling LRG everywhere
+      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, blocks, region);  // Split spilling LRG everywhere
       _lrg_map.set_max_lrg_id(new_max_lrg_id);
       // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
       C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");
@@ -1256,12 +1256,12 @@ void PhaseChaitin::cache_lrg_info(uint region) {
   for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
     LRG &lrg = lrgs(i);
 
-    if (lrg._region < region) {
+    if (lrg._region == region) {
       continue;
     }
 
     if (region == 1) {
-      tty->print("XXX %d: %d %d %d - %d %d - %p %d %d", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill, lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
+      tty->print("XXX %d: %d %d %d - %d %d - %p %ld %ld", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill, lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
                  offset_of(LRG, _region), sizeof(LRG));
       lrg.dump();
     }
@@ -1314,7 +1314,7 @@ void PhaseChaitin::Simplify(uint region) {
 
       // Put the simplified guy on the simplified list.
       lrgs(lo)._next = _simplified;
-      assert(lrgs(lo)._region >= region, "");
+      assert(lrgs(lo)._region == region, "");
       _simplified = lo;
       // If this guy is "at risk" then mark his current neighbors
       if (lrgs(lo)._at_risk && !_ifg->neighbors(lo)->is_empty()) {
@@ -1322,7 +1322,7 @@ void PhaseChaitin::Simplify(uint region) {
         uint datum;
         while ((datum = elements.next()) != 0) {
           lrgs(datum)._risk_bias = lo;
-          assert(lrgs(datum)._region >= region, "");
+          assert(lrgs(datum)._region == region, "");
         }
       }
 
@@ -1341,7 +1341,7 @@ void PhaseChaitin::Simplify(uint region) {
       uint neighbor;
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
-        assert(n->_region >= region, "");
+        assert(n->_region == region, "");
 #ifdef ASSERT
         if (VerifyRegisterAllocator) {
           assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
@@ -1357,12 +1357,12 @@ void PhaseChaitin::Simplify(uint region) {
           uint next = n->_next;
           if (prev) {
             lrgs(prev)._next = next;
-            assert(lrgs(prev)._region >= region, "");
+            assert(lrgs(prev)._region == region, "");
           } else {
             _hi_degree = next;
           }
           lrgs(next)._prev = prev;
-          assert(lrgs(next)._region >= region, "");
+          assert(lrgs(next)._region == region, "");
           n->_next = _lo_degree;
           _lo_degree = neighbor;
         }
@@ -1378,7 +1378,7 @@ void PhaseChaitin::Simplify(uint region) {
     double area = lrgs(lo_score)._area;
     double cost = lrgs(lo_score)._cost;
     bool bound = lrgs(lo_score)._is_bound;
-    assert(lrgs(lo_score)._region >= region, "");
+    assert(lrgs(lo_score)._region == region, "");
 
     // Find cheapest guy
     debug_only( int lo_no_simplify=0; );
@@ -1389,7 +1389,7 @@ void PhaseChaitin::Simplify(uint region) {
       // a float live range it's degree will drop by 2 and you can skip the
       // just-lo-degree stage.  It's very rare (shows up after 5000+ methods
       // in -Xcomp of Java2Demo).  So just choose this guy to simplify next.
-      assert(lrgs(i)._region >= region, "");
+      assert(lrgs(i)._region == region, "");
       if( lrgs(i).lo_degree() ) {
         lo_score = i;
         break;
@@ -1421,7 +1421,7 @@ void PhaseChaitin::Simplify(uint region) {
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
-    assert(lo_lrg->_region >= region, "");
+    assert(lo_lrg->_region == region, "");
 
     if (region == 1) {
       tty->print_cr("YYY %d - %d %d %d - %d", lo_score, lo_lrg->degree(), lo_lrg->degrees_of_freedom(), lo_lrg->lo_degree(), lo_no_simplify);
@@ -1437,17 +1437,17 @@ void PhaseChaitin::Simplify(uint region) {
     uint next = lo_lrg->_next;
     if( prev ) {
       lrgs(prev)._next = next;
-      assert(lrgs(prev)._region >= region, "");
+      assert(lrgs(prev)._region == region, "");
     } else {
       _hi_degree = next;
     }
-    assert(lrgs(next)._region >= region, "");
+    assert(lrgs(next)._region == region, "");
     lrgs(next)._prev = prev;
     // Jam him on the lo-degree list, despite his high degree.
     // Maybe he'll get a color, and maybe he'll spill.
     // Only Select() will know.
     lrgs(lo_score)._at_risk = true;
-    assert(lrgs(lo_score)._region >= region, "");
+    assert(lrgs(lo_score)._region == region, "");
     _lo_degree = lo_score;
     lo_lrg->_next = 0;
 
@@ -1621,7 +1621,7 @@ uint PhaseChaitin::Select(uint region) {
     // Pull next LRG from the simplified list - in reverse order of removal
     uint lidx = _simplified;
     LRG *lrg = &lrgs(lidx);
-    assert(lrg->_region >= region, "");
+    assert(lrg->_region == region, "");
     _simplified = lrg->_next;
 
 #ifndef PRODUCT
@@ -1662,7 +1662,7 @@ uint PhaseChaitin::Select(uint region) {
         // its chunk, a new chunk of color may be tried, in which case
         // examination of neighbors is started again, at retry_next_chunk.)
         LRG &nlrg = lrgs(neighbor);
-        assert(nlrg._region >= region, "");
+        assert(nlrg._region == region, "");
         OptoReg::Name nreg = nlrg.reg();
         // Only subtract masks in the same chunk
         if (nreg >= chunk && nreg < chunk + RegMask::CHUNK_SIZE) {
