@@ -48,8 +48,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * A <em>carrier</em> is an opaque object that can be used to store component values
  * while avoiding primitive boxing associated with collection objects. Component values
  * can be primitive or Object. Clients can create new carrier instances by describing a
- * carrier <em>shape</em>, that is, a MethodType whose parameter types describe the
- * types of the carrier component values.
+ * carrier <em>shape</em>, that is, a {@linkplain MethodType method type} whose parameter
+ * types describe the types of the carrier component values.
  *
  * @implNote The strategy for storing components is deliberately left ambiguous
  * so that future improvements will not be hampered by backward compatability
@@ -341,7 +341,12 @@ public final class Carrier {
         private static final MethodHandle PUT_OBJECT;
 
         /**
-         * Wrapper object for carrier arrays.
+         * Wrapper object for carrier arrays. Instances types are stored in the {@code objects}
+         * array, while primitive types are recast to {@code int/long} and stored in the
+         * {@code primitives} array. Primitive byte, short, char, boolean and int are stored as
+         * integers. Longs and doubles are stored as longs.  Longs take up the first part of the
+         * primitives array using normal indices. Integers follow using int[] indices offset beyond
+         * the longs using unsafe getInt/putInt.
          */
         private static class CarrierArray {
             /**
@@ -478,7 +483,7 @@ public final class Carrier {
                 constructor = MethodHandles.collectArguments(put, 0, constructor);
             }
 
-            // int array index (double number of longs)
+            // transition to int array index (double number of longs)
             index *= LONG_SLOTS;
             for (int i = 0; i < intCount; i++) {
                 MethodHandle put = MethodHandles.insertArguments(PUT_INTEGER, 1, index++);
@@ -515,7 +520,7 @@ public final class Carrier {
                 components[comIndex++] = MethodHandles.insertArguments(GET_LONG, 1, index++);
             }
 
-            // int array index (double number of longs)
+            // transition to int array index (double number of longs)
             index *= LONG_SLOTS;
             for (int i = 0; i < intCount; i++) {
                 components[comIndex++] = MethodHandles.insertArguments(GET_INTEGER, 1, index++);
