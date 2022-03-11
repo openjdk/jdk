@@ -25,16 +25,26 @@
 
 package com.apple.laf;
 
-import java.awt.event.ActionEvent;
-import java.util.*;
-
-import javax.swing.*;
-import javax.swing.UIDefaults.LazyValue;
-import javax.swing.text.*;
-import javax.swing.text.DefaultEditorKit.DefaultKeyTypedAction;
-
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.JTextField;
+import javax.swing.LookAndFeel;
+import javax.swing.UIDefaults;
+import javax.swing.UIDefaults.LazyValue;
+import javax.swing.UIManager;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.DefaultEditorKit.DefaultKeyTypedAction;
+import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.TextAction;
+import javax.swing.text.Utilities;
 
 public class AquaKeyBindings {
     private static final RecyclableSingleton<AquaKeyBindings> instance = new RecyclableSingletonFromDefaultConstructor<AquaKeyBindings>(AquaKeyBindings.class);
@@ -380,7 +390,20 @@ public class AquaKeyBindings {
             "shift ENTER", "selectPreviousRowCell",
             "alt TAB", "focusHeader",
             "alt shift TAB", "focusHeader",
-            "F8", "focusHeader"
+            "F8", "focusHeader",
+                "ctrl PAGE_UP", "scrollLeftChangeSelection",
+                "ctrl shift PAGE_UP", "scrollLeftExtendSelection",
+                "ctrl PAGE_DOWN", "scrollRightChangeSelection",
+                "ctrl shift PAGE_DOWN", "scrollRightExtendSelection",
+                "ctrl UP", "selectPreviousRowChangeLead",
+                "ctrl KP_UP", "selectPreviousRowChangeLead",
+                "ctrl DOWN", "selectNextRowChangeLead",
+                "ctrl KP_DOWN", "selectNextRowChangeLead",
+                "ctrl RIGHT", "selectNextColumnChangeLead",
+                "ctrl KP_RIGHT", "selectNextColumnChangeLead",
+                "ctrl LEFT", "selectPreviousColumnChangeLead",
+                "ctrl KP_LEFT", "selectPreviousColumnChangeLead",
+                "SPACE", "addToSelection"
         }));
     }
 
@@ -397,7 +420,16 @@ public class AquaKeyBindings {
             "ctrl PAGE_UP", "scrollRightChangeSelection",
             "ctrl PAGE_DOWN", "scrollLeftChangeSelection",
             "ctrl shift PAGE_UP", "scrollRightExtendSelection",
-            "ctrl shift PAGE_DOWN", "scrollLeftExtendSelection"
+            "ctrl shift PAGE_DOWN", "scrollLeftExtendSelection",
+                "ctrl UP", "selectPreviousRowChangeLead",
+                "ctrl KP_UP", "selectPreviousRowChangeLead",
+                "ctrl DOWN", "selectNextRowChangeLead",
+                "ctrl KP_DOWN", "selectNextRowChangeLead",
+                "ctrl RIGHT", "selectPreviousColumnChangeLead",
+                "ctrl KP_RIGHT", "selectPreviousColumnChangeLead",
+                "ctrl LEFT", "selectNextColumnChangeLead",
+                "ctrl KP_LEFT", "selectNextColumnChangeLead",
+                "SPACE", "addToSelection"
         }));
     }
 
