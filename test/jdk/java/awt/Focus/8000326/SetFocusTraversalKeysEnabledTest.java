@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8000326
  * @key headful
  * @summary Focus unable to traverse within the menubar
  * @run main SetFocusTraversalKeysEnabledTest
