@@ -985,7 +985,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         if (tree.isInline()) {
             DocCommentTree dct = getCurrentPath().getDocComment();
-            if (dct.getFullBody().isEmpty() || tree != dct.getFullBody().get(0)) {
+            if (dct.getFirstSentence().isEmpty() || tree != dct.getFirstSentence().get(0)) {
                 env.messages.warning(REFERENCE, tree, "dc.return.not.first");
             }
         }
