@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,6 +446,12 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   ObjArrayAllocator allocator(Universe::intArrayKlassObj(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
   DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  if (DumpSharedSpaces) {
+    // This array is written into the CDS archive. Make sure it
+    // has deterministic contents.
+    Copy::fill_to_words(start + filler_array_hdr_size(),
+                        words - filler_array_hdr_size(), 0);
+  }
 }
 
 void
