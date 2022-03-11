@@ -29,8 +29,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8281453
- * @summary Test that transformation from c - (~x) to x + (c + 1) and
- *          from ~(c - x) to x + (-c - 1) works as intended.
+ * @summary Test that transformation from ~x to -1-x in different situations works as intended.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIRSubIdealCMinusNotX
  */
@@ -38,6 +37,173 @@ public class TestIRSubIdealCMinusNotX {
 
     public static void main(String[] args) {
         TestFramework.run();
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.XOR_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testInt_NotYPlusX_PlusOne(int x, int y) {
+        return (~y + x) + 1; // transformed to x - y;
+    }
+
+    @Run(test = "testInt_NotYPlusX_PlusOne")
+    public void checkTestInt_NotYPlusX_PlusOne(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1, testInt_NotYPlusX_PlusOne(10, 9));
+        Asserts.assertEquals(0, testInt_NotYPlusX_PlusOne(100, 100));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.XOR_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLong_NotYPlusX_PlusOne(long x, long y) {
+        return (~y + x) + 1; // transformed to x - y;
+    }
+
+    @Run(test = "testLong_NotYPlusX_PlusOne")
+    public void checkTestLong_NotYPlusX_PlusOne(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1L, testLong_NotYPlusX_PlusOne(123_456_789_123L, 123_456_789_122L));
+        Asserts.assertEquals(0L, testLong_NotYPlusX_PlusOne(123_456_789_123L, 123_456_789_123L));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.XOR_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testInt_XPlusNotY_PlusOne(int x, int y) {
+        return (x + ~y) + 1; // transformed to x - y;
+    }
+
+    @Run(test = "testInt_XPlusNotY_PlusOne")
+    public void checkTestInt_XPlusNotY_PlusOne(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1, testInt_XPlusNotY_PlusOne(10, 9));
+        Asserts.assertEquals(0, testInt_XPlusNotY_PlusOne(100, 100));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.XOR_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLong_XPlusNotY_PlusOne(long x, long y) {
+        return (x + ~y) + 1; // transformed to x - y;
+    }
+
+    @Run(test = "testLong_XPlusNotY_PlusOne")
+    public void checkTestLong_XPlusNotY_PlusOne(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1L, testLong_XPlusNotY_PlusOne(123_456_789_123L, 123_456_789_122L));
+        Asserts.assertEquals(0L, testLong_XPlusNotY_PlusOne(123_456_789_123L, 123_456_789_123L));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.XOR_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testIntNotYPlus_XPlusOne_(int x, int y) {
+        return ~y + (x + 1); // transformed to x - y;
+    }
+
+    @Run(test = "testIntNotYPlus_XPlusOne_")
+    public void checkTestIntNotYPlus_XPlusOne_(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1, testIntNotYPlus_XPlusOne_(10, 9));
+        Asserts.assertEquals(0, testIntNotYPlus_XPlusOne_(100, 100));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.XOR_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLongNotYPlus_XPlusOne_(long x, long y) {
+        return ~y + (x + 1); // transformed to x - y;
+    }
+
+    @Run(test = "testLongNotYPlus_XPlusOne_")
+    public void checkTestLongNotYPlus_XPlusOne_(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1L, testLongNotYPlus_XPlusOne_(123_456_789_123L, 123_456_789_122L));
+        Asserts.assertEquals(0L, testLongNotYPlus_XPlusOne_(123_456_789_123L, 123_456_789_123L));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.XOR_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testInt_XPlusOne_PlusNotY(int x, int y) {
+        return (x + 1) + ~y; // transformed to x - y;
+    }
+
+    @Run(test = "testInt_XPlusOne_PlusNotY")
+    public void checkTestInt_XPlusOne_PlusNotY(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1, testInt_XPlusOne_PlusNotY(10, 9));
+        Asserts.assertEquals(0, testInt_XPlusOne_PlusNotY(100, 100));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.XOR_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLong_XPlusOne_PlusNotY(long x, long y) {
+        return (x + 1) + ~y; // transformed to x - y;
+    }
+
+    @Run(test = "testLong_XPlusOne_PlusNotY")
+    public void checkTestLong_XPlusOne_PlusNotY(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1L, testLong_XPlusOne_PlusNotY(123_456_789_123L, 123_456_789_122L));
+        Asserts.assertEquals(0L, testLong_XPlusOne_PlusNotY(123_456_789_123L, 123_456_789_123L));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.XOR_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testIntNotXPlusC(int x) {
+        return ~x + 1234; // transformed to 1233 - x
+    }
+
+    @Run(test = "testIntNotXPlusC")
+    public void checkTestIntNotXPlusC(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1223, testIntNotXPlusC(10));
+        Asserts.assertEquals(1233, testIntNotXPlusC(0));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.XOR_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLongNotXPlusC(long x) {
+        return ~x + 123_456_789_123L; // transformed to 123_456_789_122L - x
+    }
+
+    @Run(test = "testLongNotXPlusC")
+    public void checkTestLongNotXPlusC(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(113_456_789_122L, testLongNotXPlusC(10_000_000_000L));
+        Asserts.assertEquals(123_456_789_122L, testLongNotXPlusC(0L));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testIntNotXMinusNotY(int x, int y) {
+        return ~x - ~y; // transformed to y - x
+    }
+
+    @Run(test = "testIntNotXMinusNotY")
+    public void checkTestIntNotXMinusNotY(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(-1, testIntNotXMinusNotY(10, 9));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLongNotXMinusNotY(long x, long y) {
+        return ~x - ~y; // transformed to y - x
+    }
+
+
+    @Run(test = "testLongNotXMinusNotY")
+    public void checkTestLongNotXMinusNotY(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(-100_000_000_000L, testLongNotXMinusNotY(123_456_789_122L, 23_456_789_122L));
     }
 
     @Test

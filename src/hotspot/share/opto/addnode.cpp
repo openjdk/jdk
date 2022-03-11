@@ -367,15 +367,26 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert (~x+c) into (c-1)-x. Note there isn't a bitwise not
-  // bytecode, "~x" would typically represented as "x^(-1)", so (~x+c)
-  // will be (x^(-1))+c.
-  if (op1 == Op_Xor(bt) &&
-      (in2->Opcode() == Op_ConI || in2->Opcode() == Op_ConL) &&
-      phase->type(in1->in(2)) == TypeInteger::minus_1(bt)) {
-    Node* c_minus_one = phase->makecon(add_ring(phase->type(in(2)), TypeInteger::minus_1(bt)));
-    return SubNode::make(c_minus_one, in1->in(1), bt);
+  // Convert (con - x) + y into "(y - x) + con"
+  if (op1 == Op_Sub(bt) && in1->in(1)->Opcode() == Op_ConIL(bt)) {
+    return AddNode::make(phase->transform(SubNode::make(in2, in1->in(2), bt)), in1->in(1), bt);
   }
+
+  // Convert y + (con - x) into "(y - x) + con"
+  if (op2 == Op_Sub(bt) && in2->in(1)->Opcode() == Op_ConIL(bt)) {
+    return AddNode::make(phase->transform(SubNode::make(in1, in2->in(2), bt)), in2->in(1), bt);
+  }
+
+  // Convert ~x + rhs, which is (x ^ (-1)) + rhs, into (-1 - x) + rhs.
+  if (op1 == Op_Xor(bt) && phase->type(in1->in(2)) == TypeInteger::minus_1(bt)) {
+    return AddNode::make(phase->transform(SubNode::make(phase->integercon(-1, bt), in1->in(1), bt)), in2, bt);
+  }
+
+  // Convert lhs + ~x, which is lhs + (x ^ (-1)), into lhs + (-1 - x).
+  if (op2 == Op_Xor(bt) && phase->type(in2->in(2)) == TypeInteger::minus_1(bt)) {
+    return AddNode::make(in1, phase->transform(SubNode::make(phase->integercon(-1, bt), in2->in(1), bt)), bt);
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
