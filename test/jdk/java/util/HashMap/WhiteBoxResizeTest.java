@@ -55,42 +55,9 @@ import static org.testng.Assert.assertNull;
  */
 public class WhiteBoxResizeTest {
 
-    static class KeyStructure {
-
-        int value;
-
-        public KeyStructure(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public int hashCode() {
-            return this.value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-            KeyStructure that = (KeyStructure) o;
-            return value == that.value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
-        public void setValue(int value) {
-            this.value = value;
-        }
-
-    }
-
-    private static void putMap(Map<KeyStructure, KeyStructure> map, int i) {
-        KeyStructure keyStructure = new KeyStructure(i);
-        map.put(keyStructure, keyStructure);
+    private static void putMap(Map<String, String> map, int i) {
+        String String = Integer.toString(i);
+        map.put(String, String);
     }
 
     final MethodHandle TABLE_SIZE_FOR;
@@ -133,8 +100,8 @@ public class WhiteBoxResizeTest {
     }
 
     // creates a map with size mappings
-    Map<KeyStructure, KeyStructure> makeMap(int size) {
-        Map<KeyStructure, KeyStructure> map = new HashMap<>();
+    Map<String, String> makeMap(int size) {
+        Map<String, String> map = new HashMap<>();
         for (int i = 0; i < size; ++i) {
             putMap(map, i);
         }
@@ -143,24 +110,23 @@ public class WhiteBoxResizeTest {
 
     // creates a "fake" map: size() returns the given size, but
     // the entrySet iterator returns only one entry
-    Map<KeyStructure, KeyStructure> fakeMap(int size) {
+    Map<String, String> fakeMap(int size) {
         return new AbstractMap<>() {
-            public Set<Map.Entry<KeyStructure, KeyStructure>> entrySet() {
-                return new AbstractSet<Map.Entry<KeyStructure, KeyStructure>>() {
+            public Set<Map.Entry<String, String>> entrySet() {
+                return new AbstractSet<Map.Entry<String, String>>() {
                     public int size() {
                         return size;
                     }
 
-                    public Iterator<Map.Entry<KeyStructure, KeyStructure>> iterator() {
-                        KeyStructure keyStructure = new KeyStructure(1);
-                        return Set.of(Map.entry(keyStructure, keyStructure)).iterator();
+                    public Iterator<Map.Entry<String, String>> iterator() {
+                        return Set.of(Map.entry("1", "1")).iterator();
                     }
                 };
             }
         };
     }
 
-    void putN(Map<KeyStructure, KeyStructure> map, int n) {
+    void putN(Map<String, String> map, int n) {
         for (int i = 0; i < n; i++) {
             putMap(map, i);
         }
@@ -346,8 +312,8 @@ public class WhiteBoxResizeTest {
     }
 
     @Test(dataProvider = "defaultCapacity")
-    public void defaultCapacity(Supplier<Map<KeyStructure, KeyStructure>> s) {
-        Map<KeyStructure, KeyStructure> map = s.get();
+    public void defaultCapacity(Supplier<Map<String, String>> s) {
+        Map<String, String> map = s.get();
         putMap(map, 0);
         assertEquals(capacity(map), 16);
     }
@@ -361,19 +327,19 @@ public class WhiteBoxResizeTest {
         ArrayList<Object[]> cases = new ArrayList<>();
         for (int i = 2; i < 128; i++) {
             int cap = i;
-            cases.add(new Object[]{"rhm1", cap, (Supplier<Map<KeyStructure, KeyStructure>>) () -> new HashMap<>(cap)});
-            cases.add(new Object[]{"rhm2", cap, (Supplier<Map<KeyStructure, KeyStructure>>) () -> new HashMap<>(cap, 0.75f)});
-            cases.add(new Object[]{"rlm1", cap, (Supplier<Map<KeyStructure, KeyStructure>>) () -> new LinkedHashMap<>(cap)});
-            cases.add(new Object[]{"rlm2", cap, (Supplier<Map<KeyStructure, KeyStructure>>) () -> new LinkedHashMap<>(cap, 0.75f)});
-            cases.add(new Object[]{"rwm1", cap, (Supplier<Map<KeyStructure, KeyStructure>>) () -> new WeakHashMap<>(cap)});
-            cases.add(new Object[]{"rwm2", cap, (Supplier<Map<KeyStructure, KeyStructure>>) () -> new WeakHashMap<>(cap, 0.75f)});
+            cases.add(new Object[]{"rhm1", cap, (Supplier<Map<String, String>>) () -> new HashMap<>(cap)});
+            cases.add(new Object[]{"rhm2", cap, (Supplier<Map<String, String>>) () -> new HashMap<>(cap, 0.75f)});
+            cases.add(new Object[]{"rlm1", cap, (Supplier<Map<String, String>>) () -> new LinkedHashMap<>(cap)});
+            cases.add(new Object[]{"rlm2", cap, (Supplier<Map<String, String>>) () -> new LinkedHashMap<>(cap, 0.75f)});
+            cases.add(new Object[]{"rwm1", cap, (Supplier<Map<String, String>>) () -> new WeakHashMap<>(cap)});
+            cases.add(new Object[]{"rwm2", cap, (Supplier<Map<String, String>>) () -> new WeakHashMap<>(cap, 0.75f)});
         }
         return cases.iterator();
     }
 
     @Test(dataProvider = "requestedCapacity")
-    public void requestedCapacity(String label, int cap, Supplier<Map<KeyStructure, KeyStructure>> s) {
-        Map<KeyStructure, KeyStructure> map = s.get();
+    public void requestedCapacity(String label, int cap, Supplier<Map<String, String>> s) {
+        Map<String, String> map = s.get();
         putMap(map, 0);
         assertEquals(capacity(map), tableSizeFor(cap));
     }
@@ -392,8 +358,8 @@ public class WhiteBoxResizeTest {
     Object[] pcc(String label,
                  int size,
                  int expectedCapacity,
-                 Supplier<Map<KeyStructure, KeyStructure>> supplier,
-                 Consumer<Map<KeyStructure, KeyStructure>> consumer) {
+                 Supplier<Map<String, String>> supplier,
+                 Consumer<Map<String, String>> consumer) {
         return new Object[]{label, size, expectedCapacity, supplier, consumer};
     }
 
@@ -634,9 +600,9 @@ public class WhiteBoxResizeTest {
     public void populatedCapacity(String label, // unused, included for diagnostics
                                   int size,     // unused, included for diagnostics
                                   int expectedCapacity,
-                                  Supplier<Map<KeyStructure, KeyStructure>> s,
-                                  Consumer<Map<KeyStructure, KeyStructure>> c) {
-        Map<KeyStructure, KeyStructure> map = s.get();
+                                  Supplier<Map<String, String>> s,
+                                  Consumer<Map<String, String>> c) {
+        Map<String, String> map = s.get();
         c.accept(map);
         assertEquals(capacity(map), expectedCapacity);
     }
