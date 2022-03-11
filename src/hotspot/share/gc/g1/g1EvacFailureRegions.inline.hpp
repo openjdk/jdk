@@ -30,8 +30,6 @@
 #include "runtime/atomic.hpp"
 
 bool G1EvacFailureRegions::record(uint region_idx) {
-  assert(region_idx < _max_regions, "must be");
-
   bool success = _regions_failed_evacuation.par_set_bit(region_idx,
                                                         memory_order_relaxed);
   if (success) {

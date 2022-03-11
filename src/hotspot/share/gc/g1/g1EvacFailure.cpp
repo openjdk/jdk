@@ -154,31 +154,37 @@ public:
 class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
   class RegionMarkedWordsCache {
     G1CollectedHeap* _g1h;
+    const uint _uninitialized_idx;
     uint _region_idx;
     size_t _marked_words;
 
   public:
     RegionMarkedWordsCache():
       _g1h(G1CollectedHeap::heap()),
-      _region_idx(_g1h->max_regions()),
+      _uninitialized_idx(_g1h->max_regions()),
+      _region_idx(_uninitialized_idx),
       _marked_words(0) { }
 
+    void note_self_forwarding_removal_end_par() {
+      _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+    }
+
     void add(uint region_idx, size_t marked_words) {
-      if (_region_idx == _g1h->max_regions()) {
+      if (_region_idx == _uninitialized_idx) {
         _region_idx = region_idx;
         _marked_words = marked_words;
       } else if (_region_idx == region_idx) {
         _marked_words += marked_words;
       } else {
-        _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+        note_self_forwarding_removal_end_par();
         _region_idx = region_idx;
         _marked_words = marked_words;
       }
     }
 
     void flush() {
-      if (_region_idx != _g1h->max_regions()) {
-        _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+      if (_region_idx != _uninitialized_idx) {
+        note_self_forwarding_removal_end_par();
       }
     }
   };

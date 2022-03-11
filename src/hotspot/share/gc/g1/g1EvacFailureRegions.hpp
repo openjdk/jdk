@@ -45,10 +45,6 @@ class G1EvacFailureRegions {
   G1ScanChunksInHeapRegions* _chunks_in_regions;
   // Number of regions evacuation failed in the current collection.
   volatile uint _evac_failure_regions_cur_length;
-  // Maximum of regions number.
-  uint _max_regions;
-  G1CollectedHeap* _heap;
-  G1GCPhaseTimes* _phase_times;
 
 public:
   G1EvacFailureRegions();
@@ -70,10 +66,6 @@ public:
 
   // Do necessary preparation for evacuation failure regions
   void prepare_regions();
-
-  uint max_regions() const {
-    return _max_regions;
-  }
 
   uint num_regions_failed_evacuation() const {
     return Atomic::load(&_evac_failure_regions_cur_length);

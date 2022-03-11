@@ -45,8 +45,6 @@ G1HeapRegionChunk::G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint ch
   bool marked_obj_in_this_chunk = _start <= _first_obj_in_chunk && _first_obj_in_chunk < _limit;
   _include_first_obj_in_region = marked_obj_in_this_chunk
                                  && _bitmap->get_next_marked_addr(bottom, _limit) >= _start;
-  _include_last_obj_in_region = marked_obj_in_this_chunk
-                                && _bitmap->get_next_marked_addr(_limit, top) == top;
 }
 
 bool G1ScanChunksInHeapRegions::claim_chunk(uint chunk_id) {

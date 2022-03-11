@@ -35,10 +35,7 @@ G1EvacFailureRegions::G1EvacFailureRegions() :
   _regions_failed_evacuation(mtGC),
   _evac_failure_regions(nullptr),
   _chunks_in_regions(nullptr),
-  _evac_failure_regions_cur_length(0),
-  _max_regions(0),
-  _heap(G1CollectedHeap::heap()),
-  _phase_times(_heap->phase_times()) {
+  _evac_failure_regions_cur_length(0) {
 }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
@@ -48,9 +45,8 @@ G1EvacFailureRegions::~G1EvacFailureRegions() {
 
 void G1EvacFailureRegions::pre_collection(uint max_regions) {
   Atomic::store(&_evac_failure_regions_cur_length, 0u);
-  _max_regions = max_regions;
-  _regions_failed_evacuation.resize(_max_regions);
-  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, _max_regions, mtGC);
+  _regions_failed_evacuation.resize(max_regions);
+  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
   _chunks_in_regions = new (NEW_C_HEAP_OBJ(G1ScanChunksInHeapRegions, mtGC)) G1ScanChunksInHeapRegions();
 }
 
@@ -62,11 +58,9 @@ void G1EvacFailureRegions::post_collection() {
 
   FREE_C_HEAP_ARRAY(uint, _evac_failure_regions);
   _evac_failure_regions = nullptr;
-  _max_regions = 0; // To have any record() attempt fail in the future.
 }
 
 bool G1EvacFailureRegions::contains(uint region_idx) const {
-  assert(region_idx < _max_regions, "must be");
   return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
 }
 

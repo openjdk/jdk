@@ -46,7 +46,6 @@ class G1HeapRegionChunk {
   HeapWord * _next_obj_in_region;
 
   bool _include_first_obj_in_region;
-  bool _include_last_obj_in_region;
 
 public:
   G1HeapRegionChunk(HeapRegion* region, uint chunk_idx, uint chunk_size, const G1CMBitMap* const bitmap);
@@ -65,8 +64,6 @@ public:
   bool empty() const { return _first_obj_in_chunk >= _limit; }
 
   bool include_first_obj_in_region() const { return _include_first_obj_in_region; }
-
-  bool include_last_obj_in_region() const { return _include_last_obj_in_region; }
 };
 
 class G1HeapRegionChunkClosure {
