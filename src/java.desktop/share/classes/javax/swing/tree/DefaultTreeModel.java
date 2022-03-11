@@ -204,7 +204,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
      * Returns whether the specified node is a leaf node.
      * The way the test is performed depends on the
-     * <code>askAllowsChildren</code> setting.
+     * <code>asksAllowsChildren</code> setting.
      *
      * @param node the node to check
      * @return true if the node is a leaf node

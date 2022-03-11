@@ -150,7 +150,7 @@ public class InflaterInputStream extends FilterInputStream {
         }
         try {
             int n;
-            while ((n = inf.inflate(b, off, len)) == 0) {
+            do {
                 if (inf.finished() || inf.needsDictionary()) {
                     reachEOF = true;
                     return -1;
@@ -158,7 +158,7 @@ public class InflaterInputStream extends FilterInputStream {
                 if (inf.needsInput()) {
                     fill();
                 }
-            }
+            } while ((n = inf.inflate(b, off, len)) == 0);
             return n;
         } catch (DataFormatException e) {
             String s = e.getMessage();

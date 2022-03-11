@@ -98,9 +98,6 @@ class InstanceRefKlass: public InstanceKlass {
   static void do_referent(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T, class OopClosureType, class Contains>
-  static void do_next(oop obj, OopClosureType* closure, Contains& contains);
-
-  template <typename T, class OopClosureType, class Contains>
   static void do_discovered(oop obj, OopClosureType* closure, Contains& contains);
 
   template <typename T, class OopClosureType>

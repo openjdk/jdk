@@ -772,8 +772,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     else
       UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    GNM="$NM"
-    AC_SUBST(GNM)
   fi
 
   # objcopy is used for moving debug symbols to separate files when

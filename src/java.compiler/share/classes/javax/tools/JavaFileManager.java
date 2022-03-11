@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,6 @@ import static javax.tools.JavaFileObject.Kind;
  * <p>Unless explicitly allowed, all methods in this interface might
  * throw a NullPointerException if given a {@code null} argument.
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @see JavaFileObject
  * @see FileObject
  * @since 1.6

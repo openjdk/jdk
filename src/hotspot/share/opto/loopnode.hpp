@@ -1042,9 +1042,10 @@ private:
   Node **_idom;                  // Array of immediate dominators
   uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
+  LoopOptsMode _mode;
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(LoopOptsMode mode);
+  void build_and_optimize();
 
   // Dominators for the sea of nodes
   void Dominators();
@@ -1055,9 +1056,10 @@ private:
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
+    _mode(mode),
     _nodes_required(UINT_MAX) {
     assert(mode != LoopOptsVerify, "wrong constructor to verify IdealLoop");
-    build_and_optimize(mode);
+    build_and_optimize();
   }
 
 #ifndef PRODUCT
@@ -1068,8 +1070,9 @@ private:
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
+    _mode(LoopOptsVerify),
     _nodes_required(UINT_MAX) {
-    build_and_optimize(LoopOptsVerify);
+    build_and_optimize();
   }
 #endif
 
@@ -1262,15 +1265,15 @@ public:
   void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
-  bool is_scaled_iv(Node* exp, Node* iv, jlong* p_scale, BasicType bt, bool* converted);
+  bool is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth = 0);
 
   bool is_iv(Node* exp, Node* iv, BasicType bt);
 
   // Return true if exp is a scaled induction var plus (or minus) constant
-  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, jlong* p_scale, Node** p_offset, BasicType bt, bool* converted = NULL, int depth = 0);
+  bool is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt, jlong* p_scale, Node** p_offset, bool* p_short_scale = NULL, int depth = 0);
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset) {
     jlong long_scale;
-    if (is_scaled_iv_plus_offset(exp, iv, &long_scale, p_offset, T_INT)) {
+    if (is_scaled_iv_plus_offset(exp, iv, T_INT, &long_scale, p_offset)) {
       int int_scale = checked_cast<int>(long_scale);
       if (p_scale != NULL) {
         *p_scale = int_scale;
@@ -1279,6 +1282,12 @@ public:
     }
     return false;
   }
+  // Helper for finding more complex matches to is_scaled_iv_plus_offset.
+  bool is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset2, Node* iv,
+                                      BasicType bt,
+                                      jlong* p_scale, Node** p_offset,
+                                      bool* p_short_scale, int depth);
+
 
   // Enum to determine the action to be performed in create_new_if_for_predicate() when processing phis of UCT regions.
   enum class UnswitchingAction {
@@ -1655,6 +1664,7 @@ public:
 
   void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
                                              IfNode*&exit_test, SafePointNode*&safepoint);
+
   void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
 
   bool try_merge_identical_ifs(Node* n);

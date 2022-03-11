@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,6 +589,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number, divisor);
+            if (checkIncrement(iPart, compactDataIndex, divisor)) {
+                divisor = (Long) divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number, divisor);
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
 
@@ -658,6 +662,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number, divisor);
+            if (checkIncrement(iPart, compactDataIndex, divisor)) {
+                divisor = (Long) divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number, divisor);
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
@@ -753,6 +761,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            if (checkIncrement(iPart, compactDataIndex, divisor.doubleValue())) {
+                divisor = divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
@@ -820,6 +832,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            if (checkIncrement(iPart, compactDataIndex, divisor.doubleValue())) {
+                divisor = divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
@@ -875,7 +891,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * Appends the {@code prefix} to the {@code result} and also set the
      * {@code NumberFormat.Field.SIGN} and {@code NumberFormat.Field.PREFIX}
      * field positions.
-     * @param result the resulting string, where the pefix is to be appended
+     * @param result the resulting string, where the prefix is to be appended
      * @param prefix prefix to append
      * @param delegate notified of the locations of
      *                 {@code NumberFormat.Field.SIGN} and
@@ -910,7 +926,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param result the resulting string, where the text is to be appended
      * @param string the text to append
      * @param delegate notified of the locations of sub fields
-     * @param positions a list of {@code FieldPostion} in the given
+     * @param positions a list of {@code FieldPosition} in the given
      *                  string
      */
     private void append(StringBuffer result, String string,
@@ -956,10 +972,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Returns a list of {@code FieldPostion} in the given {@code pattern}.
+     * Returns a list of {@code FieldPosition} in the given {@code pattern}.
      * @param pattern the pattern to be parsed for {@code FieldPosition}
      * @param field whether a PREFIX or SUFFIX field
-     * @return a list of {@code FieldPostion}
+     * @return a list of {@code FieldPosition}
      */
     private List<FieldPosition> getFieldPositions(String pattern, Field field) {
         List<FieldPosition> positions = new ArrayList<>();
@@ -1769,7 +1785,7 @@ public final class CompactNumberFormat extends NumberFormat {
             if (cnfMultiplier.longValue() != 1L) {
                 double doubleResult = number.doubleValue() * cnfMultiplier.doubleValue();
                 doubleResult = (double) convertIfNegative(doubleResult, status, gotLongMin);
-                // Check if a double can be represeneted as a long
+                // Check if a double can be represented as a long
                 long longResult = (long) doubleResult;
                 gotDouble = ((doubleResult != (double) longResult)
                         || (doubleResult == 0.0 && 1 / doubleResult < 0.0));
@@ -2394,6 +2410,19 @@ public final class CompactNumberFormat extends NumberFormat {
     private int getIntegerPart(double number, double divisor) {
         return BigDecimal.valueOf(number)
                 .divide(BigDecimal.valueOf(divisor), roundingMode).intValue();
+    }
+
+    // Checks whether the iPart is incremented by the BigDecimal division in
+    // getIntegerPart(), and affects the compact number index.
+    private boolean checkIncrement(int iPart, int index, double divisor) {
+        if (index < compactPatterns.length - 1 &&
+            !"".equals(compactPatterns[index])) { // ignore empty pattern
+            var nextDiv = divisors.get(index + 1).doubleValue();
+            if (divisor != nextDiv) {
+                return Math.log10(iPart) == Math.log10(nextDiv) - Math.log10(divisor);
+            }
+        }
+        return false;
     }
 
     /**

@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2022, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1288,6 +1288,36 @@ instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector not - predicated
+
+instruct vnotI_masked(vReg dst, vReg src, immI_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (XorV (Binary src (ReplicateB m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateS m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateI m1)) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $pg, $src\t# vector (sve) B/H/S" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_not(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnotL_masked(vReg dst, vReg src, immL_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (XorV (Binary src (ReplicateL m1)) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $pg, $src\t# vector (sve) D" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_not(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector and_not
 
 instruct vand_notI(vReg dst, vReg src1, vReg src2, immI_M1 m1) %{
@@ -1314,6 +1344,36 @@ instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
     __ sve_bic(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// vector and_not - predicated
+
+instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateB m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateS m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateI m1))) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst_src1, $pg, $dst_src1, $src2\t# vector (sve) B/H/S" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bic(as_FloatRegister($dst_src1$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateL m1))) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst_src1, $pg, $dst_src1, $src2\t# vector (sve) D" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bic(as_FloatRegister($dst_src1$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -5569,105 +5629,6 @@ instruct stringU_indexof_char_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegI_R3 ch,
     __ string_indexof_char_sve($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
                                as_FloatRegister($ztmp1$$reg), as_FloatRegister($ztmp2$$reg),
                                as_PRegister($pgtmp$$reg), as_PRegister($ptmp$$reg), false /* isL */);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Intrisics for String.compareTo()
-
-// Note that Z registers alias the corresponding NEON registers, we declare the vector operands of
-// these string_compare variants as NEON register type for convenience so that the prototype of
-// string_compare can be shared with all variants.
-
-
-instruct string_compareLL_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
-                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
-                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
-                              pRegGov_P1 pgtmp2, rFlagsReg cr)
-%{
-  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL));
-  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
-         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
-                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
-                      StrIntrinsicNode::LL);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_compareLU_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
-                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
-                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
-                              pRegGov_P1 pgtmp2, rFlagsReg cr)
-%{
-  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU));
-  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
-         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
-                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
-                      StrIntrinsicNode::LU);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_compareUL_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
-                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
-                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
-                              pRegGov_P1 pgtmp2, rFlagsReg cr)
-%{
-  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL));
-  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
-         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
-                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
-                      StrIntrinsicNode::UL);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_compareUU_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
-                              iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
-                              vRegD_V0 vtmp1, vRegD_V1 vtmp2, pRegGov_P0 pgtmp1,
-                              pRegGov_P1 pgtmp2, rFlagsReg cr)
-%{
-  predicate((UseSVE > 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU));
-  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP vtmp1, TEMP vtmp2, TEMP pgtmp1, TEMP pgtmp2,
-         USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
-
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # USE sve" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$Register, $tmp2$$Register,
-                      $vtmp1$$FloatRegister, $vtmp2$$FloatRegister, fnoreg,
-                      as_PRegister($pgtmp1$$reg), as_PRegister($pgtmp2$$reg),
-                      StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}

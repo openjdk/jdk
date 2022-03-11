@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1727,7 +1727,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -1737,11 +1737,48 @@ public abstract class FloatVector extends AbstractVector<Float> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Float> test(VectorOperators.Test op,
-                                  VectorMask<Float> m) {
-        return test(op).and(m);
+                                  VectorMask<Float> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Float>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        FloatSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            IntVector bits = this.viewAsIntegralLanes();
+            VectorMask<Integer> m = mask.cast(IntVector.species(shape()));
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (int) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (int) 0, m);
+            }
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and(Integer.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                int infbits = (int) toBits(Float.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, m);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, m);
+                } else {
+                    m = bits.compare(EQ, infbits, m);
+                }
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m.cast(vsp));
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -2439,7 +2476,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                VectorMask<Float> m) {
         m.check(maskClass, this);
         if (op == FIRST_NONZERO) {
-            FloatVector v = reduceIdentityVector(op).blend(this, m);
+            // FIXME:  The JIT should handle this.
+            FloatVector v = broadcast((float) 0).blend(this, m);
             return v.reduceLanesTemplate(op);
         }
         int opc = opCode(op);
@@ -2454,10 +2492,11 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     float reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<Integer> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, (int) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : (float) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
@@ -2483,30 +2522,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
             default: return null;
         }
     }
-
-    private
-    @ForceInline
-    FloatVector reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<FloatVector> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
-    private static final
-    ImplCache<Associative,UnaryOperator<FloatVector>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, FloatVector.class);
 
     private static final float MIN_OR_INF = Float.NEGATIVE_INFINITY;
     private static final float MAX_OR_INF = Float.POSITIVE_INFINITY;

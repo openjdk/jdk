@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,6 @@ import javax.lang.model.element.*;
  * choose to present this information in a different fashion, such as
  * messages in a window.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see ProcessingEnvironment#getLocale
  * @since 1.6
  */

@@ -76,6 +76,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
       case Bytecodes::_getstatic:
       case Bytecodes::_ldc:
       case Bytecodes::_ldc_w:
+      case Bytecodes::_ldc2_w:
         break;
       default:
         ShouldNotReachHere();

@@ -597,7 +597,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
-
 ############################################################################
 
 # jdk_nio
@@ -739,6 +738,8 @@ javax/swing/plaf/metal/MetalGradient/8163193/ButtonGradientTest.java  8277816 ma
 javax/swing/JInternalFrame/8160248/JInternalFrameDraggingTest.java  8277816 macosx-aarch64
 javax/swing/JInternalFrame/8069348/bug8069348.java 8277816 macosx-aarch64
 java/awt/Robot/HiDPIScreenCapture/ScreenCaptureTest.java  8277816 macosx-aarch64
+java/awt/Robot/HiDPIScreenCapture/ScreenCaptureGtkTest.java 8282270 linux-all
+java/awt/Robot/HiDPIScreenCapture/HiDPIRobotScreenCaptureTest.java 8282270 windows-all
 java/awt/Robot/CheckCommonColors/CheckCommonColors.java 8277816 macosx-aarch64
 java/awt/ColorClass/AlphaColorTest.java 8277816 macosx-aarch64
 java/awt/AlphaComposite/WindowAlphaCompositeTest.java 8277816 macosx-aarch64
@@ -820,13 +821,13 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 generic-all
+jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 macosx-all,linux-all,windows-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 generic-x64
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
+jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
 ############################################################################
 

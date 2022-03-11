@@ -196,7 +196,6 @@ TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
 }
 
 bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
-  GCMutexLocker x(ExpandHeap_lock);
   return CardGeneration::expand(bytes, expand_bytes);
 }
 
@@ -209,7 +208,7 @@ size_t TenuredGeneration::contiguous_available() const {
 }
 
 void TenuredGeneration::assert_correct_size_change_locking() {
-  assert_locked_or_safepoint(ExpandHeap_lock);
+  assert_locked_or_safepoint(Heap_lock);
 }
 
 void TenuredGeneration::object_iterate(ObjectClosure* blk) {
