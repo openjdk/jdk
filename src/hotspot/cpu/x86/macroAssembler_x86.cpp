@@ -1281,6 +1281,9 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
     case 6:
       testptr(size, Address(tmp, (-os::vm_page_size())));
       break;
+    case 7:
+      movntiptr(Address(tmp, (-os::vm_page_size())), size);
+      break;
     default:
       ShouldNotReachHere();
   }
@@ -1319,6 +1322,9 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
         break;
       case 6:
         testptr(size, Address(tmp, (-os::vm_page_size())));
+        break;
+      case 7:
+        movntiptr(Address(tmp, (-os::vm_page_size())), size);
         break;
       default:
         ShouldNotReachHere();
@@ -2545,6 +2551,10 @@ void MacroAssembler::movptr(Register dst, intptr_t src) {
 
 void MacroAssembler::movptr(Address dst, Register src) {
   LP64_ONLY(movq(dst, src)) NOT_LP64(movl(dst, src));
+}
+
+void MacroAssembler::movntiptr(Address dst, Register src) {
+  LP64_ONLY(movntiq(dst, src)) NOT_LP64(movntil(dst, src));
 }
 
 void MacroAssembler::movdqu(Address dst, XMMRegister src) {

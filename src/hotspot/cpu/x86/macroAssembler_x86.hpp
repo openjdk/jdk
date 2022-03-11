@@ -681,6 +681,9 @@ class MacroAssembler: public Assembler {
       case 6:
         testptr(rax, Address(rsp, (-offset)));
         break;
+      case 7:
+        movntiptr(Address(rsp, (-offset)), rax);
+        break;
       default:
         ShouldNotReachHere();
     }
@@ -1810,6 +1813,8 @@ public:
   void movptr(Address dst, int32_t imm32);
   void movptr(Register dst, int32_t imm32);
 #endif // _LP64
+
+  void movntiptr(Address dst, Register src);
 
   // to avoid hiding movl
   void mov32(AddressLiteral dst, Register src);

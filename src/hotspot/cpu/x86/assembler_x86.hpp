@@ -1652,6 +1652,12 @@ private:
   void movzwq(Register dst, Register src);
 #endif
 
+  void movntil(Address dst, Register src);
+
+#ifdef _LP64
+  void movntiq(Address dst, Register src);
+#endif
+
   // Unsigned multiply with RAX destination register
   void mull(Address src);
   void mull(Register src);

@@ -3456,6 +3456,13 @@ void Assembler::movzwl(Register dst, Register src) { // movzxw
   emit_int24(0x0F, (unsigned char)0xB7, 0xC0 | encode);
 }
 
+void Assembler::movntil(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int16((unsigned char)0x0F, (unsigned char)0xC3);
+  emit_operand(src, dst);
+}
+
 void Assembler::mull(Address src) {
   InstructionMark im(this);
   prefix(src);
@@ -12533,6 +12540,13 @@ void Assembler::movzwq(Register dst, Address src) {
 void Assembler::movzwq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int24(0x0F, (unsigned char)0xB7, (0xC0 | encode));
+}
+
+void Assembler::movntiq(Address dst, Register src) {
+  InstructionMark im(this);
+  prefixq(dst);
+  emit_int16((unsigned char)0x0F, (unsigned char)0xC3);
+  emit_operand(src, dst);
 }
 
 void Assembler::mulq(Address src) {
