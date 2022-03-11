@@ -415,11 +415,14 @@ class DirectMethodHandle extends MethodHandle {
             return new Special(newType, form, member, false, caller);
         }
         Object checkReceiver(Object recv) {
-            Objects.requireNonNull(recv, "null receiver");
             if (!caller.isInstance(recv)) {
-                String msg = String.format("Receiver class %s is not a subclass of caller class %s",
-                                           recv.getClass().getName(), caller.getName());
-                throw new IncompatibleClassChangeError(msg);
+                if (recv != null) {
+                    String msg = String.format("Receiver class %s is not a subclass of caller class %s",
+                                               recv.getClass().getName(), caller.getName());
+                    throw new IncompatibleClassChangeError(msg);
+                } else {
+                    throw new NullPointerException();
+                }
             }
             return recv;
         }
@@ -444,11 +447,14 @@ class DirectMethodHandle extends MethodHandle {
         }
         @Override
         Object checkReceiver(Object recv) {
-            Objects.requireNonNull(recv, "null receiver");
             if (!refc.isInstance(recv)) {
-                String msg = String.format("Receiver class %s does not implement the requested interface %s",
-                                           recv.getClass().getName(), refc.getName());
-                throw new IncompatibleClassChangeError(msg);
+                if (recv != null) {
+                    String msg = String.format("Receiver class %s does not implement the requested interface %s",
+                                               recv.getClass().getName(), refc.getName());
+                    throw new IncompatibleClassChangeError(msg);
+                } else {
+                    throw new NullPointerException();
+                }
             }
             return recv;
         }
