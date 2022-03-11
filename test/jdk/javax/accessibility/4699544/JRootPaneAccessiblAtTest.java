@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 4699544
  * @key headful
  * @summary AccessibleJRootPane always returns null for getAccessibleAt()
  * @run main JRootPaneAccessiblAtTest
