@@ -649,7 +649,7 @@ private:
   bool remove_node_if_not_used(Block* b, uint location, Node* n, uint lid, IndexSet* liveout);
   void assign_high_score_to_immediate_copies(Block* b, Node* n, LRG& lrg, uint next_inst, uint last_inst);
   void remove_interference_from_copy(Block* b, uint location, uint lid_copy, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure);
-  void remove_bound_register_from_interfering_live_ranges(LRG& lrg, IndexSet* liveout, uint& must_spill);
+  void remove_bound_register_from_interfering_live_ranges(LRG &lrg, IndexSet* liveout, uint &must_spill, uint region);
   void check_for_high_pressure_block(Pressure& pressure);
   void adjust_high_pressure_index(Block* b, uint& hrp_index, Pressure& pressure);
 

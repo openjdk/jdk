@@ -1204,6 +1204,7 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
     }
     lrg.compute_set_mask_size();
     if (lrg.not_free()) {      // Handle case where we lose from the start
+      assert(lrg._region == region, "");
       lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
       lrg._direct_conflict = 1;
     }
@@ -1256,7 +1257,7 @@ void PhaseChaitin::cache_lrg_info(uint region) {
   for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
     LRG &lrg = lrgs(i);
 
-    if (lrg._region == region) {
+    if (lrg._region != region) {
       continue;
     }
 
@@ -1321,8 +1322,10 @@ void PhaseChaitin::Simplify(uint region) {
         IndexSetIterator elements(_ifg->neighbors(lo));
         uint datum;
         while ((datum = elements.next()) != 0) {
+          if (lrgs(datum)._risk_bias != region) {
+            continue;
+          }
           lrgs(datum)._risk_bias = lo;
-          assert(lrgs(datum)._region == region, "");
         }
       }
 
@@ -1341,7 +1344,9 @@ void PhaseChaitin::Simplify(uint region) {
       uint neighbor;
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
-        assert(n->_region == region, "");
+        if (n->_region != region) {
+          continue;
+        }
 #ifdef ASSERT
         if (VerifyRegisterAllocator) {
           assert( _ifg->effective_degree(neighbor) == n->degree(), "" );
@@ -1770,6 +1775,7 @@ uint PhaseChaitin::Select(uint region) {
               lrg->_def->outcnt() > 0, "fat_proj cannot spill");
       assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
 
+      assert(lrg->_region == region, "");
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));
       // Do not empty the regmask; leave mask_size lying around

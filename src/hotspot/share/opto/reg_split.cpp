@@ -600,7 +600,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
     for( slidx = 0; slidx < spill_cnt; slidx++ ) {
       // Grab the live range number
       uint lidx = lidxs.at(slidx);
-      assert(lrgs(bidx)._region == region, "");
+      assert(lrgs(lidx)._region == region, "");
 
       // Do not bother splitting or putting in Phis for single-def
       // rematerialized live ranges.  This happens a lot to constants

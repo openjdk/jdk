@@ -693,7 +693,8 @@ void PhaseChaitin::remove_interference_from_copy(Block* b, uint location, uint l
  * The defined value must go in a particular register. Remove that register from
  * all conflicting parties and avoid the interference.
  */
-void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, IndexSet* liveout, uint& must_spill) {
+void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG &lrg, IndexSet* liveout, uint &must_spill,
+                                                                      uint region) {
   if (liveout->is_empty()) return;
   // Check for common case
   const RegMask& rm = lrg.mask();
@@ -703,6 +704,10 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
   uint l = elements.next();
   while (l != 0) {
     LRG& interfering_lrg = lrgs(l);
+    if (interfering_lrg._region != region) {
+      l = elements.next();
+      continue;
+    }
     // If 'l' must spill already, do not further hack his bits.
     // He'll get some interferences and be forced to spill later.
     if (interfering_lrg._must_spill) {
@@ -747,6 +752,7 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG& lrg, 
       interfering_lrg.set_mask_size(old_size);
       must_spill++;
       interfering_lrg._must_spill = 1;
+      assert(interfering_lrg._region == region, "");
       interfering_lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
     }
     l = elements.next();
@@ -922,7 +928,7 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
         // some uses must be bound. If we spill live range 'r', it can
         // rematerialize at each use site according to its bindings.
         if (lrg.is_bound() && !n->rematerialize() && lrg.mask().is_NotEmpty()) {
-          remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
+          remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill, region);
         }
         interfere_with_live(lid, &liveout, region);
       }
