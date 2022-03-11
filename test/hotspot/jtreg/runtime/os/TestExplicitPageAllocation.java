@@ -27,6 +27,7 @@ package runtime.os;
  * @bug 8271195
  * @summary Use largest available large page size smaller than LargePageSizeInBytes when available.
  * @requires os.family == "linux"
+ * @requires vm.bits == 64
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -39,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.List;
+import java.util.*;
 import java.io.*;
 import java.util.Scanner;
 import jdk.test.whitebox.WhiteBox;
@@ -52,48 +53,38 @@ public class TestExplicitPageAllocation {
     private static final Pattern HEAP_PATTERN = Pattern.compile("Heap:");
     private static final Pattern PAGE_SIZE_PATTERN = Pattern.compile(".*page_size=([^ ]+).*");
     private static final Pattern HUGEPAGE_PATTERN = Pattern.compile(".*hugepages-([^ ]+).*kB");
-
-    private static String errorMessage = "";
-
-    private static final int MAX_NUMBER_OF_PAGESIZE = 64;
-    private static boolean[] pageSizes = new boolean[MAX_NUMBER_OF_PAGESIZE];
-    private static int[] pageCount = new int[MAX_NUMBER_OF_PAGESIZE];
-    private static int largestPageSizeIndex;
-    private static int vmPageSizeIndex;
+    private static TreeMap<Long, Integer> treeMap = new TreeMap<Long, Integer>(Collections.reverseOrder());
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
         try {
             doSetup();
-            if (largestPageSizeIndex > vmPageSizeIndex) {
-                testCase(largestPageSizeIndex);
-            }
         } catch (Exception e) {
-           System.out.println("Exception " + e);
+            System.out.println("Setup Exception " + e);
+            return;
         }
+        testCase(treeMap.firstKey());
     }
 
-    private static long requiredPageCount(int index) {
-        long pageSizeInKB = 1L << (index - 10);
-        long codeCacheAddened = CODE_CACHE_SIZE_IN_KB >= pageSizeInKB ? CODE_CACHE_SIZE_IN_KB : 0;
-        return (long) Math.ceil((double) (HEAP_SIZE_IN_KB + codeCacheAddened) / pageSizeInKB);
+    // Calculates the required page count needed to accomodate both code cache and heap for the given page size index.
+    private static long requiredPageCount(long pageSizeInKb) {
+        long codeCacheAddened = CODE_CACHE_SIZE_IN_KB >= pageSizeInKb ? CODE_CACHE_SIZE_IN_KB : 0;
+        return (long) Math.ceil((double) (HEAP_SIZE_IN_KB + codeCacheAddened) / pageSizeInKb);
     }
 
-    private static String sizeFromIndex(int index) {
-        int k = 1024;
-        int m = 1024 * 1024;
-        int g = 1024 * 1024 * 1024;
-        long sizeInBytes = 1L << index;
-        if (sizeInBytes < m) {
-           return Long.toString(sizeInBytes / k) + "K";
-        } else if (sizeInBytes < g) {
-           return Long.toString(sizeInBytes / m) + "M";
+    public static String pageSizeToString(long pageSizeInKb) {
+        int m = 1024;
+        int g = 1024 * 1024;
+        if (pageSizeInKb < m) {
+            return Long.toString(pageSizeInKb) + "K";
+        } else if (pageSizeInKb < g) {
+            return Long.toString(pageSizeInKb / m) + "M";
         } else {
-           return Long.toString(sizeInBytes / g) + "G";
+            return Long.toString(pageSizeInKb / g) + "G";
         }
     }
 
-    private static boolean checkOutput(OutputAnalyzer out, String pageSize) throws Exception {
+    private static boolean checkOutput(OutputAnalyzer out, String pageSize) {
         List<String> lines = out.asLines();
         for (int i = 0; i < lines.size(); ++i) {
             String line = lines.get(i);
@@ -129,54 +120,42 @@ public class TestExplicitPageAllocation {
             String pageSize = matcher.group(1);
             assert pageSize != null;
             int availablePages = readPageCount(DIR_HUGE_PAGES + pageSizeFileName + "/free_hugepages", pageSize);
-            int index = Long.numberOfTrailingZeros(Long.parseLong(pageSize) * 1024);
-            largestPageSizeIndex = Math.max(index, largestPageSizeIndex);
-            pageSizes[index] = true;
-            pageCount[index] = availablePages;
+            treeMap.put(Long.parseLong(pageSize), availablePages);
         }
         // OS vm page size
-        vmPageSizeIndex = Long.numberOfTrailingZeros(wb.getVMPageSize());
-        pageSizes[vmPageSizeIndex] = true;
-        pageCount[vmPageSizeIndex] = Integer.MAX_VALUE;
+        treeMap.put(wb.getVMPageSize() / 1024L, Integer.MAX_VALUE);
     }
 
-    public static void testCase(int index) throws Exception {
-        String pageSize = sizeFromIndex(index);
-        long heap_size_in_gb = HEAP_SIZE_IN_KB >> 20;
-        long code_cache_size = CODE_CACHE_SIZE_IN_KB >> 10;
+    public static void testCase(long pageSize) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:pagesize",
-                                                                  "-XX:ReservedCodeCacheSize=" + code_cache_size + "m",
+                                                                  "-XX:ReservedCodeCacheSize=" + CODE_CACHE_SIZE_IN_KB + "k",
                                                                   "-XX:InitialCodeCacheSize=160k",
-                                                                  "-XX:LargePageSizeInBytes=" + pageSize,
+                                                                  "-XX:LargePageSizeInBytes=" + pageSizeToString(pageSize),
                                                                   "-XX:+UseParallelGC",
                                                                   "-XX:+UseLargePages",
-                                                                  "-Xmx" + heap_size_in_gb + "g",
-                                                                  "-Xms" + heap_size_in_gb + "g",
+                                                                  "-Xmx" + HEAP_SIZE_IN_KB + "k",
+                                                                  "-Xms" + HEAP_SIZE_IN_KB + "k",
                                                                   "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        for (int i = index; i >= vmPageSizeIndex; i--) {
-            if (pageSizes[i]) {
-                String size = sizeFromIndex(i);
-                System.out.println("Checking allocation for " + size);
-                if (checkOutput(output, size)) {
-                    System.out.println("TestCase Passed for pagesize: " + pageSize + ", allocated pagesize: " + size);
-                    // Page allocation succeeded no need to check any more page sizes.
-                    return;
-                } else {
-                    // Only consider this a test failure if there are enough configured
-                    // pages to allow this reservation to succeeded.
-                    if (requiredPageCount(i) <= pageCount[i]) {
-                        throw new AssertionError("TestCase Failed for " + size + " page allocation. " +
-                                                 "Required pages: " + requiredPageCount(i) + ", " +
-                                                 "Configured pages: " + pageCount[i]);
-                    }
+        for (Map.Entry<Long, Integer> entry : treeMap.entrySet()) {
+            long pageSizeInKb = entry.getKey();
+            int pageCount = entry.getValue();
+            String size = pageSizeToString(pageSizeInKb);
+            System.out.println("Checking allocation for " + size);
+            if (checkOutput(output, size)) {
+                System.out.println("TestCase Passed for pagesize: " + pageSizeToString(pageSize) + ", allocated pagesize: " + size);
+                // Page allocation succeeded no need to check any more page sizes.
+                return;
+            } else {
+                // Only consider this a test failure if there are enough configured
+                // pages to allow this reservation to succeeded.
+                if (requiredPageCount(pageSizeInKb) <= pageCount) {
+                    throw new AssertionError("TestCase Failed for " + size + " page allocation. " +
+                                             "Required pages: " + requiredPageCount(pageSizeInKb) + ", " +
+                                             "Configured pages: " + pageCount);
                 }
             }
-        }
-
-        if (errorMessage != "") {
-            throw new AssertionError(errorMessage);
         }
     }
 }
