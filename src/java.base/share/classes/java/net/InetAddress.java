@@ -44,6 +44,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectInputStream.GetField;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutputStream.PutField;
+import java.io.Serializable;
 import java.lang.annotation.Native;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -223,7 +224,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * @see     java.net.InetAddress#getLocalHost()
  * @since 1.0
  */
-public sealed class InetAddress implements java.io.Serializable permits Inet4Address, Inet6Address {
+public sealed class InetAddress implements Serializable permits Inet4Address, Inet6Address {
 
     /**
      * Specify the address family: Internet Protocol, Version 4
