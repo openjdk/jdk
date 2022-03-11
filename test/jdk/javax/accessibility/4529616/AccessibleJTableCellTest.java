@@ -39,7 +39,7 @@ public class AccessibleJTableCellTest {
     private static JTable jTable;
     private static JFrame jFrame;
 
-    private static Object[][] rowData = { 
+    private static Object[][] rowData = {
         { "01", "02", "03", "04", "05" },
         { "11", "12", "13", "14", "15" },
         { "21", "22", "23", "24", "25" },
