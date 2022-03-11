@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @test
- * @bug     8140364 8189291
+ * @bug     8140364 8189291 8283049
  * @summary JDK implementation specific unit test for LoggerFinderLoader.
  *          Tests the behavior of LoggerFinderLoader with respect to the
  *          value of the internal diagnosability switches. Also test the
