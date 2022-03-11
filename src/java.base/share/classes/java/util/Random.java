@@ -228,6 +228,12 @@ public class Random implements RandomGenerator, java.io.Serializable {
         public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
             return this.generator.doubles(randomNumberOrigin, randomNumberBound);
         }
+
+        //This method should never be reached unless done by reflection so we should throw when tried
+        @Override
+        protected int next(int bits) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /** use serialVersionUID from JDK 1.1 for interoperability */
@@ -257,7 +263,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
     }
 
     private Random(Void unused) {
-        this.seed = new AtomicLong();
+        this.seed = null;
     }
 
     private static long seedUniquifier() {
