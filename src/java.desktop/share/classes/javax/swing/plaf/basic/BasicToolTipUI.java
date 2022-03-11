@@ -47,15 +47,14 @@ import javax.swing.text.View;
  */
 public class BasicToolTipUI extends ToolTipUI
 {
+    static BasicToolTipUI sharedInstance = new BasicToolTipUI();
+    private JToolTip tip;
+
     /**
      * The space between strings.
      */
     public static final int padSpaceBetweenStrings = 12;
     private String acceleratorDelimiter;
-
-    static BasicToolTipUI sharedInstance = new BasicToolTipUI();
-    private Font smallFont;
-    private JToolTip tip;
     /**
      * Global <code>PropertyChangeListener</code> that
      * <code>createPropertyChangeListener</code> returns.
@@ -280,13 +279,7 @@ public class BasicToolTipUI extends ToolTipUI
      *
      * @return the accelerator string.
      */
-    // NOTE: This requires the tip field to be set before this is invoked.
-    // As MetalToolTipUI is shared between all JToolTips the tip field is
-    // set appropriately before this is invoked. Unfortunately this means
-    // that subclasses that randomly invoke this method will see varying
-    // results. If this becomes an issue, MetalToolTipUI should no longer be
-    // shared.
-    @SuppressWarnings("deprecation")
+
     public String getAcceleratorString() {
         if (tip == null || isAcceleratorHidden()) {
             return "";
