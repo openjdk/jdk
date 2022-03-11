@@ -43,8 +43,6 @@ public class ToLocalizedPatternTest {
 
     public void testToLocalizedPattern() {
         var dfs = new DecimalFormatSymbols(Locale.US);
-        var grouping = dfs.getGroupingSeparator();
-        var decimal = dfs.getDecimalSeparator();
 
         // Customize the decimal format symbols
         dfs.setMonetaryGroupingSeparator(MONETARY_GROUPING);
@@ -57,7 +55,7 @@ public class ToLocalizedPatternTest {
         // check
         assertEquals(cf.toLocalizedPattern(),
             cf.toPattern()
-               .replace(grouping, MONETARY_GROUPING)
-               .replace(decimal, MONETARY_DECIMAL));
+               .replace(',', MONETARY_GROUPING)
+               .replace('.', MONETARY_DECIMAL));
     }
 }
