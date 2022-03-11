@@ -117,7 +117,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
 
         abstract Path descriptorFilePath(Path root);
     }
-    
+
     private final PlatformPackage thePackage;
     private final List<String> requiredPackages;
     private final List<UnixLauncherAsService> launchers;
@@ -126,7 +126,7 @@ class UnixLaunchersAsServices extends ShellCustomAction {
     private static final String COMMANDS_INSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_INSTALL";
     private static final String COMMANDS_UNINSTALL = "LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL";
     private static final String SCRIPTS = "LAUNCHER_AS_SERVICE_SCRIPTS";
-    
+
     protected static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS);
 }
