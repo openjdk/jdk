@@ -209,15 +209,17 @@ class Instruction(object):
         self._name = name
         self.isWord = name.endswith("w") | name.endswith("wi")
         self.asmRegPrefix = ["x", "w"][self.isWord]
+        self.isPostfixException = False
 
     def aname(self):
-        if (self._name.endswith("wi")):
+        if self.isPostfixException:
+            return self._name
+        elif (self._name.endswith("wi")):
             return self._name[:len(self._name)-2]
+        elif (self._name.endswith("i") | self._name.endswith("w")):
+            return self._name[:len(self._name)-1]
         else:
-            if (self._name.endswith("i") | self._name.endswith("w")):
-                return self._name[:len(self._name)-1]
-            else:
-                return self._name
+            return self._name
 
     def emit(self) :
         pass
@@ -347,6 +349,12 @@ class OneRegOp(Instruction):
     def astr(self):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
+
+class PostfixExceptionOneRegOp(OneRegOp):
+
+    def __init__(self, op):
+        OneRegOp.__init__(self, op)
+        self.isPostfixException=True
 
 class ArithOp(ThreeRegInstruction):
 
@@ -596,6 +604,13 @@ class Op(Instruction):
         return Instruction.cstr(self) + ");"
     def astr(self):
         return self.aname();
+
+
+class PostfixExceptionOp(Op):
+
+    def __init__(self, op):
+        Op.__init__(self, op)
+        self.isPostfixException=True
 
 class SystemOp(Instruction):
 
@@ -1335,14 +1350,26 @@ generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "
 generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
                ])
 
-generate (Op, ["nop", "eret", "drps", "isb"])
+generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
+               "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
+               "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
+               "eret", "drps", "isb",])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOp, ["wfi", "xpaclri"])
 
 barriers = ["OSHLD", "OSHST", "OSH", "NSHLD", "NSHST", "NSH",
             "ISHLD", "ISHST", "ISH", "LD", "ST", "SY"]
 
 generate (SystemOp, [["dsb", barriers], ["dmb", barriers]])
 
-generate (OneRegOp, ["br", "blr"])
+generate (OneRegOp, ["br", "blr",
+                     "paciza", "pacizb", "pacdza", "pacdzb",
+                     "autiza", "autizb", "autdza", "autdzb", "xpacd",
+                     "braaz", "brabz", "blraaz", "blrabz"])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOneRegOp, ["xpaci"])
 
 for mode in 'xwhb':
     generate (LoadStoreExclusiveOp, [["stxr", mode, 3], ["stlxr", mode, 3],
@@ -1387,7 +1414,10 @@ generate(ConditionalSelectOp,
 
 generate(TwoRegOp,
          ["rbitw", "rev16w", "revw", "clzw", "clsw", "rbit",
-          "rev16", "rev32", "rev", "clz", "cls"])
+          "rev16", "rev32", "rev", "clz", "cls",
+          "pacia",  "pacib", "pacda", "pacdb", "autia", "autib", "autda", "autdb",
+          "braa", "brab", "blraa", "blrab"])
+
 generate(ThreeRegOp,
          ["udivw", "sdivw", "lslvw", "lsrvw", "asrvw", "rorvw", "udiv", "sdiv",
           "lslv", "lsrv", "asrv", "rorv", "umulh", "smulh"])
@@ -1839,8 +1869,8 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.2 and sha3 because of SHA3 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.2-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with 8.3 and sha3 because of SHA3 crypto extension.
+subprocess.check_call([AARCH64_AS, "-march=armv8.3-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

@@ -785,7 +785,8 @@ public:
     Flag_is_expensive                = 1 << 13,
     Flag_is_predicated_vector        = 1 << 14,
     Flag_for_post_loop_opts_igvn     = 1 << 15,
-    _last_flag                       = Flag_for_post_loop_opts_igvn
+    Flag_is_removed_by_peephole      = 1 << 16,
+    _last_flag                       = Flag_is_removed_by_peephole
   };
 
   class PD;
@@ -1148,7 +1149,12 @@ public:
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL, "must be con");
+    guarantee(t != NULL && t->is_con(), "must be con");
+    return t->get_con_as_long(bt);
+  }
+  jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
+    const TypeInteger* t = find_integer_type(bt);
+    if (t == NULL || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;
@@ -1243,14 +1249,15 @@ public:
 #ifdef ASSERT
   void verify_construction();
   bool verify_jvms(const JVMState* jvms) const;
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   Node* _debug_orig;                   // Original version of this, if any.
   Node*  debug_orig() const            { return _debug_orig; }
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
+
+  int  _debug_idx;                     // Unique value assigned to every node.
+  int   debug_idx() const              { return _debug_idx; }
+  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }

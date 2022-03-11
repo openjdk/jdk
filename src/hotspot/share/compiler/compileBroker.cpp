@@ -225,11 +225,13 @@ class CompilationLog : public StringEventLog {
   }
 
   void log_metaspace_failure(const char* reason) {
+    // Note: This method can be called from non-Java/compiler threads to
+    // log the global metaspace failure that might affect profiling.
     ResourceMark rm;
     StringLogMessage lm;
     lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
     lm.print("\n");
-    log(JavaThread::current(), "%s", (const char*)lm);
+    log(Thread::current(), "%s", (const char*)lm);
   }
 };
 
