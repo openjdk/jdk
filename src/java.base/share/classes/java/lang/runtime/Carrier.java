@@ -373,7 +373,7 @@ public final class Carrier {
              * @return offset for unsafe access
              */
             private long offset(int i) {
-                if (i < 0 || primitive.length <= i) {
+                if (i < 0 || primitives.length <= i) {
                     throw new RuntimeException("primitive index out of range: " + i);
                 }
 
@@ -382,9 +382,11 @@ public final class Carrier {
             }
 
             /**
+             * Return long value at index.
+             *
              * @param i  array index
              *
-             * {@return long value at that index.}
+             * @return long value at index
              */
             private long getLong(int i) {
                 return primitives[i];
@@ -407,7 +409,7 @@ public final class Carrier {
             /**
              * @param i  array index
              *
-             * {@return int value at that index.}
+             * {}@return int value at index}
              */
             private int getInteger(int i) {
                 return UNSAFE.getInt(primitives, offset(i));
@@ -428,9 +430,11 @@ public final class Carrier {
             }
 
             /**
+             * Return object value at index.
+             *
              * @param i  array index
              *
-             * {@return object value at that index.}
+             * @return object value at index
              */
             private Object getObject(int i) {
                 return objects[i];
@@ -505,18 +509,20 @@ public final class Carrier {
 
             // long array index
             int index = 0;
+            // component index
+            int comIndex = 0;
             for (int i = 0; i < longCount; i++) {
-                components[j++] = MethodHandles.insertArguments(GET_LONG, 1, index++);
+                components[comIndex++] = MethodHandles.insertArguments(GET_LONG, 1, index++);
             }
 
             // int array index (double number of longs)
             index *= LONG_SLOTS;
             for (int i = 0; i < intCount; i++) {
-                components[j++] = MethodHandles.insertArguments(GET_INTEGER, 1, index++);
+                components[comIndex++] = MethodHandles.insertArguments(GET_INTEGER, 1, index++);
             }
 
             for (int i = 0; i < objectCount; i++) {
-                components[j++] = MethodHandles.insertArguments(GET_OBJECT, 1, i);
+                components[comIndex++] = MethodHandles.insertArguments(GET_OBJECT, 1, i);
             }
             return components;
         }
@@ -718,7 +724,11 @@ public final class Carrier {
         }
 
         /**
-         * {@return the constructor method type.}
+         * Build up a {@link MethodType} based in a carrier shape.
+         *
+         * @param carrierShape  shape of carrier
+         *
+         * @return the constructor method type
          */
         private static MethodType constructorMethodType(CarrierShape carrierShape) {
             int longCount = carrierShape.longCount();
