@@ -417,19 +417,14 @@ public class AquaKeyBindings {
             "shift KP_RIGHT", "selectPreviousColumnExtendSelection",
             "shift LEFT", "selectNextColumnExtendSelection",
             "shift KP_LEFT", "selectNextColumnExtendSelection",
+            "ctrl RIGHT", "selectPreviousColumnChangeLead",
+            "ctrl KP_RIGHT", "selectPreviousColumnChangeLead",
+            "ctrl LEFT", "selectNextColumnChangeLead",
+            "ctrl KP_LEFT", "selectNextColumnChangeLead",
             "ctrl PAGE_UP", "scrollRightChangeSelection",
             "ctrl PAGE_DOWN", "scrollLeftChangeSelection",
             "ctrl shift PAGE_UP", "scrollRightExtendSelection",
-            "ctrl shift PAGE_DOWN", "scrollLeftExtendSelection",
-                "ctrl UP", "selectPreviousRowChangeLead",
-                "ctrl KP_UP", "selectPreviousRowChangeLead",
-                "ctrl DOWN", "selectNextRowChangeLead",
-                "ctrl KP_DOWN", "selectNextRowChangeLead",
-                "ctrl RIGHT", "selectPreviousColumnChangeLead",
-                "ctrl KP_RIGHT", "selectPreviousColumnChangeLead",
-                "ctrl LEFT", "selectNextColumnChangeLead",
-                "ctrl KP_LEFT", "selectNextColumnChangeLead",
-                "SPACE", "addToSelection"
+            "ctrl shift PAGE_DOWN", "scrollLeftExtendSelection"
         }));
     }
 
