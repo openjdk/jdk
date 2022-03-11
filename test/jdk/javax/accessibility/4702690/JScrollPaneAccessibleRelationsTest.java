@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 4702690
  * @key headful
  * @summary Make an automatic AccessibleRelation between JScrollBars and what they scroll (TP)
  * @run main JScrollPaneAccessibleRelationsTest
