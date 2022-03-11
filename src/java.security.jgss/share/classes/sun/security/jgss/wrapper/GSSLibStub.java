@@ -42,6 +42,7 @@ import java.util.Hashtable;
 class GSSLibStub {
 
     private final Oid mech;
+    private long pMech; // Warning: used by NativeUtil.c
 
     /**
      * Initialization routine to dynamically load function pointers.
@@ -106,8 +107,7 @@ class GSSLibStub {
     private GSSLibStub(Oid mech) throws GSSException {
         SunNativeProvider.debug("Created GSSLibStub for mech " + mech);
         this.mech = mech;
-        // Warning: used by NativeUtil.c
-        long pMech = getMechPtr(mech.getDER());
+        this.pMech = getMechPtr(mech.getDER());
     }
     public boolean equals(Object obj) {
         if (obj == this) return true;
