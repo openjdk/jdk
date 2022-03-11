@@ -25,15 +25,15 @@
  * @test
  * @bug 4432213
  * @modules java.base/sun.net.www
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Dhttp.auth.digest.validateServer=true DigestTest
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Djava.net.preferIPv6Addresses=true
  *                   -Dhttp.auth.digest.validateServer=true DigestTest
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Dhttp.auth.digest.validateServer=true
  *                   -Dtest.succeed=true DigestTest
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Djava.net.preferIPv6Addresses=true
  *                   -Dhttp.auth.digest.validateServer=true
  *                   -Dtest.succeed=true DigestTest

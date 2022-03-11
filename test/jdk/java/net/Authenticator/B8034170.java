@@ -31,10 +31,10 @@ import jdk.test.lib.net.URIBuilder;
  * @bug 8034170
  * @summary Digest authentication interop issue
  * @library /test/lib
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 B8034170 unquoted
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 B8034170 unquoted
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Dhttp.auth.digest.quoteParameters=true B8034170 quoted
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Djava.net.preferIPv6Addresses=true B8034170 unquoted
  */
 

@@ -63,10 +63,10 @@ import static java.net.Proxy.NO_PROXY;
  *                    server that perform Digest authentication;
  *            PROXY305: The server attempts to redirect
  *                    the client to a proxy using 305 code;
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 HTTPTest SERVER
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 HTTPTest PROXY
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 HTTPTest SERVER307
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 HTTPTest PROXY305
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest SERVER
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest PROXY
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest SERVER307
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest PROXY305
  *
  * @author danielfuchs
  */

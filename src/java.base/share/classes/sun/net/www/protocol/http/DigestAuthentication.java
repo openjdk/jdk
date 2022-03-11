@@ -29,7 +29,11 @@ import java.io.*;
 import java.net.PasswordAuthentication;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.MessageDigest;
@@ -40,12 +44,15 @@ import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
+import sun.security.util.KnownOIDs;
 import sun.util.logging.PlatformLogger;
 
 import static sun.net.www.protocol.http.HttpURLConnection.HTTP_CONNECT;
@@ -64,41 +71,35 @@ class DigestAuthentication extends AuthenticationInfo {
 
     private String authMethod;
 
-    private static final String secPropName =
-        "jdk.httpdigest.defaultDisabledAlgorithms";
+    private static final String propPrefix = "http.auth.digest.";
 
-    private static final String compatPropName = "http.auth.digest." +
+    private static final String compatPropName = propPrefix +
         "quoteParameters";
 
-    // default set of disabled message digest algorithms that may not be
-    // used for proxy connections, or plain text http server connections
-
-    private static final Set<String> defDisabledAlgs = getDefaultAlgs();
-
-    private static Set<String> getDefaultAlgs() {
-        Set<String> disabledAlgs = new HashSet<>();
-        @SuppressWarnings("removal")
-        String secprops = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public String run() {
-                    return Security.getProperty(secPropName)
-                                   .replaceAll("\\s", "")
-                                   .toUpperCase();
-                }
-            }
-        );
-        String[] algorithms = secprops.split(",");
-        for (String algorithm : algorithms) {
-            disabledAlgs.add(algorithm);
+    // Takes a set and input string containing comma separated values. converts to upper
+    // case, and trims each value, then applies given function to set and value
+    // (either add or delete element from set)
+    private static void processPropValue(String input,
+        Set<String> theSet,
+        BiConsumer<Set<String>,String> consumer)
+    {
+        if (input == null) {
+            return;
         }
-        return Collections.unmodifiableSet(disabledAlgs);
+        String[] values = input.toUpperCase(Locale.ROOT).split(",");
+        for (String v : values) {
+            consumer.accept(theSet, v.trim());
+        }
     }
+
+    private static final String secPropName =
+        propPrefix + "disabledAlgorithms";
 
     // A net property which overrides the disabled set above.
     private static final String enabledAlgPropName =
-        "http.auth.digest.enabledAlgorithms";
+        propPrefix + "reEnabledAlgorithms";
 
-    private static final Set<String> disabledAlgs = new HashSet<>();
+    private static final Set<String> disabledAlgorithms = new HashSet<>();
 
     // true if http.auth.digest.quoteParameters Net property is true
     private static final boolean delimCompatFlag;
@@ -109,28 +110,23 @@ class DigestAuthentication extends AuthenticationInfo {
     static {
         @SuppressWarnings("removal")
         Boolean b = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Boolean run() {
-                    return NetProperties.getBoolean(compatPropName);
-                }
-            }
+            (PrivilegedAction<Boolean>) () -> NetProperties.getBoolean(compatPropName)
         );
         delimCompatFlag = (b == null) ? false : b.booleanValue();
 
-        disabledAlgs.addAll(defDisabledAlgs);
         @SuppressWarnings("removal")
-        String algs = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public String run() {
-                    String s = NetProperties.get(enabledAlgPropName);
-                    return s == null
-                        ? "" : s.replaceAll("\\s", "").toUpperCase();
-                }
-            }
+        String secprops = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> Security.getProperty(secPropName)
         );
-        for (String alg : algs.split(",")) {
-            disabledAlgs.remove(alg.toUpperCase());
-        }
+        // add the default insecure algorithms to set
+        processPropValue(secprops, disabledAlgorithms, (set, elem) -> set.add(elem));
+
+        @SuppressWarnings("removal")
+        String netprops = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> NetProperties.get(enabledAlgPropName)
+        );
+        // remove any algorithms from disabled set that were opted-in by user
+        processPropValue(netprops, disabledAlgorithms, (set, elem) -> set.remove(elem));
     }
 
     // Authentication parameters defined in RFC2617.
@@ -394,7 +390,15 @@ class DigestAuthentication extends AuthenticationInfo {
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));
         params.setUserhash (Boolean.valueOf(p.findValue("userhash")));
-        params.setCharset(p.findValue("charset", "ISO_8859_1").toUpperCase());
+        String charset = p.findValue("charset");
+        if (charset == null) {
+            charset = "ISO_8859_1";
+        } else if (!charset.equalsIgnoreCase("UTF-8")) {
+            // UTF-8 is only valid value. ISO_8859_1 represents default behavior
+            // when the parameter is not set.
+            return false;
+        }
+        params.setCharset(charset.toUpperCase(Locale.ROOT));
 
         String uri="";
         String method;
@@ -423,7 +427,12 @@ class DigestAuthentication extends AuthenticationInfo {
         if (algorithm == null || algorithm.isEmpty()) {
             algorithm = "MD5";  // The default, accoriding to rfc2069
         }
-        algorithm = algorithm.toUpperCase();
+        var oid = KnownOIDs.findMatch(algorithm.toUpperCase(Locale.ROOT));
+        if (oid == null) {
+            log("unknown algorithm: " + algorithm);
+            return false;
+        }
+        algorithm = oid.stdName();
         params.setAlgorithm (algorithm);
 
         // If authQop is true, then the server is doing RFC2617 and
@@ -481,7 +490,8 @@ class DigestAuthentication extends AuthenticationInfo {
             response = computeDigest(true, pw.getUserName(),passwd,realm,
                                         method, uri, nonce, cnonce, ncstring,
                                         algorithm, session, charset);
-        } catch (NoSuchAlgorithmException ex) {
+        } catch (CharacterCodingException | NoSuchAlgorithmException ex) {
+            log(ex.getMessage());
             return null;
         }
 
@@ -509,9 +519,8 @@ class DigestAuthentication extends AuthenticationInfo {
                 user = computeUserhash(algorithm, user, realm, charset);
                 userhashField = ", userhash=true";
             }
-        } catch (NoSuchAlgorithmException ex) {
-            // can't happen as the algorithm was found already
-            assert false;
+        } catch (CharacterCodingException | NoSuchAlgorithmException ex) {
+            log(ex.getMessage());
             return null;
         }
 
@@ -541,20 +550,23 @@ class DigestAuthentication extends AuthenticationInfo {
         checkResponse (header, method, url.getFile());
     }
 
+    private static void log(String msg) {
+        if (logger.isLoggable(PlatformLogger.Level.INFO)) {
+            logger.info(msg);
+        }
+    }
+
     private void validateAlgorithm(String algorithm) throws IOException {
         if (getAuthType() == AuthCacheValue.Type.Server &&
                 getProtocolScheme().equals("https")) {
             // HTTPS server authentication can use any algorithm
             return;
         }
-        algorithm = algorithm.toUpperCase();
-        if (disabledAlgs.contains(algorithm)) {
+        if (disabledAlgorithms.contains(algorithm)) {
             String msg = "Rejecting digest authentication with insecure algorithm: "
                 + algorithm;
-            if (logger.isLoggable(PlatformLogger.Level.INFO)) {
-                logger.info(msg + " This constraint may be relaxed by setting " +
-                     "the \"http.auth.digest.enabledAlgorithms\" system property.");
-            }
+            log(msg + " This constraint may be relaxed by setting " +
+                     "the \"http.auth.digest.reEnabledAlgorithms\" system property.");
             throw new IOException(msg);
         }
     }
@@ -583,7 +595,7 @@ class DigestAuthentication extends AuthenticationInfo {
         }
 
         if (nccount != -1) {
-            ncstring = Integer.toHexString (nccount).toUpperCase();
+            ncstring = Integer.toHexString (nccount).toUpperCase(Locale.ROOT);
             int len = ncstring.length();
             if (len < 8)
                 ncstring = zeroPad [len] + ncstring;
@@ -608,12 +620,14 @@ class DigestAuthentication extends AuthenticationInfo {
 
         } catch (NoSuchAlgorithmException ex) {
             throw new ProtocolException ("Unsupported algorithm in response");
+        } catch (CharacterCodingException ex) {
+            throw new ProtocolException ("Invalid characters in username or password");
         }
     }
 
     private String computeUserhash(String algorithm, String user,
                                    String realm, Charset charset)
-        throws NoSuchAlgorithmException
+        throws NoSuchAlgorithmException, CharacterCodingException
     {
         if (algorithm.equals("SHA-512-256")) {
             algorithm = "SHA-512/256";
@@ -630,7 +644,7 @@ class DigestAuthentication extends AuthenticationInfo {
                         String cnonce, String ncValue,
                         String algorithm, boolean session,
                         Charset charset
-                    ) throws NoSuchAlgorithmException
+                    ) throws NoSuchAlgorithmException, CharacterCodingException
     {
 
         String A1, HashA1;
@@ -685,15 +699,24 @@ class DigestAuthentication extends AuthenticationInfo {
         "00000000", "0000000", "000000", "00000", "0000", "000", "00", "0"
     };
 
-    private String encode(String src, char[] passwd, MessageDigest md, Charset charset) {
-        if (charset.equals(StandardCharsets.UTF_8)) {
+    private String encode(String src, char[] passwd, MessageDigest md, Charset charset)
+        throws CharacterCodingException
+    {
+        boolean isUtf8 = charset.equals(StandardCharsets.UTF_8);
+
+        if (isUtf8) {
             src = Normalizer.normalize(src, Normalizer.Form.NFC);
         }
         md.update(src.getBytes(charset));
         if (passwd != null) {
-            byte[] passwdBytes = new byte[passwd.length];
-            for (int i=0; i<passwd.length; i++)
-                passwdBytes[i] = (byte)passwd[i];
+            byte[] passwdBytes;
+            if (isUtf8) {
+                passwdBytes = getUtf8Bytes(passwd);
+            } else {
+                passwdBytes = new byte[passwd.length];
+                for (int i=0; i<passwd.length; i++)
+                    passwdBytes[i] = (byte)passwd[i];
+            }
             md.update(passwdBytes);
             Arrays.fill(passwdBytes, (byte)0x00);
         }
@@ -706,5 +729,16 @@ class DigestAuthentication extends AuthenticationInfo {
             res.append(charArray[hashchar]);
         }
         return res.toString();
+    }
+
+    private static byte[] getUtf8Bytes(char[] passwd) throws CharacterCodingException {
+        CharBuffer cb = CharBuffer.wrap(passwd);
+        CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
+        ByteBuffer bb = encoder.encode(cb);
+        byte[] buf = new byte[bb.remaining()];
+        bb.get(buf);
+        if (bb.hasArray())
+            Arrays.fill(bb.array(), bb.arrayOffset(), bb.capacity(), (byte)0);
+        return buf;
     }
 }

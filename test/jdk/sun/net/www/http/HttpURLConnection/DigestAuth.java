@@ -47,20 +47,20 @@ import java.util.List;
  *          the testcases run in a separate JVM to avoid cache hits
  * @modules jdk.httpserver
  * @run main/othervm DigestAuth bad
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth good
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth only_nonce
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=SHA1 DigestAuth sha1-good
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth sha1-bad
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth good
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth only_nonce
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=SHA-1 DigestAuth sha1-good
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth sha1-bad
  * @run main/othervm DigestAuth sha256
  * @run main/othervm DigestAuth sha512
  * @run main/othervm DigestAuth sha256-userhash
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth sha256
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth no_header
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth no_nonce
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth no_qop
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth invalid_alg
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth validate_server
- * @run main/othervm -Dhttp.auth.digest.enabledAlgorithms=MD5 DigestAuth validate_server_no_qop
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth sha256
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_header
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_nonce
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_qop
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth invalid_alg
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth validate_server
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth validate_server_no_qop
  */
 public class DigestAuth {
 
