@@ -26,52 +26,27 @@
  * @bug 8279508
  * @summary Auto-vectorize Math.round API
  * @requires vm.compiler2.enabled
+ * @requires vm.cpu.features ~= ".*avx.*"
  * @requires os.simpleArch == "x64"
  * @library /test/lib /
- * @run driver compiler.vectorization.TestRoundVect
+ * @run driver compiler.vectorization.TestRoundVectFloat
  */
 
 package compiler.vectorization;
 
 import compiler.lib.ir_framework.*;
 
-public class TestRoundVect {
+public class TestRoundVectFloat {
   private static final int ARRLEN = 1024;
   private static final int ITERS  = 11000;
-
-  private static double [] dinp;
-  private static long   [] lout;
   private static float  [] finp;
   private static int    [] iout;
 
   public static void main(String args[]) {
       TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                  "-XX:UseAVX=3",
-                                  "-XX:CompileThresholdScaling=0.3");
-      TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                  "-XX:UseAVX=1",
-                                  "-XX:CompileThresholdScaling=0.3");
+                                 "-XX:UseAVX=1",
+                                 "-XX:CompileThresholdScaling=0.3");
       System.out.println("PASSED");
-  }
-
-  @Test
-  @IR(applyIf = {"UseAVX", "3"}, counts = {"RoundVD" , " > 0 "})
-  public void test_round_double(long[] lout, double[] dinp) {
-      for (int i = 0; i < lout.length; i+=1) {
-          lout[i] = Math.round(dinp[i]);
-      }
-  }
-
-  @Run(test = {"test_round_double"}, mode = RunMode.STANDALONE)
-  public void kernel_test_round_double() {
-      dinp = new double[ARRLEN];
-      lout = new long[ARRLEN];
-      for(int i = 0 ; i < ARRLEN; i++) {
-          dinp[i] = (double)i*1.4;
-      }
-      for (int i = 0; i < ITERS; i++) {
-          test_round_double(lout , dinp);
-      }
   }
 
   @Test
