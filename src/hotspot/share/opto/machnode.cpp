@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ int MachNode::operand_index(Node* def) const {
 
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
-MachNode *MachNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {
+MachNode *MachNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_) {
   return NULL;
 }
 

@@ -1012,7 +1012,7 @@ static void print_block_index(FILE *fp, int inst_position) {
 }
 
 // Scan the peepmatch and output a test for each instruction
-static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch) {
+static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, PeepConstraint *pconstraint) {
   int         parent        = -1;
   int         inst_position = 0;
   const char* inst_name     = NULL;
@@ -1038,15 +1038,13 @@ static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch) {
       // When not the root
       // Test we have the correct instruction by comparing the rule.
       if( parent != -1 ) {
-        if (strcmp("MachSpillCopy", inst_name) != 0) {
-          fprintf(fp, "  matches = matches && (inst%d != NULL) && (inst%d->rule() == %s_rule);\n",
-                  inst_position, inst_position, inst_name);
-        }
-        else {
-          fprintf(fp, "  matches = matches && (inst%d != NULL) && (inst%d->is_MachSpillCopy());\n",
-                  inst_position, inst_position);
-        }
+        fprintf(fp, "  matches = matches && (inst%d != NULL) && (inst%d->rule() == %s_rule);\n",
+                inst_position, inst_position, inst_name);
       }
+    } else {
+      // Check that user did not try to constrain a placeholder
+      assert( ! pconstraint->constrains_instruction(inst_position),
+              "fatal(): Can not constrain a placeholder instruction");
     }
   }
 }
@@ -1370,6 +1368,9 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   int max_position = 0;
   Peephole *peep;
   for( peep = node->peepholes(); peep != NULL; peep = peep->next() ) {
+    if (peep->procedure() != NULL) {
+      continue;
+    }
     PeepMatch *pmatch = peep->match();
     assert( pmatch != NULL, "fatal(), missing peepmatch rule");
     if( max_position < pmatch->max_position() )  max_position = pmatch->max_position();
@@ -1401,44 +1402,50 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
     // Make each peephole rule individually selectable
     fprintf(fp, "  if( ((OptoPeepholeAt == -1) || (OptoPeepholeAt==%d)) && ( %s ) ) {\n",
             peephole_number, ppredicate != NULL ? ppredicate->rule() : "true");
-    fprintf(fp, "    matches = true;\n");
-    // Scan the peepmatch and output a test for each instruction
-    check_peepmatch_instruction_sequence( fp, pmatch );
-
-    // Check constraints and build replacement inside scope
-    fprintf(fp, "    // If instruction subtree matches\n");
-    fprintf(fp, "    if( matches ) {\n");
-
     if (pprocedure == NULL) {
+      fprintf(fp, "    matches = true;\n");
+      // Scan the peepmatch and output a test for each instruction
+      check_peepmatch_instruction_sequence( fp, pmatch, pconstraint );
+
+      // Check constraints and build replacement inside scope
+      fprintf(fp, "    // If instruction subtree matches\n");
+      fprintf(fp, "    if( matches ) {\n");
+
       // Generate tests for the constraints
       check_peepconstraints( fp, _globalNames, pmatch, pconstraint );
 
       // Construct the new sub-tree
       generate_peepreplace( fp, _globalNames, pmatch, pconstraint, preplace, max_position );
+
+      // End of scope for this peephole's constraints
+      fprintf(fp, "    }\n");
     } else {
-      assert(preplace != NULL, "Null peepreplace");
       const char* replace_inst = NULL;
       preplace->next_instruction(replace_inst);
       // Generate the target instruction
-      fprintf(fp, "      auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+      fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+
       // Call the precedure
-      fprintf(fp, "      MachNode* replacement = Peephole::%s(ra_, replacing", pprocedure->name());
-      for (int i = 0; i <= max_position; i++) {
-        fprintf(fp, ", inst%d", i);
+      fprintf(fp, "    MachNode* replacement = Peephole::%s(block, block_index, ra_, deleted, replacing", pprocedure->name());
+
+      int         parent        = -1;
+      int         inst_position = 0;
+      const char* inst_name     = NULL;
+      int         input         = 0;
+      pmatch->reset();
+      for (pmatch->next_instruction(parent, inst_position, inst_name, input);
+           inst_name != NULL;
+           pmatch->next_instruction(parent, inst_position, inst_name, input)) {
+        fprintf(fp, ", %s_rule", inst_name);
       }
       fprintf(fp, ");\n");
-      // If substitution succeeded, delete the old node and return the new node
-      fprintf(fp, "      if (replacement != nullptr) {\n");
-      for (int i = 0; i <= max_position; i++) {
-        fprintf(fp, "        inst%d->set_removed();\n", i);
-      }
-      fprintf(fp, "        deleted = %d;\n", max_position + 1);
-      fprintf(fp, "        return replacement;\n");
-      fprintf(fp, "      }\n");
+
+      // If substitution succeeded, return the new node
+      fprintf(fp, "    if (replacement != nullptr) {\n");
+      fprintf(fp, "      return replacement;\n");
+      fprintf(fp, "    }\n");
     }
 
-    // End of scope for this peephole's constraints
-    fprintf(fp, "    }\n");
     // Closing brace '}' to make each peephole rule individually selectable
     fprintf(fp, "  } // end of peephole rule #%d\n", peephole_number);
     fprintf(fp, "\n");

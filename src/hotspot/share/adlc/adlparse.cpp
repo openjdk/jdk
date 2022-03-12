@@ -2511,7 +2511,7 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
     // This instruction is the parent of a sub-tree
     else if ((token = get_ident_dup()) != NULL) {
       const Form *form = _AD._globalNames[token];
-      if (form != NULL) {
+      if (form) {
         InstructForm *inst = form->is_instruction();
         // Record the first instruction at this level
         if( inst_seen == NULL ) {
@@ -2526,11 +2526,6 @@ InstructForm *ADLParser::peep_match_child_parse(PeepMatch &match, int parent, in
                     token);
           return inst_seen;
         }
-      }
-      else if (strcmp("MachSpillCopy", token) == 0) {
-        match.add_instruction(parent, position, token, input);
-        parent = position;
-        ++position;
       }
       else {
         parse_err(SYNERR, "missing identifier in peepmatch rule.\n");

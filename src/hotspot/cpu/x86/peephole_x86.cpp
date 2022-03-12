@@ -30,15 +30,30 @@
 // lea d, [s1 + s2] and
 // mov d, s1; shl d, s2 into
 // lea d, [s1 << s2] with s2 = 1, 2, 3
-MachNode* lea_coalesce_helper(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1, bool imm) {
-  // root is an appropriate lea while inst0 is a add or shift node following inst1 which is a
-  // MachSpillCopy
-  // both input and output of inst1 must be general purpose registers
+MachNode* lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_, int& deleted,
+                              MachNode* (*new_root)(), int inst0_rule, bool imm) {
+  MachNode* inst0 = block->get_node(block_index)->as_Mach();
+  assert(inst0->rule() == inst0_rule, "sanity");
+
+  // Check if the first operand is a MachSpillCopy between general purpose registers
+  if (!inst0->in(1)->is_MachSpillCopy()) {
+    return nullptr;
+  }
+  MachNode* inst1 = inst0->in(1)->as_Mach();
   OptoReg::Name dst = ra_->get_reg_first(inst1);
   OptoReg::Name src1 = ra_->get_reg_first(inst1->in(1));
-  bool matches = OptoReg::is_reg(dst) && OptoReg::is_reg(src1) &&
-                 OptoReg::as_VMReg(dst)->is_Register() && OptoReg::as_VMReg(src1)->is_Register();
-  matches = matches && ra_->get_encode(inst0->in(1)) == ra_->get_encode(inst1);
+  if (OptoReg::is_reg(dst) && OptoReg::is_reg(src1) &&
+      OptoReg::as_VMReg(dst)->is_Register() && OptoReg::as_VMReg(src1)->is_Register()) {
+    return nullptr;
+  }
+
+  // Go up the block to find inst1, if some node between writes src1 then coalescing will
+  // fail
+  bool matches = false;
+  for (int i = block_index - 1; i >= 0; i--) {
+    Node* curr = block->
+  }
+  
   if (matches) {
     MachNode* root = new_root();
     ra_->add_reference(root, inst0);
@@ -56,10 +71,12 @@ MachNode* lea_coalesce_helper(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachN
   }
 }
 
-MachNode* Peephole::lea_coalesce_reg(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1) {
-  return lea_coalesce_helper(ra_, new_root, inst0, inst1, false);
+MachNode* Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
+                                     int& deleted, MachNode* (*new_root)(), int inst0_rule) {
+  return lea_coalesce_helper(block, block_index, ra_, deleted, new_root, inst0_rule, false);
 }
 
-MachNode* Peephole::lea_coalesce_imm(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1) {
-  return lea_coalesce_helper(ra_, new_root, inst0, inst1, true);
+MachNode* Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
+                                     int& deleted, MachNode* (*new_root)(), int inst0_rule) {
+  return lea_coalesce_helper(block, block_index, ra_, deleted, new_root, inst0_rule, true);
 }

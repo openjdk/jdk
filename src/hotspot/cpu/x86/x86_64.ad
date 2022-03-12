@@ -13228,9 +13228,10 @@ instruct tlsLoadP(r15_RegP dst) %{
 // peepprocedure ( procedure_name );
 // // provide a procedure name to perform the optimization, the procedure should
 // // reside in the architecture dependent peephole file, the method has the
-// // signature of MachNode* (PhaseRegAlloc*, (MachNode*)(*)(), MachNode*...)
-// // with the arguments being the register allocator, the function upon invoked
-// // return a new node defined in peepreplace, and the nodes appearing in the
+// // signature of MachNode* (Block*, int, PhaseRegAlloc*, (MachNode*)(*)(), int...)
+// // with the arguments being the basic block, the current node index inside the
+// // block, the register allocator, the function upon invoked return a new node
+// // defined in peepreplace, and the rules of the nodes appearing in the
 // // corresponding peepmatch, the function return a new node if successful, else
 // // return nullptr
 //
@@ -13254,7 +13255,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 // ---------CURRENT LIMITATIONS----------------------------------------------
 //
-// Only match adjacent instructions in same basic block
+// Only one replacement instruction
 //
 // ---------EXAMPLE----------------------------------------------------------
 //
@@ -13277,10 +13278,10 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 //
 // 1. Simple replacement
+// - Only match adjacent instructions in same basic block
 // - Only equality constraints
 // - Only constraints between operands, not (0.dest_reg == RAX_enc)
-// - Only one replacement instruction
-// 
+//
 // // Change (inc mov) to lea
 // peephole %{
 //   // lea should only be emitted when beneficial
@@ -13296,6 +13297,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 // %}
 //
 // 2. Procedural replacement
+// - More flexible finding relevent nodes
 // - More flexible constraints
 // - More flexible transformations
 // - May utilise architecture-dependent API more effectively
@@ -13420,7 +13422,7 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (addI_rReg MachSpillCopy);
+  peepmatch (addI_rReg);
   peepprocedure (lea_coalesce_reg);
   peepreplace (addI_rReg_rReg_peep());
 %}
@@ -13428,7 +13430,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (addI_rReg_imm MachSpillCopy);
+  peepmatch (addI_rReg_imm);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
 %}
@@ -13436,7 +13438,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (incI_rReg MachSpillCopy);
+  peepmatch (incI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
 %}
@@ -13444,7 +13446,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (decI_rReg MachSpillCopy);
+  peepmatch (decI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
 %}
@@ -13452,7 +13454,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (salI_rReg_immI2 MachSpillCopy);
+  peepmatch (salI_rReg_immI2);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI2_peep());
 %}
@@ -13460,7 +13462,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (addL_rReg MachSpillCopy);
+  peepmatch (addL_rReg);
   peepprocedure (lea_coalesce_reg);
   peepreplace (addL_rReg_rReg_peep());
 %}
@@ -13468,7 +13470,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (addL_rReg_imm MachSpillCopy);
+  peepmatch (addL_rReg_imm);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
 %}
@@ -13476,7 +13478,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (incL_rReg MachSpillCopy);
+  peepmatch (incL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
 %}
@@ -13484,7 +13486,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (decL_rReg MachSpillCopy);
+  peepmatch (decL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
 %}
@@ -13492,7 +13494,7 @@ peephole
 peephole
 %{
   // peeppredicate(VM_Version::supports_fast_2op_lea());
-  peepmatch (salL_rReg_immI2 MachSpillCopy);
+  peepmatch (salL_rReg_immI2);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immI2_peep());
 %}

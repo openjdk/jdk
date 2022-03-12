@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,7 +355,7 @@ public:
   virtual const class TypePtr *adr_type() const;
 
   // Apply peephole rule(s) to this instruction
-  virtual MachNode *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);
+  virtual MachNode *peephole(Block *block, int block_index, PhaseRegAlloc *ra_);
 
   // Top-level ideal Opcode matched
   virtual int ideal_Opcode()     const { return Op_Node; }

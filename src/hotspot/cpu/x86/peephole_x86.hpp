@@ -26,7 +26,9 @@
 #define CPU_X86_PEEPHOLE_X86_HPP
 
 public:
-  static MachNode* lea_coalesce_reg(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1);
-  static MachNode* lea_coalesce_imm(PhaseRegAlloc* ra_, MachNode* (*new_root)(), MachNode* inst0, MachNode* inst1);
+  static MachNode* lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
+                                    int& deleted, MachNode* (*new_root)(), int inst0_rule);
+  static MachNode* lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
+                                    int& deleted, MachNode* (*new_root)(), int inst0_rule);
 
 #endif // CPU_X86_PEEPHOLE_X86_HPP
