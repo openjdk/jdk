@@ -105,7 +105,7 @@ public class DisassembleCodeBlobTest {
         // architecture: [Disassembling for mach='i386:x86-64']
         // so discard it and try again.
         String str2 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        String[] strLines = str2.split(System.lineSeparator());
+        String[] strLines = str2.split("\\R");
         // Check some basic layout
         int MIN_LINES = 5;
         Asserts.assertTrue(strLines.length > 2,
