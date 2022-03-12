@@ -163,7 +163,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Constructs an empty list with an initial capacity of ten.
+     * Constructs an empty list with default sized empty instances.
      */
     public ArrayList() {
         this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
