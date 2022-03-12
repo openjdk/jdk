@@ -361,6 +361,7 @@ public class SSLSocketSSLEngineCloseInbound {
 
                     // write(byte[]) goes in one shot.
                     os.write(clientMsg);
+                    os.flush();
 
                     try {
                         sslSocket.shutdownInput();
@@ -375,6 +376,10 @@ public class SSLSocketSSLEngineCloseInbound {
                     } else {
                         throw new Exception("Client's session is not valid");
                     }
+
+                    // Give server a chance to read before we shutdown via
+                    // the try-with-resources block.
+                    Thread.sleep(2000);
                 } catch (Exception e) {
                     clientException = e;
                 }
