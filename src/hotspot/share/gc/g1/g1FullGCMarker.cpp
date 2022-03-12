@@ -55,7 +55,7 @@ void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
                                       ObjArrayTaskQueueSet* array_stacks,
                                       TaskTerminator* terminator) {
   do {
-    drain_stack();
+    follow_marking_stacks();
     ObjArrayTask steal_array;
     if (array_stacks->steal(_worker_id, steal_array)) {
       follow_array_chunk(objArrayOop(steal_array.obj()), steal_array.index());

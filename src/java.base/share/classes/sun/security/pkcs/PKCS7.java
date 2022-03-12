@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import sun.security.x509.*;
  * @author Benjamin Renaud
  */
 public class PKCS7 {
-
-    private ObjectIdentifier contentType;
 
     // the ASN.1 members for a signedData (and other) contentTypes
     private BigInteger version = null;
@@ -167,7 +165,7 @@ public class PKCS7 {
         throws IOException
     {
         ContentInfo block = new ContentInfo(derin, oldStyle);
-        contentType = block.contentType;
+        ObjectIdentifier contentType = block.contentType;
         DerValue content = block.getContent();
 
         if (contentType.equals(ContentInfo.SIGNED_DATA_OID)) {
@@ -240,13 +238,9 @@ public class PKCS7 {
                     bais.close();
                     bais = null;
                 }
-            } catch (CertificateException ce) {
+            } catch (CertificateException | IOException ce) {
                 ParsingException pe = new ParsingException(ce.getMessage());
                 pe.initCause(ce);
-                throw pe;
-            } catch (IOException ioe) {
-                ParsingException pe = new ParsingException(ioe.getMessage());
-                pe.initCause(ioe);
                 throw pe;
             } finally {
                 if (bais != null)
@@ -330,13 +324,9 @@ public class PKCS7 {
                         }
                         count++;
                     }
-                } catch (CertificateException ce) {
+                } catch (CertificateException | IOException ce) {
                     ParsingException pe = new ParsingException(ce.getMessage());
                     pe.initCause(ce);
-                    throw pe;
-                } catch (IOException ioe) {
-                    ParsingException pe = new ParsingException(ioe.getMessage());
-                    pe.initCause(ioe);
                     throw pe;
                 } finally {
                     if (bais != null)
@@ -444,13 +434,9 @@ public class PKCS7 {
                     bais.close();
                     bais = null;
                 }
-            } catch (CertificateException ce) {
+            } catch (CertificateException | IOException ce) {
                 ParsingException pe = new ParsingException(ce.getMessage());
                 pe.initCause(ce);
-                throw pe;
-            } catch (IOException ioe) {
-                ParsingException pe = new ParsingException(ioe.getMessage());
-                pe.initCause(ioe);
                 throw pe;
             } finally {
                 if (bais != null)

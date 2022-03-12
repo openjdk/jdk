@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,7 +825,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_SetProperty
     */
     if (!JNU_IsNull(env, jstr)) {
 #ifdef X_HAVE_UTF8_STRING
-        cname = (char *) (*env)->GetStringUTFChars(env, jstr, JNI_FALSE);
+        cname = (char *) (*env)->GetStringUTFChars(env, jstr, NULL);
 #else
         cname = (char *) JNU_GetStringPlatformChars(env, jstr, NULL);
 #endif

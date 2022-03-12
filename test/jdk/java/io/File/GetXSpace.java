@@ -154,7 +154,7 @@ public class GetXSpace {
                         // cygwin's df lists windows path as FileSystem (1st group)
                         name = Platform.isWindows() ? m.group(1) : m.group(4);
                     }
-                    al.add(new Space(m.group(2), m.group(3), name));;
+                    al.add(new Space(m.group(2), m.group(3), name));
                 }
                 j = m.end();
             } else {

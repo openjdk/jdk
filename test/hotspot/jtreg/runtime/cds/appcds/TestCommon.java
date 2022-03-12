@@ -466,7 +466,7 @@ public class TestCommon extends CDSTestUtils {
 
     public static Result runWithoutCDS(String... suffix) throws Exception {
         AppCDSOptions opts = (new AppCDSOptions());
-        opts.addSuffix(suffix).setXShareMode("off");;
+        opts.addSuffix(suffix).setXShareMode("off");
         return new Result(opts, runWithArchive(opts));
     }
 

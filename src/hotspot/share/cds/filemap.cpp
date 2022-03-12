@@ -1994,7 +1994,7 @@ void FileMapInfo::map_or_load_heap_regions() {
     } else if (HeapShared::can_load()) {
       success = HeapShared::load_heap_regions(this);
     } else {
-      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC or UseSerialGC are required.");
+      log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
     }
   }
 

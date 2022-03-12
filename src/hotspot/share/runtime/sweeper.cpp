@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,19 +229,19 @@ void NMethodSweeper::sweeper_loop() {
 /**
   * Wakes up the sweeper thread to sweep if code cache space runs low
   */
-void NMethodSweeper::report_allocation(int code_blob_type) {
-  if (should_start_aggressive_sweep(code_blob_type)) {
+void NMethodSweeper::report_allocation() {
+  if (should_start_aggressive_sweep()) {
     MonitorLocker waiter(CodeSweeper_lock, Mutex::_no_safepoint_check_flag);
     _should_sweep = true;
     CodeSweeper_lock->notify();
   }
 }
 
-bool NMethodSweeper::should_start_aggressive_sweep(int code_blob_type) {
+bool NMethodSweeper::should_start_aggressive_sweep() {
   // Makes sure that we do not invoke the sweeper too often during startup.
   double start_threshold = 100.0 / (double)StartAggressiveSweepingAt;
   double aggressive_sweep_threshold = MAX2(start_threshold, 1.1);
-  return (CodeCache::reverse_free_ratio(code_blob_type) >= aggressive_sweep_threshold);
+  return (CodeCache::reverse_free_ratio() >= aggressive_sweep_threshold);
 }
 
 /**
@@ -546,8 +546,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
       // ReservedCodeCacheSize
       int reset_val = hotness_counter_reset_val();
       int time_since_reset = reset_val - nm->hotness_counter();
-      int code_blob_type = CodeCache::get_code_blob_type(nm);
-      double threshold = -reset_val + (CodeCache::reverse_free_ratio(code_blob_type) * NmethodSweepActivity);
+      double threshold = -reset_val + (CodeCache::reverse_free_ratio() * NmethodSweepActivity);
       // The less free space in the code cache we have - the bigger reverse_free_ratio() is.
       // I.e., 'threshold' increases with lower available space in the code cache and a higher
       // NmethodSweepActivity. If the current hotness counter - which decreases from its initial

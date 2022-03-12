@@ -4458,7 +4458,7 @@ static errno_t get_full_path(LPCWSTR unicode_path, LPWSTR* full_path) {
   return ERROR_SUCCESS;
 }
 
-static void set_path_prefix(char* buf, LPWSTR* prefix, int* prefix_off, bool* needs_fullpath) {
+static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* needs_fullpath) {
   *prefix_off = 0;
   *needs_fullpath = true;
 
@@ -4494,7 +4494,7 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   strncpy(buf, path, buf_len);
   os::native_path(buf);
 
-  LPWSTR prefix = NULL;
+  LPCWSTR prefix = NULL;
   int prefix_off = 0;
   bool needs_fullpath = true;
   set_path_prefix(buf, &prefix, &prefix_off, &needs_fullpath);

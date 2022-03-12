@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ class InterpreterOopMap;
 class Method : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
+ friend class MethodTest;
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to Method::metaspace_pointers_do().
@@ -98,6 +99,8 @@ class Method : public Metadata {
 
 #ifndef PRODUCT
   int64_t _compiled_invocation_count;
+
+  Symbol* _name;
 #endif
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
@@ -113,7 +116,7 @@ class Method : public Metadata {
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
-  Method(ConstMethod* xconst, AccessFlags access_flags);
+  Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name);
  public:
 
   static Method* allocate(ClassLoaderData* loader_data,
@@ -121,6 +124,7 @@ class Method : public Metadata {
                           AccessFlags access_flags,
                           InlineTableSizes* sizes,
                           ConstMethod::MethodType method_type,
+                          Symbol* name,
                           TRAPS);
 
   // CDS and vtbl checking can create an empty Method to get vtbl pointer.

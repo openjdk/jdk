@@ -365,15 +365,7 @@ void G1CardSet::free_mem_object(CardSetPtr card_set) {
   assert(type == G1CardSet::CardSetArrayOfCards ||
          type == G1CardSet::CardSetBitMap ||
          type == G1CardSet::CardSetHowl, "should not free card set type %zu", type);
-
-#ifdef ASSERT
-  if (type == G1CardSet::CardSetArrayOfCards ||
-      type == G1CardSet::CardSetBitMap ||
-      type == G1CardSet::CardSetHowl) {
-    G1CardSetContainer* card_set = (G1CardSetContainer*)value;
-    assert((card_set->refcount() == 1), "must be");
-  }
-#endif
+  assert(static_cast<G1CardSetContainer*>(value)->refcount() == 1, "must be");
 
   _mm->free(card_set_type_to_mem_object_type(type), value);
 }
