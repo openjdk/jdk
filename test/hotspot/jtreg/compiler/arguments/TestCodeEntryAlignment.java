@@ -66,9 +66,10 @@ public class TestCodeEntryAlignment {
     }
 
     public static void driver() throws IOException {
-        for (int align = 16; align < 256; align *= 2) {
+        for (int align = 32; align <= 1024; align *= 2) {
             shouldPass(
                 "-XX:+UnlockExperimentalVMOptions",
+                "-XX:CodeCacheSegmentSize=" + align,
                 "-XX:CodeEntryAlignment=" + align
             );
         }
