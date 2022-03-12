@@ -789,17 +789,17 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // Is it ready to close inbound?
             //
             // No exception if the initial handshake is not started.
-            if (!conContext.isInputCloseNotified &&
-                (conContext.isNegotiated ||
-                    conContext.handshakeContext != null)) {
 
-                throw conContext.fatal(Alert.INTERNAL_ERROR,
-                        "closing inbound before receiving peer's close_notify");
-            }
+                if (!conContext.isInputCloseNotified &&
+                        (conContext.isNegotiated ||
+                                conContext.handshakeContext != null)) {
 
-            conContext.closeInbound();
+                    throw new SSLException(
+                            "closing inbound before receiving peer's close_notify");
+                }
         } finally {
-            engineLock.unlock();
+                conContext.closeInbound();
+                engineLock.unlock();
         }
     }
 
