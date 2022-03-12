@@ -55,11 +55,6 @@ import static org.testng.Assert.assertNull;
  */
 public class WhiteBoxResizeTest {
 
-    private static void putMap(Map<String, String> map, int i) {
-        String String = Integer.toString(i);
-        map.put(String, String);
-    }
-
     final MethodHandle TABLE_SIZE_FOR;
     final VarHandle HM_TABLE;
     final VarHandle WHM_TABLE;
@@ -102,9 +97,7 @@ public class WhiteBoxResizeTest {
     // creates a map with size mappings
     Map<String, String> makeMap(int size) {
         Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < size; ++i) {
-            putMap(map, i);
-        }
+        putN(map, size);
         return map;
     }
 
@@ -128,7 +121,8 @@ public class WhiteBoxResizeTest {
 
     void putN(Map<String, String> map, int n) {
         for (int i = 0; i < n; i++) {
-            putMap(map, i);
+            String string = Integer.toString(i);
+            map.put(string, string);
         }
     }
 
@@ -139,139 +133,21 @@ public class WhiteBoxResizeTest {
     @DataProvider(name = "tableSizeFor")
     public Object[][] tableSizeForCases() {
         final int MAX = 1 << 30;
-        return new Object[][]{
+        return new Object[][] {
                 // tableSizeFor(arg), expected
-                {1, 1},
-                {2, 2},
-                {3, 4},
-                {4, 4},
-                {5, 8},
-                {6, 8},
-                {7, 8},
-                {8, 8},
-                {9, 16},
-                {10, 16},
-                {11, 16},
-                {12, 16},
-                {13, 16},
-                {14, 16},
-                {15, 16},
-                {16, 16},
-                {17, 32},
-                {18, 32},
-                {19, 32},
-                {20, 32},
-                {21, 32},
-                {22, 32},
-                {23, 32},
-                {24, 32},
-                {25, 32},
-                {26, 32},
-                {27, 32},
-                {28, 32},
-                {29, 32},
-                {30, 32},
-                {31, 32},
-                {32, 32},
-                {33, 64},
-                {34, 64},
-                {35, 64},
-                {36, 64},
-                {37, 64},
-                {38, 64},
-                {39, 64},
-                {40, 64},
-                {41, 64},
-                {42, 64},
-                {43, 64},
-                {44, 64},
-                {45, 64},
-                {46, 64},
-                {47, 64},
-                {48, 64},
-                {49, 64},
-                {50, 64},
-                {51, 64},
-                {52, 64},
-                {53, 64},
-                {54, 64},
-                {55, 64},
-                {56, 64},
-                {57, 64},
-                {58, 64},
-                {59, 64},
-                {60, 64},
-                {61, 64},
-                {62, 64},
-                {63, 64},
-                {64, 64},
-                {65, 128},
-                {66, 128},
-                {67, 128},
-                {68, 128},
-                {69, 128},
-                {70, 128},
-                {71, 128},
-                {72, 128},
-                {73, 128},
-                {74, 128},
-                {75, 128},
-                {76, 128},
-                {77, 128},
-                {78, 128},
-                {79, 128},
-                {80, 128},
-                {81, 128},
-                {82, 128},
-                {83, 128},
-                {84, 128},
-                {85, 128},
-                {86, 128},
-                {87, 128},
-                {88, 128},
-                {89, 128},
-                {90, 128},
-                {91, 128},
-                {92, 128},
-                {93, 128},
-                {94, 128},
-                {95, 128},
-                {96, 128},
-                {97, 128},
-                {98, 128},
-                {99, 128},
-                {100, 128},
-                {101, 128},
-                {102, 128},
-                {103, 128},
-                {104, 128},
-                {105, 128},
-                {106, 128},
-                {107, 128},
-                {108, 128},
-                {109, 128},
-                {110, 128},
-                {111, 128},
-                {112, 128},
-                {113, 128},
-                {114, 128},
-                {115, 128},
-                {116, 128},
-                {117, 128},
-                {118, 128},
-                {119, 128},
-                {120, 128},
-                {121, 128},
-                {122, 128},
-                {123, 128},
-                {124, 128},
-                {125, 128},
-                {126, 128},
-                {127, 128},
-                {MAX - 1, MAX},
-                {MAX, MAX},
-                {MAX + 1, MAX},
-                {Integer.MAX_VALUE, MAX}
+                { 0,                   1 },
+                { 1,                   1 },
+                { 2,                   2 },
+                { 3,                   4 },
+                { 4,                   4 },
+                { 5,                   8 },
+                { 15,                 16 },
+                { 16,                 16 },
+                { 17,                 32 },
+                { MAX-1,             MAX },
+                { MAX,               MAX },
+                { MAX+1,             MAX },
+                { Integer.MAX_VALUE, MAX }
         };
     }
 
@@ -314,7 +190,7 @@ public class WhiteBoxResizeTest {
     @Test(dataProvider = "defaultCapacity")
     public void defaultCapacity(Supplier<Map<String, String>> s) {
         Map<String, String> map = s.get();
-        putMap(map, 0);
+        map.put("", "");
         assertEquals(capacity(map), 16);
     }
 
@@ -340,7 +216,7 @@ public class WhiteBoxResizeTest {
     @Test(dataProvider = "requestedCapacity")
     public void requestedCapacity(String label, int cap, Supplier<Map<String, String>> s) {
         Map<String, String> map = s.get();
-        putMap(map, 0);
+        map.put("", "");
         assertEquals(capacity(map), tableSizeFor(cap));
     }
 
@@ -365,106 +241,48 @@ public class WhiteBoxResizeTest {
 
     List<Object[]> genPopulatedCapacityCases(int size, int cap) {
         return Arrays.asList(
-                pcc("phmcpy", size, cap, () -> new HashMap<>(makeMap(size)), map -> {
-                }),
-                pcc("phm0pn", size, cap, () -> new HashMap<>(), map -> {
-                    putN(map, size);
-                }),
-                pcc("phm1pn", size, cap, () -> new HashMap<>(cap), map -> {
-                    putN(map, size);
-                }),
-                pcc("phm2pn", size, cap, () -> new HashMap<>(cap, 0.75f), map -> {
-                    putN(map, size);
-                }),
-                pcc("phm0pa", size, cap, () -> new HashMap<>(), map -> {
-                    map.putAll(makeMap(size));
-                }),
-                pcc("phm1pa", size, cap, () -> new HashMap<>(cap), map -> {
-                    map.putAll(makeMap(size));
-                }),
-                pcc("phm2pa", size, cap, () -> new HashMap<>(cap, 0.75f), map -> {
-                    map.putAll(makeMap(size));
-                }),
+                pcc("phmcpy", size, cap, () -> new HashMap<>(makeMap(size)),       map -> { }),
+                pcc("phm0pn", size, cap, () -> new HashMap<>(),                    map -> { putN(map, size); }),
+                pcc("phm1pn", size, cap, () -> new HashMap<>(cap),                 map -> { putN(map, size); }),
+                pcc("phm2pn", size, cap, () -> new HashMap<>(cap, 0.75f),          map -> { putN(map, size); }),
+                pcc("phm0pa", size, cap, () -> new HashMap<>(),                    map -> { map.putAll(makeMap(size)); }),
+                pcc("phm1pa", size, cap, () -> new HashMap<>(cap),                 map -> { map.putAll(makeMap(size)); }),
+                pcc("phm2pa", size, cap, () -> new HashMap<>(cap, 0.75f),          map -> { map.putAll(makeMap(size)); }),
 
-                pcc("plmcpy", size, cap, () -> new LinkedHashMap<>(makeMap(size)), map -> {
-                }),
-                pcc("plm0pn", size, cap, () -> new LinkedHashMap<>(), map -> {
-                    putN(map, size);
-                }),
-                pcc("plm1pn", size, cap, () -> new LinkedHashMap<>(cap), map -> {
-                    putN(map, size);
-                }),
-                pcc("plm2pn", size, cap, () -> new LinkedHashMap<>(cap, 0.75f), map -> {
-                    putN(map, size);
-                }),
-                pcc("plm0pa", size, cap, () -> new LinkedHashMap<>(), map -> {
-                    map.putAll(makeMap(size));
-                }),
-                pcc("plm1pa", size, cap, () -> new LinkedHashMap<>(cap), map -> {
-                    map.putAll(makeMap(size));
-                }),
-                pcc("plm2pa", size, cap, () -> new LinkedHashMap<>(cap, 0.75f), map -> {
-                    map.putAll(makeMap(size));
-                }),
+                pcc("plmcpy", size, cap, () -> new LinkedHashMap<>(makeMap(size)), map -> { }),
+                pcc("plm0pn", size, cap, () -> new LinkedHashMap<>(),              map -> { putN(map, size); }),
+                pcc("plm1pn", size, cap, () -> new LinkedHashMap<>(cap),           map -> { putN(map, size); }),
+                pcc("plm2pn", size, cap, () -> new LinkedHashMap<>(cap, 0.75f),    map -> { putN(map, size); }),
+                pcc("plm0pa", size, cap, () -> new LinkedHashMap<>(),              map -> { map.putAll(makeMap(size)); }),
+                pcc("plm1pa", size, cap, () -> new LinkedHashMap<>(cap),           map -> { map.putAll(makeMap(size)); }),
+                pcc("plm2pa", size, cap, () -> new LinkedHashMap<>(cap, 0.75f),    map -> { map.putAll(makeMap(size)); }),
 
-                pcc("pwmcpy", size, cap, () -> new WeakHashMap<>(makeMap(size)), map -> {
-                }),
-                pcc("pwm0pn", size, cap, () -> new WeakHashMap<>(), map -> {
-                    putN(map, size);
-                }),
-                pcc("pwm1pn", size, cap, () -> new WeakHashMap<>(cap), map -> {
-                    putN(map, size);
-                }),
-                pcc("pwm2pn", size, cap, () -> new WeakHashMap<>(cap, 0.75f), map -> {
-                    putN(map, size);
-                }),
-                pcc("pwm0pa", size, cap, () -> new WeakHashMap<>(), map -> {
-                    map.putAll(makeMap(size));
-                }),
-                pcc("pwm1pa", size, cap, () -> new WeakHashMap<>(cap), map -> {
-                    map.putAll(makeMap(size));
-                }),
-                pcc("pwm2pa", size, cap, () -> new WeakHashMap<>(cap, 0.75f), map -> {
-                    map.putAll(makeMap(size));
-                })
+                pcc("pwmcpy", size, cap, () -> new WeakHashMap<>(makeMap(size)),   map -> { }),
+                pcc("pwm0pn", size, cap, () -> new WeakHashMap<>(),                map -> { putN(map, size); }),
+                pcc("pwm1pn", size, cap, () -> new WeakHashMap<>(cap),             map -> { putN(map, size); }),
+                pcc("pwm2pn", size, cap, () -> new WeakHashMap<>(cap, 0.75f),      map -> { putN(map, size); }),
+                pcc("pwm0pa", size, cap, () -> new WeakHashMap<>(),                map -> { map.putAll(makeMap(size)); }),
+                pcc("pwm1pa", size, cap, () -> new WeakHashMap<>(cap),             map -> { map.putAll(makeMap(size)); }),
+                pcc("pwm2pa", size, cap, () -> new WeakHashMap<>(cap, 0.75f),      map -> { map.putAll(makeMap(size)); })
         );
     }
 
     List<Object[]> genFakePopulatedCapacityCases(int size, int cap) {
         return Arrays.asList(
-                pcc("fhmcpy", size, cap, () -> new HashMap<>(fakeMap(size)), map -> {
-                }),
-                pcc("fhm0pa", size, cap, () -> new HashMap<>(), map -> {
-                    map.putAll(fakeMap(size));
-                }),
-                pcc("fhm1pa", size, cap, () -> new HashMap<>(cap), map -> {
-                    map.putAll(fakeMap(size));
-                }),
-                pcc("fhm2pa", size, cap, () -> new HashMap<>(cap, 0.75f), map -> {
-                    map.putAll(fakeMap(size));
-                }),
+                pcc("fhmcpy", size, cap, () -> new HashMap<>(fakeMap(size)),       map -> { }),
+                pcc("fhm0pa", size, cap, () -> new HashMap<>(),                    map -> { map.putAll(fakeMap(size)); }),
+                pcc("fhm1pa", size, cap, () -> new HashMap<>(cap),                 map -> { map.putAll(fakeMap(size)); }),
+                pcc("fhm2pa", size, cap, () -> new HashMap<>(cap, 0.75f),          map -> { map.putAll(fakeMap(size)); }),
 
-                pcc("flmcpy", size, cap, () -> new LinkedHashMap<>(fakeMap(size)), map -> {
-                }),
-                pcc("flm0pa", size, cap, () -> new LinkedHashMap<>(), map -> {
-                    map.putAll(fakeMap(size));
-                }),
-                pcc("flm1pa", size, cap, () -> new LinkedHashMap<>(cap), map -> {
-                    map.putAll(fakeMap(size));
-                }),
-                pcc("flm2pa", size, cap, () -> new LinkedHashMap<>(cap, 0.75f), map -> {
-                    map.putAll(fakeMap(size));
-                }),
+                pcc("flmcpy", size, cap, () -> new LinkedHashMap<>(fakeMap(size)), map -> { }),
+                pcc("flm0pa", size, cap, () -> new LinkedHashMap<>(),              map -> { map.putAll(fakeMap(size)); }),
+                pcc("flm1pa", size, cap, () -> new LinkedHashMap<>(cap),           map -> { map.putAll(fakeMap(size)); }),
+                pcc("flm2pa", size, cap, () -> new LinkedHashMap<>(cap, 0.75f),    map -> { map.putAll(fakeMap(size)); }),
 
-                pcc("fwmcpy", size, cap, () -> new WeakHashMap<>(fakeMap(size)), map -> {
-                }),
+                pcc("fwmcpy", size, cap, () -> new WeakHashMap<>(fakeMap(size)),   map -> { }),
                 // pcc("fwm0pa", size, cap, () -> new WeakHashMap<>(),                map -> { map.putAll(fakeMap(size)); }), // see note
-                pcc("fwm1pa", size, cap, () -> new WeakHashMap<>(cap), map -> {
-                    map.putAll(fakeMap(size));
-                }),
-                pcc("fwm2pa", size, cap, () -> new WeakHashMap<>(cap, 0.75f), map -> {
-                    map.putAll(fakeMap(size));
-                })
+                pcc("fwm1pa", size, cap, () -> new WeakHashMap<>(cap),             map -> { map.putAll(fakeMap(size)); }),
+                pcc("fwm2pa", size, cap, () -> new WeakHashMap<>(cap, 0.75f),      map -> { map.putAll(fakeMap(size)); })
         );
 
         // Test case "fwm0pa" is commented out because WeakHashMap uses a different allocation
@@ -474,118 +292,10 @@ public class WhiteBoxResizeTest {
     @DataProvider(name = "populatedCapacity")
     public Iterator<Object[]> populatedCapacityCases() {
         ArrayList<Object[]> cases = new ArrayList<>();
-        cases.addAll(genPopulatedCapacityCases(16, 32));
-        cases.addAll(genPopulatedCapacityCases(17, 32));
-        cases.addAll(genPopulatedCapacityCases(18, 32));
-        cases.addAll(genPopulatedCapacityCases(19, 32));
-        cases.addAll(genPopulatedCapacityCases(20, 32));
-        cases.addAll(genPopulatedCapacityCases(21, 32));
-        cases.addAll(genPopulatedCapacityCases(22, 32));
-        cases.addAll(genPopulatedCapacityCases(23, 32));
-        cases.addAll(genPopulatedCapacityCases(24, 32));
-        cases.addAll(genPopulatedCapacityCases(25, 64));
-        cases.addAll(genPopulatedCapacityCases(26, 64));
-        cases.addAll(genPopulatedCapacityCases(27, 64));
-        cases.addAll(genPopulatedCapacityCases(28, 64));
-        cases.addAll(genPopulatedCapacityCases(29, 64));
-        cases.addAll(genPopulatedCapacityCases(30, 64));
-        cases.addAll(genPopulatedCapacityCases(31, 64));
-        cases.addAll(genPopulatedCapacityCases(32, 64));
-        cases.addAll(genPopulatedCapacityCases(33, 64));
-        cases.addAll(genPopulatedCapacityCases(34, 64));
-        cases.addAll(genPopulatedCapacityCases(35, 64));
-        cases.addAll(genPopulatedCapacityCases(36, 64));
-        cases.addAll(genPopulatedCapacityCases(37, 64));
-        cases.addAll(genPopulatedCapacityCases(38, 64));
-        cases.addAll(genPopulatedCapacityCases(39, 64));
-        cases.addAll(genPopulatedCapacityCases(40, 64));
-        cases.addAll(genPopulatedCapacityCases(41, 64));
-        cases.addAll(genPopulatedCapacityCases(42, 64));
-        cases.addAll(genPopulatedCapacityCases(43, 64));
-        cases.addAll(genPopulatedCapacityCases(44, 64));
-        cases.addAll(genPopulatedCapacityCases(45, 64));
-        cases.addAll(genPopulatedCapacityCases(46, 64));
-        cases.addAll(genPopulatedCapacityCases(47, 64));
-        cases.addAll(genPopulatedCapacityCases(48, 64));
-        cases.addAll(genPopulatedCapacityCases(49, 128));
-        cases.addAll(genPopulatedCapacityCases(50, 128));
-        cases.addAll(genPopulatedCapacityCases(51, 128));
-        cases.addAll(genPopulatedCapacityCases(52, 128));
-        cases.addAll(genPopulatedCapacityCases(53, 128));
-        cases.addAll(genPopulatedCapacityCases(54, 128));
-        cases.addAll(genPopulatedCapacityCases(55, 128));
-        cases.addAll(genPopulatedCapacityCases(56, 128));
-        cases.addAll(genPopulatedCapacityCases(57, 128));
-        cases.addAll(genPopulatedCapacityCases(58, 128));
-        cases.addAll(genPopulatedCapacityCases(59, 128));
-        cases.addAll(genPopulatedCapacityCases(60, 128));
-        cases.addAll(genPopulatedCapacityCases(61, 128));
-        cases.addAll(genPopulatedCapacityCases(62, 128));
-        cases.addAll(genPopulatedCapacityCases(63, 128));
+        cases.addAll(genPopulatedCapacityCases(11,  16));
+        cases.addAll(genPopulatedCapacityCases(12,  16));
+        cases.addAll(genPopulatedCapacityCases(13,  32));
         cases.addAll(genPopulatedCapacityCases(64, 128));
-        cases.addAll(genPopulatedCapacityCases(65, 128));
-        cases.addAll(genPopulatedCapacityCases(66, 128));
-        cases.addAll(genPopulatedCapacityCases(67, 128));
-        cases.addAll(genPopulatedCapacityCases(68, 128));
-        cases.addAll(genPopulatedCapacityCases(69, 128));
-        cases.addAll(genPopulatedCapacityCases(70, 128));
-        cases.addAll(genPopulatedCapacityCases(71, 128));
-        cases.addAll(genPopulatedCapacityCases(72, 128));
-        cases.addAll(genPopulatedCapacityCases(73, 128));
-        cases.addAll(genPopulatedCapacityCases(74, 128));
-        cases.addAll(genPopulatedCapacityCases(75, 128));
-        cases.addAll(genPopulatedCapacityCases(76, 128));
-        cases.addAll(genPopulatedCapacityCases(77, 128));
-        cases.addAll(genPopulatedCapacityCases(78, 128));
-        cases.addAll(genPopulatedCapacityCases(79, 128));
-        cases.addAll(genPopulatedCapacityCases(80, 128));
-        cases.addAll(genPopulatedCapacityCases(81, 128));
-        cases.addAll(genPopulatedCapacityCases(82, 128));
-        cases.addAll(genPopulatedCapacityCases(83, 128));
-        cases.addAll(genPopulatedCapacityCases(84, 128));
-        cases.addAll(genPopulatedCapacityCases(85, 128));
-        cases.addAll(genPopulatedCapacityCases(86, 128));
-        cases.addAll(genPopulatedCapacityCases(87, 128));
-        cases.addAll(genPopulatedCapacityCases(88, 128));
-        cases.addAll(genPopulatedCapacityCases(89, 128));
-        cases.addAll(genPopulatedCapacityCases(90, 128));
-        cases.addAll(genPopulatedCapacityCases(91, 128));
-        cases.addAll(genPopulatedCapacityCases(92, 128));
-        cases.addAll(genPopulatedCapacityCases(93, 128));
-        cases.addAll(genPopulatedCapacityCases(94, 128));
-        cases.addAll(genPopulatedCapacityCases(95, 128));
-        cases.addAll(genPopulatedCapacityCases(96, 128));
-        cases.addAll(genPopulatedCapacityCases(97, 256));
-        cases.addAll(genPopulatedCapacityCases(98, 256));
-        cases.addAll(genPopulatedCapacityCases(99, 256));
-        cases.addAll(genPopulatedCapacityCases(100, 256));
-        cases.addAll(genPopulatedCapacityCases(101, 256));
-        cases.addAll(genPopulatedCapacityCases(102, 256));
-        cases.addAll(genPopulatedCapacityCases(103, 256));
-        cases.addAll(genPopulatedCapacityCases(104, 256));
-        cases.addAll(genPopulatedCapacityCases(105, 256));
-        cases.addAll(genPopulatedCapacityCases(106, 256));
-        cases.addAll(genPopulatedCapacityCases(107, 256));
-        cases.addAll(genPopulatedCapacityCases(108, 256));
-        cases.addAll(genPopulatedCapacityCases(109, 256));
-        cases.addAll(genPopulatedCapacityCases(110, 256));
-        cases.addAll(genPopulatedCapacityCases(111, 256));
-        cases.addAll(genPopulatedCapacityCases(112, 256));
-        cases.addAll(genPopulatedCapacityCases(113, 256));
-        cases.addAll(genPopulatedCapacityCases(114, 256));
-        cases.addAll(genPopulatedCapacityCases(115, 256));
-        cases.addAll(genPopulatedCapacityCases(116, 256));
-        cases.addAll(genPopulatedCapacityCases(117, 256));
-        cases.addAll(genPopulatedCapacityCases(118, 256));
-        cases.addAll(genPopulatedCapacityCases(119, 256));
-        cases.addAll(genPopulatedCapacityCases(120, 256));
-        cases.addAll(genPopulatedCapacityCases(121, 256));
-        cases.addAll(genPopulatedCapacityCases(122, 256));
-        cases.addAll(genPopulatedCapacityCases(123, 256));
-        cases.addAll(genPopulatedCapacityCases(124, 256));
-        cases.addAll(genPopulatedCapacityCases(125, 256));
-        cases.addAll(genPopulatedCapacityCases(126, 256));
-        cases.addAll(genPopulatedCapacityCases(127, 256));
 
         // numbers in this range are truncated by a float computation with 0.75f
         // but can get an exact result with a double computation with 0.75d
@@ -606,4 +316,5 @@ public class WhiteBoxResizeTest {
         c.accept(map);
         assertEquals(capacity(map), expectedCapacity);
     }
+
 }
