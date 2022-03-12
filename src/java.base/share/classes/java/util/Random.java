@@ -92,10 +92,10 @@ public class Random implements RandomGenerator, java.io.Serializable {
     @SuppressWarnings("serial")
     private static final class RandomWrapper extends Random implements RandomGenerator {
         private final RandomGenerator generator;
-
+        //randomToWrap must never be null
         private RandomWrapper(RandomGenerator randomToWrap) {
             super(null);
-            this.generator = Objects.requireNonNull(randomToWrap);
+            this.generator = randomToWrap;
         }
 
         /**
@@ -317,8 +317,10 @@ public class Random implements RandomGenerator, java.io.Serializable {
      *
      * @param generator the {@code RandomGenerator} calls are delegated to
      * @return the delegating {@code Random} instance
+     * @throws NullPointerException if generator is null
      */
     public static Random from(RandomGenerator generator) {
+        Objects.requireNonNull(generator);
         if (generator instanceof Random rand)
             return rand;
 
