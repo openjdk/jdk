@@ -7262,7 +7262,7 @@ instruct vround_float_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec
   format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    InternalAddress new_mxcsr = $constantaddress(0x3F80);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
     __ vector_round_float_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                               $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister,
                               ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
@@ -7279,7 +7279,7 @@ instruct vround_float_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    InternalAddress new_mxcsr = $constantaddress(0x3F80);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
     __ vector_round_float_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                                $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
                                ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
@@ -7294,7 +7294,7 @@ instruct vround_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kRe
   format %{ "vector_round_long $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    InternalAddress new_mxcsr = $constantaddress(0x3F80);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
     __ vector_round_double_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                                 $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
                                 ExternalAddress(vector_double_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
