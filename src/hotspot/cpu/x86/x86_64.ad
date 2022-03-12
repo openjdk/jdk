@@ -7524,7 +7524,6 @@ instruct leaI_rReg_rReg_immI2(rRegI dst, no_rbp_r13_RegI base, rRegI index, immI
 %{
   predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddI base (LShiftI index scale)));
-  match(Set dst (AddI (LShiftI index scale) base));
 
   format %{ "leal $dst, [$base + $index << $scale]\t# int" %}
   ins_encode %{
@@ -7538,7 +7537,6 @@ instruct leaI_rReg_rReg_immI2_immI(rRegI dst, rRegI base, rRegI index, immI2 sca
 %{
   predicate(VM_Version::supports_fast_3op_lea());
   match(Set dst (AddI (AddI base (LShiftI index scale)) disp));
-  match(Set dst (AddI (AddI (LShiftI index scale) base) disp));
 
   format %{ "leal $dst, [$base + $index << $scale + $disp]\t# int" %}
   ins_encode %{
@@ -7696,7 +7694,6 @@ instruct leaL_rReg_rReg_immI2(rRegL dst, no_rbp_r13_RegL base, rRegL index, immI
 %{
   predicate(VM_Version::supports_fast_2op_lea());
   match(Set dst (AddL base (LShiftL index scale)));
-  match(Set dst (AddL (LShiftL index scale) base));
 
   format %{ "leaq $dst, [$base + $index << $scale]\t# long" %}
   ins_encode %{
@@ -7710,7 +7707,6 @@ instruct leaL_rReg_rReg_immI2_immL32(rRegL dst, rRegL base, rRegL index, immI2 s
 %{
   predicate(VM_Version::supports_fast_3op_lea());
   match(Set dst (AddL (AddL base (LShiftL index scale)) disp));
-  match(Set dst (AddL (AddL (LShiftL index scale) base) disp));
 
   format %{ "leaq $dst, [$base + $index << $scale + $disp]\t# long" %}
   ins_encode %{

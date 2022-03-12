@@ -1059,7 +1059,7 @@ public:
   // replaced by add-add or lea-add
   static bool supports_fast_3op_lea() {
     return supports_fast_2op_lea() &&
-           ((is_intel() && supports_clwb()) || // Icelake and above
+           ((is_intel() && supports_clwb() && !is_intel_skylake()) || // Icelake and above
             is_amd());
   }
 
