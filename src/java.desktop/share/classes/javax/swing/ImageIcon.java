@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,16 @@ package javax.swing;
 
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.MediaTracker;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.MemoryImageSource;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.PixelGrabber;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
@@ -436,10 +439,28 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param y the Y coordinate of the icon's top-left corner
      */
     public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
-        if(imageObserver == null) {
-           g.drawImage(image, x, y, c);
-        } else {
-           g.drawImage(image, x, y, imageObserver);
+        Object oldHint = null;
+        boolean hintChanged = false;
+        ImageObserver observer = imageObserver != null ? imageObserver : c;
+        if (image instanceof MultiResolutionImage) {
+            Image variant = ((MultiResolutionImage) image).getResolutionVariant(this.width, this.height);
+            if (variant.getHeight(observer) != height || variant.getWidth(observer) != width) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2d = (Graphics2D) g;
+                    RenderingHints rh = g2d.getRenderingHints();
+                    oldHint = rh.get(RenderingHints.KEY_INTERPOLATION);
+                    if (!RenderingHints.VALUE_INTERPOLATION_BICUBIC.equals(oldHint)) {
+                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                        hintChanged = true;
+                    }
+                }
+            }
+        }
+        g.drawImage(image, x, y, observer);
+        if (hintChanged) {
+            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    oldHint == null ? RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR : oldHint);
         }
     }
 
