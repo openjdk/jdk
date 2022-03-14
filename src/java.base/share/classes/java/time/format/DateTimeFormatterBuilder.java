@@ -1774,7 +1774,7 @@ public final class DateTimeFormatterBuilder {
      *    D       1      appendValue(ChronoField.DAY_OF_YEAR)
      *    DD      2      appendValue(ChronoField.DAY_OF_YEAR, 2, 3, SignStyle.NOT_NEGATIVE)
      *    DDD     3      appendValue(ChronoField.DAY_OF_YEAR, 3)
-     *    F       1      appendValue(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH)
+     *    F       1      appendValue(ChronoField.ALIGNED_WEEK_OF_MONTH)
      *    g..g    1..n   appendValue(JulianFields.MODIFIED_JULIAN_DAY, n, 19, SignStyle.NORMAL)
      *    E       1      appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT)
      *    EE      2      appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT)
@@ -2183,7 +2183,7 @@ public final class DateTimeFormatterBuilder {
         FIELD_MAP.put('L', ChronoField.MONTH_OF_YEAR);             // SDF, LDML (stand-alone)
         FIELD_MAP.put('D', ChronoField.DAY_OF_YEAR);               // SDF, LDML
         FIELD_MAP.put('d', ChronoField.DAY_OF_MONTH);              // SDF, LDML
-        FIELD_MAP.put('F', ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH);  // SDF, LDML
+        FIELD_MAP.put('F', ChronoField.ALIGNED_WEEK_OF_MONTH);     // SDF, LDML
         FIELD_MAP.put('E', ChronoField.DAY_OF_WEEK);               // SDF, LDML (different to both for 1/2 chars)
         FIELD_MAP.put('c', ChronoField.DAY_OF_WEEK);               // LDML (stand-alone)
         FIELD_MAP.put('e', ChronoField.DAY_OF_WEEK);               // LDML (needs localized week number)

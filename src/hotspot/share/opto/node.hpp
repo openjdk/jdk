@@ -1153,7 +1153,12 @@ public:
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL, "must be con");
+    guarantee(t != NULL && t->is_con(), "must be con");
+    return t->get_con_as_long(bt);
+  }
+  jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
+    const TypeInteger* t = find_integer_type(bt);
+    if (t == NULL || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;

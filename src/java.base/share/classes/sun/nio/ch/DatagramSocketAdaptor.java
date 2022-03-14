@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,9 +219,7 @@ public class DatagramSocketAdaptor
             } catch (AlreadyConnectedException e) {
                 throw new IllegalArgumentException("Connected and packet address differ");
             } catch (ClosedChannelException e) {
-                var exc = new SocketException("Socket closed");
-                exc.initCause(e);
-                throw exc;
+                throw new SocketException("Socket closed", e);
             }
         } finally {
             if (bb != null) {
@@ -249,9 +247,7 @@ public class DatagramSocketAdaptor
                 p.setSocketAddress(sender);
             }
         } catch (ClosedChannelException e) {
-            var exc = new SocketException("Socket closed");
-            exc.initCause(e);
-            throw exc;
+            throw new SocketException("Socket closed", e);
         } finally {
             Util.offerFirstTemporaryDirectBuffer(bb);
         }
@@ -481,7 +477,7 @@ public class DatagramSocketAdaptor
             joinGroup(new InetSocketAddress(group, 0), null);
         } catch (IllegalArgumentException iae) {
             // 1-arg joinGroup does not specify IllegalArgumentException
-            throw (SocketException) new SocketException("joinGroup failed").initCause(iae);
+            throw new SocketException("joinGroup failed", iae);
         }
     }
 
@@ -493,7 +489,7 @@ public class DatagramSocketAdaptor
             leaveGroup(new InetSocketAddress(group, 0), null);
         } catch (IllegalArgumentException iae) {
             // 1-arg leaveGroup does not specify IllegalArgumentException
-            throw (SocketException) new SocketException("leaveGroup failed").initCause(iae);
+            throw new SocketException("leaveGroup failed", iae);
         }
     }
 
