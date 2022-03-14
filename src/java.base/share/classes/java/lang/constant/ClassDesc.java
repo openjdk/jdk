@@ -148,7 +148,8 @@ public sealed interface ClassDesc
      * is described by this {@linkplain ClassDesc}.
      *
      * @return a {@linkplain ClassDesc} describing the array type
-     * @throws IllegalStateException if the resulting {@linkplain ClassDesc} would have an array rank of greater than 255
+     * @throws IllegalStateException if the resulting {@linkplain
+     * ClassDesc} would have an array rank of greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType() {
@@ -167,14 +168,23 @@ public sealed interface ClassDesc
      *
      * @param rank the rank of the array
      * @return a {@linkplain ClassDesc} describing the array type
-     * @throws IllegalArgumentException if the rank is less than or equal to zero or if the rank of the resulting array type is
+     * @throws IllegalArgumentException if the rank is less than or
+     * equal to zero or if the rank of the resulting array type is
      * greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
         int currentDepth = ConstantUtils.arrayDepth(descriptorString());
-        if (rank <= 0 || currentDepth + rank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS)
-            throw new IllegalArgumentException("rank: " + currentDepth + rank);
+        int netRank;
+        try {
+            netRank = Math.addExact(currentDepth, rank); 
+        } catch (ArithmeticException ae) {
+            throw new IllegalArgumentException("Integer overflow in rank computation");
+        }
+        if (rank <= 0 || netRank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS)
+            throw new IllegalArgumentException("rank: " + netRank +
+                                               " exceeds maximum supported dimension of " +
+                                               ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS);
         return ClassDesc.ofDescriptor("[".repeat(rank) + descriptorString());
     }
 
