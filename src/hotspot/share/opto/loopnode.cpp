@@ -2564,7 +2564,7 @@ BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, Basi
   return new LongCountedLoopNode(entry, backedge);
 }
 
-void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn,
+void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn,
                                               PhaseIdealLoop* iloop) {
   Node* cle_out = inner_cle->proj_out(false);
   Node* cle_tail = inner_cle->proj_out(true);
@@ -2576,7 +2576,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
       if (u->is_Store()) {
         int alias_idx = igvn->C->get_alias_index(u->adr_type());
         Node* first = u;
-        for(;;) {
+        for (;;) {
           Node* next = first->in(MemNode::Memory);
           if (!next->is_Store() || next->in(0) != cle_out) {
             break;
@@ -2585,7 +2585,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           first = next;
         }
         Node* last = u;
-        for(;;) {
+        for (;;) {
           Node* next = NULL;
           for (DUIterator_Fast jmax, j = last->fast_outs(jmax); j < jmax; j++) {
             Node* uu = last->fast_out(j);
@@ -2601,11 +2601,11 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           last = next;
         }
         Node* phi = NULL;
-        for (DUIterator_Fast jmax, j = target->fast_outs(jmax); j < jmax; j++) {
-          Node* uu = target->fast_out(j);
+        for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
+          Node* uu = inner_cl->fast_out(j);
           if (uu->is_Phi()) {
             Node* be = uu->in(LoopNode::LoopBackControl);
-            if (be->is_Store() && be->in(0) == target->in(LoopNode::LoopBackControl)) {
+            if (be->is_Store() && be->in(0) == inner_cl->in(LoopNode::LoopBackControl)) {
               assert(igvn->C->get_alias_index(uu->adr_type()) != alias_idx && igvn->C->get_alias_index(uu->adr_type()) != Compile::AliasIdxBot, "unexpected store");
             }
             if (be == last || be == first->in(MemNode::Memory)) {
@@ -2616,8 +2616,8 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
           }
         }
 #ifdef ASSERT
-        for (DUIterator_Fast jmax, j = target->fast_outs(jmax); j < jmax; j++) {
-          Node* uu = target->fast_out(j);
+        for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
+          Node* uu = inner_cl->fast_out(j);
           if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
             if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
               assert(phi == uu, "what's that phi?");
@@ -2648,19 +2648,19 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
         }
 #endif
         if (phi == NULL) {
-          // If the an entire chains was sunk, the
+          // If an entire chains was sunk, the
           // inner loop has no phi for that memory
           // slice, create one for the outer loop
-          phi = PhiNode::make(target, first->in(MemNode::Memory), Type::MEMORY,
+          phi = PhiNode::make(inner_cl, first->in(MemNode::Memory), Type::MEMORY,
                               igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type())));
           phi->set_req(LoopNode::LoopBackControl, last);
-          phi = register_new_node(phi, target, igvn, iloop);
+          phi = register_new_node(phi, inner_cl, igvn, iloop);
           igvn->replace_input_of(first, MemNode::Memory, phi);
         } else {
           // Or fix the outer loop fix to include
           // that chain of stores.
           Node* be = phi->in(LoopNode::LoopBackControl);
-          assert(!(be->is_Store() && be->in(0) == target->in(LoopNode::LoopBackControl)), "store on the backedge + sunk stores: unsupported");
+          assert(!(be->is_Store() && be->in(0) == inner_cl->in(LoopNode::LoopBackControl)), "store on the backedge + sunk stores: unsupported");
           if (be == first->in(MemNode::Memory)) {
             if (be == phi->in(LoopNode::LoopBackControl)) {
               igvn->replace_input_of(phi, LoopNode::LoopBackControl, last);

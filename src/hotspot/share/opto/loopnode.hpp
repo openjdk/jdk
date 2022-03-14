@@ -546,7 +546,7 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* target, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
 
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
