@@ -73,6 +73,15 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 const int MXCSR_MASK = 0xFFC0;  // Mask out any pending exceptions
 
+//extern uint32_t _SafeFetch32(void* p, uint32_t val);
+//extern uint64_t _SafeFetch64(void* p, uint64_t val);
+extern void* _SafeFetch32;
+extern void* _SafeFetch32_fault;
+extern void* _SafeFetch32_continuation;
+extern void* _SafeFetch64;
+extern void* _SafeFetch64_fault;
+extern void* _SafeFetch64_continuation;
+
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -3821,9 +3830,27 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+
+
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
                           address* fault_pc, address* continuation_pc) {
+    switch (size) {
+    case 4:
+      *entry = (address)_SafeFetch32;
+      *continuation_pc = (address)_SafeFetch32_continuation;
+      *fault_pc = (address)_SafeFetch32_fault;
+      break;
+    case 8:
+      *entry = (address)_SafeFetch64;
+      *continuation_pc = (address)_SafeFetch64_continuation;
+      *fault_pc = (address)_SafeFetch64_fault;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+
+/*
     // safefetch signatures:
     //   int      SafeFetch32(int*      adr, int      errValue);
     //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
@@ -3858,7 +3885,7 @@ class StubGenerator: public StubCodeGenerator {
     // return errValue or *adr
     *continuation_pc = __ pc();
     __ movq(rax, c_rarg1);
-    __ ret(0);
+    __ ret(0);*/
   }
 
   // This is a version of CBC/AES Decrypt which does 4 blocks in a loop at a time
