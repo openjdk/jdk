@@ -355,7 +355,7 @@ private:
     // growableArray::at() will throw assert otherwise.
     return _nodes.at(idx);
   }
-  uint nodes_size() const { return _nodes.length(); } 
+  uint nodes_size() const { return _nodes.length(); }
 
   uint next_pidx() { return _next_pidx++; }
 

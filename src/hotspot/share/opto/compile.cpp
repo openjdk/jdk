@@ -2168,7 +2168,6 @@ void Compile::Optimize() {
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
-    // add counter for number of candidates
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
@@ -2179,6 +2178,7 @@ void Compile::Optimize() {
     bool progress;
     do {
       ConnectionGraph::do_analysis(this, &igvn);
+
       if (failing())  return;
 
       int mcount = macro_count(); // Record number of allocations and locks before IGVN
@@ -2192,7 +2192,6 @@ void Compile::Optimize() {
       if (congraph() != NULL && macro_count() > 0) {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
-        // here is where we have scalar replacement statistics 
         mexp.eliminate_macro_nodes();
         igvn.set_delay_transform(false);
 
@@ -2208,9 +2207,6 @@ void Compile::Optimize() {
       // by removing some allocations and/or locks.
     } while (progress);
 
-  }
-  else{
-    //counter for number of non-candidates
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
