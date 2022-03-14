@@ -834,6 +834,7 @@ public class TestMaskedMacroLogicVector {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                   "-XX:+IgnoreUnrecognizedVMOptions",
                                    "-XX:UseAVX=3",
                                    "--add-modules=jdk.incubator.vector",
                                    "-XX:CompileThresholdScaling=0.3");
