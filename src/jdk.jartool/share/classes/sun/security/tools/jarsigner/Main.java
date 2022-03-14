@@ -1199,7 +1199,7 @@ public class Main {
 
         // only in verifying
         if (not_all_entries_signed_by_alias_in_keystore) {
-            errors.add(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
+            warnings.add(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
         }
 
         if (signerSelfSigned) {
