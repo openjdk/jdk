@@ -72,6 +72,14 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
+extern char _SafeFetch32[] __attribute__ ((visibility ("hidden")));
+extern char _SafeFetch32_continuation[] __attribute__ ((visibility ("hidden")));
+extern char _SafeFetch32_fault[] __attribute__ ((visibility ("hidden")));
+
+extern char _SafeFetch64[] __attribute__ ((visibility ("hidden")));
+extern char _SafeFetch64_continuation[] __attribute__ ((visibility ("hidden")));
+extern char _SafeFetch64_fault[] __attribute__ ((visibility ("hidden")));
+
 // Stub Code definitions
 
 class StubGenerator: public StubCodeGenerator {
@@ -3985,46 +3993,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   c_rarg0 = adr
-    //   c_rarg1 = errValue
-    //
-    // result:
-    //   PPC_RET  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    // Load *adr into c_rarg1, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ ldrw(c_rarg1, Address(c_rarg0, 0));
-        break;
-      case 8:
-        // int64_t
-        __ ldr(c_rarg1, Address(c_rarg0, 0));
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ mov(r0, c_rarg1);
-    __ ret(lr);
-  }
-
   /**
    *  Arguments:
    *
@@ -7481,12 +7449,14 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
+    StubRoutines::_safefetch32_entry = (address)_SafeFetch32;
+    StubRoutines::_safefetch32_fault_pc = (address)_SafeFetch32_fault;
+    StubRoutines::_safefetch32_continuation_pc = (address)_SafeFetch32_continuation;
+
+    StubRoutines::_safefetchN_entry = (address)_SafeFetch64;
+    StubRoutines::_safefetchN_fault_pc = (address)_SafeFetch64_fault;
+    StubRoutines::_safefetchN_continuation_pc = (address)_SafeFetch64_continuation;
+
   }
 
   void generate_all() {
