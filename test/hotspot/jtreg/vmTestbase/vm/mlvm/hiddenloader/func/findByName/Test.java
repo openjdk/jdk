@@ -37,23 +37,23 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.func.findByName.Test
+ * @build vm.mlvm.hiddenloader.func.findByName.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm vm.mlvm.anonloader.func.findByName.Test
+ * @run main/othervm vm.mlvm.hiddenloader.func.findByName.Test
  */
 
-package vm.mlvm.anonloader.func.findByName;
+package vm.mlvm.hiddenloader.func.findByName;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
+import vm.mlvm.hiddenloader.share.HiddenkTestee01;
 import vm.mlvm.share.MlvmTest;
 import vm.share.FileUtils;
 
 public class Test extends MlvmTest {
-    private static final Class<?> PARENT = AnonkTestee01.class;
+    private static final Class<?> PARENT = HiddenkTestee01.class;
 
     public boolean run() throws Exception {
         try {

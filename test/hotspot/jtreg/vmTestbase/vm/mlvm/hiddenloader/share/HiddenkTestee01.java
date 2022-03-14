@@ -21,11 +21,11 @@
  * questions.
  */
 
-package vm.mlvm.anonloader.share;
+package vm.mlvm.hiddenloader.share;
 
 import vm.mlvm.share.Env;
 
-public class AnonkTestee01 {
+public class HiddenkTestee01 {
     public final static String muzzy = "BIG \uFFFF\u0000\uFFFE\uFEFF MUZZY";
     public final static String
     theDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrumIsTheDrum

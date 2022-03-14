@@ -34,20 +34,20 @@
  *          /test/lib
  *
  * @comment build test class and indify classes
- * @build vm.mlvm.anonloader.stress.oome.heap.Test
+ * @build vm.mlvm.hiddenloader.stress.oome.heap.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm -XX:-UseGCOverheadLimit -Xmx128m vm.mlvm.anonloader.stress.oome.heap.Test
+ * @run main/othervm -XX:-UseGCOverheadLimit -Xmx128m vm.mlvm.hiddenloader.stress.oome.heap.Test
  */
 
-package vm.mlvm.anonloader.stress.oome.heap;
+package vm.mlvm.hiddenloader.stress.oome.heap;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.List;
 import java.io.IOException;
 
-import vm.mlvm.anonloader.share.AnonkTestee01;
+import vm.mlvm.hiddenloader.share.HiddenkTestee01;
 import vm.mlvm.share.MlvmOOMTest;
 import vm.mlvm.share.MlvmTestExecutor;
 import vm.mlvm.share.Env;
@@ -71,14 +71,14 @@ public class Test extends MlvmOOMTest {
     protected void eatMemory(List<Object> list) {
         byte[] classBytes = null;
         try {
-            classBytes = FileUtils.readClass(AnonkTestee01.class.getName());
+            classBytes = FileUtils.readClass(HiddenkTestee01.class.getName());
         } catch (IOException e) {
             Env.throwAsUncheckedException(e);
         }
         try {
             while (true) {
                 Lookup lookup = MethodHandles.lookup();
-                Lookup ank_lookup = MethodHandles.privateLookupIn(AnonkTestee01.class, lookup);
+                Lookup ank_lookup = MethodHandles.privateLookupIn(HiddenkTestee01.class, lookup);
                 Class<?> c = ank_lookup.defineHiddenClass(classBytes, true).lookupClass();
                 list.add(c.newInstance());
             }
