@@ -1770,16 +1770,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         return impl.anyLocalAddress();
     }
 
-    /**
-     * Initializes an empty InetAddress.
-     */
-    @java.io.Serial
-    private void readObjectNoData () {
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
-    }
-
     private static final jdk.internal.misc.Unsafe UNSAFE
             = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long FIELDS_OFFSET
@@ -1795,9 +1785,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     @java.io.Serial
     private void readObject (ObjectInputStream s) throws
                          IOException, ClassNotFoundException {
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
         GetField gf = s.readFields();
         String host = (String)gf.get("hostName", null);
         int address = gf.get("address", 0);
@@ -1831,11 +1818,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
-    private void writeObject (ObjectOutputStream s) throws
-                        IOException {
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
+    private void writeObject (ObjectOutputStream s) throws IOException {
         PutField pf = s.putFields();
         pf.put("hostName", holder().getHostName());
         pf.put("address", holder().getAddress());
