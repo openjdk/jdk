@@ -4321,6 +4321,94 @@ void C2_MacroAssembler::vector_maskall_operation(KRegister dst, Register src, in
   }
 }
 
+
+//
+// Following is lookup table based popcount computation algorithm:-
+//       Index   Bit set count
+//     [ 0000 ->   0,
+//       0001 ->   1,
+//       0010 ->   1,
+//       0011 ->   2,
+//       0100 ->   1,
+//       0101 ->   2,
+//       0110 ->   2,
+//       0111 ->   3,
+//       1000 ->   1,
+//       1001 ->   2,
+//       1010 ->   3,
+//       1011 ->   3,
+//       1100 ->   2,
+//       1101 ->   3,
+//       1111 ->   4 ]
+//  a. Count the number of 1s in 4 LSB bits of each byte. These bits are used as
+//     shuffle indices for lookup table access.
+//  b. Right shift each byte of vector lane by 4 positions.
+//  c. Count the number of 1s in 4 MSB bits each byte. These bits are used as
+//     shuffle indices for lookup table access.
+//  d. Add the bitset count of upper and lower 4 bits of each byte.
+//  e. Unpack double words to quad words and compute sum of absolute difference of bitset
+//     count of all the bytes of a quadword.
+//  f. Perform step e. for upper 128bit vector lane.
+//  g. Pack the bitset count of quadwords back to double word.
+//  h. Unpacking and packing operations are not needed for 64bit vector lane.
+void C2_MacroAssembler::vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                            XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                                            int vec_enc) {
+  if (VM_Version::supports_avx512_vpopcntdq()) {
+    vpopcntd(dst, src, vec_enc);
+  } else {
+    assert((vec_enc == Assembler::AVX_512bit && VM_Version::supports_avx512bw()) || VM_Version::supports_avx2(), "");
+    movl(rtmp, 0x0F0F0F0F);
+    movdl(xtmp1, rtmp);
+    vpbroadcastd(xtmp1, xtmp1, vec_enc);
+    if (Assembler::AVX_512bit == vec_enc) {
+      evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), false, vec_enc, rtmp);
+    } else {
+      vmovdqu(xtmp2, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), rtmp);
+    }
+    vpand(xtmp3, src, xtmp1, vec_enc);
+    vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
+    vpsrlw(dst, src, 4, vec_enc);
+    vpand(dst, dst, xtmp1, vec_enc);
+    vpshufb(dst, xtmp2, dst, vec_enc);
+    vpaddb(xtmp3, dst, xtmp3, vec_enc);
+    vpxor(xtmp1, xtmp1, xtmp1, vec_enc);
+    vpunpckhdq(dst, xtmp3, xtmp1, vec_enc);
+    vpsadbw(dst, dst, xtmp1, vec_enc);
+    vpunpckldq(xtmp2, xtmp3, xtmp1, vec_enc);
+    vpsadbw(xtmp2, xtmp2, xtmp1, vec_enc);
+    vpackuswb(dst, xtmp2, dst, vec_enc);
+  }
+}
+
+void C2_MacroAssembler::vector_popcount_long(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                             XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                                             int vec_enc) {
+  if (VM_Version::supports_avx512_vpopcntdq()) {
+    vpopcntq(dst, src, vec_enc);
+  } else if (vec_enc == Assembler::AVX_512bit) {
+    assert(VM_Version::supports_avx512bw(), "");
+    movl(rtmp, 0x0F0F0F0F);
+    movdl(xtmp1, rtmp);
+    vpbroadcastd(xtmp1, xtmp1, vec_enc);
+    evmovdqul(xtmp2, k0, ExternalAddress(StubRoutines::x86::vector_popcount_lut()), true, vec_enc, rtmp);
+    vpandq(xtmp3, src, xtmp1, vec_enc);
+    vpshufb(xtmp3, xtmp2, xtmp3, vec_enc);
+    vpsrlw(dst, src, 4, vec_enc);
+    vpandq(dst, dst, xtmp1, vec_enc);
+    vpshufb(dst, xtmp2, dst, vec_enc);
+    vpaddb(xtmp3, dst, xtmp3, vec_enc);
+    vpxorq(xtmp1, xtmp1, xtmp1, vec_enc);
+    vpsadbw(dst, xtmp3, xtmp1, vec_enc);
+  } else {
+    // We do not see any performance benefit of running
+    // above instruction sequence on 256 bit vector which
+    // can operate over maximum 4 long elements.
+    ShouldNotReachHere();
+  }
+  evpmovqd(dst, dst, vec_enc);
+}
+
 #ifndef _LP64
 void C2_MacroAssembler::vector_maskall_operation32(KRegister dst, Register src, KRegister tmp, int mask_len) {
   assert(VM_Version::supports_avx512bw(), "");
