@@ -174,17 +174,21 @@ public sealed interface ClassDesc
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
     default ClassDesc arrayType(int rank) {
-        int currentDepth = ConstantUtils.arrayDepth(descriptorString());
         int netRank;
+        if (rank <= 0) {
+            throw new IllegalArgumentException("rank " + rank + "is not a positive value");
+        }
         try {
+            int currentDepth = ConstantUtils.arrayDepth(descriptorString());
             netRank = Math.addExact(currentDepth, rank);
+            if (netRank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+                throw new IllegalArgumentException("rank: " + netRank +
+                                                   " exceeds maximum supported dimension of " +
+                                                   ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS);
+            }
         } catch (ArithmeticException ae) {
             throw new IllegalArgumentException("Integer overflow in rank computation");
         }
-        if (rank <= 0 || netRank > ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS)
-            throw new IllegalArgumentException("rank: " + netRank +
-                                               " exceeds maximum supported dimension of " +
-                                               ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS);
         return ClassDesc.ofDescriptor("[".repeat(rank) + descriptorString());
     }
 
