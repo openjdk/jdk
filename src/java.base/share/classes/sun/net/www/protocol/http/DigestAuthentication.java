@@ -426,8 +426,10 @@ class DigestAuthentication extends AuthenticationInfo {
         String algorithm = p.findValue("algorithm");
         if (algorithm == null || algorithm.isEmpty()) {
             algorithm = "MD5";  // The default, accoriding to rfc2069
+        } else if (algorithm.equalsIgnoreCase("SHA-512-256")) {
+            algorithm = "SHA-512/256";
         }
-        var oid = KnownOIDs.findMatch(algorithm.toUpperCase(Locale.ROOT));
+        var oid = KnownOIDs.findMatch(algorithm);
         if (oid == null) {
             log("unknown algorithm: " + algorithm);
             return false;
@@ -629,9 +631,6 @@ class DigestAuthentication extends AuthenticationInfo {
                                    String realm, Charset charset)
         throws NoSuchAlgorithmException, CharacterCodingException
     {
-        if (algorithm.equals("SHA-512-256")) {
-            algorithm = "SHA-512/256";
-        }
         MessageDigest md = MessageDigest.getInstance(algorithm);
         String s = user + ":" + realm;
         return encode(s, null, md, charset);
@@ -649,9 +648,6 @@ class DigestAuthentication extends AuthenticationInfo {
 
         String A1, HashA1;
 
-        if (algorithm.equals("SHA-512-256")) {
-            algorithm = "SHA-512/256";
-        }
         MessageDigest md = MessageDigest.getInstance(algorithm);
 
         if (session) {
