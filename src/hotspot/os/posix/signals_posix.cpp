@@ -1600,8 +1600,6 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     return;
   }
 
-  assert(thread->is_VM_thread() || thread->is_Java_thread(), "Must be VMThread or JavaThread");
-
   OSThread* osthread = thread->osthread();
 
   os::SuspendResume::State current = osthread->sr.state();

@@ -79,6 +79,7 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/frame.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/handshake.hpp"
@@ -3667,6 +3668,24 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   return the_owner;
 }
 
+static void print_native_stack(outputStream* st, frame fr, Thread* thread) {
+  char buf[O_BUFLEN];
+  VMError::print_native_stack(st, fr, thread, buf, sizeof(buf));
+}
+
+class PrintNonJavaThreadStack : public os::SuspendedThreadTask {
+private:
+  outputStream* _st;
+public:
+  PrintNonJavaThreadStack(Thread* thread, outputStream* st) :
+    os::SuspendedThreadTask(thread), _st(st) {}
+
+  void do_task(const os::SuspendedThreadTaskContext& ctx) {
+    frame fr = os::fetch_frame_from_context(ctx.ucontext());
+    print_native_stack(_st, fr, ctx.thread());
+  }
+};
+
 class PrintOnClosure : public ThreadClosure {
 private:
   outputStream* _st;
@@ -3678,7 +3697,20 @@ public:
   virtual void do_thread(Thread* thread) {
     if (thread != NULL) {
       thread->print_on(_st);
-      _st->cr();
+      if (IncludeNonJavaThreadStackTrace) {
+        Thread* current_thread = Thread::current();
+        if (current_thread == thread) {
+          // Target thread is current thread, we don't suspend itself, instead, we
+          // walk its frames directly.
+          print_native_stack(_st, os::current_frame(), current_thread);
+        } else {
+          // Otherwise, we need to suspend target thread a while to make it walking safe
+          PrintNonJavaThreadStack st(thread, _st);
+          st.run();
+        }
+      } else {
+        _st->cr();
+      }
     }
   }
 };

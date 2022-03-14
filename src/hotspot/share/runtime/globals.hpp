@@ -1575,6 +1575,10 @@ const intx ObjectAlignmentInBytes = 8;
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache")                          \
                                                                             \
+  product(bool, IncludeNonJavaThreadStackTrace, true,                       \
+          "Include non-java-thread stacktrace during thread dump. Note "    \
+          "this may block application a while when trying thread dump")     \
+                                                                            \
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
                                                                             \
