@@ -296,6 +296,10 @@ class os: AllStatic {
   // Return the default page size.
   static int    vm_page_size();
 
+  // The largest possible standard page size (sysconf(_SC_PAGESIZE)) across all our
+  // platforms, usable as a compile-time constant.
+  static const size_t max_page_size_crossplatform = 64 * K; // ppc has 64 K pages.
+
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
   static const PageSizes& page_sizes() { return _page_sizes; }

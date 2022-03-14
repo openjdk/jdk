@@ -32,19 +32,13 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-
-#ifdef ZERO
-// See stubGenerator_zero.cpp
-#include <setjmp.h>
-extern sigjmp_buf* get_jmp_buf_for_continuation();
-#endif
 
 #include <signal.h>
 
@@ -601,23 +595,17 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   if (!signal_was_handled) {
     // Handle SafeFetch access.
-#ifndef ZERO
+#if defined(SAFEFETCH_METHOD_STATIC_ASSEMBLY)
     if (uc != NULL) {
       address pc = os::Posix::ucontext_get_pc(uc);
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+      if (SafeFetchHelper::is_safefetch_fault(pc)) {
+        os::Posix::ucontext_set_pc(uc, SafeFetchHelper::continuation_for_safefetch_fault(pc));
         signal_was_handled = true;
       }
     }
-#else
-    // See JDK-8076185
-    if (sig == SIGSEGV || sig == SIGBUS) {
-      sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
-      if (pjb) {
-        siglongjmp(*pjb, 1);
-      }
-    }
-#endif // ZERO
+#elif defined(SAFEFETCH_METHOD_SIGSETJMP)
+    handle_safefetch(sig); // does not return if handled. If it returns, it was no safefetch fault.
+#endif // SAFEFETCH_METHOD_SIGSETJMP
   }
 
   // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
