@@ -62,7 +62,7 @@ public class AccessibleJTableCellTest {
                 }
             }
         } finally {
-            jFrame.dispose();
+            SwingUtilities.invokeAndWait(() -> jFrame.dispose());
         }
     }
 
