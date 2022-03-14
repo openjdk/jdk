@@ -1933,9 +1933,16 @@ private:
   // Interleave Low Doublewords
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
+  void vpunpckldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  // Interleave High Doublewords
+  void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
+
+  // Vector sum of absolute difference.
+  void vpsadbw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
 #ifndef _LP64 // no 32bit push/pop on amd64
   void pushl(Address src);
