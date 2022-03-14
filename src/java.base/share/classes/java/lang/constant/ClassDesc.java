@@ -177,7 +177,7 @@ public sealed interface ClassDesc
         int currentDepth = ConstantUtils.arrayDepth(descriptorString());
         int netRank;
         try {
-            netRank = Math.addExact(currentDepth, rank); 
+            netRank = Math.addExact(currentDepth, rank);
         } catch (ArithmeticException ae) {
             throw new IllegalArgumentException("Integer overflow in rank computation");
         }
