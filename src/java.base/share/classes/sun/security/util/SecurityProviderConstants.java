@@ -142,7 +142,7 @@ public final class SecurityProviderConstants {
     static {
         String keyLengthStr = GetPropertyAction.privilegedGetProperty
             (KEY_LENGTH_PROP);
-        int dsaKeySize = 3072;
+        int dsaKeySize = 2048;
         int rsaKeySize = 3072;
         int rsaSsaPssKeySize = rsaKeySize; // default to same value as RSA
         int dhKeySize = 3072;

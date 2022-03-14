@@ -82,15 +82,16 @@ public class TimestampCheck {
     private static final String PASSWORD = "changeit";
     private static final String defaultPolicyId = "2.3.4";
     private static String host = null;
-    private static final String DEF_DIGEST; // for signature algorithm, no "-"
-
-    static {
-        String digest = JarSigner.Builder.getDefaultDigestAlgorithm();
-        int idx = digest.indexOf("-");
-        if (idx != -1) {
-            DEF_DIGEST = digest.substring(0, idx) + digest.substring(idx + 1);
-        } else {
-            DEF_DIGEST = digest;
+    private static final String getDefaultSigAlg(String keyAlg) {
+        switch(keyAlg) {
+            case "DSA":
+                return "SHA256withDSA";
+            case "RSA":
+                return "SHA384withRSA";
+            case "EC":
+                return "SHA384withECDSA";
+            default:
+                throw new RuntimeException("Error: unsupported algo " + keyAlg);
         }
     }
 
@@ -393,10 +394,10 @@ public class TimestampCheck {
                         .shouldContain("Signature algorithm: SHA3-256withRSA")
                         .shouldContain("Signature algorithm: RSASSA-PSS")
                         .shouldContain("Signature algorithm: " +
-                                DEF_DIGEST + "withECDSA")
+                                getDefaultSigAlg("EC"))
                         .shouldContain("Signature algorithm: Ed25519")
                         .shouldContain("Signature algorithm: " +
-                                DEF_DIGEST + "withDSA");
+                                getDefaultSigAlg("DSA"));
 
                 // Disabled algorithms
                 sign("tsweak", "-digestalg", "SHA1",

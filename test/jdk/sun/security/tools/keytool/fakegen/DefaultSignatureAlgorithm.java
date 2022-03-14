@@ -52,8 +52,8 @@ public class DefaultSignatureAlgorithm {
         check("RSA", 7680, null, "SHA384withRSA");
         check("RSA", 7681, null, "SHA512withRSA");
 
-        check("DSA", 1024, null, "SHA384withDSA");
-        check("DSA", 3072, null, "SHA384withDSA");
+        check("DSA", 1024, null, "SHA256withDSA");
+        check("DSA", 3072, null, "SHA256withDSA");
 
         check("EC", 384, null, "SHA384withECDSA");
 

@@ -536,10 +536,9 @@ public class SignatureUtil {
     private static String ecStrength (int bitLength) {
         if (bitLength >= 512) { // 256 bits of strength
             return "SHA512";
-        } else if (bitLength >= 384) {  // 192 bits of strength
+        } else {
+            // per CNSA, use SHA-384
             return "SHA384";
-        } else { // 128 bits of strength and less
-            return "SHA256";
         }
     }
 
@@ -552,11 +551,17 @@ public class SignatureUtil {
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
     private static String ifcFfcStrength (int bitLength, boolean isDSA) {
-        if (bitLength > 7680) { // 256 bits security strength
-            return "SHA512";
-        } else {
-            // per CNSA, use SHA-384 unless keysize is too small
-            return (isDSA || bitLength >= 624 ? "SHA384" : "SHA256");
+        if (isDSA) {
+            // for backward interoperability
+            // SHA384withDSA is added under JDK-8172366 (jdk16)
+            return "SHA256";
+        } else { // RSA, RSASSA-PSS
+            if (bitLength > 7680) { // 256 bits security strength
+                return "SHA512";
+            } else {
+                // per CNSA, use SHA-384 unless keysize is too small
+                return (bitLength >= 624 ? "SHA384" : "SHA256");
+            }
         }
     }
 }

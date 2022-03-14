@@ -434,13 +434,13 @@ public final class JarSigner {
          * @implNote This implementation makes use of comparable strengths
          * as defined in Tables 2 and 3 of NIST SP 800-57 Part 1-Rev.5 as
          * well as NIST recommendations as appropriate.
-         * Specifically, if a DSA or RSA key with a key size greater than 7680
+         * Specifically, if an RSA key with a key size greater than 7680
          * bits, or an EC key with a key size greater than or equal to 512 bits,
          * SHA-512 will be used as the hash function for the signature.
          * Otherwise, SHA-384 will be used unless the key size is too small
-         * for resulting signature algorithm. For example, an RSA 512-bit key
-         * is too short for SHA384withRSA signature. For such keys, SHA-256
-         * will be used. The value may change in the future.
+         * for resulting signature algorithm. As for DSA keys, the SHA256withDSA
+         * signature algorithm is returned regardless of key size.
+         * The value may change in the future.
          *
          * @param key the private key.
          * @return the default signature algorithm. Returns null if a default
