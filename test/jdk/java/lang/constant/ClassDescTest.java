@@ -42,7 +42,7 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @bug 8215510
+ * @bug 8215510 8283075
  * @compile ClassDescTest.java
  * @run testng ClassDescTest
  * @summary unit tests for java.lang.constant.ClassDesc
