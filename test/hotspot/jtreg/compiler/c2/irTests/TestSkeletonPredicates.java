@@ -43,6 +43,7 @@ public class TestSkeletonPredicates {
 
     static volatile int barrier;
 
+    @ForceInline
     static boolean test1_helper(int start, int stop, double[] array1, double[] array2) {
         for (int i = start; i < stop; i++) {
             if ((i % 2) == 0) {
