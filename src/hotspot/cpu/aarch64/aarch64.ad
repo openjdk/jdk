@@ -1777,6 +1777,9 @@ int MachCallRuntimeNode::ret_addr_offset() {
   if (cb) {
     return 1 * NativeInstruction::instruction_size;
   } else {
+    if (class_id() == Class_MachCallLeaf) {
+      return 4 * NativeInstruction::instruction_size;
+    }
     return 6 * NativeInstruction::instruction_size;
   }
 }
@@ -1787,7 +1790,7 @@ int MachCallNativeNode::ret_addr_offset() {
   if (cb) {
     return 1 * NativeInstruction::instruction_size;
   } else {
-    return 6 * NativeInstruction::instruction_size;
+    return 4 * NativeInstruction::instruction_size;
   }
 }
 
@@ -3866,14 +3869,20 @@ encode %{
         return;
       }
     } else {
-      Label retaddr;
-      __ adr(rscratch2, retaddr);
-      __ lea(rscratch1, RuntimeAddress(entry));
-      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
-      __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
-      __ blr(rscratch1);
-      __ bind(retaddr);
-      __ add(sp, sp, 2 * wordSize);
+      int op = ideal_Opcode();
+      if (op == Op_CallLeaf || op == Op_CallLeafNoFP || op == Op_CallNative) {
+        __ lea(rscratch1, RuntimeAddress(entry));
+        __ blr(rscratch1);
+      } else {
+        Label retaddr;
+        __ adr(rscratch2, retaddr);
+        __ lea(rscratch1, RuntimeAddress(entry));
+        // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
+        __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
+        __ blr(rscratch1);
+        __ bind(retaddr);
+        __ add(sp, sp, 2 * wordSize);
+      }
     }
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
