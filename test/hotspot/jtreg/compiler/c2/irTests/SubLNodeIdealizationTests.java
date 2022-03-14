@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265
+ * @bug 8267265 8272735
  * @summary Test that Ideal transformations of SubLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.SubLNodeIdealizationTests
@@ -42,7 +42,8 @@ public class SubLNodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16", "test17", "test18"})
+                 "test16", "test17", "test18",
+                 "test19", "test20", "test21"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -63,20 +64,23 @@ public class SubLNodeIdealizationTests {
         Asserts.assertEQ((a + 1) - b      , test2(a, b));
         Asserts.assertEQ(a - (b + 2021)   , test3(a, b));
         Asserts.assertEQ(a - (a + b)      , test4(a, b));
-        Asserts.assertEQ(a - (b + a)      , test5(a, b));
-        Asserts.assertEQ(0 - (a - b)      , test6(a, b));
-        Asserts.assertEQ(0 - (a + 2021)   , test7(a, b));
-        Asserts.assertEQ((a + b) - (a + c), test8(a, b, c));
-        Asserts.assertEQ((b + a) - (c + a), test9(a, b, c));
-        Asserts.assertEQ((b + a) - (a + c), test10(a, b, c));
-        Asserts.assertEQ((a + b) - (c + a), test11(a, b, c));
-        Asserts.assertEQ(a - (b - c)      , test12(a, b, c));
-        Asserts.assertEQ(0 - (a >> 63)    , test13(a));
-        Asserts.assertEQ(0 - (0 - a)      , test14(a));
-        Asserts.assertEQ(a*b - a*c        , test15(a, b, c));
-        Asserts.assertEQ(a*b - b*c        , test16(a, b, c));
-        Asserts.assertEQ(a*c - b*c        , test17(a, b, c));
-        Asserts.assertEQ(a*b - c*a        , test18(a, b, c));
+        Asserts.assertEQ((a - b) - a      , test5(a, b));
+        Asserts.assertEQ(a - (b + a)      , test6(a, b));
+        Asserts.assertEQ(0 - (a - b)      , test7(a, b));
+        Asserts.assertEQ(0 - (a + 2021)   , test8(a, b));
+        Asserts.assertEQ((a + b) - (a + c), test9(a, b, c));
+        Asserts.assertEQ((b + a) - (c + a), test10(a, b, c));
+        Asserts.assertEQ((b + a) - (a + c), test11(a, b, c));
+        Asserts.assertEQ((a + b) - (c + a), test12(a, b, c));
+        Asserts.assertEQ(a - (b - c)      , test13(a, b, c));
+        Asserts.assertEQ(0 - (a >> 63)    , test14(a));
+        Asserts.assertEQ(0 - (0 - a)      , test15(a));
+        Asserts.assertEQ((a + b) - b      , test16(a, b));
+        Asserts.assertEQ((a + b) - a      , test17(a, b));
+        Asserts.assertEQ(a*b - a*c        , test18(a, b, c));
+        Asserts.assertEQ(a*b - b*c        , test19(a, b, c));
+        Asserts.assertEQ(a*c - b*c        , test20(a, b, c));
+        Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
     }
 
     @Test
@@ -114,17 +118,24 @@ public class SubLNodeIdealizationTests {
     }
 
     @Test
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks (x - y) - x => 0 - y
+    public long test5(long x, long y) {
+        return (x - y) - x;
+    }
+
+    @Test
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x - (y + x) => 0 - y
-    public long test5(long x, long y) {
+    public long test6(long x, long y) {
         return x - (y + x);
     }
 
     @Test
     @IR(counts = {IRNode.SUB, "1"})
     // Checks 0 - (x - y) => y - x
-    public long test6(long x, long y) {
+    public long test7(long x, long y) {
         return 0 - (x - y);
     }
 
@@ -132,7 +143,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks 0 - (x + 2021) => -2021 - x
-    public long test7(long x, long y) {
+    public long test8(long x, long y) {
         return 0 - (x + 2021);
     }
 
@@ -140,7 +151,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x + a) - (x + b) => a - b;
-    public long test8(long x, long a, long b) {
+    public long test9(long x, long a, long b) {
         return (x + a) - (x + b);
     }
 
@@ -148,7 +159,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a + x) - (b + x) => a - b
-    public long test9(long x, long a, long b) {
+    public long test10(long x, long a, long b) {
         return (a + x) - (b + x);
     }
 
@@ -156,7 +167,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (a + x) - (x + b) => a - b
-    public long test10(long x, long a, long b) {
+    public long test11(long x, long a, long b) {
         return (a + x) - (x + b);
     }
 
@@ -164,7 +175,7 @@ public class SubLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (x + a) - (b + x) => a - b
-    public long test11(long x, long a, long b) {
+    public long test12(long x, long a, long b) {
         return (x + a) - (b + x);
     }
 
@@ -173,7 +184,7 @@ public class SubLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks a - (b - c) => (a + c) - b
-    public long test12(long a, long b, long c) {
+    public long test13(long a, long b, long c) {
         return a - (b - c);
     }
 
@@ -182,22 +193,36 @@ public class SubLNodeIdealizationTests {
     @IR(counts = {IRNode.URSHIFT_L, "1"})
     // Checks 0 - (a >> 63) => a >>> 63
     //        signed ^^          ^^^ unsigned
-    public long test13(long a) {
+    public long test14(long a) {
         return 0 - (a >> 63);
     }
 
     @Test
     @IR(failOn = {IRNode.SUB})
     // Checks 0 - (0 - x) => x
-    public long test14(long x) {
+    public long test15(long x) {
         return 0 - (0 - x);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.ADD})
+    // Checks (x + y) - y => x
+    public long test16(long x, long y) {
+        return (x + y) - y;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.ADD})
+    // Checks (x + y) - x => y
+    public long test17(long x, long y) {
+        return (x + y) - x;
     }
 
     @Test
     @IR(counts = {IRNode.MUL, "1",
                   IRNode.SUB, "1"})
     // Checks "a*b-a*c => a*(b-c)
-    public long test15(long a, long b, long c) {
+    public long test18(long a, long b, long c) {
         return a*b - a*c;
     }
 
@@ -205,7 +230,7 @@ public class SubLNodeIdealizationTests {
     @IR(counts = {IRNode.MUL, "1",
                   IRNode.SUB, "1"})
     // Checks a*b-b*c => b*(a-c)
-    public long test16(long a, long b, long c) {
+    public long test19(long a, long b, long c) {
         return a*b - b*c;
     }
 
@@ -213,7 +238,7 @@ public class SubLNodeIdealizationTests {
     @IR(counts = {IRNode.MUL, "1",
                   IRNode.SUB, "1"})
     // Checks a*c-b*c => (a-b)*c
-    public long test17(long a, long b, long c) {
+    public long test20(long a, long b, long c) {
         return a*c - b*c;
     }
 
@@ -221,7 +246,7 @@ public class SubLNodeIdealizationTests {
     @IR(counts = {IRNode.MUL, "1",
                   IRNode.SUB, "1"})
     // Checks a*b-c*a => a*(b-c)
-    public long test18(long a, long b, long c) {
+    public long test21(long a, long b, long c) {
         return a*b - c*a;
     }
 }
