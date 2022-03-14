@@ -28,7 +28,7 @@
  * @summary Enhance macro logic optimization for masked logic operations.
  * @modules jdk.incubator.vector
  * @requires vm.compiler2.enabled
- * @requires os.simpleArch == "x64"
+ * @requires vm.cpu.features ~= ".*avx.*"
  * @library /test/lib /
  * @run driver compiler.vectorapi.TestMaskedMacroLogicVector
  */
@@ -834,7 +834,6 @@ public class TestMaskedMacroLogicVector {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:+IgnoreUnrecognizedVMOptions",
                                    "-XX:UseAVX=3",
                                    "--add-modules=jdk.incubator.vector",
                                    "-XX:CompileThresholdScaling=0.3");
