@@ -329,7 +329,7 @@ public class RecordedObject {
                 return v;
             }
         }
-        throw new IllegalArgumentException("\"Attempt to get unknown field \"" + name + "\"");
+        throw new IllegalArgumentException("Attempt to get unknown field \"" + name + "\"");
     }
 
     // Gets a value, but checks that type and name is correct first
