@@ -30,12 +30,11 @@
  * @run main JTableFocusRingTest
  */
 
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.SwingUtilities;
+import java.awt.Color;
 import javax.swing.plaf.BorderUIResource.LineBorderUIResource;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.awt.*;
-import java.lang.Exception;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class JTableFocusRingTest {
 

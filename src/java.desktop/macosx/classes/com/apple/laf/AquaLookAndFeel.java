@@ -1124,16 +1124,20 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns a more visible JTable Cell Focus Ring color
-     * by manipulating hue, saturation and brightness for a
-     * given selection background color.
+     * Returns a prominent and visible Cell Focus Ring color by
+     * manipulating hue, saturation and setting the brightness
+     * to 100% for a given selection background color.
      *
-     * If selectedBackgroundColor is equal to white or
-     * black, the returned focus ring color is Gray. If the
-     * selectedBackgroundColor is any shade of Gray then, the
-     * returned focus ring color is White/Black depending on
-     * the rgb values. For all other values of rgb, a more
-     * prominent and visible color is returned.
+     * If selectedBackgroundColor is equal to white or black, the
+     * returned focus ring color is Gray. If the selectedBackgroundColor
+     * is any shade of Gray then, the returned focus ring color is
+     * White/Black depending on the rgb values. For all other values
+     * of rgb, a more prominent and visible color is returned. Hue
+     * and saturation are obtained depending on the current hue and
+     * saturation values of selectionBackgroundColor. The brightness
+     * of new color (for focus ring) is always set to 100% to ensure
+     * that the brightest shade for the obtained hue and saturation
+     * offset values is returned.
      *
      * @param selectedBackgroundColor - the {@code Color} object
      * @return the {@code Color} object corresponding to new HSB values
@@ -1185,7 +1189,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         hsbValues[1] = hsbValues[1] >= saturationThreshold ?
                 satLowerValue : satUpperValue;
 
-        //brightness adjustment - brightness set to 100%
+        //brightness adjustment - brightness set to 100%, always return the
+        //brightest color for the obtained hue and saturation values
         hsbValues[2] = brightnessValue;
 
         //create and return Color corresponding to new hsbValues
