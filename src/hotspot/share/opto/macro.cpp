@@ -2334,6 +2334,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       DEBUG_ONLY(int old_macro_count = C->macro_count();)
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
+        if(success) {
+          #ifndef PRODUCT
+            PhaseMacroExpand::_monitor_objects_removed_counter++;
+          #endif
+        }
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2342,6 +2347,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   // Next, attempt to eliminate allocations
   _has_locks = false;
   progress = true;
+  // count number of is_mem_bar
   while (progress) {
     progress = false;
     for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
@@ -2352,16 +2358,17 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
-        // if success incremement _number_of_objects_scalar_replaced
+        if(success){
+          #ifndef PRODUCT
+            PhaseMacroExpand::_objs_scalar_replaced_counter++;
+          #endif
+        }
         break;
       case Node::Class_CallStaticJava:
         success = eliminate_boxing_node(n->as_CallStaticJava());
-        // if success increment boxing counter
         break;
       case Node::Class_Lock:
-        // monitor objects
       case Node::Class_Unlock:
-        // monitor objects
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         _has_locks = true;
         break;
@@ -2385,6 +2392,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
+  //found number of mem_bar and subtract
 }
 
 //------------------------------expand_macro_nodes----------------------
@@ -2573,3 +2581,17 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   return false;
 }
+
+#ifndef PRODUCT
+int PhaseMacroExpand::_objs_scalar_replaced_counter = 0;
+int PhaseMacroExpand::_monitor_objects_removed_counter = 0;
+int PhaseMacroExpand::_GC_barriers_removed_counter = 0;
+int PhaseMacroExpand::_memory_barriers_removed_counter = 0;
+
+void PhaseMacroExpand::print_statistics() {
+  tty->print_cr("Number of objects scalar replaced: %d", PhaseMacroExpand::_objs_scalar_replaced_counter);
+  tty->print_cr("Number of monitor objects removed: %d", _monitor_objects_removed_counter);
+  tty->print_cr("Number of GC barriers removed: %d", _GC_barriers_removed_counter);
+  tty->print_cr("Number of memory barriers removed: %d", _memory_barriers_removed_counter);
+}
+#endif

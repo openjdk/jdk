@@ -3662,7 +3662,6 @@ int ConnectionGraph::_no_escape_counter = 0;
 int ConnectionGraph::_arg_escape_counter = 0;
 int ConnectionGraph::_global_escape_counter = 0;
 double ConnectionGraph::_time_elapsed = 0;
-int ConnectionGraph::_monitor_objects_removed_counter = 0;
 
 static const char *node_type_names[] = {
   "UnknownType",
@@ -3778,7 +3777,6 @@ void ConnectionGraph::print_statistics() {
   tty->print_cr("Global Escape: %d", _global_escape_counter);
   tty->print_cr("Total Java Objects in Escape Analysis: %d", _global_escape_counter +_arg_escape_counter + _no_escape_counter);
   tty->print_cr("Total time in Escape Analysis: %7.5f seconds", _time_elapsed);
-  tty->print_cr("Number of Monitor objects removed: %d", _monitor_objects_removed_counter);
 }
 
 void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
