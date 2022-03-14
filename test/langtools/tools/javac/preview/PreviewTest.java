@@ -109,15 +109,48 @@ public class PreviewTest extends TestRunner {
                           """,
                           """
                           package test;
+                          public class UseSubClass11 extends UseClass1 {
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubClass12P extends UseClass1 {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
                           import preview.api.OuterClass;
-                          public class UseClass2 extends OuterClass {
+                          public class UseClass2P extends OuterClass {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubClass21 extends UseClass2P {
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubClass22 extends UseClass2P {
                               public void test() {}
                           }
                           """,
                           """
                           package test;
                           import preview.api.OuterIntf;
-                          public class UseIntf2 implements OuterIntf {
+                          public class UseIntf2P implements OuterIntf {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubIntf21 extends UseIntf2P {
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubIntf22 extends UseIntf2P {
                               public void test() {}
                           }
                           """,
@@ -129,9 +162,57 @@ public class PreviewTest extends TestRunner {
                           """,
                           """
                           package test;
-                          import preview.api.OuterIntfDef;
-                          public class UseIntfDef2 implements OuterIntfDef {
+                          public class UseSubIntfDef11 extends UseIntfDef1 {
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubIntfDef12P extends UseIntfDef1 {
                               public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntfDef;
+                          public class UseIntfDef2P implements OuterIntfDef {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubIntfDef21 extends UseIntfDef2P {
+                          }
+                          """,
+                          """
+                          package test;
+                          public class UseSubIntfDef22 extends UseIntfDef2P {
+                              public void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntf;
+                          public interface IUseIntf1 extends OuterIntf {
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntf;
+                          public interface IUseIntf2P extends OuterIntf {
+                              public default void test() {}
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntfDef;
+                          public interface IUseIntfDef1 extends OuterIntfDef {
+                          }
+                          """,
+                          """
+                          package test;
+                          import preview.api.OuterIntfDef;
+                          public interface IUseIntfDef2P extends OuterIntfDef {
+                              public default void test() {}
                           }
                           """);
         Path testClasses = base.resolve("test-classes");
@@ -146,13 +227,19 @@ public class PreviewTest extends TestRunner {
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
-                List.of("UseClass2.java:4:17: compiler.err.is.preview: test()",
-                        "UseIntf2.java:3:8: compiler.err.is.preview: test()",
-                        "UseIntfDef2.java:3:8: compiler.err.is.preview: test()",
-                        "3 errors");
+                List.of("IUseIntf2P.java:3:8: compiler.err.is.preview: test()",
+                        "IUseIntfDef2P.java:3:8: compiler.err.is.preview: test()",
+                        "UseClass2P.java:4:17: compiler.err.is.preview: test()",
+                        "UseIntf2P.java:3:8: compiler.err.is.preview: test()",
+                        "UseIntfDef2P.java:3:8: compiler.err.is.preview: test()",
+                        "UseSubClass12P.java:3:17: compiler.err.is.preview: test()",
+                        "UseSubIntfDef12P.java:2:8: compiler.err.is.preview: test()",
+                        "7 errors");
 
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
+
+        Path[] sources = tb.findJavaFiles(testSrc);
 
         log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(testClasses)
@@ -162,39 +249,84 @@ public class PreviewTest extends TestRunner {
                          "-Xlint:preview",
                          "-source", String.valueOf(Runtime.version().feature()),
                          "-XDrawDiagnostics")
-                .files(tb.findJavaFiles(testSrc))
+                .files(sources)
                 .run(Task.Expect.SUCCESS)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
         expected =
-                List.of("UseClass2.java:4:17: compiler.warn.is.preview: test()",
-                        "UseIntf2.java:3:8: compiler.warn.is.preview: test()",
-                        "UseIntfDef2.java:3:8: compiler.warn.is.preview: test()",
-                        "3 warnings");
+                List.of("IUseIntf2P.java:3:8: compiler.warn.is.preview: test()",
+                        "IUseIntfDef2P.java:3:8: compiler.warn.is.preview: test()",
+                        "UseClass2P.java:4:17: compiler.warn.is.preview: test()",
+                        "UseIntf2P.java:3:8: compiler.warn.is.preview: test()",
+                        "UseIntfDef2P.java:3:8: compiler.warn.is.preview: test()",
+                        "UseSubClass12P.java:3:17: compiler.warn.is.preview: test()",
+                        "UseSubIntfDef12P.java:2:8: compiler.warn.is.preview: test()",
+                        "7 warnings");
 
         if (!log.equals(expected))
             throw new Exception("expected output not found" + log);
 
-        checkPreviewClassfile(testClasses.resolve("test").resolve("UseClass1.class"),
-                              false);
-        checkPreviewClassfile(testClasses.resolve("test").resolve("UseClass2.class"),
-                              true);
-        checkPreviewClassfile(testClasses.resolve("test").resolve("UseIntf2.class"),
-                              true);
-        checkPreviewClassfile(testClasses.resolve("test").resolve("UseIntfDef1.class"),
-                              false);
-        checkPreviewClassfile(testClasses.resolve("test").resolve("UseIntfDef2.class"),
-                              true);
+        int classfileCount = verifyPreviewClassfiles(testClasses);
+
+        if (sources.length != classfileCount) {
+            throw new IllegalStateException("Unexpected number of classfiles: " + classfileCount + ", number of source files: " + sources.length);
+        }
+
+        for (Path source : sources) {
+            log = new JavacTask(tb, Task.Mode.CMDLINE)
+                    .classpath(testClasses)
+                    .outdir(testClasses)
+                    .options("--patch-module", "java.base=" + apiClasses.toString(),
+                             "--add-exports", "java.base/preview.api=ALL-UNNAMED",
+                             "--enable-preview",
+                             "-Xlint:preview",
+                             "-source", String.valueOf(Runtime.version().feature()),
+                             "-XDrawDiagnostics")
+                    .files(source)
+                    .run(Task.Expect.SUCCESS)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+            boolean preview = source.getFileName().toString().contains("P.");
+            boolean hasWarning = false;
+            for (String line : log) {
+                hasWarning |= line.contains(source.getFileName().toString()) &&
+                              line.contains("compiler.warn.is.preview: test()");
+            }
+
+            if (preview != hasWarning)
+                throw new Exception("expected " + (preview ? "preview" : "not preview") +
+                                    "but got " + (hasWarning ? "warning" : "no warning") +
+                                    "in: " + log);
+
+            classfileCount = verifyPreviewClassfiles(testClasses);
+
+            if (sources.length != classfileCount) {
+                throw new IllegalStateException("Unexpected number of classfiles: " + classfileCount + ", number of source files: " + sources.length);
+            }
+        }
+    }
+
+    private int verifyPreviewClassfiles(Path directory) throws Exception {
+        Path[] classfiles = tb.findFiles("class", directory);
+
+        for (Path classfile : classfiles) {
+            boolean preview = classfile.getFileName().toString().contains("P.");
+
+            checkPreviewClassfile(classfile, preview);
+        }
+
+        return classfiles.length;
     }
 
     private void checkPreviewClassfile(Path p, boolean preview) throws Exception {
         try (InputStream in = Files.newInputStream(p)) {
             ClassFile cf = ClassFile.read(in);
             if (preview && cf.minor_version != 65535) {
-                throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version);
+                throw new IllegalStateException("Expected preview class, but got: " + cf.minor_version + " for: " + p.toString());
             } else if (!preview && cf.minor_version != 0) {
-                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version);
+                throw new IllegalStateException("Expected minor version == 0 but got: " + cf.minor_version + " for: " + p.toString());
             }
         }
     }
