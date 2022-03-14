@@ -39,6 +39,10 @@
         .globl _Atomic_cmpxchg_long
         .globl _Atomic_move_long
 
+		.globl _SafeFetch32
+		.globl _SafeFetch32_fault
+		.globl _SafeFetch32_continuation
+
 	.text
 
         .globl  SpinPause
@@ -537,3 +541,23 @@ _Atomic_move_long:
         movl     8(%esp), %eax   # dest
         fistpll   (%eax)
         ret
+
+
+    # Support for SafeFetch32(int* address, int defaultval)
+    #
+	.type    _SafeFetch32,@function
+_SafeFetch32:
+                                   #  4(%esp) : return PC
+		pushl %edi                 #  0(%esp) : old %edi
+        movl  12(%esp),%eax        # default value
+        movl  8(%esp),%edi         # address
+
+		# try loading from suspicious address.
+		#  - If successful, we overwrite default return value in rsi
+        #  - If error, we fault, rsi stays unchanged, signal handler will jump to continuation point
+        #  - at continuation point we return rsi
+_SafeFetch32_fault:
+		movl (%edi), %eax
+_SafeFetch32_continuation:
+		popl %edi
+		ret

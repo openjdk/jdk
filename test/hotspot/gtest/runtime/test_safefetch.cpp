@@ -31,8 +31,14 @@
 #include "utilities/vmError.hpp"
 #include "unittest.hpp"
 
-static const intptr_t pattern = LP64_ONLY(0xABCDABCDABCDABCDULL) NOT_LP64(0xABCDABCD);
-static intptr_t* invalid_address = (intptr_t*)VMError::segfault_address;
+// Note: beyond these tests, there exist additional tests testing that safefetch in error handling
+// (in the context of signal handling) works, see runtime/ErrorHandling
+
+static const intptr_t patternN = LP64_ONLY(0xABCDABCDABCDABCDULL) NOT_LP64(0xABCDABCD);
+static const int pattern32 = 0xABCDABCD;
+
+static intptr_t* invalid_addressN =   (intptr_t*)VMError::segfault_address;
+static int* invalid_address32 =       (int*)VMError::segfault_address;
 
 TEST_VM(os, safefetch_can_use) {
   // Once VM initialization is through,
@@ -40,17 +46,99 @@ TEST_VM(os, safefetch_can_use) {
   ASSERT_TRUE(CanUseSafeFetch32());
 }
 
-TEST_VM(os, safefetch_positive) {
-  intptr_t v = pattern;
+static void test_safefetchN_positive() {
+  intptr_t v = patternN;
   intptr_t a = SafeFetchN(&v, 1);
-  ASSERT_EQ(v, a);
+  ASSERT_EQ(patternN, a);
 }
 
-TEST_VM(os, safefetch_negative) {
-  intptr_t a = SafeFetchN(invalid_address, pattern);
-  ASSERT_EQ(pattern, a);
-  a = SafeFetchN(invalid_address, ~pattern);
-  ASSERT_EQ(~pattern, a);
+static void test_safefetch32_positive() {
+  int v = pattern32;
+  int a = SafeFetch32(&v, 1);
+  ASSERT_EQ(pattern32, a);
+}
+
+static void test_safefetchN_negative() {
+  // Non-NULL invalid
+  intptr_t a = SafeFetchN(invalid_addressN, patternN);
+  ASSERT_EQ(patternN, a);
+  a = SafeFetchN(invalid_addressN, ~patternN);
+  ASSERT_EQ(~patternN, a);
+
+  // Also try NULL
+#ifndef AIX
+  a = SafeFetchN(nullptr, patternN);
+  ASSERT_EQ(patternN, a);
+  a = SafeFetchN(nullptr, ~patternN);
+  ASSERT_EQ(~patternN, a);
+#endif
+}
+
+static void test_safefetch32_negative() {
+  // Non-NULL invalid
+  int a = SafeFetch32(invalid_address32, pattern32);
+  ASSERT_EQ(pattern32, a);
+  a = SafeFetch32(invalid_address32, ~pattern32);
+  ASSERT_EQ(~pattern32, a);
+
+  // Also try NULL
+#ifndef AIX
+  a = SafeFetch32(nullptr, pattern32);
+  ASSERT_EQ(pattern32, a);
+  a = SafeFetch32(nullptr, ~pattern32);
+  ASSERT_EQ(~pattern32, a);
+#endif
+}
+
+TEST_VM(os, safefetchN_positive) {
+  test_safefetchN_positive();
+}
+
+TEST_VM(os, safefetch32_positive) {
+  test_safefetch32_positive();
+}
+
+TEST_VM(os, safefetchN_negative) {
+  test_safefetchN_negative();
+}
+
+TEST_VM(os, safefetch32_negative) {
+  test_safefetch32_negative();
+}
+
+// Try with Thread::current being NULL. SafeFetch should work then too.
+// See JDK-8282475
+
+class ThreadCurrentNullMark : public StackObj {
+  Thread* _saved;
+public:
+  ThreadCurrentNullMark() {
+    _saved = Thread::current();
+    Thread::clear_thread_current();
+  }
+  ~ThreadCurrentNullMark() {
+    _saved->initialize_thread_current();
+  }
+};
+
+TEST_VM(os, safefetchN_positive_thread_current_null) {
+  ThreadCurrentNullMark tcnm;
+  test_safefetchN_positive();
+}
+
+TEST_VM(os, safefetch32_positive_thread_current_null) {
+  ThreadCurrentNullMark tcnm;
+  test_safefetch32_positive();
+}
+
+TEST_VM(os, safefetchN_negative_thread_current_null) {
+  ThreadCurrentNullMark tcnm;
+  test_safefetchN_negative();
+}
+
+TEST_VM(os, safefetch32_negative_thread_current_null) {
+  ThreadCurrentNullMark tcnm;
+  test_safefetch32_negative();
 }
 
 class VM_TestSafeFetchAtSafePoint : public VM_GTestExecuteAtSafepoint {
@@ -58,10 +146,7 @@ public:
   void doit() {
     // Regression test for JDK-8257828
     // Should not crash.
-    intptr_t a = SafeFetchN(invalid_address, pattern);
-    ASSERT_EQ(pattern, a);
-    a = SafeFetchN(invalid_address, ~pattern);
-    ASSERT_EQ(~pattern, a);
+    test_safefetchN_negative();
   }
 };
 
