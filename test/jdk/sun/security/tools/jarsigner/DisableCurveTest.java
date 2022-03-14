@@ -42,7 +42,7 @@ public class DisableCurveTest {
 
     public static void main(String[] args) throws Exception{
         SecurityTools.keytool("-keystore ks -storepass changeit " +
-                "-genkeypair -keyalg EC	-alias ca -dname CN=CA " +
+                "-genkeypair -keyalg EC -alias ca -dname CN=CA " +
                 "-ext bc:c")
                 .shouldHaveExitValue(0);
 
