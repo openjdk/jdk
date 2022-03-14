@@ -2,7 +2,7 @@
 
 ### jQuery License
 ```
-jQuery v 3.5.1
+jQuery v 3.6.0
 Copyright OpenJS Foundation and other contributors, https://openjsf.org/
 
 Permission is hereby granted, free of charge, to any person obtaining
