@@ -521,10 +521,6 @@ class MacroAssembler: public Assembler {
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
-  // Callee saved registers handling
-  void push_callee_saved_registers();
-  void pop_callee_saved_registers();
-
   // allocation
   void eden_allocate(
     Register thread,                   // Current thread
