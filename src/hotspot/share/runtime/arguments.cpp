@@ -40,6 +40,7 @@
 #include "logging/logStream.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -56,6 +57,7 @@
 #include "services/management.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -747,11 +749,12 @@ bool Arguments::verify_special_jvm_flags(bool check_globals) {
 
 template <typename T, ENABLE_IF(std::is_signed<T>::value), ENABLE_IF(sizeof(T) == 4)> // signed 32-bit
 static bool parse_integer_impl(const char *s, char **endptr, int base, T* result) {
-  STATIC_ASSERT(sizeof(long) >= 4); // need to have enough bits
+  // Don't use strtol -- on 64-bit builds, "long" could be either 32- or 64-bits
+  // so the range tests could be tautological and might cause compiler warnings.
+  STATIC_ASSERT(sizeof(long long) >= 8); // C++ specification
   errno = 0; // errno is thread safe
-  long v = strtol(s, endptr, base);
-  if (errno != 0 LP64_ONLY(|| v < min_jint || v > max_jint)) {
-    // long is 64-bit on LP64, so we need explicit range check.
+  long long v = strtoll(s, endptr, base);
+  if (errno != 0 || v < min_jint || v > max_jint) {
     return false;
   }
   *result = static_cast<T>(v);
@@ -763,11 +766,11 @@ static bool parse_integer_impl(const char *s, char **endptr, int base, T* result
   if (s[0] == '-') {
     return false;
   }
-  STATIC_ASSERT(sizeof(unsigned long) >= 4); // need to have enough bits
+  // Don't use strtoul -- same reason as above.
+  STATIC_ASSERT(sizeof(unsigned long long) >= 8); // C++ specification
   errno = 0; // errno is thread safe
-  unsigned long v = strtoul(s, endptr, base);
-  if (errno != 0 LP64_ONLY(|| v > max_juint)) {
-    // unsigned long is 64-bit on LP64, so we need explicit range check.
+  unsigned long long v = strtoull(s, endptr, base);
+  if (errno != 0 || v > max_juint) {
     return false;
   }
   *result = static_cast<T>(v);
