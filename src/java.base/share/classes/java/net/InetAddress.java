@@ -411,6 +411,9 @@ public class InetAddress implements java.io.Serializable {
     // Native method to check if IPv4 is available
     private static native boolean isIPv4Available();
 
+    // Native method to check if IPv6 is available
+    private static native boolean isIPv6Supported();
+
     /**
      * The {@code RuntimePermission("inetAddressResolverProvider")} is
      * necessary to subclass and instantiate the {@code InetAddressResolverProvider}
@@ -1269,7 +1272,8 @@ public class InetAddress implements java.io.Serializable {
 
     static {
         // create the impl
-        impl = InetAddressImplFactory.create();
+        impl = isIPv6Supported() ?
+                new Inet6AddressImpl() : new Inet4AddressImpl();
 
         // impl must be initialized before calling this method
         PLATFORM_LOOKUP_POLICY = initializePlatformLookupPolicy();
@@ -1841,17 +1845,4 @@ public class InetAddress implements java.io.Serializable {
         pf.put("family", holder().getFamily());
         s.writeFields();
     }
-}
-
-/*
- * Simple factory to create the impl
- */
-class InetAddressImplFactory {
-
-    static InetAddressImpl create() {
-        return isIPv6Supported() ?
-                new Inet6AddressImpl() : new Inet4AddressImpl();
-    }
-
-    static native boolean isIPv6Supported();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,4 +80,18 @@ Java_java_net_InetAddress_init(JNIEnv *env, jclass cls) {
 JNIEXPORT jboolean JNICALL
 Java_java_net_InetAddress_isIPv4Available(JNIEnv *env, jclass clazz) {
     return ipv4_available();
+}
+
+/*
+ * Class:     java_net_InetAddress
+ * Method:    isIPv6Supported
+ * Signature: ()I
+ */
+JNIEXPORT jboolean JNICALL
+Java_java_net_InetAddress_isIPv6Supported(JNIEnv *env, jclass clazz) {
+    if (ipv6_available()) {
+        return JNI_TRUE;
+    } else {
+        return JNI_FALSE;
+    }
 }
