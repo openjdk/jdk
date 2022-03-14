@@ -119,6 +119,20 @@ public class EtchedBorder extends AbstractBorder
         this.shadow = shadow;
     }
 
+    private void paintBorderRect(Graphics g, Color c, int w, int h) {
+        g.setColor(c);
+        g.drawRect(0, 0, w-2, h-2);
+    }
+
+    private void paintBorderShadow(Graphics g, Color c, int w, int h) {
+        g.setColor(c);
+        g.drawLine(1, h-3, 1, 1);
+        g.drawLine(1, 1, w-3, 1);
+
+        g.drawLine(0, h-1, w-1, h-1);
+        g.drawLine(w-1, h-1, w-1, 0);
+    }
+
     /**
      * Paints the border for the specified component with the
      * specified position and size.
@@ -136,30 +150,18 @@ public class EtchedBorder extends AbstractBorder
 
         g.translate(x, y);
 
+        // 8279614: The dark line was being overdrawn by the light line. The fix was to
+        // make sure that the dark line is always drawn second.
         if (etchType == LOWERED) {
-            g.setColor(getHighlightColor(c));
-            g.drawLine(1, h-3, 1, 1);
-            g.drawLine(1, 1, w-3, 1);
-
-            g.drawLine(0, h-1, w-1, h-1);
-            g.drawLine(w-1, h-1, w-1, 0);
-
-            g.setColor(getShadowColor(c));
-            g.drawRect(0, 0, w-2, h-2);
+            paintBorderShadow(g, getHighlightColor(c), w, h);
+            paintBorderRect(g, getShadowColor(c), w, h);
         } else {
-            g.setColor(getHighlightColor(c));
-            g.drawRect(0, 0, w-2, h-2);
-
-            g.setColor(getShadowColor(c));
-            g.drawLine(1, h-3, 1, 1);
-            g.drawLine(1, 1, w-3, 1);
-
-            g.drawLine(0, h-1, w-1, h-1);
-            g.drawLine(w-1, h-1, w-1, 0);
+            paintBorderRect(g, getHighlightColor(c), w, h);
+            paintBorderShadow(g, getShadowColor(c), w, h);
         }
 
 
-        g.translate(-x-1, -y);
+        g.translate(-x, -y);
     }
 
     /**
