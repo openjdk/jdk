@@ -53,9 +53,9 @@ static void test_safefetchN_positive() {
 }
 
 static void test_safefetch32_positive() {
-  int v = pattern32;
-  int a = SafeFetch32(&v, 1);
-  ASSERT_EQ(pattern32, a);
+  int v[2] = { pattern32, ~pattern32 };
+  uint64_t a = SafeFetch32(v, 1);
+  ASSERT_EQ((uint64_t)pattern32, a);
 }
 
 static void test_safefetchN_negative() {
