@@ -66,7 +66,7 @@ public class AccessibleJTableCellNameTest {
                 }
             }
         } finally {
-            jFrame.dispose();
+            SwingUtilities.invokeAndWait(() -> jFrame.dispose());
         }
     }
 
