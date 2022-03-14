@@ -112,7 +112,7 @@ public final class StrictMath {
      *
      * @since 19
      */
-    public static final double TAU = 6.283185307179586;
+    public static final double TAU = 2.0 * PI;
 
     /**
      * Returns the trigonometric sine of an angle. Special cases:

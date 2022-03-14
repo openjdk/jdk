@@ -151,7 +151,7 @@ public final class Math {
      *
      * @since 19
      */
-    public static final double TAU = 6.283185307179586;
+    public static final double TAU = 2.0 * PI;
 
     /**
      * Constant by which to multiply an angular value in degrees to obtain an
