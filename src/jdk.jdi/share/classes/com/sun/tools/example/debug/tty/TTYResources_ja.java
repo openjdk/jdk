@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,6 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
         {"Thread has been resumed", "\u30B9\u30EC\u30C3\u30C9\u304C\u518D\u958B\u3057\u307E\u3057\u305F"},
         {"Thread not suspended", "\u30B9\u30EC\u30C3\u30C9\u306F\u4E2D\u65AD\u3057\u3066\u3044\u307E\u305B\u3093"},
         {"thread group number description name", "{0,number,integer}. {1} {2}"},
-        {"Threadgroup name not specified.", "\u30B9\u30EC\u30C3\u30C9\u30B0\u30EB\u30FC\u30D7\u540D\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002"},
         {"<thread_id> option not valid until the VM is started with the run command",
          "<thread_id>\u30AA\u30D7\u30B7\u30E7\u30F3\u306F\u3001VM\u304Crun\u30B3\u30DE\u30F3\u30C9\u3067\u958B\u59CB\u3055\u308C\u308B\u307E\u3067\u7121\u52B9\u3067\u3059"},
         {"Threads must be suspended", "\u30B9\u30EC\u30C3\u30C9\u3092\u4E2D\u65AD\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
