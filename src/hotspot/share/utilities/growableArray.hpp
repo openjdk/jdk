@@ -141,6 +141,14 @@ public:
     return !(*this == rhs);
   }
 
+  E* data() {
+    return _data;
+  }
+
+  const E* data() const {
+    return _data;
+  }
+
   E& at(int i) {
     assert(0 <= i && i < _len, "illegal index");
     return _data[i];

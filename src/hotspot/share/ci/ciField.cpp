@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,8 +224,8 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
     return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke") ||
+      holder->is_in_package("jdk/internal/foreign") || holder->is_in_package("java/lang/foreign") ||
       holder->is_in_package("java/lang/reflect") || holder->is_in_package("jdk/internal/reflect") ||
-      holder->is_in_package("jdk/internal/foreign") || holder->is_in_package("jdk/incubator/foreign") ||
       holder->is_in_package("jdk/internal/vm/vector") || holder->is_in_package("jdk/incubator/vector") ||
       holder->is_in_package("java/lang"))
     return true;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,21 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestMemoryAccess
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  */
 
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
@@ -85,8 +86,8 @@ public class TestMemoryAccess {
 
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
         MemorySegment outer_segment;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, scope));
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, session));
             boolean isRO = segment.isReadOnly();
             try {
                 checker.check(handle, segment);
@@ -109,19 +110,19 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment);
-            throw new AssertionError(); //not ok, scope is closed
+            throw new AssertionError(); //not ok, session is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (scope is closed)
+            //ok, should fail (session is closed)
         }
     }
 
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
         MemorySegment outer_segment;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, session));
             boolean isRO = segment.isReadOnly();
             try {
-                for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
+                for (int i = 0; i < seq.elementCount(); i++) {
                     checker.check(handle, segment, i);
                 }
                 if (isRO) {
@@ -134,7 +135,7 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, segment, seq.elementCount().getAsLong());
+                checker.check(handle, segment, seq.elementCount());
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
@@ -143,9 +144,9 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment, 0);
-            throw new AssertionError(); //not ok, scope is closed
+            throw new AssertionError(); //not ok, session is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (scope is closed)
+            //ok, should fail (session is closed)
         }
     }
 
@@ -179,12 +180,12 @@ public class TestMemoryAccess {
 
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
         MemorySegment outer_segment;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, scope));
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, session));
             boolean isRO = segment.isReadOnly();
             try {
-                for (int i = 0; i < seq.elementCount().getAsLong(); i++) {
-                    for (int j = 0; j < ((SequenceLayout) seq.elementLayout()).elementCount().getAsLong(); j++) {
+                for (int i = 0; i < seq.elementCount(); i++) {
+                    for (int j = 0; j < ((SequenceLayout) seq.elementLayout()).elementCount(); j++) {
                         checker.check(handle, segment, i, j);
                     }
                 }
@@ -198,8 +199,8 @@ public class TestMemoryAccess {
                 return;
             }
             try {
-                checker.check(handle, segment, seq.elementCount().getAsLong(),
-                        ((SequenceLayout)seq.elementLayout()).elementCount().getAsLong());
+                checker.check(handle, segment, seq.elementCount(),
+                        ((SequenceLayout)seq.elementLayout()).elementCount());
                 throw new AssertionError(); //not ok, out of bounds
             } catch (IndexOutOfBoundsException ex) {
                 //ok, should fail (out of bounds)
@@ -208,9 +209,9 @@ public class TestMemoryAccess {
         }
         try {
             checker.check(handle, outer_segment, 0, 0);
-            throw new AssertionError(); //not ok, scope is closed
+            throw new AssertionError(); //not ok, session is closed
         } catch (IllegalStateException ex) {
-            //ok, should fail (scope is closed)
+            //ok, should fail (session is closed)
         }
     }
 

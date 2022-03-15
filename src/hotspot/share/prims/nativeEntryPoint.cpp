@@ -24,22 +24,116 @@
 
 #include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "code/codeCache.hpp"
 #include "code/vmreg.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/typeArrayOop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
+#include "prims/foreignGlobals.inline.hpp"
+#include "prims/downcallLinker.hpp"
+#include "runtime/jniHandles.inline.hpp"
 
-JNI_LEAF(jlong, NEP_vmStorageToVMReg(JNIEnv* env, jclass _unused, jint type, jint index))
-  return VMRegImpl::vmStorageToVMReg(type, index)->value();
+JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject method_type, jobject jabi,
+                                      jobjectArray arg_moves, jobjectArray ret_moves, jboolean needs_return_buffer))
+  ResourceMark rm;
+  const ABIDescriptor abi = ForeignGlobals::parse_abi_descriptor(jabi);
+
+  oop type = JNIHandles::resolve(method_type);
+  objArrayOop arg_moves_oop = oop_cast<objArrayOop>(JNIHandles::resolve(arg_moves));
+  objArrayOop ret_moves_oop = oop_cast<objArrayOop>(JNIHandles::resolve(ret_moves));
+  int pcount = java_lang_invoke_MethodType::ptype_count(type);
+  int pslots = java_lang_invoke_MethodType::ptype_slot_count(type);
+  BasicType* basic_type = NEW_RESOURCE_ARRAY(BasicType, pslots);
+
+  GrowableArray<VMReg> input_regs(pcount);
+  for (int i = 0, bt_idx = 0; i < pcount; i++) {
+    oop type_oop = java_lang_invoke_MethodType::ptype(type, i);
+    assert(java_lang_Class::is_primitive(type_oop), "Only primitives expected");
+    BasicType bt = java_lang_Class::primitive_type(type_oop);
+    basic_type[bt_idx++] = bt;
+    input_regs.push(ForeignGlobals::parse_vmstorage(arg_moves_oop->obj_at(i)));
+
+    if (bt == BasicType::T_DOUBLE || bt == BasicType::T_LONG) {
+      basic_type[bt_idx++] = T_VOID;
+      // we only need these in the basic type
+      // NativeCallConv ignores them, but they are needed
+      // for JavaCallConv
+    }
+  }
+
+
+  jint outs = ret_moves_oop->length();
+  GrowableArray<VMReg> output_regs(outs);
+  oop type_oop = java_lang_invoke_MethodType::rtype(type);
+  BasicType  ret_bt = java_lang_Class::primitive_type(type_oop);
+  for (int i = 0; i < outs; i++) {
+    // note that we don't care about long/double upper halfs here:
+    // we are NOT moving Java values, we are moving register-sized values
+    output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
+  }
+
+#ifdef ASSERT
+  LogTarget(Trace, panama) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print_cr("Generating native invoker {");
+    ls.print("BasicType { ");
+    for (int i = 0; i < pslots; i++) {
+      ls.print("%s, ", null_safe_string(type2name(basic_type[i])));
+    }
+    ls.print_cr("}");
+    ls.print_cr("shadow_space_bytes = %d", abi._shadow_space_bytes);
+    ls.print("input_registers { ");
+    for (int i = 0; i < input_regs.length(); i++) {
+      VMReg reg = input_regs.at(i);
+      ls.print("%s (" INTPTR_FORMAT "), ", reg->name(), reg->value());
+    }
+    ls.print_cr("}");
+      ls.print("output_registers { ");
+    for (int i = 0; i < output_regs.length(); i++) {
+      VMReg reg = output_regs.at(i);
+      ls.print("%s (" INTPTR_FORMAT "), ", reg->name(), reg->value());
+    }
+    ls.print_cr("}");
+    ls.print_cr("}");
+  }
+#endif
+
+  return (jlong) DowncallLinker::make_downcall_stub(
+    basic_type, pslots, ret_bt, abi, input_regs, output_regs, needs_return_buffer)->code_begin();
+JNI_END
+
+JNI_ENTRY(jboolean, NEP_freeDowncallStub(JNIEnv* env, jclass _unused, jlong invoker))
+  // safe to call without code cache lock, because stub is always alive
+  CodeBlob* cb = CodeCache::find_blob((char*) invoker);
+  if (cb == nullptr) {
+    return false;
+  }
+  RuntimeStub::free(cb->as_runtime_stub());
+  return true;
 JNI_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
+#define METHOD_TYPE "Ljava/lang/invoke/MethodType;"
+#define ABI_DESC "Ljdk/internal/foreign/abi/ABIDescriptor;"
+#define VM_STORAGE_ARR "[Ljdk/internal/foreign/abi/VMStorage;"
 
 static JNINativeMethod NEP_methods[] = {
-  {CC "vmStorageToVMReg", CC "(II)J", FN_PTR(NEP_vmStorageToVMReg)},
+  {CC "makeDowncallStub", CC "(" METHOD_TYPE ABI_DESC VM_STORAGE_ARR VM_STORAGE_ARR "Z)J", FN_PTR(NEP_makeDowncallStub)},
+  {CC "freeDowncallStub0", CC "(J)Z", FN_PTR(NEP_freeDowncallStub)},
 };
+
+#undef METHOD_TYPE
+#undef ABI_DESC
+#undef VM_STORAGE_ARR
 
 JNI_ENTRY(void, JVM_RegisterNativeEntryPointMethods(JNIEnv *env, jclass NEP_class))
   ThreadToNativeFromVM ttnfv(thread);
   int status = env->RegisterNatives(NEP_class, NEP_methods, sizeof(NEP_methods)/sizeof(JNINativeMethod));
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
-            "register jdk.internal.invoke.NativeEntryPoint natives");
+            "register jdk.internal.foreign.abi.NativeEntryPoint natives");
 JNI_END

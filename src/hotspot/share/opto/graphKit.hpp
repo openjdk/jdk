@@ -804,8 +804,6 @@ class GraphKit : public Phase {
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);
 
-  Node* make_native_call(address call_addr, const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep);
-
   enum {  // flag values for make_runtime_call
     RC_NO_FP = 1,               // CallLeafNoFPNode
     RC_NO_IO = 2,               // do not hook IO edges

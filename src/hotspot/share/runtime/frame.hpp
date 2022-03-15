@@ -138,7 +138,7 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
-  bool is_optimized_entry_frame()         const;
+  bool is_upcall_stub_frame()         const;
 
   // testers
   bool is_first_frame() const; // oldest frame? (has no sender)
@@ -148,7 +148,7 @@ class frame {
 
   // is this frame doing a call using the compiled calling convention?
   bool is_compiled_caller() const {
-    return is_compiled_frame() || is_optimized_entry_frame();
+    return is_compiled_frame() || is_upcall_stub_frame();
   }
 
   // tells whether this frame is marked for deoptimization
@@ -178,7 +178,7 @@ class frame {
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
-  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
+  frame sender_for_upcall_stub_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
@@ -346,7 +346,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
-  bool optimized_entry_frame_is_first() const;
+  bool upcall_stub_frame_is_first() const;
 
   // Safepoints
 

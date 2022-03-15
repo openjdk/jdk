@@ -1125,11 +1125,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 4;
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 //=============================================================================
 
 // condition code conversions

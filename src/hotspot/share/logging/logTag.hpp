@@ -134,6 +134,7 @@ class outputStream;
   LOG_TAG(os) \
   LOG_TAG(owner) \
   LOG_TAG(pagesize) \
+  DEBUG_ONLY(LOG_TAG(panama)) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
   LOG_TAG(path) \

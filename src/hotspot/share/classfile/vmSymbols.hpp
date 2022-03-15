@@ -349,9 +349,14 @@
   template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
-  /* Foreign API Support */                                                                                          \
-  template(jdk_internal_invoke_NativeEntryPoint,                 "jdk/internal/invoke/NativeEntryPoint")           \
-  template(jdk_internal_invoke_NativeEntryPoint_signature,       "Ljdk/internal/invoke/NativeEntryPoint;")         \
+  /* Foreign API Support */                                                                       \
+  template(jdk_internal_foreign_abi_NativeEntryPoint,                "jdk/internal/foreign/abi/NativeEntryPoint") \
+  template(jdk_internal_foreign_abi_ABIDescriptor,                   "jdk/internal/foreign/abi/ABIDescriptor") \
+  template(jdk_internal_foreign_abi_VMStorage,                       "jdk/internal/foreign/abi/VMStorage") \
+  template(jdk_internal_foreign_abi_VMStorage_signature,             "Ljdk/internal/foreign/abi/VMStorage;") \
+  template(jdk_internal_foreign_abi_VMStorage_array_signature,       "[Ljdk/internal/foreign/abi/VMStorage;") \
+  template(jdk_internal_foreign_abi_VMStorage_array_array_signature, "[[Ljdk/internal/foreign/abi/VMStorage;") \
+  template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \

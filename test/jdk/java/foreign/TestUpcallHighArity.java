@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
  * @run testng/othervm/native
@@ -33,15 +33,13 @@
  *   TestUpcallHighArity
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.SymbolLookup;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.CLinker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -68,9 +66,8 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
     static {
         try {
             System.loadLibrary("TestUpcallHighArity");
-            SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_do_upcall = LINKER.downcallHandle(
-                lookup.lookup("do_upcall").get(),
+                    findNativeOrThrow("do_upcall"),
                     FunctionDescriptor.ofVoid(C_POINTER,
                     S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
                     S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
@@ -88,7 +85,7 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         for (int i = 0; i < o.length; i++) {
             if (o[i] instanceof MemorySegment) {
                 MemorySegment ms = (MemorySegment) o[i];
-                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), ResourceScope.newImplicitScope());
+                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), MemorySession.openImplicit());
                 copy.copyFrom(ms);
                 o[i] = copy;
             }
@@ -103,8 +100,8 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         MethodHandle target = MethodHandles.insertArguments(MH_passAndSave, 1, capturedArgs)
                                          .asCollector(Object[].class, upcallType.parameterCount())
                                          .asType(upcallType);
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            NativeSymbol upcallStub = LINKER.upcallStub(target, upcallDescriptor, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            Addressable upcallStub = LINKER.upcallStub(target, upcallDescriptor, session);
             Object[] args = new Object[upcallType.parameterCount() + 1];
             args[0] = upcallStub;
             List<MemoryLayout> argLayouts = upcallDescriptor.argumentLayouts();

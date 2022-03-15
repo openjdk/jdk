@@ -47,8 +47,3 @@ void VMRegImpl::set_regName() {
     regName[i] = "NON-GPR-XMM";
   }
 }
-
-VMReg VMRegImpl::vmStorageToVMReg(int type, int index) {
-  Unimplemented();
-  return VMRegImpl::Bad();
-}

@@ -160,10 +160,6 @@ public:
     assert(is_type_array(), "bad cast");
     return (ciTypeArray*)this;
   }
-  ciNativeEntryPoint* as_native_entry_point() {
-    assert(is_native_entry_point(), "bad cast");
-    return (ciNativeEntryPoint*)this;
-  }
 
   // Print debugging output about this ciObject.
   void print(outputStream* st);
