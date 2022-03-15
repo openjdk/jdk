@@ -3334,20 +3334,20 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
     if (_curchar == '(') {
       parens_depth++;
       encoding->add_code("(");
-      next_char();
+      next_char_or_line();
     }
     else if (_curchar == ')') {
       parens_depth--;
       if (parens_depth > 0)
         encoding->add_code(")");
-      next_char();
+      next_char_or_line();
     }
     else {
       // (1)
       // Check if there is a string to pass through to output
       char *start = _ptr;  // Record start of the next string
       while ((_curchar != '$') && (_curchar != '(') && (_curchar != ')')) {
-        next_char();
+        next_char_or_line();
       }
       // If a string was found, terminate it and record in EncClass
       if (start != _ptr) {

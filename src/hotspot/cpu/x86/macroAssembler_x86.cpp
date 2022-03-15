@@ -2687,6 +2687,15 @@ void MacroAssembler::movss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::movddup(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::movddup(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::movddup(dst, Address(rscratch, 0));
+  }
+}
+
 void MacroAssembler::vmovddup(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
   if (reachable(src)) {
     Assembler::vmovddup(dst, as_Address(src), vector_len);
@@ -3140,6 +3149,24 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
   }
 }
 
+void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastd(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastd(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastq(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpbroadcastw(dst, src, vector_len);
@@ -3151,6 +3178,15 @@ void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vecto
   } else {
     lea(rscratch, src);
     Assembler::vbroadcastsd(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vbroadcastss(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcastss(dst, Address(rscratch, 0), vector_len);
   }
 }
 
@@ -4023,9 +4059,11 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
     vpternlogd(dst, 0xFF, dst, dst, vector_len);
+  } else if (UseAVX > 0) {
+    vpcmpeqd(dst, dst, dst, vector_len);
   } else {
-    assert(UseAVX > 0, "");
-    vpcmpeqb(dst, dst, dst, vector_len);
+    NOT_LP64(assert(UseSSE >= 2, ""));
+    pcmpeqd(dst, dst);
   }
 }
 

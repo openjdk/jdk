@@ -1493,23 +1493,34 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
   }
 }
 
-void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
-  switch (vlen_in_bytes) {
-  case 4:  movdl(dst, src);   break;
-  case 8:  movq(dst, src);    break;
-  case 16: movdqu(dst, src);  break;
-  case 32: vmovdqu(dst, src); break;
-  case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
-  default: ShouldNotReachHere();
+void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, Address src, int vlen_in_bytes) {
+  if (is_integral_type(bt)) {
+    switch (vlen_in_bytes) {
+      case 4:  movdl(dst, src);   break;
+      case 8:  movq(dst, src);    break;
+      case 16: movdqu(dst, src);  break;
+      case 32: vmovdqu(dst, src); break;
+      case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+      default: ShouldNotReachHere();
+    }
+  } else {
+    switch (vlen_in_bytes) {
+      case 4:  movflt(dst, src); break;
+      case 8:  movdbl(dst, src); break;
+      case 16: movups(dst, src); break;
+      case 32: vmovups(dst, src, Assembler::AVX_256bit); break;
+      case 64: vmovups(dst, src, Assembler::AVX_512bit); break;
+      default: ShouldNotReachHere();
+    }
   }
 }
 
-void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
+void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
   if (reachable(src)) {
-    load_vector(dst, as_Address(src), vlen_in_bytes);
+    load_vector(bt, dst, as_Address(src), vlen_in_bytes);
   } else {
     lea(rscratch, src);
-    load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+    load_vector(bt, dst, Address(rscratch, 0), vlen_in_bytes);
   }
 }
 
@@ -2137,9 +2148,9 @@ void C2_MacroAssembler::get_elem(BasicType typ, XMMRegister dst, XMMRegister src
     if (typ == T_FLOAT) {
       if (UseAVX == 0) {
         movdqu(dst, src);
-        pshufps(dst, dst, eindex);
+        shufps(dst, dst, eindex);
       } else {
-        vpshufps(dst, src, src, eindex, Assembler::AVX_128bit);
+        vshufps(dst, src, src, eindex, Assembler::AVX_128bit);
       }
     } else {
       if (UseAVX == 0) {

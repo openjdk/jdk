@@ -104,7 +104,7 @@ void ConstantTable::calculate_offsets_and_size() {
     // Align offset for type.
     int typesize = constant_size(con);
     assert(typesize <= 8 || con->is_array(), "sanity");
-    offset = align_up(offset, MIN2(round_up_power_of_2(typesize), 8));
+    offset = align_up(offset, con->alignment());
     con->set_offset(offset);   // set constant's offset
 
     if (con->type() == T_VOID) {
@@ -127,7 +127,7 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
     Constant con = _constants.at(i);
     address constant_addr = NULL;
     if (con.is_array()) {
-      constant_addr = _masm.array_constant(con.type(), con.get_array());
+      constant_addr = _masm.array_constant(con.type(), con.get_array(), con.alignment());
     } else {
       switch (con.type()) {
       case T_INT:    constant_addr = _masm.int_constant(   con.get_jint()   ); break;
@@ -229,10 +229,16 @@ ConstantTable::Constant ConstantTable::add(Metadata* metadata) {
   return con;
 }
 
-ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt, GrowableArray<jvalue>* array) {
-  Constant con(bt, array);
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt,
+                                           GrowableArray<jvalue>* array, int alignment) {
+  Constant con(bt, array, alignment);
   add(con);
   return con;
+}
+
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt,
+                                           GrowableArray<jvalue>* array) {
+  return add(n, bt, array, array->length() * type2aelembytes(bt));
 }
 
 ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) {
