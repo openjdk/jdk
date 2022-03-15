@@ -29,6 +29,7 @@
 #include "code/relocInfo.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -193,7 +194,6 @@ class CodeSection {
     _locs_end = p;
   }
   void    set_locs_point(address pc) {
-    assert(pc >= locs_point(), "relocation addr may not decrease");
     assert(allocates2(pc),     "relocation addr must be in this section");
     _locs_point = pc;
   }
@@ -342,6 +342,22 @@ class Scrubber {
 };
 #endif // ASSERT
 
+struct SharedStub
+{
+  address _dest;
+  int     _offset;
+  void print() const  { tty->print("SharedStub: " PTR_FORMAT " %d", p2i(_dest), _offset); }
+};
+
+class StubTable: public Hashtable<SharedStub, mtCode>
+{
+ public:
+  StubTable(): Hashtable(2, sizeof(HashtableEntry<SharedStub, mtCode>)) {}
+
+  void add(SharedStub s);
+  int get(address dest) const;
+};
+
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
 // interior of a single BufferBlob, but in some cases it may be
@@ -413,6 +429,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   Arena*       _overflow_arena;
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
+
+  StubTable    _stub_table;     // used to detect and reuse identical stubs.
 
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
@@ -642,6 +660,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address last_insn() const { return _last_insn; }
   void set_last_insn(address a) { _last_insn = a; }
   void clear_last_insn() { set_last_insn(NULL); }
+
+  void add_stub(address dest, int offset)               { _stub_table.add(SharedStub{dest, offset}); }
+  int  get_stub(address dest)                           { return _stub_table.get(dest); }
 
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }

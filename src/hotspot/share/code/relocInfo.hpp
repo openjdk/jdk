@@ -285,7 +285,7 @@ class relocInfo {
 
   static int compute_bits(int offset, int format) {
     check_offset_and_format(offset, format);
-    return (offset / offset_unit) + (format << offset_width);
+    return ((offset / offset_unit) & offset_mask) + (format << offset_width);
   }
 
  public:
@@ -326,7 +326,8 @@ class relocInfo {
   int  format()           const { return format_mask==0? 0: format_mask &
                                          ((unsigned)_value >> offset_width); }
   int  addr_offset()      const { assert(!is_prefix(), "must have offset");
-                                  return (_value & offset_mask)*offset_unit; }
+                                  constexpr auto nonoffset_width = value_width - offset_width;
+                                  return (short((_value & offset_mask) << nonoffset_width) >> nonoffset_width) * offset_unit; }
 
  protected:
   const short* data()     const { assert(is_datalen(), "must have data");
@@ -337,7 +338,8 @@ class relocInfo {
                                   return (_value & datalen_mask); }
  public:
   static int addr_unit()        { return offset_unit; }
-  static int offset_limit()     { return (1 << offset_width) * offset_unit; }
+  static int offset_max()       { return (1 << (offset_width - 1)) * offset_unit; }
+  static int offset_min()       { return -offset_max(); }
 
   void set_type(relocType type);
 
@@ -359,7 +361,9 @@ class relocInfo {
   //  - to pad out the relocInfo array to the required oop alignment
   //  - to disable old relocation information which is no longer applicable
 
-  inline friend relocInfo filler_relocInfo();
+  inline friend relocInfo advance_filler_relocInfo();
+
+  inline friend relocInfo reverse_filler_relocInfo();
 
   // Every non-prefix relocation may be preceded by at most one prefix,
   // which supplies 1 or more halfwords of associated data.  Conventionally,
@@ -449,8 +453,12 @@ APPLY_TO_RELOCATIONS(FORWARD_DECLARE_EACH_CLASS)
 
 
 
-inline relocInfo filler_relocInfo() {
-  return relocInfo(relocInfo::none, relocInfo::offset_limit() - relocInfo::offset_unit);
+inline relocInfo advance_filler_relocInfo() {
+  return relocInfo(relocInfo::none, relocInfo::offset_max() - relocInfo::offset_unit);
+}
+
+inline relocInfo reverse_filler_relocInfo() {
+  return relocInfo(relocInfo::none, relocInfo::offset_min());
 }
 
 inline relocInfo prefix_relocInfo(int datalen = 0) {

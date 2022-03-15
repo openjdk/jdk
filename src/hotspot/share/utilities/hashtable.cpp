@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/codeBuffer.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -284,6 +285,8 @@ template class BasicHashtable<mtCompiler>;
 template class BasicHashtable<mtTracing>;
 template class BasicHashtable<mtServiceability>;
 template class BasicHashtable<mtLogging>;
+template class Hashtable<SharedStub, mtCode>;
+template class HashtableEntry<SharedStub, mtCode>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);

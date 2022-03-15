@@ -49,7 +49,7 @@ relocInfo::relocType relocInfo::check_relocType(relocType type) {
 }
 
 void relocInfo::check_offset_and_format(int offset, int format) {
-  assert(offset >= 0 && offset < offset_limit(), "offset out off bounds");
+  assert(offset_min() <= offset && offset < offset_max(), "offset out off bounds");
   assert(is_aligned(offset, offset_unit), "misaligned offset");
   assert((format & format_mask) == format, "wrong format");
 }

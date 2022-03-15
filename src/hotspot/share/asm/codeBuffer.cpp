@@ -37,6 +37,27 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
+void StubTable::add(SharedStub s)
+{
+  if (number_of_entries() > table_size() * 8) {
+    resize(table_size() * 2);
+  }
+  auto *e = new_entry(castable_address(s._dest), s);
+  int index = hash_to_index(e->hash());
+  add_entry(index, e);
+}
+
+int StubTable::get(address dest) const
+{
+  int index = hash_to_index(castable_address(dest));
+  for (auto* e = bucket(index); e != NULL; e = e->next()) {
+    if (e->literal()._dest == dest) {
+      return e->literal()._offset;
+    }
+  }
+  return -1;
+}
+
 // The structure of a CodeSection:
 //
 //    _start ->           +----------------+
@@ -336,8 +357,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
   relocInfo* end = locs_end();
   relocInfo* req = end + relocInfo::length_limit;
   // Check for (potential) overflow
-  if (req >= locs_limit() || offset >= relocInfo::offset_limit()) {
-    req += (uint)offset / (uint)relocInfo::offset_limit();
+  if (req >= locs_limit() || offset < relocInfo::offset_min() || offset >= relocInfo::offset_max()) {
+    req += (uint)(offset >= 0 ? offset : -offset) / (uint)relocInfo::offset_max();
     if (req >= locs_limit()) {
       // Allocate or reallocate.
       expand_locs(locs_count() + (req - end));
@@ -348,10 +369,16 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
 
   // If the offset is giant, emit filler relocs, of type 'none', but
   // each carrying the largest possible offset, to advance the locs_point.
-  while (offset >= relocInfo::offset_limit()) {
+  while (offset >= relocInfo::offset_max()) {
     assert(end < locs_limit(), "adjust previous paragraph of code");
-    *end++ = filler_relocInfo();
-    offset -= filler_relocInfo().addr_offset();
+    *end++ = advance_filler_relocInfo();
+    offset -= advance_filler_relocInfo().addr_offset();
+  }
+
+  while (offset < relocInfo::offset_min()) {
+    assert(end < locs_limit(), "adjust previous paragraph of code");
+    *end++ = reverse_filler_relocInfo();
+    offset -= reverse_filler_relocInfo().addr_offset();
   }
 
   // If it's a simple reloc with no data, we'll just write (rtype | offset).
@@ -620,7 +647,7 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
            code_point_so_far < new_code_point;
            code_point_so_far += jump) {
         jump = new_code_point - code_point_so_far;
-        relocInfo filler = filler_relocInfo();
+        relocInfo filler = advance_filler_relocInfo();
         if (jump >= filler.addr_offset()) {
           jump = filler.addr_offset();
         } else {  // else shrink the filler to fit

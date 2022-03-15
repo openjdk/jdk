@@ -565,7 +565,30 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
        Compile::current()->output()->in_scratch_emit_size());
 #endif
     if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
+      address stub = nullptr;
+      int start_offset = code()->get_stub(entry.target());
+      if (start_offset < 0) {
+        stub = emit_trampoline_stub(offset(), entry.target());
+        if (stub != nullptr && entry.rspec().type() == relocInfo::runtime_call_type) {
+          code()->add_stub(entry.target(), stub - code()->stubs()->start());
+        }
+      }
+      else {
+        CodeBuffer*  cb = code();
+        CodeSection* cs = cb->stubs();
+        const int insts_call_instruction_offset = offset();
+
+        assert(_code_section == cb->insts(), "not in insts?");
+        set_code_section(cs);
+
+        relocate(cs->start() + start_offset,
+                 trampoline_stub_Relocation::spec(cb->insts()->start() + insts_call_instruction_offset));
+
+        stub = addr_at(start_offset);
+        assert(is_NativeCallTrampolineStub_at(stub), "doesn't look like a duplicated trampoline");
+
+        set_code_section(cb->insts());
+      }
       if (stub == NULL) {
         postcond(pc() == badAddress);
         return NULL; // CodeCache is full
