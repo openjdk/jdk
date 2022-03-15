@@ -62,7 +62,7 @@ public class LockDuringDumpAgent implements Runnable {
                     long elapsed = System.currentTimeMillis() - started;
                     if (elapsed >= timeout) {
                         System.out.println("This JVM may decide to not launch any Java threads during -Xshare:dump.");
-                        System.out.println("This is OK because no string objects be in a locked state during heap dump.");
+                        System.out.println("This is OK because no string objects could be in a locked state during heap dump.");
                         System.out.println("LockDuringDumpAgent timeout after " + elapsed + " ms");
                         return;
                     }
