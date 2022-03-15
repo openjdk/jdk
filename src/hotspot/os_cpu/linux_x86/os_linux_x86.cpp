@@ -462,7 +462,7 @@ juint os::cpu_microcode_revision() {
   // Note: this code runs on startup, and therefore should not be slow.
 
   juint result = 0;
-  char data[128] = {0};
+  char data[128] = {0}; // looking for short "microcode" line, should be enough
   size_t len = sizeof(data);
 
   // Attempt 1 (faster): Read the microcode version off the sysfs.
