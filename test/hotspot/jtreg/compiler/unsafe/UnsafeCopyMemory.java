@@ -25,7 +25,6 @@
  * @test
  * @key stress randomness
  * @library /test/lib
- * @bug 8283122
  *
  * @modules java.base/jdk.internal.misc
  *
