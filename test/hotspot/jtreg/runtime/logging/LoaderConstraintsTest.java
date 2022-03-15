@@ -69,11 +69,13 @@ public class LoaderConstraintsTest {
         // -Xlog:class+loader+constraints=info
         pb = exec("-Xlog:class+loader+constraints=info");
         out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
         out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: 'app', loader[1]: 'bootstrap'");
 
         // -Xlog:class+loader+constraints=off
         pb = exec("-Xlog:class+loader+constraints=off");
         out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
         out.shouldNotContain("[class,loader,constraints]");
 
     }
