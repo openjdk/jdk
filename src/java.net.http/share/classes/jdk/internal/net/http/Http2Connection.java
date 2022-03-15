@@ -265,6 +265,8 @@ class Http2Connection  {
     private final Decoder hpackIn;
     final SettingsFrame clientSettings;
     private volatile SettingsFrame serverSettings;
+    private record PushContinuationState(HeaderDecoder pushContDecoder, PushPromiseFrame pushContFrame) {}
+    private volatile PushContinuationState pushContinuationState;
     private final String key; // for HttpClientImpl.connections map
     private final FramesDecoder framesDecoder;
     private final FramesEncoder framesEncoder = new FramesEncoder();
@@ -777,8 +779,8 @@ class Http2Connection  {
                 }
 
                 if (!(frame instanceof ResetFrame)) {
-                    if (frame instanceof DataFrame) {
-                        dropDataFrame((DataFrame) frame);
+                    if (frame instanceof DataFrame df) {
+                        dropDataFrame(df);
                     }
                     if (isServerInitiatedStream(streamid)) {
                         if (streamid < nextPushStream) {
@@ -796,14 +798,20 @@ class Http2Connection  {
                 return;
             }
 
-            // While pus frame is not null, the only acceptable frame on this
+            // While push frame is not null, the only acceptable frame on this
             // stream is a Continuation frame
-            if (pcs != null) {
+            if (pushContinuationState != null) {
                 if (frame instanceof ContinuationFrame cf) {
-                    handlePushContinuation(stream, cf);
+                    try {
+                        handlePushContinuation(stream, cf);
+                    } catch (UncheckedIOException e) {
+                        debug.log("Error handling Push Promise with Continuation: " + e.getMessage(), e);
+                        protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                    }
                 } else {
                     // TODO: Maybe say what kind of frame was received instead
-                    protocolError(ErrorFrame.PROTOCOL_ERROR, "Expected Continuation frame but received another type");
+                    pushContinuationState = null;
+                    protocolError(ErrorFrame.PROTOCOL_ERROR, "Expected a Continuation frame but received " + frame);
                 }
             } else {
                 if (frame instanceof PushPromiseFrame pp) {
@@ -813,10 +821,10 @@ class Http2Connection  {
                         protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
-                } else if (frame instanceof HeaderFrame) {
+                } else if (frame instanceof HeaderFrame hf) {
                     // decode headers
                     try {
-                        decodeHeaders((HeaderFrame) frame, stream.rspHeadersConsumer());
+                        decodeHeaders(hf, stream.rspHeadersConsumer());
                     } catch (UncheckedIOException e) {
                         debug.log("Error decoding headers: " + e.getMessage(), e);
                         protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
@@ -851,32 +859,30 @@ class Http2Connection  {
         }
     }
 
-    private record PushContinuationState(HeaderDecoder pushContDecoder, PushPromiseFrame pushContFrame) {}
-    private volatile PushContinuationState pcs;
-
     private <T> void handlePushPromise(Stream<T> parent, PushPromiseFrame pp)
         throws IOException
     {
         // always decode the headers as they may affect connection-level HPACK
         // decoding state
-        assert pcs == null;
+        assert pushContinuationState == null;
         HeaderDecoder decoder = new HeaderDecoder();
         decodeHeaders(pp, decoder);
         int promisedStreamid = pp.getPromisedStream();
         if (pp.endHeaders()) {
             completePushPromise(promisedStreamid, parent, decoder.headers());
         } else {
-            pcs = new PushContinuationState(decoder, pp);
+            pushContinuationState = new PushContinuationState(decoder, pp);
         }
     }
 
     private <T> void handlePushContinuation(Stream<T> parent, ContinuationFrame cf)
             throws IOException {
-        decodeHeaders(cf, pcs.pushContDecoder);
+        decodeHeaders(cf, pushContinuationState.pushContDecoder);
         // if all continuations are sent, set pushWithContinuation to null
         if (cf.endHeaders()) {
-            completePushPromise(pcs.pushContFrame.getPromisedStream(), parent, pcs.pushContDecoder.headers());
-            pcs = null;
+            completePushPromise(pushContinuationState.pushContFrame.getPromisedStream(), parent,
+                    pushContinuationState.pushContDecoder.headers());
+            pushContinuationState = null;
         }
     }
 
