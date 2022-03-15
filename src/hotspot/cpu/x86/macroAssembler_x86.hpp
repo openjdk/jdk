@@ -522,11 +522,21 @@ class MacroAssembler: public Assembler {
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
+private:
+  // General purpose and XMM registers potentially clobbered by native code; there
+  // is no need for FPU or AVX opmask related methods because C1/interpreter
+  // - we save/restore FPU state as a whole always
+  // - do not care about AVX-512 opmask
   static RegSet call_clobbered_gp_registers();
   static XMMRegSet call_clobbered_xmm_registers();
 
+public:
+  void push_set(RegSet set);
+  void pop_set(RegSet set);
+
   // Push and pop everything that might be clobbered by a native
-  // runtime call. Only save the lower 64 bits of each vector register.
+  // runtime call.
+  // Only save the lower 64 bits of each vector register.
   // Additonal registers can be excluded in a passed RegSet.
   void push_call_clobbered_registers_except(RegSet exclude, bool save_fpu = true);
   void pop_call_clobbered_registers_except(RegSet exclude, bool restore_fpu = true);
@@ -537,9 +547,6 @@ class MacroAssembler: public Assembler {
   void pop_call_clobbered_registers(bool restore_fpu = true) {
     pop_call_clobbered_registers_except(RegSet(), restore_fpu);
   }
-
-  void push_set(RegSet set);
-  void pop_set(RegSet set);
 
   // allocation
   void eden_allocate(

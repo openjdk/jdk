@@ -286,8 +286,6 @@ inline XMMRegister AbstractRegSet<XMMRegister>::first() {
 }
 
 typedef AbstractRegSet<Register> RegSet;
-typedef AbstractRegSet<FloatRegister> FloatRegSet;
 typedef AbstractRegSet<XMMRegister> XMMRegSet;
-typedef AbstractRegSet<KRegister> KRegSet;
 
 #endif // CPU_X86_REGISTER_X86_HPP
