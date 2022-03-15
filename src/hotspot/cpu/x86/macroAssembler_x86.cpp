@@ -52,6 +52,9 @@
 #include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
+#include "vm_version_x86.hpp"
+#include "register_x86.hpp"
+#include "c1/c1_FrameMap.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -3576,6 +3579,121 @@ void MacroAssembler::tlab_allocate(Register thread, Register obj,
                                    Label& slow_case) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+}
+
+RegSet MacroAssembler::call_clobbered_gp_registers() {
+  RegSet regs;
+#ifdef _LP64
+  regs += RegSet::of(rax, rcx, rdx);
+#ifdef LINUX
+  regs += RegSet::of(rsi, rdi);
+#endif
+  regs += RegSet::range(r8, r11);
+#else
+  regs += RegSet::of(rax, rcx, rdx); // FIXME: check?
+#endif
+  return regs;
+}
+
+XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
+  XMMRegSet regs;
+  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+#ifdef _LP64
+  if (UseAVX < 3) {
+    num_xmm_regs = num_xmm_regs / 2;
+  }
+#endif
+  regs += XMMRegSet::range(xmm0, as_XMMRegister(num_xmm_regs - 1));
+  return regs;
+}
+
+void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool save_fpu) {
+  block_comment("push_call_clobbered_registers start");
+  // Regular registers
+  RegSet registers_to_push = call_clobbered_gp_registers() - exclude;
+  push_set(registers_to_push);
+
+#ifndef _LP64
+  if (save_fpu && UseSSE < 2) {
+    subptr(rsp, 112); // 16 byte aligned of 108 byte
+    fnsave(Address(rsp, 0));
+    fwait();
+
+    // Write the default FPU control word so that it will be used in the call
+    // and restored later.
+    movw(Address(rsp, 0), StubRoutines::x86::fpu_cntrl_wrd_std());
+    frstor(Address(rsp, 0));
+  }
+#endif
+  if (save_fpu && UseSSE >= 2) {
+    XMMRegSet xmm_registers_to_push = call_clobbered_xmm_registers();
+    uint num_xmm_registers = xmm_registers_to_push.size();
+
+    uint spill_size = sizeof(double); // C1 only ever uses the first float/double of the XMM register.
+    subptr(rsp, num_xmm_registers * 8);
+
+    size_t spill_offset = 0;
+    for (auto it = xmm_registers_to_push.begin(); *it != xnoreg; ++it) {
+      movdbl(Address(rsp, spill_offset), *it);
+      spill_offset += spill_size;
+    }
+    assert(is_aligned(spill_offset, 16), "Should be aligned implicitly, is %zu", spill_offset);
+  }
+
+  block_comment("push_call_clobbered_registers end");
+}
+
+void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool restore_fpu) {
+  block_comment("pop_call_clobbered_registers start");
+
+  if (restore_fpu && UseSSE >= 2) {
+    XMMRegSet xmm_registers_to_restore = call_clobbered_xmm_registers();
+    uint num_xmm_registers = xmm_registers_to_restore.size();
+
+    uint const restore_size = sizeof(double);  // C1 only ever uses the first float/double of the XMM register.
+
+    size_t restore_offset = 0;
+    for (auto it = xmm_registers_to_restore.begin(); *it != xnoreg; ++it) {
+      movdbl(*it, Address(rsp, restore_offset));
+      restore_offset += restore_size;
+    }
+    addptr(rsp, num_xmm_registers * restore_size);
+  }
+#ifndef _LP64
+  if (restore_fpu && UseSSE < 2) {
+    frstor(Address(rsp, 0));
+    addptr(rsp, 112); // 16 byte aligned of 108 bytes
+  }
+#endif
+
+  RegSet registers_to_pop = call_clobbered_gp_registers() - exclude;
+  pop_set(registers_to_pop);
+
+  block_comment("pop_call_clobbered_registers end");
+}
+
+void MacroAssembler::push_set(RegSet set) {
+  size_t register_push_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  size_t aligned_size = align_up(register_push_size, 16);
+  subptr(rsp, aligned_size);
+
+  size_t spill_offset = 0;
+  for (auto it = set.begin(); *it != noreg; ++it) {
+    movptr(Address(rsp, spill_offset), *it);
+    spill_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  }
+}
+
+void MacroAssembler::pop_set(RegSet set) {
+  size_t restore_offset = 0;
+  for (auto it = set.begin(); *it != noreg; ++it) {
+    movptr(*it, Address(rsp, restore_offset));
+    restore_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  }
+
+  size_t register_pop_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  size_t aligned_size = align_up(register_pop_size, 16);
+  addptr(rsp, aligned_size);
 }
 
 // Defines obj, preserves var_size_in_bytes

@@ -26,6 +26,7 @@
 #define CPU_X86_REGISTER_X86_HPP
 
 #include "asm/register.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -271,5 +272,22 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_kpr;
 
 };
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_Register(exact_log2(first)) : noreg;
+}
+
+template <>
+inline XMMRegister AbstractRegSet<XMMRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_XMMRegister(exact_log2(first)) : xnoreg;
+}
+
+typedef AbstractRegSet<Register> RegSet;
+typedef AbstractRegSet<FloatRegister> FloatRegSet;
+typedef AbstractRegSet<XMMRegister> XMMRegSet;
+typedef AbstractRegSet<KRegister> KRegSet;
 
 #endif // CPU_X86_REGISTER_X86_HPP

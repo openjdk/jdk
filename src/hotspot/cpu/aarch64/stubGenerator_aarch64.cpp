@@ -1320,7 +1320,7 @@ class StubGenerator: public StubCodeGenerator {
   void clobber_registers() {
 #ifdef ASSERT
     RegSet clobbered
-      = MacroAssembler::call_clobbered_registers() - rscratch1;
+      = MacroAssembler::call_clobbered_gp_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
     for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
