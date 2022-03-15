@@ -4097,12 +4097,6 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
-        strcmp(opType,"ReplicateB")==0 ||
-        strcmp(opType,"ReplicateS")==0 ||
-        strcmp(opType,"ReplicateI")==0 ||
-        strcmp(opType,"ReplicateL")==0 ||
-        strcmp(opType,"ReplicateF")==0 ||
-        strcmp(opType,"ReplicateD")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
@@ -4117,8 +4111,9 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"OrReductionV")==0 ||
         strcmp(opType,"XorReductionV")==0 ||
         strcmp(opType,"MaskAll")==0 ||
-        0 /* 0 to line up columns nicely */ )
+        0 /* 0 to line up columns nicely */ ) {
       return 1;
+    }
   }
   return 0;
 }
