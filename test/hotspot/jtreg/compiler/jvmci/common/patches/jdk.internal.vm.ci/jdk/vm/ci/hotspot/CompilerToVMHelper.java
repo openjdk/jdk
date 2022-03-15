@@ -295,10 +295,6 @@ public class CompilerToVMHelper {
         return CTVM.shouldDebugNonSafepoints();
     }
 
-    public static void writeDebugOutput(byte[] bytes, int offset, int length) {
-        CTVM.writeDebugOutput(bytes, offset, length, true, true);
-    }
-
     public static void flushDebugOutput() {
         CTVM.flushDebugOutput();
     }

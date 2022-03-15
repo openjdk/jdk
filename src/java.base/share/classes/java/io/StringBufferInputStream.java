@@ -108,7 +108,7 @@ public class StringBufferInputStream extends InputStream {
      *             the stream has been reached.
      */
     @SuppressWarnings("deprecation")
-    public synchronized int read(byte b[], int off, int len) {
+    public synchronized int read(byte[] b, int off, int len) {
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0) ||

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "compiler/compilerDefinitions.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/vm_version.hpp"
@@ -90,16 +91,16 @@ int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
 #endif
 
 #ifndef VMTYPE
-  #ifdef TIERED
+  #if COMPILER1_AND_COMPILER2
     #define VMTYPE "Server"
-  #else // TIERED
+  #else // COMPILER1_AND_COMPILER2
   #ifdef ZERO
     #define VMTYPE "Zero"
   #else // ZERO
      #define VMTYPE COMPILER1_PRESENT("Client")   \
                     COMPILER2_PRESENT("Server")
   #endif // ZERO
-  #endif // TIERED
+  #endif // COMPILER1_AND_COMPILER2
 #endif
 
 #ifndef HOTSPOT_VM_DISTRO
@@ -127,34 +128,24 @@ const char* Abstract_VM_Version::vm_info_string() {
       return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
       if (UseSharedSpaces) {
-        if (UseAOT) {
-          return "mixed mode, aot, sharing";
-#ifdef TIERED
-        } else if(is_client_compilation_mode_vm()) {
+        if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client, sharing";
-#endif
         } else {
           return "mixed mode, sharing";
          }
       } else {
-        if (UseAOT) {
-          return "mixed mode, aot";
-#ifdef TIERED
-        } else if(is_client_compilation_mode_vm()) {
+        if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client";
-#endif
         } else {
           return "mixed mode";
         }
       }
     case Arguments::_comp:
-#ifdef TIERED
-      if (is_client_compilation_mode_vm()) {
+      if (CompilationModeFlag::quick_only()) {
          return UseSharedSpaces ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
       }
-#endif
-      return UseSharedSpaces ? "compiled mode, sharing"    : "compiled mode";
-  };
+      return UseSharedSpaces ? "compiled mode, sharing" : "compiled mode";
+  }
   ShouldNotReachHere();
   return "";
 }
@@ -207,11 +198,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if _MSC_VER == 1600
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 10.0 (VS2010)"
-      #elif _MSC_VER == 1700
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 11.0 (VS2012)"
-      #elif _MSC_VER == 1800
+      #if _MSC_VER == 1800
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
       #elif _MSC_VER == 1900
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 14.0 (VS2015)"
@@ -244,7 +231,13 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
       #elif _MSC_VER == 1927
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.7 (VS2019)"
       #elif _MSC_VER == 1928
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.8 (VS2019)"
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.8 / 16.9 (VS2019)"
+      #elif _MSC_VER == 1929
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 16.10 / 16.11 (VS2019)"
+      #elif _MSC_VER == 1930
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.0 (VS2022)"
+      #elif _MSC_VER == 1931
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.1 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -325,7 +318,7 @@ void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const 
 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
-  FILE* fp = fopen(filename, "r");
+  FILE* fp = os::fopen(filename, "r");
   if (fp == NULL) {
     return false;
   }
@@ -343,4 +336,47 @@ bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, o
   }
   fclose(fp);
   return true;
+}
+
+// Abstract_VM_Version statics
+int   Abstract_VM_Version::_no_of_threads = 0;
+int   Abstract_VM_Version::_no_of_cores = 0;
+int   Abstract_VM_Version::_no_of_sockets = 0;
+bool  Abstract_VM_Version::_initialized = false;
+char  Abstract_VM_Version::_cpu_name[CPU_TYPE_DESC_BUF_SIZE] = {0};
+char  Abstract_VM_Version::_cpu_desc[CPU_DETAILED_DESC_BUF_SIZE] = {0};
+
+int Abstract_VM_Version::number_of_threads(void) {
+  assert(_initialized, "should be initialized");
+  return _no_of_threads;
+}
+
+int Abstract_VM_Version::number_of_cores(void) {
+  assert(_initialized, "should be initialized");
+  return _no_of_cores;
+}
+
+int Abstract_VM_Version::number_of_sockets(void) {
+  assert(_initialized, "should be initialized");
+  return _no_of_sockets;
+}
+
+const char* Abstract_VM_Version::cpu_name(void) {
+  assert(_initialized, "should be initialized");
+  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
+  if (NULL == tmp) {
+    return NULL;
+  }
+  strncpy(tmp, _cpu_name, CPU_TYPE_DESC_BUF_SIZE);
+  return tmp;
+}
+
+const char* Abstract_VM_Version::cpu_description(void) {
+  assert(_initialized, "should be initialized");
+  char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
+  if (NULL == tmp) {
+    return NULL;
+  }
+  strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
+  return tmp;
 }

@@ -101,6 +101,5 @@ void ShenandoahMonitoringSupport::update_counters() {
     _heap_region_counters->update();
 
     MetaspaceCounters::update_performance_counters();
-    CompressedClassSpaceCounters::update_performance_counters();
   }
 }

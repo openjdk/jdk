@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,8 @@ public class LoopPipe
         ShapeSpanIterator sr = new ShapeSpanIterator(false);
 
         try {
-            sr.setOutputArea(sg2d.getCompClip());
+            final Region clip = sg2d.getCompClip();
+            sr.setOutputArea(clip);
             sr.setRule(PathIterator.WIND_NON_ZERO);
 
             BasicStroke bs = (BasicStroke) sg2d.stroke;
@@ -270,7 +271,7 @@ public class LoopPipe
                 (sg2d.strokeHint != SunHints.INTVAL_STROKE_PURE);
 
             RenderEngine.strokeTo(s,
-                                  sg2d.transform, bs,
+                                  sg2d.transform, clip, bs,
                                   thin, normalize, false, sr);
         } catch (Throwable t) {
             sr.dispose();

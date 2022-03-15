@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ class VirtualSpaceNodeTest {
 
   void lock_and_verify_node() {
 #ifdef ASSERT
-    MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
     _node->verify_locked();
 #endif
   }
@@ -92,7 +92,7 @@ class VirtualSpaceNodeTest {
     const bool node_is_full = _node->used_words() == _node->word_size();
     Metachunk* c = NULL;
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       c = _node->allocate_root_chunk();
     }
 
@@ -218,7 +218,7 @@ class VirtualSpaceNodeTest {
 
     // Split...
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       _node->split(target_level, c, freelist);
     }
 
@@ -259,7 +259,7 @@ class VirtualSpaceNodeTest {
 
     Metachunk* result = NULL;
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       result = _node->merge(c, freelist);
     }
     EXPECT_NOT_NULL(result);
@@ -297,7 +297,7 @@ public:
     _commit_limit(commit_limit)
   {
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       _node = VirtualSpaceNode::create_node(vs_word_size, &_commit_limiter,
                                             &_counter_reserved_words, &_counter_committed_words);
       EXPECT_EQ(_node->word_size(), vs_word_size);
@@ -308,7 +308,7 @@ public:
 
   ~VirtualSpaceNodeTest() {
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       delete _node;
     }
     // After the node is deleted, counters should be back to zero
@@ -373,7 +373,7 @@ public:
 
         bool rc = false;
         {
-          MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+          MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
           rc = _node->ensure_range_is_committed(c->base() + r.start(), r.size());
         }
 
@@ -390,7 +390,7 @@ public:
         //LOG("u " SIZE_FORMAT "," SIZE_FORMAT, r.start(), r.end());
 
         {
-          MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+          MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
           _node->uncommit_range(c->base() + r.start(), r.size());
         }
 
@@ -491,7 +491,7 @@ public:
 
 TEST_VM(metaspace, virtual_space_node_test_basics) {
 
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
   const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 10;
 

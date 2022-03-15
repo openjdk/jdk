@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,11 @@
 
 import javax.security.sasl.*;
 import javax.security.auth.callback.*;
-import java.security.*;
 import javax.security.auth.Subject;
 import javax.security.auth.login.*;
 import com.sun.security.auth.callback.*;
 import java.util.HashMap;
+import java.util.concurrent.Callable;
 
 public class AuthOnly {
     private static final String MECH = "GSSAPI";
@@ -84,8 +84,8 @@ public class AuthOnly {
         srvprops.put(Sasl.QOP, "auth,auth-int,auth-conf");
 
         final SaslClient clnt = (SaslClient)
-            Subject.doAs(clntSubj, new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
+            Subject.callAs(clntSubj, new Callable<>() {
+                public Object call() throws Exception {
                     return Sasl.createSaslClient(
                         new String[]{MECH}, null, PROTOCOL, SERVER_FQDN,
                         clntprops, null);
@@ -97,8 +97,8 @@ public class AuthOnly {
             System.out.println(srvSubj);
         }
         final SaslServer srv = (SaslServer)
-            Subject.doAs(srvSubj, new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
+            Subject.callAs(srvSubj, new Callable<Object>() {
+                public Object call() throws Exception {
                     return Sasl.createSaslServer(MECH, PROTOCOL, SERVER_FQDN,
                         srvprops, srvCbh);
                 }
@@ -117,27 +117,18 @@ public class AuthOnly {
         byte[] response;
         byte[] challenge;
 
-        response = (byte[]) Subject.doAs(clntSubj,
-            new PrivilegedExceptionAction() {
-            public Object run() throws Exception {
-                return (clnt.hasInitialResponse()? clnt.evaluateChallenge(EMPTY) : EMPTY);
-            }});
+        response = (byte[]) Subject.callAs(clntSubj,
+                () -> (clnt.hasInitialResponse()? clnt.evaluateChallenge(EMPTY) : EMPTY));
 
         while (!clnt.isComplete() || !srv.isComplete()) {
             final byte[] responseCopy = response;
-            challenge = (byte[]) Subject.doAs(srvSubj,
-                new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
-                    return srv.evaluateResponse(responseCopy);
-                }});
+            challenge = (byte[]) Subject.callAs(srvSubj,
+                    () -> srv.evaluateResponse(responseCopy));
 
             if (challenge != null) {
                 final byte[] challengeCopy = challenge;
-                response = (byte[]) Subject.doAs(clntSubj,
-                    new PrivilegedExceptionAction() {
-                    public Object run() throws Exception {
-                        return clnt.evaluateChallenge(challengeCopy);
-                    }});
+                response = (byte[]) Subject.callAs(clntSubj,
+                        () -> clnt.evaluateChallenge(challengeCopy));
             }
         }
 

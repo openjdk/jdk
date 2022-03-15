@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
 volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
@@ -335,7 +336,7 @@ public:
     }
     if (cld != NULL) {
       // Keep cld that is being returned alive.
-      _holder = Handle(_thread, cld->holder_phantom());
+      _holder = Handle(_thread, cld->holder());
       _next = cld->next();
     } else {
       _next = NULL;
@@ -424,21 +425,6 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
 #define FOR_ALL_DICTIONARY(X)   ClassLoaderDataGraphIterator iter; \
                                 while (ClassLoaderData* X = iter.get_next()) \
                                   if (X->dictionary() != NULL)
-
-// Walk classes in the loaded class dictionaries in various forms.
-// Only walks the classes defined in this class loader.
-void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->classes_do(f);
-  }
-}
-
-// Only walks the classes defined in this class loader.
-void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
-  FOR_ALL_DICTIONARY(cld) {
-    cld->dictionary()->classes_do(f, CHECK);
-  }
-}
 
 void ClassLoaderDataGraph::verify_dictionary() {
   FOR_ALL_DICTIONARY(cld) {
@@ -672,6 +658,7 @@ void ClassLoaderDataGraph::verify() {
 // callable from debugger
 extern "C" int print_loader_data_graph() {
   ResourceMark rm;
+  MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::print_on(tty);
   return 0;
 }

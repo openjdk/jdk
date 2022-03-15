@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ final class RSAKeyExchange {
                 byte[] encrypted) throws GeneralSecurityException {
 
             byte[] encoded = null;
-            boolean needFailover = false;
+            boolean needFailover;
             Cipher cipher = Cipher.getInstance(JsseJce.CIPHER_RSA_PKCS1);
             try {
                 // Try UNWRAP_MODE mode firstly.
@@ -236,8 +236,7 @@ final class RSAKeyExchange {
                     NoSuchAlgorithmException iae) {
                 // unlikely to happen, otherwise, must be a provider exception
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine("RSA premaster secret generation error:");
-                    iae.printStackTrace(System.out);
+                    SSLLogger.fine("RSA premaster secret generation error", iae);
                 }
 
                 throw new GeneralSecurityException(

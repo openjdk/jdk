@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,11 @@ public class JPEGImageReader extends ImageReader {
     private int numImages = 0;
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 @Override
@@ -1047,7 +1052,7 @@ public class JPEGImageReader extends ImageReader {
                        (!cs.isCS_sRGB()) &&
                        (cm.getNumComponents() == numComponents)) {
                 // Target isn't sRGB, so convert from sRGB to the target
-                convert = new ColorConvertOp(JPEG.JCS.sRGB, cs, null);
+                convert = new ColorConvertOp(JPEG.sRGB, cs, null);
             } else if (csType != ColorSpace.TYPE_RGB) {
                 throw new IIOException("Incompatible color conversion");
             }
@@ -1149,6 +1154,13 @@ public class JPEGImageReader extends ImageReader {
             Iterator<ImageTypeSpecifier> imageTypes = getImageTypes(imageIndex);
             if (imageTypes.hasNext() == false) {
                 throw new IIOException("Unsupported Image Type");
+            }
+
+            if ((long)width * height > Integer.MAX_VALUE - 2) {
+                // We are not able to properly decode image that has number
+                // of pixels greater than Integer.MAX_VALUE - 2
+                throw new IIOException("Can not read image of the size "
+                        + width + " by " + height);
             }
 
             image = getDestination(param, imageTypes, width, height);
@@ -1270,9 +1282,8 @@ public class JPEGImageReader extends ImageReader {
         // and set knownPassCount
         if (imageIndex == imageMetadataIndex) { // We have metadata
             knownPassCount = 0;
-            for (Iterator<MarkerSegment> iter =
-                    imageMetadata.markerSequence.iterator(); iter.hasNext();) {
-                if (iter.next() instanceof SOSMarkerSegment) {
+            for (MarkerSegment markerSegment : imageMetadata.markerSequence) {
+                if (markerSegment instanceof SOSMarkerSegment) {
                     knownPassCount++;
                 }
             }
@@ -1898,7 +1909,7 @@ class ImageTypeProducer {
             case JPEG.JCS_YCbCr:
             //there is no YCbCr raw type so by default we assume it as RGB
             case JPEG.JCS_RGB:
-                return ImageTypeSpecifier.createInterleaved(JPEG.JCS.sRGB,
+                return ImageTypeSpecifier.createInterleaved(JPEG.sRGB,
                         JPEG.bOffsRGB,
                         DataBuffer.TYPE_BYTE,
                         false,

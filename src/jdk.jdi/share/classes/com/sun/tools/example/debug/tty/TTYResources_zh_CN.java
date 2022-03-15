@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
         {"dbgtrace command value must be an integer:", "dbgtrace \u547D\u4EE4\u503C\u5FC5\u987B\u4E3A\u6574\u6570\uFF1A{0}"},
         {"Deferring.", "\u6B63\u5728\u5EF6\u8FDF{0}\u3002\n\u5C06\u5728\u52A0\u8F7D\u7C7B\u540E\u8BBE\u7F6E\u3002"},
         {"End of stack.", "\u5806\u6808\u7ED3\u675F\u3002"},
+        {"EOF", "EOF"},
         {"Error popping frame", "\u4F7F\u5E27\u51FA\u6808\u65F6\u51FA\u9519 - {0}"},
         {"Error reading file", "\u8BFB\u53D6 ''{0}'' \u65F6\u51FA\u9519 - {1}"},
         {"Error redefining class to file", "\u5C06{0}\u91CD\u65B0\u5B9A\u4E49\u4E3A{1}\u65F6\u51FA\u9519 - {2}"},
@@ -252,6 +253,9 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
          "\u7528\u6CD5\uFF1Astop [go|thread] [<thread_id>] <at|in> <location>\n  \u5982\u679C\u6307\u5B9A \"go\"\uFF0C\u5219\u5728\u505C\u6B62\u540E\u7ACB\u5373\u6062\u590D\n  \u5982\u679C\u6307\u5B9A \"thread\"\uFF0C\u5219\u4EC5\u6302\u8D77\u5728\u5176\u4E2D\u505C\u6B62\u7684\u7EBF\u7A0B\n  \u5982\u679C\u65E2\u672A\u6307\u5B9A \"go\" \u4E5F\u672A\u6307\u5B9A \"thread\"\uFF0C\u5219\u6302\u8D77\u6240\u6709\u7EBF\u7A0B\n  \u5982\u679C\u6307\u5B9A\u4EE5\u6574\u6570\u8868\u793A\u7684 <thread_id>\uFF0C\u5219\u4EC5\u5728\u6307\u5B9A\u7684\u7EBF\u7A0B\u4E2D\u505C\u6B62\n  \"at\" \u548C \"in\" \u7684\u542B\u4E49\u76F8\u540C\n  <location> \u53EF\u4EE5\u662F\u884C\u53F7\u6216\u65B9\u6CD5\uFF1A\n    <class_id>:<line_number>\n    <class_id>.<method>[(argument_type,...)]"
         },
         {"Removed:", "\u5DF2\u5220\u9664: {0}"},
+        {"repeat is on", "Repeat is on"},
+        {"repeat is off", "Repeat is off"},
+        {"repeat usage", "Usage: repeat <on|off>"},
         {"Requested stack frame is no longer active:", "\u8BF7\u6C42\u7684\u5806\u6808\u5E27\u4E0D\u518D\u6709\u6548: {0,number,integer}"},
         {"run <args> command is valid only with launched VMs", "'run <args>' \u547D\u4EE4\u4EC5\u5BF9\u542F\u52A8\u7684 VM \u6709\u6548"},
         {"run", "\u8FD0\u884C{0}"},

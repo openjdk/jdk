@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ public class OopUtilities {
       return null;
     }
     int length = (int)charArray.getLength();
-    StringBuffer buf = new StringBuffer(length);
+    StringBuilder buf = new StringBuilder(length);
     for (int i = 0; i < length; i++) {
       buf.append(charArray.getCharAt(i));
     }
@@ -111,7 +111,7 @@ public class OopUtilities {
       return null;
     }
     int length = (int)byteArray.getLength() >> coder;
-    StringBuffer buf = new StringBuffer(length);
+    StringBuilder buf = new StringBuilder(length);
     if (coder == 0) {
       // Latin1 encoded
       for (int i = 0; i < length; i++) {

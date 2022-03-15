@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build sun.hotspot.WhiteBox
  *        compiler.jvmci.compilerToVM.DisassembleCodeBlobTest
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -101,7 +101,16 @@ public class DisassembleCodeBlobTest {
         // Therefore compare strings 2 and 3.
         String str2 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
         String str3 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        Asserts.assertEQ(str2, str3,
+        String[] str2Lines = str2.split(System.lineSeparator());
+        String[] str3Lines = str3.split(System.lineSeparator());
+        // skip the first two lines since it contains a timestamp that may vary from different invocations
+        // <empty-line>
+        // Compiled method (c2)     309  463       4       compiler.jvmci.compilerToVM.CompileCodeTestCase$Dummy::staticMethod (1 bytes)
+        // <empty-line>
+        // Compiled method (c2)     310  463       4       compiler.jvmci.compilerToVM.CompileCodeTestCase$Dummy::staticMethod (1 bytes)
+        for (int i = 2; i < str2Lines.length; i++) {
+            Asserts.assertEQ(str2Lines[i], str3Lines[i],
                 testCase + " : 3nd invocation returned different value from 2nd");
+        }
     }
 }

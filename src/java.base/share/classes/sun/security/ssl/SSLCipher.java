@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -411,10 +412,11 @@ enum SSLCipher {
     private static final HashMap<String, Long> cipherLimits = new HashMap<>();
 
     // Keywords found on the jdk.tls.keyLimits security property.
-    final static String tag[] = {"KEYUPDATE"};
+    static final String[] tag = {"KEYUPDATE"};
 
     static  {
         final long max = 4611686018427387904L; // 2^62
+        @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
                 new PrivilegedAction<String>() {
             @Override
@@ -424,12 +426,13 @@ enum SSLCipher {
         });
 
         if (prop != null) {
-            String propvalue[] = prop.split(",");
+            String[] propvalue = prop.split(",");
 
             for (String entry : propvalue) {
                 int index;
                 // If this is not a UsageLimit, goto to next entry.
-                String values[] = entry.trim().toUpperCase().split(" ");
+                String[] values =
+                        entry.trim().toUpperCase(Locale.ENGLISH).split(" ");
 
                 if (values[1].contains(tag[0])) {
                     index = 0;
@@ -532,6 +535,7 @@ enum SSLCipher {
             for (ProtocolVersion pv : me.getValue()) {
                 if (protocolVersion == pv) {
                     rcg = me.getKey();
+                    break;
                 }
             }
         }
@@ -557,6 +561,7 @@ enum SSLCipher {
             for (ProtocolVersion pv : me.getValue()) {
                 if (protocolVersion == pv) {
                     wcg = me.getKey();
+                    break;
                 }
             }
         }
@@ -1862,10 +1867,10 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyLimit read side: algorithm = " +
-                            algorithm.toUpperCase() + ":" + tag[0] +
+                            algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
                 }
                 if (keyLimitCountdown > 0) {
@@ -2016,10 +2021,10 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyLimit write side: algorithm = "
-                            + algorithm.toUpperCase() + ":" + tag[0] +
+                            + algorithm + ":" + tag[0] +
                             "\ncountdown value = " + keyLimitCountdown);
                 }
                 if (keyLimitCountdown > 0) {
@@ -2198,7 +2203,7 @@ enum SSLCipher {
 
                 // DON'T decrypt the nonce_explicit for AEAD mode. The buffer
                 // position has moved out of the nonce_explicit range.
-                int len = bb.remaining();
+                int len;
                 int pos = bb.position();
                 ByteBuffer dup = bb.duplicate();
                 try {
@@ -2276,9 +2281,9 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase() +
+                    SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
                 }
@@ -2318,7 +2323,6 @@ enum SSLCipher {
                 cipher.updateAAD(aad);
 
                 // DON'T encrypt the nonce for AEAD mode.
-                int len = bb.remaining();
                 int pos = bb.position();
                 if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
                     SSLLogger.fine(
@@ -2337,6 +2341,7 @@ enum SSLCipher {
                     bb.limit(pos + outputSize);
                 }
 
+                int len;
                 try {
                     len = cipher.doFinal(dup, bb);
                 } catch (IllegalBlockSizeException |
@@ -2468,7 +2473,7 @@ enum SSLCipher {
                                         contentType, bb.remaining(), sn);
                 cipher.updateAAD(aad);
 
-                int len = bb.remaining();
+                int len;
                 int pos = bb.position();
                 ByteBuffer dup = bb.duplicate();
                 try {
@@ -2558,9 +2563,9 @@ enum SSLCipher {
                 this.random = random;
 
                 keyLimitCountdown = cipherLimits.getOrDefault(
-                        algorithm.toUpperCase() + ":" + tag[0], 0L);
+                    algorithm.toUpperCase(Locale.ENGLISH) + ":" + tag[0], 0L);
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("algorithm = " + algorithm.toUpperCase() +
+                    SSLLogger.fine("algorithm = " + algorithm +
                             ":" + tag[0] + "\ncountdown value = " +
                             keyLimitCountdown);
                 }
@@ -2600,7 +2605,6 @@ enum SSLCipher {
                                         contentType, outputSize, sn);
                 cipher.updateAAD(aad);
 
-                int len = bb.remaining();
                 int pos = bb.position();
                 if (SSLLogger.isOn && SSLLogger.isOn("plaintext")) {
                     SSLLogger.fine(
@@ -2618,6 +2622,7 @@ enum SSLCipher {
                     bb.limit(pos + outputSize);
                 }
 
+                int len;
                 try {
                     len = cipher.doFinal(dup, bb);
                 } catch (IllegalBlockSizeException |

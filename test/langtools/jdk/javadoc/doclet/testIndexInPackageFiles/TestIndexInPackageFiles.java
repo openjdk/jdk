@@ -112,15 +112,15 @@ public class TestIndexInPackageFiles extends JavadocTester {
 
         checkOutput("index-all.html", true,
             """
-                <span class="search-tag-link"><a href="p/q/package-summary.html#test.name.1">test.name.1</a></span>""",
+                <a href="p/q/package-summary.html#test.name.1" class="search-tag-link">test.name.1</a>""",
             """
-                <span class="search-tag-link"><a href="p/q/doc-files/extra.html#test.name.2">test.name.2</a></span>""",
+                <a href="p/q/doc-files/extra.html#test.name.2" class="search-tag-link">test.name.2</a>""",
             """
-                <span class="search-tag-link"><a href="index.html#test.name.3">test.name.3</a></span> - Search tag in Overview</dt>""",
+                <a href="index.html#test.name.3" class="search-tag-link">test.name.3</a> - Search tag in Overview</dt>""",
             """
-                <span class="search-tag-link"><a href="p/q/package-summary.html#test.property.1">test.property.1</a></span>""",
+                <a href="p/q/package-summary.html#test.property.1" class="search-tag-link">test.property.1</a>""",
             """
-                <span class="search-tag-link"><a href="p/q/doc-files/extra.html#test.property.2">test.property.2</a></span>""");
+                <a href="p/q/doc-files/extra.html#test.property.2" class="search-tag-link">test.property.2</a>""");
     }
 }
 

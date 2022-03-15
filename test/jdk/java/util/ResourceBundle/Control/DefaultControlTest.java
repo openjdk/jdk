@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 5102289 6278334
+ * @bug 5102289 6278334 8261179
  * @summary Test the default Control implementation. The expiration
  * functionality of newBundle, getTimeToLive, and needsReload is
  * tested by ExpirationTest.sh. The factory methods are tested
@@ -145,31 +145,50 @@ public class DefaultControlTest {
                               new Locale("ja", "JP", "YOK"),
                               new Locale("ja", "JP"),
                               new Locale("ja"),
-                              new Locale("") });
+                              Locale.ROOT });
         candidateData.put(new Locale("ja", "JP"), new Locale[] {
                               new Locale("ja", "JP"),
                               new Locale("ja"),
-                              new Locale("") });
+                              Locale.ROOT });
         candidateData.put(new Locale("ja"), new Locale[] {
                               new Locale("ja"),
-                              new Locale("") });
+                              Locale.ROOT });
 
         candidateData.put(new Locale("ja", "", "YOK"), new Locale[] {
                               new Locale("ja", "", "YOK"),
                               new Locale("ja"),
-                              new Locale("") });
+                              Locale.ROOT });
         candidateData.put(new Locale("", "JP", "YOK"), new Locale[] {
                               new Locale("", "JP", "YOK"),
                               new Locale("", "JP"),
-                              new Locale("") });
+                              Locale.ROOT });
         candidateData.put(new Locale("", "", "YOK"), new Locale[] {
                               new Locale("", "", "YOK"),
-                              new Locale("") });
+                              Locale.ROOT });
         candidateData.put(new Locale("", "JP"), new Locale[] {
                               new Locale("", "JP"),
-                              new Locale("") });
-        candidateData.put(new Locale(""), new Locale[] {
-                              new Locale("") });
+                              Locale.ROOT });
+        candidateData.put(Locale.ROOT, new Locale[] {
+                              Locale.ROOT });
+
+        // Norwegian Bokmal
+        candidateData.put(Locale.forLanguageTag("nb-NO-POSIX"), new Locale[] {
+                Locale.forLanguageTag("nb-NO-POSIX"),
+                Locale.forLanguageTag("no-NO-POSIX"),
+                Locale.forLanguageTag("nb-NO"),
+                Locale.forLanguageTag("no-NO"),
+                Locale.forLanguageTag("nb"),
+                Locale.forLanguageTag("no"),
+                Locale.ROOT});
+        candidateData.put(Locale.forLanguageTag("no-NO-POSIX"), new Locale[] {
+                Locale.forLanguageTag("no-NO-POSIX"),
+                Locale.forLanguageTag("nb-NO-POSIX"),
+                Locale.forLanguageTag("no-NO"),
+                Locale.forLanguageTag("nb-NO"),
+                Locale.forLanguageTag("no"),
+                Locale.forLanguageTag("nb"),
+                Locale.ROOT});
+
 
         for (Locale locale : candidateData.keySet()) {
             List<Locale> candidates = CONTROL.getCandidateLocales("any", locale);
@@ -233,7 +252,7 @@ public class DefaultControlTest {
             }
 
             testNo = 2;
-            rb = CONTROL.newBundle("TestResourceRB", new Locale(""),
+            rb = CONTROL.newBundle("TestResourceRB", Locale.ROOT,
                                    CLAZZ, LOADER, false);
             s = rb.getString("type");
             if (!s.equals(CLAZZ)) {
@@ -267,7 +286,7 @@ public class DefaultControlTest {
         }
 
         try {
-            rb = CONTROL.newBundle("NonResourceBundle", new Locale(""),
+            rb = CONTROL.newBundle("NonResourceBundle", Locale.ROOT,
                                    "java.class", LOADER, false);
             error("newBundle: doesn't throw ClassCastException with a non-ResourceBundle subclass.");
         } catch (ClassCastException cce) {
@@ -349,7 +368,7 @@ public class DefaultControlTest {
                         name + "_" + "" + "_" + "" + "_" + "YOK");
         bundleNames.put(new Locale("", "JP"),
                         name + "_" + "" + "_" + "JP");
-        bundleNames.put(new Locale(""),
+        bundleNames.put(Locale.ROOT,
                         name);
 
         for (Locale locale : bundleNames.keySet()) {

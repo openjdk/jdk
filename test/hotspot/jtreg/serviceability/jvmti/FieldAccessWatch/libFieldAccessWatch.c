@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ static jvmtiEnv *jvmti = NULL;
 // valid while a test is executed
 static jobject testResultObject = NULL;
 static jclass testResultClass = NULL;
+static jthread testThread = NULL;
 
 
 static void reportError(const char *msg, int err) {
@@ -46,6 +47,7 @@ static void reportError(const char *msg, int err) {
 
 // logs the notification and updates currentTestResult
 static void handleNotification(JNIEnv *jni_env,
+    jthread thread,
     jmethodID method,
     jfieldID field,
     jclass field_klass,
@@ -62,6 +64,10 @@ static void handleNotification(JNIEnv *jni_env,
     if (testResultObject == NULL) {
         // we are out of test
         return;
+    }
+
+    if (!(*jni_env)->IsSameObject(jni_env, thread, testThread)) {
+        return; // skip events from unexpected threads
     }
 
     err = (*jvmti)->GetFieldName(jvmti, field_klass, field, &name, NULL, NULL);
@@ -179,7 +185,7 @@ onFieldAccess(jvmtiEnv *jvmti_env,
             jobject object,
             jfieldID field)
 {
-    handleNotification(jni_env, method, field, field_klass, 0, location);
+    handleNotification(jni_env, thread, method, field, field_klass, 0, location);
 }
 
 
@@ -195,7 +201,7 @@ onFieldModification(jvmtiEnv *jvmti_env,
             char signature_type,
             jvalue new_value)
 {
-    handleNotification(jni_env, method, field, field_klass, 1, location);
+    handleNotification(jni_env, thread, method, field, field_klass, 1, location);
 
     if (signature_type == 'L') {
         jobject newObject = new_value.l;
@@ -251,7 +257,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
 
 
 JNIEXPORT jboolean JNICALL
-Java_FieldAccessWatch_initWatchers(JNIEnv *env, jclass thisClass, jclass cls, jobject field)
+Java_FieldAccessWatch_initWatchers(JNIEnv *env, jclass thisClass, jclass cls, jobject field, jthread thread)
 {
     jfieldID fieldId;
     jvmtiError err;
@@ -274,6 +280,8 @@ Java_FieldAccessWatch_initWatchers(JNIEnv *env, jclass thisClass, jclass cls, jo
         reportError("SetFieldAccessWatch failed", err);
         return JNI_FALSE;
     }
+
+    testThread = (jthread)(*env)->NewGlobalRef(env, thread);
 
     return JNI_TRUE;
 }

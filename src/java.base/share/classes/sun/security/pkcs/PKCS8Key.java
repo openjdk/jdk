@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.x509.*;
 import sun.security.util.*;
 
@@ -95,8 +96,9 @@ public class PKCS8Key implements PrivateKey {
     }
 
     private void decode(InputStream is) throws InvalidKeyException {
+        DerValue val = null;
         try {
-            DerValue val = new DerValue(is);
+            val = new DerValue(is);
             if (val.tag != DerValue.tag_Sequence) {
                 throw new InvalidKeyException("invalid key format");
             }
@@ -106,7 +108,7 @@ public class PKCS8Key implements PrivateKey {
                 throw new InvalidKeyException("unknown version: " + version);
             }
             algid = AlgorithmId.parse (val.data.getDerValue ());
-            key = val.data.getOctetString ();
+            key = val.data.getOctetString();
 
             DerValue next;
             if (val.data.available() == 0) {
@@ -131,11 +133,15 @@ public class PKCS8Key implements PrivateKey {
             throw new InvalidKeyException("Extra bytes");
         } catch (IOException e) {
             throw new InvalidKeyException("IOException : " + e.getMessage());
+        } finally {
+            if (val != null) {
+                val.clear();
+            }
         }
     }
 
     /**
-     * Construct PKCS#8 subject public key from a DER value.  If a
+     * Construct PKCS#8 subject public key from a DER encoding.  If a
      * security provider supports the key algorithm with a specific class,
      * a PrivateKey from the provider is returned.  Otherwise, a raw
      * PKCS8Key object is returned.
@@ -145,21 +151,29 @@ public class PKCS8Key implements PrivateKey {
      * information.  Also, when a key (or algorithm) needs some special
      * handling, that specific need can be accommodated.
      *
-     * @param in the DER-encoded SubjectPublicKeyInfo value
+     * @param encoded the DER-encoded SubjectPublicKeyInfo value
      * @exception IOException on data format errors
      */
-    public static PrivateKey parseKey(DerValue in) throws IOException {
+    public static PrivateKey parseKey(byte[] encoded) throws IOException {
         try {
-            PKCS8Key rawKey = new PKCS8Key(in.toByteArray());
-            PKCS8EncodedKeySpec pkcs8KeySpec
-                = new PKCS8EncodedKeySpec(rawKey.getEncoded());
+            PKCS8Key rawKey = new PKCS8Key(encoded);
+            byte[] internal = rawKey.getEncodedInternal();
+            PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(internal);
+            PrivateKey result = null;
             try {
-                return KeyFactory.getInstance(rawKey.algid.getName())
+                result = KeyFactory.getInstance(rawKey.algid.getName())
                         .generatePrivate(pkcs8KeySpec);
             } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                 // Ignore and return raw key
-                return rawKey;
+                result = rawKey;
+            } finally {
+                if (result != rawKey) {
+                    rawKey.clear();
+                }
+                SharedSecrets.getJavaSecuritySpecAccess()
+                        .clearEncodedKeySpec(pkcs8KeySpec);
             }
+            return result;
         } catch (InvalidKeyException e) {
             throw new IOException("corrupt private key", e);
         }
@@ -183,14 +197,9 @@ public class PKCS8Key implements PrivateKey {
      * Returns the DER-encoded form of the key as a byte array,
      * or {@code null} if an encoding error occurs.
      */
-    public synchronized byte[] getEncoded() {
-        try {
-            encode();
-            return encodedKey.clone();
-        } catch (InvalidKeyException e) {
-            // ignored and return null
-        }
-        return null;
+    public byte[] getEncoded() {
+        byte[] b = getEncodedInternal();
+        return (b == null) ? null : b.clone();
     }
 
     /**
@@ -201,34 +210,34 @@ public class PKCS8Key implements PrivateKey {
     }
 
     /**
-     * DER-encodes this key as a byte array that can be retrieved
-     * by the {@link #getEncoded()} method.
+     * DER-encodes this key as a byte array stored inside this object
+     * and return it.
      *
-     * @exception InvalidKeyException if an encoding error occurs.
+     * @return the encoding, or null if there is an I/O error.
      */
-    private void encode() throws InvalidKeyException {
+    private synchronized byte[] getEncodedInternal() {
         if (encodedKey == null) {
             try {
-                DerOutputStream out = new DerOutputStream ();
                 DerOutputStream tmp = new DerOutputStream();
                 tmp.putInteger(V1);
                 algid.encode(tmp);
                 tmp.putOctetString(key);
-                out.write(DerValue.tag_Sequence, tmp);
+                DerValue out = DerValue.wrap(DerValue.tag_Sequence, tmp);
                 encodedKey = out.toByteArray();
+                out.clear();
             } catch (IOException e) {
-                throw new InvalidKeyException ("IOException : " +
-                                               e.getMessage());
+                // encodedKey is still null
             }
         }
+        return encodedKey;
     }
 
     @java.io.Serial
     protected Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PRIVATE,
-                        getAlgorithm(),
-                        getFormat(),
-                        getEncoded());
+                getAlgorithm(),
+                getFormat(),
+                getEncodedInternal());
     }
 
     /**
@@ -258,11 +267,23 @@ public class PKCS8Key implements PrivateKey {
         if (this == object) {
             return true;
         }
-        if (object instanceof Key) {
+        if (object instanceof PKCS8Key) {
             // time-constant comparison
             return MessageDigest.isEqual(
-                    getEncoded(),
-                    ((Key)object).getEncoded());
+                    getEncodedInternal(),
+                    ((PKCS8Key)object).getEncodedInternal());
+        } else if (object instanceof Key) {
+            // time-constant comparison
+            byte[] otherEncoded = ((Key)object).getEncoded();
+            try {
+                return MessageDigest.isEqual(
+                        getEncodedInternal(),
+                        otherEncoded);
+            } finally {
+                if (otherEncoded != null) {
+                    Arrays.fill(otherEncoded, (byte) 0);
+                }
+            }
         }
         return false;
     }
@@ -272,6 +293,13 @@ public class PKCS8Key implements PrivateKey {
      * which are equal will also have the same hashcode.
      */
     public int hashCode() {
-        return Arrays.hashCode(getEncoded());
+        return Arrays.hashCode(getEncodedInternal());
+    }
+
+    public void clear() {
+        if (encodedKey != null) {
+            Arrays.fill(encodedKey, (byte)0);
+        }
+        Arrays.fill(key, (byte)0);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
 
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "runtime/perfData.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmEnums.hpp"
 
@@ -49,6 +49,11 @@ struct SpecialFlag {
   JDK_Version deprecated_in; // When the deprecation warning started (or "undefined").
   JDK_Version obsolete_in;   // When the obsolete warning started (or "undefined").
   JDK_Version expired_in;    // When the option expires (or "undefined").
+};
+
+struct LegacyGCLogging {
+    const char* file;        // NULL -> stdout
+    int lastFlag;            // 0 not set; 1 -> -verbose:gc; 2 -> -Xloggc
 };
 
 // PathString is used as:
@@ -104,7 +109,8 @@ class SystemProperty : public PathString {
   void set_next(SystemProperty* next) { _next = next; }
 
   bool is_readable() const {
-    return !_internal || strcmp(_key, "jdk.boot.class.path.append") == 0;
+    return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
+                          value() != NULL);
   }
 
   // A system property should only have its value set
@@ -231,6 +237,7 @@ class Arguments : AllStatic {
   friend class JvmtiExport;
   friend class CodeCacheExtensions;
   friend class ArgumentsTest;
+  friend class LargeOptionsTest;
  public:
   // Operation modi
   enum Mode {
@@ -317,8 +324,9 @@ class Arguments : AllStatic {
   // was this VM created via the -XXaltjvm=<path> option
   static bool   _sun_java_launcher_is_altjvm;
 
-  // Option flags
-  static const char*  _gc_log_filename;
+  // for legacy gc options (-verbose:gc and -Xloggc:)
+  static LegacyGCLogging _legacyGCLogging;
+
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
@@ -354,15 +362,13 @@ class Arguments : AllStatic {
   static bool _UseOnStackReplacement;
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
-  static intx _Tier3InvokeNotifyFreqLog;
-  static intx _Tier4InvocationThreshold;
 
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
-  static jint set_shared_spaces_flags_and_archive_paths();
+  static void set_shared_spaces_flags_and_archive_paths();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
@@ -465,12 +471,12 @@ class Arguments : AllStatic {
   static char*  SharedArchivePath;
   static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
-  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   static void extract_shared_archive_paths(const char* archive_path,
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
  public:
+  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Parse a string for a unsigned integer.  Returns true if value
@@ -614,11 +620,13 @@ class Arguments : AllStatic {
   static void  fix_appclasspath();
 
   static char* get_default_shared_archive_path() NOT_CDS_RETURN_(NULL);
-  static bool  init_shared_archive_paths() NOT_CDS_RETURN_(false);
+  static void  init_shared_archive_paths() NOT_CDS_RETURN;
 
   // Operation modi
-  static Mode mode()                        { return _mode; }
-  static bool is_interpreter_only() { return mode() == _int; }
+  static Mode mode()                { return _mode;           }
+  static bool is_interpreter_only() { return mode() == _int;  }
+  static bool is_compiler_only()    { return mode() == _comp; }
+
 
   // preview features
   static void set_enable_preview() { _enable_preview = true; }

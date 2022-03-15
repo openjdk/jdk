@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import jdk.internal.jimage.decompressor.CompressIndexes;
 import jdk.internal.jimage.decompressor.SignatureParser;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
@@ -264,7 +263,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                             List<Integer> indexes
                                     = parseResult.types.stream().map((type) -> {
                                         return strings.addString(type);
-                                    }).collect(Collectors.toList());
+                                    }).toList();
                             if (!indexes.isEmpty()) {
                                 out.write(StringSharingDecompressor.EXTERNALIZED_STRING_DESCRIPTOR);
                                 int sigIndex = strings.addString(parseResult.formatted);
@@ -312,9 +311,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                 buffers.add(buffer);
             }
             ByteBuffer bb = ByteBuffer.allocate(l);
-            buffers.stream().forEach((buf) -> {
-                bb.put(buf);
-            });
+            buffers.forEach(bb::put);
             byte[] compressed_indices = bb.array();
             byte[] compressed_size = CompressIndexes.
                     compress(compressed_indices.length);

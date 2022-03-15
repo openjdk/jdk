@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.HexFormat;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.ChaCha20ParameterSpec;
@@ -46,10 +47,9 @@ import jdk.test.lib.Utils;
 public class ChaCha20CipherUnitTest {
 
     private static final byte[] NONCE
-            = Utils.toByteArray("012345670123456701234567");
+            = HexFormat.of().parseHex("012345670123456701234567");
     private static final SecretKeySpec KEY = new SecretKeySpec(
-            Utils.toByteArray(
-                    "0123456701234567012345670123456701234567012345670123456701234567"),
+            HexFormat.of().parseHex("0123456701234567012345670123456701234567012345670123456701234567"),
             "ChaCha20");
     private static final ChaCha20ParameterSpec CHACHA20_PARAM_SPEC
             = new ChaCha20ParameterSpec(NONCE, 0);
@@ -165,7 +165,7 @@ public class ChaCha20CipherUnitTest {
     }
 
     private static void testAEAD() throws Exception {
-        byte[] expectedPlainttext = Utils.toByteArray("01234567");
+        byte[] expectedPlainttext = HexFormat.of().parseHex("01234567");
         byte[] ciphertext = testUpdateAAD(Cipher.ENCRYPT_MODE, expectedPlainttext);
         byte[] plaintext = testUpdateAAD(Cipher.DECRYPT_MODE, ciphertext);
         if (!Arrays.equals(plaintext, expectedPlainttext)) {
@@ -180,7 +180,7 @@ public class ChaCha20CipherUnitTest {
         String opModeName = getOpModeName(opMode);
         System.out.println("== updateAAD (" + opModeName + ") ==");
 
-        byte[] aad = Utils.toByteArray("0000");
+        byte[] aad = HexFormat.of().parseHex("0000");
         ByteBuffer aadBuf = ByteBuffer.wrap(aad);
 
         Cipher cipher = Cipher.getInstance("ChaCha20");

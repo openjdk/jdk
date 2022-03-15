@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,14 @@ public abstract class PrimitiveValueImpl extends ValueImpl
         super(aVm);
     }
 
-    abstract public boolean booleanValue();
-    abstract public byte byteValue();
-    abstract public char charValue();
-    abstract public short shortValue();
-    abstract public int intValue();
-    abstract public long longValue();
-    abstract public float floatValue();
-    abstract public double doubleValue();
+    public abstract boolean booleanValue();
+    public abstract byte byteValue();
+    public abstract char charValue();
+    public abstract short shortValue();
+    public abstract int intValue();
+    public abstract long longValue();
+    public abstract float floatValue();
+    public abstract double doubleValue();
 
     /*
      * The checked versions of the value accessors throw

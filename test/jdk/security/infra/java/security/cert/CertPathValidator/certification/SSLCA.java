@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8243320
+ * @bug 8243320 8256895
  * @summary Interoperability tests with SSL.com's RSA, EV RSA, and ECC CA
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath SSLCA OCSP
@@ -47,6 +47,7 @@ public class SSLCA {
 
     public static void main(String[] args) throws Exception {
 
+        System.setProperty("jdk.security.certpath.ocspNonce", "true");
         ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
         boolean ocspEnabled = false;
 

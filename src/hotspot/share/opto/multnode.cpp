@@ -46,7 +46,6 @@ Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->
 // Get a named projection or null if not found
 ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || which_proj == (uint)true || which_proj == (uint)false, "must be 1 or 0");
-  assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || outcnt() == 2, "bad if #1");
   for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
     Node *p = fast_out(i);
     if (p->is_Proj()) {
@@ -75,6 +74,7 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
 
 // Get a named projection
 ProjNode* MultiNode::proj_out(uint which_proj) const {
+  assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || outcnt() == 2, "bad if #1");
   ProjNode* p = proj_out_or_null(which_proj);
   assert(p != NULL, "named projection %u not found", which_proj);
   return p;
@@ -140,7 +140,7 @@ void ProjNode::dump_spec(outputStream *st) const { st->print("#%d",_con); if(_is
 void ProjNode::dump_compact_spec(outputStream *st) const {
   for (DUIterator i = this->outs(); this->has_out(i); i++) {
     Node* o = this->out(i);
-    if (NotANode(o)) {
+    if (not_a_node(o)) {
       st->print("[?]");
     } else if (o == NULL) {
       st->print("[_]");
@@ -188,7 +188,7 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason 
   int path_limit = 10;
   Node* out = this;
   for (int ct = 0; ct < path_limit; ct++) {
-    out = out->unique_ctrl_out();
+    out = out->unique_ctrl_out_or_null();
     if (out == NULL)
       return NULL;
     if (out->is_CallStaticJava()) {

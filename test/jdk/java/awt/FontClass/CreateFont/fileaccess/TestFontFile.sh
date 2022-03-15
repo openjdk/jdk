@@ -71,7 +71,7 @@ THIS_DIR=`pwd`
 
 ${TESTJAVA}${FS}bin${FS}java ${BIT_FLAG} -version
 
-${TESTJAVA}${FS}bin${FS}java ${BIT_FLAG} FontFile > test.out 2>&1
+${TESTJAVA}${FS}bin${FS}java -Djava.security.manager=allow ${BIT_FLAG} FontFile > test.out 2>&1
 
 STATUS=$?
 

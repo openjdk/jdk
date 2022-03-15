@@ -35,7 +35,7 @@ import java.util.Iterator;
  * @test
  * @bug 8209615
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.JDK8209615
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.JDK8209615
  * @run testng/othervm stream.XMLEventReaderTest.JDK8209615
  * @summary Verifies that the parser continues parsing the character data
  */

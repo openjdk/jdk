@@ -1,0 +1,22 @@
+EmptyDescriptionTest.java:13: warning: use of default constructor, which does not provide a comment
+public class EmptyDescriptionTest {
+       ^
+EmptyDescriptionTest.java:17: warning: no comment
+    public int f1;
+               ^
+EmptyDescriptionTest.java:21: warning: empty comment
+    public int f2;
+               ^
+EmptyDescriptionTest.java:25: warning: no initial description
+     * @since 1.0
+       ^
+EmptyDescriptionTest.java:36: warning: no comment
+    public int m1() { return 0; }
+               ^
+EmptyDescriptionTest.java:40: warning: empty comment
+    public int m2() { return 0; }
+               ^
+EmptyDescriptionTest.java:44: warning: no initial description
+     * @return 0
+       ^
+7 warnings

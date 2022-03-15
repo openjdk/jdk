@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.ValueLayout;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -40,12 +40,16 @@ import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.VarHandle;
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -62,9 +66,15 @@ public class LoopOverNonConstantHeap {
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
     static final int UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
 
-    static final VarHandle VH_int = MemoryLayout.ofSequence(JAVA_INT).varHandle(int.class, sequenceElement());
-    MemorySegment segment;
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(sequenceElement());
+
+    static final ValueLayout.OfInt JAVA_INT_ALIGNED = JAVA_INT.withBitAlignment(32);
+    static final VarHandle VH_int_aligned = MemoryLayout.sequenceLayout(JAVA_INT_ALIGNED).varHandle(sequenceElement());
+    static final int UNSAFE_INT_BASE = unsafe.arrayBaseOffset(int[].class);
+
+    MemorySegment segment, alignedSegment;
     byte[] base;
+    int[] alignedBase;
 
     ByteBuffer byteBuffer;
 
@@ -78,14 +88,13 @@ public class LoopOverNonConstantHeap {
             MemorySegment intI = MemorySegment.ofArray(new int[ALLOC_SIZE]);
             MemorySegment intD = MemorySegment.ofArray(new double[ALLOC_SIZE]);
             MemorySegment intF = MemorySegment.ofArray(new float[ALLOC_SIZE]);
-            try (MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE)) {
-                for (int i = 0; i < ALLOC_SIZE; i++) {
-                    MemoryAccess.setByteAtOffset(intB, i, (byte)i);
-                    MemoryAccess.setIntAtIndex(intI, i, i);
-                    MemoryAccess.setDoubleAtIndex(intD, i, i);
-                    MemoryAccess.setFloatAtIndex(intF, i, i);
-                    MemoryAccess.setByteAtOffset(s, i, (byte) i);
-                }
+            MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE, 1, ResourceScope.newConfinedScope());
+            for (int i = 0; i < ALLOC_SIZE; i++) {
+                intB.set(JAVA_BYTE, i, (byte)i);
+                intI.setAtIndex(JAVA_INT, i, i);
+                intD.setAtIndex(JAVA_DOUBLE, i, i);
+                intF.setAtIndex(JAVA_FLOAT, i, i);
+                s.set(JAVA_BYTE, i, (byte) i);
             }
         }
 
@@ -93,13 +102,13 @@ public class LoopOverNonConstantHeap {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(base, UNSAFE_BYTE_BASE + (i * CARRIER_SIZE) , i);
         }
+        alignedBase = new int[ELEM_SIZE];
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            unsafe.putInt(base, UNSAFE_INT_BASE + (i * CARRIER_SIZE) , i);
+        }
         segment = MemorySegment.ofArray(base);
+        alignedSegment = MemorySegment.ofArray(alignedBase);
         byteBuffer = ByteBuffer.wrap(base).order(ByteOrder.nativeOrder());
-    }
-
-    @TearDown
-    public void tearDown() {
-        segment.close();
     }
 
     @Benchmark
@@ -139,10 +148,28 @@ public class LoopOverNonConstantHeap {
     }
 
     @Benchmark
-    public int segment_loop_static() {
+    public int segment_loop_aligned() {
+        int sum = 0;
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            sum += (int) VH_int_aligned.get(alignedSegment, (long) i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int segment_loop_instance() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += MemoryAccess.getIntAtIndex(segment, i);
+            res += segment.get(JAVA_INT, i * CARRIER_SIZE);
+        }
+        return res;
+    }
+
+    @Benchmark
+    public int segment_loop_instance_aligned() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += alignedSegment.get(JAVA_INT_ALIGNED, i * CARRIER_SIZE);
         }
         return res;
     }
@@ -160,7 +187,7 @@ public class LoopOverNonConstantHeap {
     @Benchmark
     public int segment_loop_readonly() {
         int sum = 0;
-        MemorySegment base = segment.withAccessModes(MemorySegment.READ);
+        MemorySegment base = segment.asReadOnly();
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += (int) VH_int.get(base, (long) i);
         }

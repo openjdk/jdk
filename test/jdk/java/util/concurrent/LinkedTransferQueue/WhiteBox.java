@@ -61,7 +61,6 @@ import java.util.function.Consumer;
 public class WhiteBox {
     final ThreadLocalRandom rnd = ThreadLocalRandom.current();
     final VarHandle HEAD, TAIL, ITEM, NEXT;
-    final int SWEEP_THRESHOLD;
 
     public WhiteBox() throws ReflectiveOperationException {
         Class<?> qClass = LinkedTransferQueue.class;
@@ -72,9 +71,6 @@ public class WhiteBox {
         TAIL = lookup.findVarHandle(qClass, "tail", nodeClass);
         NEXT = lookup.findVarHandle(nodeClass, "next", nodeClass);
         ITEM = lookup.findVarHandle(nodeClass, "item", Object.class);
-        SWEEP_THRESHOLD = (int)
-            lookup.findStaticVarHandle(qClass, "SWEEP_THRESHOLD", int.class)
-            .get();
     }
 
     Object head(LinkedTransferQueue q) { return HEAD.getVolatile(q); }
@@ -365,36 +361,6 @@ public class WhiteBox {
     public void testSerialization() {
         LinkedTransferQueue q = serialClone(new LinkedTransferQueue());
         assertInvariants(q);
-    }
-
-    public void cancelledNodeSweeping() throws Throwable {
-        assertEquals(SWEEP_THRESHOLD & (SWEEP_THRESHOLD - 1), 0);
-        LinkedTransferQueue q = new LinkedTransferQueue();
-        Thread blockHead = null;
-        if (rnd.nextBoolean()) {
-            blockHead = new Thread(
-                () -> { try { q.take(); } catch (InterruptedException ok) {}});
-            blockHead.start();
-            while (nodeCount(q) != 2) { Thread.yield(); }
-            assertTrue(q.hasWaitingConsumer());
-            assertEquals(q.getWaitingConsumerCount(), 1);
-        }
-        int initialNodeCount = nodeCount(q);
-
-        // Some dead nodes do in fact accumulate ...
-        if (blockHead != null)
-            while (nodeCount(q) < initialNodeCount + SWEEP_THRESHOLD / 2)
-                q.poll(1L, TimeUnit.MICROSECONDS);
-
-        // ... but no more than SWEEP_THRESHOLD nodes accumulate
-        for (int i = rnd.nextInt(SWEEP_THRESHOLD * 10); i-->0; )
-            q.poll(1L, TimeUnit.MICROSECONDS);
-        assertTrue(nodeCount(q) <= initialNodeCount + SWEEP_THRESHOLD);
-
-        if (blockHead != null) {
-            blockHead.interrupt();
-            blockHead.join();
-        }
     }
 
     /** Checks conditions which should always be true. */

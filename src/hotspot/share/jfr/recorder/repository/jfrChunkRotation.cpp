@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ static jobject chunk_monitor = NULL;
 static int64_t threshold = 0;
 static bool rotate = false;
 
-static jobject install_chunk_monitor(Thread* thread) {
+static jobject install_chunk_monitor(JavaThread* thread) {
   assert(chunk_monitor == NULL, "invariant");
   // read static field
   HandleMark hm(thread);
@@ -48,7 +48,7 @@ static jobject install_chunk_monitor(Thread* thread) {
 }
 
 // lazy install
-static jobject get_chunk_monitor(Thread* thread) {
+static jobject get_chunk_monitor(JavaThread* thread) {
   return chunk_monitor != NULL ? chunk_monitor : install_chunk_monitor(thread);
 }
 
@@ -56,7 +56,6 @@ static void notify() {
   JavaThread* const thread = JavaThread::current();
   // can safepoint here
   ThreadInVMfromNative transition(thread);
-  ResetNoHandleMark rnhm;
   JfrJavaSupport::notify_all(get_chunk_monitor(thread), thread);
 }
 

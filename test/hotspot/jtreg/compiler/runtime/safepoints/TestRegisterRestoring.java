@@ -47,7 +47,7 @@ public class TestRegisterRestoring {
             // Check result
             for (int i = 0; i < array.length; i++) {
                 if (array[i] != 10_000) {
-                    throw new RuntimeException("Test failed: array[" + i + "] = " + array[i] + " but should be 10.000");
+                    throw new RuntimeException("Test failed: array[" + i + "] = " + array[i] + " but should be 10,000");
                 }
                 array[i] = 0;
             }

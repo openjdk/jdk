@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ eventHandlerRestricted_iterator(EventIndex ei,
 
 /* BREAKPOINT, METHOD_ENTRY and SINGLE_STEP events are covered by
  * the co-location of events policy. Of these three co-located
- * events, METHOD_ENTRY is  always reported first and BREAKPOINT
+ * events, METHOD_ENTRY is always reported first and BREAKPOINT
  * is always reported last. Here are the possible combinations and
  * their order:
  *
@@ -534,7 +534,64 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
 /* Garbage Collection Happened */
 static unsigned int garbageCollected = 0;
 
-/* The JVMTI generic event callback. Each event is passed to a sequence of
+/*
+ * Run the event through each HandlerNode's filter, and if it passes, call the HandlerNode's
+ * HandlerFunction for the event, and then report all accumulated events to the debugger.
+ */
+static void
+filterAndHandleEvent(JNIEnv *env, EventInfo *evinfo, EventIndex ei,
+                     struct bag *eventBag, jbyte eventSessionID)
+{
+    debugMonitorEnter(handlerLock);
+    {
+        HandlerNode *node;
+        char        *classname;
+
+        /* We must keep track of all classes prepared to know what's unloaded */
+        if (evinfo->ei == EI_CLASS_PREPARE) {
+            classTrack_addPreparedClass(env, evinfo->clazz);
+        }
+
+        node = getHandlerChain(ei)->first;
+        classname = getClassname(evinfo->clazz);
+
+        /* Filter the event over each handler node. */
+        while (node != NULL) {
+            /* Save next so handlers can remove themselves. */
+            HandlerNode *next = NEXT(node);
+            jboolean shouldDelete;
+
+            if (eventFilterRestricted_passesFilter(env, classname,
+                                                   evinfo, node,
+                                                   &shouldDelete)) {
+                HandlerFunction func = HANDLER_FUNCTION(node);
+                if (func == NULL) {
+                    EXIT_ERROR(AGENT_ERROR_INTERNAL,"handler function NULL");
+                }
+                /* Handle the event by calling the event handler. */
+                (*func)(env, evinfo, node, eventBag);
+            }
+            if (shouldDelete) {
+                /* We can safely free the node now that we are done using it. */
+                (void)freeHandler(node);
+            }
+            node = next;
+        }
+        jvmtiDeallocate(classname);
+    }
+    debugMonitorExit(handlerLock);
+
+    /*
+     * The events destined for the debugger were accumulated in eventBag. Report all these events.
+     */
+    if (eventBag != NULL) {
+        reportEvents(env, eventSessionID, evinfo->thread, evinfo->ei,
+                     evinfo->clazz, evinfo->method, evinfo->location, eventBag);
+    }
+}
+
+/*
+ * The JVMTI generic event callback. Each event is passed to a sequence of
  * handlers in a chain until the chain ends or one handler
  * consumes the event.
  */
@@ -545,8 +602,9 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     jbyte eventSessionID = currentSessionID; /* session could change */
     jthrowable currentException;
     jthread thread;
+    EventIndex ei = evinfo->ei;
 
-    LOG_MISC(("event_callback(): ei=%s", eventText(evinfo->ei)));
+    LOG_MISC(("event_callback(): ei=%s", eventText(ei)));
     log_debugee_location("event_callback()", evinfo->thread, evinfo->method, evinfo->location);
 
     /* We want to preserve any current exception that might get
@@ -602,8 +660,7 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
          * resources can be allocated.  This must be done before
          * grabbing any locks.
          */
-        eventBag = threadControl_onEventHandlerEntry(eventSessionID,
-                                 evinfo->ei, thread, currentException);
+        eventBag = threadControl_onEventHandlerEntry(eventSessionID, evinfo, currentException);
         if ( eventBag == NULL ) {
             jboolean invoking;
             do {
@@ -633,51 +690,7 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
         }
     }
 
-    debugMonitorEnter(handlerLock);
-    {
-        HandlerNode *node;
-        char        *classname;
-
-        /* We must keep track of all classes prepared to know what's unloaded */
-        if (evinfo->ei == EI_CLASS_PREPARE) {
-            classTrack_addPreparedClass(env, evinfo->clazz);
-        }
-
-        node = getHandlerChain(evinfo->ei)->first;
-        classname = getClassname(evinfo->clazz);
-
-        while (node != NULL) {
-            /* save next so handlers can remove themselves */
-            HandlerNode *next = NEXT(node);
-            jboolean shouldDelete;
-
-            if (eventFilterRestricted_passesFilter(env, classname,
-                                                   evinfo, node,
-                                                   &shouldDelete)) {
-                HandlerFunction func;
-
-                func = HANDLER_FUNCTION(node);
-                if ( func == NULL ) {
-                    EXIT_ERROR(AGENT_ERROR_INTERNAL,"handler function NULL");
-                }
-                (*func)(env, evinfo, node, eventBag);
-            }
-            if (shouldDelete) {
-                /* We can safely free the node now that we are done
-                 * using it.
-                 */
-                (void)freeHandler(node);
-            }
-            node = next;
-        }
-        jvmtiDeallocate(classname);
-    }
-    debugMonitorExit(handlerLock);
-
-    if (eventBag != NULL) {
-        reportEvents(env, eventSessionID, thread, evinfo->ei,
-                evinfo->clazz, evinfo->method, evinfo->location, eventBag);
-    }
+    filterAndHandleEvent(env, evinfo, ei, eventBag, eventSessionID);
 
     /* we are continuing after VMDeathEvent - now we are dead */
     if (evinfo->ei == EI_VM_DEATH) {
@@ -1229,6 +1242,10 @@ cbVMDeath(jvmtiEnv *jvmti_env, JNIEnv *env)
     EventInfo info;
     LOG_CB(("cbVMDeath"));
 
+    /* Setting this flag is needed by findThread(). It's ok to set it before
+       the callbacks are cleared.*/
+    gdata->jvmtiCallBacksCleared = JNI_TRUE;
+
     /* Clear out ALL callbacks at this time, we don't want any more. */
     /*    This should prevent any new BEGIN_CALLBACK() calls. */
     (void)memset(&(gdata->callbacks),0,sizeof(gdata->callbacks));
@@ -1713,3 +1730,47 @@ eventHandler_installExternal(HandlerNode *node)
                           standardHandlers_defaultHandler(node->ei),
                           JNI_TRUE);
 }
+
+/***** debugging *****/
+
+#ifdef DEBUG
+
+void
+eventHandler_dumpAllHandlers(jboolean dumpPermanent)
+{
+    int ei;
+    for (ei = EI_min; ei <= EI_max; ++ei) {
+        eventHandler_dumpHandlers(ei, dumpPermanent);
+    }
+}
+
+void
+eventHandler_dumpHandlers(EventIndex ei, jboolean dumpPermanent)
+{
+  HandlerNode *nextNode;
+  nextNode = getHandlerChain(ei)->first;
+  if (nextNode != NULL) {
+      tty_message("\nHandlers for %s(%d)", eventIndex2EventName(ei), ei);
+      while (nextNode != NULL) {
+          HandlerNode *node = nextNode;
+          nextNode = NEXT(node);
+
+          if (node->permanent && !dumpPermanent) {
+              continue; // ignore permanent handlers
+          }
+
+          tty_message("node(%p) handlerID(%d) suspendPolicy(%d) permanent(%d)",
+                      node, node->handlerID, node->suspendPolicy, node->permanent);
+          eventFilter_dumpHandlerFilters(node);
+      }
+  }
+}
+
+void
+eventHandler_dumpHandler(HandlerNode *node)
+{
+    tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
+    eventFilter_dumpHandlerFilters(node);
+}
+
+#endif /* DEBUG */

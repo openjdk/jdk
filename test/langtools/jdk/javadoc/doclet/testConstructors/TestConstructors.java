@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,42 +50,46 @@ public class TestConstructors extends JavadocTester {
         checkOutput("pkg1/Outer.html", true,
                 """
                     <dt>See Also:</dt>
-                    <dd><a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a>,\s
-                    <a href="Outer.Inner.html#%3Cinit%3E(int)"><code>Inner(int)</code></a>,\s
-                    <a href="Outer.Inner.NestedInner.html#%3Cinit%3E()"><code>NestedInner()</code></a>,\s
-                    <a href="Outer.Inner.NestedInner.html#%3Cinit%3E(int)"><code>NestedInner(int)</code></a>,\s
-                    <a href="#%3Cinit%3E()"><code>Outer()</code></a>,\s
-                    <a href="#%3Cinit%3E(int)"><code>Outer(int)</code></a></dd>""",
+                    <dd>
+                    <ul class="see-list">
+                    <li><a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a></li>
+                    <li><a href="Outer.Inner.html#%3Cinit%3E(int)"><code>Inner(int)</code></a></li>
+                    <li><a href="Outer.Inner.NestedInner.html#%3Cinit%3E()"><code>NestedInner()</code></a></li>
+                    <li><a href="Outer.Inner.NestedInner.html#%3Cinit%3E(int)"><code>NestedInner(int)</code></a></li>
+                    <li><a href="#%3Cinit%3E()"><code>Outer()</code></a></li>
+                    <li><a href="#%3Cinit%3E(int)"><code>Outer(int)</code></a></li>
+                    </ul>
+                    </dd>""",
                 """
                     Link: <a href="Outer.Inner.html#%3Cinit%3E()"><code>Inner()</code></a>, <a href=\
                     "#%3Cinit%3E(int)"><code>Outer(int)</code></a>, <a href="Outer.Inner.NestedInner\
                     .html#%3Cinit%3E(int)"><code>NestedInner(int)</code></a>""",
                 """
-                    <a href="#%3Cinit%3E()">Outer</a></span>()""",
+                    <a href="#%3Cinit%3E()" class="member-name-link">Outer</a>()""",
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
                 """
-                    <a href="#%3Cinit%3E(int)">Outer</a></span>&#8203;(int&nbsp;i)""",
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">Outer</a><wbr>(int&nbsp;i)""",
                 """
                     <section class="detail" id="&lt;init&gt;(int)">""");
 
         checkOutput("pkg1/Outer.Inner.html", true,
                 """
-                    <a href="#%3Cinit%3E()">Inner</a></span>()""",
+                    <a href="#%3Cinit%3E()" class="member-name-link">Inner</a>()""",
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
                 """
-                    <a href="#%3Cinit%3E(int)">Inner</a></span>&#8203;(int&nbsp;i)""",
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">Inner</a><wbr>(int&nbsp;i)""",
                 """
                     <section class="detail" id="&lt;init&gt;(int)">""");
 
         checkOutput("pkg1/Outer.Inner.NestedInner.html", true,
                 """
-                    <a href="#%3Cinit%3E()">NestedInner</a></span>()""",
+                    <a href="#%3Cinit%3E()" class="member-name-link">NestedInner</a>()""",
                 """
                     <section class="detail" id="&lt;init&gt;()">""",
                 """
-                    <a href="#%3Cinit%3E(int)">NestedInner</a></span>&#8203;(int&nbsp;i)""",
+                    <a href="#%3Cinit%3E(int)" class="member-name-link">NestedInner</a><wbr>(int&nbsp;i)""",
                 """
                     <section class="detail" id="&lt;init&gt;(int)">""");
 

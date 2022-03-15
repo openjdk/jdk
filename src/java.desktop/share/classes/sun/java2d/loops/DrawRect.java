@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 
 package sun.java2d.loops;
 
-import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 
@@ -74,15 +73,6 @@ public class DrawRect extends GraphicsPrimitive
      */
     public native void DrawRect(SunGraphics2D sg2d, SurfaceData dest,
                                 int x1, int y1, int w, int h);
-
-    public GraphicsPrimitive makePrimitive(SurfaceType srctype,
-                                           CompositeType comptype,
-                                           SurfaceType dsttype)
-    {
-        // REMIND: use FillSpans or converter object?
-        throw new InternalError("DrawRect not implemented for "+
-                                srctype+" with "+comptype);
-    }
 
     public GraphicsPrimitive traceWrap() {
         return new TraceDrawRect(this);

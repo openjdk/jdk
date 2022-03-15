@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  *          a file name that contains address host mappings, similar to those in
  *          /etc/hosts file. TestHosts-II file doesn't exist, so a UHE should be
  *          thrown
- * @run main/othervm -Dsun.net.inetaddr.ttl=0  InternalNameServiceWithNoHostsFileTest
+ * @run main/othervm -Djdk.net.hosts.file=TestHosts-II -Dsun.net.inetaddr.ttl=0
+ *          InternalNameServiceWithNoHostsFileTest
  */
 
 
@@ -39,10 +40,6 @@ import java.net.UnknownHostException;
 
 public class InternalNameServiceWithNoHostsFileTest {
     public static void main(String args[]) throws Exception {
-
-        String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts-II";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
-        System.setProperty("sun.net.inetaddr.ttl", "0");
         InetAddress testAddress = null;
 
         try {

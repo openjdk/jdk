@@ -60,8 +60,7 @@
 class Stub {
  public:
   // Initialization/finalization
-  void    initialize(int size,
-                     CodeStrings& strings)       { ShouldNotCallThis(); }                // called to initialize/specify the stub's size
+  void    initialize(int size)                   { ShouldNotCallThis(); }                // called to initialize/specify the stub's size
   void    finalize()                             { ShouldNotCallThis(); }                // called before the stub is deallocated
 
   // General info/converters
@@ -94,8 +93,7 @@ class Stub {
 class StubInterface: public CHeapObj<mtCode> {
  public:
   // Initialization/finalization
-  virtual void    initialize(Stub* self, int size,
-                             CodeStrings& strings)         = 0; // called after creation (called twice if allocated via (request, commit))
+  virtual void    initialize(Stub* self, int size)         = 0; // called after creation (called twice if allocated via (request, commit))
   virtual void    finalize(Stub* self)                     = 0; // called before deallocation
 
   // General info/converters
@@ -123,8 +121,7 @@ class StubInterface: public CHeapObj<mtCode> {
                                                            \
    public:                                                 \
     /* Initialization/finalization */                      \
-    virtual void    initialize(Stub* self, int size,       \
-                               CodeStrings& strings)       { cast(self)->initialize(size, strings); } \
+    virtual void    initialize(Stub* self, int size)       { cast(self)->initialize(size); }       \
     virtual void    finalize(Stub* self)                   { cast(self)->finalize(); }             \
                                                            \
     /* General info */                                     \
@@ -163,8 +160,7 @@ class StubQueue: public CHeapObj<mtCode> {
   Stub* current_stub() const                     { return stub_at(_queue_end); }
 
   // Stub functionality accessed via interface
-  void  stub_initialize(Stub* s, int size,
-                        CodeStrings& strings)    { assert(size % CodeEntryAlignment == 0, "size not aligned"); _stub_interface->initialize(s, size, strings); }
+  void  stub_initialize(Stub* s, int size)       { assert(size % CodeEntryAlignment == 0, "size not aligned"); _stub_interface->initialize(s, size); }
   void  stub_finalize(Stub* s)                   { _stub_interface->finalize(s); }
   int   stub_size(Stub* s) const                 { return _stub_interface->size(s); }
   bool  stub_contains(Stub* s, address pc) const { return _stub_interface->code_begin(s) <= pc && pc < _stub_interface->code_end(s); }
@@ -191,8 +187,7 @@ class StubQueue: public CHeapObj<mtCode> {
   // Stub allocation (atomic transactions)
   Stub* request_committed(int code_size);        // request a stub that provides exactly code_size space for code
   Stub* request(int requested_code_size);        // request a stub with a (maximum) code space - locks the queue
-  void  commit (int committed_code_size,
-                CodeStrings& strings);           // commit the previously requested stub - unlocks the queue
+  void  commit (int committed_code_size);        // commit the previously requested stub - unlocks the queue
 
   // Stub deallocation
   void  remove_first();                          // remove the first stub in the queue

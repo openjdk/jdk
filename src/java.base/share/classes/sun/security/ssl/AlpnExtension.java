@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ final class AlpnExtension {
     static final Charset alpnCharset;
 
     static {
+        @SuppressWarnings("removal")
         String alpnCharsetString = AccessController.doPrivileged(
                 (PrivilegedAction<String>) ()
                         -> Security.getProperty("jdk.tls.alpnCharset"));
@@ -85,8 +86,7 @@ final class AlpnExtension {
         final List<String> applicationProtocols;
 
         private AlpnSpec(String[] applicationProtocols) {
-            this.applicationProtocols = Collections.unmodifiableList(
-                    Arrays.asList(applicationProtocols));
+            this.applicationProtocols = List.of(applicationProtocols);
         }
 
         private AlpnSpec(HandshakeContext hc,

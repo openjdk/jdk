@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,15 +73,15 @@ public class getvalues001 {
 
     // list of tested variables names and values
     static final Object variables[][] = {
-                    { "booleanValue", "boolean",  new Boolean(true),           new Byte(JDWP.Tag.BOOLEAN)},
-                    { "byteValue",    "byte",     new Byte((byte)0x0F),        new Byte(JDWP.Tag.BYTE)   },
-                    { "charValue",    "char",     new Character('Z'),          new Byte(JDWP.Tag.CHAR)   },
-                    { "intValue",     "int",      new Integer(100),            new Byte(JDWP.Tag.INT)    },
-                    { "shortValue",   "short",    new Short((short)10),        new Byte(JDWP.Tag.SHORT)  },
-                    { "longValue",    "long",     new Long((long)1000000),     new Byte(JDWP.Tag.LONG)   },
-                    { "floatValue",   "float",    new Float((float)3.14),      new Byte(JDWP.Tag.FLOAT)  },
-                    { "doubleValue",  "double",   new Double((double)2.8e-12), new Byte(JDWP.Tag.DOUBLE) },
-                    { "objectValue",  "objectID", new Long((long)0),           new Byte(JDWP.Tag.OBJECT) }
+                    { "booleanValue", "boolean",  Boolean.valueOf(true),           Byte.valueOf(JDWP.Tag.BOOLEAN)},
+                    { "byteValue",    "byte",     Byte.valueOf((byte)0x0F),        Byte.valueOf(JDWP.Tag.BYTE)   },
+                    { "charValue",    "char",     Character.valueOf('Z'),          Byte.valueOf(JDWP.Tag.CHAR)   },
+                    { "intValue",     "int",      Integer.valueOf(100),            Byte.valueOf(JDWP.Tag.INT)    },
+                    { "shortValue",   "short",    Short.valueOf((short)10),        Byte.valueOf(JDWP.Tag.SHORT)  },
+                    { "longValue",    "long",     Long.valueOf((long)1000000),     Byte.valueOf(JDWP.Tag.LONG)   },
+                    { "floatValue",   "float",    Float.valueOf((float)3.14),      Byte.valueOf(JDWP.Tag.FLOAT)  },
+                    { "doubleValue",  "double",   Double.valueOf((double)2.8e-12), Byte.valueOf(JDWP.Tag.DOUBLE) },
+                    { "objectValue",  "objectID", Long.valueOf((long)0),           Byte.valueOf(JDWP.Tag.OBJECT) }
                 };
     static final int VARIABLES_COUNT = variables.length;
 

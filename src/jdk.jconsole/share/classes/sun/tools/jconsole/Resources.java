@@ -74,7 +74,7 @@ public final class Resources {
     }
 
     /**
-     * Initializes all non-final public static fields in the given class with
+     * Initializes all public static non-final fields in the given class with
      * messages from a {@link ResourceBundle}.
      *
      * @param clazz the class containing the fields

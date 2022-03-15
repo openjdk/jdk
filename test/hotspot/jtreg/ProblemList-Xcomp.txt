@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,25 +29,9 @@
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
 
-compiler/blackhole/BlackholeDiagnosticUnlockTest.java           8258101 generic-all
-compiler/blackhole/BlackholeInstanceReturnTest.java#c1          8258101 generic-all
-compiler/blackhole/BlackholeInstanceReturnTest.java#c1-no-coops 8258101 generic-all
-compiler/blackhole/BlackholeInstanceReturnTest.java#c2          8258101 generic-all
-compiler/blackhole/BlackholeInstanceReturnTest.java#c2-no-coops 8258101 generic-all
-compiler/blackhole/BlackholeInstanceTest.java#c1                8258101 generic-all
-compiler/blackhole/BlackholeInstanceTest.java#c1-no-coops       8258101 generic-all
-compiler/blackhole/BlackholeInstanceTest.java#c2                8258101 generic-all
-compiler/blackhole/BlackholeInstanceTest.java#c2-no-coops       8258101 generic-all
-compiler/blackhole/BlackholeNonVoidWarningTest.java             8258101 generic-all
-compiler/blackhole/BlackholeNullCheckTest.java#c1               8258101 generic-all
-compiler/blackhole/BlackholeNullCheckTest.java#c1-no-coops      8258101 generic-all
-compiler/blackhole/BlackholeNullCheckTest.java#c2               8258101 generic-all
-compiler/blackhole/BlackholeNullCheckTest.java#c2-no-coops      8258101 generic-all
-compiler/blackhole/BlackholeStaticReturnTest.java#c1            8258101 generic-all
-compiler/blackhole/BlackholeStaticReturnTest.java#c1-no-coops   8258101 generic-all
-compiler/blackhole/BlackholeStaticReturnTest.java#c2            8258101 generic-all
-compiler/blackhole/BlackholeStaticReturnTest.java#c2-no-coops   8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c1                  8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c1-no-coops         8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c2                  8258101 generic-all
-compiler/blackhole/BlackholeStaticTest.java#c2-no-coops         8258101 generic-all
+vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 linux-x64,windows-x64
+
+vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 8245680 windows-x64
+
+serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
+

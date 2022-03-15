@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ public class TestIntConstant {
                  "CollectedHeap::G1 3",
                  "RUNNABLE 2",
                  "Deoptimization::Reason_class_check 4",
-                 "InstanceKlass::_misc_is_unsafe_anonymous 8",
                  "_thread_uninitialized 0"));
             expStrMap.put("intConstant _temp_constant", List.of(
                  "intConstant _temp_constant 45"));

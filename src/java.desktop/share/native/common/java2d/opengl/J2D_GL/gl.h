@@ -56,11 +56,6 @@
 #ifndef __gl_h_
 #define __gl_h_
 
-#if defined(USE_MGL_NAMESPACE)
-#include "gl_mangle.h"
-#endif
-
-
 /**********************************************************************
  * Begin system-specific stuff.
  */
@@ -2129,13 +2124,6 @@ GLAPI void APIENTRY glEGLImageTargetRenderbufferStorageOES (GLenum target, GLegl
 typedef void (APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC) (GLenum target, GLeglImageOES image);
 typedef void (APIENTRYP PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC) (GLenum target, GLeglImageOES image);
 #endif
-
-
-/**
- ** NOTE!!!!!  If you add new functions to this file, or update
- ** glext.h be sure to regenerate the gl_mangle.h file.  See comments
- ** in that file for details.
- **/
 
 
 #ifdef __cplusplus

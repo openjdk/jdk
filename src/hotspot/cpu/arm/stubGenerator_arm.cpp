@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_arm.inline.hpp"
+#include "asm/assembler.inline.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
@@ -635,17 +635,17 @@ class StubGenerator: public StubCodeGenerator {
     Register result_hi = R1;
     Register src       = R0;
 
-    if (!os::is_MP()) {
-      __ ldmia(src, RegisterSet(result_lo, result_hi));
-      __ bx(LR);
-    } else if (VM_Version::supports_ldrexd()) {
+    if (VM_Version::supports_ldrexd()) {
       __ ldrexd(result_lo, Address(src));
       __ clrex(); // FIXME: safe to remove?
-      __ bx(LR);
+    } else if (!os::is_MP()) {
+      // Last-ditch attempt: we are allegedly running on uni-processor.
+      // Load the thing non-atomically and hope for the best.
+      __ ldmia(src, RegisterSet(result_lo, result_hi));
     } else {
       __ stop("Atomic load(jlong) unsupported on this platform");
-      __ bx(LR);
     }
+    __ bx(LR);
 
     return start;
   }
@@ -662,10 +662,7 @@ class StubGenerator: public StubCodeGenerator {
     Register scratch_hi    = R3;  /* After load from stack */
     Register result    = R3;
 
-    if (!os::is_MP()) {
-      __ stmia(dest, RegisterSet(newval_lo, newval_hi));
-      __ bx(LR);
-    } else if (VM_Version::supports_ldrexd()) {
+    if (VM_Version::supports_ldrexd()) {
       __ mov(Rtemp, dest);  // get dest to Rtemp
       Label retry;
       __ bind(retry);
@@ -673,11 +670,14 @@ class StubGenerator: public StubCodeGenerator {
       __ strexd(result, R0, Address(Rtemp));
       __ rsbs(result, result, 1);
       __ b(retry, eq);
-      __ bx(LR);
+    } else if (!os::is_MP()) {
+      // Last-ditch attempt: we are allegedly running on uni-processor.
+      // Store the thing non-atomically and hope for the best.
+      __ stmia(dest, RegisterSet(newval_lo, newval_hi));
     } else {
       __ stop("Atomic store(jlong) unsupported on this platform");
-      __ bx(LR);
     }
+    __ bx(LR);
 
     return start;
   }

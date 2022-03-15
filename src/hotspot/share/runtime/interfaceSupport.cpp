@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,12 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe.hpp"
+#include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -76,38 +78,13 @@ VMNativeEntryWrapper::~VMNativeEntryWrapper() {
 
 unsigned int InterfaceSupport::_scavenge_alot_counter = 1;
 unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
-int InterfaceSupport::_fullgc_alot_invocation = 0;
-
-Histogram* RuntimeHistogram;
-
-RuntimeHistogramElement::RuntimeHistogramElement(const char* elementName) {
-  static volatile int RuntimeHistogram_lock = 0;
-  _name = elementName;
-  uintx count = 0;
-
-  while (Atomic::cmpxchg(&RuntimeHistogram_lock, 0, 1) != 0) {
-    while (Atomic::load_acquire(&RuntimeHistogram_lock) != 0) {
-      count +=1;
-      if ( (WarnOnStalledSpinLock > 0)
-        && (count % WarnOnStalledSpinLock == 0)) {
-        warning("RuntimeHistogram_lock seems to be stalled");
-      }
-    }
-  }
-
-  if (RuntimeHistogram == NULL) {
-    RuntimeHistogram = new Histogram("VM Runtime Call Counts",200);
-  }
-
-  RuntimeHistogram->add_element(this);
-  Atomic::dec(&RuntimeHistogram_lock);
-}
+intx InterfaceSupport::_fullgc_alot_invocation = 0;
 
 void InterfaceSupport::gc_alot() {
   Thread *thread = Thread::current();
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
-  JavaThread *current_thread = thread->as_Java_thread();
+  JavaThread *current_thread = JavaThread::cast(thread);
   if (current_thread->active_handles() == NULL) return;
 
   // Short-circuit any possible re-entrant gc-a-lot attempt

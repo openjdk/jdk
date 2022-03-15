@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
 #include "jfr/writers/jfrNativeEventWriter.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 
@@ -405,7 +404,7 @@ BufferPtr JfrStorage::flush(BufferPtr cur, size_t used, size_t req, bool native,
 
 BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size_t used, size_t req, bool native, Thread* t) {
   debug_only(assert_flush_regular_precondition(cur, cur_pos, used, req, t);)
-  // A flush is needed before memcpy since a non-large buffer is thread stable
+  // A flush is needed before memmove since a non-large buffer is thread stable
   // (thread local). The flush will not modify memory in addresses above pos()
   // which is where the "used / uncommitted" data resides. It is therefore both
   // possible and valid to migrate data after the flush. This is however only
@@ -417,7 +416,8 @@ BufferPtr JfrStorage::flush_regular(BufferPtr cur, const u1* const cur_pos, size
   if (cur->free_size() >= req) {
     // simplest case, no switching of buffers
     if (used > 0) {
-      memcpy(cur->pos(), (void*)cur_pos, used);
+      // source and destination may overlap so memmove must be used instead of memcpy
+      memmove(cur->pos(), (void*)cur_pos, used);
     }
     assert(native ? t->jfr_thread_local()->native_buffer() == cur : t->jfr_thread_local()->java_buffer() == cur, "invariant");
     return cur;

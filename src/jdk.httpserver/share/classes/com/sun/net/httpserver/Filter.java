@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,13 @@ package com.sun.net.httpserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import sun.net.httpserver.DelegatingHttpExchange;
 
 /**
  * A filter used to pre- and post-process incoming requests. Pre-processing occurs
@@ -132,7 +137,6 @@ public abstract class Filter {
      */
     public abstract void doFilter (HttpExchange exchange, Chain chain)
         throws IOException;
-
     /**
      * Returns a short description of this {@code Filter}.
      *
@@ -140,4 +144,174 @@ public abstract class Filter {
      */
     public abstract String description ();
 
+    /**
+     * Returns a pre-processing {@code Filter} with the given description and
+     * operation.
+     *
+     * <p>The {@link Consumer operation} is the effective implementation of the
+     * filter. It is executed for each {@code HttpExchange} before invoking
+     * either the next filter in the chain or the exchange handler (if this is
+     * the final filter in the chain). Exceptions thrown by the
+     * {@code operation} are not handled by the filter.
+     *
+     * @apiNote
+     * A beforeHandler filter is typically used to examine or modify the
+     * exchange state before it is handled. The filter {@code operation} is
+     * executed before {@link Filter.Chain#doFilter(HttpExchange)} is invoked,
+     * so before any subsequent filters in the chain and the exchange handler
+     * are executed. The filter {@code operation} is not expected to handle the
+     * request or {@linkplain HttpExchange#sendResponseHeaders(int, long) send response headers},
+     * since this is commonly done by the exchange handler.
+     *
+     * <p> Example of adding the {@code "Foo"} response header to all responses:
+     * <pre>{@code
+     *     var filter = Filter.beforeHandler("Add response header Foo",
+     *                 e -> e.getResponseHeaders().set("Foo", "Bar"));
+     *     httpContext.getFilters().add(filter);
+     * }</pre>
+     *
+     * @param description the string to be returned from {@link #description()}
+     * @param operation the operation of the returned filter
+     * @return a filter whose operation is invoked before the exchange is handled
+     * @throws NullPointerException if any argument is null
+     * @since 17
+     */
+    public static Filter beforeHandler(String description,
+                                       Consumer<HttpExchange> operation) {
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(operation);
+        return new Filter() {
+            @Override
+            public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+                operation.accept(exchange);
+                chain.doFilter(exchange);
+            }
+            @Override
+            public String description() {
+                return description;
+            }
+        };
+    }
+
+    /**
+     * Returns a post-processing {@code Filter} with the given description and
+     * operation.
+     *
+     * <p>The {@link Consumer operation} is the effective implementation of the
+     * filter. It is executed for each {@code HttpExchange} after invoking
+     * either the next filter in the chain or the exchange handler (if this
+     * filter is the final filter in the chain). Exceptions thrown by the
+     * {@code operation} are not handled by the filter.
+     *
+     * @apiNote
+     * An afterHandler filter is typically used to examine the exchange state
+     * rather than modifying it. The filter {@code operation} is executed after
+     * {@link Filter.Chain#doFilter(HttpExchange)} is invoked, this means any
+     * subsequent filters in the chain and the exchange handler have been
+     * executed. The filter {@code operation} is not expected to handle the
+     * exchange or {@linkplain HttpExchange#sendResponseHeaders(int, long) send the response headers}.
+     * Doing so is likely to fail, since the exchange has commonly been handled
+     * before the {@code operation} is invoked. More specifically, the response
+     * may be sent before the filter {@code operation} is executed.
+     *
+     * <p> Example of adding a filter that logs the response code of all exchanges:
+     * <pre>{@code
+     *     var filter = Filter.afterHandler("Log response code", e -> log(e.getResponseCode());
+     *     httpContext.getFilters().add(filter);
+     * }</pre>
+     *
+     * <p> Example of adding a sequence of afterHandler filters to a context:<br>
+     * The order in which the filter operations are invoked is reverse to the
+     * order in which the filters are added to the context's filter-list.
+     *
+     * <pre>{@code
+     *     var a1Set = Filter.afterHandler("Set a1", e -> e.setAttribute("a1", "some value"));
+     *     var a1Get = Filter.afterHandler("Get a1", e -> doSomething(e.getAttribute("a1")));
+     *     httpContext.getFilters().addAll(List.of(a1Get, a1Set));
+     * }</pre>
+     * <p>The operation of {@code a1Get} will be invoked after the operation of
+     * {@code a1Set} because {@code a1Get} was added before {@code a1Set}.
+     *
+     * @param description the string to be returned from {@link #description()}
+     * @param operation the operation of the returned filter
+     * @return a filter whose operation is invoked after the exchange is handled
+     * @throws NullPointerException if any argument is null
+     * @since 17
+     */
+    public static Filter afterHandler(String description,
+                                      Consumer<HttpExchange> operation) {
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(operation);
+        return new Filter() {
+            @Override
+            public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+                chain.doFilter(exchange);
+                operation.accept(exchange);
+            }
+            @Override
+            public String description() {
+                return description;
+            }
+        };
+    }
+
+    /**
+     * Returns a
+     * {@linkplain Filter#beforeHandler(String, Consumer) pre-processing Filter}
+     * that inspects and possibly adapts the request state.
+     *
+     * The {@code Request} returned by the {@link UnaryOperator requestOperator}
+     * will be the effective request state of the exchange. It is executed for
+     * each {@code HttpExchange} before invoking either the next filter in the
+     * chain or the exchange handler (if this is the final filter in the chain).
+     * Exceptions thrown by the {@code requestOperator} are not handled by the
+     * filter.
+     *
+     * @apiNote
+     * When the returned filter is invoked, it first invokes the
+     * {@code requestOperator} with the given exchange, {@code ex}, in order to
+     * retrieve the <i>adapted request state</i>. It then invokes the next
+     * filter in the chain or the exchange handler, passing an exchange
+     * equivalent to {@code ex} with the <i>adapted request state</i> set as the
+     * effective request state.
+     *
+     * <p> Example of adding the {@code "Foo"} request header to all requests:
+     * <pre>{@code
+     *     var filter = Filter.adaptRequest("Add Foo header", r -> r.with("Foo", List.of("Bar")));
+     *     httpContext.getFilters().add(filter);
+     * }</pre>
+     *
+     * @param description the string to be returned from {@link #description()}
+     * @param requestOperator the request operator
+     * @return a filter that adapts the request state before the exchange is handled
+     * @throws NullPointerException if any argument is null
+     * @since 18
+     */
+    public static Filter adaptRequest(String description,
+                                      UnaryOperator<Request> requestOperator) {
+        Objects.requireNonNull(description);
+        Objects.requireNonNull(requestOperator);
+
+        return new Filter() {
+            @Override
+            public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
+                var request = requestOperator.apply(exchange);
+                var newExchange =  new DelegatingHttpExchange(exchange) {
+                    @Override
+                    public URI getRequestURI() { return request.getRequestURI(); }
+
+                    @Override
+                    public String getRequestMethod() { return request.getRequestMethod(); }
+
+                    @Override
+                    public Headers getRequestHeaders() { return request.getRequestHeaders(); }
+                };
+                chain.doFilter(newExchange);
+            }
+            @Override
+            public String description() {
+                return description;
+            }
+        };
+    }
 }

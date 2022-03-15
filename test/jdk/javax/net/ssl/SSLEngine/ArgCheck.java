@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class ArgCheck {
 
         // For unwrap(), the BUFFER_OVERFLOW will not be generated
         // until received SSL/TLS application data.
-        // Test test/javax/net/ssl/NewAPIs/SSLEngine/LargePacket will check
+        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
         //
         //res = ssle.unwrap(netBB, smallAppBB);
@@ -172,7 +172,7 @@ public class ArgCheck {
 
         // For unwrap(), the BUFFER_OVERFLOW will not be generated
         // until received SSL/TLS application data.
-        // Test test/javax/net/ssl/NewAPIs/SSLEngine/LargePacket will check
+        // Test test/jdk/javax/net/ssl/SSLEngine/LargePacket.java will check
         // BUFFER_OVERFLOW/UNDERFLOW for both wrap() and unwrap().
         //
         //res = ssle.unwrap(netBB, smallAppBB, 0, appBB.length);

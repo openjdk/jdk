@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
 #ifndef SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 #define SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP
 
-#include "gc/g1/g1BufferNodeList.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
+#include "utilities/nonblockingQueue.hpp"
 
-class G1ConcurrentRefineThread;
+class G1PrimaryConcurrentRefineThread;
 class G1DirtyCardQueueSet;
 class G1RedirtyCardsQueueSet;
 class Thread;
@@ -41,9 +43,6 @@ class Thread;
 class G1DirtyCardQueue: public PtrQueue {
   G1ConcurrentRefineStats* _refinement_stats;
 
-protected:
-  virtual void handle_completed_buffer();
-
 public:
   G1DirtyCardQueue(G1DirtyCardQueueSet* qset);
 
@@ -51,18 +50,9 @@ public:
   // doing something else, with auto-flush on completion.
   ~G1DirtyCardQueue();
 
-  // Process queue entries and release resources.
-  void flush();
-
-  inline G1DirtyCardQueueSet* dirty_card_qset() const;
-
   G1ConcurrentRefineStats* refinement_stats() const {
     return _refinement_stats;
   }
-
-  // To be called by the barrier set's on_thread_detach, to notify this
-  // object of the corresponding state change of its owning thread.
-  void on_thread_detach();
 
   // Compiler support.
   static ByteSize byte_offset_of_index() {
@@ -79,49 +69,12 @@ public:
 
 class G1DirtyCardQueueSet: public PtrQueueSet {
   // Head and tail of a list of BufferNodes, linked through their next()
-  // fields.  Similar to G1BufferNodeList, but without the _entry_count.
+  // fields.  Similar to BufferNodeList, but without the _entry_count.
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
     HeadTail() : _head(NULL), _tail(NULL) {}
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
-  };
-
-  // A lock-free FIFO of BufferNodes, linked through their next() fields.
-  // This class has a restriction that pop() may return NULL when there are
-  // buffers in the queue if there is a concurrent push/append operation.
-  class Queue {
-    BufferNode* volatile _head;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
-    BufferNode* volatile _tail;
-    DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
-
-    NONCOPYABLE(Queue);
-
-  public:
-    Queue() : _head(NULL), _tail(NULL) {}
-    DEBUG_ONLY(~Queue();)
-
-    // Return the first buffer in the queue.
-    // Thread-safe, but the result may change immediately.
-    BufferNode* top() const;
-
-    // Thread-safe add the buffer to the end of the queue.
-    void push(BufferNode& node) { append(node, node); }
-
-    // Thread-safe add the buffers from first to last to the end of the queue.
-    void append(BufferNode& first, BufferNode& last);
-
-    // Thread-safe attempt to remove and return the first buffer in the queue.
-    // Returns NULL if the queue is empty, or if a concurrent push/append
-    // interferes.  Uses GlobalCounter critical sections to address the ABA
-    // problem; this works with the buffer allocator's use of GlobalCounter
-    // synchronization.
-    BufferNode* pop();
-
-    // Take all the buffers from the queue, leaving the queue empty.
-    // Not thread-safe.
-    HeadTail take_all();
   };
 
   // Concurrent refinement may stop processing in the middle of a buffer if
@@ -203,22 +156,23 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail take_all();
   };
 
-  // The primary refinement thread, for activation when the processing
-  // threshold is reached.  NULL if there aren't any refinement threads.
-  G1ConcurrentRefineThread* _primary_refinement_thread;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(G1ConcurrentRefineThread*));
+  // The refinement notification thread, for activation when the notification
+  // threshold is reached.  nullptr if there aren't any refinement threads.
+  G1PrimaryConcurrentRefineThread* _refinement_notification_thread;
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(G1PrimaryConcurrentRefineThread*));
   // Upper bound on the number of cards in the completed and paused buffers.
   volatile size_t _num_cards;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
-  Queue _completed;           // Has inner padding, including trailer.
+  // NonblockingQueue has inner padding of one cache line.
+  NonblockingQueue<BufferNode, &BufferNode::next_ptr> _completed;
+  // Add a trailer padding after NonblockingQueue.
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
   // Buffers for which refinement is temporarily paused.
-  PausedBuffers _paused;      // Has inner padding, including trailer.
+  // PausedBuffers has inner padding, including trailer.
+  PausedBuffers _paused;
 
   G1FreeIdSet _free_ids;
-
-  // Activation threshold for the primary refinement thread.
-  size_t _process_cards_threshold;
 
   // If the queue contains more cards than configured here, the
   // mutator must start doing some of the concurrent refinement work.
@@ -259,50 +213,18 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   // deallocate the buffer.  Otherwise, record it as paused.
   void handle_refined_buffer(BufferNode* node, bool fully_processed);
 
+  // Thread-safe attempt to remove and return the first buffer from
+  // the _completed queue.
+  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // interferes. It uses GlobalCounter critical section to avoid ABA problem.
+  BufferNode* dequeue_completed_buffer();
   // Remove and return a completed buffer from the list, or return NULL
   // if none available.
   BufferNode* get_completed_buffer();
 
-public:
-  G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
-  ~G1DirtyCardQueueSet();
+  // Called when queue is full or has no buffer.
+  void handle_zero_index(G1DirtyCardQueue& queue);
 
-  void set_primary_refinement_thread(G1ConcurrentRefineThread* thread) {
-    _primary_refinement_thread = thread;
-  }
-
-  // The number of parallel ids that can be claimed to allow collector or
-  // mutator threads to do card-processing work.
-  static uint num_par_ids();
-
-  static void handle_zero_index_for_thread(Thread* t);
-
-  virtual void enqueue_completed_buffer(BufferNode* node);
-
-  // Upper bound on the number of cards currently in in this queue set.
-  // Read without synchronization.  The value may be high because there
-  // is a concurrent modification of the set of buffers.
-  size_t num_cards() const { return _num_cards; }
-
-  // Get/Set the number of cards that triggers log processing.
-  // Log processing should be done when the number of cards exceeds the
-  // threshold.
-  void set_process_cards_threshold(size_t sz) {
-    _process_cards_threshold = sz;
-  }
-  size_t process_cards_threshold() const {
-    return _process_cards_threshold;
-  }
-  static const size_t ProcessCardsThresholdNever = SIZE_MAX;
-
-  // Notify the consumer if the number of buffers crossed the threshold
-  void notify_if_necessary();
-
-  void merge_bufferlists(G1RedirtyCardsQueueSet* src);
-
-  G1BufferNodeList take_all_completed_buffers();
-
-  // Helper for G1DirtyCardQueue::handle_completed_buffer().
   // Enqueue the buffer, and optionally perform refinement by the mutator.
   // Mutator refinement is only done by Java threads, and only if there
   // are more than max_cards (possibly padded) cards in the completed
@@ -312,6 +234,38 @@ public:
   // SuspendibleThreadSet::should_yield(), recording the incompletely
   // processed buffer for later processing of the remainder.
   void handle_completed_buffer(BufferNode* node, G1ConcurrentRefineStats* stats);
+
+public:
+  G1DirtyCardQueueSet(BufferNode::Allocator* allocator);
+  ~G1DirtyCardQueueSet();
+
+  // The number of parallel ids that can be claimed to allow collector or
+  // mutator threads to do card-processing work.
+  static uint num_par_ids();
+
+  static void handle_zero_index_for_thread(Thread* t);
+
+  virtual void enqueue_completed_buffer(BufferNode* node);
+
+  // Upper bound on the number of cards currently in this queue set.
+  // Read without synchronization.  The value may be high because there
+  // is a concurrent modification of the set of buffers.
+  size_t num_cards() const;
+
+  // Record the primary concurrent refinement thread.  This is the thread to
+  // be notified when num_cards() exceeds the refinement notification threshold.
+  void set_refinement_notification_thread(G1PrimaryConcurrentRefineThread* thread) {
+    _refinement_notification_thread = thread;
+  }
+
+  void merge_bufferlists(G1RedirtyCardsQueueSet* src);
+
+  BufferNodeList take_all_completed_buffers();
+
+  void flush_queue(G1DirtyCardQueue& queue);
+
+  using CardValue = G1CardTable::CardValue;
+  void enqueue(G1DirtyCardQueue& queue, volatile CardValue* card_ptr);
 
   // If there are more than stop_at cards in the completed buffers, pop
   // a buffer, refine its contents, and return true.  Otherwise return
@@ -352,9 +306,5 @@ public:
   // Discard artificial increase of mutator refinement threshold.
   void discard_max_cards_padding();
 };
-
-inline G1DirtyCardQueueSet* G1DirtyCardQueue::dirty_card_qset() const {
-  return static_cast<G1DirtyCardQueueSet*>(qset());
-}
 
 #endif // SHARE_GC_G1_G1DIRTYCARDQUEUE_HPP

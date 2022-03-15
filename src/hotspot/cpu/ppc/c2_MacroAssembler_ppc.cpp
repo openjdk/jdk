@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "runtime/vm_version.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
@@ -40,17 +41,18 @@
 // Compress char[] to byte[] by compressing 16 bytes at once.
 void C2_MacroAssembler::string_compress_16(Register src, Register dst, Register cnt,
                                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
-                                           Label& Lfailure) {
+                                           Label& Lfailure, bool ascii) {
 
   const Register tmp0 = R0;
+  const int byte_mask = ascii ? 0x7F : 0xFF;
   assert_different_registers(src, dst, cnt, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
   Label Lloop, Lslow;
 
   // Check if cnt >= 8 (= 16 bytes)
-  lis(tmp1, 0xFF);                // tmp1 = 0x00FF00FF00FF00FF
+  lis(tmp1, byte_mask);           // tmp1 = 0x00FF00FF00FF00FF (non ascii case)
   srwi_(tmp2, cnt, 3);
   beq(CCR0, Lslow);
-  ori(tmp1, tmp1, 0xFF);
+  ori(tmp1, tmp1, byte_mask);
   rldimi(tmp1, tmp1, 32, 0);
   mtctr(tmp2);
 
@@ -66,7 +68,7 @@ void C2_MacroAssembler::string_compress_16(Register src, Register dst, Register 
   rldimi(tmp4, tmp4, 2*8, 2*8);   // _4_6_7_7
 
   andc_(tmp0, tmp0, tmp1);
-  bne(CCR0, Lfailure);            // Not latin1.
+  bne(CCR0, Lfailure);            // Not latin1/ascii.
   addi(src, src, 16);
 
   rlwimi(tmp3, tmp2, 0*8, 24, 31);// _____1_3
@@ -86,18 +88,47 @@ void C2_MacroAssembler::string_compress_16(Register src, Register dst, Register 
 }
 
 // Compress char[] to byte[]. cnt must be positive int.
-void C2_MacroAssembler::string_compress(Register src, Register dst, Register cnt, Register tmp, Label& Lfailure) {
+void C2_MacroAssembler::string_compress(Register src, Register dst, Register cnt, Register tmp,
+                                        Label& Lfailure, bool ascii) {
+  const int byte_mask = ascii ? 0x7F : 0xFF;
   Label Lloop;
   mtctr(cnt);
 
   bind(Lloop);
   lhz(tmp, 0, src);
-  cmplwi(CCR0, tmp, 0xff);
-  bgt(CCR0, Lfailure);            // Not latin1.
+  cmplwi(CCR0, tmp, byte_mask);
+  bgt(CCR0, Lfailure);            // Not latin1/ascii.
   addi(src, src, 2);
   stb(tmp, 0, dst);
   addi(dst, dst, 1);
   bdnz(Lloop);
+}
+
+void C2_MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
+                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                                         Register result, bool ascii) {
+  Label Lslow, Lfailure1, Lfailure2, Ldone;
+
+  string_compress_16(src, dst, len, tmp1, tmp2, tmp3, tmp4, tmp5, Lfailure1, ascii);
+  rldicl_(result, len, 0, 64-3); // Remaining characters.
+  beq(CCR0, Ldone);
+  bind(Lslow);
+  string_compress(src, dst, result, tmp2, Lfailure2, ascii);
+  li(result, 0);
+  b(Ldone);
+
+  bind(Lfailure1);
+  mr(result, len);
+  mfctr(tmp1);
+  rldimi_(result, tmp1, 3, 0); // Remaining characters.
+  beq(CCR0, Ldone);
+  b(Lslow);
+
+  bind(Lfailure2);
+  mfctr(result); // Remaining characters.
+
+  bind(Ldone);
+  subf(result, result, len);
 }
 
 // Inflate byte[] to char[] by inflating 16 bytes at once.

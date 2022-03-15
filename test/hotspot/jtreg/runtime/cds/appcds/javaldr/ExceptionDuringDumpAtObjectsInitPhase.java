@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @summary Out of memory When dumping the CDS archive
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
  * @run driver ExceptionDuringDumpAtObjectsInitPhase
  */
@@ -34,6 +34,7 @@
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class ExceptionDuringDumpAtObjectsInitPhase {
     public static String appClasses[] = {
@@ -67,7 +68,7 @@ public class ExceptionDuringDumpAtObjectsInitPhase {
                         "-Xmx32m",
                         "-Dtest.with.exception=true",
                         gcLog).shouldNotHaveExitValue(0)
-                              .shouldContain("Preload Error: Failed to load jdk/internal/math/FDBigInteger")
+                              .shouldContain("Preload Warning: Cannot find jdk/internal/math/FDBigInteger")
                               .shouldContain("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
 
         // 2. Test with OOM

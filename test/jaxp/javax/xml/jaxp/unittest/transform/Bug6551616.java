@@ -25,7 +25,7 @@
  * @test
  * @bug 6551616
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6551616
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6551616
  * @run testng/othervm transform.Bug6551616
  * @summary Test SAX2StAXEventWriter.
  */

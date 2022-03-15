@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.security.interfaces.*;
 import sun.security.pkcs11.wrapper.*;
 import sun.security.util.KnownOIDs;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * RSASSA-PSS Signature implementation class. This class currently supports the
@@ -68,7 +68,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  */
 final class P11PSSSignature extends SignatureSpi {
 
-    private final static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
 
     // mappings of digest algorithms and their output length in bytes
     private static final Hashtable<String, Integer> DIGEST_LENGTHS =
@@ -153,14 +153,14 @@ final class P11PSSSignature extends SignatureSpi {
     private int bytesProcessed = 0;
 
     // constant for signing mode
-    private final static int M_SIGN   = 1;
+    private static final int M_SIGN   = 1;
     // constant for verification mode
-    private final static int M_VERIFY = 2;
+    private static final int M_VERIFY = 2;
 
     // constant for type digesting, we do the hashing ourselves
-    private final static int T_DIGEST = 1;
+    private static final int T_DIGEST = 1;
     // constant for type update, token does everything
-    private final static int T_UPDATE = 2;
+    private static final int T_UPDATE = 2;
 
     P11PSSSignature(Token token, String algorithm, long mechId)
             throws NoSuchAlgorithmException, PKCS11Exception {
@@ -170,7 +170,7 @@ final class P11PSSSignature extends SignatureSpi {
         this.mechanism = new CK_MECHANISM(mechId);
         int idx = algorithm.indexOf("with");
         // convert to stdName
-        this.mdAlg = (idx == -1?
+        this.mdAlg = (idx == -1 ?
                 null : toStdName(algorithm.substring(0, idx)));
 
         switch ((int)mechId) {
@@ -193,7 +193,7 @@ final class P11PSSSignature extends SignatureSpi {
                 throw new NoSuchAlgorithmException("Unsupported algorithm: " +
                         algorithm);
             }
-            this.md = (this.mdAlg == null? null :
+            this.md = (this.mdAlg == null ? null :
                     MessageDigest.getInstance(this.mdAlg));
             type = T_DIGEST;
             break;
@@ -269,9 +269,16 @@ final class P11PSSSignature extends SignatureSpi {
 
     private void cancelOperation() {
         token.ensureValid();
+
         if (DEBUG) System.out.print("Cancelling operation");
 
-        // cancel operation by finishing it; avoid killSession as some
+        if (P11Util.trySessionCancel(token, session,
+                (mode == M_SIGN ? CKF_SIGN : CKF_VERIFY))) {
+            if (DEBUG) System.out.println(" by C_SessionCancel");
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession call as some
         // hardware vendors may require re-login
         try {
             if (mode == M_SIGN) {
@@ -280,7 +287,7 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_SignFinal(session.id(), 0);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Sign");
                     token.p11.C_Sign(session.id(), digest);
                 }
@@ -292,12 +299,19 @@ final class P11PSSSignature extends SignatureSpi {
                     token.p11.C_VerifyFinal(session.id(), signature);
                 } else {
                     byte[] digest =
-                        (md == null? new byte[0] : md.digest());
+                        (md == null ? new byte[0] : md.digest());
                     if (DEBUG) System.out.println(" by C_Verify");
                     token.p11.C_Verify(session.id(), digest, signature);
                 }
             }
         } catch (PKCS11Exception e) {
+            if (e.match(CKR_OPERATION_NOT_INITIALIZED)) {
+                // Cancel Operation may be invoked after an error on a PKCS#11
+                // call. If the operation inside the token was already cancelled,
+                // do not fail here. This is part of a defensive mechanism for
+                // PKCS#11 libraries that do not strictly follow the standard.
+                return;
+            }
             if (mode == M_SIGN) {
                 throw new ProviderException("cancel failed", e);
             }
@@ -662,6 +676,11 @@ final class P11PSSSignature extends SignatureSpi {
             doCancel = false;
             return signature;
         } catch (PKCS11Exception pe) {
+            // As per the PKCS#11 standard, C_Sign and C_SignFinal may only
+            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+            // successful calls to determine the output length. However,
+            // these cases are handled at OpenJDK's libj2pkcs11 native
+            // library. Thus, doCancel can safely be 'false' here.
             doCancel = false;
             throw new ProviderException(pe);
         } catch (ProviderException e) {
@@ -693,16 +712,9 @@ final class P11PSSSignature extends SignatureSpi {
             return true;
         } catch (PKCS11Exception pe) {
             doCancel = false;
-            long errorCode = pe.getErrorCode();
-            if (errorCode == CKR_SIGNATURE_INVALID) {
-                return false;
-            }
-            if (errorCode == CKR_SIGNATURE_LEN_RANGE) {
-                // return false rather than throwing an exception
-                return false;
-            }
-            // ECF bug?
-            if (errorCode == CKR_DATA_LEN_RANGE) {
+            if (pe.match(CKR_SIGNATURE_INVALID) ||
+                    pe.match(CKR_SIGNATURE_LEN_RANGE) ||
+                    pe.match(CKR_DATA_LEN_RANGE)) {
                 return false;
             }
             throw new ProviderException(pe);

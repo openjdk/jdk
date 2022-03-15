@@ -260,7 +260,7 @@ public class InterfaceCalls {
     /** Interface call with five different receivers. */
     @Benchmark
     public void testCallPoly5(Blackhole bh) {
-        for (int kk = 0; kk < 3; kk++) {
+        for (int kk = 0; kk < 5; kk++) {
             bh.consume(as[kk].getInt());
         }
     }

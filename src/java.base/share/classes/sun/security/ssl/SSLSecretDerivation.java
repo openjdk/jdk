@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,15 @@ import javax.net.ssl.SSLHandshakeException;
 import sun.security.ssl.CipherSuite.HashAlg;
 
 final class SSLSecretDerivation implements SSLKeyDerivation {
+
+    /*
+     * Performance optimization:
+     *
+     *     Derive-Secret(Secret, Label, Messages) =
+     *          HKDF-Expand-Label(..., Transcript-Hash(""), ...);
+     *
+     * Hardcode tha Transcript-Hash("") result and skip a digest operation.
+     */
     private static final byte[] sha256EmptyDigest = new byte[] {
         (byte)0xE3, (byte)0xB0, (byte)0xC4, (byte)0x42,
         (byte)0x98, (byte)0xFC, (byte)0x1C, (byte)0x14,
@@ -45,6 +54,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
         (byte)0x78, (byte)0x52, (byte)0xB8, (byte)0x55
     };
 
+    // See above.
     private static final byte[] sha384EmptyDigest = new byte[] {
         (byte)0x38, (byte)0xB0, (byte)0x60, (byte)0xA7,
         (byte)0x51, (byte)0xAC, (byte)0x96, (byte)0x38,
@@ -68,7 +78,6 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
             HandshakeContext context, SecretKey secret) {
         this.secret = secret;
         this.hashAlg = context.negotiatedCipherSuite.hashAlg;
-        String hkdfAlg = "HKDF-Expand/Hmac" + hashAlg.name.replace("-", "");
         context.handshakeHash.update();
         this.transcriptHash = context.handshakeHash.digest();
     }
@@ -141,7 +150,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
 
         private final byte[] label;
 
-        private SecretSchedule(String label) {
+        SecretSchedule(String label) {
             this.label = ("tls13 " + label).getBytes();
         }
     }

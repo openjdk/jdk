@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
 import javax.crypto.*;
 import javax.crypto.spec.RC2ParameterSpec;
@@ -133,6 +134,7 @@ public final class RC2Cipher extends CipherSpi {
 
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] keyBytes = CipherCore.getKeyBytes(key);
+        Arrays.fill(keyBytes, (byte)0);
         RC2Crypt.checkKey(key.getAlgorithm(), keyBytes.length);
         return keyBytes.length << 3;
     }

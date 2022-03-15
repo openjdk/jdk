@@ -25,9 +25,10 @@
 #ifndef SHARE_UTILITIES_GLOBALCOUNTER_INLINE_HPP
 #define SHARE_UTILITIES_GLOBALCOUNTER_INLINE_HPP
 
+#include "utilities/globalCounter.hpp"
+
 #include "runtime/atomic.hpp"
 #include "runtime/thread.inline.hpp"
-#include "utilities/globalCounter.hpp"
 
 inline GlobalCounter::CSContext
 GlobalCounter::critical_section_begin(Thread *thread) {

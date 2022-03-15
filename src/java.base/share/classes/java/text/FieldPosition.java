@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,9 +221,8 @@ public class FieldPosition {
     public boolean equals(Object obj)
     {
         if (obj == null) return false;
-        if (!(obj instanceof FieldPosition))
+        if (!(obj instanceof FieldPosition other))
             return false;
-        FieldPosition other = (FieldPosition) obj;
         if (attribute == null) {
             if (other.attribute != null) {
                 return false;

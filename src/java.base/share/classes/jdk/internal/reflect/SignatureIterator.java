@@ -49,7 +49,7 @@ class SignatureIterator {
         char c = sig.charAt(idx);
         if (c != '[' && c != 'L') {
             ++idx;
-            return new String(new char[] { c });
+            return String.valueOf(c);
         }
         // Walk forward to end of entry
         int endIdx = idx;

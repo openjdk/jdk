@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,12 @@ import java.util.*;
 import java.io.*;
 
 class Commands {
+    /**
+     * Number of lines to show before the target line during {@code list}.
+     */
+    protected static final int LIST_LINE_LOOKBEHIND = 4;
 
-    abstract class AsyncExecution {
+    abstract static class AsyncExecution {
         abstract void action();
 
         AsyncExecution() {
@@ -704,9 +708,9 @@ class Commands {
         }
         String expr = t.nextToken("");
         Value val = evaluate(expr);
-        if ((val != null) && (val instanceof ObjectReference)) {
+        if (val instanceof ObjectReference object) {
             try {
-                thread.stop((ObjectReference)val);
+                thread.stop(object);
                 MessageOutput.println("killed", thread.toString());
             } catch (InvalidTypeException e) {
                 MessageOutput.println("Invalid exception object");
@@ -1472,29 +1476,33 @@ class Commands {
         }
     }
 
-    void commandList(StringTokenizer t) {
+    /**
+     * @param lineHint source line number to target by default, or {@code null} to use the execution point
+     * @return line hint to be used in a subsequent {@code list} command, if any
+     */
+    Integer commandList(StringTokenizer t, Integer lineHint) {
         StackFrame frame = null;
         ThreadInfo threadInfo = ThreadInfo.getCurrentThreadInfo();
         if (threadInfo == null) {
             MessageOutput.println("No thread specified.");
-            return;
+            return null;
         }
         try {
             frame = threadInfo.getCurrentFrame();
         } catch (IncompatibleThreadStateException e) {
             MessageOutput.println("Current thread isnt suspended.");
-            return;
+            return null;
         }
 
         if (frame == null) {
             MessageOutput.println("No frames on the current call stack");
-            return;
+            return null;
         }
 
         Location loc = frame.location();
         if (loc.method().isNative()) {
             MessageOutput.println("Current method is native");
-            return;
+            return null;
         }
 
         String sourceFileName = null;
@@ -1502,9 +1510,12 @@ class Commands {
             sourceFileName = loc.sourceName();
 
             ReferenceType refType = loc.declaringType();
-            int lineno = loc.lineNumber();
 
-            if (t.hasMoreTokens()) {
+            int lineno;
+            var useDefault = !t.hasMoreTokens();
+            if (useDefault) {
+                lineno = lineHint == null ? loc.lineNumber() : lineHint;
+            } else {
                 String id = t.nextToken();
 
                 // See if token is a line number.
@@ -1515,35 +1526,48 @@ class Commands {
                     lineno = n.intValue();
                 } catch (java.text.ParseException jtpe) {
                     // It isn't -- see if it's a method name.
-                        List<Method> meths = refType.methodsByName(id);
-                        if (meths == null || meths.size() == 0) {
-                            MessageOutput.println("is not a valid line number or method name for",
-                                                  new Object [] {id, refType.name()});
-                            return;
-                        } else if (meths.size() > 1) {
-                            MessageOutput.println("is an ambiguous method name in",
-                                                  new Object [] {id, refType.name()});
-                            return;
-                        }
-                        loc = meths.get(0).location();
-                        lineno = loc.lineNumber();
+                    List<Method> meths = refType.methodsByName(id);
+                    if (meths == null || meths.size() == 0) {
+                        MessageOutput.println("is not a valid line number or method name for",
+                                              new Object [] {id, refType.name()});
+                        return null;
+                    } else if (meths.size() > 1) {
+                        MessageOutput.println("is an ambiguous method name in",
+                                              new Object [] {id, refType.name()});
+                        return null;
+                    }
+                    loc = meths.get(0).location();
+                    lineno = loc.lineNumber();
                 }
             }
-            int startLine = Math.max(lineno - 4, 1);
-            int endLine = startLine + 9;
+            int startLine = Math.max(lineno - LIST_LINE_LOOKBEHIND, 1);
+            int endLine = startLine + 10;
             if (lineno < 0) {
                 MessageOutput.println("Line number information not available for");
-            } else if (Env.sourceLine(loc, lineno) == null) {
-                MessageOutput.println("is an invalid line number for",
-                                      new Object [] {Integer.valueOf(lineno),
-                                                     refType.name()});
+            } else if (useDefault && Env.sourceLine(loc, startLine) == null) {
+                /*
+                 * If we're out of range with a default line number then we've hit EOF on auto-advance.  Stay at this
+                 * position until a different source location is requested, as in GDB.
+                 */
+                MessageOutput.println("EOF");
+                return lineno;
+            } else if (!useDefault && Env.sourceLine(loc, lineno) == null) {
+                MessageOutput.println(
+                    "is an invalid line number for",
+                    new Object[] {
+                        Integer.valueOf(lineno),
+                        refType.name()
+                    }
+                );
+                return null;
             } else {
-                for (int i = startLine; i <= endLine; i++) {
+                for (int i = startLine; i < endLine; i++) {
                     String sourceLine = Env.sourceLine(loc, i);
                     if (sourceLine == null) {
-                        break;
+                        // Next listing will start just out of range, triggering an EOF message.
+                        return i + LIST_LINE_LOOKBEHIND;
                     }
-                    if (i == lineno) {
+                    if (i == loc.lineNumber()) {
                         MessageOutput.println("source line number current line and line",
                                               new Object [] {Integer.valueOf(i),
                                                              sourceLine});
@@ -1553,6 +1577,7 @@ class Commands {
                                                              sourceLine});
                     }
                 }
+                return endLine + LIST_LINE_LOOKBEHIND;  // start next listing with `endLine'
             }
         } catch (AbsentInformationException e) {
             MessageOutput.println("No source information available for:", loc.toString());
@@ -1561,6 +1586,7 @@ class Commands {
         } catch(IOException exc) {
             MessageOutput.println("I/O exception occurred:", exc.toString());
         }
+        return null;
     }
 
     void commandLines(StringTokenizer t) { // Undocumented command: useful for testing
@@ -1778,8 +1804,7 @@ class Commands {
         Value val = evaluate(expr);
 
         try {
-            if ((val != null) && (val instanceof ObjectReference)) {
-                ObjectReference object = (ObjectReference)val;
+            if (val instanceof ObjectReference object) {
                 String strVal = getStringValue();
                 if (strVal != null) {
                     MessageOutput.println("Monitor information for expr",
@@ -1874,8 +1899,7 @@ class Commands {
 
         String expr = t.nextToken("");
         Value val = evaluate(expr);
-        if ((val != null) && (val instanceof ObjectReference)) {
-            ObjectReference object = (ObjectReference)val;
+        if (val instanceof ObjectReference object) {
             object.disableCollection();
             String strVal = getStringValue();
             if (strVal != null) {
@@ -1903,8 +1927,7 @@ class Commands {
 
         String expr = t.nextToken("");
         Value val = evaluate(expr);
-        if ((val != null) && (val instanceof ObjectReference)) {
-            ObjectReference object = (ObjectReference)val;
+        if (val instanceof ObjectReference object) {
             object.enableCollection();
             String strVal = getStringValue();
             if (strVal != null) {

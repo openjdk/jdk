@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,8 @@
   template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/hotspot/HotSpotCompilationRequestResult;") \
   template(isGCSupported_name,                                    "isGCSupported")                                                        \
   template(encodeThrowable_name,                                  "encodeThrowable")                                                      \
-  template(encodeThrowable_signature,                             "(Ljava/lang/Throwable;)Ljava/lang/String;")                            \
-  template(decodeThrowable_name,                                  "decodeThrowable")                                                      \
-  template(decodeThrowable_signature,                             "(Ljava/lang/String;)Ljava/lang/Throwable;")                            \
+  template(encodeThrowable_signature,                             "(Ljava/lang/Throwable;JI)I")                                           \
+  template(decodeAndThrowThrowable_name,                          "decodeAndThrowThrowable")                                              \
   template(fromMetaspace_name,                                    "fromMetaspace")                                                        \
   template(method_fromMetaspace_signature,                        "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")                     \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")                           \
@@ -123,14 +122,11 @@
   template(getCompiler_signature,                                 "()Ljdk/vm/ci/runtime/JVMCICompiler;")                                  \
   template(callToString_name,                                     "callToString")                                                         \
   template(callToString_signature,                                "(Ljava/lang/Object;)Ljava/lang/String;")                               \
+  template(postTranslation_name,                                  "postTranslation")                                                      \
   template(getName_name,                                          "getName")                                                              \
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \
-  template(forTypeChar_name,                                      "forTypeChar")                                                          \
-  template(forTypeChar_signature,                                 "(CJ)Ljdk/vm/ci/meta/PrimitiveConstant;")                               \
-  template(forFloat_name,                                         "forFloat")                                                             \
-  template(forFloat_signature,                                    "(F)Ljdk/vm/ci/meta/PrimitiveConstant;")                                \
-  template(forDouble_name,                                        "forDouble")                                                            \
-  template(forDouble_signature,                                   "(D)Ljdk/vm/ci/meta/PrimitiveConstant;")                                \
+  template(forPrimitive_name,                                     "forPrimitive")                                                         \
+  template(forPrimitive_signature,                                "(Ljdk/vm/ci/meta/JavaKind;J)Ljdk/vm/ci/meta/PrimitiveConstant;")       \
   template(method_string_bool_long_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
   template(initializeSavedProperties_name,                        "initializeSavedProperties")                                            \
 

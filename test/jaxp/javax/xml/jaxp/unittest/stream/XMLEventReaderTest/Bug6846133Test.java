@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6846133
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLEventReaderTest.Bug6846133Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLEventReaderTest.Bug6846133Test
  * @run testng/othervm stream.XMLEventReaderTest.Bug6846133Test
  * @summary Test method getDocumentTypeDeclaration() of DTD Event returns a valid value.
  */

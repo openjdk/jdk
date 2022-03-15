@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,6 @@ $(BUILD_LIBNIO): $(BUILD_LIBNET)
 # Create the macosx security library
 
 ifeq ($(call isTargetOs, macosx), true)
-  # JavaNativeFoundation framework not supported in static builds
-  ifneq ($(STATIC_BUILD), true)
 
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
         NAME := osxsecurity, \
@@ -110,9 +108,9 @@ ifeq ($(call isTargetOs, macosx), true)
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := \
             -lobjc \
-            -framework JavaNativeFoundation \
             -framework CoreServices \
             -framework Security \
+            -framework Foundation \
             $(JDKLIB_LIBS), \
     ))
 
@@ -120,7 +118,6 @@ ifeq ($(call isTargetOs, macosx), true)
 
     TARGETS += $(BUILD_LIBOSXSECURITY)
 
-  endif
 endif
 
 ################################################################################
@@ -159,11 +156,8 @@ ifeq ($(call isTargetOsType, unix), true)
         TARGETS += $(LIB_OUTPUTDIR)/$1/$(call SHARED_LIBRARY,jsig)
       endef
 
-      # The subdir is the same as the variant for client and minimal, for all
-      # others it's server.
-      VARIANT_SUBDIRS := $(filter client minimal, $(JVM_VARIANTS)) \
-          $(if $(filter-out client minimal, $(JVM_VARIANTS)), server)
-      $(foreach v, $(VARIANT_SUBDIRS), $(eval $(call CreateSymlinks,$v)))
+      # The subdir is the same as the variant
+      $(foreach v, $(JVM_VARIANTS), $(eval $(call CreateSymlinks,$v)))
     endif
     ############################################################################
 

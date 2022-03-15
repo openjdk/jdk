@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8080535 8191410 8215194 8221431 8239383
+ * @bug 8080535 8191410 8215194 8221431 8239383 8268081
  * @summary Expected size of Character.UnicodeBlock.map is not optimal
  * @library /test/lib
  * @modules java.base/java.lang:open
@@ -48,13 +48,14 @@ import jdk.test.lib.util.OptimalCapacity;
 // As of Unicode 11, 667 entries are expected.
 // As of Unicode 12.1, 676 entries are expected.
 // As of Unicode 13.0, 684 entries are expected.
+// As of Unicode 14.0, 696 entries are expected.
 //
 // Initialization of the map and this test will have to be adjusted
 // accordingly then.
 //
 // Note that HashMap's implementation aligns the initial capacity to
 // a power of two size, so it will end up 1024 (and thus succeed) in
-// cases, such as 638, 667, 676, and 684.
+// cases, such as 638, 667, 676, 684, and 696.
 
 public class OptimalMapSize {
     public static void main(String[] args) throws Throwable {
@@ -63,7 +64,7 @@ public class OptimalMapSize {
         Field f = Character.UnicodeBlock.class.getDeclaredField("NUM_ENTITIES");
         f.setAccessible(true);
         int num_entities = f.getInt(null);
-        assert num_entities == 684;
+        assert num_entities == 696;
         int initialCapacity = (int)(num_entities / 0.75f + 1.0f);
 
         OptimalCapacity.ofHashMap(Character.UnicodeBlock.class,

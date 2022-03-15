@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,6 +396,7 @@ public abstract class Toolkit {
      * properties are set up properly before any classes dependent upon them
      * are initialized.
      */
+    @SuppressWarnings("removal")
     private static void initAssistiveTechnologies() {
 
         // Get accessibility properties
@@ -412,12 +413,10 @@ public abstract class Toolkit {
                     File propsFile = new File(
                       System.getProperty("user.home") +
                       sep + ".accessibility.properties");
-                    FileInputStream in =
-                        new FileInputStream(propsFile);
-
-                    // Inputstream has been buffered in Properties class
-                    properties.load(in);
-                    in.close();
+                    try (FileInputStream in = new FileInputStream(propsFile)) {
+                        // Inputstream has been buffered in Properties class
+                        properties.load(in);
+                    }
                 } catch (Exception e) {
                     // Per-user accessibility properties file does not exist
                 }
@@ -430,12 +429,10 @@ public abstract class Toolkit {
                         File propsFile = new File(
                             System.getProperty("java.home") + sep + "conf" +
                             sep + "accessibility.properties");
-                        FileInputStream in =
-                            new FileInputStream(propsFile);
-
-                        // Inputstream has been buffered in Properties class
-                        properties.load(in);
-                        in.close();
+                        try (FileInputStream in = new FileInputStream(propsFile)) {
+                            // Inputstream has been buffered in Properties class
+                            properties.load(in);
+                        }
                     } catch (Exception e) {
                         // System-wide accessibility properties file does
                         // not exist;
@@ -515,6 +512,7 @@ public abstract class Toolkit {
      * {@code null} it is ignored. All other errors are handled via an AWTError
      * exception.
      */
+    @SuppressWarnings("removal")
     private static void loadAssistiveTechnologies() {
         // Load any assistive technologies
         if (atNames != null && !atNames.isBlank()) {
@@ -1377,6 +1375,7 @@ public abstract class Toolkit {
      * directly.  -hung
      */
     private static boolean loaded = false;
+    @SuppressWarnings("removal")
     static void loadLibraries() {
         if (!loaded) {
             java.security.AccessController.doPrivileged(
@@ -1391,6 +1390,11 @@ public abstract class Toolkit {
     }
 
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AWTAccessor.setToolkitAccessor(
                 new AWTAccessor.ToolkitAccessor() {
                     @Override
@@ -1464,6 +1468,7 @@ public abstract class Toolkit {
      * @see     java.awt.AWTPermission
     */
     public final EventQueue getSystemEventQueue() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.CHECK_AWT_EVENTQUEUE_PERMISSION);
@@ -1803,6 +1808,7 @@ public abstract class Toolkit {
         if (localL == null) {
             return;
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
           security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
@@ -1872,6 +1878,7 @@ public abstract class Toolkit {
         if (listener == null) {
             return;
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
@@ -1937,6 +1944,7 @@ public abstract class Toolkit {
      * @since 1.4
      */
     public AWTEventListener[] getAWTEventListeners() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
@@ -1989,6 +1997,7 @@ public abstract class Toolkit {
      * @since 1.4
      */
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
@@ -2077,7 +2086,7 @@ public abstract class Toolkit {
         }
     }
 
-    private class SelectiveAWTEventListener implements AWTEventListener {
+    private static class SelectiveAWTEventListener implements AWTEventListener {
         AWTEventListener listener;
         private long eventMask;
         // This array contains the number of times to call the eventlistener

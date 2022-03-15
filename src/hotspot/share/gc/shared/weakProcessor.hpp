@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
-#include "gc/shared/workgroup.hpp"
-#include "memory/allocation.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "memory/allStatic.hpp"
 
-class WeakProcessorPhaseTimes;
-class WorkGang;
+class WeakProcessorTimes;
+class WorkerThreads;
 
 // Helper class to aid in root scanning and cleaning of weak oops in the VM.
 //
@@ -47,40 +47,45 @@ public:
   // Visit all oop*s and apply the given closure.
   static void oops_do(OopClosure* closure);
 
-  // Parallel version.  Uses ergo_workers(), active workers, and
-  // phase_time's max_threads to determine the number of threads to use.
+  // Parallel version.  Uses ergo_workers() to determine the number of
+  // threads to use, limited by the total workers and phase_times'
+  // max_threads.
   // IsAlive must be derived from BoolObjectClosure.
   // KeepAlive must be derived from OopClosure.
   template<typename IsAlive, typename KeepAlive>
-  static void weak_oops_do(WorkGang* workers,
+  static void weak_oops_do(WorkerThreads* workers,
                            IsAlive* is_alive,
                            KeepAlive* keep_alive,
-                           WeakProcessorPhaseTimes* phase_times);
+                           WeakProcessorTimes* times);
 
-  // Convenience parallel version.  Uses ergo_workers() and active workers
-  // to determine the number of threads to run.  Implicitly logs phase times.
+  // Convenience parallel version.  Uses ergo_workers() to determine the
+  // number of threads to use, limited by the total workers.  Implicitly
+  // logs phase times.
   // IsAlive must be derived from BoolObjectClosure.
   // KeepAlive must be derived from OopClosure.
   template<typename IsAlive, typename KeepAlive>
-  static void weak_oops_do(WorkGang* workers,
+  static void weak_oops_do(WorkerThreads* workers,
                            IsAlive* is_alive,
                            KeepAlive* keep_alive,
                            uint indent_log);
 
+  // Uses the total number of weak references and ReferencesPerThread to
+  // determine the number of threads to use, limited by max_workers.
   static uint ergo_workers(uint max_workers);
+
   class Task;
 
 private:
   template<typename IsAlive, typename KeepAlive>
   class CountingClosure;
 
-  class GangTask;
+  class WeakOopsDoTask;
 };
 
 class WeakProcessor::Task {
   typedef OopStorage::ParState<false, false> StorageState;
 
-  WeakProcessorPhaseTimes* _phase_times;
+  WeakProcessorTimes* _times;
   uint _nworkers;
   OopStorageSetWeakParState<false, false> _storage_states;
 
@@ -88,7 +93,7 @@ class WeakProcessor::Task {
 
 public:
   Task(uint nworkers);          // No time tracking.
-  Task(WeakProcessorPhaseTimes* phase_times, uint nworkers);
+  Task(WeakProcessorTimes* times, uint nworkers);
 
   template<typename IsAlive, typename KeepAlive>
   void work(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive);

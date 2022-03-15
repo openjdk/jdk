@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,7 @@ public abstract class StreamPrintServiceFactory {
      *
      * @return all factories
      */
+    @SuppressWarnings("removal")
     private static ArrayList<StreamPrintServiceFactory> getAllFactories() {
         synchronized (StreamPrintServiceFactory.class) {
 
@@ -262,9 +263,7 @@ public abstract class StreamPrintServiceFactory {
         }
 
         ArrayList<StreamPrintServiceFactory> list = new ArrayList<>();
-        Iterator<StreamPrintServiceFactory> iterator = getAllFactories().iterator();
-        while (iterator.hasNext()) {
-            StreamPrintServiceFactory factory = iterator.next();
+        for (StreamPrintServiceFactory factory : getAllFactories()) {
             if ((outType == null ||
                  outType.equalsIgnoreCase(factory.getOutputFormat())) &&
                 (flavor == null ||

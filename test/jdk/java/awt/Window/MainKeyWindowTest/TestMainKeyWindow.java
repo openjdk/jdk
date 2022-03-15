@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @bug 8194327
  * @summary [macosx] AWT windows have incorrect main/key window behaviors
  * @author Alan Snyder
+ * @library /test/lib
  * @run main/othervm/native TestMainKeyWindow
  * @requires (os.family == "mac")
  */
@@ -41,6 +42,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 import javax.swing.*;
+
+import jdk.test.lib.process.ProcessTools;
 
 public class TestMainKeyWindow
 {
@@ -65,7 +68,7 @@ public class TestMainKeyWindow
     private Object actionTarget;
 
     private int failureCount;
-    private boolean isApplicationOpened;
+    private Process process;
 
     public TestMainKeyWindow()
     {
@@ -83,7 +86,7 @@ public class TestMainKeyWindow
 
         try {
             robot = new Robot();
-            robot.setAutoDelay(50);
+            robot.setAutoDelay(150);
         } catch (AWTException ex) {
             throw new RuntimeException(ex);
         }
@@ -146,19 +149,21 @@ public class TestMainKeyWindow
         performMenuItemTest(windowIdentification, selectColorPanel);
     }
 
-    private void openOtherApplication() {
+    private Process execute() {
         try {
-            String[] cmd = { "/usr/bin/open", "/Applications/System Preferences.app" };
-            Runtime.getRuntime().exec(cmd);
-            if (!isApplicationOpened) {
-                String[] cmd2 = { "/usr/bin/osascript", "-e",
-                    "tell application \"System Preferences\" to set bounds of window 1 to {400, 180, 1068, 821}" };
-                Runtime.getRuntime().exec(cmd2);
-            }
-            isApplicationOpened = true;
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    TestMainKeyWindow.class.getSimpleName(), "mark");
+            return ProcessTools.startProcess("Other frame", pb);
         } catch (IOException ex) {
-            throw new RuntimeException("Unable to deactivate test application");
+            throw new RuntimeException("Unable to execute command");
         }
+    }
+
+    private void openOtherApplication() {
+        if (process != null) {
+            process.destroyForcibly();
+        }
+        process = execute();
         robot.delay(1000);
     }
 
@@ -341,13 +346,8 @@ public class TestMainKeyWindow
         frame2.dispose();
         takedown();
         Desktop.getDesktop().setDefaultMenuBar(null);
-        if (isApplicationOpened) {
-            try {
-                String[] cmd = { "/usr/bin/osascript", "-e", "tell application \"System Preferences\" to close window 1" };
-                Process p = Runtime.getRuntime().exec(cmd);
-                p.waitFor();
-            } catch (IOException | InterruptedException ex) {
-            }
+        if (process != null) {
+            process.destroyForcibly();
         }
     }
 
@@ -374,7 +374,7 @@ public class TestMainKeyWindow
     private static native void takedown();
     private static native void activateApplication();
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
         if (!System.getProperty("os.name").contains("OS X")) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
@@ -382,6 +382,19 @@ public class TestMainKeyWindow
         }
 
         System.setProperty("apple.laf.useScreenMenuBar", "true");
+
+        if (args.length != 0) {
+            Frame frame = new Frame();
+            MenuBar mb = new MenuBar();
+            mb.add(new Menu("Hello"));
+            frame.setMenuBar(mb);
+            frame.setBounds(400, 180, 300, 300);
+            frame.setVisible(true);
+            frame.toFront();
+            Thread.sleep(20_000);
+            System.exit(0);
+            return;
+        }
 
         try {
             runSwing(() -> {

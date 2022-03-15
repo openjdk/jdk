@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"
+#include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -34,51 +35,83 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-class G1ResetPinnedClosure : public HeapRegionClosure {
-  G1CMBitMap* _bitmap;
+// Do work for all skip-compacting regions.
+class G1ResetSkipCompactingClosure : public HeapRegionClosure {
+  G1FullCollector* _collector;
 
 public:
-  G1ResetPinnedClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) { }
+  G1ResetSkipCompactingClosure(G1FullCollector* collector) : _collector(collector) { }
 
   bool do_heap_region(HeapRegion* r) {
-    if (!r->is_pinned()) {
+    uint region_index = r->hrm_index();
+    // Only for skip-compaction regions; early return otherwise.
+    if (!_collector->is_skip_compacting(region_index)) {
       return false;
     }
-    assert(!r->is_starts_humongous() || _bitmap->is_marked((oop)r->bottom()),
-           "must be, otherwise reclaimed earlier");
-    r->reset_pinned_after_full_gc();
+#ifdef ASSERT
+    if (r->is_humongous()) {
+      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
+      assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
+    } else if (r->is_open_archive()) {
+      bool is_empty = (_collector->live_words(r->hrm_index()) == 0);
+      assert(!is_empty, "should contain at least one live obj");
+    } else if (r->is_closed_archive()) {
+      // should early-return above
+      ShouldNotReachHere();
+    } else {
+      assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
+             "should be quite full");
+    }
+#endif
+    r->reset_skip_compacting_after_full_gc();
     return false;
   }
 };
 
+void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_prev_bitmap(oop obj) {
+  assert(_bitmap->is_marked(obj), "Should only compact marked objects");
+  _bitmap->clear(obj);
+}
+
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
-  if (destination == NULL) {
-    // Object not moving
+  if (!obj->is_forwarded()) {
+    // Object not moving, but clear the mark to allow reuse of the bitmap.
+    clear_in_prev_bitmap(obj);
     return size;
   }
+
+  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
 
   // copy object and reinit its mark
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
   assert(obj_addr != destination, "everything in this pass should be moving");
   Copy::aligned_conjoint_words(obj_addr, destination, size);
-  oop(destination)->init_mark();
-  assert(oop(destination)->klass() != NULL, "should have a class");
+  cast_to_oop(destination)->init_mark();
+  assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
+  // Clear the mark for the compacted object to allow reuse of the
+  // bitmap without an additional clearing step.
+  clear_in_prev_bitmap(obj);
   return size;
 }
 
 void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   assert(!hr->is_pinned(), "Should be no pinned region in compaction queue");
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
-  G1CompactRegionClosure compact(collector()->mark_bitmap());
-  hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
-  // Clear the liveness information for this region if necessary i.e. if we actually look at it
-  // for bitmap verification. Otherwise it is sufficient that we move the TAMS to bottom().
-  if (G1VerifyBitmaps) {
-    collector()->mark_bitmap()->clear_region(hr);
+
+  if (!collector()->is_free(hr->hrm_index())) {
+    // The compaction closure not only copies the object to the new
+    // location, but also clears the bitmap for it. This is needed
+    // for bitmap verification and to be able to use the prev_bitmap
+    // for evacuation failures in the next young collection. Testing
+    // showed that it was better overall to clear bit by bit, compared
+    // to clearing the whole region at the end. This difference was
+    // clearly seen for regions with few marks.
+    G1CompactRegionClosure compact(collector()->mark_bitmap());
+    hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
   }
+
   hr->reset_compacted_after_full_gc();
 }
 
@@ -91,7 +124,7 @@ void G1FullGCCompactTask::work(uint worker_id) {
     compact_region(*it);
   }
 
-  G1ResetPinnedClosure hc(collector()->mark_bitmap());
+  G1ResetSkipCompactingClosure hc(collector());
   G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
   log_task("Compaction task", worker_id, start);
 }

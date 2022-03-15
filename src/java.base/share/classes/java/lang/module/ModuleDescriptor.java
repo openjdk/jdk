@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Requires
+    public static final class Requires
         implements Comparable<Requires>
     {
 
@@ -310,10 +310,8 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Requires))
-                return false;
-            Requires that = (Requires)ob;
-            return name.equals(that.name) && mods.equals(that.mods)
+            return (ob instanceof Requires that)
+                    && name.equals(that.name) && mods.equals(that.mods)
                     && Objects.equals(compiledVersion, that.compiledVersion)
                     && Objects.equals(rawCompiledVersion, that.rawCompiledVersion);
         }
@@ -329,7 +327,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = name.hashCode() * 43 + mods.hashCode();
+            int hash = name.hashCode() * 43 + modsHashCode(mods);
             if (compiledVersion != null)
                 hash = hash * 43 + compiledVersion.hashCode();
             if (rawCompiledVersion != null)
@@ -362,7 +360,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Exports
+    public static final class Exports
         implements Comparable<Exports>
     {
 
@@ -507,7 +505,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = mods.hashCode();
+            int hash = modsHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -531,10 +529,8 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Exports))
-                return false;
-            Exports other = (Exports)ob;
-            return Objects.equals(this.mods, other.mods)
+            return (ob instanceof Exports other)
+                    && Objects.equals(this.mods, other.mods)
                     && Objects.equals(this.source, other.source)
                     && Objects.equals(this.targets, other.targets);
         }
@@ -568,7 +564,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Opens
+    public static final class Opens
         implements Comparable<Opens>
     {
         /**
@@ -712,7 +708,7 @@ public class ModuleDescriptor
          */
         @Override
         public int hashCode() {
-            int hash = mods.hashCode();
+            int hash = modsHashCode(mods);
             hash = hash * 43 + source.hashCode();
             return hash * 43 + targets.hashCode();
         }
@@ -736,12 +732,10 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Opens))
-                return false;
-            Opens other = (Opens)ob;
-            return Objects.equals(this.mods, other.mods)
-                    && Objects.equals(this.source, other.source)
-                    && Objects.equals(this.targets, other.targets);
+           return (ob instanceof Opens other)
+                   && Objects.equals(this.mods, other.mods)
+                   && Objects.equals(this.source, other.source)
+                   && Objects.equals(this.targets, other.targets);
         }
 
         /**
@@ -767,7 +761,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Provides
+    public static final class Provides
         implements Comparable<Provides>
     {
         private final String service;
@@ -872,11 +866,9 @@ public class ModuleDescriptor
          */
         @Override
         public boolean equals(Object ob) {
-            if (!(ob instanceof Provides))
-                return false;
-            Provides other = (Provides)ob;
-            return Objects.equals(this.service, other.service) &&
-                    Objects.equals(this.providers, other.providers);
+            return (ob instanceof Provides other)
+                    && Objects.equals(this.service, other.service)
+                    && Objects.equals(this.providers, other.providers);
         }
 
         /**
@@ -901,7 +893,8 @@ public class ModuleDescriptor
      * integer or a string.  Tokens are separated by the punctuation characters
      * {@code '.'}, {@code '-'}, or {@code '+'}, or by transitions from a
      * sequence of digits to a sequence of characters that are neither digits
-     * nor punctuation characters, or vice versa.
+     * nor punctuation characters, or vice versa.  Consecutive repeated
+     * punctuation characters are treated as a single punctuation character.
      *
      * <ul>
      *
@@ -940,7 +933,7 @@ public class ModuleDescriptor
      * @since 9
      */
 
-    public final static class Version
+    public static final class Version
         implements Comparable<Version>
     {
 
@@ -1041,13 +1034,6 @@ public class ModuleDescriptor
 
             while (i < n) {
                 c = v.charAt(i);
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, pre);
-                else
-                    i = takeString(v, i, pre);
-                if (i >= n)
-                    break;
-                c = v.charAt(i);
                 if (c == '.' || c == '-') {
                     i++;
                     continue;
@@ -1056,6 +1042,10 @@ public class ModuleDescriptor
                     i++;
                     break;
                 }
+                if (c >= '0' && c <= '9')
+                    i = takeNumber(v, i, pre);
+                else
+                    i = takeString(v, i, pre);
             }
 
             if (c == '+' && i >= n)
@@ -1063,17 +1053,14 @@ public class ModuleDescriptor
 
             while (i < n) {
                 c = v.charAt(i);
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, build);
-                else
-                    i = takeString(v, i, build);
-                if (i >= n)
-                    break;
-                c = v.charAt(i);
                 if (c == '.' || c == '-' || c == '+') {
                     i++;
                     continue;
                 }
+                if (c >= '0' && c <= '9')
+                    i = takeNumber(v, i, build);
+                else
+                    i = takeString(v, i, build);
             }
 
             this.version = v;
@@ -2241,10 +2228,8 @@ public class ModuleDescriptor
     public boolean equals(Object ob) {
         if (ob == this)
             return true;
-        if (!(ob instanceof ModuleDescriptor))
-            return false;
-        ModuleDescriptor that = (ModuleDescriptor)ob;
-        return (name.equals(that.name)
+        return (ob instanceof ModuleDescriptor that)
+                && (name.equals(that.name)
                 && modifiers.equals(that.modifiers)
                 && requires.equals(that.requires)
                 && Objects.equals(packages, that.packages)
@@ -2271,7 +2256,7 @@ public class ModuleDescriptor
         int hc = hash;
         if (hc == 0) {
             hc = name.hashCode();
-            hc = hc * 43 + Objects.hashCode(modifiers);
+            hc = hc * 43 + modsHashCode(modifiers);
             hc = hc * 43 + requires.hashCode();
             hc = hc * 43 + Objects.hashCode(packages);
             hc = hc * 43 + exports.hashCode();
@@ -2457,7 +2442,7 @@ public class ModuleDescriptor
      * Reads the binary form of a module declaration from an input stream as a
      * module descriptor. This method works exactly as specified by the 2-arg
      * {@link #read(InputStream,Supplier) read} method with the exception that
-     * a packager finder is not used to find additional packages when the
+     * a package finder is not used to find additional packages when the
      * module descriptor read from the stream does not indicate the set of
      * packages.
      *
@@ -2526,7 +2511,7 @@ public class ModuleDescriptor
      * Reads the binary form of a module declaration from a byte buffer as a
      * module descriptor. This method works exactly as specified by the 2-arg
      * {@link #read(ByteBuffer,Supplier) read} method with the exception that a
-     * packager finder is not used to find additional packages when the module
+     * package finder is not used to find additional packages when the module
      * descriptor encoded in the buffer does not indicate the set of packages.
      *
      * @param  bb
@@ -2554,6 +2539,18 @@ public class ModuleDescriptor
                                                       .toLowerCase(Locale.ROOT)),
                               Stream.of(what)))
                 .collect(Collectors.joining(" "));
+    }
+
+    /**
+     * Generates and returns a hashcode for the enum instances. The returned hashcode
+     * is a value based on the {@link Enum#name() name} of each enum instance.
+     */
+    private static int modsHashCode(Iterable<? extends Enum<?>> enums) {
+        int h = 0;
+        for (Enum<?> e : enums) {
+            h = h * 43 + Objects.hashCode(e.name());
+        }
+        return h;
     }
 
     private static <T extends Object & Comparable<? super T>>

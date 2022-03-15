@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
  * @run testng/othervm stream.XMLOutputFactoryTest.DuplicateNSDeclarationTest
  * @summary Test the writing of duplicate namespace declarations when IS_REPAIRING_NAMESPACES is ture.
  */

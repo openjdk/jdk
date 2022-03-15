@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 
 package sun.nio.cs;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -42,9 +41,9 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 
-public class StreamDecoder extends Reader
-{
+public class StreamDecoder extends Reader {
 
     private static final int MIN_BYTE_BUFFER_SIZE = 32;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
@@ -72,13 +71,14 @@ public class StreamDecoder extends Reader
         throws UnsupportedEncodingException
     {
         String csn = charsetName;
-        if (csn == null)
+        if (csn == null) {
             csn = Charset.defaultCharset().name();
+        }
         try {
-            if (Charset.isSupported(csn))
-                return new StreamDecoder(in, lock, Charset.forName(csn));
-        } catch (IllegalCharsetNameException x) { }
-        throw new UnsupportedEncodingException (csn);
+            return new StreamDecoder(in, lock, Charset.forName(csn));
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
+            throw new UnsupportedEncodingException (csn);
+        }
     }
 
     public static StreamDecoder forInputStreamReader(InputStream in,
@@ -133,7 +133,7 @@ public class StreamDecoder extends Reader
             }
 
             // Convert more bytes
-            char cb[] = new char[2];
+            char[] cb = new char[2];
             int n = read(cb, 0, 2);
             switch (n) {
             case -1:
@@ -151,7 +151,7 @@ public class StreamDecoder extends Reader
         }
     }
 
-    public int read(char cbuf[], int offset, int length) throws IOException {
+    public int read(char[] cbuf, int offset, int length) throws IOException {
         int off = offset;
         int len = length;
         synchronized (lock) {
@@ -215,54 +215,28 @@ public class StreamDecoder extends Reader
 
     // -- Charset-based stream decoder impl --
 
-    // In the early stages of the build we haven't yet built the NIO native
-    // code, so guard against that by catching the first UnsatisfiedLinkError
-    // and setting this flag so that later attempts fail quickly.
-    //
-    private static volatile boolean channelsAvailable = true;
-
-    private static FileChannel getChannel(FileInputStream in) {
-        if (!channelsAvailable)
-            return null;
-        try {
-            return in.getChannel();
-        } catch (UnsatisfiedLinkError x) {
-            channelsAvailable = false;
-            return null;
-        }
-    }
-
-    private Charset cs;
-    private CharsetDecoder decoder;
-    private ByteBuffer bb;
+    private final Charset cs;
+    private final CharsetDecoder decoder;
+    private final ByteBuffer bb;
 
     // Exactly one of these is non-null
-    private InputStream in;
-    private ReadableByteChannel ch;
+    private final InputStream in;
+    private final ReadableByteChannel ch;
 
     StreamDecoder(InputStream in, Object lock, Charset cs) {
         this(in, lock,
-         cs.newDecoder()
-         .onMalformedInput(CodingErrorAction.REPLACE)
-         .onUnmappableCharacter(CodingErrorAction.REPLACE));
+            cs.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE));
     }
 
     StreamDecoder(InputStream in, Object lock, CharsetDecoder dec) {
         super(lock);
         this.cs = dec.charset();
         this.decoder = dec;
-
-        // This path disabled until direct buffers are faster
-        if (false && in instanceof FileInputStream) {
-        ch = getChannel((FileInputStream)in);
-        if (ch != null)
-            bb = ByteBuffer.allocateDirect(DEFAULT_BYTE_BUFFER_SIZE);
-        }
-        if (ch == null) {
         this.in = in;
         this.ch = null;
         bb = ByteBuffer.allocate(DEFAULT_BYTE_BUFFER_SIZE);
-        }
         bb.flip();                      // So that bb is initially empty
     }
 
@@ -282,35 +256,34 @@ public class StreamDecoder extends Reader
     private int readBytes() throws IOException {
         bb.compact();
         try {
-        if (ch != null) {
-            // Read from the channel
-            int n = ch.read(bb);
-            if (n < 0)
-                return n;
-        } else {
-            // Read from the input stream, and then update the buffer
-            int lim = bb.limit();
-            int pos = bb.position();
-            assert (pos <= lim);
-            int rem = (pos <= lim ? lim - pos : 0);
-            assert rem > 0;
-            int n = in.read(bb.array(), bb.arrayOffset() + pos, rem);
-            if (n < 0)
-                return n;
-            if (n == 0)
-                throw new IOException("Underlying input stream returned zero bytes");
-            assert (n <= rem) : "n = " + n + ", rem = " + rem;
-            bb.position(pos + n);
-        }
+            if (ch != null) {
+                // Read from the channel
+                int n = ch.read(bb);
+                if (n < 0)
+                    return n;
+            } else {
+                // Read from the input stream, and then update the buffer
+                int lim = bb.limit();
+                int pos = bb.position();
+                assert (pos <= lim);
+                int rem = (pos <= lim ? lim - pos : 0);
+                int n = in.read(bb.array(), bb.arrayOffset() + pos, rem);
+                if (n < 0)
+                    return n;
+                if (n == 0)
+                    throw new IOException("Underlying input stream returned zero bytes");
+                assert (n <= rem) : "n = " + n + ", rem = " + rem;
+                bb.position(pos + n);
+            }
         } finally {
-        // Flip even when an IOException is thrown,
-        // otherwise the stream will stutter
-        bb.flip();
+            // Flip even when an IOException is thrown,
+            // otherwise the stream will stutter
+            bb.flip();
         }
 
         int rem = bb.remaining();
-            assert (rem != 0) : rem;
-            return rem;
+        assert (rem != 0) : rem;
+        return rem;
     }
 
     int implRead(char[] cbuf, int off, int end) throws IOException {
@@ -322,44 +295,46 @@ public class StreamDecoder extends Reader
         assert (end - off > 1);
 
         CharBuffer cb = CharBuffer.wrap(cbuf, off, end - off);
-        if (cb.position() != 0)
-        // Ensure that cb[0] == cbuf[off]
-        cb = cb.slice();
+        if (cb.position() != 0) {
+            // Ensure that cb[0] == cbuf[off]
+            cb = cb.slice();
+        }
 
         boolean eof = false;
         for (;;) {
-        CoderResult cr = decoder.decode(bb, cb, eof);
-        if (cr.isUnderflow()) {
-            if (eof)
-                break;
-            if (!cb.hasRemaining())
-                break;
-            if ((cb.position() > 0) && !inReady())
-                break;          // Block at most once
-            int n = readBytes();
-            if (n < 0) {
-                eof = true;
-                if ((cb.position() == 0) && (!bb.hasRemaining()))
+            CoderResult cr = decoder.decode(bb, cb, eof);
+            if (cr.isUnderflow()) {
+                if (eof)
                     break;
-                decoder.reset();
+                if (!cb.hasRemaining())
+                    break;
+                if ((cb.position() > 0) && !inReady())
+                    break;          // Block at most once
+                int n = readBytes();
+                if (n < 0) {
+                    eof = true;
+                    if ((cb.position() == 0) && (!bb.hasRemaining()))
+                        break;
+                    decoder.reset();
+                }
+                continue;
             }
-            continue;
-        }
-        if (cr.isOverflow()) {
-            assert cb.position() > 0;
-            break;
-        }
-        cr.throwException();
+            if (cr.isOverflow()) {
+                assert cb.position() > 0;
+                break;
+            }
+            cr.throwException();
         }
 
         if (eof) {
-        // ## Need to flush decoder
-        decoder.reset();
+            // ## Need to flush decoder
+            decoder.reset();
         }
 
         if (cb.position() == 0) {
-            if (eof)
+            if (eof) {
                 return -1;
+            }
             assert false;
         }
         return cb.position();
@@ -373,22 +348,22 @@ public class StreamDecoder extends Reader
 
     private boolean inReady() {
         try {
-        return (((in != null) && (in.available() > 0))
-                || (ch instanceof FileChannel)); // ## RBC.available()?
+            return (((in != null) && (in.available() > 0))
+                    || (ch instanceof FileChannel)); // ## RBC.available()?
         } catch (IOException x) {
-        return false;
+            return false;
         }
     }
 
     boolean implReady() {
-            return bb.hasRemaining() || inReady();
+        return bb.hasRemaining() || inReady();
     }
 
     void implClose() throws IOException {
-        if (ch != null)
-        ch.close();
-        else
-        in.close();
+        if (ch != null) {
+            ch.close();
+        } else {
+            in.close();
+        }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class SunJSSE extends java.security.Provider {
     @java.io.Serial
     private static final long serialVersionUID = 3231825739635378733L;
 
-    private static String info = "Sun JSSE provider" +
+    private static final String info = "Sun JSSE provider" +
         "(PKCS12, SunX509/PKIX key/trust factories, " +
         "SSLv3/TLSv1/TLSv1.1/TLSv1.2/TLSv1.3/DTLSv1.0/DTLSv1.2)";
 
@@ -65,6 +65,7 @@ public class SunJSSE extends java.security.Provider {
         registerAlgorithms();
     }
 
+    @SuppressWarnings("removal")
     private void registerAlgorithms() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             doRegister();

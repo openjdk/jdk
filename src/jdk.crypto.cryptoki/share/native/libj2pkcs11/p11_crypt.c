@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -173,7 +173,7 @@ cleanup:
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0 && outBufP != NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     return ckEncryptedLen;
 }
@@ -239,7 +239,7 @@ cleanup:
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0 && outBufP != NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     return ckEncryptedPartLen;
 }
@@ -284,7 +284,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptFinal
                                          &ckLastEncryptedPartLen);
 
     if (directOut == 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
 
     ckAssertReturnValueOK(env, rv);
@@ -408,7 +408,7 @@ cleanup:
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0 && outBufP != NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     return ckOutLen;
 }
@@ -472,7 +472,7 @@ cleanup:
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
     if (directOut == 0 && outBufP != NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     return ckDecryptedPartLen;
 }
@@ -518,7 +518,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptFinal
                                          &ckLastPartLen);
 
     if (directOut == 0) {
-        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, JNI_COMMIT);
+        (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
 
     }
 

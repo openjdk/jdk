@@ -23,8 +23,9 @@
 
 package jar1;
 
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class LoadResourceBundle {
 

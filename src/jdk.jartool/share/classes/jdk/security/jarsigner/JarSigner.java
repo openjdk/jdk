@@ -793,13 +793,19 @@ public final class JarSigner {
                 ManifestDigester oldMd = new ManifestDigester(mfRawBytes);
                 ManifestDigester newMd = new ManifestDigester(mfNewRawBytes);
 
+                ManifestDigester.Entry oldEntry = oldMd.getMainAttsEntry();
+
                 // main attributes
-                if (manifest.getMainAttributes().equals(
-                        oldManifest.getMainAttributes())
+                if (oldEntry != null
+                        && manifest.getMainAttributes().equals(
+                                oldManifest.getMainAttributes())
                         && (manifest.getEntries().isEmpty() ||
-                            oldMd.getMainAttsEntry().isProperlyDelimited())) {
-                    oldMd.getMainAttsEntry().reproduceRaw(baos);
+                                oldEntry.isProperlyDelimited())) {
+                    oldEntry.reproduceRaw(baos);
                 } else {
+                    if (newMd.getMainAttsEntry() == null) {
+                        throw new SignatureException("Error getting new main attribute entry");
+                    }
                     newMd.getMainAttsEntry().reproduceRaw(baos);
                 }
 

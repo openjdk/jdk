@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class ByteArrayInputStream extends InputStream {
      *
      * @param   buf   the input buffer.
      */
-    public ByteArrayInputStream(byte buf[]) {
+    public ByteArrayInputStream(byte[] buf) {
         this.buf = buf;
         this.pos = 0;
         this.count = buf.length;
@@ -122,7 +122,7 @@ public class ByteArrayInputStream extends InputStream {
      * @param   offset   the offset in the buffer of the first byte to read.
      * @param   length   the maximum number of bytes to read from the buffer.
      */
-    public ByteArrayInputStream(byte buf[], int offset, int length) {
+    public ByteArrayInputStream(byte[] buf, int offset, int length) {
         this.buf = buf;
         this.pos = offset;
         this.count = Math.min(offset + length, buf.length);
@@ -156,6 +156,10 @@ public class ByteArrayInputStream extends InputStream {
      * {@code b[off+k-1]} in the manner performed by {@code System.arraycopy}.
      * The value {@code k} is added into {@code pos} and {@code k} is returned.
      * <p>
+     * Unlike the {@link InputStream#read(byte[],int,int) overridden method}
+     * of {@code InputStream}, this method returns {@code -1} instead of zero
+     * if the end of the stream has been reached and {@code len == 0}.
+     * <p>
      * This {@code read} method cannot block.
      *
      * @param   b     the buffer into which the data is read.
@@ -169,7 +173,7 @@ public class ByteArrayInputStream extends InputStream {
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}
      */
-    public synchronized int read(byte b[], int off, int len) {
+    public synchronized int read(byte[] b, int off, int len) {
         Objects.checkFromIndexSize(off, len, b.length);
 
         if (pos >= count) {

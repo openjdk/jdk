@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_CARDGENERATION_INLINE_HPP
 
 #include "gc/shared/cardGeneration.hpp"
+
 #include "gc/shared/space.hpp"
 
 inline size_t CardGeneration::capacity() const {

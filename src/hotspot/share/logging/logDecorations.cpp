@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,12 @@
 #include "logging/logConfiguration.hpp"
 #include "logging/logDecorations.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/management.hpp"
 
 const char* volatile LogDecorations::_host_name = NULL;
-
-LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
-    : _level(level), _tagset(tagset) {
-  create_decorations(decorators);
-}
+const int LogDecorations::_pid = os::current_process_id(); // This is safe to call during dynamic initialization.
 
 const char* LogDecorations::host_name() {
   const char* host_name = Atomic::load_acquire(&_host_name);
@@ -53,89 +49,95 @@ const char* LogDecorations::host_name() {
   return host_name;
 }
 
-void LogDecorations::create_decorations(const LogDecorators &decorators) {
-  char* position = _decorations_buffer;
-  #define DECORATOR(full_name, abbr) \
-  if (decorators.is_decorator(LogDecorators::full_name##_decorator)) { \
-    _decoration_offset[LogDecorators::full_name##_decorator] = position; \
-    position = create_##full_name##_decoration(position) + 1; \
-  } else { \
-    _decoration_offset[LogDecorators::full_name##_decorator] = NULL; \
-  }
+LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators) :
+  // When constructing the LogDecorations we resolve values for the requested decorators.
+  //
+  // _millis: needed for "time", "utctime", "timemillis":
+  _millis(
+      (decorators.is_decorator(LogDecorators::time_decorator) ||
+       decorators.is_decorator(LogDecorators::utctime_decorator) ||
+       decorators.is_decorator(LogDecorators::timemillis_decorator)) ? os::javaTimeMillis() : 0),
+  // _nanos: needed for "timenanos"
+  _nanos(decorators.is_decorator(LogDecorators::timenanos_decorator) ? os::javaTimeNanos() : 0),
+  // _elapsed_seconds: needed for "uptime", "uptimemillis", "uptimenanos"
+  _elapsed_seconds(
+      (decorators.is_decorator(LogDecorators::uptime_decorator) ||
+       decorators.is_decorator(LogDecorators::uptimemillis_decorator) ||
+       decorators.is_decorator(LogDecorators::uptimenanos_decorator)) ? os::elapsedTime() : 0),
+  // tid
+  _tid(decorators.is_decorator(LogDecorators::tid_decorator) ? os::current_thread_id() : 0),
+  // the rest is handed down by the caller
+  _level(level), _tagset(tagset)
+#ifdef ASSERT
+  , _decorators(decorators)
+#endif
+{
+}
+
+void LogDecorations::print_decoration(LogDecorators::Decorator decorator, outputStream* st) const {
+  assert(_decorators.is_decorator(decorator), "decorator was not part of the decorator set specified at creation.");
+  switch(decorator) {
+#define DECORATOR(name, abbr) case LogDecorators:: name##_decorator: print_##name##_decoration(st); break;
   DECORATOR_LIST
 #undef DECORATOR
+    default: ShouldNotReachHere();
+  }
 }
 
-#define ASSERT_AND_RETURN(written, pos) \
-    assert(written >= 0, "Decorations buffer overflow"); \
-    return pos + written;
-
-char* LogDecorations::create_time_decoration(char* pos) {
-  char* buf = os::iso8601_time(pos, 29);
-  int written = buf == NULL ? -1 : 29;
-  ASSERT_AND_RETURN(written, pos)
+const char* LogDecorations::decoration(LogDecorators::Decorator decorator, char* buf, size_t buflen) const {
+  stringStream ss(buf, buflen);
+  print_decoration(decorator, &ss);
+  return buf;
 }
 
-char* LogDecorations::create_utctime_decoration(char* pos) {
-  char* buf = os::iso8601_time(pos, 29, true);
-  int written = buf == NULL ? -1 : 29;
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_time_decoration(outputStream* st) const {
+  char buf[os::iso8601_timestamp_size];
+  char* result = os::iso8601_time(_millis, buf, sizeof(buf), false);
+  st->print_raw(result ? result : "");
 }
 
-char * LogDecorations::create_uptime_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%.3fs", os::elapsedTime());
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_utctime_decoration(outputStream* st) const {
+  char buf[os::iso8601_timestamp_size];
+  char* result = os::iso8601_time(_millis, buf, sizeof(buf), true);
+  st->print_raw(result ? result : "");
 }
 
-char * LogDecorations::create_timemillis_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ms", os::javaTimeMillis());
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_uptime_decoration(outputStream* st) const {
+  st->print("%.3fs", _elapsed_seconds);
 }
 
-// Small helper for uptime conversion
-static jlong elapsed_time(int unit_multiplier) {
-  return (jlong)(os::elapsedTime() * unit_multiplier);
+void LogDecorations::print_timemillis_decoration(outputStream* st) const {
+  st->print(INT64_FORMAT "ms", (int64_t)_millis);
 }
 
-char * LogDecorations::create_uptimemillis_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer),
-                             INT64_FORMAT "ms", elapsed_time(MILLIUNITS));
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_uptimemillis_decoration(outputStream* st) const {
+  st->print(INT64_FORMAT "ms", (int64_t)(_elapsed_seconds * MILLIUNITS));
 }
 
-char * LogDecorations::create_timenanos_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ns", os::javaTimeNanos());
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_timenanos_decoration(outputStream* st) const {
+  st->print(INT64_FORMAT "ns", (int64_t)_nanos);
 }
 
-char * LogDecorations::create_uptimenanos_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), INT64_FORMAT "ns", elapsed_time(NANOUNITS));
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_uptimenanos_decoration(outputStream* st) const {
+  st->print(INT64_FORMAT "ns", (int64_t)(_elapsed_seconds * NANOUNITS));
 }
 
-char * LogDecorations::create_pid_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%d", os::current_process_id());
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_pid_decoration(outputStream* st) const {
+  st->print("%d", _pid);
 }
 
-char * LogDecorations::create_tid_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer),
-                             INTX_FORMAT, os::current_thread_id());
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_tid_decoration(outputStream* st) const {
+  st->print(INTX_FORMAT, _tid);
 }
 
-char* LogDecorations::create_level_decoration(char* pos) {
-  // Avoid generating the level decoration because it may change.
-  // The decoration() method has a special case for level decorations.
-  return pos;
+void LogDecorations::print_level_decoration(outputStream* st) const {
+  st->print_raw(LogLevel::name(_level));
 }
 
-char* LogDecorations::create_tags_decoration(char* pos) {
-  int written = _tagset.label(pos, DecorationsBufferSize - (pos - _decorations_buffer));
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_tags_decoration(outputStream* st) const {
+  _tagset.label(st);
 }
 
-char* LogDecorations::create_hostname_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%s", host_name());
-  ASSERT_AND_RETURN(written, pos)
+void LogDecorations::print_hostname_decoration(outputStream* st) const {
+  st->print_raw(host_name());
 }

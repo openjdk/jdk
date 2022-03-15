@@ -59,9 +59,9 @@ void G1UncommitRegionTask::enqueue() {
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
-    // Change state to active and schedule with no delay.
+    // Change state to active and schedule using UncommitInitialDelayMs.
     uncommit_task->set_active(true);
-    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, 0);
+    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, UncommitInitialDelayMs);
   }
 }
 
@@ -124,9 +124,8 @@ void G1UncommitRegionTask::execute() {
   // Reschedule if there are more regions to uncommit, otherwise
   // change state to inactive.
   if (g1h->has_uncommittable_regions()) {
-    // No delay, reason to reschedule rather then to loop is to allow
-    // other tasks to run without waiting for a full uncommit cycle.
-    schedule(0);
+    // Delay to avoid starving application.
+    schedule(UncommitTaskDelayMs);
   } else {
     // Nothing more to do, change state and report a summary.
     set_active(false);

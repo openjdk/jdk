@@ -151,8 +151,12 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
   assert(current != NULL, "invariant");
   assert(_thread_group_hierarchy != NULL, "invariant");
 
+  oop thread_oop = jt->threadObj();
+  if (thread_oop == nullptr) {
+    return 0;
+  }
   // immediate thread group
-  Handle thread_group_handle(current, java_lang_Thread::threadGroup(jt->threadObj()));
+  Handle thread_group_handle(current, java_lang_Thread::threadGroup(thread_oop));
   if (thread_group_handle == NULL) {
     return 0;
   }
@@ -167,7 +171,7 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
   Handle parent_thread_group_handle(current, parent_thread_group_obj);
 
   // and check parents parents...
-  while (!(parent_thread_group_handle == NULL)) {
+  while (parent_thread_group_handle != nullptr) {
     const jweak parent_group_weak_ref = use_weak_handles ? JNIHandles::make_weak_global(parent_thread_group_handle) : NULL;
     thread_group_pointers = new JfrThreadGroupPointers(parent_thread_group_handle, parent_group_weak_ref);
     _thread_group_hierarchy->append(thread_group_pointers);

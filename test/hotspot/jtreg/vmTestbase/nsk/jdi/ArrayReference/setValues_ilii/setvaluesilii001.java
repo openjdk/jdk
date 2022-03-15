@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -805,11 +805,11 @@ public class setvaluesilii001 {
                         continue;
                     }
 
-                    element = new Double(doubleValue.value());
+                    element = Double.valueOf(doubleValue.value());
                     log.display("debuger> " + i + " field has " + j
                               + " element " + element);
 
-                    if (!element.equals(new Double(DOUB[j]))) {
+                    if (!element.equals(Double.valueOf(DOUB[j]))) {
                         log.complain("debuger FAILURE D3> " + j + " element of "
                                    + "array " + name + " was expected "
                                    + DOUB[j] + ", but returned " + element);
@@ -833,11 +833,11 @@ public class setvaluesilii001 {
                         continue;
                     }
 
-                    element = new Float(floatValue.value());
+                    element = Float.valueOf(floatValue.value());
                     log.display("debuger> " + i + " field has " + j
                               + " element " + element);
 
-                    if (!element.equals(new Float(FLOAT[j]))) {
+                    if (!element.equals(Float.valueOf(FLOAT[j]))) {
                         log.complain("debuger FAILURE F3> " + j + " element of "
                                    + "array " + name + " was expected "
                                    + FLOAT[j] + ", but returned " + element);

@@ -29,8 +29,8 @@
  *          as specified in javadoc and that no special
  *          logging permission is required for instantiating them.
  * @modules java.logging/java.util.logging:open
- * @run main/othervm HandlersConfigTest default
- * @run main/othervm HandlersConfigTest configured
+ * @run main/othervm -Djava.security.manager=allow HandlersConfigTest default
+ * @run main/othervm -Djava.security.manager=allow HandlersConfigTest configured
  */
 
 import java.io.IOException;

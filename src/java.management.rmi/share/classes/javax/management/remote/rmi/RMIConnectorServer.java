@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * the serial form of any deserialized object.
      * The pattern must be in same format as used in
      * {@link java.io.ObjectInputFilter.Config#createFilter}.
-     * It may define a white list of permitted classes, a black list of
+     * It may define an allow-list of permitted classes, a reject-list of
      * rejected classes, a maximum depth for the deserialized objects,
      * etc.
      * <p>
@@ -149,7 +149,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      * classes they use in their serial form.
      * <p>
      * Care must be taken when defining such a filter, as defining
-     * a white list too restrictive or a too wide a black list may
+     * an allow-list that is too narrow or a reject-list that is too wide may
      * prevent legitimate clients from interoperating with the
      * {@code JMXConnectorServer}.
      */
@@ -420,8 +420,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 try {
                     mbsf = new MBeanServerFileAccessController(accessFile);
                 } catch (IOException e) {
-                    throw EnvHelp.initCause(
-                        new IllegalArgumentException(e.getMessage()), e);
+                    throw new IllegalArgumentException(e.getMessage(), e);
                 }
                 // Set the MBeanServerForwarder
                 //
@@ -434,9 +433,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
             defaultClassLoader = EnvHelp.resolveServerClassLoader(
                     attributes, getMBeanServer());
         } catch (InstanceNotFoundException infc) {
-            IllegalArgumentException x = new
-                IllegalArgumentException("ClassLoader not found: "+infc);
-            throw EnvHelp.initCause(x,infc);
+            throw new IllegalArgumentException("ClassLoader not found: " + infc, infc);
         }
 
         if (tracing) logger.trace("start", "setting RMIServer object");
@@ -831,8 +828,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      */
     private static IOException newIOException(String message,
                                               Throwable cause) {
-        final IOException x = new IOException(message);
-        return EnvHelp.initCause(x,cause);
+        return new IOException(message, cause);
     }
 
 
@@ -855,6 +851,6 @@ public class RMIConnectorServer extends JMXConnectorServer {
     private static final int STOPPED = 2;
 
     private int state = CREATED;
-    private final static Set<RMIConnectorServer> openedServers =
+    private static final Set<RMIConnectorServer> openedServers =
             new HashSet<RMIConnectorServer>();
 }

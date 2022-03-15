@@ -29,54 +29,37 @@
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
  * @run testng/othervm/native
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   TestUpcallHighArity
- * @run testng/othervm/native
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=false
- *   TestUpcallHighArity
- * @run testng/othervm/native
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
- *   TestUpcallHighArity
- * @run testng/othervm/native
- *   -Dforeign.restricted=permit
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_INTRINSICS=true
+ *   --enable-native-access=ALL-UNNAMED
  *   TestUpcallHighArity
  */
 
+import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.LibraryLookup;
+import jdk.incubator.foreign.NativeSymbol;
+import jdk.incubator.foreign.SymbolLookup;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
-import static jdk.incubator.foreign.CLinker.*;
 import static org.testng.Assert.assertEquals;
 
 public class TestUpcallHighArity extends CallGeneratorHelper {
     static final MethodHandle MH_do_upcall;
     static final MethodHandle MH_passAndSave;
-    static final CLinker LINKER = CLinker.getInstance();
+    static final CLinker LINKER = CLinker.systemCLinker();
 
     // struct S_PDI { void* p0; double p1; int p2; };
-    static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.ofStruct(
+    static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.structLayout(
         C_POINTER.withName("p0"),
         C_DOUBLE.withName("p1"),
         C_INT.withName("p2")
@@ -84,15 +67,11 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
 
     static {
         try {
-            LibraryLookup lookup = LibraryLookup.ofLibrary("TestUpcallHighArity");
+            System.loadLibrary("TestUpcallHighArity");
+            SymbolLookup lookup = SymbolLookup.loaderLookup();
             MH_do_upcall = LINKER.downcallHandle(
                 lookup.lookup("do_upcall").get(),
-                MethodType.methodType(void.class, MemoryAddress.class,
-                    MemorySegment.class, int.class, double.class, MemoryAddress.class,
-                    MemorySegment.class, int.class, double.class, MemoryAddress.class,
-                    MemorySegment.class, int.class, double.class, MemoryAddress.class,
-                    MemorySegment.class, int.class, double.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(C_POINTER,
+                    FunctionDescriptor.ofVoid(C_POINTER,
                     S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
                     S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
                     S_PDI_LAYOUT, C_INT, C_DOUBLE, C_POINTER,
@@ -106,6 +85,14 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
     }
 
     static void passAndSave(Object[] o, AtomicReference<Object[]> ref) {
+        for (int i = 0; i < o.length; i++) {
+            if (o[i] instanceof MemorySegment) {
+                MemorySegment ms = (MemorySegment) o[i];
+                MemorySegment copy = MemorySegment.allocateNative(ms.byteSize(), ResourceScope.newImplicitScope());
+                copy.copyFrom(ms);
+                o[i] = copy;
+            }
+        }
         ref.set(o);
     }
 
@@ -116,13 +103,13 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
         MethodHandle target = MethodHandles.insertArguments(MH_passAndSave, 1, capturedArgs)
                                          .asCollector(Object[].class, upcallType.parameterCount())
                                          .asType(upcallType);
-        try (MemorySegment upcallStub = LINKER.upcallStub(target, upcallDescriptor)) {
-            List<MemorySegment> segments = new ArrayList<>();
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            NativeSymbol upcallStub = LINKER.upcallStub(target, upcallDescriptor, scope);
             Object[] args = new Object[upcallType.parameterCount() + 1];
-            args[0] = upcallStub.address();
+            args[0] = upcallStub;
             List<MemoryLayout> argLayouts = upcallDescriptor.argumentLayouts();
             for (int i = 1; i < args.length; i++) {
-                args[i] = makeArg(argLayouts.get(i - 1), null, false, segments);
+                args[i] = makeArg(argLayouts.get(i - 1), null, false);
             }
 
             downcall.invokeWithArguments(args);
@@ -132,10 +119,9 @@ public class TestUpcallHighArity extends CallGeneratorHelper {
                 if (upcallType.parameterType(i) == MemorySegment.class) {
                     assertStructEquals((MemorySegment) capturedArgsArr[i], (MemorySegment) args[i + 1], argLayouts.get(i));
                 } else {
-                    assertEquals(capturedArgsArr[i], args[i + 1]);
+                    assertEquals(capturedArgsArr[i], args[i + 1], "For index " + i);
                 }
             }
-            segments.forEach(MemorySegment::close);
         }
     }
 

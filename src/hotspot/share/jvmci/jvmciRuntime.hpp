@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,16 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
+#include "jvm_io.h"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
 #include "utilities/linkedlist.hpp"
+#if INCLUDE_G1GC
+#include "gc/g1/g1CardTable.hpp"
+#endif // INCLUDE_G1GC
 
 class JVMCIEnv;
 class JVMCICompiler;
@@ -286,7 +290,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                        const methodHandle&       target,
-                       nmethod*&                 nm,
+                       nmethodLocker&            code_handle,
                        int                       entry_bci,
                        CodeOffsets*              offsets,
                        int                       orig_pc_offset,
@@ -350,11 +354,11 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   static BasicType kindToBasicType(const Handle& kind, TRAPS);
 
-  static void new_instance_common(JavaThread* thread, Klass* klass, bool null_on_fail);
-  static void new_array_common(JavaThread* thread, Klass* klass, jint length, bool null_on_fail);
-  static void new_multi_array_common(JavaThread* thread, Klass* klass, int rank, jint* dims, bool null_on_fail);
-  static void dynamic_new_array_common(JavaThread* thread, oopDesc* element_mirror, jint length, bool null_on_fail);
-  static void dynamic_new_instance_common(JavaThread* thread, oopDesc* type_mirror, bool null_on_fail);
+  static void new_instance_common(JavaThread* current, Klass* klass, bool null_on_fail);
+  static void new_array_common(JavaThread* current, Klass* klass, jint length, bool null_on_fail);
+  static void new_multi_array_common(JavaThread* current, Klass* klass, int rank, jint* dims, bool null_on_fail);
+  static void dynamic_new_array_common(JavaThread* current, oopDesc* element_mirror, jint length, bool null_on_fail);
+  static void dynamic_new_instance_common(JavaThread* current, oopDesc* type_mirror, bool null_on_fail);
 
   // The following routines are called from compiled JVMCI code
 
@@ -364,11 +368,11 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // 2. Return NULL with a pending exception.
   // Compiled code must ensure these stubs are not called twice for the same allocation
   // site due to the non-repeatable side effects in the case of OOME.
-  static void new_instance(JavaThread* thread, Klass* klass) { new_instance_common(thread, klass, false); }
-  static void new_array(JavaThread* thread, Klass* klass, jint length) { new_array_common(thread, klass, length, false); }
-  static void new_multi_array(JavaThread* thread, Klass* klass, int rank, jint* dims) { new_multi_array_common(thread, klass, rank, dims, false); }
-  static void dynamic_new_array(JavaThread* thread, oopDesc* element_mirror, jint length) { dynamic_new_array_common(thread, element_mirror, length, false); }
-  static void dynamic_new_instance(JavaThread* thread, oopDesc* type_mirror) { dynamic_new_instance_common(thread, type_mirror, false); }
+  static void new_instance(JavaThread* current, Klass* klass) { new_instance_common(current, klass, false); }
+  static void new_array(JavaThread* current, Klass* klass, jint length) { new_array_common(current, klass, length, false); }
+  static void new_multi_array(JavaThread* current, Klass* klass, int rank, jint* dims) { new_multi_array_common(current, klass, rank, dims, false); }
+  static void dynamic_new_array(JavaThread* current, oopDesc* element_mirror, jint length) { dynamic_new_array_common(current, element_mirror, length, false); }
+  static void dynamic_new_instance(JavaThread* current, oopDesc* type_mirror) { dynamic_new_instance_common(current, type_mirror, false); }
 
   // When allocation fails, these stubs return NULL and have no pending exception. Compiled code
   // can use these stubs if a failed allocation will be retried (e.g., by deoptimizing and
@@ -380,13 +384,13 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   static void dynamic_new_instance_or_null(JavaThread* thread, oopDesc* type_mirror) { dynamic_new_instance_common(thread, type_mirror, true); }
 
   static void vm_message(jboolean vmError, jlong format, jlong v1, jlong v2, jlong v3);
-  static jint identity_hash_code(JavaThread* thread, oopDesc* obj);
-  static address exception_handler_for_pc(JavaThread* thread);
-  static void monitorenter(JavaThread* thread, oopDesc* obj, BasicLock* lock);
-  static void monitorexit (JavaThread* thread, oopDesc* obj, BasicLock* lock);
-  static jboolean object_notify(JavaThread* thread, oopDesc* obj);
-  static jboolean object_notifyAll(JavaThread* thread, oopDesc* obj);
-  static void vm_error(JavaThread* thread, jlong where, jlong format, jlong value);
+  static jint identity_hash_code(JavaThread* current, oopDesc* obj);
+  static address exception_handler_for_pc(JavaThread* current);
+  static void monitorenter(JavaThread* current, oopDesc* obj, BasicLock* lock);
+  static void monitorexit (JavaThread* current, oopDesc* obj, BasicLock* lock);
+  static jboolean object_notify(JavaThread* current, oopDesc* obj);
+  static jboolean object_notifyAll(JavaThread* current, oopDesc* obj);
+  static void vm_error(JavaThread* current, jlong where, jlong format, jlong value);
   static oopDesc* load_and_clear_exception(JavaThread* thread);
   static void log_printf(JavaThread* thread, const char* format, jlong v1, jlong v2, jlong v3);
   static void log_primitive(JavaThread* thread, jchar typeChar, jlong value, jboolean newline);
@@ -396,18 +400,24 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // followed by its address.
   static void log_object(JavaThread* thread, oopDesc* object, bool as_string, bool newline);
 #if INCLUDE_G1GC
+  using CardValue = G1CardTable::CardValue;
   static void write_barrier_pre(JavaThread* thread, oopDesc* obj);
-  static void write_barrier_post(JavaThread* thread, void* card);
+  static void write_barrier_post(JavaThread* thread, volatile CardValue* card);
 #endif
   static jboolean validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child);
 
   // used to throw exceptions from compiled JVMCI code
-  static int throw_and_post_jvmti_exception(JavaThread* thread, const char* exception, const char* message);
+  static int throw_and_post_jvmti_exception(JavaThread* current, const char* exception, const char* message);
   // helper methods to throw exception with complex messages
-  static int throw_klass_external_name_exception(JavaThread* thread, const char* exception, Klass* klass);
-  static int throw_class_cast_exception(JavaThread* thread, const char* exception, Klass* caster_klass, Klass* target_klass);
+  static int throw_klass_external_name_exception(JavaThread* current, const char* exception, Klass* klass);
+  static int throw_class_cast_exception(JavaThread* current, const char* exception, Klass* caster_klass, Klass* target_klass);
+
+  // A helper to allow invocation of an arbitrary Java method.  For simplicity the method is
+  // restricted to a static method that takes at most one argument.  For calling convention
+  // simplicty all types are passed by being converted into a jlong
+  static jlong invoke_static_method_one_arg(JavaThread* current, Method* method, jlong argument);
 
   // Test only function
-  static jint test_deoptimize_call_int(JavaThread* thread, int value);
+  static jint test_deoptimize_call_int(JavaThread* current, int value);
 };
 #endif // SHARE_JVMCI_JVMCIRUNTIME_HPP

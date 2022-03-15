@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class BadBSM {
         TestCommon.list("WrongBSM",
                         "@lambda-proxy WrongBSM 7"),
         "-Xlog:cds+lambda=debug");
-    out.shouldHaveExitValue(0);
-    out.shouldContain( "is_supported_invokedynamic check failed for cp_index 7");
+    out.shouldHaveExitValue(0)
+       .shouldContain("resolve_indy for class WrongBSM has encountered exception: java.lang.NoSuchMethodError");
   }
 }

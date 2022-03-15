@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@ import javax.naming.directory.InvalidSearchFilterException;
 
 import java.io.IOException;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * LDAP (RFC-1960) and LDAPv3 (RFC-2254) search filters.
  *
@@ -59,9 +62,9 @@ final class Filter {
         byte[] filter;
         int filterLen;
         if (isLdapv3) {
-            filter = filterStr.getBytes("UTF8");
+            filter = filterStr.getBytes(UTF_8);
         } else {
-            filter = filterStr.getBytes("8859_1");
+            filter = filterStr.getBytes(ISO_8859_1);
         }
         filterLen = filter.length;
         if (dbg) {
@@ -189,24 +192,6 @@ final class Filter {
 
     }
 
-    /**
-     * convert character 'c' that represents a hexadecimal digit to an integer.
-     * if 'c' is not a hexadecimal digit [0-9A-Fa-f], -1 is returned.
-     * otherwise the converted value is returned.
-     */
-    private static int hexchar2int( byte c ) {
-        if ( c >= '0' && c <= '9' ) {
-            return( c - '0' );
-        }
-        if ( c >= 'A' && c <= 'F' ) {
-            return( c - 'A' + 10 );
-        }
-        if ( c >= 'a' && c <= 'f' ) {
-            return( c - 'a' + 10 );
-        }
-        return( -1 );
-    }
-
     // called by the LdapClient.compare method
     static byte[] unescapeFilterValue(byte[] orig, int start, int end)
         throws NamingException {
@@ -225,7 +210,7 @@ final class Filter {
             ch = orig[i];
             if (escape) {
                 // Try LDAP V3 escape (\xx)
-                if ((ival = hexchar2int(ch)) < 0) {
+                if ((ival = Character.digit(ch, 16)) < 0) {
 
                     /**
                      * If there is no hex char following a '\' when
@@ -322,7 +307,6 @@ final class Filter {
             dbgIndent++;
         }
 
-        String type, value;
         int valueStart, valueEnd, typeStart, typeEnd;
 
         int eq;

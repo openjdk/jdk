@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public interface JavaConstant extends Constant, JavaValue {
     PrimitiveConstant DOUBLE_1 = new PrimitiveConstant(JavaKind.Double, Double.doubleToRawLongBits(1.0D));
     PrimitiveConstant TRUE = new PrimitiveConstant(JavaKind.Boolean, 1L);
     PrimitiveConstant FALSE = new PrimitiveConstant(JavaKind.Boolean, 0L);
+    PrimitiveConstant ILLEGAL = new PrimitiveConstant(JavaKind.Illegal, 0);
 
     /**
      * Returns the Java kind of this constant.
@@ -300,6 +301,29 @@ public interface JavaConstant extends Constant, JavaValue {
         }
     }
 
+    static PrimitiveConstant forPrimitive(JavaKind kind, long rawValue) {
+        switch (kind) {
+            case Boolean:
+                return JavaConstant.forBoolean(rawValue != 0);
+            case Byte:
+                return JavaConstant.forByte((byte) rawValue);
+            case Char:
+                return JavaConstant.forChar((char) rawValue);
+            case Short:
+                return JavaConstant.forShort((short) rawValue);
+            case Int:
+                return JavaConstant.forInt((int) rawValue);
+            case Long:
+                return JavaConstant.forLong(rawValue);
+            case Float:
+                return JavaConstant.forFloat(Float.intBitsToFloat((int) rawValue));
+            case Double:
+                return JavaConstant.forDouble(Double.longBitsToDouble(rawValue));
+            default:
+                throw new IllegalArgumentException("Unsupported kind: " + kind);
+        }
+    }
+
     /**
      * Creates a boxed constant for the given boxed primitive value.
      *
@@ -329,7 +353,7 @@ public interface JavaConstant extends Constant, JavaValue {
     }
 
     static PrimitiveConstant forIllegal() {
-        return new PrimitiveConstant(JavaKind.Illegal, 0);
+        return JavaConstant.ILLEGAL;
     }
 
     /**

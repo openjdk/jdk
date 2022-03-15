@@ -49,8 +49,8 @@ public @interface Cutoff {
     /**
      * Settings name {@code "cutoff"} for configuring event cutoffs.
      */
-    public final static String NAME = "cutoff";
-    public final static String INFINITY = "infinity";
+    public static final String NAME = "cutoff";
+    public static final String INFINITY = "infinity";
 
     /**
      * Cutoff, for example {@code "20 ms"}.

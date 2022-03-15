@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,39 @@
 
 package sun.java2d.cmm.lcms;
 
-import java.awt.color.ICC_Profile;
 import java.awt.color.CMMException;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.awt.image.ColorModel;
-import java.awt.image.SampleModel;
 import java.awt.image.DataBuffer;
-import sun.java2d.cmm.*;
-import sun.java2d.cmm.lcms.*;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+import java.lang.ref.Reference;
+
+import sun.java2d.cmm.ColorTransform;
+
 import static sun.java2d.cmm.lcms.LCMSImageLayout.ImageLayoutException;
 
+final class LCMSTransform implements ColorTransform {
 
-public class LCMSTransform implements ColorTransform {
-    long ID;
-    private int inFormatter = 0;
-    private boolean isInIntPacked = false;
-    private int outFormatter = 0;
-    private boolean isOutIntPacked = false;
+    private static final class NativeTransform {
+        private long ID;
+        private int inFormatter;
+        private boolean isInIntPacked;
+        private int outFormatter;
+        private boolean isOutIntPacked;
 
+        private boolean match(LCMSImageLayout in, LCMSImageLayout out) {
+            return inFormatter == in.pixelType
+                    && isInIntPacked == in.isIntPacked
+                    && outFormatter == out.pixelType
+                    && isOutIntPacked == out.isIntPacked;
+        }
+    }
+
+    private volatile NativeTransform transform;
     ICC_Profile[] profiles;
     LCMSProfile[] lcmsProfiles;
     int renderType;
@@ -63,15 +75,6 @@ public class LCMSTransform implements ColorTransform {
 
     private int numInComponents = -1;
     private int numOutComponents = -1;
-
-    private Object disposerReferent = new Object();
-
-    /* the class initializer */
-    static {
-        if (ProfileDeferralMgr.deferring) {
-            ProfileDeferralMgr.activateProfiles();
-        }
-    }
 
     public LCMSTransform(ICC_Profile profile, int renderType,
                          int transformType)
@@ -129,37 +132,58 @@ public class LCMSTransform implements ColorTransform {
         return numOutComponents;
     }
 
-    private synchronized void doTransform(LCMSImageLayout in,
-                                          LCMSImageLayout out) {
-        // update native transfrom if needed
-        if (ID == 0L ||
-            inFormatter != in.pixelType || isInIntPacked != in.isIntPacked ||
-            outFormatter != out.pixelType || isOutIntPacked != out.isIntPacked)
-        {
+    private void doTransform(LCMSImageLayout in, LCMSImageLayout out) {
+        NativeTransform tfm = transform;
+        // update native transform if needed
+        if (tfm == null || !tfm.match(in, out)) {
+            synchronized (this) {
+                tfm = transform;
+                if (tfm == null || !tfm.match(in, out)) {
+                    tfm = new NativeTransform();
+                    tfm.inFormatter = in.pixelType;
+                    tfm.isInIntPacked = in.isIntPacked;
 
-            if (ID != 0L) {
-                // Disposer will destroy forgotten transform
-                disposerReferent = new Object();
+                    tfm.outFormatter = out.pixelType;
+                    tfm.isOutIntPacked = out.isIntPacked;
+
+                    tfm.ID = LCMS.createTransform(lcmsProfiles, renderType,
+                                                  tfm.inFormatter,
+                                                  tfm.isInIntPacked,
+                                                  tfm.outFormatter,
+                                                  tfm.isOutIntPacked, tfm);
+                    // Disposer will destroy forgotten transform
+                    transform = tfm;
+                }
             }
-            inFormatter = in.pixelType;
-            isInIntPacked = in.isIntPacked;
-
-            outFormatter = out.pixelType;
-            isOutIntPacked = out.isIntPacked;
-
-            ID = LCMS.createTransform(lcmsProfiles, renderType,
-                                            inFormatter, isInIntPacked,
-                                            outFormatter, isOutIntPacked,
-                                            disposerReferent);
         }
+        LCMS.colorConvert(tfm.ID, in.width, in.height, in.offset,
+                          in.nextRowOffset, out.offset, out.nextRowOffset,
+                          in.imageAtOnce, out.imageAtOnce,
+                          in.dataArray, out.dataArray,
+                          in.dataType, out.dataType);
+        Reference.reachabilityFence(tfm); // prevent deallocation of "tfm.ID"
+    }
 
-        LCMS.colorConvert(this, in, out);
+    /**
+     * Returns {@code true} if lcms may supports this format directly.
+     */
+    private static boolean isLCMSSupport(BufferedImage src, BufferedImage dst) {
+        if (!dst.getColorModel().hasAlpha()) {
+            return true;
+        }
+        // lcms as of now does not support pre-alpha
+        if (src.isAlphaPremultiplied() || dst.isAlphaPremultiplied()) {
+            return false;
+        }
+        // lcms does not set correct alpha for transparent dst if src is opaque
+        // is it feature or bug?
+        return dst.getColorModel().hasAlpha() == src.getColorModel().hasAlpha();
     }
 
     public void colorConvert(BufferedImage src, BufferedImage dst) {
         LCMSImageLayout srcIL, dstIL;
         try {
-            if (!dst.getColorModel().hasAlpha()) {
+            if (isLCMSSupport(src, dst)) {
                 dstIL = LCMSImageLayout.createImageLayout(dst);
 
                 if (dstIL != null) {

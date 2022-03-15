@@ -26,9 +26,9 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "runtime/safepoint.hpp"
 
+JfrSignal JfrTraceIdEpoch::_tag_state;
 bool JfrTraceIdEpoch::_epoch_state = false;
 bool JfrTraceIdEpoch::_synchronizing = false;
-volatile bool JfrTraceIdEpoch::_changed_tag_state = false;
 
 void JfrTraceIdEpoch::begin_epoch_shift() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
@@ -43,3 +43,4 @@ void JfrTraceIdEpoch::end_epoch_shift() {
   OrderAccess::storestore();
   _synchronizing = false;
 }
+

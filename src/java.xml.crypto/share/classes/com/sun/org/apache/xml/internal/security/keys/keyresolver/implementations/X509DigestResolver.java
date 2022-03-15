@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -50,8 +51,9 @@ public class X509DigestResolver extends KeyResolverSpi {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(X509DigestResolver.class);
 
-    /** {{@inheritDoc}}. */
-    public boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
+    /** {@inheritDoc} */
+    @Override
+    protected boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
         if (XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_X509DATA)) {
             try {
                 X509Data x509Data = new X509Data(element, baseURI);
@@ -64,11 +66,12 @@ public class X509DigestResolver extends KeyResolverSpi {
         }
     }
 
-    /** {{@inheritDoc}}. */
-    public PublicKey engineLookupAndResolvePublicKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected PublicKey engineResolvePublicKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
 
-        X509Certificate cert = this.engineLookupResolveX509Certificate(element, baseURI, storage);
+        X509Certificate cert = this.engineResolveX509Certificate(element, baseURI, storage, secureValidation);
 
         if (cert != null) {
             return cert.getPublicKey();
@@ -77,15 +80,10 @@ public class X509DigestResolver extends KeyResolverSpi {
         return null;
     }
 
-    /** {{@inheritDoc}}. */
-    public X509Certificate engineLookupResolveX509Certificate(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected X509Certificate engineResolveX509Certificate(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
-
-        LOG.debug("Can I resolve {}", element.getTagName());
-
-        if (!engineCanResolve(element, baseURI, storage)) {
-            return null;
-        }
 
         try {
             return resolveCertificate(element, baseURI, storage);
@@ -96,8 +94,9 @@ public class X509DigestResolver extends KeyResolverSpi {
         return null;
     }
 
-    /** {{@inheritDoc}}. */
-    public SecretKey engineLookupAndResolveSecretKey(Element element, String baseURI, StorageResolver storage)
+    /** {@inheritDoc} */
+    @Override
+    protected SecretKey engineResolveSecretKey(Element element, String baseURI, StorageResolver storage, boolean secureValidation)
         throws KeyResolverException {
         return null;
     }
@@ -162,11 +161,18 @@ public class X509DigestResolver extends KeyResolverSpi {
      */
     private void checkStorage(StorageResolver storage) throws KeyResolverException {
         if (storage == null) {
-            Object exArgs[] = { Constants._TAG_X509DIGEST };
+            Object[] exArgs = { Constants._TAG_X509DIGEST };
             KeyResolverException ex = new KeyResolverException("KeyResolver.needStorageResolver", exArgs);
             LOG.debug("", ex);
             throw ex;
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    protected PrivateKey engineResolvePrivateKey(
+        Element element, String baseURI, StorageResolver storage, boolean secureValidation
+    ) {
+        return null;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.test.lib.thread.ProcessThread;
  * <pre>
  * {@code
  * // start jstatd process
- * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy
+ * jstatd -J-XX:+UsePerfData
  *
  * // run jps and verify its output
  * jps -J-XX:+UsePerfData hostname
@@ -244,20 +244,16 @@ public final class JstatdTest {
     /**
      * Depending on test settings command line can look like:
      *
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -p port
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -p port -r rmiport
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -n serverName
-     * jstatd -J-XX:+UsePerfData -J-Djava.security.policy=all.policy -p port -n serverName
+     * jstatd -J-XX:+UsePerfData
+     * jstatd -J-XX:+UsePerfData -p port
+     * jstatd -J-XX:+UsePerfData -p port -r rmiport
+     * jstatd -J-XX:+UsePerfData -n serverName
+     * jstatd -J-XX:+UsePerfData -p port -n serverName
      */
     private String[] getJstatdCmd() throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstatd");
         launcher.addVMArg("-XX:+UsePerfData");
         String testSrc = System.getProperty("test.src");
-        File policy = new File(testSrc, "all.policy");
-        assertTrue(policy.exists() && policy.isFile(),
-                "Security policy " + policy.getAbsolutePath() + " does not exist or not a file");
-        launcher.addVMArg("-Djava.security.policy=" + policy.getAbsolutePath());
         if (port != null) {
             addToolArg(launcher,"-p", port);
         }

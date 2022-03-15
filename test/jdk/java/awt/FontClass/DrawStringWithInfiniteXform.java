@@ -35,11 +35,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class DrawStringWithInfiniteXform {
-    Timer timer;
-    boolean done;
+
+    volatile Timer timer;
+    volatile boolean done;
+
     class ScheduleTask extends TimerTask {
         public void run() {
-            timer.cancel();
             if (!done) {
                 throw new
                 RuntimeException("drawString with InfiniteXform transform takes long time");
@@ -48,7 +49,7 @@ public class DrawStringWithInfiniteXform {
     }
     public DrawStringWithInfiniteXform() {
         timer = new Timer();
-        timer.schedule(new ScheduleTask(), 10000);
+        timer.schedule(new ScheduleTask(), 20000);
     }
 
     public static void main(String [] args) {
@@ -73,6 +74,7 @@ public class DrawStringWithInfiniteXform {
             g2d.drawString("abc", 20, 20);
         }
         done = true;
+        timer.cancel();
         System.out.println("Test passed");
     }
 }

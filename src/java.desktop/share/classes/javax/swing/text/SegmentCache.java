@@ -25,6 +25,7 @@
 package javax.swing.text;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -110,7 +111,11 @@ class SegmentCache {
     public void releaseSegment(Segment segment) {
         if (segment instanceof CachedSegment) {
             synchronized(this) {
+                if (segment.copy) {
+                    Arrays.fill(segment.array, '\u0000');
+                }
                 segment.array = null;
+                segment.copy = false;
                 segment.count = 0;
                 segments.add(segment);
             }

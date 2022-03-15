@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
 
                 buildSignature(constructorDocTree);
                 buildDeprecationInfo(constructorDocTree);
+                buildPreviewInfo(constructorDocTree);
                 buildConstructorComments(constructorDocTree);
                 buildTagInfo(constructorDocTree);
 
@@ -158,6 +159,15 @@ public class ConstructorBuilder extends AbstractMemberBuilder {
      */
     protected void buildDeprecationInfo(Content constructorDocTree) {
         writer.addDeprecated(currentConstructor, constructorDocTree);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param constructorDocTree the content tree to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content constructorDocTree) {
+        writer.addPreview(currentConstructor, constructorDocTree);
     }
 
     /**

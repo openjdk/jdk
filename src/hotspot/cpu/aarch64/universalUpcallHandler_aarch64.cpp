@@ -71,7 +71,8 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
 
   // Capture prev stack pointer (stack arguments base)
   __ add(rscratch1, rfp, 16);   // Skip saved FP and LR
-  __ str(rscratch1, Address(sp, layout.stack_args));
+  Address slot = __ legitimize_address(Address(sp, layout.stack_args), wordSize, rscratch2);
+  __ str(rscratch1, slot);
 
   // Call upcall helper
   __ ldr(c_rarg0, rec_adr);
@@ -98,4 +99,13 @@ address ProgrammableUpcallHandler::generate_upcall_stub(jobject rec, jobject jab
   BufferBlob* blob = BufferBlob::create("upcall_stub", &buffer);
 
   return blob->code_begin();
+}
+
+address ProgrammableUpcallHandler::generate_optimized_upcall_stub(jobject mh, Method* entry, jobject jabi, jobject jconv) {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool ProgrammableUpcallHandler::supports_optimized_upcalls() {
+  return false;
 }

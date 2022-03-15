@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
+import java.util.Arrays;
 
 import sun.security.util.*;
 
@@ -74,31 +75,60 @@ public final class RSAPrivateCrtKeyImpl
     private transient AlgorithmParameterSpec keyParams;
 
     /**
-     * Generate a new key from its encoding. Returns a CRT key if possible
-     * and a non-CRT key otherwise. Used by RSAKeyFactory.
+     * Generate a new RSAPrivate(Crt)Key from the specified type,
+     * format and encoding. Returns a CRT key if possible and a non-CRT
+     * key otherwise.
+     * Also used by SunPKCS11 provider.
      */
-    public static RSAPrivateKey newKey(byte[] encoded)
-            throws InvalidKeyException {
+    public static RSAPrivateKey newKey(KeyType type, String format,
+            byte[] encoded) throws InvalidKeyException {
         if (encoded == null || encoded.length == 0) {
             throw new InvalidKeyException("Missing key encoding");
         }
-        RSAPrivateCrtKeyImpl key = new RSAPrivateCrtKeyImpl(encoded);
-        // check all CRT-specific components are available, if any one
-        // missing, return a non-CRT key instead
-        if ((key.getPublicExponent().signum() == 0) ||
+        switch (format) {
+        case "PKCS#8":
+            RSAPrivateCrtKeyImpl key = new RSAPrivateCrtKeyImpl(encoded);
+            RSAKeyFactory.checkKeyAlgo(key, type.keyAlgo);
+            // check all CRT-specific components are available, if any one
+            // missing, return a non-CRT key instead
+            if (checkComponents(key)) {
+                return key;
+            } else {
+                return new RSAPrivateKeyImpl(key.type, key.keyParams,
+                    key.getModulus(), key.getPrivateExponent());
+            }
+        case "PKCS#1":
+            try {
+                BigInteger[] comps = parseASN1(encoded);
+                if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
+                    (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
+                    (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
+                    return new RSAPrivateKeyImpl(type, null, comps[0],
+                            comps[2]);
+                } else {
+                    return new RSAPrivateCrtKeyImpl(type, null, comps[0],
+                            comps[1], comps[2], comps[3], comps[4], comps[5],
+                            comps[6], comps[7]);
+                }
+            } catch (IOException ioe) {
+                throw new InvalidKeyException("Invalid PKCS#1 encoding", ioe);
+            }
+        default:
+            throw new InvalidKeyException("Unsupported RSA Private(Crt)Key "
+                    + "format: " + format);
+        }
+    }
+
+    /**
+     * Validate if all CRT-specific components are available.
+     */
+    static boolean checkComponents(RSAPrivateCrtKey key) {
+        return !((key.getPublicExponent().signum() == 0) ||
             (key.getPrimeExponentP().signum() == 0) ||
             (key.getPrimeExponentQ().signum() == 0) ||
             (key.getPrimeP().signum() == 0) ||
             (key.getPrimeQ().signum() == 0) ||
-            (key.getCrtCoefficient().signum() == 0)) {
-            return new RSAPrivateKeyImpl(
-                key.type, key.keyParams,
-                key.getModulus(),
-                key.getPrivateExponent()
-            );
-        } else {
-            return key;
-        }
+            (key.getCrtCoefficient().signum() == 0));
     }
 
     /**
@@ -111,7 +141,7 @@ public final class RSAPrivateCrtKeyImpl
             BigInteger n, BigInteger e, BigInteger d,
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
-        RSAPrivateKey key;
+
         if ((e.signum() == 0) || (p.signum() == 0) ||
             (q.signum() == 0) || (pe.signum() == 0) ||
             (qe.signum() == 0) || (coeff.signum() == 0)) {
@@ -126,7 +156,7 @@ public final class RSAPrivateCrtKeyImpl
     /**
      * Construct a key from its encoding. Called from newKey above.
      */
-    RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
+    private RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
         super(encoded);
         parseKeyBits();
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
@@ -170,20 +200,44 @@ public final class RSAPrivateCrtKeyImpl
         this.keyParams = keyParams;
 
         try {
-            // generate the key encoding
-            DerOutputStream out = new DerOutputStream();
+            byte[][] nbytes = new byte[8][];
+            nbytes[0] = n.toByteArray();
+            nbytes[1] = e.toByteArray();
+            nbytes[2] = d.toByteArray();
+            nbytes[3] = p.toByteArray();
+            nbytes[4] = q.toByteArray();
+            nbytes[5] = pe.toByteArray();
+            nbytes[6] = qe.toByteArray();
+            nbytes[7] = coeff.toByteArray();
+
+            // Initiate with a big enough size so there's no need to
+            // reallocate memory later and thus can be cleaned up
+            // reliably.
+            DerOutputStream out = new DerOutputStream(
+                    nbytes[0].length + nbytes[1].length +
+                    nbytes[2].length + nbytes[3].length +
+                    nbytes[4].length + nbytes[5].length +
+                    nbytes[6].length + nbytes[7].length +
+                    100); // Enough for version(3) and 8 tag+length(3 or 4)
             out.putInteger(0); // version must be 0
-            out.putInteger(n);
-            out.putInteger(e);
-            out.putInteger(d);
-            out.putInteger(p);
-            out.putInteger(q);
-            out.putInteger(pe);
-            out.putInteger(qe);
-            out.putInteger(coeff);
-            DerValue val =
-                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+            out.putInteger(nbytes[0]);
+            out.putInteger(nbytes[1]);
+            out.putInteger(nbytes[2]);
+            out.putInteger(nbytes[3]);
+            out.putInteger(nbytes[4]);
+            out.putInteger(nbytes[5]);
+            out.putInteger(nbytes[6]);
+            out.putInteger(nbytes[7]);
+            // Private values from [2] on.
+            Arrays.fill(nbytes[2], (byte)0);
+            Arrays.fill(nbytes[3], (byte)0);
+            Arrays.fill(nbytes[4], (byte)0);
+            Arrays.fill(nbytes[5], (byte)0);
+            Arrays.fill(nbytes[6], (byte)0);
+            Arrays.fill(nbytes[7], (byte)0);
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
             key = val.toByteArray();
+            val.clear();
         } catch (IOException exc) {
             // should never occur
             throw new InvalidKeyException(exc);
@@ -258,19 +312,21 @@ public final class RSAPrivateCrtKeyImpl
                + "\n  modulus: " + n + "\n  private exponent: " + d;
     }
 
-    private void parseKeyBits() throws InvalidKeyException {
+    // utility method for parsing DER encoding of RSA private keys in PKCS#1
+    // format as defined in RFC 8017 Appendix A.1.2, i.e. SEQ of version, n,
+    // e, d, p, q, pe, qe, and coeff, and return the parsed components.
+    private static BigInteger[] parseASN1(byte[] raw) throws IOException {
+        DerValue derValue = new DerValue(raw);
         try {
-            DerInputStream in = new DerInputStream(key);
-            DerValue derValue = in.getDerValue();
             if (derValue.tag != DerValue.tag_Sequence) {
                 throw new IOException("Not a SEQUENCE");
             }
-            DerInputStream data = derValue.data;
-            int version = data.getInteger();
+            int version = derValue.data.getInteger();
             if (version != 0) {
                 throw new IOException("Version must be 0");
             }
 
+            BigInteger[] result = new BigInteger[8]; // n, e, d, p, q, pe, qe, coeff
             /*
              * Some implementations do not correctly encode ASN.1 INTEGER values
              * in 2's complement format, resulting in a negative integer when
@@ -278,17 +334,29 @@ public final class RSAPrivateCrtKeyImpl
              *
              * See CR 6255949
              */
-            n = data.getPositiveBigInteger();
-            e = data.getPositiveBigInteger();
-            d = data.getPositiveBigInteger();
-            p = data.getPositiveBigInteger();
-            q = data.getPositiveBigInteger();
-            pe = data.getPositiveBigInteger();
-            qe = data.getPositiveBigInteger();
-            coeff = data.getPositiveBigInteger();
+            for (int i = 0; i < result.length; i++) {
+                result[i] = derValue.data.getPositiveBigInteger();
+            }
             if (derValue.data.available() != 0) {
                 throw new IOException("Extra data available");
             }
+            return result;
+        } finally {
+            derValue.clear();
+        }
+    }
+
+    private void parseKeyBits() throws InvalidKeyException {
+        try {
+            BigInteger[] comps = parseASN1(key);
+            n = comps[0];
+            e = comps[1];
+            d = comps[2];
+            p = comps[3];
+            q = comps[4];
+            pe = comps[5];
+            qe = comps[6];
+            coeff = comps[7];
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid RSA private key", e);
         }

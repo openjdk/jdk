@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ extern "C" {
 /*
  * AWTTrayIcon
  */
-@interface AWTTrayIcon : NSObject {
+@interface AWTTrayIcon : NSObject <NSUserNotificationCenterDelegate>{
     jobject peer;
     AWTTrayIconView *view;
     NSStatusItem *theItem;
@@ -52,7 +52,7 @@ extern "C" {
 - (void) setTooltip:(NSString *)tooltip;
 - (NSStatusItem *)theItem;
 - (jobject) peer;
-- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize;
+- (void) setImage:(NSImage *) imagePtr sizing:(BOOL)autosize template:(BOOL)isTemplate;
 - (NSPoint) getLocationOnScreen;
 - (void) deliverJavaMouseEvent:(NSEvent*) event;
 
@@ -61,16 +61,14 @@ extern "C" {
 //==================================================================================
 /*
  * AWTTrayIconView */
-@interface AWTTrayIconView : NSView <NSMenuDelegate> {
+@interface AWTTrayIconView : NSStatusBarButton <NSMenuDelegate> {
 @public
     AWTTrayIcon *trayIcon;
-    NSImage* image;
     NSTrackingArea *trackingArea;
     BOOL isHighlighted;
 }
 -(id)initWithTrayIcon:(AWTTrayIcon *)theTrayIcon;
 -(void)setHighlighted:(BOOL)aFlag;
--(void)setImage:(NSImage*)anImage;
 -(void)setTrayIcon:(AWTTrayIcon*)theTrayIcon;
 -(void)addTrackingArea;
 

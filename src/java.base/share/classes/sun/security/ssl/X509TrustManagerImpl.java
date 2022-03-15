@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                 "null or zero-length authentication type");
         }
 
-        Validator v = null;
+        Validator v;
         if (checkClientTrusted) {
             v = clientValidator;
             if (v == null) {
@@ -197,7 +197,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             boolean checkClientTrusted) throws CertificateException {
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
-        X509Certificate[] trustedChain = null;
+        X509Certificate[] trustedChain;
         if ((socket != null) && socket.isConnected() &&
                                         (socket instanceof SSLSocket)) {
 
@@ -254,7 +254,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             boolean checkClientTrusted) throws CertificateException {
         Validator v = checkTrustedInit(chain, authType, checkClientTrusted);
 
-        X509Certificate[] trustedChain = null;
+        X509Certificate[] trustedChain;
         if (engine != null) {
             SSLSession session = engine.getHandshakeSession();
             if (session == null) {
@@ -404,6 +404,12 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         boolean identifiable = false;
         String peerHost = session.getPeerHost();
+        // Is it a Fully-Qualified Domain Names (FQDN) ending with a dot?
+        if (peerHost != null && peerHost.endsWith(".")) {
+            // Remove the ending dot, which is not allowed in SNIHostName.
+            peerHost = peerHost.substring(0, peerHost.length() - 1);
+        }
+
         if (!checkClientTrusted) {
             List<SNIServerName> sniNames = getRequestedServerNames(session);
             String sniHostName = getHostNameInSNI(sniNames);

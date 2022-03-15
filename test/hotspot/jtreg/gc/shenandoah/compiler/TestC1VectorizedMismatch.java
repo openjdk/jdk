@@ -22,7 +22,7 @@
  *
  */
 
-/* @test TestC1VectorizedMismatch
+/* @test
  * @summary test C1 vectorized mismatch intrinsic
  * @key randomness
  * @requires vm.gc.Shenandoah

@@ -223,7 +223,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="zh_cmn_Hans" replacement="zh_Hans" reason="deprecated"/>  <!-- Mandarin Chinese (Simplified) -->
 			<languageAlias type="zh_cmn_Hant" replacement="zh_Hant" reason="deprecated"/>  <!-- Mandarin Chinese (Traditional) -->
 			<languageAlias type="zh_gan" replacement="gan" reason="deprecated"/>  <!-- Kan or Gan -->
-			<languageAlias type="zh_wuu" replacement="wuu" reason="deprecated"/>  <!-- Shanghaiese or Wu -->
+			<languageAlias type="zh_wuu" replacement="wuu" reason="deprecated"/>  <!-- Shanghainese or Wu -->
 			<languageAlias type="zh_yue" replacement="yue" reason="deprecated"/>  <!-- Cantonese -->
 			
 			<!-- miscellaneous deprecated -->
@@ -233,7 +233,6 @@ For terms of use, see http://www.unicode.org/copyright.html
             <!-- legacy use -->
             <languageAlias type="sh" replacement="sr_Latn" reason="legacy"/> <!-- Serbo-Croatian -->
             <languageAlias type="cnr" replacement="sr_ME" reason="legacy"/> <!-- Montenegrin -->
-            <languageAlias type="no" replacement="nb" reason="legacy"/> <!-- Norwegian -->
             <languageAlias type="tl" replacement="fil" reason="legacy"/> <!-- Tagalog -->
             <!-- macrolanguages -->
 			<languageAlias type="aju" replacement="jrb" reason="macrolanguage"/> <!-- Moroccan Judeo-Arabic ⇒ Judeo-Arabic -->
@@ -300,8 +299,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="him" replacement="srx" reason="macrolanguage"/> <!-- Himachali ⇒ Sirmauri (= Pahari, Himachali) -->
 			<languageAlias type="mnk" replacement="man" reason="macrolanguage"/> <!-- Mandinka ⇒ Mandingo -->
 			<languageAlias type="bh" replacement="bho" reason="macrolanguage"/> <!-- Bihari ⇒ Bhojpuri -->
+
 			<languageAlias type="prs" replacement="fa_AF" reason="overlong"/> <!-- Dari ⇒ Farsi (Afganistan) -->
-			<languageAlias type="swc" replacement="sw_CD" reason="overlong"/> <!-- Dari ⇒ Farsi (Afganistan) -->
+			<languageAlias type="swc" replacement="sw_CD" reason="overlong"/> <!-- Congo Swahili ⇒ Swahili (Congo - Kinshasa) -->
 			<!-- incorrect three-letter language codes -->
             <!-- start of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
 			<languageAlias type="aar" replacement="aa" reason="overlong"/> <!-- [Afar] -->
@@ -422,7 +422,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="ndo" replacement="ng" reason="overlong"/> <!-- [Ndonga] -->
 			<languageAlias type="nld" replacement="nl" reason="overlong"/> <!-- [Dutch, Flemish] -->
 			<languageAlias type="nno" replacement="nn" reason="overlong"/> <!-- [Norwegian Nynorsk] -->
-			<languageAlias type="nor" replacement="nb" reason="overlong"/> <!-- [Norwegian] -->
+			<languageAlias type="nor" replacement="no" reason="overlong"/> <!-- [Norwegian] -->
 			<languageAlias type="nbl" replacement="nr" reason="overlong"/> <!-- [South Ndebele] -->
 			<languageAlias type="nav" replacement="nv" reason="overlong"/> <!-- [Navajo, Navaho] -->
 			<languageAlias type="nya" replacement="ny" reason="overlong"/> <!-- [Nyanja, Chewa, Chichewa] -->
@@ -1668,12 +1668,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR khq_ML ki_KE
 			kk_KZ kkj_CM kl_GL kln_KE km_KH kn_IN ko_KR kok_IN kpe_LR ks_Arab ks_Arab_IN
 			ks_Deva_IN ksb_TZ ksf_CM ksh_DE ku_TR kw_GB ky_KG
-			la_VA lag_TZ lb_LU lg_UG lij_IT lkt_US ln_CD lo_LA lrc_IR lt_LT lu_CD luo_KE luy_KE lv_LV
+			la_VA lag_TZ lb_LU lg_UG lij_IT lkt_US ln_CD lo_LA lrc_IR lt_LT lu_CD luo_KE
+			luy_KE lv_LV
 			mai_IN mas_KE mer_KE mfe_MU mg_MG mgh_MZ mgo_CM mi_NZ mk_MK ml_IN mn_MN
 			mn_Mong_CN mni_Beng mni_Beng_IN mni_Mtei_IN moh_CA mr_IN ms_Arab_MY ms_MY mt_MT
 			mua_CM mus_US my_MM myv_RU mzn_IR
-			naq_NA nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA nso_ZA
-			nus_SS nv_US ny_MW nyn_UG
+			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA nso_ZA nus_SS
+			nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
 			pa_Arab_PK pa_Guru pa_Guru_IN pcm_NG pl_PL prg_001 ps_AF pt_BR
 			qu_PE quc_GT

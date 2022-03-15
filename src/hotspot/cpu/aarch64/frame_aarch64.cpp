@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -127,13 +128,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
         return false;
       }
 
-      sender_pc = (address) this->fp()[return_addr_offset];
       // for interpreted frames, the value below is the sender "raw" sp,
       // which can be different from the sender unextended sp (the sp seen
       // by the sender) because of current frame local variables
       sender_sp = (intptr_t*) addr_at(sender_sp_offset);
       sender_unextended_sp = (intptr_t*) this->fp()[interpreter_frame_sender_sp_offset];
       saved_fp = (intptr_t*) this->fp()[link_offset];
+      sender_pc = pauth_strip_verifiable((address) this->fp()[return_addr_offset], (address)saved_fp);
 
     } else {
       // must be some sort of compiled/runtime frame
@@ -150,9 +151,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
         return false;
       }
       sender_unextended_sp = sender_sp;
-      sender_pc = (address) *(sender_sp-1);
       // Note: frame::sender_sp_offset is only valid for compiled frame
       saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
+      sender_pc = pauth_strip_verifiable((address) *(sender_sp-1), (address)saved_fp);
     }
 
 
@@ -267,14 +268,22 @@ bool frame::safe_for_sender(JavaThread *thread) {
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
+  address signing_sp = (((address*) sp())[-2]);
+  address signed_pc = pauth_sign_return_address(pc, (address)signing_sp);
+  address pc_old = pauth_strip_verifiable(*pc_addr, (address)signing_sp);
   if (TracePcPatching) {
-    tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
-                  p2i(pc_addr), p2i(*pc_addr), p2i(pc));
+    tty->print("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
+                  p2i(pc_addr), p2i(pc_old), p2i(pc));
+    if (VM_Version::use_rop_protection()) {
+      tty->print(" [signed " INTPTR_FORMAT " -> " INTPTR_FORMAT "]", p2i(*pc_addr), p2i(signed_pc));
+    }
+    tty->print_cr("");
   }
+
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  assert(_pc == *pc_addr || pc == *pc_addr, "must be");
-  *pc_addr = pc;
+  assert(_pc == pc_old || pc == pc_old, "must be");
+  *pc_addr = signed_pc;
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
     assert(original_pc == _pc, "expected original PC to be stored before patching");
@@ -354,7 +363,24 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map->include_argument_oops(), "should be set by clear");
   vmassert(jfa->last_Java_pc() != NULL, "not walkable");
   frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+  fr.set_sp_is_trusted();
+
   return fr;
+}
+
+OptimizedEntryBlob::FrameData* OptimizedEntryBlob::frame_data_for_frame(const frame& frame) const {
+  ShouldNotCallThis();
+  return nullptr;
+}
+
+bool frame::optimized_entry_frame_is_first() const {
+  ShouldNotCallThis();
+  return false;
+}
+
+frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
+  ShouldNotCallThis();
+  return {};
 }
 
 //------------------------------------------------------------------------------
@@ -434,23 +460,36 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2_OR_JVMCI
 
-  return frame(sender_sp, unextended_sp, link(), sender_pc());
-}
+  // For ROP protection, Interpreter will have signed the sender_pc, but there is no requirement to authenticate it here.
+  address sender_pc = pauth_strip_verifiable(sender_pc_maybe_signed(), (address)link());
 
+  return frame(sender_sp, unextended_sp, link(), sender_pc);
+}
 
 //------------------------------------------------------------------------------
 // frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
-  // we cannot rely upon the last fp having been saved to the thread
-  // in C2 code but it will have been pushed onto the stack. so we
-  // have to find it relative to the unextended sp
+  // When the sp of a compiled frame is correct, we can get the correct sender sp
+  // by unextended sp + frame size.
+  // For the following two scenarios, the sp of a compiled frame is correct:
+  //  a) This compiled frame is built from the anchor.
+  //  b) This compiled frame is built from a callee frame, and the callee frame can
+  //    calculate its sp correctly.
+  //
+  // For b), if the callee frame is a native code frame (such as leaf call), the sp of
+  // the compiled frame cannot be calculated correctly. There is currently no suitable
+  // solution to solve this problem perfectly. But when PreserveFramePointer is enabled,
+  // we can get the correct sender sp by fp + 2 (that is sender_sp()).
 
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = unextended_sp() + _cb->frame_size();
+  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
+                                                                    : sender_sp();
   intptr_t* unextended_sp = l_sender_sp;
 
   // the return_address is always the word on the stack
-  address sender_pc = (address) *(l_sender_sp-1);
+
+  // For ROP protection, C1/C2 will have signed the sender_pc, but there is no requirement to authenticate it here.
+  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp-1), (address) *(l_sender_sp-2));
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 
@@ -497,6 +536,10 @@ frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
+
+  // Native code may or may not have signed the return address, we have no way to be sure or what
+  // signing methods they used. Instead, just ensure the stripped value is used.
+
   return frame(sender_sp(), link(), sender_pc());
 }
 
@@ -594,7 +637,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
       }
-      assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
+      assert(Universe::is_in_heap_or_null(obj), "sanity check");
       *oop_result = obj;
       break;
     }
@@ -791,7 +834,6 @@ frame::frame(void* sp, void* fp, void* pc) {
   init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
 }
 
-void frame::pd_ps() {}
 #endif
 
 void JavaFrameAnchor::make_walkable(JavaThread* thread) {

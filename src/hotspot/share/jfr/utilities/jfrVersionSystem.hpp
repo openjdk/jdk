@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@
  */
 
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrRefCountPointer.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/padded.hpp"
 
@@ -66,41 +67,43 @@ class JfrVersionSystem : public JfrCHeapObj {
   typedef traceid Type;
  private:
   class Node : public JfrCHeapObj {
-   public:
+    friend class JfrVersionSystem;
+    template <typename>
+    friend class RefCountHandle;
+   private:
+    JfrVersionSystem* const _system;
     Node* _next;
-    Type _version;
-    bool _live;
-    Node();
+    mutable Type _version;
+    SingleThreadedRefCounter _ref_counter;
+    mutable bool _live;
+    Node(JfrVersionSystem* system);
+    void add_ref() const;
+    void remove_ref() const;
     Type version() const;
-    void set(Type version);
+    void set(Type version) const;
+   public:
+    void checkout();
+    void commit();
+    const Node* operator->() const { return this; }
+    Node* operator->() { return this; }
   };
   typedef Node* NodePtr;
- public:
-  class Handle {
-   private:
-    JfrVersionSystem* _system;
-    NodePtr _node;
-    Handle(JfrVersionSystem* system);
-   public:
-    Handle();
-    ~Handle();
-    void checkout();
-    void release();
-    Type increment();
-    void await(Type version);
-    DEBUG_ONLY(bool is_tracked() const;)
-    friend class JfrVersionSystem;
-  };
 
+ public:
   JfrVersionSystem();
   ~JfrVersionSystem();
   void reset();
 
-  // to access the versioning system
-  Handle get_handle();
-  Handle checkout_handle();
+  typedef RefCountHandle<Node> Handle;
+  Handle get();
 
  private:
+  NodePtr acquire();
+  void await(Type version);
+  Type tip() const;
+  Type inc_tip();
+  NodePtr synchronize_with(Type version, NodePtr last) const;
+  DEBUG_ONLY(void assert_state(const Node* node) const;)
   struct PaddedTip {
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
     volatile Type _value;
@@ -108,16 +111,6 @@ class JfrVersionSystem : public JfrCHeapObj {
   };
   PaddedTip _tip;
   NodePtr _head;
-  volatile int _spinlock;
-
-  NodePtr acquire();
-  void release(NodePtr node);
-  void await(Type version);
-  Type tip() const;
-  Type increment();
-  NodePtr synchronize_with(Type version, NodePtr last) const;
-  debug_only(bool is_registered(Type version) const;)
-  friend class Handle;
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRVERSIONSYSTEM_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -835,7 +835,7 @@ void replaceCalendarArrayElems(JNIEnv *env, jstring jlangtag, jint calid, jobjec
     WCHAR name[BUFLEN];
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
     jstring tmp_string;
-    CALTYPE isGenitive;
+    CALTYPE isGenitive = 0;
 
     CHECK_NULL(langtag);
 

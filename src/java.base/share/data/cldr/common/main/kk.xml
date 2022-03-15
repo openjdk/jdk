@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -316,7 +316,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro">румын тілі</language>
 			<language type="ro_MD">молдован тілі</language>
 			<language type="rof">ромбо тілі</language>
-			<language type="root">ата тіл</language>
 			<language type="ru">орыс тілі</language>
 			<language type="rup">арумын тілі</language>
 			<language type="rw">киньяруанда тілі</language>
@@ -2296,9 +2295,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Санта-Изабел</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Гонолулу</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Дүниежүзілік үйлестірілген уақыт</standard>
@@ -2418,11 +2414,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Брокен-Хилл</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Керри</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Мельбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Керри</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Хобарт</exemplarCity>
@@ -3455,6 +3451,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Гонолулу</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Джонстон</exemplarCity>
@@ -5643,7 +5642,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>КФА ВСЕАО франкі</displayName>
 				<displayName count="one">КФА ВСЕАО франкі</displayName>
 				<displayName count="other">КФА ВСЕАО франкі</displayName>
-				<symbol>CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>КФП франкі</displayName>
@@ -5882,7 +5881,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} карат</unitPattern>
 				<unitPattern count="other">{0} карат</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>миллиграмм/децилитр</displayName>
 				<unitPattern count="one">{0} миллиграмм/децилитр</unitPattern>
 				<unitPattern count="other">{0} миллиграмм/децилитр</unitPattern>
@@ -6904,7 +6903,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} кар.</unitPattern>
 				<unitPattern count="other">{0} кар.</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>мг/дл</displayName>
 				<unitPattern count="one">{0} мг/дл</unitPattern>
 				<unitPattern count="other">{0} мг/дл</unitPattern>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,27 +69,32 @@ public class TextAreaScrolling {
 
     public void performTest() {
         robot.waitForIdle();
-        robot.delay(200);
+        robot.delay(1000);
         Point loc = textArea.getLocationOnScreen();
         Rectangle textAreaBounds = new Rectangle();
         textArea.getBounds(textAreaBounds);
 
         // Move mouse at center in first row of TextArea.
         robot.mouseMove(loc.x + textAreaBounds.width / 2, loc.y + 5);
+        robot.waitForIdle();
+        robot.delay(500);
 
         // Perform selection by scrolling to left from end of char sequence.
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseMove(loc.x - 5, loc.y + 5);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.delay(500);
 
         // Perform double click on beginning word of TextArea
         robot.mouseMove(loc.x + 5, loc.y + 5);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.delay(100);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.delay(100);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle();
+        robot.delay(500);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(500);
         robot.waitForIdle();
 
         if (textArea.getSelectedText().contentEquals("5678")) {

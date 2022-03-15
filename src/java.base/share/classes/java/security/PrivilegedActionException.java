@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,6 @@ import jdk.internal.access.SharedSecrets;
  * {@code PrivilegedActionException} is a "wrapper"
  * for an exception thrown by a privileged action.
  *
- * <p>As of release 1.4, this exception has been retrofitted to conform to
- * the general purpose exception-chaining mechanism.  The "exception thrown
- * by the privileged computation" that is provided at construction time and
- * accessed via the {@link #getException()} method is now known as the
- * <i>cause</i>, and may be accessed via the {@link Throwable#getCause()}
- * method, as well as the aforementioned "legacy method."
- *
  * @since 1.2
  * @see PrivilegedExceptionAction
  * @see AccessController#doPrivileged(PrivilegedExceptionAction)
@@ -73,7 +66,8 @@ public class PrivilegedActionException extends Exception {
      * Returns the exception thrown by the privileged computation that
      * resulted in this {@code PrivilegedActionException}.
      *
-     * <p>This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *
@@ -96,23 +90,28 @@ public class PrivilegedActionException extends Exception {
 
 
     /**
-     * Serializable fields for UndeclaredThrowableException.
+     * The exception thrown by the privileged computation that resulted
+     * in this {@code PrivilegedActionException}.
      *
-     * @serialField undeclaredThrowable Throwable
+     * @serialField exception Exception the thrown Exception
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("exception", Exception.class)
     };
 
-    /*
+    /**
      * Reconstitutes the PrivilegedActionException instance from a stream
      * and initialize the cause properly when deserializing from an older
      * version.
      *
-     * The getException and getCause method returns the private "exception"
+     * <p>The getException and getCause method returns the private "exception"
      * field in the older implementation and PrivilegedActionException::cause
      * was set to null.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
@@ -123,9 +122,12 @@ public class PrivilegedActionException extends Exception {
         }
     }
 
-    /*
+    /**
      * To maintain compatibility with older implementation, write a serial
      * "exception" field with the cause as the value.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {

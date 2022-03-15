@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,12 @@ package com.sun.tools.javac.util;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.Set;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.tree.JCTree.*;
 
@@ -57,8 +59,8 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
      * Helper class to generate stable positions for AST nodes occurring in diagnostic arguments.
-     * If the AST node appears in the same line number as the main diagnostic, the line is information is omitted.
-     * Otherwise both line and column information is included, using the format @{code line:col}".
+     * If the AST node appears in the same line number as the main diagnostic, the line information is omitted.
+     * Otherwise, both line and column information is included, using the format {@code line:col}.
      *
      * Note: since subdiagnostics can be created without a diagnostic source, a position helper
      * should always refer to the toplevel diagnostic source.
@@ -83,7 +85,7 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
      * Create a formatter based on the supplied options.
-     * @param options
+     * @param options the compiler options
      */
     public RawDiagnosticFormatter(Options options) {
         super(null, new SimpleConfiguration(options,
@@ -153,18 +155,24 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
         String s;
         if (arg instanceof Formattable) {
             s = arg.toString();
-        } else if (arg instanceof JCExpression) {
+        } else if (arg instanceof JCExpression expression) {
             Assert.checkNonNull(rawDiagnosticPosHelper);
-            s = "@" + rawDiagnosticPosHelper.getPosition((JCExpression)arg);
-        } else if (arg instanceof PathFileObject) {
-            s = ((PathFileObject) arg).getShortName();
-        } else if (arg instanceof Tag) {
-            s = "compiler.misc.tree.tag." + StringUtils.toLowerCase(((Tag) arg).name());
+            s = "@" + rawDiagnosticPosHelper.getPosition(expression);
+        } else if (arg instanceof PathFileObject pathFileObject) {
+            s = pathFileObject.getShortName();
+        } else if (arg instanceof Tag tag) {
+            s = "compiler.misc.tree.tag." + StringUtils.toLowerCase(tag.name());
+        } else if (arg instanceof Source && arg == Source.DEFAULT &&
+                CODES_NEEDING_SOURCE_NORMALIZATION.contains(diag.getCode())) {
+            s = "DEFAULT";
         } else {
             s = super.formatArgument(diag, arg, null);
         }
         return (arg instanceof JCDiagnostic) ? "(" + s + ")" : s;
     }
+    //where:
+        private static final Set<String> CODES_NEEDING_SOURCE_NORMALIZATION = Set.of(
+                "compiler.note.preview.filename", "compiler.note.preview.plural");
 
     @Override
     protected String localize(Locale l, String key, Object... args) {

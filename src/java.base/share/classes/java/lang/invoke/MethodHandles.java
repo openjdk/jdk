@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package java.lang.invoke;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import jdk.internal.module.IllegalAccessLogger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
@@ -59,13 +59,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -108,25 +109,37 @@ public class MethodHandles {
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
+     * In cases where {@code MethodHandles.lookup} is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a {@link Lookup lookup object} in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use {@link MethodHandles#publicLookup()}
+     * to obtain a low-privileged lookup instead.
      * @return a lookup object for the caller of this method, with
      * {@linkplain Lookup#ORIGINAL original} and
      * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}.
+     * @throws IllegalCallerException if there is no caller frame on the stack.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
-        return new Lookup(Reflection.getCallerClass());
+        final Class<?> c = Reflection.getCallerClass();
+        if (c == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
+        return new Lookup(c);
     }
 
     /**
-     * This reflected$lookup method is the alternate implementation of
-     * the lookup method when being invoked by reflection.
+     * This lookup method is the alternate implementation of
+     * the lookup method with a leading caller class argument which is
+     * non-caller-sensitive.  This method is only invoked by reflection
+     * and method handle.
      */
-    @CallerSensitive
-    private static Lookup reflected$lookup() {
-        Class<?> caller = Reflection.getCallerClass();
+    @CallerSensitiveAdapter
+    private static Lookup lookup(Class<?> caller) {
         if (caller.getClassLoader() == null) {
-            throw newIllegalArgumentException("illegal lookupClass: "+caller);
+            throw newInternalError("calling lookup() reflectively is not supported: "+caller);
         }
         return new Lookup(caller);
     }
@@ -230,8 +243,9 @@ public class MethodHandles {
             return new Lookup(targetClass);
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
+        if (sm != null) sm.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         if (targetClass.isPrimitive())
             throw new IllegalArgumentException(targetClass + " is a primitive class");
         if (targetClass.isArray())
@@ -263,13 +277,6 @@ public class MethodHandles {
             // M2 != M1, set previous lookup class to M1 and drop MODULE access
             newPreviousClass = callerClass;
             newModes &= ~Lookup.MODULE;
-
-            if (!callerModule.isNamed() && targetModule.isNamed()) {
-                IllegalAccessLogger logger = IllegalAccessLogger.illegalAccessLogger();
-                if (logger != null) {
-                    logger.logIfOpenedForIllegalAccess(caller, targetClass);
-                }
-            }
         }
         return Lookup.newLookup(targetClass, newPreviousClass, newModes);
     }
@@ -337,7 +344,7 @@ public class MethodHandles {
              throw new IllegalAccessException(caller + " does not have ORIGINAL access");
          }
 
-         Object classdata = MethodHandleNatives.classData(caller.lookupClass());
+         Object classdata = classData(caller.lookupClass());
          if (classdata == null) return null;
 
          try {
@@ -347,6 +354,17 @@ public class MethodHandles {
          } catch (Throwable e) {
              throw new InternalError(e);
          }
+    }
+
+    /*
+     * Returns the class data set by the VM in the Class::classData field.
+     *
+     * This is also invoked by LambdaForms as it cannot use condy via
+     * MethodHandles::classData due to bootstrapping issue.
+     */
+    static Object classData(Class<?> c) {
+        UNSAFE.ensureClassInitialized(c);
+        return SharedSecrets.getJavaLangAccess().classData(c);
     }
 
     /**
@@ -449,14 +467,12 @@ public class MethodHandles {
      * @since 1.8
      */
     public static <T extends Member> T reflectAs(Class<T> expected, MethodHandle target) {
+        @SuppressWarnings("removal")
         SecurityManager smgr = System.getSecurityManager();
-        if (smgr != null)  smgr.checkPermission(ACCESS_PERMISSION);
+        if (smgr != null)  smgr.checkPermission(SecurityConstants.ACCESS_PERMISSION);
         Lookup lookup = Lookup.IMPL_LOOKUP;  // use maximally privileged lookup
         return lookup.revealDirect(target).reflectAs(expected, lookup);
     }
-    // Copied from AccessibleObject, as used by Method.setAccessible, etc.:
-    private static final java.security.Permission ACCESS_PERMISSION =
-        new ReflectPermission("suppressAccessChecks");
 
     /**
      * A <em>lookup object</em> is a factory for creating method handles,
@@ -870,40 +886,20 @@ public class MethodHandles {
      * with all public types that are accessible to {@code M0}. {@code M0}
      * reads {@code M1} and hence the set of accessible types includes:
      *
-     * <table class="striped">
-     * <caption style="display:none">
-     * Public types in the following packages are accessible to the
-     * lookup class and the previous lookup class.
-     * </caption>
-     * <thead>
-     * <tr>
-     * <th scope="col">Equally accessible types to {@code M0} and {@code M1}</th>
-     * </tr>
-     * </thead>
-     * <tbody>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M1}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">unconditional-exported packages from a third module {@code M2}
-     * if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M1} to {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from {@code M0} to {@code M1}
-     * if {@code M1} reads {@code M0}</th>
-     * </tr>
-     * <tr>
-     * <th scope="row" style="text-align:left">qualified-exported packages from a third module {@code M2} to
-     * both {@code M0} and {@code M1} if both {@code M0} and {@code M1} read {@code M2}</th>
-     * </tr>
-     * </tbody>
-     * </table>
+     * <ul>
+     * <li>unconditional-exported packages from {@code M1}</li>
+     * <li>unconditional-exported packages from {@code M0} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     unconditional-exported packages from a third module {@code M2}if both {@code M0}
+     *     and {@code M1} read {@code M2}
+     * </li>
+     * <li>qualified-exported packages from {@code M1} to {@code M0}</li>
+     * <li>qualified-exported packages from {@code M0} to {@code M1} if {@code M1} reads {@code M0}</li>
+     * <li>
+     *     qualified-exported packages from a third module {@code M2} to both {@code M0} and
+     *     {@code M1} if both {@code M0} and {@code M1} read {@code M2}
+     * </li>
+     * </ul>
      *
      * <h2><a id="access-modes"></a>Access modes</h2>
      *
@@ -970,7 +966,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.in(D).in(C)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code CL.in(D).in(C)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -979,7 +975,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1 = privateLookupIn(C1,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1 = privateLookupIn(C1,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -988,7 +984,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1a = privateLookupIn(C,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1a = privateLookupIn(C,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -997,7 +993,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1006,7 +1002,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(C1)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(C1)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1015,7 +1011,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1024,7 +1020,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1033,7 +1029,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1042,7 +1038,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1051,7 +1047,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1060,7 +1056,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI1.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI1.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1068,7 +1064,7 @@ public class MethodHandles {
      * <td></td>
      * <td style="text-align:center">none</td>
      * <tr>
-     * <td>{@code PRI2 = privateLookupIn(D,CL)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2 = privateLookupIn(D,CL)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1077,7 +1073,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(D,PRI1)}</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(D,PRI1)}</th>
      * <td></td>
      * <td style="text-align:center">PRO</td>
      * <td style="text-align:center">PRI</td>
@@ -1086,7 +1082,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C,PRI2)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C,PRI2)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1095,7 +1091,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} same package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} same package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1104,7 +1100,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(D2)} different package</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(D2)} different package</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1113,7 +1109,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(C1)} hop back to module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(C1)} hop back to module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1122,7 +1118,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.in(E)} hop to third module</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.in(E)} hop to third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1131,7 +1127,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1140,7 +1136,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1149,7 +1145,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1158,7 +1154,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1167,7 +1163,7 @@ public class MethodHandles {
      * <td style="text-align:center">2R</td>
      * </tr>
      * <tr>
-     * <td>{@code PRI2.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code PRI2.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1176,7 +1172,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PROTECTED)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PROTECTED)}</th>
      * <td></td>
      * <td></td>
      * <td style="text-align:center">PRI</td>
@@ -1185,7 +1181,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PRIVATE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PRIVATE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1194,7 +1190,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PACKAGE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PACKAGE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1203,7 +1199,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(MODULE)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(MODULE)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1212,7 +1208,7 @@ public class MethodHandles {
      * <td style="text-align:center">1R</td>
      * </tr>
      * <tr>
-     * <td>{@code CL.dropLookupMode(PUBLIC)}</td>
+     * <th scope="row" style="text-align:left">{@code CL.dropLookupMode(PUBLIC)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1221,7 +1217,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB = publicLookup()}</td>
+     * <th scope="row" style="text-align:left">{@code PUB = publicLookup()}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1230,7 +1226,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D)} different module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D)} different module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1239,7 +1235,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.in(D).in(E)} third module</td>
+     * <th scope="row" style="text-align:left">{@code PUB.in(D).in(E)} third module</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1248,7 +1244,7 @@ public class MethodHandles {
      * <td style="text-align:center">U</td>
      * </tr>
      * <tr>
-     * <td>{@code PUB.dropLookupMode(UNCONDITIONAL)}</td>
+     * <th scope="row" style="text-align:left">{@code PUB.dropLookupMode(UNCONDITIONAL)}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1257,7 +1253,7 @@ public class MethodHandles {
      * <td style="text-align:center">none</td>
      * </tr>
      * <tr>
-     * <td>{@code privateLookupIn(C1,PUB)} fails</td>
+     * <th scope="row" style="text-align:left">{@code privateLookupIn(C1,PUB)} fails</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1266,7 +1262,7 @@ public class MethodHandles {
      * <td style="text-align:center">IAE</td>
      * </tr>
      * <tr>
-     * <td>{@code ANY.in(X)}, for inaccessible {@code X}</td>
+     * <th scope="row" style="text-align:left">{@code ANY.in(X)}, for inaccessible {@code X}</th>
      * <td></td>
      * <td></td>
      * <td></td>
@@ -1681,7 +1677,7 @@ public class MethodHandles {
          * (used during {@link #findClass} invocations)
          * are determined by the lookup class' loader,
          * which may change due to this operation.
-         * <p>
+         *
          * @param requestedLookupClass the desired lookup class for the new lookup object
          * @return a lookup object which reports the desired lookup class, or the same object
          * if there is no change
@@ -1854,6 +1850,7 @@ public class MethodHandles {
             if (allowedModes == TRUSTED)  return;
 
             if (!hasFullPrivilegeAccess()) {
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null)
                     sm.checkPermission(new RuntimePermission("defineClass"));
@@ -1891,7 +1888,7 @@ public class MethodHandles {
              *
              * <p> By default, a hidden class or interface may be unloaded
              * even if the class loader that is marked as its defining loader is
-             * <a href="../ref/package.html#reachability">reachable</a>.
+             * <a href="../ref/package-summary.html#reachability">reachable</a>.
 
              *
              * @jls 12.7 Unloading of Classes and Interfaces
@@ -1939,9 +1936,9 @@ public class MethodHandles {
          * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The purported representation in {@code bytes} must be a {@code ClassFile}
-         * structure of a supported major and minor version. The major and minor version
-         * may differ from the {@code class} file version of the lookup class of this
-         * {@code Lookup}.</li>
+         * structure (JVMS {@jvms 4.1}) of a supported major and minor version.
+         * The major and minor version may differ from the {@code class} file version
+         * of the lookup class of this {@code Lookup}.</li>
          *
          * <li> The value of {@code this_class} must be a valid index in the
          * {@code constant_pool} table, and the entry at that index must be a valid
@@ -2016,7 +2013,7 @@ public class MethodHandles {
          * there is no internal form available to record in any class's constant pool.
          * A hidden class or interface is not discoverable by {@link Class#forName(String, boolean, ClassLoader)},
          * {@link ClassLoader#loadClass(String, boolean)}, or {@link #findClass(String)}, and
-         * is not {@linkplain java.lang.instrument.Instrumentation#isModifiableClass(Class)
+         * is not {@linkplain java.instrument/java.lang.instrument.Instrumentation#isModifiableClass(Class)
          * modifiable} by Java agents or tool agents using the <a href="{@docRoot}/../specs/jvmti.html">
          * JVM Tool Interface</a>.
          *
@@ -2031,7 +2028,7 @@ public class MethodHandles {
          *
          * By default, however, a hidden class or interface may be unloaded even if
          * the class loader that is marked as its defining loader is
-         * <a href="../ref/package.html#reachability">reachable</a>.
+         * <a href="../ref/package-summary.html#reachability">reachable</a>.
          * This behavior is useful when a hidden class or interface serves multiple
          * classes defined by arbitrary class loaders.  In other cases, a hidden
          * class or interface may be linked to a single class (or a small number of classes)
@@ -2119,6 +2116,7 @@ public class MethodHandles {
          * @jvms 5.5 Initialization
          * @jls 12.7 Unloading of Classes and Interfaces
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public Lookup defineHiddenClass(byte[] bytes, boolean initialize, ClassOption... options)
                 throws IllegalAccessException
         {
@@ -2262,10 +2260,9 @@ public class MethodHandles {
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
-                    if (!(constant instanceof Type)) {
+                    if (!(constant instanceof Type type)) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
-                    Type type = ((Type) constant);
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
@@ -2369,15 +2366,16 @@ public class MethodHandles {
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes.  No package name check on the given name.
+         * from the given bytes and the given options.  No package name check on the given name.
          *
          * @param name    fully-qualified name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @return ClassDefiner that defines a hidden class of the given bytes.
+         * @param options class options
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), Set.of(), false);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false);
         }
 
         /**
@@ -2775,6 +2773,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @throws ClassNotFoundException if the class cannot be loaded by the lookup class' loader.
          * @throws IllegalAccessException if the class is not accessible, using the allowed access
          * modes.
+         * @throws NullPointerException if {@code targetName} is null
          * @since 9
          * @jvms 5.4.3.1 Class and Interface Resolution
          */
@@ -2790,8 +2789,13 @@ assertEquals("[x, y, z]", pb.command().toString());
          * to be initialized if it has not been already initialized,
          * as specified in JVMS {@jvms 5.5}.
          *
+         * <p>
+         * This method returns when {@code targetClass} is fully initialized, or
+         * when {@code targetClass} is being initialized by the current thread.
+         *
          * @param targetClass the class to be initialized
-         * @return {@code targetClass} that has been initialized
+         * @return {@code targetClass} that has been initialized, or that is being
+         *         initialized by the current thread.
          *
          * @throws  IllegalArgumentException if {@code targetClass} is a primitive type or {@code void}
          *          or array class
@@ -2844,8 +2848,12 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Determines if a class can be accessed from the lookup context defined by
          * this {@code Lookup} object. The static initializer of the class is not run.
+         * If {@code targetClass} is an array class, {@code targetClass} is accessible
+         * if the element type of the array class is accessible.  Otherwise,
+         * {@code targetClass} is determined as accessible as follows.
+         *
          * <p>
-         * If the {@code targetClass} is in the same module as the lookup class,
+         * If {@code targetClass} is in the same module as the lookup class,
          * the lookup class is {@code LC} in module {@code M1} and
          * the previous lookup class is in module {@code M0} or
          * {@code null} if not present,
@@ -2868,7 +2876,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * can access public types in all modules when the type is in a package
          * that is exported unconditionally.
          * <p>
-         * Otherwise, the target class is in a different module from {@code lookupClass},
+         * Otherwise, {@code targetClass} is in a different module from {@code lookupClass},
          * and if this lookup does not have {@code PUBLIC} access, {@code lookupClass}
          * is inaccessible.
          * <p>
@@ -2904,13 +2912,14 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @return the class that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
-         * @throws    SecurityException if a security manager is present and it
-         *                              <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws SecurityException if a security manager is present and it
+         *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
+         * @throws NullPointerException if {@code targetClass} is {@code null}
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
         public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
-            if (!VerifyAccess.isClassAccessible(targetClass, lookupClass, prevLookupClass, allowedModes)) {
+            if (!isClassAccessible(targetClass)) {
                 throw makeAccessException(targetClass);
             }
             checkSecurityManager(targetClass);
@@ -3645,9 +3654,8 @@ return mh1;
 
         MemberName resolveOrFail(byte refKind, Class<?> refc, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
             checkSymbolicClass(refc);  // do this before attempting to resolve
-            Objects.requireNonNull(name);
             Objects.requireNonNull(type);
-            checkMethodName(refKind, name);  // NPE check on name
+            checkMethodName(refKind, name);  // implicit null-check of name
             return IMPL_NAMES.resolveOrFail(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes,
                                             NoSuchMethodException.class);
         }
@@ -3670,6 +3678,19 @@ return mh1;
             return IMPL_NAMES.resolveOrNull(refKind, member, lookupClassOrNull(), allowedModes);
         }
 
+        MemberName resolveOrNull(byte refKind, Class<?> refc, String name, MethodType type) {
+            // do this before attempting to resolve
+            if (!isClassAccessible(refc)) {
+                return null;
+            }
+            Objects.requireNonNull(type);
+            // implicit null-check of name
+            if (name.startsWith("<") && refKind != REF_newInvokeSpecial) {
+                return null;
+            }
+            return IMPL_NAMES.resolveOrNull(refKind, new MemberName(refc, name, type, refKind), lookupClassOrNull(), allowedModes);
+        }
+
         void checkSymbolicClass(Class<?> refc) throws IllegalAccessException {
             if (!isClassAccessible(refc)) {
                 throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
@@ -3679,7 +3700,11 @@ return mh1;
         boolean isClassAccessible(Class<?> refc) {
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
-            return caller == null || VerifyAccess.isClassAccessible(refc, caller, prevLookupClass, allowedModes);
+            Class<?> type = refc;
+            while (type.isArray()) {
+                type = type.getComponentType();
+            }
+            return caller == null || VerifyAccess.isClassAccessible(type, caller, prevLookupClass, allowedModes);
         }
 
         /** Check name for an illegal leading "&lt;" character. */
@@ -3687,7 +3712,6 @@ return mh1;
             if (name.startsWith("<") && refKind != REF_newInvokeSpecial)
                 throw new NoSuchMethodException("illegal method name: "+name);
         }
-
 
         /**
          * Find my trustable caller class if m is a caller sensitive method.
@@ -3739,6 +3763,7 @@ return mh1;
         void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 
@@ -3770,6 +3795,7 @@ return mh1;
 
             if (allowedModes == TRUSTED)  return;
 
+            @SuppressWarnings("removal")
             SecurityManager smgr = System.getSecurityManager();
             if (smgr == null)  return;
 
@@ -4371,7 +4397,7 @@ return mh1;
      * {@code double}.
      * <p>
      * Access of bytes at a given index will result in an
-     * {@code IndexOutOfBoundsException} if the index is less than {@code 0}
+     * {@code ArrayIndexOutOfBoundsException} if the index is less than {@code 0}
      * or greater than the {@code byte[]} array length minus the size (in bytes)
      * of {@code T}.
      * <p>
@@ -4403,7 +4429,7 @@ return mh1;
      * <p>
      * Misaligned access, and therefore atomicity guarantees, may be determined
      * for {@code byte[]} arrays without operating on a specific array.  Given
-     * an {@code index}, {@code T} and it's corresponding boxed type,
+     * an {@code index}, {@code T} and its corresponding boxed type,
      * {@code T_BOX}, misalignment may be determined as follows:
      * <pre>{@code
      * int sizeOfT = T_BOX.BYTES;  // size in bytes of T
@@ -4490,7 +4516,7 @@ return mh1;
      * <p>
      * Misaligned access, and therefore atomicity guarantees, may be determined
      * for a {@code ByteBuffer}, {@code bb} (direct or otherwise), an
-     * {@code index}, {@code T} and it's corresponding boxed type,
+     * {@code index}, {@code T} and its corresponding boxed type,
      * {@code T_BOX}, as follows:
      * <pre>{@code
      * int sizeOfT = T_BOX.BYTES;  // size in bytes of T
@@ -5169,13 +5195,13 @@ assert((int)twice.invokeExact(21) == 42);
         Wrapper w = Wrapper.forPrimitiveType(ptype);
         // perform unboxing and/or primitive conversion
         value = w.convert(value, ptype);
-        switch (w) {
-        case INT:     return result.bindArgumentI(pos, (int)value);
-        case LONG:    return result.bindArgumentJ(pos, (long)value);
-        case FLOAT:   return result.bindArgumentF(pos, (float)value);
-        case DOUBLE:  return result.bindArgumentD(pos, (double)value);
-        default:      return result.bindArgumentI(pos, ValueConversions.widenSubword(value));
-        }
+        return switch (w) {
+            case INT    -> result.bindArgumentI(pos, (int) value);
+            case LONG   -> result.bindArgumentJ(pos, (long) value);
+            case FLOAT  -> result.bindArgumentF(pos, (float) value);
+            case DOUBLE -> result.bindArgumentD(pos, (double) value);
+            default -> result.bindArgumentI(pos, ValueConversions.widenSubword(value));
+        };
     }
 
     private static Class<?>[] insertArgumentsChecks(MethodHandle target, int insCount, int pos) throws RuntimeException {
@@ -5732,14 +5758,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType newType = collectArgumentsChecks(target, pos, filter);
         MethodType collectorType = filter.type();
         BoundMethodHandle result = target.rebind();
-        LambdaForm lform;
-        if (collectorType.returnType().isArray() && filter.intrinsicName() == Intrinsic.NEW_ARRAY) {
-            lform = result.editor().collectArgumentArrayForm(1 + pos, filter);
-            if (lform != null) {
-                return result.copyWith(newType, lform);
-            }
-        }
-        lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
+        LambdaForm lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
         return result.copyWithExtendL(newType, lform, filter);
     }
 
@@ -5748,6 +5767,10 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType filterType = filter.type();
         Class<?> rtype = filterType.returnType();
         List<Class<?>> filterArgs = filterType.parameterList();
+        if (pos < 0 || (rtype == void.class && pos > targetType.parameterCount()) ||
+                       (rtype != void.class && pos >= targetType.parameterCount())) {
+            throw newIllegalArgumentException("position is out of range for target", target, pos);
+        }
         if (rtype == void.class) {
             return targetType.insertParameterTypes(pos, filterArgs);
         }
@@ -5867,8 +5890,8 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         BoundMethodHandle result = target.rebind();
         LambdaForm lform = result.editor().collectReturnValueForm(filterType.basicType());
         MethodType newType = targetType.changeReturnType(filterType.returnType());
-        if (filterType.parameterList().size() > 1) {
-            for (int i = 0 ; i < filterType.parameterList().size() - 1 ; i++) {
+        if (filterType.parameterCount() > 1) {
+            for (int i = 0 ; i < filterType.parameterCount() - 1 ; i++) {
                 newType = newType.appendParameterTypes(filterType.parameterType(i));
             }
         }
@@ -6642,8 +6665,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 iterationVariableTypes.add(in == null ? st.type().returnType() : in.type().returnType());
             }
         }
-        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).
-                collect(Collectors.toList());
+        final List<Class<?>> commonPrefix = iterationVariableTypes.stream().filter(t -> t != void.class).toList();
 
         // Step 1B: determine loop parameters (A...).
         final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
@@ -6721,7 +6743,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                         filter(t -> t.parameterCount() > skipSize).
                         map(MethodType::parameterList).
                         reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
-        return longest.size() == 0 ? empty : longest.subList(skipSize, longest.size());
+        return longest.isEmpty() ? empty : longest.subList(skipSize, longest.size());
     }
 
     private static List<Class<?>> longestParameterList(List<List<Class<?>>> lists) {
@@ -6772,11 +6794,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
             return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private static List<MethodHandle> fixArities(List<MethodHandle> hs) {
-        return hs.stream().map(MethodHandle::asFixedArity).collect(Collectors.toList());
+        return hs.stream().map(MethodHandle::asFixedArity).toList();
     }
 
     /**
@@ -7005,7 +7027,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> outerList = innerList;
         if (returnType == void.class) {
             // OK
-        } else if (innerList.size() == 0 || innerList.get(0) != returnType) {
+        } else if (innerList.isEmpty() || innerList.get(0) != returnType) {
             // leading V argument missing => error
             MethodType expected = bodyType.insertParameterTypes(0, returnType);
             throw misMatchedTypes("body function", bodyType, expected);
@@ -7335,7 +7357,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> innerList = bodyType.parameterList();
         // strip leading V value if present
         int vsize = (returnType == void.class ? 0 : 1);
-        if (vsize != 0 && (innerList.size() == 0 || innerList.get(0) != returnType)) {
+        if (vsize != 0 && (innerList.isEmpty() || innerList.get(0) != returnType)) {
             // argument list has no "V" => error
             MethodType expected = bodyType.insertParameterTypes(0, returnType);
             throw misMatchedTypes("body function", bodyType, expected);
@@ -7559,7 +7581,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         List<Class<?>> internalParamList = bodyType.parameterList();
         // strip leading V value if present
         int vsize = (returnType == void.class ? 0 : 1);
-        if (vsize != 0 && (internalParamList.size() == 0 || internalParamList.get(0) != returnType)) {
+        if (vsize != 0 && (internalParamList.isEmpty() || internalParamList.get(0) != returnType)) {
             // argument list has no "V" => error
             MethodType expected = bodyType.insertParameterTypes(0, returnType);
             throw misMatchedTypes("body function", bodyType, expected);
@@ -7752,6 +7774,92 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw misMatchedTypes("cleanup parameters after (Throwable,result) and target parameter list prefix",
                     cleanup.type(), target.type());
         }
+    }
+
+    /**
+     * Creates a table switch method handle, which can be used to switch over a set of target
+     * method handles, based on a given target index, called selector.
+     * <p>
+     * For a selector value of {@code n}, where {@code n} falls in the range {@code [0, N)},
+     * and where {@code N} is the number of target method handles, the table switch method
+     * handle will invoke the n-th target method handle from the list of target method handles.
+     * <p>
+     * For a selector value that does not fall in the range {@code [0, N)}, the table switch
+     * method handle will invoke the given fallback method handle.
+     * <p>
+     * All method handles passed to this method must have the same type, with the additional
+     * requirement that the leading parameter be of type {@code int}. The leading parameter
+     * represents the selector.
+     * <p>
+     * Any trailing parameters present in the type will appear on the returned table switch
+     * method handle as well. Any arguments assigned to these parameters will be forwarded,
+     * together with the selector value, to the selected method handle when invoking it.
+     *
+     * @apiNote Example:
+     * The cases each drop the {@code selector} value they are given, and take an additional
+     * {@code String} argument, which is concatenated (using {@link String#concat(String)})
+     * to a specific constant label string for each case:
+     * <blockquote><pre>{@code
+     * MethodHandles.Lookup lookup = MethodHandles.lookup();
+     * MethodHandle caseMh = lookup.findVirtual(String.class, "concat",
+     *         MethodType.methodType(String.class, String.class));
+     * caseMh = MethodHandles.dropArguments(caseMh, 0, int.class);
+     *
+     * MethodHandle caseDefault = MethodHandles.insertArguments(caseMh, 1, "default: ");
+     * MethodHandle case0 = MethodHandles.insertArguments(caseMh, 1, "case 0: ");
+     * MethodHandle case1 = MethodHandles.insertArguments(caseMh, 1, "case 1: ");
+     *
+     * MethodHandle mhSwitch = MethodHandles.tableSwitch(
+     *     caseDefault,
+     *     case0,
+     *     case1
+     * );
+     *
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(-1, "data"));
+     * assertEquals("case 0: data", (String) mhSwitch.invokeExact(0, "data"));
+     * assertEquals("case 1: data", (String) mhSwitch.invokeExact(1, "data"));
+     * assertEquals("default: data", (String) mhSwitch.invokeExact(2, "data"));
+     * }</pre></blockquote>
+     *
+     * @param fallback the fallback method handle that is called when the selector is not
+     *                 within the range {@code [0, N)}.
+     * @param targets array of target method handles.
+     * @return the table switch method handle.
+     * @throws NullPointerException if {@code fallback}, the {@code targets} array, or any
+     *                              any of the elements of the {@code targets} array are
+     *                              {@code null}.
+     * @throws IllegalArgumentException if the {@code targets} array is empty, if the leading
+     *                                  parameter of the fallback handle or any of the target
+     *                                  handles is not {@code int}, or if the types of
+     *                                  the fallback handle and all of target handles are
+     *                                  not the same.
+     */
+    public static MethodHandle tableSwitch(MethodHandle fallback, MethodHandle... targets) {
+        Objects.requireNonNull(fallback);
+        Objects.requireNonNull(targets);
+        targets = targets.clone();
+        MethodType type = tableSwitchChecks(fallback, targets);
+        return MethodHandleImpl.makeTableSwitch(type, fallback, targets);
+    }
+
+    private static MethodType tableSwitchChecks(MethodHandle defaultCase, MethodHandle[] caseActions) {
+        if (caseActions.length == 0)
+            throw new IllegalArgumentException("Not enough cases: " + Arrays.toString(caseActions));
+
+        MethodType expectedType = defaultCase.type();
+
+        if (!(expectedType.parameterCount() >= 1) || expectedType.parameterType(0) != int.class)
+            throw new IllegalArgumentException(
+                "Case actions must have int as leading parameter: " + Arrays.toString(caseActions));
+
+        for (MethodHandle mh : caseActions) {
+            Objects.requireNonNull(mh);
+            if (mh.type() != expectedType)
+                throw new IllegalArgumentException(
+                    "Case actions must have the same type: " + Arrays.toString(caseActions));
+        }
+
+        return expectedType;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ public class UUIDBench {
     @Param("20000")
     private int size;
 
+    private byte[][] uuidBytes;
+
     private UUID[] uuids;
 
     private String[] uuidStrings;
@@ -45,11 +47,14 @@ public class UUIDBench {
 
     @Setup
     public void setup() {
+        uuidBytes = new byte[size][];
         uuids = new UUID[size];
         uuidStrings = new String[size];
+        java.util.Random r = new java.util.Random(0);
         for (int i = 0; i < this.uuidStrings.length; i++) {
             final UUID uuid = UUID.randomUUID();
-
+            this.uuidBytes[i] = new byte[16];
+            r.nextBytes(this.uuidBytes[i]);
             this.uuids[i] = uuid;
             this.uuidStrings[i] = uuid.toString();
         }
@@ -71,5 +76,10 @@ public class UUIDBench {
     @Benchmark
     public String toString() {
         return uuids[index].toString();
+    }
+
+    @Benchmark
+    public UUID fromType3Bytes() {
+        return UUID.nameUUIDFromBytes(uuidBytes[index]);
     }
 }

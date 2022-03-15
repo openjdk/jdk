@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.util;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -642,8 +644,7 @@ public class IdentityHashMap<K,V>
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (o instanceof IdentityHashMap) {
-            IdentityHashMap<?,?> m = (IdentityHashMap<?,?>) o;
+        } else if (o instanceof IdentityHashMap<?, ?> m) {
             if (m.size() != size)
                 return false;
 
@@ -654,8 +655,7 @@ public class IdentityHashMap<K,V>
                     return false;
             }
             return true;
-        } else if (o instanceof Map) {
-            Map<?,?> m = (Map<?,?>)o;
+        } else if (o instanceof Map<?, ?> m) {
             return entrySet().equals(m.entrySet());
         } else {
             return false;  // o is not a Map
@@ -888,11 +888,9 @@ public class IdentityHashMap<K,V>
                 if (index < 0)
                     return super.equals(o);
 
-                if (!(o instanceof Map.Entry))
-                    return false;
-                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-                return (e.getKey() == unmaskNull(traversalTable[index]) &&
-                       e.getValue() == traversalTable[index+1]);
+                return o instanceof Map.Entry<?, ?> e
+                        && e.getKey() == unmaskNull(traversalTable[index])
+                        && e.getValue() == traversalTable[index+1];
             }
 
             public int hashCode() {
@@ -1189,16 +1187,12 @@ public class IdentityHashMap<K,V>
             return new EntryIterator();
         }
         public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
-            return containsMapping(entry.getKey(), entry.getValue());
+            return o instanceof Entry<?, ?> entry
+                    && containsMapping(entry.getKey(), entry.getValue());
         }
         public boolean remove(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
-            return removeMapping(entry.getKey(), entry.getValue());
+            return o instanceof Entry<?, ?> entry
+                    && removeMapping(entry.getKey(), entry.getValue());
         }
         public int size() {
             return size;
@@ -1275,12 +1269,12 @@ public class IdentityHashMap<K,V>
      *          particular order.
      */
     @java.io.Serial
-    private void writeObject(java.io.ObjectOutputStream s)
+    private void writeObject(ObjectOutputStream s)
         throws java.io.IOException  {
-        // Write out and any hidden stuff
+        // Write out size (number of mappings) and any hidden stuff
         s.defaultWriteObject();
 
-        // Write out size (number of Mappings)
+        // Write out size again (maintained for backward compatibility)
         s.writeInt(size);
 
         // Write out keys and values (alternating)
@@ -1299,18 +1293,20 @@ public class IdentityHashMap<K,V>
      * deserializes it).
      */
     @java.io.Serial
-    private void readObject(java.io.ObjectInputStream s)
+    private void readObject(ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException  {
-        // Read in any hidden stuff
-        s.defaultReadObject();
+        // Size (number of mappings) is written to the stream twice
+        // Read first size value and ignore it
+        s.readFields();
 
-        // Read in size (number of Mappings)
+        // Read second size value, validate and assign to size field
         int size = s.readInt();
         if (size < 0)
             throw new java.io.StreamCorruptedException
                 ("Illegal mappings count: " + size);
         int cap = capacity(size);
-        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, cap);
+        SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Object[].class, cap*2);
+        this.size = size;
         init(cap);
 
         // Read the keys and values, and put the mappings in the table

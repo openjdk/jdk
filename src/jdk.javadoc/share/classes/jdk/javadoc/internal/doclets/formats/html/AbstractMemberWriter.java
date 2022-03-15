@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,9 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.TypeMirror;
@@ -46,22 +42,12 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-
-import static javax.lang.model.element.Modifier.ABSTRACT;
-import static javax.lang.model.element.Modifier.NATIVE;
-import static javax.lang.model.element.Modifier.PUBLIC;
-import static javax.lang.model.element.Modifier.STRICTFP;
-import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 
 /**
  * The base class for member writers.
@@ -80,6 +66,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     protected final Contents contents;
     protected final Resources resources;
     protected final Links links;
+    protected final HtmlIds htmlIds;
 
     protected final TypeElement typeElement;
 
@@ -89,9 +76,10 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         this.writer = writer;
         this.typeElement = typeElement;
         this.utils = configuration.utils;
-        this.contents = configuration.contents;
+        this.contents = configuration.getContents();
         this.resources = configuration.docResources;
         this.links = writer.links;
+        this.htmlIds = configuration.htmlIds;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {
@@ -159,7 +147,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param tdSummary   the content tree to which the link will be added
      */
     protected void addSummaryLink(TypeElement typeElement, Element member, Content tdSummary) {
-        addSummaryLink(LinkInfoImpl.Kind.MEMBER, typeElement, member, tdSummary);
+        addSummaryLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member, tdSummary);
     }
 
     /**
@@ -170,8 +158,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param member      the member to be documented
      * @param tdSummary   the content tree to which the summary link will be added
      */
-    protected abstract void addSummaryLink(LinkInfoImpl.Kind context,
-            TypeElement typeElement, Element member, Content tdSummary);
+    protected abstract void addSummaryLink(HtmlLinkInfo.Kind context,
+                                           TypeElement typeElement, Element member, Content tdSummary);
 
     /**
      * Adds the inherited summary link for the member.
@@ -184,13 +172,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Element member, Content linksTree);
 
     /**
-     * Returns the deprecated link.
+     * Returns a link for summary (deprecated, preview) pages.
      *
      * @param member the member being linked to
      *
      * @return a content tree representing the link
      */
-    protected abstract Content getDeprecatedLink(Element member);
+    protected abstract Content getSummaryLink(Element member);
 
     /**
      * Adds the modifier and type for the member in the member summary.
@@ -204,7 +192,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         HtmlTree code = new HtmlTree(TagName.CODE);
         addModifier(member, code);
         if (type == null) {
-            code.add(utils.isClass(member) ? "class" : "interface");
+            code.add(switch (member.getKind()) {
+                case ENUM -> "enum";
+                case INTERFACE -> "interface";
+                case ANNOTATION_TYPE -> "@interface";
+                case RECORD -> "record";
+                default -> "class";
+            });
             code.add(Entity.NO_BREAK_SPACE);
         } else {
             List<? extends TypeParameterElement> list = utils.isExecutableElement(member)
@@ -222,8 +216,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 }
             }
             code.add(
-                    writer.getLink(new LinkInfoImpl(configuration,
-                            LinkInfoImpl.Kind.SUMMARY_RETURN_TYPE, type)));
+                    writer.getLink(new HtmlLinkInfo(configuration,
+                            HtmlLinkInfo.Kind.SUMMARY_RETURN_TYPE, type)));
         }
         tdSummaryType.add(code);
     }
@@ -255,6 +249,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         if (utils.isStatic(member)) {
             code.add("static ");
         }
+        if (!utils.isEnum(member) && utils.isFinal(member)) {
+            code.add("final ");
+        }
     }
 
     /**
@@ -283,22 +280,18 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
     }
 
-    protected String name(Element member) {
-        return utils.getSimpleName(member);
+    /**
+     * Add the preview information for the given member.
+     *
+     * @param member the member being documented.
+     * @param contentTree the content tree to which the preview information will be added.
+     */
+    protected void addPreviewInfo(Element member, Content contentTree) {
+        writer.addPreviewInfo(member, contentTree);
     }
 
-    /**
-     * Returns {@code true} if the given element is inherited
-     * by the class that is being documented.
-     *
-     * @param ped the element being checked
-     *
-     * @return {@code true} if inherited
-     */
-    protected boolean isInherited(Element ped){
-        return (!utils.isPrivate(ped) &&
-                (!utils.isPackagePrivate(ped) ||
-                    ped.getEnclosingElement().equals(ped.getEnclosingElement())));
+    protected String name(Element member) {
+        return utils.getSimpleName(member);
     }
 
     /**
@@ -338,11 +331,11 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 typeContent.add(name);
             }
             addSummaryLink(utils.isClass(element) || utils.isInterface(element)
-                    ? LinkInfoImpl.Kind.CLASS_USE
-                    : LinkInfoImpl.Kind.MEMBER,
+                    ? HtmlLinkInfo.Kind.CLASS_USE
+                    : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);
             Content desc = new ContentBuilder();
-            writer.addSummaryLinkComment(this, element, desc);
+            writer.addSummaryLinkComment(element, desc);
             useTable.addRow(summaryType, typeContent, desc);
         }
         contentTree.add(useTable);
@@ -370,7 +363,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         addSummaryLink(tElement, member, summaryLink);
         rowContents.add(summaryLink);
         Content desc = new ContentBuilder();
-        writer.addSummaryLinkComment(this, member, firstSentenceTrees, desc);
+        writer.addSummaryLinkComment(member, firstSentenceTrees, desc);
         rowContents.add(desc);
         table.addRow(member, rowContents);
     }

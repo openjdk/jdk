@@ -25,14 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Table;
-
 import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -94,25 +93,23 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
             Table table =  new Table(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                    .setId("all-packages-table")
-                    .setDefaultTab(resources.getText("doclet.All_Packages"));
+                    .setId(HtmlIds.ALL_PACKAGES_TABLE)
+                    .setDefaultTab(contents.getContent("doclet.All_Packages"));
 
             // add the tabs in command-line order
             for (String groupName : configuration.group.getGroupList()) {
                 Set<PackageElement> groupPackages = groupPackageMap.get(groupName);
                 if (groupPackages != null) {
-                    table.addTab(groupName, groupPackages::contains);
+                    table.addTab(Text.of(groupName), groupPackages::contains);
                 }
             }
 
             for (PackageElement pkg : configuration.packages) {
-                if (!pkg.isUnnamed()) {
-                    if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                        Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
-                        Content summaryContent = new ContentBuilder();
-                        addSummaryComment(pkg, summaryContent);
-                        table.addRow(pkg, packageLinkContent, summaryContent);
-                    }
+                if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
+                    Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
+                    Content summaryContent = new ContentBuilder();
+                    addSummaryComment(pkg, summaryContent);
+                    table.addRow(pkg, packageLinkContent, summaryContent);
                 }
             }
 

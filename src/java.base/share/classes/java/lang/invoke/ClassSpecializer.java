@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static java.lang.invoke.GenerateJLIClassesHelper.traceSpeciesType;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_getStatic;
 import static java.lang.invoke.MethodHandleNatives.Constants.REF_putStatic;
@@ -476,8 +475,10 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             Class<?> salvage = null;
             try {
                 salvage = BootLoader.loadClassOrNull(className);
-                traceSpeciesType(className, salvage);
             } catch (Error ex) {
+                // ignore
+            } finally {
+                traceSpeciesType(className, salvage);
             }
             final Class<? extends T> speciesCode;
             if (salvage != null) {
@@ -488,7 +489,6 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 // Not pregenerated, generate the class
                 try {
                     speciesCode = generateConcreteSpeciesCode(className, speciesData);
-                    traceSpeciesType(className, salvage);
                     // This operation causes a lot of churn:
                     linkSpeciesDataToCode(speciesData, speciesCode);
                     // This operation commits the relation, but causes little churn:
@@ -566,6 +566,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
          * @param speciesData what species we are generating
          * @return the generated concrete TopClass class
          */
+        @SuppressWarnings("removal")
         Class<? extends T> generateConcreteSpeciesCode(String className, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             byte[] classFile = generateConcreteSpeciesCodeFile(className, speciesData);
 
@@ -620,7 +621,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
-            cw.visit(V1_6, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
+            cw.visit(CLASSFILE_VERSION, NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER, className, null, superClassName, null);
 
             final String sourceFile = className.substring(className.lastIndexOf('.')+1);
             cw.visitSource(sourceFile, null);
@@ -852,14 +853,14 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         }
 
         private int typeLoadOp(char t) {
-            switch (t) {
-            case 'L': return ALOAD;
-            case 'I': return ILOAD;
-            case 'J': return LLOAD;
-            case 'F': return FLOAD;
-            case 'D': return DLOAD;
-            default : throw newInternalError("unrecognized type " + t);
-            }
+            return switch (t) {
+                case 'L' -> ALOAD;
+                case 'I' -> ILOAD;
+                case 'J' -> LLOAD;
+                case 'F' -> FLOAD;
+                case 'D' -> DLOAD;
+                default -> throw newInternalError("unrecognized type " + t);
+            };
         }
 
         private void emitIntConstant(int con, MethodVisitor mv) {

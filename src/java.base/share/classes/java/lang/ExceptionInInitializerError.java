@@ -36,13 +36,6 @@ import java.io.ObjectStreamField;
  * exception occurred during evaluation of a static initializer or the
  * initializer for a static variable.
  *
- * <p>As of release 1.4, this exception has been retrofitted to conform to
- * the general purpose exception-chaining mechanism.  The "saved throwable
- * object" that may be provided at construction time and accessed via
- * the {@link #getException()} method is now known as the <i>cause</i>,
- * and may be accessed via the {@link Throwable#getCause()} method, as well
- * as the aforementioned "legacy method."
- *
  * @author  Frank Yellin
  * @since   1.1
  */
@@ -92,7 +85,8 @@ public class ExceptionInInitializerError extends LinkageError {
      * Returns the exception that occurred during a static initialization that
      * caused this error to be created.
      *
-     * <p>This method predates the general-purpose exception chaining facility.
+     * @apiNote
+     * This method predates the general-purpose exception chaining facility.
      * The {@link Throwable#getCause()} method is now the preferred means of
      * obtaining this information.
      *

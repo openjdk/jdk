@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ MAKE := @MAKE@
 
 # Make sure all shell commands are executed with the C locale
 export LC_ALL := C
+
+# Make sure we override any local CLASSPATH variable
+export CLASSPATH := @CLASSPATH@
 
 # The default make arguments
 MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
@@ -127,6 +130,13 @@ RELEASE_FILE_LIBC:=@RELEASE_FILE_LIBC@
 
 SOURCE_DATE := @SOURCE_DATE@
 ENABLE_REPRODUCIBLE_BUILD := @ENABLE_REPRODUCIBLE_BUILD@
+ISO_8601_FORMAT_STRING := @ISO_8601_FORMAT_STRING@
+
+ifneq ($(SOURCE_DATE), updated)
+  # For "updated" source date value, these are set in InitSupport.gmk
+  export SOURCE_DATE_EPOCH := $(SOURCE_DATE)
+  SOURCE_DATE_ISO_8601 := @SOURCE_DATE_ISO_8601@
+endif
 
 LIBM:=@LIBM@
 LIBDL:=@LIBDL@
@@ -230,10 +240,13 @@ VENDOR_VERSION_STRING := @VENDOR_VERSION_STRING@
 VERSION_CLASSFILE_MAJOR := @VERSION_CLASSFILE_MAJOR@
 VERSION_CLASSFILE_MINOR := @VERSION_CLASSFILE_MINOR@
 
+# Version for API docs "new-since" feature
+VERSION_DOCS_API_SINCE := @VERSION_DOCS_API_SINCE@
+
 JDK_SOURCE_TARGET_VERSION := @JDK_SOURCE_TARGET_VERSION@
 
 # Convenience CFLAGS settings for passing version information into native programs.
-VERSION_CFLAGS := \
+VERSION_CFLAGS = \
     -DVERSION_FEATURE=$(VERSION_FEATURE) \
     -DVERSION_INTERIM=$(VERSION_INTERIM) \
     -DVERSION_UPDATE=$(VERSION_UPDATE) \
@@ -255,7 +268,7 @@ VERSION_CFLAGS := \
     #
 
 ifneq ($(COMPANY_NAME),)
-  # COMPANY_NAME is set to "N/A" in $AUTOCONF_DIR/version-numbers by default,
+  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
   # but can be customized with the '--with-vendor-name' configure option.
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
   # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
@@ -349,7 +362,15 @@ BUILD_MANPAGES := @BUILD_MANPAGES@
 
 BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
 
+ENABLE_COMPATIBLE_CDS_ALIGNMENT := @ENABLE_COMPATIBLE_CDS_ALIGNMENT@
+
 ALLOW_ABSOLUTE_PATHS_IN_OUTPUT := @ALLOW_ABSOLUTE_PATHS_IN_OUTPUT@
+
+HSDIS_BACKEND := @HSDIS_BACKEND@
+ENABLE_HSDIS_BUNDLING := @ENABLE_HSDIS_BUNDLING@
+HSDIS_CFLAGS := @HSDIS_CFLAGS@
+HSDIS_LDFLAGS := @HSDIS_LDFLAGS@
+HSDIS_LIBS := @HSDIS_LIBS@
 
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
@@ -358,6 +379,9 @@ BOOT_JDK:=@BOOT_JDK@
 BUILD_JDK:=@BUILD_JDK@
 CREATE_BUILDJDK:=@CREATE_BUILDJDK@
 EXTERNAL_BUILDJDK:=@EXTERNAL_BUILDJDK@
+
+# Whether the boot jdk jar supports --date=TIMESTAMP
+BOOT_JDK_JAR_SUPPORTS_DATE:=@BOOT_JDK_JAR_SUPPORTS_DATE@
 
 # When compiling Java source to be run by the boot jdk
 # use these extra flags, eg -source 6 -target 6
@@ -390,8 +414,8 @@ LIBFFI_LIBS:=@LIBFFI_LIBS@
 LIBFFI_CFLAGS:=@LIBFFI_CFLAGS@
 ENABLE_LIBFFI_BUNDLING:=@ENABLE_LIBFFI_BUNDLING@
 LIBFFI_LIB_FILE:=@LIBFFI_LIB_FILE@
-GRAALUNIT_LIB := @GRAALUNIT_LIB@
 FILE_MACRO_CFLAGS := @FILE_MACRO_CFLAGS@
+BRANCH_PROTECTION_CFLAGS := @BRANCH_PROTECTION_CFLAGS@
 
 STATIC_LIBS_CFLAGS := @STATIC_LIBS_CFLAGS@
 
@@ -405,6 +429,8 @@ GTEST_FRAMEWORK_SRC := @GTEST_FRAMEWORK_SRC@
 
 # Source file for cacerts
 CACERTS_FILE=@CACERTS_FILE@
+# Source folder for user provided cacerts PEM files
+CACERTS_SRC=@CACERTS_SRC@
 
 # Enable unlimited crypto policy
 UNLIMITED_CRYPTO=@UNLIMITED_CRYPTO@
@@ -475,8 +501,7 @@ CXX_O_FLAG_NORM:=@CXX_O_FLAG_NORM@
 CXX_O_FLAG_NONE:=@CXX_O_FLAG_NONE@
 CXX_O_FLAG_SIZE:=@CXX_O_FLAG_SIZE@
 
-C_FLAG_DEPS:=@C_FLAG_DEPS@
-CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
+GENDEPS_FLAGS := @GENDEPS_FLAGS@
 
 DISABLE_WARNING_PREFIX := @DISABLE_WARNING_PREFIX@
 CFLAGS_WARNINGS_ARE_ERRORS:=@CFLAGS_WARNINGS_ARE_ERRORS@
@@ -508,6 +533,8 @@ JVM_LDFLAGS := @JVM_LDFLAGS@
 JVM_ASFLAGS := @JVM_ASFLAGS@
 JVM_LIBS := @JVM_LIBS@
 
+BASIC_ASFLAGS := @BASIC_ASFLAGS@
+
 # These flags might contain variables set by a custom extension that is included later.
 EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@
@@ -520,9 +547,6 @@ CPP := @CPP@
 
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD := @LD@
-
-# Linker used by the jaotc tool for AOT compilation.
-LD_JAOTC:=@LD_JAOTC@
 
 # Xcode SDK path
 SDKROOT:=@SDKROOT@
@@ -567,13 +591,14 @@ AR := @AR@
 ARFLAGS:=@ARFLAGS@
 
 NM:=@NM@
-GNM:=@GNM@
 STRIP:=@STRIP@
 OBJDUMP:=@OBJDUMP@
 CXXFILT:=@CXXFILT@
 
 LIPO:=@LIPO@
 INSTALL_NAME_TOOL:=@INSTALL_NAME_TOOL@
+METAL := @METAL@
+METALLIB := @METALLIB@
 
 # Options to linker to specify a mapfile.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
@@ -648,6 +673,8 @@ BUILD_JAVA=@FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
 BUILD_JAVAC=@FIXPATH@ $(BUILD_JDK)/bin/javac
 BUILD_JAR=@FIXPATH@ $(BUILD_JDK)/bin/jar
 
+DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
+
 # Interim langtools modules and arguments
 INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.javadoc
 INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
@@ -656,6 +683,8 @@ INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
     --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
     --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=java.compiler.interim \
+    --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
@@ -663,6 +692,7 @@ INTERIM_LANGTOOLS_ARGS := \
     --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
     --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
+    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
     $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
     #
 JAVAC_MAIN_CLASS = -m jdk.compiler.interim/com.sun.tools.javac.Main
@@ -689,6 +719,7 @@ CODESIGN:=@CODESIGN@
 CP:=@CP@
 CUT:=@CUT@
 DATE:=@DATE@
+IS_GNU_DATE:=@IS_GNU_DATE@
 DIFF:=@DIFF@
 DIRNAME:=@DIRNAME@
 DSYMUTIL:=@DSYMUTIL@
@@ -756,7 +787,6 @@ TAR_INCLUDE_PARAM:=@TAR_INCLUDE_PARAM@
 TAR_SUPPORTS_TRANSFORM:=@TAR_SUPPORTS_TRANSFORM@
 
 # Build setup
-ENABLE_AOT:=@ENABLE_AOT@
 USE_EXTERNAL_LIBJPEG:=@USE_EXTERNAL_LIBJPEG@
 USE_EXTERNAL_LIBGIF:=@USE_EXTERNAL_LIBGIF@
 USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
@@ -844,8 +874,8 @@ PNG_CFLAGS:=@PNG_CFLAGS@
 #
 
 INCLUDE_SA=@INCLUDE_SA@
-INCLUDE_GRAAL=@INCLUDE_GRAAL@
 INCLUDE_JVMCI=@INCLUDE_JVMCI@
+INCLUDE_COMPILER2=@INCLUDE_COMPILER2@
 
 OS_VERSION_MAJOR:=@OS_VERSION_MAJOR@
 OS_VERSION_MINOR:=@OS_VERSION_MINOR@
@@ -908,7 +938,12 @@ JDK_MACOSX_CONTENTS_DIR=$(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_CONTENTS_SUBDIR)
 JRE_MACOSX_CONTENTS_DIR=$(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_CONTENTS_SUBDIR)
 
 # Bundle names
-BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+ifneq ($(VERSION_BUILD), )
+  BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+else
+  BASE_NAME := $(VERSION_SHORT)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
+endif
+
 ifeq ($(DEBUG_LEVEL), fastdebug)
   DEBUG_PART := -debug
 else ifneq ($(DEBUG_LEVEL), release)

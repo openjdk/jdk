@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_RUNTIME_FRAME_HPP
 #define SHARE_RUNTIME_FRAME_HPP
 
-#include "oops/method.hpp"
+#include "code/vmregTypes.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
-#include "runtime/registerMap.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
 # include "stack_zero.hpp"
@@ -37,9 +37,13 @@
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
+class CompiledMethod;
 class FrameValues;
 class vframeArray;
 class JavaCallWrapper;
+class Method;
+class methodHandle;
+class RegisterMap;
 
 enum class DerivedPointerIterationMode {
   _with_table,
@@ -134,12 +138,18 @@ class frame {
   bool is_compiled_frame()       const;
   bool is_safepoint_blob_frame() const;
   bool is_deoptimized_frame()    const;
+  bool is_optimized_entry_frame()         const;
 
   // testers
   bool is_first_frame() const; // oldest frame? (has no sender)
   bool is_first_java_frame() const;              // same for Java frame
 
   bool is_interpreted_frame_valid(JavaThread* thread) const;       // performs sanity checks on interpreted frames.
+
+  // is this frame doing a call using the compiled calling convention?
+  bool is_compiled_caller() const {
+    return is_compiled_frame() || is_optimized_entry_frame();
+  }
 
   // tells whether this frame is marked for deoptimization
   bool should_be_deoptimized() const;
@@ -168,6 +178,7 @@ class frame {
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
   frame sender_for_native_frame(RegisterMap* map) const;
+  frame sender_for_optimized_entry_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
@@ -255,8 +266,7 @@ class frame {
   oop retrieve_receiver(RegisterMap *reg_map);
 
   // Return the monitor owner and BasicLock for compiled synchronized
-  // native methods so that biased locking can revoke the receiver's
-  // bias if necessary.  This is also used by JVMTI's GetLocalInstance method
+  // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
   BasicLock* get_native_monitor();
   oop        get_native_receiver();
@@ -336,6 +346,7 @@ class frame {
 
   // tells whether there is another chunk of Delta stack above
   bool entry_frame_is_first() const;
+  bool optimized_entry_frame_is_first() const;
 
   // Safepoints
 
@@ -361,7 +372,8 @@ class frame {
   void describe(FrameValues& values, int frame_no);
 
   // Conversion from a VMReg to physical stack location
-  oop* oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const;
+  address oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const;
+  oop* oopmapreg_to_oop_location(VMReg reg, const RegisterMap* reg_map) const;
 
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
@@ -392,8 +404,6 @@ class frame {
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
-
-  NOT_PRODUCT(void pd_ps();)  // platform dependent frame printing
 
 #include CPU_HEADER(frame)
 
@@ -446,40 +456,5 @@ class FrameValues {
 
 #endif
 
-//
-// StackFrameStream iterates through the frames of a thread starting from
-// top most frame. It automatically takes care of updating the location of
-// all (callee-saved) registers iff the update flag is set. It also
-// automatically takes care of lazily applying deferred GC processing
-// onto exposed frames, such that all oops are valid iff the process_frames
-// flag is set.
-//
-// Notice: If a thread is stopped at a safepoint, all registers are saved,
-// not only the callee-saved ones.
-//
-// Use:
-//
-//   for(StackFrameStream fst(thread, true /* update */, true /* process_frames */);
-//       !fst.is_done();
-//       fst.next()) {
-//     ...
-//   }
-//
-class StackFrameStream : public StackObj {
- private:
-  frame       _fr;
-  RegisterMap _reg_map;
-  bool        _is_done;
- public:
-  StackFrameStream(JavaThread *thread, bool update, bool process_frames);
-
-  // Iteration
-  inline bool is_done();
-  void next()                     { if (!_is_done) _fr = _fr.sender(&_reg_map); }
-
-  // Query
-  frame *current()                { return &_fr; }
-  RegisterMap* register_map()     { return &_reg_map; }
-};
 
 #endif // SHARE_RUNTIME_FRAME_HPP

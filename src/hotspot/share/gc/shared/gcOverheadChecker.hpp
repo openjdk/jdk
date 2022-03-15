@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 
 #include "memory/allocation.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"
 
 class SoftRefPolicy;

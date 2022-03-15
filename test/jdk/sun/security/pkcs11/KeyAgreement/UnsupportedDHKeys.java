@@ -28,7 +28,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm UnsupportedDHKeys
- * @run main/othervm UnsupportedDHKeys sm
+ * @run main/othervm -Djava.security.manager=allow UnsupportedDHKeys sm
  */
 
 import java.security.InvalidParameterException;

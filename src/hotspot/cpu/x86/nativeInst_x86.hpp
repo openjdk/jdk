@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
-#include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
 
 // We have interfaces for the following instructions:
@@ -161,8 +160,6 @@ class NativeCall: public NativeInstruction {
     return_address_offset       =    5
   };
 
-  enum { cache_line_size = BytesPerWord };  // conservative estimate!
-
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(return_address_offset); }
   int   displacement() const                { return (jint) int_at(displacement_offset); }
@@ -176,9 +173,11 @@ class NativeCall: public NativeInstruction {
 #endif // AMD64
     set_int_at(displacement_offset, dest - return_address());
   }
+  // Returns whether the 4-byte displacement operand is 4-byte aligned.
+  bool  is_displacement_aligned();
   void  set_destination_mt_safe(address dest);
 
-  void  verify_alignment() { assert((intptr_t)addr_at(displacement_offset) % BytesPerInt == 0, "must be aligned"); }
+  void  verify_alignment() { assert(is_displacement_aligned(), "displacement of call is not aligned"); }
   void  verify();
   void  print();
 
@@ -198,13 +197,6 @@ class NativeCall: public NativeInstruction {
     return nativeInstruction_at(instr)->is_call() &&
       nativeCall_at(instr)->destination() == target;
   }
-
-#if INCLUDE_AOT
-  static bool is_far_call(address instr, address target) {
-    intptr_t disp = target - (instr + sizeof(int32_t));
-    return !Assembler::is_simm32(disp);
-  }
-#endif
 
   // MT-safe patching of a call instruction.
   static void insert(address code_pos, address entry);

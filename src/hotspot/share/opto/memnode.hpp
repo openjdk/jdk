@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public:
   Node* split_through_phi(PhaseGVN *phase);
 
   // Recover original value from boxed values
-  Node *eliminate_autobox(PhaseGVN *phase);
+  Node *eliminate_autobox(PhaseIterGVN *igvn);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
@@ -285,7 +285,6 @@ public:
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
-  void pin() { _control_dependency = Pinned; }
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
 
 #ifndef PRODUCT
@@ -529,7 +528,7 @@ public:
 
   // Polymorphic factory method:
   static Node* make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const TypePtr* at,
-                    const TypeKlassPtr* tk = TypeKlassPtr::OBJECT);
+                    const TypeKlassPtr* tk = TypeInstKlassPtr::OBJECT);
 };
 
 //------------------------------LoadNKlassNode---------------------------------
@@ -849,6 +848,7 @@ public:
   virtual const Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const;
   virtual const class TypePtr *adr_type() const { return _adr_type; }  // returns bottom_type of address
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   bool result_not_used() const;
   MemBarNode* trailing_membar() const;
@@ -863,6 +863,7 @@ public:
     ExpectedIn = MemNode::ValueIn+1 // One more input than MemNode
   };
   LoadStoreConditionalNode(Node *c, Node *mem, Node *adr, Node *val, Node *ex);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------StorePConditionalNode---------------------------
@@ -1308,6 +1309,13 @@ public:
   virtual int Opcode() const;
 };
 
+class StoreStoreFenceNode: public MemBarNode {
+public:
+  StoreStoreFenceNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
@@ -1346,8 +1354,8 @@ public:
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file
   const RegMask &in_RegMask(uint idx) const {
     // Fake the incoming arguments mask for blackholes: accept all registers
-    // and all stack slots. This would avoid moving the arguments for the
-    // call that never happens.
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
     return RegMask::All;
   }
 #ifndef PRODUCT

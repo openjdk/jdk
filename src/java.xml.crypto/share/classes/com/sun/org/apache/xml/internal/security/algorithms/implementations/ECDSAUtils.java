@@ -20,6 +20,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ */
 package com.sun.org.apache.xml.internal.security.algorithms.implementations;
 
 import java.io.IOException;
@@ -42,14 +45,15 @@ public final class ECDSAUtils {
      * The JAVA JCE ECDSA Signature algorithm creates ASN.1 encoded (r, s) value
      * pairs; the XML Signature requires the core BigInteger values.
      *
-     * @param asn1Bytes
-     * @return the decode bytes
+     * @param asn1Bytes the ASN.1 encoded bytes
+     * @param rawLen the intended length of decoded bytes for an integer.
+     *               If -1, choose one automatically.
+     * @return the decoded bytes
      * @throws IOException
      * @see <A HREF="http://www.w3.org/TR/xmldsig-core/#dsa-sha1">6.4.1 DSA</A>
      * @see <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4050.txt">3.3. ECDSA Signatures</A>
      */
-    public static byte[] convertASN1toXMLDSIG(byte asn1Bytes[]) throws IOException {
-
+    public static byte[] convertASN1toXMLDSIG(byte[] asn1Bytes, int rawLen) throws IOException {
         if (asn1Bytes.length < 8 || asn1Bytes[0] != 48) {
             throw new IOException("Invalid ASN.1 format of ECDSA signature");
         }
@@ -72,7 +76,13 @@ public final class ECDSAUtils {
 
         for (j = sLength; j > 0 && asn1Bytes[offset + 2 + rLength + 2 + sLength - j] == 0; j--); //NOPMD
 
-        int rawLen = Math.max(i, j);
+        int maxLen = Math.max(i, j);
+
+        if (rawLen < 0) {
+            rawLen = maxLen;
+        } else if (rawLen < maxLen) {
+            throw new IOException("Invalid signature length");
+        }
 
         if ((asn1Bytes[offset - 1] & 0xff) != asn1Bytes.length - offset
                 || (asn1Bytes[offset - 1] & 0xff) != 2 + rLength + 2 + sLength
@@ -80,7 +90,7 @@ public final class ECDSAUtils {
                 || asn1Bytes[offset + 2 + rLength] != 2) {
             throw new IOException("Invalid ASN.1 format of ECDSA signature");
         }
-        byte xmldsigBytes[] = new byte[2 * rawLen];
+        byte[] xmldsigBytes = new byte[2 * rawLen];
 
         System.arraycopy(asn1Bytes, offset + 2 + rLength - i, xmldsigBytes, rawLen - i, i);
         System.arraycopy(asn1Bytes, offset + 2 + rLength + 2 + sLength - j, xmldsigBytes,
@@ -101,7 +111,7 @@ public final class ECDSAUtils {
      * @see <A HREF="http://www.w3.org/TR/xmldsig-core/#dsa-sha1">6.4.1 DSA</A>
      * @see <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4050.txt">3.3. ECDSA Signatures</A>
      */
-    public static byte[] convertXMLDSIGtoASN1(byte xmldsigBytes[]) throws IOException {
+    public static byte[] convertXMLDSIGtoASN1(byte[] xmldsigBytes) throws IOException {
 
         int rawLen = xmldsigBytes.length / 2;
 
@@ -130,7 +140,7 @@ public final class ECDSAUtils {
             throw new IOException("Invalid XMLDSIG format of ECDSA signature");
         }
         int offset;
-        byte asn1Bytes[];
+        byte[] asn1Bytes;
         if (len < 128) {
             asn1Bytes = new byte[2 + 2 + j + 2 + l];
             offset = 1;
@@ -877,9 +887,9 @@ public final class ECDSAUtils {
 
     public static byte[] encodePoint(ECPoint ecPoint, EllipticCurve ellipticCurve) {
         int size = (ellipticCurve.getField().getFieldSize() + 7) / 8;
-        byte affineXBytes[] = stripLeadingZeros(ecPoint.getAffineX().toByteArray());
-        byte affineYBytes[] = stripLeadingZeros(ecPoint.getAffineY().toByteArray());
-        byte encodedBytes[] = new byte[size * 2 + 1];
+        byte[] affineXBytes = stripLeadingZeros(ecPoint.getAffineX().toByteArray());
+        byte[] affineYBytes = stripLeadingZeros(ecPoint.getAffineY().toByteArray());
+        byte[] encodedBytes = new byte[size * 2 + 1];
         encodedBytes[0] = 0x04; //uncompressed
         System.arraycopy(affineXBytes, 0, encodedBytes, size - affineXBytes.length + 1, affineXBytes.length);
         System.arraycopy(affineYBytes, 0, encodedBytes, encodedBytes.length - affineYBytes.length, affineYBytes.length);
@@ -892,8 +902,8 @@ public final class ECDSAUtils {
         }
 
         int size = (elliptiCcurve.getField().getFieldSize() + 7) / 8;
-        byte affineXBytes[] = new byte[size];
-        byte affineYBytes[] = new byte[size];
+        byte[] affineXBytes = new byte[size];
+        byte[] affineYBytes = new byte[size];
         System.arraycopy(encodedBytes, 1, affineXBytes, 0, size);
         System.arraycopy(encodedBytes, size + 1, affineYBytes, 0, size);
         return new ECPoint(new BigInteger(1, affineXBytes), new BigInteger(1, affineYBytes));
@@ -910,7 +920,7 @@ public final class ECDSAUtils {
         if (i == 0) {
             return bytes;
         } else {
-            byte stripped[] = new byte[bytes.length - i];
+            byte[] stripped = new byte[bytes.length - i];
             System.arraycopy(bytes, i, stripped, 0, stripped.length);
             return stripped;
         }

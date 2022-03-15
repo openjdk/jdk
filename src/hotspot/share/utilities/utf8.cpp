@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/utf8.hpp"
+
 
 // Assume the utf8 string is in legal form and has been
 // checked in the class file parser/format checker.
@@ -447,6 +451,7 @@ char* UNICODE::as_utf8(const T* base, int& length) {
 }
 
 char* UNICODE::as_utf8(const jchar* base, int length, char* buf, int buflen) {
+  assert(buflen > 0, "zero length output buffer");
   u_char* p = (u_char*)buf;
   for (int index = 0; index < length; index++) {
     jchar c = base[index];
@@ -459,6 +464,7 @@ char* UNICODE::as_utf8(const jchar* base, int length, char* buf, int buflen) {
 }
 
 char* UNICODE::as_utf8(const jbyte* base, int length, char* buf, int buflen) {
+  assert(buflen > 0, "zero length output buffer");
   u_char* p = (u_char*)buf;
   for (int index = 0; index < length; index++) {
     jbyte c = base[index];

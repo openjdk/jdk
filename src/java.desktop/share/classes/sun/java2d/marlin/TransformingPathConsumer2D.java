@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.java2d.marlin;
 
-import sun.awt.geom.PathConsumer2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.Arrays;
@@ -34,8 +33,8 @@ import sun.java2d.marlin.Helpers.PolyStack;
 
 final class TransformingPathConsumer2D {
 
-    // higher uncertainty in float variant for huge shapes > 10^7
-    static final float CLIP_RECT_PADDING = 1.0f;
+    // smaller uncertainty in double variant
+    static final double CLIP_RECT_PADDING = 0.25d;
 
     private final RendererContext rdrCtx;
 
@@ -45,14 +44,14 @@ final class TransformingPathConsumer2D {
     // recycled PathClipFilter instance from pathClipper()
     private final PathClipFilter       pathClipper;
 
-    // recycled PathConsumer2D instance from wrapPath2D()
+    // recycled DPathConsumer2D instance from wrapPath2D()
     private final Path2DWrapper        wp_Path2DWrapper        = new Path2DWrapper();
 
-    // recycled PathConsumer2D instances from deltaTransformConsumer()
+    // recycled DPathConsumer2D instances from deltaTransformConsumer()
     private final DeltaScaleFilter     dt_DeltaScaleFilter     = new DeltaScaleFilter();
     private final DeltaTransformFilter dt_DeltaTransformFilter = new DeltaTransformFilter();
 
-    // recycled PathConsumer2D instances from inverseDeltaTransformConsumer()
+    // recycled DPathConsumer2D instances from inverseDeltaTransformConsumer()
     private final DeltaScaleFilter     iv_DeltaScaleFilter     = new DeltaScaleFilter();
     private final DeltaTransformFilter iv_DeltaTransformFilter = new DeltaTransformFilter();
 
@@ -70,51 +69,51 @@ final class TransformingPathConsumer2D {
         this.pathClipper = new PathClipFilter(rdrCtx);
     }
 
-    PathConsumer2D wrapPath2D(Path2D.Float p2d) {
+    DPathConsumer2D wrapPath2D(Path2D.Double p2d) {
         return wp_Path2DWrapper.init(p2d);
     }
 
-    PathConsumer2D traceInput(PathConsumer2D out) {
+    DPathConsumer2D traceInput(DPathConsumer2D out) {
         return tracerInput.init(out);
     }
 
-    PathConsumer2D traceClosedPathDetector(PathConsumer2D out) {
+    DPathConsumer2D traceClosedPathDetector(DPathConsumer2D out) {
         return tracerCPDetector.init(out);
     }
 
-    PathConsumer2D traceFiller(PathConsumer2D out) {
+    DPathConsumer2D traceFiller(DPathConsumer2D out) {
         return tracerFiller.init(out);
     }
 
-    PathConsumer2D traceStroker(PathConsumer2D out) {
+    DPathConsumer2D traceStroker(DPathConsumer2D out) {
         return tracerStroker.init(out);
     }
 
-    PathConsumer2D traceDasher(PathConsumer2D out) {
+    DPathConsumer2D traceDasher(DPathConsumer2D out) {
         return tracerDasher.init(out);
     }
 
-    PathConsumer2D detectClosedPath(PathConsumer2D out) {
+    DPathConsumer2D detectClosedPath(DPathConsumer2D out) {
         return cpDetector.init(out);
     }
 
-    PathConsumer2D pathClipper(PathConsumer2D out) {
+    DPathConsumer2D pathClipper(DPathConsumer2D out) {
         return pathClipper.init(out);
     }
 
-    PathConsumer2D deltaTransformConsumer(PathConsumer2D out,
+    DPathConsumer2D deltaTransformConsumer(DPathConsumer2D out,
                                           AffineTransform at)
     {
         if (at == null) {
             return out;
         }
-        final float mxx = (float) at.getScaleX();
-        final float mxy = (float) at.getShearX();
-        final float myx = (float) at.getShearY();
-        final float myy = (float) at.getScaleY();
+        final double mxx = at.getScaleX();
+        final double mxy = at.getShearX();
+        final double myx = at.getShearY();
+        final double myy = at.getScaleY();
 
-        if (mxy == 0.0f && myx == 0.0f) {
-            if (mxx == 1.0f && myy == 1.0f) {
+        if (mxy == 0.0d && myx == 0.0d) {
+            if (mxx == 1.0d && myy == 1.0d) {
                 return out;
             } else {
                 // Scale only
@@ -135,26 +134,26 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    private static float adjustClipScale(final float[] clipRect,
-                                         final float mxx, final float myy)
+    private static double adjustClipScale(final double[] clipRect,
+                                          final double mxx, final double myy)
     {
         // Adjust the clipping rectangle (iv_DeltaScaleFilter):
-        final float scaleY = 1.0f / myy;
+        final double scaleY = 1.0d / myy;
         clipRect[0] *= scaleY;
         clipRect[1] *= scaleY;
 
         if (clipRect[1] < clipRect[0]) {
-            float tmp = clipRect[0];
+            double tmp = clipRect[0];
             clipRect[0] = clipRect[1];
             clipRect[1] = tmp;
         }
 
-        final float scaleX = 1.0f / mxx;
+        final double scaleX = 1.0d / mxx;
         clipRect[2] *= scaleX;
         clipRect[3] *= scaleX;
 
         if (clipRect[3] < clipRect[2]) {
-            float tmp = clipRect[2];
+            double tmp = clipRect[2];
             clipRect[2] = clipRect[3];
             clipRect[3] = tmp;
         }
@@ -163,22 +162,22 @@ final class TransformingPathConsumer2D {
                 MarlinUtils.logInfo("clipRect (ClipScale): "
                                     + Arrays.toString(clipRect));
         }
-        return 0.5f * (Math.abs(scaleX) + Math.abs(scaleY));
+        return 0.5d * (Math.abs(scaleX) + Math.abs(scaleY));
     }
 
-    private static float adjustClipInverseDelta(final float[] clipRect,
-                                                final float mxx, final float mxy,
-                                                final float myx, final float myy)
+    private static double adjustClipInverseDelta(final double[] clipRect,
+                                                 final double mxx, final double mxy,
+                                                 final double myx, final double myy)
     {
         // Adjust the clipping rectangle (iv_DeltaTransformFilter):
-        final float det = mxx * myy - mxy * myx;
-        final float imxx =  myy / det;
-        final float imxy = -mxy / det;
-        final float imyx = -myx / det;
-        final float imyy =  mxx / det;
+        final double det = mxx * myy - mxy * myx;
+        final double imxx =  myy / det;
+        final double imxy = -mxy / det;
+        final double imyx = -myx / det;
+        final double imyy =  mxx / det;
 
-        float xmin, xmax, ymin, ymax;
-        float x, y;
+        double xmin, xmax, ymin, ymax;
+        double x, y;
         // xmin, ymin:
         x = clipRect[2] * imxx + clipRect[0] * imxy;
         y = clipRect[2] * imyx + clipRect[0] * imyy;
@@ -217,31 +216,31 @@ final class TransformingPathConsumer2D {
                                     + Arrays.toString(clipRect));
         }
 
-        final float scaleX = (float) Math.sqrt(imxx * imxx + imxy * imxy);
-        final float scaleY = (float) Math.sqrt(imyx * imyx + imyy * imyy);
+        final double scaleX = Math.sqrt(imxx * imxx + imxy * imxy);
+        final double scaleY = Math.sqrt(imyx * imyx + imyy * imyy);
 
-        return 0.5f * (scaleX + scaleY);
+        return 0.5d * (scaleX + scaleY);
     }
 
-    PathConsumer2D inverseDeltaTransformConsumer(PathConsumer2D out,
+    DPathConsumer2D inverseDeltaTransformConsumer(DPathConsumer2D out,
                                                  AffineTransform at)
     {
         if (at == null) {
             return out;
         }
-        float mxx = (float) at.getScaleX();
-        float mxy = (float) at.getShearX();
-        float myx = (float) at.getShearY();
-        float myy = (float) at.getScaleY();
+        double mxx = at.getScaleX();
+        double mxy = at.getShearX();
+        double myx = at.getShearY();
+        double myy = at.getScaleY();
 
-        if (mxy == 0.0f && myx == 0.0f) {
-            if (mxx == 1.0f && myy == 1.0f) {
+        if (mxy == 0.0d && myx == 0.0d) {
+            if (mxx == 1.0d && myy == 1.0d) {
                 return out;
             } else {
-                return iv_DeltaScaleFilter.init(out, 1.0f / mxx, 1.0f / myy);
+                return iv_DeltaScaleFilter.init(out, 1.0d / mxx, 1.0d / myy);
             }
         } else {
-            final float det = mxx * myy - mxy * myx;
+            final double det = mxx * myy - mxy * myx;
             return iv_DeltaTransformFilter.init(out,
                                                 myy / det,
                                                -mxy / det,
@@ -250,14 +249,14 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class DeltaScaleFilter implements PathConsumer2D {
-        private PathConsumer2D out;
-        private float sx, sy;
+    static final class DeltaScaleFilter implements DPathConsumer2D {
+        private DPathConsumer2D out;
+        private double sx, sy;
 
         DeltaScaleFilter() {}
 
-        DeltaScaleFilter init(PathConsumer2D out,
-                              float mxx, float myy)
+        DeltaScaleFilter init(DPathConsumer2D out,
+                              double mxx, double myy)
         {
             this.out = out;
             sx = mxx;
@@ -266,27 +265,27 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             out.moveTo(x0 * sx, y0 * sy);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             out.lineTo(x1 * sx, y1 * sy);
         }
 
         @Override
-        public void quadTo(float x1, float y1,
-                           float x2, float y2)
+        public void quadTo(double x1, double y1,
+                           double x2, double y2)
         {
             out.quadTo(x1 * sx, y1 * sy,
                        x2 * sx, y2 * sy);
         }
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             out.curveTo(x1 * sx, y1 * sy,
                         x2 * sx, y2 * sy,
@@ -309,15 +308,15 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class DeltaTransformFilter implements PathConsumer2D {
-        private PathConsumer2D out;
-        private float mxx, mxy, myx, myy;
+    static final class DeltaTransformFilter implements DPathConsumer2D {
+        private DPathConsumer2D out;
+        private double mxx, mxy, myx, myy;
 
         DeltaTransformFilter() {}
 
-        DeltaTransformFilter init(PathConsumer2D out,
-                                  float mxx, float mxy,
-                                  float myx, float myy)
+        DeltaTransformFilter init(DPathConsumer2D out,
+                                  double mxx, double mxy,
+                                  double myx, double myy)
         {
             this.out = out;
             this.mxx = mxx;
@@ -328,20 +327,20 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             out.moveTo(x0 * mxx + y0 * mxy,
                        x0 * myx + y0 * myy);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             out.lineTo(x1 * mxx + y1 * mxy,
                        x1 * myx + y1 * myy);
         }
 
         @Override
-        public void quadTo(float x1, float y1,
-                           float x2, float y2)
+        public void quadTo(double x1, double y1,
+                           double x2, double y2)
         {
             out.quadTo(x1 * mxx + y1 * mxy,
                        x1 * myx + y1 * myy,
@@ -350,9 +349,9 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             out.curveTo(x1 * mxx + y1 * mxy,
                         x1 * myx + y1 * myy,
@@ -378,23 +377,23 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class Path2DWrapper implements PathConsumer2D {
-        private Path2D.Float p2d;
+    static final class Path2DWrapper implements DPathConsumer2D {
+        private Path2D.Double p2d;
 
         Path2DWrapper() {}
 
-        Path2DWrapper init(Path2D.Float p2d) {
+        Path2DWrapper init(Path2D.Double p2d) {
             this.p2d = p2d;
             return this;
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             p2d.moveTo(x0, y0);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             p2d.lineTo(x1, y1);
         }
 
@@ -407,15 +406,15 @@ final class TransformingPathConsumer2D {
         public void pathDone() {}
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             p2d.curveTo(x1, y1, x2, y2, x3, y3);
         }
 
         @Override
-        public void quadTo(float x1, float y1, float x2, float y2) {
+        public void quadTo(double x1, double y1, double x2, double y2) {
             p2d.quadTo(x1, y1, x2, y2);
         }
 
@@ -425,12 +424,12 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class ClosedPathDetector implements PathConsumer2D {
+    static final class ClosedPathDetector implements DPathConsumer2D {
 
         private final RendererContext rdrCtx;
         private final PolyStack stack;
 
-        private PathConsumer2D out;
+        private DPathConsumer2D out;
 
         ClosedPathDetector(final RendererContext rdrCtx) {
             this.rdrCtx = rdrCtx;
@@ -444,7 +443,7 @@ final class TransformingPathConsumer2D {
                 : new PolyStack(rdrCtx);
         }
 
-        ClosedPathDetector init(PathConsumer2D out) {
+        ClosedPathDetector init(DPathConsumer2D out) {
             this.out = out;
             return this; // fluent API
         }
@@ -476,7 +475,7 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             // previous path is not closed:
             finish(false);
             out.moveTo(x0, y0);
@@ -488,20 +487,20 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             stack.pushLine(x1, y1);
         }
 
         @Override
-        public void curveTo(float x3, float y3,
-                            float x2, float y2,
-                            float x1, float y1)
+        public void curveTo(double x3, double y3,
+                            double x2, double y2,
+                            double x1, double y1)
         {
             stack.pushCubic(x1, y1, x2, y2, x3, y3);
         }
 
         @Override
-        public void quadTo(float x2, float y2, float x1, float y1) {
+        public void quadTo(double x2, double y2, double x1, double y1) {
             stack.pushQuad(x1, y1, x2, y2);
         }
 
@@ -511,14 +510,14 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class PathClipFilter implements PathConsumer2D {
+    static final class PathClipFilter implements DPathConsumer2D {
 
-        private PathConsumer2D out;
+        private DPathConsumer2D out;
 
         // Bounds of the drawing region, at pixel precision.
-        private final float[] clipRect;
+        private final double[] clipRect;
 
-        private final float[] corners = new float[8];
+        private final double[] corners = new double[8];
         private boolean init_corners = false;
 
         private final IndexStack stack;
@@ -532,13 +531,13 @@ final class TransformingPathConsumer2D {
         private boolean outside = false;
 
         // The starting point of the path
-        private float sx0, sy0;
+        private double sx0, sy0;
 
         // The current point (TODO stupid repeated info)
-        private float cx0, cy0;
+        private double cx0, cy0;
 
         // The current point OUTSIDE
-        private float cox0, coy0;
+        private double cox0, coy0;
 
         private boolean subdivide = MarlinConst.DO_CLIP_SUBDIVIDER;
         private final CurveClipSplitter curveSplitter;
@@ -555,7 +554,7 @@ final class TransformingPathConsumer2D {
                 : new IndexStack(rdrCtx);
         }
 
-        PathClipFilter init(final PathConsumer2D out) {
+        PathClipFilter init(final DPathConsumer2D out) {
             this.out = out;
 
             if (MarlinConst.DO_CLIP_SUBDIVIDER) {
@@ -596,8 +595,8 @@ final class TransformingPathConsumer2D {
                 if (init_corners) {
                     init_corners = false;
 
-                    final float[] _corners = corners;
-                    final float[] _clipRect = clipRect;
+                    final double[] _corners = corners;
+                    final double[] _clipRect = clipRect;
                     // Top Left (0):
                     _corners[0] = _clipRect[2];
                     _corners[1] = _clipRect[0];
@@ -642,7 +641,7 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void moveTo(final float x0, final float y0) {
+        public void moveTo(final double x0, final double y0) {
             finishPath();
 
             out.moveTo(x0, y0);
@@ -657,7 +656,7 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void lineTo(final float xe, final float ye) {
+        public void lineTo(final double xe, final double ye) {
             final int outcode0 = this.cOutCode;
             final int outcode1 = Helpers.outcode(xe, ye, clipRect);
 
@@ -751,9 +750,9 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void curveTo(final float x1, final float y1,
-                            final float x2, final float y2,
-                            final float xe, final float ye)
+        public void curveTo(final double x1, final double y1,
+                            final double x2, final double y2,
+                            final double xe, final double ye)
         {
             final int outcode0 = this.cOutCode;
             final int outcode1 = Helpers.outcode(x1, y1, clipRect);
@@ -815,8 +814,8 @@ final class TransformingPathConsumer2D {
         }
 
         @Override
-        public void quadTo(final float x1, final float y1,
-                           final float xe, final float ye)
+        public void quadTo(final double x1, final double y1,
+                           final double xe, final double ye)
         {
             final int outcode0 = this.cOutCode;
             final int outcode1 = Helpers.outcode(x1, y1, clipRect);
@@ -882,8 +881,8 @@ final class TransformingPathConsumer2D {
 
     static final class CurveClipSplitter {
 
-        static final float LEN_TH = MarlinProperties.getSubdividerMinLength();
-        static final boolean DO_CHECK_LENGTH = (LEN_TH > 0.0f);
+        static final double LEN_TH = MarlinProperties.getSubdividerMinLength();
+        static final boolean DO_CHECK_LENGTH = (LEN_TH > 0.0d);
 
         private static final boolean TRACE = false;
 
@@ -892,20 +891,20 @@ final class TransformingPathConsumer2D {
         private final RendererContext rdrCtx;
 
         // scaled length threshold:
-        private float minLength;
+        private double minLength;
 
         // clip rectangle (ymin, ymax, xmin, xmax):
-        final float[] clipRect;
+        final double[] clipRect;
 
         // clip rectangle (ymin, ymax, xmin, xmax) including padding:
-        final float[] clipRectPad = new float[4];
+        final double[] clipRectPad = new double[4];
         private boolean init_clipRectPad = false;
 
         // This is where the curve to be processed is put. We give it
         // enough room to store all curves.
-        final float[] middle = new float[MAX_N_CURVES * 8 + 2];
+        final double[] middle = new double[MAX_N_CURVES * 8 + 2];
         // t values at subdivision points
-        private final float[] subdivTs = new float[MAX_N_CURVES];
+        private final double[] subdivTs = new double[MAX_N_CURVES];
 
         // dirty curve
         private final Curve curve;
@@ -920,7 +919,7 @@ final class TransformingPathConsumer2D {
             this.init_clipRectPad = true;
 
             if (DO_CHECK_LENGTH) {
-                this.minLength = (this.rdrCtx.clipInvScale == 0.0f) ? LEN_TH
+                this.minLength = (this.rdrCtx.clipInvScale == 0.0d) ? LEN_TH
                                     : (LEN_TH * this.rdrCtx.clipInvScale);
 
                 if (MarlinConst.DO_LOG_CLIP) {
@@ -934,8 +933,8 @@ final class TransformingPathConsumer2D {
             // bounds as half-open intervals: minX <= x < maxX and minY <= y < maxY
             // adjust padded clip rectangle (ymin, ymax, xmin, xmax):
             // add a rounding error (curve subdivision ~ 0.1px):
-            final float[] _clipRect = clipRect;
-            final float[] _clipRectPad = clipRectPad;
+            final double[] _clipRect = clipRect;
+            final double[] _clipRectPad = clipRectPad;
 
             _clipRectPad[0] = _clipRect[0] - CLIP_RECT_PADDING;
             _clipRectPad[1] = _clipRect[1] + CLIP_RECT_PADDING;
@@ -948,10 +947,10 @@ final class TransformingPathConsumer2D {
             }
         }
 
-        boolean splitLine(final float x0, final float y0,
-                          final float x1, final float y1,
+        boolean splitLine(final double x0, final double y0,
+                          final double x1, final double y1,
                           final int outCodeOR,
-                          final PathConsumer2D out)
+                          final DPathConsumer2D out)
         {
             if (TRACE) {
                 MarlinUtils.logInfo("divLine P0(" + x0 + ", " + y0 + ") P1(" + x1 + ", " + y1 + ")");
@@ -961,18 +960,18 @@ final class TransformingPathConsumer2D {
                 return false;
             }
 
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
 
             return subdivideAtIntersections(4, outCodeOR, out);
         }
 
-        boolean splitQuad(final float x0, final float y0,
-                          final float x1, final float y1,
-                          final float x2, final float y2,
+        boolean splitQuad(final double x0, final double y0,
+                          final double x1, final double y1,
+                          final double x2, final double y2,
                           final int outCodeOR,
-                          final PathConsumer2D out)
+                          final DPathConsumer2D out)
         {
             if (TRACE) {
                 MarlinUtils.logInfo("divQuad P0(" + x0 + ", " + y0 + ") P1(" + x1 + ", " + y1 + ") P2(" + x2 + ", " + y2 + ")");
@@ -982,7 +981,7 @@ final class TransformingPathConsumer2D {
                 return false;
             }
 
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
             mid[4] = x2;  mid[5] = y2;
@@ -990,12 +989,12 @@ final class TransformingPathConsumer2D {
             return subdivideAtIntersections(6, outCodeOR, out);
         }
 
-        boolean splitCurve(final float x0, final float y0,
-                           final float x1, final float y1,
-                           final float x2, final float y2,
-                           final float x3, final float y3,
+        boolean splitCurve(final double x0, final double y0,
+                           final double x1, final double y1,
+                           final double x2, final double y2,
+                           final double x3, final double y3,
                            final int outCodeOR,
-                           final PathConsumer2D out)
+                           final DPathConsumer2D out)
         {
             if (TRACE) {
                 MarlinUtils.logInfo("divCurve P0(" + x0 + ", " + y0 + ") P1(" + x1 + ", " + y1 + ") P2(" + x2 + ", " + y2 + ") P3(" + x3 + ", " + y3 + ")");
@@ -1005,7 +1004,7 @@ final class TransformingPathConsumer2D {
                 return false;
             }
 
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
             mid[4] = x2;  mid[5] = y2;
@@ -1015,10 +1014,10 @@ final class TransformingPathConsumer2D {
         }
 
         private boolean subdivideAtIntersections(final int type, final int outCodeOR,
-                                                 final PathConsumer2D out)
+                                                 final DPathConsumer2D out)
         {
-            final float[] mid = middle;
-            final float[] subTs = subdivTs;
+            final double[] mid = middle;
+            final double[] subTs = subdivTs;
 
             if (init_clipRectPad) {
                 init_clipRectPad = false;
@@ -1036,12 +1035,12 @@ final class TransformingPathConsumer2D {
                 // only curve support shortcut
                 return false;
             }
-            float prevT = 0.0f;
+            double prevT = 0.0d;
 
             for (int i = 0, off = 0; i < nSplits; i++, off += type) {
-                final float t = subTs[i];
+                final double t = subTs[i];
 
-                Helpers.subdivideAt((t - prevT) / (1.0f - prevT),
+                Helpers.subdivideAt((t - prevT) / (1.0d - prevT),
                                      mid, off, mid, off, type);
                 prevT = t;
             }
@@ -1055,8 +1054,8 @@ final class TransformingPathConsumer2D {
             return true;
         }
 
-        static void emitCurrent(final int type, final float[] pts,
-                                final int off, final PathConsumer2D out)
+        static void emitCurrent(final int type, final double[] pts,
+                                final int off, final DPathConsumer2D out)
         {
             // if instead of switch (perf + most probable cases first)
             if (type == 8) {
@@ -1077,16 +1076,16 @@ final class TransformingPathConsumer2D {
         private static final int MAX_N_CURVES = 11;
 
         // squared half line width (for stroker)
-        private float lw2;
+        private double lw2;
 
         // number of splitted curves
         int nbSplits;
 
         // This is where the curve to be processed is put. We give it
         // enough room to store all curves.
-        final float[] middle = new float[MAX_N_CURVES * 6 + 2];
+        final double[] middle = new double[MAX_N_CURVES * 6 + 2];
         // t values at subdivision points
-        private final float[] subdivTs = new float[MAX_N_CURVES - 1];
+        private final double[] subdivTs = new double[MAX_N_CURVES - 1];
 
         // dirty curve
         private final Curve curve;
@@ -1095,29 +1094,29 @@ final class TransformingPathConsumer2D {
             this.curve = rdrCtx.curve;
         }
 
-        void init(final float lineWidth) {
-            this.lw2 = (lineWidth * lineWidth) / 4.0f;
+        void init(final double lineWidth) {
+            this.lw2 = (lineWidth * lineWidth) / 4.0d;
         }
 
-        CurveBasicMonotonizer curve(final float x0, final float y0,
-                                    final float x1, final float y1,
-                                    final float x2, final float y2,
-                                    final float x3, final float y3)
+        CurveBasicMonotonizer curve(final double x0, final double y0,
+                                    final double x1, final double y1,
+                                    final double x2, final double y2,
+                                    final double x3, final double y3)
         {
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
             mid[4] = x2;  mid[5] = y2;
             mid[6] = x3;  mid[7] = y3;
 
-            final float[] subTs = subdivTs;
+            final double[] subTs = subdivTs;
             final int nSplits = Helpers.findSubdivPoints(curve, mid, subTs, 8, lw2);
 
-            float prevT = 0.0f;
+            double prevT = 0.0d;
             for (int i = 0, off = 0; i < nSplits; i++, off += 6) {
-                final float t = subTs[i];
+                final double t = subTs[i];
 
-                Helpers.subdivideCubicAt((t - prevT) / (1.0f - prevT),
+                Helpers.subdivideCubicAt((t - prevT) / (1.0d - prevT),
                                           mid, off, mid, off, off + 6);
                 prevT = t;
             }
@@ -1126,22 +1125,22 @@ final class TransformingPathConsumer2D {
             return this;
         }
 
-        CurveBasicMonotonizer quad(final float x0, final float y0,
-                                   final float x1, final float y1,
-                                   final float x2, final float y2)
+        CurveBasicMonotonizer quad(final double x0, final double y0,
+                                   final double x1, final double y1,
+                                   final double x2, final double y2)
         {
-            final float[] mid = middle;
+            final double[] mid = middle;
             mid[0] = x0;  mid[1] = y0;
             mid[2] = x1;  mid[3] = y1;
             mid[4] = x2;  mid[5] = y2;
 
-            final float[] subTs = subdivTs;
+            final double[] subTs = subdivTs;
             final int nSplits = Helpers.findSubdivPoints(curve, mid, subTs, 6, lw2);
 
-            float prevt = 0.0f;
+            double prevt = 0.0d;
             for (int i = 0, off = 0; i < nSplits; i++, off += 4) {
-                final float t = subTs[i];
-                Helpers.subdivideQuadAt((t - prevt) / (1.0f - prevt),
+                final double t = subTs[i];
+                Helpers.subdivideQuadAt((t - prevt) / (1.0d - prevt),
                                          mid, off, mid, off, off + 4);
                 prevt = t;
             }
@@ -1151,43 +1150,43 @@ final class TransformingPathConsumer2D {
         }
     }
 
-    static final class PathTracer implements PathConsumer2D {
+    static final class PathTracer implements DPathConsumer2D {
         private final String prefix;
-        private PathConsumer2D out;
+        private DPathConsumer2D out;
 
         PathTracer(String name) {
             this.prefix = name + ": ";
         }
 
-        PathTracer init(PathConsumer2D out) {
+        PathTracer init(DPathConsumer2D out) {
             this.out = out;
             return this; // fluent API
         }
 
         @Override
-        public void moveTo(float x0, float y0) {
+        public void moveTo(double x0, double y0) {
             log("p.moveTo(" + x0 + ", " + y0 + ");");
             out.moveTo(x0, y0);
         }
 
         @Override
-        public void lineTo(float x1, float y1) {
+        public void lineTo(double x1, double y1) {
             log("p.lineTo(" + x1 + ", " + y1 + ");");
             out.lineTo(x1, y1);
         }
 
         @Override
-        public void curveTo(float x1, float y1,
-                            float x2, float y2,
-                            float x3, float y3)
+        public void curveTo(double x1, double y1,
+                            double x2, double y2,
+                            double x3, double y3)
         {
             log("p.curveTo(" + x1 + ", " + y1 + ", " + x2 + ", " + y2  + ", " + x3 + ", " + y3 + ");");
             out.curveTo(x1, y1, x2, y2, x3, y3);
         }
 
         @Override
-        public void quadTo(float x1, float y1,
-                           float x2, float y2) {
+        public void quadTo(double x1, double y1,
+                           double x2, double y2) {
             log("p.quadTo(" + x1 + ", " + y1 + ", " + x2 + ", " + y2  + ");");
             out.quadTo(x1, y1, x2, y2);
         }

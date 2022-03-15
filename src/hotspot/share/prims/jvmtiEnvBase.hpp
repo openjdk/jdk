@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_PRIMS_JVMTIENVBASE_HPP
 #define SHARE_PRIMS_JVMTIENVBASE_HPP
 
-#include "classfile/classLoader.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -34,7 +33,7 @@
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/thread.hpp"
-#include "runtime/vmOperations.hpp"
+#include "runtime/vmOperation.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
@@ -640,17 +639,15 @@ class ResourceTracker : public StackObj {
 // Jvmti monitor closure to collect off stack monitors.
 class JvmtiMonitorClosure: public MonitorClosure {
  private:
-  JavaThread *_java_thread;
   JavaThread *_calling_thread;
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
   jvmtiError _error;
   JvmtiEnvBase *_env;
 
  public:
-  JvmtiMonitorClosure(JavaThread* thread, JavaThread *calling_thread,
+  JvmtiMonitorClosure(JavaThread *calling_thread,
                       GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors,
                       JvmtiEnvBase *env) {
-    _java_thread = thread;
     _calling_thread = calling_thread;
     _owned_monitors_list = owned_monitors;
     _error = JVMTI_ERROR_NONE;

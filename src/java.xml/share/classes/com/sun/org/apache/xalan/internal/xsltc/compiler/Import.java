@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,7 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
@@ -32,6 +31,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 import java.util.Iterator;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.SecuritySupport;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
@@ -41,7 +41,7 @@ import org.xml.sax.XMLReader;
  * @author Morten Jorgensen
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Gunnlaugur Briem <gthb@dimon.is>
- * @LastModified: Sep 2017
+ * @LastModified: May 2021
  */
 final class Import extends TopLevelElement {
 
@@ -85,7 +85,7 @@ final class Import extends TopLevelElement {
                 docToLoad = SystemIDResolver.getAbsoluteURI(docToLoad, currLoadedDoc);
                 String accessError = SecuritySupport.checkAccess(docToLoad,
                         (String)xsltc.getProperty(XMLConstants.ACCESS_EXTERNAL_STYLESHEET),
-                        XalanConstants.ACCESS_EXTERNAL_ALL);
+                        JdkConstants.ACCESS_EXTERNAL_ALL);
 
                 if (accessError != null) {
                     final ErrorMsg msg = new ErrorMsg(ErrorMsg.ACCESSING_XSLT_TARGET_ERR,

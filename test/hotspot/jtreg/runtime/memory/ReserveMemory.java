@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
  * @test
  * @bug 8012015
  * @requires !(os.family == "aix")
+ * @requires vm.flagless
  * @summary Make sure reserved (but uncommitted) memory is not accessible
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run driver ReserveMemory
  */
 
@@ -44,27 +45,27 @@ import sun.hotspot.WhiteBox;
 public class ReserveMemory {
   public static void main(String args[]) throws Exception {
     if (args.length > 0) {
+      // expected to crash
       WhiteBox.getWhiteBox().readReservedMemory();
-
-      throw new Exception("Read of reserved/uncommitted memory unexpectedly succeeded, expected crash!");
-    }
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-          "-Xbootclasspath/a:.",
-          "-XX:+UnlockDiagnosticVMOptions",
-          "-XX:+WhiteBoxAPI",
-          "-XX:-CreateCoredumpOnCrash",
-          "-Xmx128m",
-          "ReserveMemory",
-          "test");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    if (Platform.isWindows()) {
-      output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
-    } else if (Platform.isOSX()) {
-      output.shouldContain("SIGBUS");
     } else {
-      output.shouldContain("SIGSEGV");
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-XX:-CreateCoredumpOnCrash",
+            "-Xmx128m",
+            "ReserveMemory",
+            "test");
+
+      OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      output.shouldNotHaveExitValue(0);
+      if (Platform.isWindows()) {
+        output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
+      } else if (Platform.isOSX()) {
+        output.shouldContain("SIGBUS");
+      } else {
+        output.shouldContain("SIGSEGV");
+      }
     }
   }
 }

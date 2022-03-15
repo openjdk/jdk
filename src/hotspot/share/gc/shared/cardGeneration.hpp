@@ -71,11 +71,7 @@ class CardGeneration: public Generation {
 
   virtual void compute_new_size();
 
-  virtual void clear_remembered_set();
-
   virtual void invalidate_remembered_set();
-
-  virtual void prepare_for_verify();
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
@@ -89,7 +85,7 @@ class CardGeneration: public Generation {
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
 
-  void younger_refs_iterate(OopIterateClosure* blk, uint n_threads);
+  void younger_refs_iterate(OopIterateClosure* blk);
 
   bool is_in(const void* p) const;
 

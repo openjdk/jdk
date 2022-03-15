@@ -311,20 +311,19 @@ public final class ThaiBuddhistDate
     //-----------------------------------------------------------------------
     @Override
     public ThaiBuddhistDate with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
-            if (getLong(f) == newValue) {
+        if (field instanceof ChronoField chronoField) {
+            if (getLong(chronoField) == newValue) {
                 return this;
             }
-            switch (f) {
+            switch (chronoField) {
                 case PROLEPTIC_MONTH:
-                    getChronology().range(f).checkValidValue(newValue, f);
+                    getChronology().range(chronoField).checkValidValue(newValue, chronoField);
                     return plusMonths(newValue - getProlepticMonth());
                 case YEAR_OF_ERA:
                 case YEAR:
                 case ERA: {
-                    int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
-                    switch (f) {
+                    int nvalue = getChronology().range(chronoField).checkValidIntValue(newValue, chronoField);
+                    switch (chronoField) {
                         case YEAR_OF_ERA:
                             return with(isoDate.withYear((getProlepticYear() >= 1 ? nvalue : 1 - nvalue)  - YEARS_DIFFERENCE));
                         case YEAR:
@@ -459,11 +458,8 @@ public final class ThaiBuddhistDate
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ThaiBuddhistDate) {
-            ThaiBuddhistDate otherDate = (ThaiBuddhistDate) obj;
-            return this.isoDate.equals(otherDate.isoDate);
-        }
-        return false;
+        return (obj instanceof ThaiBuddhistDate otherDate)
+                && this.isoDate.equals(otherDate.isoDate);
     }
 
     /**

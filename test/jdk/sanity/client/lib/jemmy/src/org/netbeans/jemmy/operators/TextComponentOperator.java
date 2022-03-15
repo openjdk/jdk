@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,13 @@ public class TextComponentOperator extends ComponentOperator
      * @see #getDump
      */
     public static final String TEXT_DPROP = "Text";
+
+    /**
+     * Identifier for a "selected text" property.
+     *
+     * @see #getDump
+     */
+    public static final String SELECTED_TEXT_DPROP = "Selected text";
 
     private final static long PUSH_KEY_TIMEOUT = 0;
     private final static long BETWEEN_KEYS_TIMEOUT = 0;
@@ -505,6 +512,8 @@ public class TextComponentOperator extends ComponentOperator
     public Hashtable<String, Object> getDump() {
         Hashtable<String, Object> result = super.getDump();
         result.put(TEXT_DPROP, ((TextComponent) getSource()).getText());
+        String selected = ((TextComponent) getSource()).getSelectedText();
+        result.put(SELECTED_TEXT_DPROP, (selected != null) ? selected : "");
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
 #include "utilities/align.hpp"
 #include "utilities/constantTag.hpp"
 #include "utilities/growableArray.hpp"
-
-class PSPromotionManager;
 
 // The ConstantPoolCache is not a cache! It is the resolution table that the
 // interpreter uses to avoid going into the runtime and a way to access resolved
@@ -223,8 +221,7 @@ class ConstantPoolCacheEntry {
     int             field_offset,                // the field offset in words in the field holder
     TosState        field_type,                  // the (machine) field type
     bool            is_final,                    // the field is final
-    bool            is_volatile,                 // the field is volatile
-    Klass*          root_klass                   // needed by the GC to dirty the klass
+    bool            is_volatile                  // the field is volatile
   );
 
  private:

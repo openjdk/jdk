@@ -56,7 +56,7 @@ import java.util.logging.LoggingPermission;
  * @bug 8033661
  * @summary tests LogManager.updateConfiguration(Function) method
  * @run main/othervm SimpleUpdateConfigurationTest UNSECURE
- * @run main/othervm SimpleUpdateConfigurationTest SECURE
+ * @run main/othervm -Djava.security.manager=allow SimpleUpdateConfigurationTest SECURE
  * @author danielfuchs
  */
 public class SimpleUpdateConfigurationTest {

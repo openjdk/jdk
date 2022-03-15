@@ -40,12 +40,12 @@ public interface Xid {
     /**
      * Maximum number of bytes returned by {@link #getGlobalTransactionId }.
      */
-    final static int MAXGTRIDSIZE = 64;
+    static final int MAXGTRIDSIZE = 64;
 
     /**
      * Maximum number of bytes returned by {@link #getBranchQualifier }.
      */
-    final static int MAXBQUALSIZE = 64;
+    static final int MAXBQUALSIZE = 64;
 
     /**
      * Obtain the format identifier part of the XID.

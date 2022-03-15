@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8167273 8251317
+ * @bug 8167273 8251317 8258794
  * @summary Test
  * Era names retrieved from Calendar and DateFormatSymbols class
  * should match for default providers preference
@@ -87,7 +87,7 @@ public class Bug8167273 {
                 new Locale("ja", "JP", "JP"), new Locale("th", "TH", "TH")
         );
         Set<Locale> allLocs = new HashSet<>(allLocales);
-        // Removing Japense and Thai Locales to check  Gregorian Calendar Locales
+        // Removing Japanese and Thai Locales to check  Gregorian Calendar Locales
         allLocs.removeAll(JpThlocales);
         allLocs.forEach((locale) -> {
             Calendar cal = Calendar.getInstance(locale);
@@ -107,7 +107,7 @@ public class Bug8167273 {
         for (String era : dfsEras) {
             System.out.println("For Locale  " + locale + " era names in DateFormatSymbols era array are  " + era);
         }
-        throw new RuntimeException(" Era name retrived from Calendar class do not match with"
+        throw new RuntimeException(" Era name retrieved from Calendar class do not match with"
                 + " retrieved from DateFormatSymbols  for Locale   " + locale);
 
     }

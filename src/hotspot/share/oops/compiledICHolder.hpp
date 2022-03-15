@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,16 +71,7 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
   CompiledICHolder* next()     { return _next; }
   void set_next(CompiledICHolder* n) { _next = n; }
 
-  inline bool is_loader_alive() {
-    Klass* k = _is_metadata_method ? ((Method*)_holder_metadata)->method_holder() : (Klass*)_holder_metadata;
-    if (!k->is_loader_alive()) {
-      return false;
-    }
-    if (!_holder_klass->is_loader_alive()) {
-      return false;
-    }
-    return true;
-  }
+  inline bool is_loader_alive();
 
   // Verify
   void verify_on(outputStream* st);

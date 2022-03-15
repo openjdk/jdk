@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.java.accessibility.internal;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.util.*;
 import java.lang.*;
 import java.lang.reflect.*;
@@ -53,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Note: This class has to be public.  It's loaded from the VM like this:
  *       Class.forName(atName).newInstance();
  */
-final public class AccessBridge {
+public final class AccessBridge {
 
     private static AccessBridge theAccessBridge;
     private ObjectReferences references;
@@ -82,6 +83,11 @@ final public class AccessBridge {
      * Load DLLs
      */
     static {
+        initStatic();
+    }
+
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         // Load the appropriate DLLs
         boolean is32on64 = false;
         if (System.getProperty("os.arch").equals("x86")) {
@@ -309,15 +315,15 @@ final public class AccessBridge {
     }
 
     // hash table of native window handle to AccessibleContext mappings
-    static private ConcurrentHashMap<Integer,AccessibleContext> windowHandleToContextMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Integer,AccessibleContext> windowHandleToContextMap = new ConcurrentHashMap<>();
 
     // hash table of AccessibleContext to native window handle mappings
-    static private ConcurrentHashMap<AccessibleContext,Integer> contextToWindowHandleMap = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<AccessibleContext,Integer> contextToWindowHandleMap = new ConcurrentHashMap<>();
 
     /*
      * adds a virtual window handler to our hash tables
      */
-    static private void registerVirtualFrame(final Accessible a,
+    private static void registerVirtualFrame(final Accessible a,
                                              Integer nativeWindowHandle ) {
         if (a != null) {
             AccessibleContext ac = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
@@ -334,7 +340,7 @@ final public class AccessBridge {
     /*
      * removes a virtual window handler to our hash tables
      */
-    static private void revokeVirtualFrame(final Accessible a,
+    private static void revokeVirtualFrame(final Accessible a,
                                            Integer nativeWindowHandle ) {
         AccessibleContext ac = InvocationUtils.invokeAndWait(new Callable<AccessibleContext>() {
             @Override
@@ -473,6 +479,9 @@ final public class AccessBridge {
         if (parent == null) {
             return null;
         }
+        Point userSpaceXY = AccessibilityGraphicsEnvironment.toUserSpace(x, y);
+        x = userSpaceXY.x;
+        y = userSpaceXY.y;
         if (windowHandleToContextMap != null &&
             windowHandleToContextMap.containsValue(getRootAccessibleContext(parent))) {
             // Path for applications that register their top-level
@@ -1588,6 +1597,8 @@ final public class AccessBridge {
                             if (p != null) {
                                 r.x = p.x;
                                 r.y = p.y;
+
+                                r = AccessibilityGraphicsEnvironment.toDeviceSpaceAbs(r);
                                 return r;
                             }
                         } catch (Exception e) {
@@ -2252,6 +2263,7 @@ final public class AccessBridge {
                             if (s != null && s.equals("\n")) {
                                 rect.width = 0;
                             }
+                            rect = AccessibilityGraphicsEnvironment.toDeviceSpaceAbs(rect);
                             return rect;
                         }
                     }
@@ -5235,7 +5247,7 @@ final public class AccessBridge {
                     accessBridge.debugString("[INFO]: AccessibleContext: " + ac);
                     String propertyName = e.getPropertyName();
 
-                    if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_CARET_PROPERTY) == 0) {
+                    if (propertyName.equals(AccessibleContext.ACCESSIBLE_CARET_PROPERTY)) {
                         int oldValue = 0;
                         int newValue = 0;
 
@@ -5248,7 +5260,7 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyCaretChange()   old value: " + oldValue + "new value: " + newValue);
                         accessBridge.propertyCaretChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY)) {
                         String oldValue = null;
                         String newValue = null;
 
@@ -5261,7 +5273,7 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyDescriptionChange()   old value: " + oldValue + "new value: " + newValue);
                         accessBridge.propertyDescriptionChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_NAME_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_NAME_PROPERTY)) {
                         String oldValue = null;
                         String newValue = null;
 
@@ -5274,12 +5286,12 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyNameChange()   old value: " + oldValue + " new value: " + newValue);
                         accessBridge.propertyNameChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY)) {
                         accessBridge.debugString("[INFO]:  - about to call propertySelectionChange() " + ac +  "   " + Thread.currentThread() + "   " + e.getSource());
 
                         accessBridge.propertySelectionChange(e, ac);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_STATE_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_STATE_PROPERTY)) {
                         String oldValue = null;
                         String newValue = null;
 
@@ -5296,11 +5308,11 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyStateChange()");
                         accessBridge.propertyStateChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY)) {
                         accessBridge.debugString("[INFO]:  - about to call propertyTextChange()");
                         accessBridge.propertyTextChange(e, ac);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_VALUE_PROPERTY) == 0) {  // strings 'cause of floating point, etc.
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_VALUE_PROPERTY)) {  // strings 'cause of floating point, etc.
                         String oldValue = null;
                         String newValue = null;
 
@@ -5313,10 +5325,10 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyDescriptionChange()");
                         accessBridge.propertyValueChange(e, ac, oldValue, newValue);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_VISIBLE_DATA_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_VISIBLE_DATA_PROPERTY)) {
                         accessBridge.propertyVisibleDataChange(e, ac);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_CHILD_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_CHILD_PROPERTY)) {
                         AccessibleContext oldAC = null;
                         AccessibleContext newAC = null;
                         Accessible a;
@@ -5332,7 +5344,7 @@ final public class AccessBridge {
                         accessBridge.debugString("[INFO]:  - about to call propertyChildChange()   old AC: " + oldAC + "new AC: " + newAC);
                         accessBridge.propertyChildChange(e, ac, oldAC, newAC);
 
-                    } else if (propertyName.compareTo(AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY) == 0) {
+                    } else if (propertyName.equals(AccessibleContext.ACCESSIBLE_ACTIVE_DESCENDANT_PROPERTY)) {
                         handleActiveDescendentEvent(e, ac);
                     }
                 }
@@ -7331,6 +7343,184 @@ final public class AccessBridge {
                     throw e;
                 return object;
             }
+        }
+    }
+
+    /**
+     * A helper class to handle coordinate conversion between screen and user spaces.
+     * See {@link sun.java2d.SunGraphicsEnvironment}
+     */
+    private static abstract class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
+        /**
+         * Returns the graphics configuration which bounds contain the given point in the user's space.
+         *
+         * See {@link sun.java2d.SunGraphicsEnvironment#getGraphicsConfigurationAtPoint(GraphicsConfiguration, double, double)}
+         *
+         * @param  x the x coordinate of the given point in the user's space
+         * @param  y the y coordinate of the given point in the user's space
+         * @return the graphics configuration
+         */
+        public static GraphicsConfiguration getGraphicsConfigurationAtPoint(double x, double y) {
+            GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice().getDefaultConfiguration();
+            return getGraphicsConfigurationAtPoint(gc, x, y);
+        }
+
+        /**
+         * Returns the graphics configuration which bounds contain the given point in the user's space.
+         *
+         * See {@link sun.java2d.SunGraphicsEnvironment#getGraphicsConfigurationAtPoint(GraphicsConfiguration, double, double)}
+         *
+         * @param  current the default configuration which is checked in the first
+         *         place
+         * @param  x the x coordinate of the given point in the user's space
+         * @param  y the y coordinate of the given point in the user's space
+         * @return the graphics configuration
+         */
+        public static GraphicsConfiguration getGraphicsConfigurationAtPoint(
+                GraphicsConfiguration current, double x, double y) {
+            if (containsUserSpacePoint(current, x, y)) {
+                return current;
+            }
+            GraphicsEnvironment env = getLocalGraphicsEnvironment();
+            for (GraphicsDevice device : env.getScreenDevices()) {
+                GraphicsConfiguration config = device.getDefaultConfiguration();
+                if (containsUserSpacePoint(config, x, y)) {
+                    return config;
+                }
+            }
+            return current;
+        }
+
+        /**
+         * Returns the graphics configuration which bounds contain the given point in the device space.
+         *
+         * @param  x the x coordinate of the given point in the device space
+         * @param  y the y coordinate of the given point in the device space
+         * @return the graphics configuration
+         */
+        public static GraphicsConfiguration getGraphicsConfigurationAtDevicePoint(double x, double y) {
+            GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice().getDefaultConfiguration();
+            return getGraphicsConfigurationAtDevicePoint(gc, x, y);
+        }
+
+        /**
+         * Returns the graphics configuration which bounds contain the given point in the device space.
+         *
+         * @param  current the default configuration which is checked in the first
+         *         place
+         * @param  x the x coordinate of the given point in the device space
+         * @param  y the y coordinate of the given point in the device space
+         * @return the graphics configuration
+         */
+        public static GraphicsConfiguration getGraphicsConfigurationAtDevicePoint(
+                GraphicsConfiguration current, double x, double y) {
+            if (containsDeviceSpacePoint(current, x, y)) {
+                return current;
+            }
+            GraphicsEnvironment env = getLocalGraphicsEnvironment();
+            for (GraphicsDevice device : env.getScreenDevices()) {
+                GraphicsConfiguration config = device.getDefaultConfiguration();
+                if (containsDeviceSpacePoint(config, x, y)) {
+                    return config;
+                }
+            }
+            return current;
+        }
+
+        private static boolean containsDeviceSpacePoint(GraphicsConfiguration config, double x, double y) {
+            Rectangle bounds = config.getBounds();
+            bounds = toDeviceSpaceAbs(config, bounds.x, bounds.y, bounds.width, bounds.height);
+            return bounds.contains(x, y);
+        }
+
+        private static boolean containsUserSpacePoint(GraphicsConfiguration config, double x, double y) {
+            Rectangle bounds = config.getBounds();
+            return bounds.contains(x, y);
+        }
+
+        /**
+         * Converts absolute coordinates from the device
+         * space to the user's space space using appropriate device transformation.
+         *
+         * @param  x absolute x coordinate in the device's space
+         * @param  y absolute y coordinate in the device's space
+         * @return the corresponding coordinates in user's space
+         */
+        public static Point toUserSpace(int x, int y) {
+            GraphicsConfiguration gc = getGraphicsConfigurationAtDevicePoint(x, y);
+            return toUserSpace(gc, x, y);
+        }
+
+        /**
+         * Converts absolute coordinates from the device
+         * space to the user's space using passed graphics configuration.
+         *
+         * @param  gc the graphics configuration to be used for transformation
+         * @param  x absolute x coordinate in the device's space
+         * @param  y absolute y coordinate in the device's space
+         * @return the corresponding coordinates in user's space
+         */
+        public static Point toUserSpace(GraphicsConfiguration gc, int x, int y) {
+            AffineTransform tx = gc.getDefaultTransform();
+            Rectangle screen = gc.getBounds();
+            int userX = screen.x + clipRound((x - screen.x) / tx.getScaleX());
+            int userY = screen.y + clipRound((y - screen.y) / tx.getScaleY());
+            return new Point(userX, userY);
+        }
+
+        /**
+         * Converts the rectangle from the user's space to the device space using
+         * appropriate device transformation.
+         *
+         * See {@link sun.java2d.SunGraphicsEnvironment#toDeviceSpaceAbs(Rectangle)}
+         *
+         * @param  rect the rectangle in the user's space
+         * @return the rectangle which uses device space (pixels)
+         */
+        public static Rectangle toDeviceSpaceAbs(Rectangle rect) {
+            GraphicsConfiguration gc = getGraphicsConfigurationAtPoint(rect.x, rect.y);
+            return toDeviceSpaceAbs(gc, rect.x, rect.y, rect.width, rect.height);
+        }
+
+        /**
+         * Converts absolute coordinates (x, y) and the size (w, h) from the user's
+         * space to the device space using passed graphics configuration.
+         *
+         * See {@link sun.java2d.SunGraphicsEnvironment#toDeviceSpaceAbs(GraphicsConfiguration, int, int, int, int)}
+         *
+         * @param  gc the graphics configuration to be used for transformation
+         * @param  x absolute coordinate in the user's space
+         * @param  y absolute coordinate in the user's space
+         * @param  w the width in the user's space
+         * @param  h the height in the user's space
+         * @return the rectangle which uses device space (pixels)
+         */
+        public static Rectangle toDeviceSpaceAbs(GraphicsConfiguration gc,
+                                                 int x, int y, int w, int h) {
+            AffineTransform tx = gc.getDefaultTransform();
+            Rectangle screen = gc.getBounds();
+            return new Rectangle(
+                    screen.x + clipRound((x - screen.x) * tx.getScaleX()),
+                    screen.y + clipRound((y - screen.y) * tx.getScaleY()),
+                    clipRound(w * tx.getScaleX()),
+                    clipRound(h * tx.getScaleY())
+            );
+        }
+
+        /**
+         * See {@link sun.java2d.pipe.Region#clipRound}
+         */
+        private static int clipRound(final double coordinate) {
+            final double newv = coordinate - 0.5;
+            if (newv < Integer.MIN_VALUE) {
+                return Integer.MIN_VALUE;
+            }
+            if (newv > Integer.MAX_VALUE) {
+                return Integer.MAX_VALUE;
+            }
+            return (int) Math.ceil(newv);
         }
     }
 }

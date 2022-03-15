@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,13 @@
  * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes test-classes
  * @build Hello GetFlightRecorder
- * @run driver ClassFileInstaller -jar CDSandJFR.jar Hello GetFlightRecorder GetFlightRecorder$TestEvent GetFlightRecorder$SimpleEvent
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar CDSandJFR.jar Hello GetFlightRecorder GetFlightRecorder$TestEvent GetFlightRecorder$SimpleEvent
  * @run main/othervm/timeout=500 CDSandJFR
  */
 
 import jdk.test.lib.BuildHelper;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class CDSandJFR {
     static String[] classes = {
@@ -63,20 +64,20 @@ public class CDSandJFR {
         TestCommon.checkDump(output, "Skipping jdk/jfr/Event: JFR event class");
 
         output = TestCommon.exec(appJar,
-                                 "-XX:StartFlightRecording=dumponexit=true",
+                                 "-XX:StartFlightRecording:dumponexit=true",
                                  "Hello");
         TestCommon.checkExec(output, "Hello World");
 
         TestCommon.checkExec(TestCommon.exec(appJar,
-                                             "-XX:FlightRecorderOptions=retransform=true",
+                                             "-XX:FlightRecorderOptions:retransform=true",
                                              "GetFlightRecorder"));
         TestCommon.checkExec(TestCommon.exec(appJar,
-                                             "-XX:FlightRecorderOptions=retransform=false",
+                                             "-XX:FlightRecorderOptions:retransform=false",
                                              "GetFlightRecorder"));
 
         // Test dumping with flight recorder enabled.
         output = TestCommon.testDump(appJar, TestCommon.list(classes),
-                                     "-XX:StartFlightRecording=dumponexit=true");
+                                     "-XX:StartFlightRecording:dumponexit=true");
         TestCommon.checkDump(output, "warning: JFR will be disabled during CDS dumping");
     }
 }

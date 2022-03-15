@@ -31,7 +31,7 @@
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ReadCertificates
- * @run main/othervm ReadCertificates sm policy
+ * @run main/othervm -Djava.security.manager=allow ReadCertificates sm policy
  */
 
 import java.io.File;

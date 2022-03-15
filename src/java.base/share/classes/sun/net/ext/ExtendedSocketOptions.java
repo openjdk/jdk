@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,25 +167,35 @@ public abstract class ExtendedSocketOptions {
 
     private static volatile ExtendedSocketOptions instance;
 
-    public static final ExtendedSocketOptions getInstance() { return instance; }
-
-    /** Registers support for extended socket options. Invoked by the jdk.net module. */
-    public static final void register(ExtendedSocketOptions extOptions) {
-        if (instance != null)
-            throw new InternalError("Attempting to reregister extended options");
-
-        instance = extOptions;
-    }
-
-    static {
+    public static ExtendedSocketOptions getInstance() {
+        ExtendedSocketOptions ext = instance;
+        if (ext != null) {
+            return ext;
+        }
         try {
             // If the class is present, it will be initialized which
             // triggers registration of the extended socket options.
             Class<?> c = Class.forName("jdk.net.ExtendedSocketOptions");
+            ext = instance;
         } catch (ClassNotFoundException e) {
-            // the jdk.net module is not present => no extended socket options
-            instance = new NoExtendedSocketOptions();
+            synchronized (ExtendedSocketOptions.class) {
+                ext = instance;
+                if (ext != null) {
+                    return ext;
+                }
+                // the jdk.net module is not present => no extended socket options
+                ext = instance = new NoExtendedSocketOptions();
+            }
         }
+        return ext;
+    }
+
+    /** Registers support for extended socket options. Invoked by the jdk.net module. */
+    public static synchronized void register(ExtendedSocketOptions extOptions) {
+        if (instance != null)
+            throw new InternalError("Attempting to reregister extended options");
+
+        instance = extOptions;
     }
 
     static final class NoExtendedSocketOptions extends ExtendedSocketOptions {

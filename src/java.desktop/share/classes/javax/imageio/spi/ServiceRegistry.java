@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,7 @@ public class ServiceRegistry {
      */
     private Iterator<SubRegistry> getSubRegistries(Object provider) {
         List<SubRegistry> l = new ArrayList<>();
-        Iterator<Class<?>> iter = categoryMap.keySet().iterator();
-        while (iter.hasNext()) {
-            Class<?> c = iter.next();
+        for (Class<?> c : categoryMap.keySet()) {
             if (c.isAssignableFrom(provider.getClass())) {
                 l.add(categoryMap.get(c));
             }
@@ -540,9 +538,7 @@ public class ServiceRegistry {
         if (providerClass == null) {
             throw new IllegalArgumentException("providerClass == null!");
         }
-        Iterator<Class<?>> iter = categoryMap.keySet().iterator();
-        while (iter.hasNext()) {
-            Class<?> c = iter.next();
+        for (Class<?> c : categoryMap.keySet()) {
             if (c.isAssignableFrom(providerClass)) {
                 SubRegistry reg = categoryMap.get(c);
                 T provider = reg.getServiceProviderByClass(providerClass);
@@ -670,9 +666,7 @@ public class ServiceRegistry {
      * categories.
      */
     public void deregisterAll() {
-        Iterator<SubRegistry> iter = categoryMap.values().iterator();
-        while (iter.hasNext()) {
-            SubRegistry reg = iter.next();
+        for (SubRegistry reg : categoryMap.values()) {
             reg.clear();
         }
     }
@@ -686,16 +680,12 @@ public class ServiceRegistry {
      * @exception Throwable if an error occurs during superclass
      * finalization.
      *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings("removal")
     public void finalize() throws Throwable {
         deregisterAll();
         super.finalize();
@@ -742,6 +732,7 @@ class SubRegistry {
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
     final Map<Class<?>, Object> map = new HashMap<>();
+    @SuppressWarnings("removal")
     final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
@@ -749,6 +740,7 @@ class SubRegistry {
         this.category = category;
     }
 
+    @SuppressWarnings("removal")
     public synchronized boolean registerServiceProvider(Object provider) {
         Object oprovider = map.get(provider.getClass());
         boolean present =  oprovider != null;
@@ -824,6 +816,7 @@ class SubRegistry {
         return (T)map.get(providerClass);
     }
 
+    @SuppressWarnings("removal")
     public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {
@@ -845,7 +838,7 @@ class SubRegistry {
         accMap.clear();
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public synchronized void finalize() {
         clear();
     }

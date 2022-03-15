@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,18 +444,28 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * in <a href="#special_cases_constructor">Special Cases</a>, only
  * for the two cases th_TH_TH and ja_JP_JP.
  *
- * <h4>Legacy language codes</h4>
+ * <h4><a id="legacy_language_codes">Legacy language codes</a></h4>
  *
  * <p>Locale's constructor has always converted three language codes to
  * their earlier, obsoleted forms: {@code he} maps to {@code iw},
  * {@code yi} maps to {@code ji}, and {@code id} maps to
- * {@code in}.  This continues to be the case, in order to not break
- * backwards compatibility.
+ * {@code in}. Since Java SE 17, this is no longer the case. Each
+ * language maps to its new form; {@code iw} maps to {@code he}, {@code ji}
+ * maps to {@code yi}, and {@code in} maps to {@code id}.
+ *
+ * <p>For the backward compatible behavior, the system property
+ * {@systemProperty java.locale.useOldISOCodes} reverts the behavior
+ * back to that of before Java SE 17. If the system property is set to
+ * {@code true}, those three current language codes are mapped to their
+ * backward compatible forms. The property is only read at Java runtime
+ * startup and subsequent calls to {@code System.setProperty()} will
+ * have no effect.
  *
  * <p>The APIs added in 1.7 map between the old and new language codes,
- * maintaining the old codes internal to Locale (so that
- * {@code getLanguage} and {@code toString} reflect the old
- * code), but using the new codes in the BCP 47 language tag APIs (so
+ * maintaining the mapped codes internal to Locale (so that
+ * {@code getLanguage} and {@code toString} reflect the mapped
+ * code, which depends on the {@code java.locale.useOldISOCodes} system
+ * property), but using the new codes in the BCP 47 language tag APIs (so
  * that {@code toLanguageTag} reflects the new one). This
  * preserves the equivalence between Locales no matter which code or
  * API is used to construct them. Java's default resource bundle
@@ -720,13 +730,11 @@ public final class Locale implements Cloneable, Serializable {
      * Construct a locale from language, country and variant.
      * This constructor normalizes the language value to lowercase and
      * the country value to uppercase.
-     * <p>
-     * <b>Note:</b>
+     * @implNote
      * <ul>
-     * <li>ISO 639 is not a stable standard; some of the language codes it defines
-     * (specifically "iw", "ji", and "in") have changed.  This constructor accepts both the
-     * old codes ("iw", "ji", and "in") and the new codes ("he", "yi", and "id"), but all other
-     * API on Locale will return only the OLD codes.
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
      * <li>For backward compatibility reasons, this constructor does not make
      * any syntactic checks on the input.
      * <li>The two cases ("ja", "JP", "JP") and ("th", "TH", "TH") are handled specially,
@@ -754,13 +762,11 @@ public final class Locale implements Cloneable, Serializable {
      * Construct a locale from language and country.
      * This constructor normalizes the language value to lowercase and
      * the country value to uppercase.
-     * <p>
-     * <b>Note:</b>
+     * @implNote
      * <ul>
-     * <li>ISO 639 is not a stable standard; some of the language codes it defines
-     * (specifically "iw", "ji", and "in") have changed.  This constructor accepts both the
-     * old codes ("iw", "ji", and "in") and the new codes ("he", "yi", and "id"), but all other
-     * API on Locale will return only the OLD codes.
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
      * <li>For backward compatibility reasons, this constructor does not make
      * any syntactic checks on the input.
      * </ul>
@@ -779,13 +785,11 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Construct a locale from a language code.
      * This constructor normalizes the language value to lowercase.
-     * <p>
-     * <b>Note:</b>
+     * @implNote
      * <ul>
-     * <li>ISO 639 is not a stable standard; some of the language codes it defines
-     * (specifically "iw", "ji", and "in") have changed.  This constructor accepts both the
-     * old codes ("iw", "ji", and "in") and the new codes ("he", "yi", and "id"), but all other
-     * API on Locale will return only the OLD codes.
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
      * <li>For backward compatibility reasons, this constructor does not make
      * any syntactic checks on the input.
      * </ul>
@@ -885,10 +889,9 @@ public final class Locale implements Cloneable, Serializable {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof LocaleKey)) {
+            if (!(obj instanceof LocaleKey other)) {
                 return false;
             }
-            LocaleKey other = (LocaleKey)obj;
             if (hash != other.hash || !base.equals(other.base)) {
                 return false;
             }
@@ -939,29 +942,38 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Locale getDefault(Locale.Category category) {
         // do not synchronize this method - see 4071298
-        switch (category) {
-        case DISPLAY:
-            if (defaultDisplayLocale == null) {
-                synchronized(Locale.class) {
-                    if (defaultDisplayLocale == null) {
-                        defaultDisplayLocale = initDefault(category);
-                    }
-                }
+        Objects.requireNonNull(category);
+        if (category == Category.DISPLAY) {
+            Locale loc = defaultDisplayLocale; // volatile read
+            if (loc == null) {
+                loc = getDisplayLocale();
             }
-            return defaultDisplayLocale;
-        case FORMAT:
-            if (defaultFormatLocale == null) {
-                synchronized(Locale.class) {
-                    if (defaultFormatLocale == null) {
-                        defaultFormatLocale = initDefault(category);
-                    }
-                }
+            return loc;
+        } else {
+            assert category == Category.FORMAT : "Unknown category";
+            Locale loc = defaultFormatLocale; // volatile read
+            if (loc == null) {
+                loc = getFormatLocale();
             }
-            return defaultFormatLocale;
-        default:
-            assert false: "Unknown Category";
+            return loc;
         }
-        return getDefault();
+    }
+
+    private static synchronized Locale getDisplayLocale() {
+        Locale loc = defaultDisplayLocale;
+        if (loc == null) {
+            loc = defaultDisplayLocale = initDefault(Category.DISPLAY);
+        }
+        return loc;
+    }
+
+
+    private static synchronized Locale getFormatLocale() {
+        Locale loc = defaultFormatLocale;
+        if (loc == null) {
+            loc = defaultFormatLocale = initDefault(Category.FORMAT);
+        }
+        return loc;
     }
 
     private static Locale initDefault() {
@@ -1093,6 +1105,7 @@ public final class Locale implements Cloneable, Serializable {
         if (newLocale == null)
             throw new NullPointerException("Can't set default locale to NULL");
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) sm.checkPermission(new PropertyPermission
                         ("user.language", "write"));
@@ -1113,8 +1126,9 @@ public final class Locale implements Cloneable, Serializable {
      * The returned array represents the union of locales supported
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
-     * implementations.  It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * implementations. At a minimum, the returned array must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
      *
      * @return An array of installed locales.
      */
@@ -1199,19 +1213,10 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns the language code of this Locale.
      *
-     * <p><b>Note:</b> ISO 639 is not a stable standard&mdash; some languages' codes have changed.
-     * Locale's constructor recognizes both the new and the old codes for the languages
-     * whose codes have changed, but this function always returns the old code.  If you
-     * want to check for a specific language whose code has changed, don't do
-     * <pre>
-     * if (locale.getLanguage().equals("he")) // BAD!
-     *    ...
-     * </pre>
-     * Instead, do
-     * <pre>
-     * if (locale.getLanguage().equals(new Locale("he").getLanguage()))
-     *    ...
-     * </pre>
+     * @implNote This method returns the new forms for the obsolete ISO 639
+     * codes ("iw", "ji", and "in"). See <a href="#legacy_language_codes">
+     * Legacy language codes</a> for more information.
+     *
      * @return The language code, or the empty string if none is defined.
      * @see #getDisplayLanguage
      */
@@ -1599,9 +1604,11 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <li>The language code "und" is mapped to language "".
      *
-     * <li>The language codes "he", "yi", and "id" are mapped to "iw",
-     * "ji", and "in" respectively. (This is the same canonicalization
-     * that's done in Locale's constructors.)
+     * <li>The language codes "iw", "ji", and "in" are mapped to "he",
+     * "yi", and "id" respectively. (This is the same canonicalization
+     * that's done in Locale's constructors.) See
+     * <a href="#legacy_language_codes">Legacy language codes</a>
+     * for more information.
      *
      * <li>The portion of a private use subtag prefixed by "lvariant",
      * if any, is removed and appended to the variant field in the
@@ -1645,18 +1652,19 @@ public final class Locale implements Cloneable, Serializable {
      * </pre></ul>
      *
      * <p>This implements the 'Language-Tag' production of BCP47, and
-     * so supports grandfathered (regular and irregular) as well as
+     * so supports legacy (regular and irregular, referred to as
+     * "Type: grandfathered" in BCP47) as well as
      * private use language tags.  Stand alone private use tags are
      * represented as empty language and extension 'x-whatever',
-     * and grandfathered tags are converted to their canonical replacements
+     * and legacy tags are converted to their canonical replacements
      * where they exist.
      *
-     * <p>Grandfathered tags with canonical replacements are as follows:
+     * <p>Legacy tags with canonical replacements are as follows:
      *
      * <table class="striped">
-     * <caption style="display:none">Grandfathered tags with canonical replacements</caption>
+     * <caption style="display:none">Legacy tags with canonical replacements</caption>
      * <thead style="text-align:center">
-     * <tr><th scope="col" style="padding: 0 2px">grandfathered tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
+     * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">modern replacement</th></tr>
      * </thead>
      * <tbody style="text-align:center">
      * <tr><th scope="row">art-lojban</th><td>jbo</td></tr>
@@ -1682,13 +1690,13 @@ public final class Locale implements Cloneable, Serializable {
      * </tbody>
      * </table>
      *
-     * <p>Grandfathered tags with no modern replacement will be
+     * <p>Legacy tags with no modern replacement will be
      * converted as follows:
      *
      * <table class="striped">
-     * <caption style="display:none">Grandfathered tags with no modern replacement</caption>
+     * <caption style="display:none">Legacy tags with no modern replacement</caption>
      * <thead style="text-align:center">
-     * <tr><th scope="col" style="padding: 0 2px">grandfathered tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>
+     * <tr><th scope="col" style="padding: 0 2px">legacy tag</th><th scope="col" style="padding: 0 2px">converts to</th></tr>
      * </thead>
      * <tbody style="text-align:center">
      * <tr><th scope="row">cel-gaulish</th><td>xtg-x-cel-gaulish</td></tr>
@@ -1700,7 +1708,7 @@ public final class Locale implements Cloneable, Serializable {
      * </tbody>
      * </table>
      *
-     * <p>For a list of all grandfathered tags, see the
+     * <p>For a list of all legacy tags, see the
      * IANA Language Subtag Registry (search for "Type: grandfathered").
      *
      * <p><b>Note</b>: there is no guarantee that {@code toLanguageTag}
@@ -1995,7 +2003,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a name for the locale that is appropriate for display
      * to the user.  This will be the values returned by
-     * getDisplayLanguage(), getDisplayScript(),getDisplayCountry()
+     * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional <a href="./Locale.html#def_locale_extension">
      * Unicode extensions</a> assembled into a single string. The non-empty
      * values are used in order, with the second and subsequent names in
@@ -2253,23 +2261,20 @@ public final class Locale implements Cloneable, Serializable {
             return Arrays.stream(stringList).collect(Collectors.joining(","));
         }
 
-        switch (stringList.length) {
-            case 0:
-                return "";
-            case 1:
-                return stringList[0];
-            default:
-                return Arrays.stream(stringList).reduce("",
-                    (s1, s2) -> {
-                        if (s1.isEmpty()) {
-                            return s2;
-                        }
-                        if (s2.isEmpty()) {
-                            return s1;
-                        }
-                        return MessageFormat.format(pattern, s1, s2);
-                    });
-        }
+        return switch (stringList.length) {
+            case 0 -> "";
+            case 1 -> stringList[0];
+            default -> Arrays.stream(stringList).reduce("",
+                (s1, s2) -> {
+                    if (s1.isEmpty()) {
+                        return s2;
+                    }
+                    if (s2.isEmpty()) {
+                        return s1;
+                    }
+                    return MessageFormat.format(pattern, s1, s2);
+                });
+        };
     }
 
     // Duplicate of sun.util.locale.UnicodeLocaleExtension.isKey in order to
@@ -2387,17 +2392,9 @@ public final class Locale implements Cloneable, Serializable {
 
     private static String convertOldISOCodes(String language) {
         // we accept both the old and the new ISO codes for the languages whose ISO
-        // codes have changed, but we always store the OLD code, for backward compatibility
-        language = LocaleUtils.toLowerString(language).intern();
-        if (language == "he") {
-            return "iw";
-        } else if (language == "yi") {
-            return "ji";
-        } else if (language == "id") {
-            return "in";
-        } else {
-            return language;
-        }
+        // codes have changed, but we always store the NEW code, unless the property
+        // java.locale.useOldISOCodes is set to "true"
+        return BaseLocale.convertOldISOCodes(LocaleUtils.toLowerString(language).intern());
     }
 
     private static LocaleExtensions getCompatibilityExtensions(String language,
@@ -2586,7 +2583,7 @@ public final class Locale implements Cloneable, Serializable {
          * Resets the Builder to match the provided IETF BCP 47
          * language tag.  Discards the existing state.  Null and the
          * empty string cause the builder to be reset, like {@link
-         * #clear}.  Grandfathered tags (see {@link
+         * #clear}.  Legacy tags (see {@link
          * Locale#forLanguageTag}) are converted to their canonical
          * form before being processed.  Otherwise, the language tag
          * must be well-formed (see {@link Locale}) or an exception is
@@ -2838,7 +2835,7 @@ public final class Locale implements Cloneable, Serializable {
          * on this builder.
          *
          * <p>This applies the conversions listed in {@link Locale#forLanguageTag}
-         * when constructing a Locale. (Grandfathered tags are handled in
+         * when constructing a Locale. (Legacy tags are handled in
          * {@link #setLanguageTag}.)
          *
          * @return A Locale.
@@ -3331,12 +3328,9 @@ public final class Locale implements Cloneable, Serializable {
             if (this == obj) {
                 return true;
             }
-            if (!(obj instanceof LanguageRange)) {
-                return false;
-            }
-            LanguageRange other = (LanguageRange)obj;
-            return range.equals(other.range)
-                   && weight == other.weight;
+            return obj instanceof LanguageRange other
+                    && range.equals(other.range)
+                    && weight == other.weight;
         }
 
         /**

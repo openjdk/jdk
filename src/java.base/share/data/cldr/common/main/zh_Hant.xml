@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -465,7 +465,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">摩爾多瓦文</language>
 			<language type="rof">蘭博文</language>
 			<language type="rom">吉普賽文</language>
-			<language type="root">根語言</language>
 			<language type="rtm">羅圖馬島文</language>
 			<language type="ru">俄文</language>
 			<language type="rue">盧森尼亞文</language>
@@ -7736,9 +7735,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>聖伊薩貝爾</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>檀香山</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>世界標準時間</standard>
@@ -7858,11 +7854,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>布羅肯希爾</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>克黎</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>墨爾本</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>克黎</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>荷巴特</exemplarCity>
@@ -8896,6 +8892,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>諾姆</exemplarCity>
 			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>檀香山</exemplarCity>
+			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>強斯頓</exemplarCity>
 			</zone>
@@ -9525,7 +9524,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Indochina">
 				<long>
-					<standard>印度支那時間</standard>
+					<standard>中南半島時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Central">
@@ -13533,7 +13532,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="XOF">
 				<displayName>法郎 (CFA–BCEAO)</displayName>
 				<displayName count="other">法郎 (CFA–BCEAO)</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName draft="contributed">帕拉狄昂</displayName>
@@ -14004,7 +14003,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0} 克拉</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>每分升毫克</displayName>
 				<unitPattern count="other">每分升 {0} 毫克</unitPattern>
 			</unit>
@@ -14798,7 +14797,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>克拉</displayName>
 				<unitPattern count="other">{0} 克拉</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>毫克/分升</displayName>
 				<unitPattern count="other">{0} 毫克/分升</unitPattern>
 			</unit>
@@ -15573,7 +15572,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">克拉</displayName>
 				<unitPattern count="other" draft="contributed">{0}kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName draft="contributed">毫克/分升</displayName>
 				<unitPattern count="other" draft="contributed">{0}mg/dL</unitPattern>
 			</unit>
@@ -15777,7 +15776,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-micrometer">
 				<displayName draft="contributed">微米</displayName>
-				<unitPattern count="other" draft="contributed">{0}µm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName draft="contributed">奈米</displayName>
@@ -15858,7 +15857,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-microgram">
 				<displayName draft="contributed">微克</displayName>
-				<unitPattern count="other" draft="contributed">{0}µg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="contributed">英噸</displayName>

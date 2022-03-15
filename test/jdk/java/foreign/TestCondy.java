@@ -39,7 +39,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static jdk.incubator.foreign.CLinker.*;
+import static jdk.incubator.foreign.ValueLayout.ADDRESS;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BOOLEAN;
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
+import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
+import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
+import static jdk.incubator.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.assertEquals;
 
 public class TestCondy {
@@ -53,14 +61,15 @@ public class TestCondy {
 
 
     private static final MemoryLayout[] constants = {
-        C_CHAR,
-        C_SHORT,
-        C_INT,
-        C_LONG,
-        C_LONG_LONG,
-        C_FLOAT,
-        C_DOUBLE,
-        C_POINTER
+        JAVA_BOOLEAN,
+        JAVA_CHAR,
+        JAVA_BYTE,
+        JAVA_SHORT,
+        JAVA_INT,
+        JAVA_FLOAT,
+        JAVA_LONG,
+        JAVA_DOUBLE,
+        ADDRESS
     };
 
     @DataProvider
@@ -69,16 +78,16 @@ public class TestCondy {
 
         testValues.addAll(Arrays.asList(constants));
 
-        testValues.add(MemoryLayout.ofStruct(constants));
-        testValues.add(MemoryLayout.ofUnion(constants));
+        testValues.add(MemoryLayout.structLayout(constants));
+        testValues.add(MemoryLayout.unionLayout(constants));
 
         for (MemoryLayout ml : constants) {
-            testValues.add(MemoryLayout.ofSequence(ml));
-            testValues.add(MemoryLayout.ofSequence(10, ml));
+            testValues.add(MemoryLayout.sequenceLayout(ml));
+            testValues.add(MemoryLayout.sequenceLayout(10, ml));
         }
 
         testValues.add(FunctionDescriptor.ofVoid(constants));
-        testValues.add(FunctionDescriptor.of(C_CHAR, constants));
+        testValues.add(FunctionDescriptor.of(JAVA_BYTE, constants));
 
         return testValues.stream().map(e -> new Object[] { e }).toArray(Object[][]::new);
     }

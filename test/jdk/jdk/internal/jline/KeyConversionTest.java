@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 
 import jdk.internal.org.jline.terminal.Size;
+import jdk.internal.org.jline.terminal.Terminal.SignalHandler;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
 
 public class KeyConversionTest {
@@ -58,11 +59,7 @@ public class KeyConversionTest {
     void checkKeyConversion(KeyEvent event, String expected) throws IOException {
         StringBuilder result = new StringBuilder();
         new AbstractWindowsTerminal(new StringWriter(), "", "windows", Charset.forName("UTF-8"),
-                                    0, true, null, in -> in) {
-            @Override
-            protected int getConsoleOutputCP() {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
+                                    0, true, SignalHandler.SIG_DFL, in -> in) {
             @Override
             protected int getConsoleMode() {
                 return 0;

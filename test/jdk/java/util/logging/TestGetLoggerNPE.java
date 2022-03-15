@@ -38,8 +38,8 @@ import jdk.internal.access.SharedSecrets;
  * @modules java.base/jdk.internal.access
  *          java.logging
  * @build TestGetLoggerNPE
- * @run main/othervm TestGetLoggerNPE getLogger
- * @run main/othervm TestGetLoggerNPE getLogManager
+ * @run main/othervm -Djava.security.manager=allow TestGetLoggerNPE getLogger
+ * @run main/othervm -Djava.security.manager=allow TestGetLoggerNPE getLogManager
  */
 public class TestGetLoggerNPE {
     static volatile Throwable thrown = null;

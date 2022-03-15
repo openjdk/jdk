@@ -54,7 +54,9 @@ class Invokers {
             INV_EXACT          =  0,  // MethodHandles.exactInvoker
             INV_GENERIC        =  1,  // MethodHandles.invoker (generic invocation)
             INV_BASIC          =  2,  // MethodHandles.basicInvoker
-            INV_LIMIT          =  3;
+            VH_INV_EXACT       =  3,  // MethodHandles.varHandleExactInvoker
+            VH_INV_GENERIC     =  VH_INV_EXACT   + VarHandle.AccessMode.COUNT,  // MethodHandles.varHandleInvoker
+            INV_LIMIT          =  VH_INV_GENERIC + VarHandle.AccessMode.COUNT;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
@@ -101,14 +103,20 @@ class Invokers {
 
     /*non-public*/
     MethodHandle varHandleMethodInvoker(VarHandle.AccessMode ak) {
-        // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak, false);
+        boolean isExact = false;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
+        if (invoker != null)  return invoker;
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     /*non-public*/
     MethodHandle varHandleMethodExactInvoker(VarHandle.AccessMode ak) {
-        // TODO cache invoker
-        return makeVarHandleMethodInvoker(ak, true);
+        boolean isExact = true;
+        MethodHandle invoker = cachedVHInvoker(isExact, ak);
+        if (invoker != null)  return invoker;
+        invoker = makeVarHandleMethodInvoker(ak, isExact);
+        return setCachedVHInvoker(isExact, ak, invoker);
     }
 
     private MethodHandle cachedInvoker(int idx) {
@@ -120,6 +128,16 @@ class Invokers {
         MethodHandle prev = invokers[idx];
         if (prev != null)  return prev;
         return invokers[idx] = invoker;
+    }
+
+    private MethodHandle cachedVHInvoker(boolean isExact, VarHandle.AccessMode ak) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return cachedInvoker(baseIndex + ak.ordinal());
+    }
+
+    private MethodHandle setCachedVHInvoker(boolean isExact, VarHandle.AccessMode ak, final MethodHandle invoker) {
+        int baseIndex = (isExact ? VH_INV_EXACT : VH_INV_GENERIC);
+        return setCachedInvoker(baseIndex + ak.ordinal(), invoker);
     }
 
     private MethodHandle makeExactOrGeneralInvoker(boolean isExact) {
@@ -236,12 +254,11 @@ class Invokers {
     static MemberName methodHandleInvokeLinkerMethod(String name,
                                                      MethodType mtype,
                                                      Object[] appendixResult) {
-        int which;
-        switch (name) {
-            case "invokeExact":  which = MethodTypeForm.LF_EX_LINKER; break;
-            case "invoke":       which = MethodTypeForm.LF_GEN_LINKER; break;
-            default:             throw new InternalError("not invoker: "+name);
-        }
+        int which = switch (name) {
+            case "invokeExact" -> MethodTypeForm.LF_EX_LINKER;
+            case "invoke"      -> MethodTypeForm.LF_GEN_LINKER;
+            default -> throw new InternalError("not invoker: " + name);
+        };
         LambdaForm lform;
         if (mtype.parameterSlotCount() <= MethodType.MAX_MH_ARITY - MH_LINKER_ARG_APPENDED) {
             lform = invokeHandleForm(mtype, false, which);
@@ -642,24 +659,16 @@ class Invokers {
 
     private static NamedFunction createFunction(byte func) {
         try {
-            switch (func) {
-                case NF_checkExactType:
-                    return getNamedFunction("checkExactType", MethodType.methodType(void.class, MethodHandle.class, MethodType.class));
-                case NF_checkGenericType:
-                    return getNamedFunction("checkGenericType", MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
-                case NF_getCallSiteTarget:
-                    return getNamedFunction("getCallSiteTarget", MethodType.methodType(MethodHandle.class, CallSite.class));
-                case NF_checkCustomized:
-                    return getNamedFunction("checkCustomized", MethodType.methodType(void.class, MethodHandle.class));
-                case NF_checkVarHandleGenericType:
-                    return getNamedFunction("checkVarHandleGenericType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
-                case NF_checkVarHandleExactType:
-                    return getNamedFunction("checkVarHandleExactType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
-                case NF_directVarHandleTarget:
-                    return getNamedFunction("directVarHandleTarget", MethodType.methodType(VarHandle.class, VarHandle.class));
-                default:
-                    throw newInternalError("Unknown function: " + func);
-            }
+            return switch (func) {
+                case NF_checkExactType            -> getNamedFunction("checkExactType", MethodType.methodType(void.class, MethodHandle.class, MethodType.class));
+                case NF_checkGenericType          -> getNamedFunction("checkGenericType", MethodType.methodType(MethodHandle.class, MethodHandle.class, MethodType.class));
+                case NF_getCallSiteTarget         -> getNamedFunction("getCallSiteTarget", MethodType.methodType(MethodHandle.class, CallSite.class));
+                case NF_checkCustomized           -> getNamedFunction("checkCustomized", MethodType.methodType(void.class, MethodHandle.class));
+                case NF_checkVarHandleGenericType -> getNamedFunction("checkVarHandleGenericType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
+                case NF_checkVarHandleExactType   -> getNamedFunction("checkVarHandleExactType", MethodType.methodType(MethodHandle.class, VarHandle.class, VarHandle.AccessDescriptor.class));
+                case NF_directVarHandleTarget     -> getNamedFunction("directVarHandleTarget", MethodType.methodType(VarHandle.class, VarHandle.class));
+                default -> throw newInternalError("Unknown function: " + func);
+            };
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }

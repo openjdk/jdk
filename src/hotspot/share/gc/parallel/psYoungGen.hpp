@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 class PSYoungGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ParallelScavengeHeap;
-  friend class AdjoiningGenerations;
 
  private:
   MemRegion       _reserved;
@@ -91,7 +90,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   MemRegion reserved() const { return _reserved; }
 
   bool is_in(const void* p) const {
-    return _virtual_space->contains((void *)p);
+    return _virtual_space->is_in_committed(p);
   }
 
   bool is_in_reserved(const void* p) const {

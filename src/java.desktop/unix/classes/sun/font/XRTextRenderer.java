@@ -83,7 +83,7 @@ public class XRTextRenderer extends GlyphListPipe {
             int activeGlyphSet = cachedGlyphs[0].getGlyphSet();
 
             int eltIndex = -1;
-            gl.getBounds();
+            gl.startGlyphIteration();
             float[] positions = gl.getPositions();
             for (int i = 0; i < gl.getNumGlyphs(); i++) {
                 gl.setGlyphIndex(i);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ class WindowsFileCopy {
 
         // check permissions. If the source file is a symbolic link then
         // later we must also check LinkPermission
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             source.checkRead();
@@ -137,6 +138,12 @@ class WindowsFileCopy {
         // if source file is a symbolic link then we must check for LinkPermission
         if (sm != null && sourceAttrs.isSymbolicLink()) {
             sm.checkPermission(new LinkPermission("symbolic"));
+        }
+
+        // if source is a Unix domain socket, we don't want to copy it for various
+        // reasons including consistency with Unix
+        if (sourceAttrs.isUnixDomainSocket()) {
+            throw new IOException("Can not copy socket file");
         }
 
         final String sourcePath = asWin32Path(source);
@@ -286,6 +293,7 @@ class WindowsFileCopy {
             throw new UnsupportedOperationException("Unsupported copy option");
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             source.checkWrite();

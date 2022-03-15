@@ -37,7 +37,7 @@ import static jaxp.library.JAXPTestUtilities.tryRunWithAllPerm;
  * @test
  * @bug 8171243
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogAccessTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogAccessTest
  * @summary the Catalog API grants no privilege to external resources. This test
  * verifies that SecurityException will be thrown if access to resources is denied
  * by the security manager.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@ void PSOldGen::initialize(ReservedSpace rs, size_t initial_size, size_t alignmen
   initialize_virtual_space(rs, initial_size, alignment);
   initialize_work(perf_data_name, level);
 
-  // The old gen can grow to max_gen_size().  _reserve reflects only
-  // the current maximum that can be committed.
-  assert(_reserved.byte_size() <= max_gen_size(), "Consistency check");
-
   initialize_performance_counters(perf_data_name, level);
 }
 
@@ -69,66 +65,51 @@ void PSOldGen::initialize_virtual_space(ReservedSpace rs,
 }
 
 void PSOldGen::initialize_work(const char* perf_data_name, int level) {
-  //
-  // Basic memory initialization
-  //
+  MemRegion const reserved_mr = reserved();
+  assert(reserved_mr.byte_size() == max_gen_size(), "invariant");
 
-  MemRegion limit_reserved((HeapWord*)virtual_space()->low_boundary(),
-                           heap_word_size(max_gen_size()));
-  assert(limit_reserved.byte_size() == max_gen_size(),
-    "word vs bytes confusion");
-  //
-  // Object start stuff
-  //
+  // Object start stuff: for all reserved memory
+  start_array()->initialize(reserved_mr);
 
-  start_array()->initialize(limit_reserved);
+  // Card table stuff: for all committed memory
+  MemRegion committed_mr((HeapWord*)virtual_space()->low(),
+                         (HeapWord*)virtual_space()->high());
 
-  _reserved = MemRegion((HeapWord*)virtual_space()->low_boundary(),
-                        (HeapWord*)virtual_space()->high_boundary());
-
-  //
-  // Card table stuff
-  //
-
-  MemRegion cmr((HeapWord*)virtual_space()->low(),
-                (HeapWord*)virtual_space()->high());
   if (ZapUnusedHeapArea) {
     // Mangle newly committed space immediately rather than
     // waiting for the initialization of the space even though
     // mangling is related to spaces.  Doing it here eliminates
     // the need to carry along information that a complete mangling
     // (bottom to end) needs to be done.
-    SpaceMangler::mangle_region(cmr);
+    SpaceMangler::mangle_region(committed_mr);
   }
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSCardTable* ct = heap->card_table();
-  ct->resize_covered_region(cmr);
+  ct->resize_covered_region(committed_mr);
 
   // Verify that the start and end of this generation is the start of a card.
   // If this wasn't true, a single card could span more than one generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(ct->is_card_aligned(_reserved.start()), "generation must be card aligned");
-  if (_reserved.end() != heap->reserved_region().end()) {
-    // Don't check at the very end of the heap as we'll assert that we're probing off
-    // the end if we try.
-    guarantee(ct->is_card_aligned(_reserved.end()), "generation must be card aligned");
-  }
+  guarantee(ct->is_card_aligned(reserved_mr.start()), "generation must be card aligned");
+  // Check the heap layout documented at `class ParallelScavengeHeap`.
+  assert(reserved_mr.end() != heap->reserved_region().end(), "invariant");
+  guarantee(ct->is_card_aligned(reserved_mr.end()), "generation must be card aligned");
 
   //
   // ObjectSpace stuff
   //
 
   _object_space = new MutableSpace(virtual_space()->alignment());
-  object_space()->initialize(cmr,
+  object_space()->initialize(committed_mr,
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle,
                              MutableSpace::SetupPages,
                              &ParallelScavengeHeap::heap()->workers());
 
   // Update the start_array
-  start_array()->set_covered_region(cmr);
+  start_array()->set_covered_region(committed_mr);
 }
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
@@ -146,32 +127,13 @@ bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
 
-// Allocation. We report all successful allocations to the size policy
-// Note that the perm gen does not use this method, and should not!
-HeapWord* PSOldGen::allocate(size_t word_size) {
-  assert_locked_or_safepoint(Heap_lock);
-  HeapWord* res = allocate_noexpand(word_size);
-
-  if (res == NULL) {
-    res = expand_and_allocate(word_size);
-  }
-
-  // Allocations in the old generation need to be reported
-  if (res != NULL) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    heap->size_policy()->tenured_allocation(word_size * HeapWordSize);
-  }
-
-  return res;
-}
-
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % (ObjectStartArray::block_size)) == 0,
+  assert((block_word_size % (ObjectStartArray::card_size())) == 0,
          "Block size not a multiple of start_array block");
 
   MutableSpace *space = object_space();
@@ -186,38 +148,42 @@ void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   // Get object starting at or reaching into this block.
   HeapWord* start = start_array()->object_start(begin);
   if (start < begin) {
-    start += oop(start)->size();
+    start += cast_to_oop(start)->size();
   }
   assert(start >= begin,
          "Object address" PTR_FORMAT " must be larger or equal to block address at " PTR_FORMAT,
          p2i(start), p2i(begin));
   // Iterate all objects until the end.
-  for (HeapWord* p = start; p < end; p += oop(p)->size()) {
-    cl->do_object(oop(p));
+  for (HeapWord* p = start; p < end; p += cast_to_oop(p)->size()) {
+    cl->do_object(cast_to_oop(p));
   }
 }
 
-HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
+bool PSOldGen::expand_for_allocate(size_t word_size) {
+  assert(word_size > 0, "allocating zero words?");
+  bool result = true;
+  {
+    MutexLocker x(PSOldGenExpand_lock);
+    // Avoid "expand storms" by rechecking available space after obtaining
+    // the lock, because another thread may have already made sufficient
+    // space available.  If insufficient space available, that will remain
+    // true until we expand, since we have the lock.  Other threads may take
+    // the space we need before we can allocate it, regardless of whether we
+    // expand.  That's okay, we'll just try expanding again.
+    if (object_space()->needs_expand(word_size)) {
+      result = expand(word_size*HeapWordSize);
+    }
+  }
   if (GCExpandToAllocateDelayMillis > 0) {
     os::naked_sleep(GCExpandToAllocateDelayMillis);
   }
-  return allocate_noexpand(word_size);
+  return result;
 }
 
-HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {
-  expand(word_size*HeapWordSize);
-  if (GCExpandToAllocateDelayMillis > 0) {
-    os::naked_sleep(GCExpandToAllocateDelayMillis);
-  }
-  return cas_allocate_noexpand(word_size);
-}
-
-void PSOldGen::expand(size_t bytes) {
-  if (bytes == 0) {
-    return;
-  }
-  MutexLocker x(ExpandHeap_lock);
+bool PSOldGen::expand(size_t bytes) {
+  assert_lock_strong(PSOldGenExpand_lock);
+  assert_locked_or_safepoint(Heap_lock);
+  assert(bytes > 0, "precondition");
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_up(bytes, alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
@@ -227,13 +193,11 @@ void PSOldGen::expand(size_t bytes) {
     // providing a page per lgroup. Alignment is larger or equal to the page size.
     aligned_expand_bytes = MAX2(aligned_expand_bytes, alignment * os::numa_get_groups_num());
   }
-  if (aligned_bytes == 0){
-    // The alignment caused the number of bytes to wrap.  An expand_by(0) will
-    // return true with the implication that and expansion was done when it
-    // was not.  A call to expand implies a best effort to expand by "bytes"
-    // but not a guarantee.  Align down to give a best effort.  This is likely
-    // the most that the generation can expand since it has some capacity to
-    // start with.
+  if (aligned_bytes == 0) {
+    // The alignment caused the number of bytes to wrap.  A call to expand
+    // implies a best effort to expand by "bytes" but not a guarantee.  Align
+    // down to give a best effort.  This is likely the most that the generation
+    // can expand since it has some capacity to start with.
     aligned_bytes = align_down(bytes, alignment);
   }
 
@@ -251,14 +215,13 @@ void PSOldGen::expand(size_t bytes) {
   if (success && GCLocker::is_active_and_needs_gc()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
+  return success;
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
-  if (bytes == 0) {
-    return true;  // That's what virtual_space()->expand_by(0) would return
-  }
+  assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
     if (ZapUnusedHeapArea) {
@@ -292,10 +255,10 @@ bool PSOldGen::expand_by(size_t bytes) {
 }
 
 bool PSOldGen::expand_to_reserved() {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
 
-  bool result = true;
+  bool result = false;
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
   if (remaining_bytes > 0) {
     result = expand_by(remaining_bytes);
@@ -305,12 +268,11 @@ bool PSOldGen::expand_to_reserved() {
 }
 
 void PSOldGen::shrink(size_t bytes) {
-  assert_lock_strong(ExpandHeap_lock);
+  assert_lock_strong(PSOldGenExpand_lock);
   assert_locked_or_safepoint(Heap_lock);
 
   size_t size = align_down(bytes, virtual_space()->alignment());
   if (size > 0) {
-    assert_lock_strong(ExpandHeap_lock);
     virtual_space()->shrink_by(bytes);
     post_resize();
 
@@ -318,6 +280,15 @@ void PSOldGen::shrink(size_t bytes) {
     size_t old_mem_size = new_mem_size + bytes;
     log_debug(gc)("Shrinking %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
                   name(), old_mem_size/K, bytes/K, new_mem_size/K);
+  }
+}
+
+void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
+  HeapWord* cur = archive_space.start();
+  while (cur < archive_space.end()) {
+    _start_array.allocate_block(cur);
+    size_t word_size = cast_to_oop(cur)->size();
+    cur += word_size;
   }
 }
 
@@ -332,7 +303,6 @@ void PSOldGen::resize(size_t desired_free_space) {
   // Adjust according to our min and max
   new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
-  assert(max_gen_size() >= reserved().byte_size(), "max new size problem?");
   new_size = align_up(new_size, alignment);
 
   const size_t current_size = capacity_in_bytes();
@@ -350,11 +320,11 @@ void PSOldGen::resize(size_t desired_free_space) {
   }
   if (new_size > current_size) {
     size_t change_bytes = new_size - current_size;
+    MutexLocker x(PSOldGenExpand_lock);
     expand(change_bytes);
   } else {
     size_t change_bytes = current_size - new_size;
-    // shrink doesn't grab this lock, expand does. Is that right?
-    MutexLocker x(ExpandHeap_lock);
+    MutexLocker x(PSOldGenExpand_lock);
     shrink(change_bytes);
   }
 
@@ -377,10 +347,12 @@ void PSOldGen::post_resize() {
   start_array()->set_covered_region(new_memregion);
   ParallelScavengeHeap::heap()->card_table()->resize_covered_region(new_memregion);
 
-  WorkGang* workers = Thread::current()->is_VM_thread() ?
+  WorkerThreads* workers = Thread::current()->is_VM_thread() ?
                       &ParallelScavengeHeap::heap()->workers() : NULL;
 
-  // ALWAYS do this last!!
+  // The update of the space's end is done by this call.  As that
+  // makes the new space available for concurrent allocation, this
+  // must be the last step when expanding.
   object_space()->initialize(new_memregion,
                              SpaceDecorator::DontClear,
                              SpaceDecorator::DontMangle,
@@ -416,12 +388,11 @@ void PSOldGen::verify() {
 }
 
 class VerifyObjectStartArrayClosure : public ObjectClosure {
-  PSOldGen* _old_gen;
   ObjectStartArray* _start_array;
 
  public:
-  VerifyObjectStartArrayClosure(PSOldGen* old_gen, ObjectStartArray* start_array) :
-    _old_gen(old_gen), _start_array(start_array) { }
+  VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
+    _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
     HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
@@ -431,7 +402,7 @@ class VerifyObjectStartArrayClosure : public ObjectClosure {
 };
 
 void PSOldGen::verify_object_start_array() {
-  VerifyObjectStartArrayClosure check( this, &_start_array );
+  VerifyObjectStartArrayClosure check(&_start_array);
   object_iterate(&check);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,11 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Comment;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.FixedStringContent;
-import jdk.javadoc.internal.doclets.formats.html.markup.StringContent;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
@@ -54,7 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  */
 public class Contents {
 
-    public final Content allClassesLabel;
+    public final Content allClassesAndInterfacesLabel;
     public final Content allImplementedInterfacesLabel;
     public final Content allModulesLabel;
     public final Content allPackagesLabel;
@@ -84,8 +81,8 @@ public class Contents {
     public final Content deprecatedLabel;
     public final Content deprecatedPhrase;
     public final Content deprecatedForRemovalPhrase;
-    public final Content descfrmClassLabel;
-    public final Content descfrmInterfaceLabel;
+    public final Content descriptionFromClassLabel;
+    public final Content descriptionFromInterfaceLabel;
     public final Content descriptionLabel;
     public final Content detailLabel;
     public final Content enclosingClassLabel;
@@ -95,10 +92,8 @@ public class Contents {
     public final Content enumConstantSummary;
     public final Content enum_;
     public final Content enums;
-    public final Content error;
-    public final Content errors;
-    public final Content exception;
-    public final Content exceptions;
+    public final Content exceptionClass;
+    public final Content exceptionClasses;
     public final Content exportedTo;
     public final Content fieldLabel;
     public final Content fieldDetailsLabel;
@@ -108,6 +103,7 @@ public class Contents {
     public final Content functionalInterface;
     public final Content functionalInterfaceMessage;
     public final Content helpLabel;
+    public final Content helpSubNavLabel;
     public final Content hierarchyForAllPackages;
     public final Content implementation;
     public final Content implementingClassesLabel;
@@ -129,18 +125,22 @@ public class Contents {
     public final Content navAnnotationTypeMember;
     public final Content navAnnotationTypeOptionalMember;
     public final Content navAnnotationTypeRequiredMember;
+    public final Content navClassesAndInterfaces;
     public final Content navConstructor;
+    public final Content navDescription;
     public final Content navEnum;
     public final Content navField;
+    public final Content navHelpNavigation;
+    public final Content navHelpPages;
     public final Content navMethod;
-    public final Content navModuleDescription;
     public final Content navModules;
     public final Content navNested;
     public final Content navPackages;
     public final Content navProperty;
     public final Content navServices;
     public final Content nestedClassSummary;
-    public final Content newPage;
+    public final Content newAPI;
+    public final Content newLabel;
     public final Content noScriptMessage;
     public final Content openModuleLabel;
     public final Content openedTo;
@@ -150,14 +150,21 @@ public class Contents {
     public final Content packageLabel;
     public final Content package_;
     public final Content packagesLabel;
+    public final Content packageSubNavLabel;
+    public final Content packageSummaryLabel;
     public final Content parameters;
+    public final Content previewAPI;
+    public final Content previewLabel;
+    public final Content previewMark;
+    public final Content previewPhrase;
     public final Content properties;
     public final Content propertyLabel;
     public final Content propertyDetailsLabel;
     public final Content propertySummaryLabel;
-    public final Content record;
+    public final Content records;
     public final Content recordComponents;
     public final Content referencedIn;
+    public final Content relatedPackages;
     public final Content returns;
     public final Content seeAlso;
     public final Content serializedForm;
@@ -188,7 +195,7 @@ public class Contents {
     Contents(HtmlConfiguration configuration) {
         this.resources = configuration.getDocResources();
 
-        allClassesLabel = getNonBreakResource("doclet.All_Classes");
+        this.allClassesAndInterfacesLabel = getContent("doclet.All_Classes_And_Interfaces");
         allImplementedInterfacesLabel = getContent("doclet.All_Implemented_Interfaces");
         allModulesLabel = getNonBreakResource("doclet.All_Modules");
         allPackagesLabel = getNonBreakResource("doclet.All_Packages");
@@ -212,14 +219,14 @@ public class Contents {
         constructorSummaryLabel = getContent("doclet.Constructor_Summary");
         constructors = getContent("doclet.Constructors");
         contentsHeading = getContent("doclet.Contents");
-        defaultPackageLabel = new StringContent(DocletConstants.DEFAULT_PACKAGE_NAME);
+        defaultPackageLabel = getContent("doclet.Unnamed_Package");
         default_ = getContent("doclet.Default");
         deprecatedAPI = getContent("doclet.Deprecated_API");
         deprecatedLabel = getContent("doclet.navDeprecated");
         deprecatedPhrase = getContent("doclet.Deprecated");
         deprecatedForRemovalPhrase = getContent("doclet.DeprecatedForRemoval");
-        descfrmClassLabel = getContent("doclet.Description_From_Class");
-        descfrmInterfaceLabel = getContent("doclet.Description_From_Interface");
+        descriptionFromClassLabel = getContent("doclet.Description_From_Class");
+        descriptionFromInterfaceLabel = getContent("doclet.Description_From_Interface");
         descriptionLabel = getContent("doclet.Description");
         detailLabel = getContent("doclet.Detail");
         enclosingClassLabel = getContent("doclet.Enclosing_Class");
@@ -229,10 +236,8 @@ public class Contents {
         enumConstantSummary = getContent("doclet.Enum_Constant_Summary");
         enum_ = getContent("doclet.Enum");
         enums = getContent("doclet.Enums");
-        error = getContent("doclet.Error");
-        errors = getContent("doclet.Errors");
-        exception = getContent("doclet.Exception");
-        exceptions = getContent("doclet.Exceptions");
+        exceptionClass = getContent("doclet.ExceptionClass");
+        exceptionClasses = getContent("doclet.ExceptionClasses");
         exportedTo = getContent("doclet.ExportedTo");
         fieldDetailsLabel = getContent("doclet.Field_Detail");
         fieldSummaryLabel = getContent("doclet.Field_Summary");
@@ -242,6 +247,7 @@ public class Contents {
         functionalInterface = getContent("doclet.Functional_Interface");
         functionalInterfaceMessage = getContent("doclet.Functional_Interface_Message");
         helpLabel = getContent("doclet.Help");
+        helpSubNavLabel = getContent("doclet.Help_Sub_Nav");
         hierarchyForAllPackages = getContent("doclet.Hierarchy_For_All_Packages");
         implementation = getContent("doclet.Implementation");
         implementingClassesLabel = getContent("doclet.Implementing_Classes");
@@ -263,18 +269,22 @@ public class Contents {
         navAnnotationTypeMember = getContent("doclet.navAnnotationTypeMember");
         navAnnotationTypeOptionalMember = getContent("doclet.navAnnotationTypeOptionalMember");
         navAnnotationTypeRequiredMember = getContent("doclet.navAnnotationTypeRequiredMember");
+        navClassesAndInterfaces = getContent("doclet.navClassesAndInterfaces");
         navConstructor = getContent("doclet.navConstructor");
         navEnum = getContent("doclet.navEnum");
         navField = getContent("doclet.navField");
+        navHelpNavigation = getContent("doclet.navNavigation");
+        navHelpPages = getContent("doclet.navPages");
         navMethod = getContent("doclet.navMethod");
-        navModuleDescription = getContent("doclet.navModuleDescription");
+        navDescription = getContent("doclet.navDescription");
         navModules = getContent("doclet.navModules");
         navNested = getContent("doclet.navNested");
         navPackages = getContent("doclet.navPackages");
         navProperty = getContent("doclet.navProperty");
         navServices = getContent("doclet.navServices");
         nestedClassSummary = getContent("doclet.Nested_Class_Summary");
-        newPage = new Comment(resources.getText("doclet.New_Page"));
+        newAPI = getContent("doclet.New_API");
+        newLabel = getContent("doclet.New_Label");
         noScriptMessage = getContent("doclet.No_Script_Message");
         openedTo = getContent("doclet.OpenedTo");
         openModuleLabel = getContent("doclet.Open_Module");
@@ -284,14 +294,21 @@ public class Contents {
         packageLabel = getContent("doclet.Package");
         package_ = getContent("doclet.package");
         packagesLabel = getContent("doclet.Packages");
+        packageSubNavLabel = getContent("doclet.Package_Sub_Nav");
+        this.packageSummaryLabel = getContent("doclet.Package_Summary");
         parameters = getContent("doclet.Parameters");
+        previewAPI = getContent("doclet.Preview_API");
+        previewLabel = getContent("doclet.Preview_Label");
+        previewMark = getContent("doclet.Preview_Mark");
+        previewPhrase = getContent("doclet.Preview");
         properties = getContent("doclet.Properties");
         propertyLabel = getContent("doclet.Property");
         propertyDetailsLabel = getContent("doclet.Property_Detail");
         propertySummaryLabel = getContent("doclet.Property_Summary");
-        record = getContent("doclet.Record");
+        records = getContent("doclet.RecordClasses");
         recordComponents = getContent("doclet.RecordComponents");
         referencedIn = getContent("doclet.ReferencedIn");
+        relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
@@ -310,11 +327,15 @@ public class Contents {
         valueLabel = getContent("doclet.Value");
 
         navLinkLabels = new EnumMap<>(VisibleMemberTable.Kind.class);
-        navLinkLabels.put(VisibleMemberTable.Kind.INNER_CLASSES, getContent("doclet.navNested"));
+        navLinkLabels.put(VisibleMemberTable.Kind.NESTED_CLASSES, getContent("doclet.navNested"));
         navLinkLabels.put(VisibleMemberTable.Kind.ENUM_CONSTANTS, getContent("doclet.navEnum"));
         navLinkLabels.put(VisibleMemberTable.Kind.FIELDS, getContent("doclet.navField"));
         navLinkLabels.put(VisibleMemberTable.Kind.CONSTRUCTORS, getContent("doclet.navConstructor"));
         navLinkLabels.put(VisibleMemberTable.Kind.METHODS, getContent("doclet.navMethod"));
+        navLinkLabels.put(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL,
+                getContent("doclet.navAnnotationTypeOptionalMember"));
+        navLinkLabels.put(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED,
+                getContent("doclet.navAnnotationTypeRequiredMember"));
     }
 
     /**
@@ -325,7 +346,7 @@ public class Contents {
      * @return a content tree for the string
      */
     public Content getContent(String key) {
-        return new FixedStringContent(resources.getText(key));
+        return Text.of(resources.getText(key));
     }
 
     /**
@@ -384,10 +405,10 @@ public class Contents {
 
             if (o == null) {
                 c.add("{" + m.group(1) + "}");
-            } else if (o instanceof String) {
-                c.add((String) o);
-            } else if (o instanceof Content) {
-                c.add((Content) o);
+            } else if (o instanceof String str) {
+                c.add(str);
+            } else if (o instanceof Content con) {
+                c.add(con);
             }
 
             start = m.end();

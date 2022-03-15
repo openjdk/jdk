@@ -42,8 +42,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -Djdk.xml.resetSymbolTable=false sax.SymbolTableResetTest
  * @run testng/othervm -Djdk.xml.resetSymbolTable=true sax.SymbolTableResetTest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=false -DrunSecMngr=true sax.SymbolTableResetTest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=true -DrunSecMngr=true sax.SymbolTableResetTest
+ * @run testng/othervm -Djdk.xml.resetSymbolTable=false -DrunSecMngr=true -Djava.security.manager=allow sax.SymbolTableResetTest
+ * @run testng/othervm -Djdk.xml.resetSymbolTable=true -DrunSecMngr=true -Djava.security.manager=allow sax.SymbolTableResetTest
  * @summary Test that SAXParser reallocates symbol table during
  *          subsequent parse operations
  */

@@ -58,9 +58,9 @@ import sun.security.util.Cache;
  */
 
 final class SSLSessionContextImpl implements SSLSessionContext {
-    private final static int DEFAULT_MAX_CACHE_SIZE = 20480;
+    private static final int DEFAULT_MAX_CACHE_SIZE = 20480;
     // Default lifetime of a session. 24 hours
-    final static int DEFAULT_SESSION_TIMEOUT = 86400;
+    static final int DEFAULT_SESSION_TIMEOUT = 86400;
 
     private final Cache<SessionId, SSLSessionImpl> sessionCache;
                                         // session cache, session id as key
@@ -173,6 +173,15 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     // package-private method, used ONLY by ServerHandshaker
     SSLSessionImpl get(byte[] id) {
         return (SSLSessionImpl)getSession(id);
+    }
+
+    // package-private method, find and remove session from cache
+    // return found session
+    SSLSessionImpl pull(byte[] id) {
+        if (id != null) {
+            return sessionCache.pull(new SessionId(id));
+        }
+        return null;
     }
 
     // package-private method, used ONLY by ClientHandshaker

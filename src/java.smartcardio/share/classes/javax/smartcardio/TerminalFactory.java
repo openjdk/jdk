@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,15 +88,16 @@ import sun.security.jca.GetInstance.*;
  */
 public final class TerminalFactory {
 
-    private final static String PROP_NAME =
+    private static final String PROP_NAME =
                         "javax.smartcardio.TerminalFactory.DefaultType";
 
-    private final static String defaultType;
+    private static final String defaultType;
 
-    private final static TerminalFactory defaultFactory;
+    private static final TerminalFactory defaultFactory;
 
     static {
         // lookup up the user specified type, default to PC/SC
+        @SuppressWarnings("removal")
         String type = AccessController.doPrivileged(
              (PrivilegedAction<String>) () -> System.getProperty(PROP_NAME, "PC/SC")).trim();
         TerminalFactory factory = null;
@@ -132,14 +133,14 @@ public final class TerminalFactory {
     private static final class NoneProvider extends Provider {
 
         private static final long serialVersionUID = 2745808869881593918L;
-        final static Provider INSTANCE = new NoneProvider();
+        static final Provider INSTANCE = new NoneProvider();
         private NoneProvider() {
             super("None", "1.0", "none");
         }
     }
 
     private static final class NoneFactorySpi extends TerminalFactorySpi {
-        final static TerminalFactorySpi INSTANCE = new NoneFactorySpi();
+        static final TerminalFactorySpi INSTANCE = new NoneFactorySpi();
         private NoneFactorySpi() {
             // empty
         }
@@ -149,7 +150,7 @@ public final class TerminalFactory {
     }
 
     private static final class NoneCardTerminals extends CardTerminals {
-        final static CardTerminals INSTANCE = new NoneCardTerminals();
+        static final CardTerminals INSTANCE = new NoneCardTerminals();
         private NoneCardTerminals() {
             // empty
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,13 @@
 
 #include "gc/g1/g1ServiceThread.hpp"
 
+class G1CollectedHeap;
+class G1GCCounters;
+
 // Task handling periodic GCs
 class G1PeriodicGCTask : public G1ServiceTask {
-  bool should_start_periodic_gc();
+  bool should_start_periodic_gc(G1CollectedHeap* g1h,
+                                G1GCCounters* counters);
   void check_for_periodic_gc();
 
 public:

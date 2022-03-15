@@ -122,9 +122,9 @@ abstract class HelloCookieManager {
             class D10HelloCookieManager extends HelloCookieManager {
 
         final SecureRandom secureRandom;
-        private int         cookieVersion;  // allow to wrap, version + sequence
-        private byte[]      cookieSecret;
-        private byte[]      legacySecret;
+        private int               cookieVersion;  // allow to wrap, version + sequence
+        private final byte[]      cookieSecret;
+        private final byte[]      legacySecret;
 
         private final ReentrantLock d10ManagerLock = new ReentrantLock();
 
@@ -208,7 +208,7 @@ abstract class HelloCookieManager {
             byte[] target = md.digest(secret);      // 32 bytes
             target[0] = cookie[0];
 
-            return Arrays.equals(target, cookie);
+            return MessageDigest.isEqual(target, cookie);
         }
     }
 
@@ -361,7 +361,7 @@ abstract class HelloCookieManager {
             md.update(headerBytes);
             byte[] headerCookie = md.digest(secret);
 
-            if (!Arrays.equals(headerCookie, prevHeadCookie)) {
+            if (!MessageDigest.isEqual(headerCookie, prevHeadCookie)) {
                 return false;
             }
 

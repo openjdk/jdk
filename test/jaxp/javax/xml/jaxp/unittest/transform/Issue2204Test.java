@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6905829
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Issue2204Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Issue2204Test
  * @run testng/othervm transform.Issue2204Test
  * @summary Test XSLT can work against the certain xsl.
  */

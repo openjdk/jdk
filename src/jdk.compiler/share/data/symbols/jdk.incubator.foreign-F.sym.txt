@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,9 @@ method name asSlice descriptor (JJ)Ljdk/incubator/foreign/MemorySegment; flags 1
 method name withAccessModes descriptor (I)Ljdk/incubator/foreign/MemorySegment; flags 1041
 
 class name jdk/incubator/foreign/MemoryAddress
-field name NULL descriptor Ljdk/incubator/foreign/MemoryAddress; flags 19
 -method name offset descriptor ()J
 -method name copy descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/MemoryAddress;J)V
+field name NULL descriptor Ljdk/incubator/foreign/MemoryAddress; flags 19
 method name segmentOffset descriptor ()J flags 401
 method name toRawLongValue descriptor ()J flags 401
 method name rebase descriptor (Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/MemoryAddress; flags 401
@@ -78,8 +78,8 @@ method name collectCoordinates descriptor (Ljava/lang/invoke/VarHandle;ILjava/la
 method name dropCoordinates descriptor (Ljava/lang/invoke/VarHandle;I[Ljava/lang/Class;)Ljava/lang/invoke/VarHandle; flags 89 signature (Ljava/lang/invoke/VarHandle;I[Ljava/lang/Class<*>;)Ljava/lang/invoke/VarHandle;
 
 class name jdk/incubator/foreign/MemoryLayout
-field name LAYOUT_NAME descriptor Ljava/lang/String; constantValue layout/name flags 19
 -method name offset descriptor ([Ljdk/incubator/foreign/MemoryLayout$PathElement;)J
+field name LAYOUT_NAME descriptor Ljava/lang/String; constantValue layout/name flags 19
 method name attribute descriptor (Ljava/lang/String;)Ljava/util/Optional; flags 401 signature (Ljava/lang/String;)Ljava/util/Optional<Ljava/lang/constant/Constable;>;
 method name withAttribute descriptor (Ljava/lang/String;Ljava/lang/constant/Constable;)Ljdk/incubator/foreign/MemoryLayout; flags 401
 method name attributes descriptor ()Ljava/util/stream/Stream; flags 401 signature ()Ljava/util/stream/Stream<Ljava/lang/String;>;
@@ -88,16 +88,16 @@ method name byteOffset descriptor ([Ljdk/incubator/foreign/MemoryLayout$PathElem
 method name isPadding descriptor ()Z flags 401
 
 class name jdk/incubator/foreign/MemorySegment
+-method name acquire descriptor ()Ljdk/incubator/foreign/MemorySegment;
+-method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment;
+-method name isReadOnly descriptor ()Z
+-method name mapFromPath descriptor (Ljava/nio/file/Path;JLjava/nio/channels/FileChannel$MapMode;)Ljdk/incubator/foreign/MemorySegment;
 field name READ descriptor I constantValue 1 flags 19
 field name WRITE descriptor I constantValue 2 flags 19
 field name CLOSE descriptor I constantValue 4 flags 19
 field name ACQUIRE descriptor I constantValue 8 flags 19
 field name HANDOFF descriptor I constantValue 16 flags 19
 field name ALL_ACCESS descriptor I constantValue 31 flags 19
--method name acquire descriptor ()Ljdk/incubator/foreign/MemorySegment;
--method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment;
--method name isReadOnly descriptor ()Z
--method name mapFromPath descriptor (Ljava/nio/file/Path;JLjava/nio/channels/FileChannel$MapMode;)Ljdk/incubator/foreign/MemorySegment;
 method name spliterator descriptor (Ljdk/incubator/foreign/MemorySegment;Ljdk/incubator/foreign/SequenceLayout;)Ljava/util/Spliterator; flags 9 signature <S::Ljdk/incubator/foreign/MemorySegment;>(TS;Ljdk/incubator/foreign/SequenceLayout;)Ljava/util/Spliterator<TS;>;
 method name withOwnerThread descriptor (Ljava/lang/Thread;)Ljdk/incubator/foreign/MemorySegment; flags 401
 method name withAccessModes descriptor (I)Ljdk/incubator/foreign/MemorySegment; flags 401

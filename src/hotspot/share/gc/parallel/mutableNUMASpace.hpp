@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ class MutableNUMASpace : public MutableSpace {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkGang* pretouch_gang = NULL);
+                          WorkerThreads* pretouch_workers = NULL);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
@@ -227,7 +227,6 @@ class MutableNUMASpace : public MutableSpace {
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
   // Allocation (return NULL if full)
-  virtual HeapWord* allocate(size_t word_size);
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging

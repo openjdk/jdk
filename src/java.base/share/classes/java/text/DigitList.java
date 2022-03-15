@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,9 +702,8 @@ final class DigitList implements Cloneable {
     public boolean equals(Object obj) {
         if (this == obj)                      // quick check
             return true;
-        if (!(obj instanceof DigitList))         // (1) same object?
+        if (!(obj instanceof DigitList other))         // (1) same object?
             return false;
-        DigitList other = (DigitList) obj;
         if (count != other.count ||
         decimalAt != other.decimalAt)
             return false;

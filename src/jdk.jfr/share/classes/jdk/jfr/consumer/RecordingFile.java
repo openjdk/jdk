@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,33 +34,33 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
+import java.util.Objects;
+import java.util.function.Predicate;
 import jdk.jfr.EventType;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Type;
+import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
+import jdk.jfr.internal.consumer.ParserFilter;
 import jdk.jfr.internal.consumer.ChunkHeader;
 import jdk.jfr.internal.consumer.ChunkParser;
 import jdk.jfr.internal.consumer.FileAccess;
+import jdk.jfr.internal.consumer.ParserState;
 import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.consumer.filter.ChunkWriter;
 
 /**
  * A recording file.
  * <p>
  * The following example shows how read and print all events in a recording file.
  *
- * <pre>{@literal
- * try (RecordingFile recordingFile = new RecordingFile(Paths.get("recording.jfr"))) {
- *   while (recordingFile.hasMoreEvents()) {
- *     RecordedEvent event = recordingFile.readEvent();
- *     System.out.println(event);
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="RecordingFileOverview"}
  *
  * @since 9
  */
 public final class RecordingFile implements Closeable {
 
+    private final ParserState parserState = new ParserState();
+    private final ChunkWriter chunkWriter;
     private boolean isLastEventInChunk;
     private final File file;
     private RecordingInput input;
@@ -80,8 +80,18 @@ public final class RecordingFile implements Closeable {
      *         {@code checkRead} method denies read access to the file.
      */
     public RecordingFile(Path file) throws IOException {
+        Objects.requireNonNull(file, "file");
         this.file = file.toFile();
         this.input = new RecordingInput(this.file, FileAccess.UNPRIVILEGED);
+        this.chunkWriter = null;
+        findNext();
+    }
+
+    // Only used by RecordingFile::write(Path, Predicate<RecordedEvent>)
+    private RecordingFile(ChunkWriter chunkWriter) throws IOException {
+        this.file = null; // not used
+        this.input = chunkWriter.getInput();
+        this.chunkWriter = chunkWriter;
         findNext();
     }
 
@@ -103,6 +113,9 @@ public final class RecordingFile implements Closeable {
         isLastEventInChunk = false;
         RecordedEvent event = nextEvent;
         nextEvent = chunkParser.readEvent();
+        while (nextEvent == ChunkParser.FLUSH_MARKER) {
+            nextEvent = chunkParser.readEvent();
+        }
         if (nextEvent == null) {
             isLastEventInChunk = true;
             findNext();
@@ -190,6 +203,7 @@ public final class RecordingFile implements Closeable {
      *
      * @throws IOException if an I/O error occurred
      */
+    @Override
     public void close() throws IOException {
         if (input != null) {
             eof = true;
@@ -197,6 +211,34 @@ public final class RecordingFile implements Closeable {
             chunkParser = null;
             input = null;
             nextEvent = null;
+        }
+    }
+
+    /**
+     * Filter out events and write them to a new file.
+     *
+     * @param destination path where the new file should be written, not
+     *                    {@code null}
+     *
+     * @param filter      filter that determines if an event should be included, not
+     *                    {@code null}
+     * @throws IOException       if an I/O error occurred, it's not a Flight
+     *                           Recorder file or a version of a JFR file that can't
+     *                           be parsed
+     *
+     * @throws SecurityException if a security manager exists and its
+     *                           {@code checkWrite} method denies write access to the
+     *                           file
+     */
+    public void write(Path destination, Predicate<RecordedEvent> filter) throws IOException {
+        Objects.requireNonNull(destination, "destination");
+        Objects.requireNonNull(filter, "filter");
+        try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter)) {
+            try (RecordingFile rf = new RecordingFile(cw)) {
+                while (rf.hasMoreEvents()) {
+                    rf.readEvent();
+                }
+            }
         }
     }
 
@@ -238,20 +280,53 @@ public final class RecordingFile implements Closeable {
         return isLastEventInChunk;
     }
 
-
     // either sets next to an event or sets eof to true
     private void findNext() throws IOException {
         while (nextEvent == null) {
             if (chunkParser == null) {
-                chunkParser = new ChunkParser(input);
+                chunkParser = createChunkParser();
             } else if (!chunkParser.isLastChunk()) {
-                chunkParser = chunkParser.nextChunkParser();
+                chunkParser = nextChunkParser();
             } else {
+                endChunkParser();
                 eof = true;
                 return;
             }
             nextEvent = chunkParser.readEvent();
+            while (nextEvent == ChunkParser.FLUSH_MARKER) {
+                nextEvent = chunkParser.readEvent();
+            }
         }
+    }
+
+    private ChunkParser createChunkParser() throws IOException {
+        if (chunkWriter != null) {
+            boolean reuse = true;
+            boolean ordered = false;
+            ParserConfiguration pc = new ParserConfiguration(0, Long.MAX_VALUE, reuse, ordered, ParserFilter.ACCEPT_ALL, chunkWriter);
+            ChunkParser chunkParser = new ChunkParser(chunkWriter.getInput(), pc, new ParserState());
+            chunkWriter.beginChunk(chunkParser.getHeader());
+            return chunkParser;
+        } else {
+            return new ChunkParser(input, parserState);
+        }
+    }
+
+    private void endChunkParser() throws IOException {
+        if (chunkWriter != null) {
+            chunkWriter.endChunk(chunkParser.getHeader());
+        }
+    }
+
+    private ChunkParser nextChunkParser() throws IOException {
+        if (chunkWriter != null) {
+            chunkWriter.endChunk(chunkParser.getHeader());
+        }
+        ChunkParser next = chunkParser.nextChunkParser();
+        if (chunkWriter != null) {
+            chunkWriter.beginChunk(next.getHeader());
+        }
+        return next;
     }
 
     private void ensureOpen() throws IOException {

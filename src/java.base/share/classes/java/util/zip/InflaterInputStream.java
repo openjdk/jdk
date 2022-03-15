@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
+import java.util.Objects;
 
 /**
  * This class implements a stream filter for uncompressing data in the
@@ -105,7 +106,7 @@ public class InflaterInputStream extends FilterInputStream {
      * @param in the input stream
      */
     public InflaterInputStream(InputStream in) {
-        this(in, new Inflater());
+        this(in, in != null ? new Inflater() : null);
         usesDefaultInflater = true;
     }
 
@@ -142,14 +143,14 @@ public class InflaterInputStream extends FilterInputStream {
         ensureOpen();
         if (b == null) {
             throw new NullPointerException();
-        } else if (off < 0 || len < 0 || len > b.length - off) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
             return 0;
         }
         try {
             int n;
-            while ((n = inf.inflate(b, off, len)) == 0) {
+            do {
                 if (inf.finished() || inf.needsDictionary()) {
                     reachEOF = true;
                     return -1;
@@ -157,7 +158,7 @@ public class InflaterInputStream extends FilterInputStream {
                 if (inf.needsInput()) {
                     fill();
                 }
-            }
+            } while ((n = inf.inflate(b, off, len)) == 0);
             return n;
         } catch (DataFormatException e) {
             String s = e.getMessage();

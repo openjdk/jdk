@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -349,6 +351,23 @@ TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
 
+#ifdef __APPLE__
+// Not all macOS versions can use os::reserve_memory (i.e. anon_mmap) API
+// to reserve executable memory, so before attempting to use it,
+// we need to verify that we can do so by asking for a tiny executable
+// memory chunk.
+static inline bool can_reserve_executable_memory(void) {
+  bool executable = true;
+  size_t len = 128;
+  char* p = os::reserve_memory(len, executable);
+  bool exec_supported = (p != NULL);
+  if (exec_supported) {
+    os::release_memory(p, len);
+  }
+  return exec_supported;
+}
+#endif
+
 // Test that os::release_memory() can deal with areas containing multiple mappings.
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); }
 //#define PRINT_MAPPINGS
@@ -358,6 +377,13 @@ TEST_VM(os, jio_snprintf) {
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {
   assert(is_aligned(stripe_len, os::vm_allocation_granularity()), "Sanity");
+
+#ifdef __APPLE__
+  // Workaround: try reserving executable memory to figure out
+  // if such operation is supported on this macOS version
+  const bool exec_supported = can_reserve_executable_memory();
+#endif
+
   size_t total_range_len = num_stripes * stripe_len;
   // Reserve a large contiguous area to get the address space...
   address p = (address)os::reserve_memory(total_range_len);
@@ -367,11 +393,15 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
   // ... re-reserve in the same spot multiple areas...
   for (int stripe = 0; stripe < num_stripes; stripe++) {
     address q = p + (stripe * stripe_len);
-    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len);
-    EXPECT_NE(q, (address)NULL);
     // Commit, alternatingly with or without exec permission,
     //  to prevent kernel from folding these mappings.
+#ifdef __APPLE__
+    const bool executable = exec_supported ? (stripe % 2 == 0) : false;
+#else
     const bool executable = stripe % 2 == 0;
+#endif
+    q = (address)os::attempt_reserve_memory_at((char*)q, stripe_len, executable);
+    EXPECT_NE(q, (address)NULL);
     EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
   }
   return p;
@@ -412,9 +442,33 @@ struct NUMASwitcher {
 
 #ifndef _AIX // JDK-8257041
 TEST_VM(os, release_multi_mappings) {
+
+  // With NMT enabled, this will trigger JDK-8263464. For now disable the test if NMT=on.
+  if (MemTracker::tracking_level() > NMT_off) {
+    return;
+  }
+
   // Test that we can release an area created with multiple reservation calls
-  const size_t stripe_len = 4 * M;
-  const int num_stripes = 4;
+  // What we do:
+  // A) we reserve 6 small segments (stripes) adjacent to each other. We commit
+  //    them with alternating permissions to prevent the kernel from folding them into
+  //    a single segment.
+  //    -stripe-stripe-stripe-stripe-stripe-stripe-
+  // B) we release the middle four stripes with a single os::release_memory call. This
+  //    tests that os::release_memory indeed works across multiple segments created with
+  //    multiple os::reserve calls.
+  //    -stripe-___________________________-stripe-
+  // C) Into the now vacated address range between the first and the last stripe, we
+  //    re-reserve a new memory range. We expect this to work as a proof that the address
+  //    range was really released by the single release call (B).
+  //
+  // Note that this is inherently racy. Between (B) and (C), some other thread may have
+  //  reserved something into the hole in the meantime. Therefore we keep that range small and
+  //  entrenched between the first and last stripe, which reduces the chance of some concurrent
+  //  thread grabbing that memory.
+
+  const size_t stripe_len = os::vm_allocation_granularity();
+  const int num_stripes = 6;
   const size_t total_range_len = stripe_len * num_stripes;
 
   // reserve address space...
@@ -422,22 +476,27 @@ TEST_VM(os, release_multi_mappings) {
   ASSERT_NE(p, (address)NULL);
   PRINT_MAPPINGS("A");
 
-  // .. release it...
+  // .. release the middle stripes...
+  address p_middle_stripes = p + stripe_len;
+  const size_t middle_stripe_len = (num_stripes - 2) * stripe_len;
   {
-    // On Windows, use UseNUMAInterleaving=1 which makes
-    //  os::release_memory accept multi-map-ranges.
-    //  Otherwise we would assert (see below for death test).
+    // On Windows, temporarily switch on UseNUMAInterleaving to allow release_memory to release
+    //  multiple mappings in one go (otherwise we assert, which we test too, see death test below).
     WINDOWS_ONLY(NUMASwitcher b(true);)
-    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+    ASSERT_TRUE(os::release_memory((char*)p_middle_stripes, middle_stripe_len));
   }
   PRINT_MAPPINGS("B");
 
-  // re-reserve it. This should work unless release failed.
-  address p2 = (address)os::attempt_reserve_memory_at((char*)p, total_range_len);
-  ASSERT_EQ(p2, p);
+  // ...re-reserve the middle stripes. This should work unless release silently failed.
+  address p2 = (address)os::attempt_reserve_memory_at((char*)p_middle_stripes, middle_stripe_len);
+  ASSERT_EQ(p2, p_middle_stripes);
   PRINT_MAPPINGS("C");
 
-  ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  // Clean up. Release all mappings.
+  {
+    WINDOWS_ONLY(NUMASwitcher b(true);) // allow release_memory to release multiple regions
+    ASSERT_TRUE(os::release_memory((char*)p, total_range_len));
+  }
 }
 #endif // !AIX
 
@@ -695,4 +754,114 @@ TEST_VM(os, pagesizes_test_print) {
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
   ASSERT_EQ(strcmp(expected, buffer), 0);
+}
+
+TEST_VM(os, dll_address_to_function_and_library_name) {
+  char tmp[1024];
+  char output[1024];
+  stringStream st(output, sizeof(output));
+
+#define EXPECT_CONTAINS(haystack, needle) \
+  EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+#define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
+  EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
+// #define LOG(...) tty->print_cr(__VA_ARGS__); // enable if needed
+#define LOG(...)
+
+  // Invalid addresses
+  LOG("os::print_function_and_library_name(st, -1) expects FALSE.");
+  address addr = (address)(intptr_t)-1;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+  LOG("os::print_function_and_library_name(st, NULL) expects FALSE.");
+  addr = NULL;
+  EXPECT_FALSE(os::print_function_and_library_name(&st, addr));
+
+  // Valid addresses
+  // Test with or without shorten-paths, demangle, and scratch buffer
+  for (int i = 0; i < 16; i++) {
+    const bool shorten_paths = (i & 1) != 0;
+    const bool demangle = (i & 2) != 0;
+    const bool strip_arguments = (i & 4) != 0;
+    const bool provide_scratch_buffer = (i & 8) != 0;
+    LOG("shorten_paths=%d, demangle=%d, strip_arguments=%d, provide_scratch_buffer=%d",
+        shorten_paths, demangle, strip_arguments, provide_scratch_buffer);
+
+    // Should show os::min_page_size in libjvm
+    addr = CAST_FROM_FN_PTR(address, Threads::create_vm);
+    st.reset();
+    EXPECT_TRUE(os::print_function_and_library_name(&st, addr,
+                                                    provide_scratch_buffer ? tmp : NULL,
+                                                    sizeof(tmp),
+                                                    shorten_paths, demangle,
+                                                    strip_arguments));
+    EXPECT_CONTAINS(output, "Threads");
+    EXPECT_CONTAINS(output, "create_vm");
+    EXPECT_CONTAINS(output, "jvm"); // "jvm.dll" or "libjvm.so" or similar
+    LOG("%s", output);
+
+    // Test truncation on scratch buffer
+    if (provide_scratch_buffer) {
+      st.reset();
+      tmp[10] = 'X';
+      EXPECT_TRUE(os::print_function_and_library_name(&st, addr, tmp, 10,
+                                                      shorten_paths, demangle));
+      EXPECT_EQ(tmp[10], 'X');
+      LOG("%s", output);
+    }
+  }
+}
+
+// Not a regex! Very primitive, just match:
+// "d" - digit
+// "a" - ascii
+// "." - everything
+// rest must match
+static bool very_simple_string_matcher(const char* pattern, const char* s) {
+  const size_t lp = strlen(pattern);
+  const size_t ls = strlen(s);
+  if (ls < lp) {
+    return false;
+  }
+  for (size_t i = 0; i < lp; i ++) {
+    switch (pattern[i]) {
+      case '.': continue;
+      case 'd': if (!isdigit(s[i])) return false; break;
+      case 'a': if (!isascii(s[i])) return false; break;
+      default: if (s[i] != pattern[i]) return false; break;
+    }
+  }
+  return true;
+}
+
+TEST_VM(os, iso8601_time) {
+  char buffer[os::iso8601_timestamp_size + 1]; // + space for canary
+  buffer[os::iso8601_timestamp_size] = 'X'; // canary
+  const char* result = NULL;
+  // YYYY-MM-DDThh:mm:ss.mmm+zzzz
+  const char* const pattern_utc = "dddd-dd-dd.dd:dd:dd.ddd.0000";
+  const char* const pattern_local = "dddd-dd-dd.dd:dd:dd.ddd.dddd";
+
+  result = os::iso8601_time(buffer, sizeof(buffer), true);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher(pattern_utc, result));
+
+  result = os::iso8601_time(buffer, sizeof(buffer), false);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher(pattern_local, result));
+
+  // Test with explicit timestamps
+  result = os::iso8601_time(0, buffer, sizeof(buffer), true);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.000+0000", result));
+
+  result = os::iso8601_time(17, buffer, sizeof(buffer), true);
+  tty->print_cr("%s", result);
+  EXPECT_EQ(result, buffer);
+  EXPECT_TRUE(very_simple_string_matcher("1970-01-01.00:00:00.017+0000", result));
+
+  // Canary should still be intact
+  EXPECT_EQ(buffer[os::iso8601_timestamp_size], 'X');
 }

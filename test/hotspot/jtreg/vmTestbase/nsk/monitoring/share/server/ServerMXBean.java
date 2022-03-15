@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class ServerMXBean {
          * @return value of the attribute.
          */
         protected void setLongAttribute(String name, long value) {
-                Attribute attribute = new Attribute(name, new Long(value));
+                Attribute attribute = new Attribute(name, Long.valueOf(value));
                 try {
                         mbeanServer.setAttribute(objectName, attribute);
                 } catch (Exception e) {
@@ -119,7 +119,7 @@ public class ServerMXBean {
          * @param value value of the attribute.
          */
         protected void setBooleanAttribute(String name, boolean value) {
-                Attribute attribute = new Attribute(name, new Boolean(value));
+                Attribute attribute = new Attribute(name, Boolean.valueOf(value));
                 try {
                         mbeanServer.setAttribute(objectName, attribute);
                 } catch (Exception e) {

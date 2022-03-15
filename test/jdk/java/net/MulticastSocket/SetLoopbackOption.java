@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  * @run testng/othervm SetLoopbackOption
  * @run testng/othervm -Djava.net.preferIPv4Stack=true SetLoopbackOption
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true SetLoopbackOption
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SetLoopbackOption
  */
 
 import java.io.FileDescriptor;

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -356,8 +356,8 @@ compare_general_files() {
                     "
                 $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
                 $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [[ "$f" = *"/lib/classlist" ]] || [ "$SUFFIX" = "jar_contents" ]; then
-                # The classlist files may have some lines in random order
+            elif [ "$SUFFIX" = "jar_contents" ]; then
+                # The jar_contents files may have some lines in random order
                 OTHER_FILE=$WORK_DIR/$f.other
                 THIS_FILE=$WORK_DIR/$f.this
                 $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
@@ -1084,7 +1084,7 @@ compare_all_execs() {
             -o -name '*.zip' -o -name '*.jimage' -o -name '*.java' -o -name '*.mf' \
             -o -name '*.jpg' -o -name '*.wsdl' -o -name '*.js' -o -name '*.sh' \
             -o -name '*.bat' -o -name '*LICENSE' -o -name '*.d' -o -name '*store' \
-            -o -name 'blacklist' -o -name '*certs' -o -name '*.ttf' \
+            -o -name 'blocked' -o -name '*certs' -o -name '*.ttf' \
             -o -name '*.jfc' -o -name '*.dat'  -o -name 'release' -o -name '*.dir'\
             -o -name '*.sym' -o -name '*.idl' -o -name '*.h' -o -name '*.access' \
             -o -name '*.template' -o -name '*.policy' -o -name '*.security' \

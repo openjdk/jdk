@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
 
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private final AlgorithmParameterSpec paramSpec;
     private byte[] k;
 
@@ -49,12 +50,14 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
         this.k = k.clone();
 
         this.algid = new AlgorithmId(params.getOid());
-        DerOutputStream derKey = new DerOutputStream();
+
+        DerValue val = new DerValue(DerValue.tag_OctetString, k);
         try {
-            derKey.putOctetString(k);
-            this.key = derKey.toByteArray();
+            this.key = val.toByteArray();
         } catch (IOException ex) {
             throw new AssertionError("Should not happen", ex);
+        } finally {
+            val.clear();
         }
         checkLength(params);
     }

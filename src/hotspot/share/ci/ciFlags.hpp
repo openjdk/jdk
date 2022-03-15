@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_CI_CIFLAGS_HPP
 #define SHARE_CI_CIFLAGS_HPP
 
-#include "jvm.h"
+#include "jvm_constants.h"
 #include "ci/ciClassList.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/ostream.hpp"
@@ -58,7 +58,6 @@ public:
   bool is_native               () const { return (_flags & JVM_ACC_NATIVE                    ) != 0; }
   bool is_interface            () const { return (_flags & JVM_ACC_INTERFACE                 ) != 0; }
   bool is_abstract             () const { return (_flags & JVM_ACC_ABSTRACT                  ) != 0; }
-  bool is_strict               () const { return (_flags & JVM_ACC_STRICT                    ) != 0; }
   bool is_stable               () const { return (_flags & JVM_ACC_FIELD_STABLE              ) != 0; }
   // In case the current object represents a field, return true if
   // the field is modified outside of instance initializer methods

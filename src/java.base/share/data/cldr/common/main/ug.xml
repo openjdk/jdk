@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -395,7 +395,6 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="ro">رومىنچە</language>
 			<language type="rof" draft="contributed">رومبوچە</language>
 			<language type="rom" draft="contributed">سىگانچە</language>
-			<language type="root" draft="contributed">غول تىل</language>
 			<language type="ru">رۇسچە</language>
 			<language type="rup" draft="contributed">ئارومانچە</language>
 			<language type="rw">كېنىيەرىۋانداچە</language>
@@ -4729,7 +4728,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
-			<pluralMinimalPairs count="one">{0}  كىتاب</pluralMinimalPairs>
+			<pluralMinimalPairs count="one">{0} كىتاب</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} بېلىق كۆردۈم ۋە ئۇنى يەۋەتتىم.</pluralMinimalPairs>
 		</minimalPairs>
 	</numbers>

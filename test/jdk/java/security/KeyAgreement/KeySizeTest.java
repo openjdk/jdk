@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary KeyLength support test for DiffieHellman, EC, XDH.
  *  Arguments order <KeyExchangeAlgorithm> <Provider> <KeyGenAlgorithm> <keyLen>
  * @library /test/lib
- * @build jdk.test.lib.Convert
  * @run main KeySizeTest DiffieHellman SunJCE DiffieHellman 512
  * @run main KeySizeTest DiffieHellman SunJCE DiffieHellman 768
  * @run main KeySizeTest DiffieHellman SunJCE DiffieHellman 832
@@ -55,10 +54,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
+import java.util.HexFormat;
 import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
-import jdk.test.lib.Convert;
 
 public class KeySizeTest {
 
@@ -229,9 +228,9 @@ public class KeySizeTest {
     private static boolean equals(byte[] actual, byte[] expected) {
         boolean equals = Arrays.equals(actual, expected);
         if (!equals) {
-            throw new RuntimeException(String.format("Actual array: %s, "
-                    + "Expected array:%s", Convert.byteArrayToHexString(actual),
-                    Convert.byteArrayToHexString(expected)));
+            throw new RuntimeException(String.format("Actual array: %s, Expected array:%s",
+                    HexFormat.of().withUpperCase().formatHex(actual),
+                    HexFormat.of().withUpperCase().formatHex(expected)));
         }
         return equals;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public class JavaThread extends Thread {
   private static AddressField  stackBaseField;
   private static CIntegerField stackSizeField;
   private static CIntegerField terminatedField;
+  private static AddressField activeHandlesField;
 
   private static JavaThreadPDAccess access;
 
@@ -95,6 +96,7 @@ public class JavaThread extends Thread {
     stackBaseField    = type.getAddressField("_stack_base");
     stackSizeField    = type.getCIntegerField("_stack_size");
     terminatedField   = type.getCIntegerField("_terminated");
+    activeHandlesField = type.getAddressField("_active_handles");
 
     UNINITIALIZED     = db.lookupIntConstant("_thread_uninitialized").intValue();
     NEW               = db.lookupIntConstant("_thread_new").intValue();
@@ -409,6 +411,14 @@ public class JavaThread extends Thread {
     return null;
   }
 
+  public JNIHandleBlock activeHandles() {
+    Address a = activeHandlesField.getAddress(addr);
+    if (a == null) {
+      return null;
+    }
+    return new JNIHandleBlock(a);
+  }
+
   public void printInfoOn(PrintStream tty) {
 
     tty.println("State: " + getThreadState().toString());
@@ -467,10 +477,29 @@ public class JavaThread extends Thread {
     return fr;
   }
 
-  private Address lastSPDbg() {
+  public Address lastSPDbg() {
     return access.getLastSP(addr);
   }
 
+  // Print the contents of all registers in the thread's context
+  public void printThreadContextOn(PrintStream out, boolean verbose){
+    ThreadContext tc = getThreadProxy().getContext();
+    for (int r = 0; r < tc.getNumRegisters(); r++) {
+      Address regAddr = tc.getRegisterAsAddress(r);
+      System.out.format("%s: %s", tc.getRegisterName(r), regAddr);
+      if (regAddr == null) {
+        System.out.println();
+      } else {
+        PointerLocation l = PointerFinder.find(regAddr);
+        if (l.isUnknown()) {
+          System.out.println();
+        } else {
+          System.out.print(": ");
+          l.printOn(System.out, false, verbose);
+        }
+      }
+    }
+  }
 
   public void printThreadInfoOn(PrintStream out){
     Oop threadOop = this.getThreadObj();
@@ -487,7 +516,7 @@ public class JavaThread extends Thread {
     out.print(" tid=");
     out.print(this.getAddress());
     out.print(" nid=");
-    out.print(String.format("0x%x ",this.getOSThread().threadId()));
+    out.print(String.format("%d ",this.getOSThread().threadId()));
     out.print(getOSThread().getThreadState().getPrintVal());
     out.print(" [");
     if(this.getLastJavaSP() == null){

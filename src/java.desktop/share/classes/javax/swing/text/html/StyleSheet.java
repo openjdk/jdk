@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,15 +478,12 @@ public class StyleSheet extends StyleContext {
      * @since 1.3
      */
     public void importStyleSheet(URL url) {
-        try {
-            InputStream is;
-
-            is = url.openStream();
-            Reader r = new BufferedReader(new InputStreamReader(is));
+        try (InputStream is = url.openStream();
+             InputStreamReader isr = new InputStreamReader(is);
+             Reader r = new BufferedReader(isr))
+        {
             CssParser parser = new CssParser();
             parser.parse(url, r, false, true);
-            r.close();
-            is.close();
         } catch (Throwable e) {
             // on error we simply have no styles... the html
             // will look mighty wrong but still function.
@@ -1728,6 +1725,19 @@ public class StyleSheet extends StyleContext {
         }
     }
 
+    /**
+     * Proxy value to compute inherited {@code font-size}.
+     *
+     * @see  <a href="https://www.w3.org/TR/CSS2/cascade.html">Assigning
+     *          property values, Cascading, and Inheritance</a>
+     */
+    private Object fontSizeInherit() {
+        if (fontSizeInherit == null) {
+            fontSizeInherit = css.new FontSize().parseCssValue("100%");
+        }
+        return fontSizeInherit;
+    }
+
 
     /**
      * A temporary class used to hold a Vector, a StringBuffer and a
@@ -2198,10 +2208,9 @@ public class StyleSheet extends StyleContext {
                     retIndex--;
                 } else if (as.isDefined(HTML.Attribute.VALUE)) {
                     Object value = as.getAttribute(HTML.Attribute.VALUE);
-                    if (value != null &&
-                        (value instanceof String)) {
+                    if (value instanceof String s) {
                         try {
-                            int iValue = Integer.parseInt((String)value);
+                            int iValue = Integer.parseInt(s);
                             return retIndex - counter + iValue;
                         }
                         catch (NumberFormatException nfe) {}
@@ -2731,8 +2740,7 @@ public class StyleSheet extends StyleContext {
                                    kind of conditional behaviour in the
                                    stylesheet.
                                  **/
-                                    if (o != null && o instanceof AttributeSet) {
-                                        AttributeSet attr = (AttributeSet)o;
+                                    if (o instanceof AttributeSet attr) {
                                         if (attr.getAttribute(HTML.Attribute.HREF) == null) {
                                             continue;
                                         }
@@ -2800,7 +2808,10 @@ public class StyleSheet extends StyleContext {
                                ((StyleConstants)key);
                 if (cssKey != null) {
                     Object value = doGetAttribute(cssKey);
-                    if (value instanceof CSS.CssValue) {
+                    if (value instanceof CSS.FontSize) {
+                        return ((CSS.FontSize)value)
+                                     .getValue(this, StyleSheet.this);
+                    } else if (value instanceof CSS.CssValue) {
                         return ((CSS.CssValue)value).toStyleConstants
                                      ((StyleConstants)key, host);
                     }
@@ -2810,6 +2821,13 @@ public class StyleSheet extends StyleContext {
         }
 
         Object doGetAttribute(Object key) {
+            if (key == CSS.Attribute.FONT_SIZE && !isDefined(key)) {
+                // CSS.FontSize represents a specified value and we need
+                // to inherit a computed value so don't resolve percentage
+                // value from parent.
+                return fontSizeInherit();
+            }
+
             Object retValue = super.getAttribute(key);
             if (retValue != null) {
                 return retValue;
@@ -3205,6 +3223,8 @@ public class StyleSheet extends StyleContext {
     // ---- Variables ---------------------------------------------
 
     static final int DEFAULT_FONT_SIZE = 3;
+
+    private transient Object fontSizeInherit;
 
     private CSS css;
 

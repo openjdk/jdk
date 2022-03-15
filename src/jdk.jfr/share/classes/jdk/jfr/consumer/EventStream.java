@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,25 +95,7 @@ import jdk.jfr.internal.consumer.FileAccess;
  * The following example shows how an {@code EventStream} can be used to listen
  * to events on a JVM running Flight Recorder
  *
- * <pre>{@literal
- * try (var es = EventStream.openRepository()) {
- *   es.onEvent("jdk.CPULoad", event -> {
- *     System.out.println("CPU Load " + event.getEndTime());
- *     System.out.println(" Machine total: " + 100 * event.getFloat("machineTotal") + "%");
- *     System.out.println(" JVM User: " + 100 * event.getFloat("jvmUser") + "%");
- *     System.out.println(" JVM System: " + 100 * event.getFloat("jvmSystem") + "%");
- *     System.out.println();
- *   });
- *   es.onEvent("jdk.GarbageCollection", event -> {
- *     System.out.println("Garbage collection: " + event.getLong("gcId"));
- *     System.out.println(" Cause: " + event.getString("cause"));
- *     System.out.println(" Total pause: " + event.getDuration("sumOfPauses"));
- *     System.out.println(" Longest pause: " + event.getDuration("longestPause"));
- *     System.out.println();
- *   });
- *   es.start();
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="EventStreamOverview"}
  * <p>
  * To start recording together with the stream, see {@link RecordingStream}.
  *
@@ -136,9 +118,17 @@ public interface EventStream extends AutoCloseable {
      *         does not have
      *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
+    @SuppressWarnings("removal")
     public static EventStream openRepository() throws IOException {
         Utils.checkAccessFlightRecorder();
-        return new EventDirectoryStream(AccessController.getContext(), null, SecuritySupport.PRIVILEGED, null, Collections.emptyList());
+        return new EventDirectoryStream(
+            AccessController.getContext(),
+            null,
+            SecuritySupport.PRIVILEGED,
+            null,
+            Collections.emptyList(),
+            false
+        );
     }
 
     /**
@@ -159,9 +149,17 @@ public interface EventStream extends AutoCloseable {
      *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
-        Objects.nonNull(directory);
+        Objects.requireNonNull(directory, "directory");
+        @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
-        return new EventDirectoryStream(acc, directory, FileAccess.UNPRIVILEGED, null, Collections.emptyList());
+        return new EventDirectoryStream(
+            acc,
+            directory,
+            FileAccess.UNPRIVILEGED,
+            null,
+            Collections.emptyList(),
+            true
+        );
     }
 
     /**
@@ -179,7 +177,9 @@ public interface EventStream extends AutoCloseable {
      * @throws SecurityException if a security manager exists and its
      *         {@code checkRead} method denies read access to the file
      */
+    @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {
+        Objects.requireNonNull(file, "file");
         return new EventFileStream(AccessController.getContext(), file);
     }
 
@@ -263,6 +263,7 @@ public interface EventStream extends AutoCloseable {
      * <p>
      * Closing a previously closed stream has no effect.
      */
+    @Override
     void close();
 
     /**

@@ -25,7 +25,7 @@
  * @test
  * @bug 8159855
  * @summary test ToolProvider SPI
- * @run main/othervm ToolProviderTest
+ * @run main/othervm -Djava.security.manager=allow ToolProviderTest
  */
 
 import java.io.IOException;

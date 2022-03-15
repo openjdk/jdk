@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 #ifndef SHARE_PRIMS_METHODHANDLES_HPP
 #define SHARE_PRIMS_METHODHANDLES_HPP
 
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/fieldDescriptor.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/macros.hpp"
@@ -67,7 +69,7 @@ class MethodHandles: AllStatic {
   static void expand_MemberName(Handle mname, int suppress, TRAPS);  // expand defc/name/type if missing
   static oop init_MemberName(Handle mname_h, Handle target_h, TRAPS); // compute vmtarget/vmindex from target
   static oop init_field_MemberName(Handle mname_h, fieldDescriptor& fd, bool is_setter = false);
-  static oop init_method_MemberName(Handle mname_h, CallInfo& info, TRAPS);
+  static oop init_method_MemberName(Handle mname_h, CallInfo& info);
   static int find_MemberNames(Klass* k, Symbol* name, Symbol* sig,
                               int mflags, Klass* caller,
                               int skip, objArrayHandle results, TRAPS);
@@ -150,9 +152,9 @@ class MethodHandles: AllStatic {
 
 public:
   static Symbol* lookup_signature(oop type_str, bool polymorphic, TRAPS);  // use TempNewSymbol
-  static Symbol* lookup_basic_type_signature(Symbol* sig, bool keep_last_arg, TRAPS);  // use TempNewSymbol
-  static Symbol* lookup_basic_type_signature(Symbol* sig, TRAPS) {
-    return lookup_basic_type_signature(sig, false, THREAD);
+  static Symbol* lookup_basic_type_signature(Symbol* sig, bool keep_last_arg);  // use TempNewSymbol
+  static Symbol* lookup_basic_type_signature(Symbol* sig) {
+    return lookup_basic_type_signature(sig, false);
   }
   static bool is_basic_type_signature(Symbol* sig);
 

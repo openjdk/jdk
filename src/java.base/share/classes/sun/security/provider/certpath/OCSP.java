@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,19 @@
  */
 package sun.security.provider.certpath;
 
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CRLReason;
 import java.security.cert.Extension;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +44,7 @@ import java.util.Map;
 import sun.security.action.GetIntegerAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
-import sun.security.validator.Validator;
+import sun.security.util.IOUtils;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.GeneralName;
@@ -54,6 +52,8 @@ import sun.security.x509.GeneralNameInterface;
 import sun.security.x509.PKIXExtensions;
 import sun.security.x509.URIName;
 import sun.security.x509.X509CertImpl;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is a class that checks the revocation status of a certificate(s) using
@@ -84,6 +84,7 @@ public final class OCSP {
      * value is negative, set the timeout length to the default.
      */
     private static int initializeTimeout() {
+        @SuppressWarnings("removal")
         Integer tmp = java.security.AccessController.doPrivileged(
                 new GetIntegerAction("com.sun.security.ocsp.timeout"));
         if (tmp == null || tmp < 0) {
@@ -95,66 +96,6 @@ public final class OCSP {
     }
 
     private OCSP() {}
-
-
-    /**
-     * Obtains the revocation status of a certificate using OCSP.
-     *
-     * @param cert the certificate to be checked
-     * @param issuerCert the issuer certificate
-     * @param responderURI the URI of the OCSP responder
-     * @param responderCert the OCSP responder's certificate
-     * @param date the time the validity of the OCSP responder's certificate
-     *    should be checked against. If null, the current time is used.
-     * @return the RevocationStatus
-     * @throws IOException if there is an exception connecting to or
-     *    communicating with the OCSP responder
-     * @throws CertPathValidatorException if an exception occurs while
-     *    encoding the OCSP Request or validating the OCSP Response
-     */
-
-    // Called by com.sun.deploy.security.TrustDecider
-    public static RevocationStatus check(X509Certificate cert,
-                                         X509Certificate issuerCert,
-                                         URI responderURI,
-                                         X509Certificate responderCert,
-                                         Date date)
-        throws IOException, CertPathValidatorException
-    {
-        return check(cert, issuerCert, responderURI, responderCert, date,
-                     Collections.<Extension>emptyList(), Validator.VAR_GENERIC);
-    }
-
-
-    public static RevocationStatus check(X509Certificate cert,
-            X509Certificate issuerCert, URI responderURI,
-            X509Certificate responderCert, Date date, List<Extension> extensions,
-            String variant)
-        throws IOException, CertPathValidatorException
-    {
-        return check(cert, responderURI, null, issuerCert, responderCert, date,
-                extensions, variant);
-    }
-
-    public static RevocationStatus check(X509Certificate cert,
-            URI responderURI, TrustAnchor anchor, X509Certificate issuerCert,
-            X509Certificate responderCert, Date date,
-            List<Extension> extensions, String variant)
-            throws IOException, CertPathValidatorException
-    {
-        CertId certId;
-        try {
-            X509CertImpl certImpl = X509CertImpl.toImpl(cert);
-            certId = new CertId(issuerCert, certImpl.getSerialNumberObject());
-        } catch (CertificateException | IOException e) {
-            throw new CertPathValidatorException
-                ("Exception while encoding OCSPRequest", e);
-        }
-        OCSPResponse ocspResponse = check(Collections.singletonList(certId),
-                responderURI, new OCSPResponse.IssuerInfo(anchor, issuerCert),
-                responderCert, date, extensions, variant);
-        return (RevocationStatus) ocspResponse.getSingleResponse(certId);
-    }
 
     /**
      * Checks the revocation status of a list of certificates using OCSP.
@@ -223,72 +164,66 @@ public final class OCSP {
             List<Extension> extensions) throws IOException {
         OCSPRequest request = new OCSPRequest(certIds, extensions);
         byte[] bytes = request.encodeBytes();
+        String responder = responderURI.toString();
 
-        InputStream in = null;
-        OutputStream out = null;
-        byte[] response = null;
+        if (debug != null) {
+            debug.println("connecting to OCSP service at: " + responder);
+        }
+        Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check",
+                responder);
 
+        URL url;
+        HttpURLConnection con = null;
         try {
-            URL url = responderURI.toURL();
-            if (debug != null) {
-                debug.println("connecting to OCSP service at: " + url);
+            StringBuilder encodedGetReq = new StringBuilder(responder);
+            if (!responder.endsWith("/")) {
+                encodedGetReq.append("/");
+            }
+            encodedGetReq.append(URLEncoder.encode(
+                    Base64.getEncoder().encodeToString(bytes), UTF_8));
+
+            if (encodedGetReq.length() <= 255) {
+                url = new URL(encodedGetReq.toString());
+                con = (HttpURLConnection)url.openConnection();
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestMethod("GET");
+            } else {
+                url = responderURI.toURL();
+                con = (HttpURLConnection)url.openConnection();
+                con.setConnectTimeout(CONNECT_TIMEOUT);
+                con.setReadTimeout(CONNECT_TIMEOUT);
+                con.setDoOutput(true);
+                con.setDoInput(true);
+                con.setRequestMethod("POST");
+                con.setRequestProperty
+                    ("Content-type", "application/ocsp-request");
+                con.setRequestProperty
+                    ("Content-length", String.valueOf(bytes.length));
+                OutputStream out = con.getOutputStream();
+                out.write(bytes);
+                out.flush();
             }
 
-            Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check", url.toString());
-            HttpURLConnection con = (HttpURLConnection)url.openConnection();
-            con.setConnectTimeout(CONNECT_TIMEOUT);
-            con.setReadTimeout(CONNECT_TIMEOUT);
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            con.setRequestMethod("POST");
-            con.setRequestProperty
-                ("Content-type", "application/ocsp-request");
-            con.setRequestProperty
-                ("Content-length", String.valueOf(bytes.length));
-            out = con.getOutputStream();
-            out.write(bytes);
-            out.flush();
             // Check the response
             if (debug != null &&
                 con.getResponseCode() != HttpURLConnection.HTTP_OK) {
                 debug.println("Received HTTP error: " + con.getResponseCode()
                     + " - " + con.getResponseMessage());
             }
-            in = con.getInputStream();
+
             int contentLength = con.getContentLength();
             if (contentLength == -1) {
                 contentLength = Integer.MAX_VALUE;
             }
-            response = new byte[contentLength > 2048 ? 2048 : contentLength];
-            int total = 0;
-            while (total < contentLength) {
-                int count = in.read(response, total, response.length - total);
-                if (count < 0)
-                    break;
 
-                total += count;
-                if (total >= response.length && total < contentLength) {
-                    response = Arrays.copyOf(response, total * 2);
-                }
-            }
-            response = Arrays.copyOf(response, total);
+            return IOUtils.readExactlyNBytes(con.getInputStream(),
+                    contentLength);
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ioe) {
-                    throw ioe;
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException ioe) {
-                    throw ioe;
-                }
+            if (con != null) {
+                con.disconnect();
             }
         }
-        return response;
     }
 
     /**

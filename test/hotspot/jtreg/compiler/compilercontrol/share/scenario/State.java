@@ -42,6 +42,7 @@ public class State {
     private Optional<Boolean> printAssembly = Optional.empty();
     private Optional<Boolean> printInline = Optional.empty();
     private Optional<Boolean> log = Optional.empty();
+    private Optional<String> controlIntrinsic = Optional.empty();
 
     public State() {
         Arrays.fill(compile, Optional.empty());
@@ -275,6 +276,12 @@ public class State {
         printInline = Optional.of(value);
     }
 
+    public void setControlIntrinsic(String argument) {
+        if (argument != null) {
+            controlIntrinsic = Optional.of(argument);
+        }
+    }
+
     public boolean isLog() {
         return log.orElse(false);
     }
@@ -313,6 +320,9 @@ public class State {
                 break;
             case PRINT:
                 setPrintAssembly(true);
+                break;
+            case INTRINSIC:
+                setControlIntrinsic(compileCommand.argument);
                 break;
             case QUIET:
             case NONEXISTENT:
@@ -368,6 +378,9 @@ public class State {
         result.printInline = mergeOptional(high.printInline, low.printInline);
         // set LogCompilation
         result.log = mergeOptional(high.log, low.log);
+        // set controlIntrinsic
+        result.controlIntrinsic = mergeOptional(high.controlIntrinsic, low.controlIntrinsic);
+
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  *       has been reached, jvmti agent suspend thread and calls NotifyFramePop;
  *     - expects FRAME_POP event is sent 1000 time.
  *     2)
- *     - changes callbacks for choosen event;
+ *     - changes callbacks for chosen event;
  *     - debuggee starts recurisve method with depth=1000 and when defined depth
  *       has been reached, jvmti agent suspend thread and calls NotifyFramePop;
  *     - checks that altered callback works and FRAME_POP event is sent 1000 time.

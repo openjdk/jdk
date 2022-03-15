@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8226530
  * @summary ZIP File System tests that leverage DirectoryStream
- * @modules java.base
  * @compile Zip64SizeTest.java
  * @run testng Zip64SizeTest
  */

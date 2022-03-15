@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 #define SHARE_GC_SHARED_THREADLOCALALLOCBUFFER_HPP
 
 #include "gc/shared/gcUtil.hpp"
-#include "runtime/perfData.hpp"
-#include "runtime/vm_version.hpp"
+#include "runtime/perfDataTypes.hpp"
+#include "utilities/align.hpp"
+#include "utilities/sizes.hpp"
 
 class ThreadLocalAllocStats;
 
@@ -62,8 +63,7 @@ private:
   static unsigned _target_refills;                    // expected number of refills between GCs
 
   unsigned  _number_of_refills;
-  unsigned  _fast_refill_waste;
-  unsigned  _slow_refill_waste;
+  unsigned  _refill_waste;
   unsigned  _gc_waste;
   unsigned  _slow_allocations;
   size_t    _allocated_size;
@@ -80,7 +80,7 @@ private:
   void set_desired_size(size_t desired_size)     { _desired_size = desired_size; }
   void set_refill_waste_limit(size_t waste)      { _refill_waste_limit = waste;  }
 
-  size_t initial_refill_waste_limit()            { return desired_size() / TLABRefillWasteFraction; }
+  size_t initial_refill_waste_limit();
 
   static int    target_refills()                 { return _target_refills; }
   size_t initial_desired_size();
@@ -105,15 +105,13 @@ private:
   // statistics
 
   int number_of_refills() const { return _number_of_refills; }
-  int fast_refill_waste() const { return _fast_refill_waste; }
-  int slow_refill_waste() const { return _slow_refill_waste; }
   int gc_waste() const          { return _gc_waste; }
   int slow_allocations() const  { return _slow_allocations; }
 
 public:
   ThreadLocalAllocBuffer();
 
-  static size_t min_size()                       { return align_object_size(MinTLABSize / HeapWordSize) + alignment_reserve(); }
+  static size_t min_size();
   static size_t max_size()                       { assert(_max_size != 0, "max_size not set up"); return _max_size; }
   static size_t max_size_in_bytes()              { return max_size() * BytesPerWord; }
   static void set_max_size(size_t max_size)      { _max_size = max_size; }
@@ -130,6 +128,10 @@ public:
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
   size_t bytes_since_last_sample_point() const   { return _bytes_since_last_sample_point; }
+
+  // For external inspection.
+  const HeapWord* start_relaxed() const;
+  const HeapWord* top_relaxed() const;
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
@@ -171,7 +173,7 @@ public:
   void set_back_allocation_end();
   void set_sample_end(bool reset_byte_accumulation);
 
-  static size_t refill_waste_limit_increment()   { return TLABWasteIncrement; }
+  static size_t refill_waste_limit_increment();
 
   template <typename T> void addresses_do(T f) {
     f(&_start);
@@ -196,10 +198,8 @@ private:
   static PerfVariable* _perf_total_allocations;
   static PerfVariable* _perf_total_gc_waste;
   static PerfVariable* _perf_max_gc_waste;
-  static PerfVariable* _perf_total_slow_refill_waste;
-  static PerfVariable* _perf_max_slow_refill_waste;
-  static PerfVariable* _perf_total_fast_refill_waste;
-  static PerfVariable* _perf_max_fast_refill_waste;
+  static PerfVariable* _perf_total_refill_waste;
+  static PerfVariable* _perf_max_refill_waste;
   static PerfVariable* _perf_total_slow_allocations;
   static PerfVariable* _perf_max_slow_allocations;
 
@@ -211,10 +211,8 @@ private:
   size_t       _total_allocations;
   size_t       _total_gc_waste;
   size_t       _max_gc_waste;
-  size_t       _total_fast_refill_waste;
-  size_t       _max_fast_refill_waste;
-  size_t       _total_slow_refill_waste;
-  size_t       _max_slow_refill_waste;
+  size_t       _total_refill_waste;
+  size_t       _max_refill_waste;
   unsigned int _total_slow_allocations;
   unsigned int _max_slow_allocations;
 
@@ -227,8 +225,7 @@ public:
   void update_fast_allocations(unsigned int refills,
                                size_t allocations,
                                size_t gc_waste,
-                               size_t fast_refill_waste,
-                               size_t slow_refill_waste);
+                               size_t refill_waste);
   void update_slow_allocations(unsigned int allocations);
   void update(const ThreadLocalAllocStats& other);
 

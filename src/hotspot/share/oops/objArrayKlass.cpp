@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/iterator.inline.hpp"
@@ -59,7 +59,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = NULL;
-  if (!Universe::is_bootstrapping() || SystemDictionary::Object_klass_loaded()) {
+  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_loaded()) {
     Klass* element_super = element_klass->super();
     if (element_super != NULL) {
       // The element type has a direct super.  E.g., String[] has direct super of Object[].
@@ -92,7 +92,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
       }
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
-      super_klass = SystemDictionary::Object_klass();
+      super_klass = vmClasses::Object_klass();
     }
   }
 
@@ -155,19 +155,17 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
   assert(is_objArray_klass(), "sanity");
 }
 
-int ObjArrayKlass::oop_size(oop obj) const {
+size_t ObjArrayKlass::oop_size(oop obj) const {
   assert(obj->is_objArray(), "must be object array");
   return objArrayOop(obj)->object_size();
 }
 
 objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  int size = objArrayOopDesc::object_size(length);
+  size_t size = objArrayOopDesc::object_size(length);
   return (objArrayOop)Universe::heap()->array_allocate(this, size, length,
                                                        /* do_zero */ true, THREAD);
 }
-
-static int multi_alloc_counter = 0;
 
 oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;
@@ -310,7 +308,7 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
 }
 
 
-Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
+Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -318,10 +316,8 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == NULL) {
-    if (or_null) return NULL;
 
-    ResourceMark rm;
-    JavaThread *jt = THREAD->as_Java_thread();
+    ResourceMark rm(THREAD);
     {
       // Ensure atomic creation of higher dimensions
       MutexLocker mu(THREAD, MultiArray_lock);
@@ -342,15 +338,31 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   }
 
   ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
-  if (or_null) {
-    return ak->array_klass_or_null(n);
-  }
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, dimension() +  1, THREAD);
+Klass* ObjArrayKlass::array_klass_or_null(int n) {
+
+  assert(dimension() <= n, "check order of chain");
+  int dim = dimension();
+  if (dim == n) return this;
+
+  // lock-free read needs acquire semantics
+  if (higher_dimension_acquire() == NULL) {
+    return NULL;
+  }
+
+  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  return ak->array_klass_or_null(n);
+}
+
+Klass* ObjArrayKlass::array_klass(TRAPS) {
+  return array_klass(dimension() +  1, THREAD);
+}
+
+Klass* ObjArrayKlass::array_klass_or_null() {
+  return array_klass_or_null(dimension() +  1);
 }
 
 bool ObjArrayKlass::can_be_primary_super_slow() const {
@@ -374,8 +386,8 @@ GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slo
     return NULL;
   } else {
     GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(num_elem_supers+2);
-    secondaries->push(SystemDictionary::Cloneable_klass());
-    secondaries->push(SystemDictionary::Serializable_klass());
+    secondaries->push(vmClasses::Cloneable_klass());
+    secondaries->push(vmClasses::Serializable_klass());
     for (int i = 0; i < num_elem_supers; i++) {
       Klass* elem_super = elem_supers->at(i);
       Klass* array_super = elem_super->array_klass_or_null();
@@ -396,16 +408,14 @@ void ObjArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_bottom_klass);
 }
 
-// JVM support
-
-jint ObjArrayKlass::compute_modifier_flags(TRAPS) const {
+jint ObjArrayKlass::compute_modifier_flags() const {
   // The modifier for an objectArray is the same as its element
   if (element_klass() == NULL) {
     assert(Universe::is_bootstrapping(), "partial objArray only at startup");
     return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
   }
   // Return the flags of the bottom element type.
-  jint element_flags = bottom_klass()->compute_modifier_flags(CHECK_0);
+  jint element_flags = bottom_klass()->compute_modifier_flags();
 
   return (element_flags & (JVM_ACC_PUBLIC | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED))
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);

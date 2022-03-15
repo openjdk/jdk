@@ -27,6 +27,7 @@
  * @summary Make sure BasicPermission constructor raises
  * NullPointerException if permission name is null, and
  * IllegalArgumentException is permission name is empty.
+ * @run main/othervm -Djava.security.manager=allow NullOrEmptyName
  */
 
 public class NullOrEmptyName {

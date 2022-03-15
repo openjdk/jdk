@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,11 +210,13 @@ public final class SystemModuleFinders {
             throw new InternalError("Unable to detect the run-time image");
         ModuleFinder f = ModulePath.of(ModuleBootstrap.patcher(), dir);
         return new ModuleFinder() {
+            @SuppressWarnings("removal")
             @Override
             public Optional<ModuleReference> find(String name) {
                 PrivilegedAction<Optional<ModuleReference>> pa = () -> f.find(name);
                 return AccessController.doPrivileged(pa);
             }
+            @SuppressWarnings("removal")
             @Override
             public Set<ModuleReference> findAll() {
                 PrivilegedAction<Set<ModuleReference>> pa = f::findAll;
@@ -399,6 +401,7 @@ public final class SystemModuleFinders {
          * connect to the run-time image.
          */
         private static void checkPermissionToConnect(URI uri) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {
@@ -432,11 +435,27 @@ public final class SystemModuleFinders {
             }
         }
 
+        /**
+         * Returns {@code true} if the given resource exists, {@code false}
+         * if not found.
+         */
+        private boolean containsImageLocation(String name) throws IOException {
+            Objects.requireNonNull(name);
+            if (closed)
+                throw new IOException("ModuleReader is closed");
+            ImageReader imageReader = SystemImage.reader();
+            if (imageReader != null) {
+                return imageReader.verifyLocation(module, name);
+            } else {
+                // not an images build
+                return false;
+            }
+        }
+
         @Override
         public Optional<URI> find(String name) throws IOException {
-            ImageLocation location = findImageLocation(name);
-            if (location != null) {
-                URI u = URI.create("jrt:/" + module + "/" + name);
+            if (containsImageLocation(name)) {
+                URI u = JNUA.create("jrt", "/" + module + "/" + name);
                 return Optional.of(u);
             } else {
                 return Optional.empty();

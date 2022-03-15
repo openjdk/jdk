@@ -108,6 +108,8 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
   // marking bitmap has been cleared and in_progress() is
   // cleared).
   bool in_progress() const;
+
+  bool in_undo_mark() const;
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_HPP

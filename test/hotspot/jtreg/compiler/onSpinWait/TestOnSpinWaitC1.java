@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2016 Azul Systems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,9 +27,11 @@
  * @summary (x86 only) checks that java.lang.Thread.onSpinWait is intrinsified
  * @bug 8147844
  * @library /test/lib
- * @modules java.base/jdk.internal.misc
+ *
+ * @requires vm.flagless
  * @requires os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64"
  * @requires vm.compiler1.enabled
+ *
  * @run driver compiler.onSpinWait.TestOnSpinWaitC1
  */
 

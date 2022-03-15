@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -29,6 +30,12 @@ public final class ExecHelper {
         try {
             Log.trace("Running: ", cmd);
             ProcessBuilder pb = new ProcessBuilder(cmd);
+            if (OSUtils.IS_AIX) {
+                Map<String,String> env = pb.environment();
+                env.put("PATH", "/opt/freeware/bin:" + env.get("PATH"));
+                env.put("LANG", "C");
+                env.put("LC_ALL", "C");
+            }
             if (redirectInput) {
                 pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
             }

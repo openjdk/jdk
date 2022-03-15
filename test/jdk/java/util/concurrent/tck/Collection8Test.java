@@ -120,28 +120,28 @@ public class Collection8Test extends JSR166TestCase {
 
     void emptyMeansEmpty(Collection c) throws InterruptedException {
         assertTrue(c.isEmpty());
-        assertEquals(0, c.size());
-        assertEquals("[]", c.toString());
+        mustEqual(0, c.size());
+        mustEqual("[]", c.toString());
         if (c instanceof List<?>) {
             List x = (List) c;
-            assertEquals(1, x.hashCode());
-            assertEquals(x, Collections.emptyList());
-            assertEquals(Collections.emptyList(), x);
-            assertEquals(-1, x.indexOf(impl.makeElement(86)));
-            assertEquals(-1, x.lastIndexOf(impl.makeElement(99)));
+            mustEqual(1, x.hashCode());
+            mustEqual(x, Collections.emptyList());
+            mustEqual(Collections.emptyList(), x);
+            mustEqual(-1, x.indexOf(impl.makeElement(86)));
+            mustEqual(-1, x.lastIndexOf(impl.makeElement(99)));
             assertThrows(
                 IndexOutOfBoundsException.class,
                 () -> x.get(0),
                 () -> x.set(0, impl.makeElement(42)));
         }
         else if (c instanceof Set<?>) {
-            assertEquals(0, c.hashCode());
-            assertEquals(c, Collections.emptySet());
-            assertEquals(Collections.emptySet(), c);
+            mustEqual(0, c.hashCode());
+            mustEqual(c, Collections.emptySet());
+            mustEqual(Collections.emptySet(), c);
         }
         {
             Object[] a = c.toArray();
-            assertEquals(0, a.length);
+            mustEqual(0, a.length);
             assertSame(Object[].class, a.getClass());
         }
         {
@@ -149,15 +149,15 @@ public class Collection8Test extends JSR166TestCase {
             assertSame(a, c.toArray(a));
         }
         {
-            Integer[] a = new Integer[0];
+            Item[] a = new Item[0];
             assertSame(a, c.toArray(a));
         }
         {
-            Integer[] a = { 1, 2, 3};
+            Item[] a = { one, two, three};
             assertSame(a, c.toArray(a));
             assertNull(a[0]);
-            assertSame(2, a[1]);
-            assertSame(3, a[2]);
+            mustEqual(2, a[1]);
+            mustEqual(3, a[2]);
         }
         assertIteratorExhausted(c.iterator());
         Consumer alwaysThrows = e -> { throw new AssertionError(); };
@@ -166,7 +166,7 @@ public class Collection8Test extends JSR166TestCase {
         c.spliterator().forEachRemaining(alwaysThrows);
         assertFalse(c.spliterator().tryAdvance(alwaysThrows));
         if (c.spliterator().hasCharacteristics(Spliterator.SIZED))
-            assertEquals(0, c.spliterator().estimateSize());
+            mustEqual(0, c.spliterator().estimateSize());
         assertFalse(c.contains(bomb()));
         assertFalse(c.remove(bomb()));
         if (c instanceof Queue) {
@@ -198,12 +198,13 @@ public class Collection8Test extends JSR166TestCase {
 
     public void testNullPointerExceptions() throws InterruptedException {
         Collection c = impl.emptyCollection();
+        Collection nullCollection = null;
         assertThrows(
             NullPointerException.class,
-            () -> c.addAll(null),
-            () -> c.containsAll(null),
-            () -> c.retainAll(null),
-            () -> c.removeAll(null),
+            () -> c.addAll(nullCollection),
+            () -> c.containsAll(nullCollection),
+            () -> c.retainAll(nullCollection),
+            () -> c.removeAll(nullCollection),
             () -> c.removeIf(null),
             () -> c.forEach(null),
             () -> c.iterator().forEachRemaining(null),
@@ -319,14 +320,14 @@ public class Collection8Test extends JSR166TestCase {
             try {
                 boolean modified = c.removeIf(randomPredicate);
                 assertNull(threwAt.get());
-                assertEquals(modified, accepts.size() > 0);
-                assertEquals(modified, rejects.size() != n);
-                assertEquals(accepts.size() + rejects.size(), n);
+                mustEqual(modified, accepts.size() > 0);
+                mustEqual(modified, rejects.size() != n);
+                mustEqual(accepts.size() + rejects.size(), n);
                 if (ordered) {
-                    assertEquals(rejects,
+                    mustEqual(rejects,
                                  Arrays.asList(c.toArray()));
                 } else {
-                    assertEquals(new HashSet(rejects),
+                    mustEqual(new HashSet(rejects),
                                  new HashSet(Arrays.asList(c.toArray())));
                 }
             } catch (ArithmeticException ok) {
@@ -350,7 +351,7 @@ public class Collection8Test extends JSR166TestCase {
             assertTrue(c.containsAll(survivors));
             assertTrue(survivors.containsAll(rejects));
             if (threwAt.get() == null) {
-                assertEquals(n - accepts.size(), c.size());
+                mustEqual(n - accepts.size(), c.size());
                 for (Object x : accepts) assertFalse(c.contains(x));
             } else {
                 // Two acceptable behaviors: entire removeIf call is one
@@ -440,7 +441,6 @@ public class Collection8Test extends JSR166TestCase {
             if (rnd.nextBoolean()) assertTrue(it.hasNext());
             it.next();
         }
-        Consumer alwaysThrows = e -> { throw new AssertionError(); };
         // TODO: many more removal methods
         if (rnd.nextBoolean()) {
             for (Iterator z = c.iterator(); z.hasNext(); ) {
@@ -514,24 +514,24 @@ public class Collection8Test extends JSR166TestCase {
         if (c instanceof List || c instanceof Deque)
             assertTrue(ordered);
         HashSet cset = new HashSet(c);
-        assertEquals(cset, new HashSet(parallelStreamForEached));
+        mustEqual(cset, new HashSet(parallelStreamForEached));
         if (ordered) {
-            assertEquals(iterated, iteratedForEachRemaining);
-            assertEquals(iterated, tryAdvanced);
-            assertEquals(iterated, spliterated);
-            assertEquals(iterated, splitonced);
-            assertEquals(iterated, forEached);
-            assertEquals(iterated, streamForEached);
-            assertEquals(iterated, removeIfed);
+            mustEqual(iterated, iteratedForEachRemaining);
+            mustEqual(iterated, tryAdvanced);
+            mustEqual(iterated, spliterated);
+            mustEqual(iterated, splitonced);
+            mustEqual(iterated, forEached);
+            mustEqual(iterated, streamForEached);
+            mustEqual(iterated, removeIfed);
         } else {
-            assertEquals(cset, new HashSet(iterated));
-            assertEquals(cset, new HashSet(iteratedForEachRemaining));
-            assertEquals(cset, new HashSet(tryAdvanced));
-            assertEquals(cset, new HashSet(spliterated));
-            assertEquals(cset, new HashSet(splitonced));
-            assertEquals(cset, new HashSet(forEached));
-            assertEquals(cset, new HashSet(streamForEached));
-            assertEquals(cset, new HashSet(removeIfed));
+            mustEqual(cset, new HashSet(iterated));
+            mustEqual(cset, new HashSet(iteratedForEachRemaining));
+            mustEqual(cset, new HashSet(tryAdvanced));
+            mustEqual(cset, new HashSet(spliterated));
+            mustEqual(cset, new HashSet(splitonced));
+            mustEqual(cset, new HashSet(forEached));
+            mustEqual(cset, new HashSet(streamForEached));
+            mustEqual(cset, new HashSet(removeIfed));
         }
         if (c instanceof Deque) {
             Deque d = (Deque) c;
@@ -543,8 +543,8 @@ public class Collection8Test extends JSR166TestCase {
                 e -> descendingForEachRemaining.add(e));
             Collections.reverse(descending);
             Collections.reverse(descendingForEachRemaining);
-            assertEquals(iterated, descending);
-            assertEquals(iterated, descendingForEachRemaining);
+            mustEqual(iterated, descending);
+            mustEqual(iterated, descendingForEachRemaining);
         }
     }
 
@@ -582,7 +582,7 @@ public class Collection8Test extends JSR166TestCase {
             r2 = ConcurrentModificationException.class;
             assertFalse(impl.isConcurrent());
         }
-        assertEquals(r1, r2);
+        mustEqual(r1, r2);
     }
 
     /**
@@ -604,9 +604,9 @@ public class Collection8Test extends JSR166TestCase {
             Iterator it = c.iterator();
             if (ordered) {
                 if (rnd.nextBoolean()) assertTrue(it.hasNext());
-                assertEquals(impl.makeElement(0), it.next());
+                mustEqual(impl.makeElement(0), it.next());
                 if (rnd.nextBoolean()) assertTrue(it.hasNext());
-                assertEquals(impl.makeElement(1), it.next());
+                mustEqual(impl.makeElement(1), it.next());
             } else {
                 if (rnd.nextBoolean()) assertTrue(it.hasNext());
                 assertTrue(copy.contains(it.next()));
@@ -626,7 +626,7 @@ public class Collection8Test extends JSR166TestCase {
                     catch (UnsupportedOperationException ok) {
                         break testCollection;
                     }
-                    assertEquals(n - 1, c.size());
+                    mustEqual(n - 1, c.size());
                     if (ordered) {
                         for (int i = 0; i < n - 1; i++)
                             assertTrue(c.contains(impl.makeElement(i)));
@@ -642,13 +642,13 @@ public class Collection8Test extends JSR166TestCase {
             for (int i = 0; i < n; i++) d.add(impl.makeElement(i));
             Iterator it = d.descendingIterator();
             assertTrue(it.hasNext());
-            assertEquals(impl.makeElement(n - 1), it.next());
+            mustEqual(impl.makeElement(n - 1), it.next());
             assertTrue(it.hasNext());
-            assertEquals(impl.makeElement(n - 2), it.next());
+            mustEqual(impl.makeElement(n - 2), it.next());
             it.forEachRemaining(e -> assertTrue(c.contains(e)));
             if (testImplementationDetails) {
                 it.remove();
-                assertEquals(n - 1, d.size());
+                mustEqual(n - 1, d.size());
                 for (int i = 1; i < n; i++)
                     assertTrue(d.contains(impl.makeElement(i)));
                 assertFalse(d.contains(impl.makeElement(0)));
@@ -661,7 +661,6 @@ public class Collection8Test extends JSR166TestCase {
      */
     public void testStreamForEach() throws Throwable {
         final Collection c = impl.emptyCollection();
-        final AtomicLong count = new AtomicLong(0L);
         final Object x = impl.makeElement(1);
         final Object y = impl.makeElement(2);
         final ArrayList found = new ArrayList();
@@ -671,12 +670,12 @@ public class Collection8Test extends JSR166TestCase {
 
         assertTrue(c.add(x));
         c.stream().forEach(spy);
-        assertEquals(Collections.singletonList(x), found);
+        mustEqual(Collections.singletonList(x), found);
         found.clear();
 
         assertTrue(c.add(y));
         c.stream().forEach(spy);
-        assertEquals(2, found.size());
+        mustEqual(2, found.size());
         assertTrue(found.contains(x));
         assertTrue(found.contains(y));
         found.clear();
@@ -719,7 +718,6 @@ public class Collection8Test extends JSR166TestCase {
      */
     public void testForEach() throws Throwable {
         final Collection c = impl.emptyCollection();
-        final AtomicLong count = new AtomicLong(0L);
         final Object x = impl.makeElement(1);
         final Object y = impl.makeElement(2);
         final ArrayList found = new ArrayList();
@@ -729,12 +727,12 @@ public class Collection8Test extends JSR166TestCase {
 
         assertTrue(c.add(x));
         c.forEach(spy);
-        assertEquals(Collections.singletonList(x), found);
+        mustEqual(Collections.singletonList(x), found);
         found.clear();
 
         assertTrue(c.add(y));
         c.forEach(spy);
-        assertEquals(2, found.size());
+        mustEqual(2, found.size());
         assertTrue(found.contains(x));
         assertTrue(found.contains(y));
         found.clear();
@@ -908,7 +906,7 @@ public class Collection8Test extends JSR166TestCase {
             c.add(one);
             split.forEachRemaining(
                 e -> { assertSame(e, one); count.getAndIncrement(); });
-            assertEquals(1L, count.get());
+            mustEqual(1L, count.get());
             assertFalse(split.tryAdvance(e -> { throw new AssertionError(); }));
             assertTrue(c.contains(one));
         }
@@ -935,7 +933,7 @@ public class Collection8Test extends JSR166TestCase {
         Collection c = impl.emptyCollection();
         for (int n = rnd.nextInt(4); n--> 0; )
             c.add(impl.makeElement(rnd.nextInt()));
-        assertEquals(c, c);
+        mustEqual(c, c);
         if (c instanceof List)
             assertCollectionsEquals(c, new ArrayList(c));
         else if (c instanceof Set)
@@ -971,11 +969,11 @@ public class Collection8Test extends JSR166TestCase {
         int size = list.size(), half = size / 2;
         Iterator it = list.iterator();
         for (int i = 0; i < half; i++)
-            assertEquals(it.next(), copy.get(i));
+            mustEqual(it.next(), copy.get(i));
         list.replaceAll(n -> n);
         // ConcurrentModificationException must not be thrown here.
         for (int i = half; i < size; i++)
-            assertEquals(it.next(), copy.get(i));
+            mustEqual(it.next(), copy.get(i));
     }
 
 //     public void testCollection8DebugFail() {

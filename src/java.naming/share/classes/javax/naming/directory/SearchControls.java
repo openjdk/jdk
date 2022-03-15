@@ -56,7 +56,7 @@ public class SearchControls implements java.io.Serializable {
      * <p>
      * The value of this constant is {@code 0}.
      */
-    public final static int OBJECT_SCOPE = 0;
+    public static final int OBJECT_SCOPE = 0;
 
     /**
      * Search one level of the named context.
@@ -70,7 +70,7 @@ public class SearchControls implements java.io.Serializable {
      * <p>
      * The value of this constant is {@code 1}.
      */
-    public final static int ONELEVEL_SCOPE = 1;
+    public static final int ONELEVEL_SCOPE = 1;
     /**
      * Search the entire subtree rooted at the named object.
      *<p>
@@ -92,7 +92,7 @@ public class SearchControls implements java.io.Serializable {
      * <p>
      * The value of this constant is {@code 2}.
      */
-    public final static int SUBTREE_SCOPE = 2;
+    public static final int SUBTREE_SCOPE = 2;
 
     /**
      * Contains the scope with which to apply the search. One of

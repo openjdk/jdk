@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * @test
  * @bug 8225056
  * @compile planets/OuterPlanets.jcod planets/Mars.jcod
- * @compile --enable-preview -source ${jdk.version} planets/Neptune.java asteroids/Pluto.java asteroids/Charon.java
- * @run main/othervm --enable-preview SealedUnnamedModuleTest
+ * @compile planets/Neptune.java asteroids/Pluto.java asteroids/Charon.java
+ * @run main SealedUnnamedModuleTest
  */
 
 public class SealedUnnamedModuleTest {

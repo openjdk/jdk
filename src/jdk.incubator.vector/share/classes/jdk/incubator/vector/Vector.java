@@ -240,13 +240,13 @@ import java.util.Arrays;
  * each distinct lane of the input vector.  If there are additional
  * vector arguments of the same type, their lanes are aligned with the
  * lanes of the first input vector.  (They must all have a common
- * {@code VLENGTH}.)  The output resulting from a lane-wise operation
- * will have a {@code VLENGTH} which is equal to the {@code VLENGTH}
- * of the input(s) to the operation.  Thus, lane-wise operations are
- * <em>length-invariant</em>, in their basic definitions.
+ * {@code VLENGTH}.)  For most lane-wise operations, the output resulting
+ * from a lane-wise operation will have a {@code VLENGTH} which is equal to
+ * the {@code VLENGTH} of the input(s) to the operation.  Thus, such lane-wise
+ * operations are <em>length-invariant</em>, in their basic definitions.
  *
  * <p> The principle of length-invariance is combined with another
- * basic principle, that lane-wise operations are always
+ * basic principle, that most length-invariant lane-wise operations are also
  * <em>shape-invariant</em>, meaning that the inputs and the output of
  * a lane-wise operation will have a common {@code VSHAPE}.  When the
  * principles conflict, because a logical result (with an invariant
@@ -799,7 +799,8 @@ import java.util.Arrays;
  * approach to the design of such <em>resizing</em> vector operations.
  *
  * <p> As a basic principle, lane-wise operations are
- * <em>length-invariant</em>.  Length-invariance simply means that
+ * <em>length-invariant</em>, unless clearly marked otherwise.
+ * Length-invariance simply means that
  * if {@code VLENGTH} lanes go into an operation, the same number
  * of lanes come out, with nothing discarded and no extra padding.
  *

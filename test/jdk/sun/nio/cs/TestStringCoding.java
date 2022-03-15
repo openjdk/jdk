@@ -25,7 +25,7 @@
  * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307
  * @summary Test if StringCoding and NIO result have the same de/encoding result
  * @modules java.base/sun.nio.cs
- * @run main/othervm/timeout=2000 TestStringCoding
+ * @run main/othervm/timeout=2000 -Djava.security.manager=allow TestStringCoding
  * @key randomness
  */
 

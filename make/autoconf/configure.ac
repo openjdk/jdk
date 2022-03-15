@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ JDKVER_SETUP_JDK_VERSION_NUMBERS
 
 BOOTJDK_SETUP_BOOT_JDK
 BOOTJDK_SETUP_BUILD_JDK
+BOOTJDK_SETUP_DOCS_REFERENCE_JDK
 
 ###############################################################################
 #
@@ -151,6 +152,7 @@ BOOTJDK_SETUP_BUILD_JDK
 #
 ###############################################################################
 
+JDKOPT_SETUP_REPRODUCIBLE_BUILD
 JDKOPT_SETUP_JDK_OPTIONS
 
 ###############################################################################
@@ -206,7 +208,6 @@ PLATFORM_SETUP_OPENJDK_TARGET_BITS
 PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 
 # Configure flags for the tools. Need to know if we should build reproducible.
-JDKOPT_SETUP_REPRODUCIBLE_BUILD
 FLAGS_SETUP_FLAGS
 
 # Setup debug symbols (need objcopy from the toolchain for that)
@@ -247,6 +248,7 @@ JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS
 JDKOPT_ENABLE_DISABLE_MANPAGES
 JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE
+JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT
 
 ###############################################################################
 #

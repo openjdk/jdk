@@ -27,8 +27,7 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler
  * @build   JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} TestRecordDesugar.java
- * @run main/othervm --enable-preview TestRecordDesugar
+ * @run main TestRecordDesugar
  */
 
 import java.io.*;
@@ -50,8 +49,6 @@ public class TestRecordDesugar extends JavacTestingAbstractProcessor {
         String testSrc = System.getProperty("test.src");
         String testClasspath = System.getProperty("test.class.path");
         List<String> options = List.of(
-                "--enable-preview",
-                "-source", Integer.toString(Runtime.version().feature()),
                 "-classpath", testClasspath,
                 "-processor", "TestRecordDesugar",
                 "-proc:only",

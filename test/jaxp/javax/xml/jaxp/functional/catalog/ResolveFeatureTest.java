@@ -46,7 +46,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.ResolveFeatureTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.ResolveFeatureTest
  * @run testng/othervm catalog.ResolveFeatureTest
  * @summary This case tests how does resolve feature affect the catalog
  *          resolution.

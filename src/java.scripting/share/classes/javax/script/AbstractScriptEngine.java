@@ -25,8 +25,6 @@
 
 package javax.script;
 import java.io.Reader;
-import java.util.Map;
-import java.util.Iterator;
 
 /**
  * Provides a standard implementation for several of the variants of the <code>eval</code>
@@ -141,9 +139,9 @@ public abstract class AbstractScriptEngine  implements ScriptEngine {
     public void setBindings(Bindings bindings, int scope) {
 
         if (scope == ScriptContext.GLOBAL_SCOPE) {
-            context.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);;
+            context.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
         } else if (scope == ScriptContext.ENGINE_SCOPE) {
-            context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);;
+            context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         } else {
             throw new IllegalArgumentException("Invalid scope value.");
         }

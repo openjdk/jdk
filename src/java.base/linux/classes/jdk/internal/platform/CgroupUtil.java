@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 public final class CgroupUtil {
 
+    @SuppressWarnings("removal")
     public static Stream<String> readFilePrivileged(Path path) throws IOException {
         try {
             PrivilegedExceptionAction<Stream<String>> pea = () -> Files.lines(path);
@@ -64,7 +65,7 @@ public final class CgroupUtil {
     static String readStringValue(CgroupSubsystemController controller, String param) throws IOException {
         PrivilegedExceptionAction<BufferedReader> pea = () ->
                 Files.newBufferedReader(Paths.get(controller.path(), param));
-        try (BufferedReader bufferedReader =
+        try (@SuppressWarnings("removal") BufferedReader bufferedReader =
                      AccessController.doPrivileged(pea)) {
             String line = bufferedReader.readLine();
             return line;
@@ -76,6 +77,7 @@ public final class CgroupUtil {
         }
     }
 
+    @SuppressWarnings("removal")
     public static List<String> readAllLinesPrivileged(Path path) throws IOException {
         try {
             PrivilegedExceptionAction<List<String>> pea = () -> Files.readAllLines(path);

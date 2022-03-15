@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ public final class URL implements java.io.Serializable {
      * The host's IP address, used in equals and hashCode.
      * Computed on demand. An uninitialized or unknown hostAddress is null.
      */
-    transient InetAddress hostAddress;
+    private transient InetAddress hostAddress;
 
     /**
      * The URLStreamHandler for this URL.
@@ -431,6 +431,7 @@ public final class URL implements java.io.Serializable {
     public URL(String protocol, String host, int port, String file,
                URLStreamHandler handler) throws MalformedURLException {
         if (handler != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // check for permission to specify a handler
@@ -602,6 +603,7 @@ public final class URL implements java.io.Serializable {
 
         // Check for permission to specify a handler
         if (handler != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 checkSpecifyHandler(sm);
@@ -770,7 +772,7 @@ public final class URL implements java.io.Serializable {
     /*
      * Checks for permission to specify a stream handler.
      */
-    private void checkSpecifyHandler(SecurityManager sm) {
+    private void checkSpecifyHandler(@SuppressWarnings("removal") SecurityManager sm) {
         sm.checkPermission(SecurityConstants.SPECIFY_HANDLER_PERMISSION);
     }
 
@@ -808,6 +810,31 @@ public final class URL implements java.io.Serializable {
             this.authority = authority;
         }
     }
+
+    /**
+     * Returns the address of the host represented by this URL.
+     * A {@link SecurityException} or an {@link UnknownHostException}
+     * while getting the host address will result in this method returning
+     * {@code null}
+     *
+     * @return an {@link InetAddress} representing the host
+     */
+    synchronized InetAddress getHostAddress() {
+        if (hostAddress != null) {
+            return hostAddress;
+        }
+
+        if (host == null || host.isEmpty()) {
+            return null;
+        }
+        try {
+            hostAddress = InetAddress.getByName(host);
+        } catch (UnknownHostException | SecurityException ex) {
+            return null;
+        }
+        return hostAddress;
+    }
+
 
     /**
      * Gets the query part of this {@code URL}.
@@ -947,9 +974,8 @@ public final class URL implements java.io.Serializable {
      *          {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (!(obj instanceof URL))
+        if (!(obj instanceof URL u2))
             return false;
-        URL u2 = (URL)obj;
 
         return handler.equals(this, u2);
     }
@@ -1105,6 +1131,7 @@ public final class URL implements java.io.Serializable {
 
         // Create a copy of Proxy as a security measure
         Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (p.type() != Proxy.Type.DIRECT && sm != null) {
             InetSocketAddress epoint = (InetSocketAddress) p.address();
@@ -1200,6 +1227,7 @@ public final class URL implements java.io.Serializable {
             if (factory != null) {
                 throw new Error("factory already defined");
             }
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkSetFactory();
@@ -1317,6 +1345,7 @@ public final class URL implements java.io.Serializable {
     // Thread-local gate to prevent recursive provider lookups
     private static ThreadLocal<Object> gate = new ThreadLocal<>();
 
+    @SuppressWarnings("removal")
     private static URLStreamHandler lookupViaProviders(final String protocol) {
         if (gate.get() != null)
             throw new Error("Circular loading of URL stream handler providers detected");
@@ -1456,19 +1485,20 @@ public final class URL implements java.io.Serializable {
     }
 
     /**
-     * @serialField    protocol String
+     * @serialField    protocol String the protocol to use (ftp, http, nntp, ... etc.)
      *
-     * @serialField    host String
+     * @serialField    host String the host name to connect to
      *
-     * @serialField    port int
+     * @serialField    port int the protocol port to connect to
      *
-     * @serialField    authority String
+     * @serialField    authority String the authority part of this URL
      *
-     * @serialField    file String
+     * @serialField    file String the specified file name on that host. {@code file} is
+     *                 defined as {@code path[?query]}
      *
-     * @serialField    ref String
+     * @serialField    ref String the fragment part of this URL
      *
-     * @serialField    hashCode int
+     * @serialField    hashCode int the hashCode of this URL
      *
      */
     @java.io.Serial
@@ -1490,6 +1520,9 @@ public final class URL implements java.io.Serializable {
      * the reader must ensure that calling getURLStreamHandler with
      * the protocol variable returns a valid URLStreamHandler and
      * throw an IOException if it does not.
+     *
+     * @param  s the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private synchronized void writeObject(java.io.ObjectOutputStream s)
@@ -1502,6 +1535,10 @@ public final class URL implements java.io.Serializable {
      * readObject is called to restore the state of the URL from the
      * stream.  It reads the components of the URL and finds the local
      * stream handler.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private synchronized void readObject(java.io.ObjectInputStream s)
@@ -1725,7 +1762,7 @@ final class UrlDeserializedState {
 
     String reconstituteUrlString() {
 
-        // pre-compute length of StringBuffer
+        // pre-compute length of StringBuilder
         int len = protocol.length() + 1;
         if (authority != null && !authority.isEmpty())
             len += 2 + authority.length();

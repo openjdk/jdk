@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 package java.lang.annotation;
 
 /**
- * Annotation retention policy.  The constants of this enumerated type
+ * Annotation retention policy.  The constants of this enumerated class
  * describe the various policies for retaining annotations.  They are used
- * in conjunction with the {@link Retention} meta-annotation type to specify
- * how long annotations are to be retained.
+ * in conjunction with the {@link Retention} meta-annotation interface to
+ * specify how long annotations are to be retained.
  *
  * @author  Joshua Bloch
  * @since 1.5

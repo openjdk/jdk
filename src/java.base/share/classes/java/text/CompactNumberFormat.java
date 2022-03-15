@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,10 +169,10 @@ import java.util.stream.Collectors;
  * <i>NegativePattern:</i>
  *        <i>Prefix<sub>optional</sub></i> <i>MinimumInteger</i> <i>Suffix<sub>optional</sub></i>
  * <i>Prefix:</i>
- *      Any Unicode characters except &#92;uFFFE, &#92;uFFFF, and
+ *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
  *      <a href = "DecimalFormat.html#special_pattern_character">special characters</a>.
  * <i>Suffix:</i>
- *      Any Unicode characters except &#92;uFFFE, &#92;uFFFF, and
+ *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
  *      <a href = "DecimalFormat.html#special_pattern_character">special characters</a>.
  * <i>MinimumInteger:</i>
  *      0
@@ -589,6 +589,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number, divisor);
+            if (checkIncrement(iPart, compactDataIndex, divisor)) {
+                divisor = (Long) divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number, divisor);
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
 
@@ -658,6 +662,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number, divisor);
+            if (checkIncrement(iPart, compactDataIndex, divisor)) {
+                divisor = (Long) divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number, divisor);
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
@@ -753,6 +761,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            if (checkIncrement(iPart, compactDataIndex, divisor.doubleValue())) {
+                divisor = divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
@@ -820,6 +832,10 @@ public final class CompactNumberFormat extends NumberFormat {
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
             int iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            if (checkIncrement(iPart, compactDataIndex, divisor.doubleValue())) {
+                divisor = divisors.get(++compactDataIndex);
+                iPart = getIntegerPart(number.doubleValue(), divisor.doubleValue());
+            }
             String prefix = getAffix(false, true, isNegative, compactDataIndex, iPart);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, iPart);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
@@ -875,7 +891,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * Appends the {@code prefix} to the {@code result} and also set the
      * {@code NumberFormat.Field.SIGN} and {@code NumberFormat.Field.PREFIX}
      * field positions.
-     * @param result the resulting string, where the pefix is to be appended
+     * @param result the resulting string, where the prefix is to be appended
      * @param prefix prefix to append
      * @param delegate notified of the locations of
      *                 {@code NumberFormat.Field.SIGN} and
@@ -910,7 +926,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param result the resulting string, where the text is to be appended
      * @param string the text to append
      * @param delegate notified of the locations of sub fields
-     * @param positions a list of {@code FieldPostion} in the given
+     * @param positions a list of {@code FieldPosition} in the given
      *                  string
      */
     private void append(StringBuffer result, String string,
@@ -956,10 +972,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Returns a list of {@code FieldPostion} in the given {@code pattern}.
+     * Returns a list of {@code FieldPosition} in the given {@code pattern}.
      * @param pattern the pattern to be parsed for {@code FieldPosition}
      * @param field whether a PREFIX or SUFFIX field
-     * @return a list of {@code FieldPostion}
+     * @return a list of {@code FieldPosition}
      */
     private List<FieldPosition> getFieldPositions(String pattern, Field field) {
         List<FieldPosition> positions = new ArrayList<>();
@@ -1122,8 +1138,7 @@ public final class CompactNumberFormat extends NumberFormat {
         }
         Number divisor = matchedValue;
         if (count > 0) {
-            if (matchedValue instanceof BigInteger) {
-                BigInteger bigValue = (BigInteger) matchedValue;
+            if (matchedValue instanceof BigInteger bigValue) {
                 if (bigValue.compareTo(BigInteger.valueOf((long) Math.pow(RANGE_MULTIPLIER, count - 1))) < 0) {
                     throw new IllegalArgumentException("Invalid Pattern"
                             + " [" + compactPatterns[patternIndex]
@@ -1212,14 +1227,14 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     // Patterns for plurals syntax validation
-    private final static String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
-    private final static String RELATION = "(!?=)";
-    private final static String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
-    private final static String CONDITION = EXPR + "\\s*" +
+    private static final String EXPR = "([niftvwe])\\s*(([/%])\\s*(\\d+))*";
+    private static final String RELATION = "(!?=)";
+    private static final String VALUE_RANGE = "((\\d+)\\.\\.(\\d+)|\\d+)";
+    private static final String CONDITION = EXPR + "\\s*" +
                                              RELATION + "\\s*" +
                                              VALUE_RANGE + "\\s*" +
                                              "(,\\s*" + VALUE_RANGE + ")*";
-    private final static Pattern PLURALRULES_PATTERN =
+    private static final Pattern PLURALRULES_PATTERN =
             Pattern.compile("(zero|one|two|few|many):\\s*" +
                             CONDITION +
                             "(\\s*(and|or)\\s*" + CONDITION + ")*");
@@ -1265,8 +1280,8 @@ public final class CompactNumberFormat extends NumberFormat {
         String zeros = "";
         for (int j = 1; j >= 0 && start < pattern.length(); --j) {
 
-            StringBuffer prefix = new StringBuffer();
-            StringBuffer suffix = new StringBuffer();
+            StringBuilder prefix = new StringBuilder();
+            StringBuilder suffix = new StringBuilder();
             boolean inQuote = false;
             // The phase ranges from 0 to 2.  Phase 0 is the prefix.  Phase 1 is
             // the section of the pattern with digits. Phase 2 is the suffix.
@@ -1276,7 +1291,7 @@ public final class CompactNumberFormat extends NumberFormat {
             int phase = 0;
 
             // The affix is either the prefix or the suffix.
-            StringBuffer affix = prefix;
+            StringBuilder affix = prefix;
 
             for (int pos = start; pos < pattern.length(); ++pos) {
                 char ch = pattern.charAt(pos);
@@ -1770,7 +1785,7 @@ public final class CompactNumberFormat extends NumberFormat {
             if (cnfMultiplier.longValue() != 1L) {
                 double doubleResult = number.doubleValue() * cnfMultiplier.doubleValue();
                 doubleResult = (double) convertIfNegative(doubleResult, status, gotLongMin);
-                // Check if a double can be represeneted as a long
+                // Check if a double can be represented as a long
                 long longResult = (long) doubleResult;
                 gotDouble = ((doubleResult != (double) longResult)
                         || (doubleResult == 0.0 && 1 / doubleResult < 0.0));
@@ -2397,6 +2412,19 @@ public final class CompactNumberFormat extends NumberFormat {
                 .divide(BigDecimal.valueOf(divisor), roundingMode).intValue();
     }
 
+    // Checks whether the iPart is incremented by the BigDecimal division in
+    // getIntegerPart(), and affects the compact number index.
+    private boolean checkIncrement(int iPart, int index, double divisor) {
+        if (index < compactPatterns.length - 1 &&
+            !"".equals(compactPatterns[index])) { // ignore empty pattern
+            var nextDiv = divisors.get(index + 1).doubleValue();
+            if (divisor != nextDiv) {
+                return Math.log10(iPart) == Math.log10(nextDiv) - Math.log10(divisor);
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns LDML's tag from the plurals rules
      *
@@ -2422,12 +2450,12 @@ public final class CompactNumberFormat extends NumberFormat {
                 .allMatch(r -> relationCheck(r, input)));
     }
 
-    private final static String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
-    private final static String NAMED_RELATION = "(?<rel>!?=)";
-    private final static String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
-    private final static Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);
-    private final static Pattern RELATION_PATTERN = Pattern.compile(NAMED_RELATION);
-    private final static Pattern VALUE_RANGE_PATTERN = Pattern.compile(NAMED_VALUE_RANGE);
+    private static final String NAMED_EXPR = "(?<op>[niftvwe])\\s*((?<div>[/%])\\s*(?<val>\\d+))*";
+    private static final String NAMED_RELATION = "(?<rel>!?=)";
+    private static final String NAMED_VALUE_RANGE = "(?<start>\\d+)\\.\\.(?<end>\\d+)|(?<value>\\d+)";
+    private static final Pattern EXPR_PATTERN = Pattern.compile(NAMED_EXPR);
+    private static final Pattern RELATION_PATTERN = Pattern.compile(NAMED_RELATION);
+    private static final Pattern VALUE_RANGE_PATTERN = Pattern.compile(NAMED_VALUE_RANGE);
 
     /**
      * Checks if the 'input' equals the value, or within the range.

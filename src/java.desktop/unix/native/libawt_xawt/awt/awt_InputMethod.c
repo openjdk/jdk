@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1235,8 +1235,12 @@ StatusDrawCallback(XIC ic, XPointer client_data,
                 statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
             } else {
                 char *mbstr = wcstombsdmp(text->string.wide_char, text->length);
+                if (mbstr == NULL) {
+                    goto finally;
+                }
                 strncpy(statusWindow->status, mbstr, MAX_STATUS_LEN);
                 statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
+                free(mbstr);
             }
             statusWindow->on = True;
             onoffStatusWindow(pX11IMData, statusWindow->parent, True);

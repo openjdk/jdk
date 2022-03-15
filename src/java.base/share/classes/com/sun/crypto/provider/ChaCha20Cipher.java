@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Objects;
 import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
@@ -534,18 +535,20 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     private void init(int opmode, Key key, byte[] newNonce)
             throws InvalidKeyException {
+        // Cipher.init() already checks opmode to be:
+        // ENCRYPT_MODE/DECRYPT_MODE/WRAP_MODE/UNWRAP_MODE
         if ((opmode == Cipher.WRAP_MODE) || (opmode == Cipher.UNWRAP_MODE)) {
             throw new UnsupportedOperationException(
                     "WRAP_MODE and UNWRAP_MODE are not currently supported");
-        } else if ((opmode != Cipher.ENCRYPT_MODE) &&
-                (opmode != Cipher.DECRYPT_MODE)) {
-            throw new InvalidKeyException("Unknown opmode: " + opmode);
         }
 
         // Make sure that the provided key and nonce are unique before
         // assigning them to the object.
         byte[] newKeyBytes = getEncodedKey(key);
         checkKeyAndNonce(newKeyBytes, newNonce);
+        if (this.keyBytes != null) {
+            Arrays.fill(this.keyBytes, (byte)0);
+        }
         this.keyBytes = newKeyBytes;
         nonce = newNonce;
 
@@ -612,6 +615,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
         byte[] encodedKey = key.getEncoded();
         if (encodedKey == null || encodedKey.length != 32) {
+            if (encodedKey != null) {
+                Arrays.fill(encodedKey, (byte)0);
+            }
             throw new InvalidKeyException("Key length must be 256 bits");
         }
         return encodedKey;
@@ -790,6 +796,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         byte[] encodedKey = getEncodedKey(key);
+        Arrays.fill(encodedKey, (byte)0);
         return encodedKey.length << 3;
     }
 

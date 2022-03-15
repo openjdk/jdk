@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -85,6 +86,7 @@ public abstract class HttpServerProvider {
      *          {@link RuntimePermission}{@code ("httpServerProvider")}
      */
     protected HttpServerProvider() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new RuntimePermission("httpServerProvider"));
@@ -95,12 +97,17 @@ public abstract class HttpServerProvider {
         if (cn == null)
             return false;
         try {
-            @SuppressWarnings("deprecation")
-            Object o = Class.forName(cn, true,
-                                     ClassLoader.getSystemClassLoader()).newInstance();
-            provider = (HttpServerProvider)o;
-            return true;
-        } catch (ClassNotFoundException |
+            var cls = Class.forName(cn, false, ClassLoader.getSystemClassLoader());
+            if (HttpServerProvider.class.isAssignableFrom(cls)) {
+                provider = (HttpServerProvider) cls.getDeclaredConstructor().newInstance();
+                return true;
+            } else {
+                throw new ServiceConfigurationError("not assignable to HttpServerProvider: "
+                        + cls.getName());
+            }
+        } catch (InvocationTargetException |
+                 NoSuchMethodException |
+                 ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException |
                  SecurityException x) {
@@ -165,6 +172,7 @@ public abstract class HttpServerProvider {
      *
      * @return  The system-wide default HttpServerProvider
      */
+    @SuppressWarnings("removal")
     public static HttpServerProvider provider () {
         synchronized (lock) {
             if (provider != null)

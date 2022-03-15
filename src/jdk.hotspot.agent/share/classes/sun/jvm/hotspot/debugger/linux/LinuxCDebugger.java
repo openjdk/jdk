@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -69,7 +69,6 @@ class LinuxCDebugger implements CDebugger {
       LoadObject ob = (LoadObject) objs.get(i);
       Address base = ob.getBase();
       long size = ob.getSize();
-      if (base == null) continue; // Skip. LoadObject was not properly initialized.
       if (pc.greaterThanOrEqual(base) && pc.lessThan(base.addOffsetTo(size))) {
         return ob;
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.LinkedList;
 import com.sun.security.auth.UnixPrincipal;
 import com.sun.security.auth.UnixNumericUserPrincipal;
 import com.sun.security.auth.UnixNumericGroupPrincipal;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 
@@ -151,8 +153,16 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  */
 public class JndiLoginModule implements LoginModule {
 
-    /** JNDI Provider */
+    /**
+     * Directory service/path where this module can access the relevent
+     * user information.
+     */
     public final String USER_PROVIDER = "user.provider.url";
+
+    /**
+     * Directory service/path where this module can access the relevent
+     * group information.
+     */
     public final String GROUP_PROVIDER = "group.provider.url";
 
     // configurable options
@@ -542,7 +552,7 @@ public class JndiLoginModule implements LoginModule {
                 // channels. For nonsecure channels, SSL is recommended.
 
                 Attribute pwd = attributes.get(USER_PWD);
-                String encryptedPwd = new String((byte[])pwd.get(), "UTF8");
+                String encryptedPwd = new String((byte[])pwd.get(), UTF_8);
                 encryptedPassword = encryptedPwd.substring(CRYPT.length());
 
                 // check the password
@@ -632,15 +642,6 @@ public class JndiLoginModule implements LoginModule {
                 ne.printStackTrace();
             }
             throw new FailedLoginException("User not found");
-        } catch (java.io.UnsupportedEncodingException uee) {
-            // password stored in incorrect format
-            if (debug) {
-                System.out.println("\t\t[JndiLoginModule]:  " +
-                                "password incorrectly encoded");
-                uee.printStackTrace();
-            }
-            throw new LoginException("Login failure due to incorrect " +
-                                "password encoding in the password database");
         }
 
         // authentication succeeded
@@ -721,19 +722,14 @@ public class JndiLoginModule implements LoginModule {
             return false;
 
         Crypt c = new Crypt();
-        try {
-            byte[] oldCrypt = encryptedPassword.getBytes("UTF8");
-            byte[] newCrypt = c.crypt(password.getBytes("UTF8"),
-                                      oldCrypt);
-            if (newCrypt.length != oldCrypt.length)
-                return false;
-            for (int i = 0; i < newCrypt.length; i++) {
-                if (oldCrypt[i] != newCrypt[i])
-                    return false;
-            }
-        } catch (java.io.UnsupportedEncodingException uee) {
-            // cannot happen, but return false just to be safe
+        byte[] oldCrypt = encryptedPassword.getBytes(UTF_8);
+        byte[] newCrypt = c.crypt(password.getBytes(UTF_8),
+                                  oldCrypt);
+        if (newCrypt.length != oldCrypt.length)
             return false;
+        for (int i = 0; i < newCrypt.length; i++) {
+            if (oldCrypt[i] != newCrypt[i])
+                return false;
         }
         return true;
     }

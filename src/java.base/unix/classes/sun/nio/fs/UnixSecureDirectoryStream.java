@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ class UnixSecureDirectoryStream
         boolean followLinks = Util.followLinks(options);
 
         // permission check using name resolved against original path of directory
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             child.checkRead();
@@ -172,6 +173,7 @@ class UnixSecureDirectoryStream
         UnixPath file = getName(obj);
 
         // permission check using name resolved against original path of directory
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ds.directory().resolve(file).checkDelete();
@@ -237,6 +239,7 @@ class UnixSecureDirectoryStream
         UnixSecureDirectoryStream that = (UnixSecureDirectoryStream)dir;
 
         // permission check
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             this.ds.directory().resolve(from).checkWrite();
@@ -334,6 +337,7 @@ class UnixSecureDirectoryStream
         }
 
         private void checkWriteAccess() {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 if (file == null) {
@@ -356,6 +360,7 @@ class UnixSecureDirectoryStream
                 if (!ds.isOpen())
                     throw new ClosedDirectoryStreamException();
 
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     if (file == null) {
@@ -436,6 +441,7 @@ class UnixSecureDirectoryStream
         }
 
         private void checkWriteAndUserAccess() {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 super.checkWriteAccess();
@@ -450,6 +456,7 @@ class UnixSecureDirectoryStream
 
         @Override
         public PosixFileAttributes readAttributes() throws IOException {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 if (file == null)

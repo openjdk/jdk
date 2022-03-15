@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 
 package javax.print;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Vector;
 
 /**
  * Class {@code MimeType} encapsulates a Multipurpose Internet Mail Extensions
@@ -79,6 +80,7 @@ class MimeType implements Serializable, Cloneable {
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -2785720609362367683L;
 
     /**
@@ -139,10 +141,9 @@ class MimeType implements Serializable, Cloneable {
             throw new UnsupportedOperationException();
         }
         public boolean equals(Object o) {
-            return (o != null &&
-                    o instanceof Map.Entry &&
-                    getKey().equals (((Map.Entry) o).getKey()) &&
-                    getValue().equals(((Map.Entry) o).getValue()));
+            return o instanceof Map.Entry<?, ?> entry &&
+                    getKey().equals(entry.getKey()) &&
+                    getValue().equals(entry.getValue());
         }
         public int hashCode() {
             return getKey().hashCode() ^ getValue().hashCode();
@@ -288,9 +289,8 @@ class MimeType implements Serializable, Cloneable {
      *         {@code false} otherwise
      */
     public boolean equals (Object obj) {
-        return(obj != null &&
-               obj instanceof MimeType &&
-               getStringValue().equals(((MimeType) obj).getStringValue()));
+        return obj instanceof MimeType mimeType &&
+                getStringValue().equals(mimeType.getStringValue());
     }
 
     /**
@@ -569,8 +569,7 @@ class MimeType implements Serializable, Cloneable {
             throw new NullPointerException();
         }
         LexicalAnalyzer theLexer = new LexicalAnalyzer (s);
-        int theLexemeType;
-        Vector<String> thePieces = new Vector<>();
+        ArrayList<String> thePieces = new ArrayList<>();
         boolean mediaTypeIsText = false;
         boolean parameterNameIsCharset = false;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class gctest01 extends TestBase {
 
                 if (args.length > 0) {
                         try {
-                                peopleLimit = new Integer(args[0]).intValue();
+                                peopleLimit = Integer.valueOf(args[0]).intValue();
                         } catch (NumberFormatException e) {
                                 log.info(usage);
                                 throw new TestBug("Bad input to gctest01." +
@@ -205,7 +205,7 @@ public class gctest01 extends TestBase {
 
                 if (args.length > 1 ) {
                         try {
-                                LOOPCOUNT = new Integer(args[1]).intValue();
+                                LOOPCOUNT = Integer.valueOf(args[1]).intValue();
                         } catch (NumberFormatException e) {
                                 log.error(usage);
                                 throw new TestBug("Bad input to gctest01." +

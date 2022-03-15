@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,10 @@
  * questions.
  */
 
-/*
- * Must include this before JavaNativeFoundation.h to get jni.h from build
- */
-#include "jni.h"
-#include "jni_util.h"
-
+#import "JNIUtilities.h"
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
-JNIEXPORT @interface NSApplicationAWT : NSApplication <NSUserNotificationCenterDelegate> {
+JNIEXPORT @interface NSApplicationAWT : NSApplication {
     NSString *fApplicationName;
     NSWindow *eventTransparentWindow;
     NSTimeInterval dummyEventTimestamp;

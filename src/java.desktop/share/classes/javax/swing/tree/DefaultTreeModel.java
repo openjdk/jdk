@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,19 @@
 
 package javax.swing.tree;
 
-import java.util.*;
 import java.beans.ConstructorProperties;
-import java.io.*;
-import javax.swing.event.*;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.EventListener;
+import java.util.Vector;
+
+import javax.swing.event.EventListenerList;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 
 /**
  * A simple tree data model that uses TreeNodes.
@@ -195,7 +204,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
      * Returns whether the specified node is a leaf node.
      * The way the test is performed depends on the
-     * <code>askAllowsChildren</code> setting.
+     * <code>asksAllowsChildren</code> setting.
      *
      * @param node the node to check
      * @return true if the node is a leaf node
@@ -676,18 +685,20 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     }
 
     // Serialization support.
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         Vector<Object> values = new Vector<Object>();
 
         s.defaultWriteObject();
-        // Save the root, if its Serializable.
-        if(root != null && root instanceof Serializable) {
+        // Save the root, if it's Serializable.
+        if (root instanceof Serializable) {
             values.addElement("root");
             values.addElement(root);
         }
         s.writeObject(values);
     }
 
+    @Serial
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();

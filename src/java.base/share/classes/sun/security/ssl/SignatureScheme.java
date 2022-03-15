@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,8 +364,8 @@ enum SignatureScheme {
                constraints.permits(SIGNATURE_PRIMITIVE_SET,
                         this.algorithm, (signAlgParams != null ?
                                 signAlgParams.parameters : null)) &&
-               (namedGroup != null ?
-                        namedGroup.isPermitted(constraints) : true);
+                        (namedGroup == null ||
+                            namedGroup.isPermitted(constraints));
     }
 
     // Get local supported algorithm collection complying to algorithm
@@ -375,10 +375,19 @@ enum SignatureScheme {
             AlgorithmConstraints constraints,
             List<ProtocolVersion> activeProtocols) {
         List<SignatureScheme> supported = new LinkedList<>();
-        for (SignatureScheme ss: SignatureScheme.values()) {
-            if (!ss.isAvailable ||
-                    (!config.signatureSchemes.isEmpty() &&
-                        !config.signatureSchemes.contains(ss))) {
+
+        // If config.signatureSchemes is non-empty then it means that
+        // it was defined by a System property.  Per
+        // SSLConfiguration.getCustomizedSignatureScheme() the list will
+        // only contain schemes that are in the enum.
+        // Otherwise, use the enum constants (converted to a List).
+        List<SignatureScheme> schemesToCheck =
+                config.signatureSchemes.isEmpty() ?
+                    Arrays.asList(SignatureScheme.values()) :
+                    config.signatureSchemes;
+
+        for (SignatureScheme ss: schemesToCheck) {
+            if (!ss.isAvailable) {
                 if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
                     SSLLogger.finest(

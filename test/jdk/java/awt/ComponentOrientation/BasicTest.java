@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     4108453 4778440 6304780 6396378
+ * @bug     4108453 4778440 6304780 6396378 8263202
  * @summary Basic tests for java.awt.ComponentOrientation
  * @build TestBundle TestBundle_es TestBundle_iw
  * @build TestBundle1 TestBundle1_ar
@@ -100,6 +100,12 @@ public class BasicTest {
         orient = ComponentOrientation.getOrientation(new Locale("ar", ""));
         Assert(orient == ComponentOrientation.RIGHT_TO_LEFT, "ar == RIGHT_TO_LEFT");
 
+        orient = ComponentOrientation.getOrientation(new Locale("he", ""));
+        Assert(orient == ComponentOrientation.RIGHT_TO_LEFT, "he == RIGHT_TO_LEFT");
+
+        orient = ComponentOrientation.getOrientation(new Locale("yi", ""));
+        Assert(orient == ComponentOrientation.RIGHT_TO_LEFT, "yi == RIGHT_TO_LEFT");
+
         System.out.println("  } Pass");
     }
 
@@ -129,6 +135,10 @@ public class BasicTest {
 
         rb = ResourceBundle.getBundle("TestBundle", new Locale("iw", "IL"));
         assertEquals(rb, ComponentOrientation.RIGHT_TO_LEFT, "iw == RIGHT_TO_LEFT" );
+
+        // Test with "he" locale. This should load TestBundle_iw and fetch the orientation from there
+        rb = ResourceBundle.getBundle("TestBundle", new Locale("he", "IL"));
+        assertEquals(rb, ComponentOrientation.RIGHT_TO_LEFT, "he == RIGHT_TO_LEFT" );
 
         // This bundle has no orientation setting at all, so we should get
         // the system's default orientation for Arabic

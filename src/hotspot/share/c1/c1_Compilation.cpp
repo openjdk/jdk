@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,6 +399,11 @@ int Compilation::compile_java_method() {
   }
   CHECK_BAILOUT_(no_frame_size);
 
+  // Dump compilation data to replay it.
+  if (_directive->DumpReplayOption) {
+    env()->dump_replay_data(env()->compile_id());
+  }
+
   {
     PhaseTraceTime timeit(_t_codeemit);
     return emit_code_body();
@@ -446,7 +451,7 @@ void Compilation::compile_method() {
     dependency_recorder()->assert_evol_method(method());
   }
 
-  if (directive()->BreakAtCompileOption) {
+  if (env()->break_at_compile()) {
     BREAKPOINT;
   }
 
@@ -555,6 +560,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
 , _has_unsafe_access(false)
+, _has_irreducible_loops(false)
 , _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
@@ -583,7 +589,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 #endif
   compile_method();
   if (bailed_out()) {
-    _env->record_method_not_compilable(bailout_msg(), !TieredCompilation);
+    _env->record_method_not_compilable(bailout_msg());
     if (is_profiling()) {
       // Compilation failed, create MDO, which would signal the interpreter
       // to start profiling on its own.
@@ -598,6 +604,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 }
 
 Compilation::~Compilation() {
+  // simulate crash during compilation
+  assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
+
   _env->set_compiler_data(NULL);
 }
 
@@ -695,7 +704,7 @@ void Compilation::print_timers() {
 #ifndef PRODUCT
 void Compilation::compile_only_this_method() {
   ResourceMark rm;
-  fileStream stream(fopen("c1_compile_only", "wt"));
+  fileStream stream(os::fopen("c1_compile_only", "wt"));
   stream.print_cr("# c1 compile only directives");
   compile_only_this_scope(&stream, hir()->top_scope());
 }
@@ -709,7 +718,7 @@ void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
 }
 
 void Compilation::exclude_this_method() {
-  fileStream stream(fopen(".hotspot_compiler", "at"));
+  fileStream stream(os::fopen(".hotspot_compiler", "at"));
   stream.print("exclude ");
   method()->holder()->name()->print_symbol_on(&stream);
   stream.print(" ");

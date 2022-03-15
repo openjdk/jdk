@@ -1,19 +1,19 @@
 Test.java:15: error: anchor already defined: "dupTest"
- * <a name="dupTest">dupTest again</a>
+ * <a id="dupTest">dupTest again</a>
       ^
 Test.java:25: error: anchor already defined: "dupTestField"
-    /** <a name="dupTestField">dupTestField again</a> */
+    /** <a id="dupTestField">dupTestField again</a> */
            ^
 Test.java:28: error: anchor already defined: "dupTestMethod"
-    /** <a name="dupTestMethod">dupTestMethod again</a> */
+    /** <a id="dupTestMethod">dupTestMethod again</a> */
            ^
 Test.java:33: error: anchor already defined: "dupNested"
-     * <a name="dupNested">dupNested again</a>
+     * <a id="dupNested">dupNested again</a>
           ^
 Test.java:41: error: anchor already defined: "dupNestedField"
-         * <a name="dupNestedField">dupNestedField</a>
+         * <a id="dupNestedField">dupNestedField</a>
               ^
 Test.java:48: error: anchor already defined: "dupNestedMethod"
-         * <a name="dupNestedMethod">dupNestedMethod</a>
+         * <a id="dupNestedMethod">dupNestedMethod</a>
               ^
 6 errors

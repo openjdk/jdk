@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import sun.awt.image.MultiResolutionCachedImage;
 import sun.lwawt.macosx.CImage;
+import sun.swing.ImageIconUIResource;
 
 public class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
@@ -81,6 +82,7 @@ public class AquaImageFactory {
         return getAppIconCompositedOn(lockIcon);
     }
 
+    @SuppressWarnings("removal")
     static Image getGenericJavaIcon() {
         return java.security.AccessController.doPrivileged(new PrivilegedAction<Image>() {
             public Image run() {
@@ -89,6 +91,7 @@ public class AquaImageFactory {
         });
     }
 
+    @SuppressWarnings("removal")
     static String getPathToThisApplication() {
         return java.security.AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
@@ -229,14 +232,28 @@ public class AquaImageFactory {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InvertableImageIcon extends ImageIcon implements InvertableIcon, UIResource {
         Icon invertedImage;
+        private Icon disabledIcon;
         public InvertableImageIcon(final Image image) {
             super(image);
         }
 
         @Override
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            if (!c.isEnabled()) {
+                if (disabledIcon == null) {
+                    disabledIcon = new ImageIcon(GrayFilter.
+                            createDisabledImage(((ImageIcon)this).getImage()));
+                }
+                disabledIcon.paintIcon(c, g, x, y);
+            } else {
+                super.paintIcon(c, g, x, y);
+            }
+        }
+
+        @Override
         public Icon getInvertedIcon() {
             if (invertedImage != null) return invertedImage;
-            return invertedImage = new IconUIResource(new ImageIcon(AquaUtils.generateLightenedImage(getImage(), 100)));
+            return invertedImage = new InvertableImageIcon(AquaUtils.generateLightenedImage(getImage(), 100));
         }
     }
 
@@ -495,5 +512,9 @@ public class AquaImageFactory {
 
     public static Color getSelectionInactiveForegroundColorUIResource() {
         return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
+    }
+
+    public static Color getSelectedControlColorUIResource() {
+        return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.SELECTED_CONTROL_TEXT_COLOR));
     }
 }

@@ -33,9 +33,7 @@ class G1ParScanThreadState;
 
 class G1RootClosures : public CHeapObj<mtGC> {
 public:
-  virtual ~G1RootClosures() {}
-
-// Closures to process raw oops in the root set.
+  // Closures to process raw oops in the root set.
   virtual OopClosure* weak_oops() = 0;
   virtual OopClosure* strong_oops() = 0;
 

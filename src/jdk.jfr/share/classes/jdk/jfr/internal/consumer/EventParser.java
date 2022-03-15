@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@ package jdk.jfr.internal.consumer;
 import static jdk.jfr.internal.EventInstrumentation.FIELD_DURATION;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.internal.consumer.Parser;
-import jdk.jfr.internal.consumer.RecordingInput;
 
 /**
  * Parses an event and returns a {@link RecordedEvent}.
@@ -110,6 +110,7 @@ final class EventParser extends Parser {
         return enabled;
     }
 
+    @Override
     public RecordedEvent parse(RecordingInput input) throws IOException {
         if (!enabled) {
             return null;
@@ -153,6 +154,11 @@ final class EventParser extends Parser {
             values[i] = parsers[startIndex + i].parse(input);
         }
         return PRIVATE_ACCESS.newRecordedEvent(objectContext, values, startTicks, endTicks);
+    }
+
+    @Override
+    public Object parseReferences(RecordingInput input) throws IOException {
+        return CompositeParser.parseReferences(input, parsers);
     }
 
     @Override

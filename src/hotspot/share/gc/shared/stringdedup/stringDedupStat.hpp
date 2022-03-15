@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,114 +25,144 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPSTAT_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPSTAT_HPP
 
-#include "memory/allocation.hpp"
-#include "runtime/os.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ticks.hpp"
 
-// Macros for GC log output formating
-#define STRDEDUP_OBJECTS_FORMAT         UINTX_FORMAT_W(12)
-#define STRDEDUP_TIME_FORMAT            "%.3fs"
-#define STRDEDUP_TIME_PARAM(time)       (time)
-#define STRDEDUP_TIME_FORMAT_MS         "%.3fms"
-#define STRDEDUP_TIME_PARAM_MS(time)    ((time) * MILLIUNITS)
-#define STRDEDUP_PERCENT_FORMAT         "%5.1f%%"
-#define STRDEDUP_PERCENT_FORMAT_NS      "%.1f%%"
-#define STRDEDUP_BYTES_FORMAT           "%8.1f%s"
-#define STRDEDUP_BYTES_FORMAT_NS        "%.1f%s"
-#define STRDEDUP_BYTES_PARAM(bytes)     byte_size_in_proper_unit((double)(bytes)), proper_unit_for_byte_size((bytes))
+// Deduplication statistics.
+//
+// Operation counters are updated when deduplicating a string.
+// Phase timing information is collected by the processing thread.
+class StringDedup::Stat {
+public:
+  // Only phases that can be blocked, so excluding "idle".
+  enum class Phase {
+    process,
+    resize_table,
+    cleanup_table
+  };
 
-//
-// Statistics gathered by the deduplication thread.
-//
-class StringDedupStat : public CHeapObj<mtGC> {
-protected:
+private:
   // Counters
-  uintx  _inspected;
-  uintx  _skipped;
-  uintx  _hashed;
-  uintx  _known;
-  uintx  _new;
-  uintx  _new_bytes;
-  uintx  _deduped;
-  uintx  _deduped_bytes;
-  uintx  _idle;
-  uintx  _exec;
-  uintx  _block;
+  size_t _inspected;
+  size_t _known;
+  size_t _known_shared;
+  size_t _new;
+  size_t _new_bytes;
+  size_t _deduped;
+  size_t _deduped_bytes;
+  size_t _replaced;
+  size_t _deleted;
+  size_t _skipped_dead;
+  size_t _skipped_incomplete;
+  size_t _skipped_shared;
+
+  // Phase counters for deduplication thread
+  size_t _concurrent;
+  size_t _idle;
+  size_t _process;
+  size_t _resize_table;
+  size_t _cleanup_table;
+  size_t _block;
 
   // Time spent by the deduplication thread in different phases
-  double _start_concurrent;
-  double _end_concurrent;
-  double _start_phase;
-  double _idle_elapsed;
-  double _exec_elapsed;
-  double _block_elapsed;
+  Ticks _concurrent_start;
+  Tickspan _concurrent_elapsed;
+  Ticks _phase_start;
+  Tickspan _idle_elapsed;
+  Tickspan _process_elapsed;
+  Tickspan _resize_table_elapsed;
+  Tickspan _cleanup_table_elapsed;
+  Tickspan _block_elapsed;
+
+  void report_phase_start(const char* phase);
+  void report_phase_end(const char* phase, Tickspan* elapsed);
+  Tickspan* elapsed_for_phase(Phase phase);
+
+  void log_times(const char* prefix) const;
 
 public:
-  StringDedupStat();
+  Stat();
 
+  // Track number of strings looked up.
   void inc_inspected() {
     _inspected++;
   }
 
-  void inc_skipped() {
-    _skipped++;
+  // Track number of requests skipped because string died.
+  void inc_skipped_dead() {
+    _skipped_dead++;
   }
 
-  void inc_hashed() {
-    _hashed++;
+  // Track number of requests skipped because string was incomplete.
+  void inc_skipped_incomplete() {
+    _skipped_incomplete++;
   }
 
+  // Track number of shared strings skipped because of a previously
+  // installed equivalent entry.
+  void inc_skipped_shared() {
+    _skipped_shared++;
+  }
+
+  // Track number of inspected strings already present.
   void inc_known() {
     _known++;
   }
 
-  void inc_new(uintx bytes) {
+  // Track number of inspected strings found in the shared StringTable.
+  void inc_known_shared() {
+    _known_shared++;
+  }
+
+  // Track number of inspected strings added and accumulated size.
+  void inc_new(size_t bytes) {
     _new++;
     _new_bytes += bytes;
   }
 
-  virtual void deduped(oop obj, uintx bytes) {
+  // Track number of inspected strings dedup'ed and accumulated savings.
+  void inc_deduped(size_t bytes) {
     _deduped++;
     _deduped_bytes += bytes;
   }
 
-  void mark_idle() {
-    _start_phase = os::elapsedTime();
-    _idle++;
+  // Track number of interned strings replacing existing strings.
+  void inc_replaced() {
+    _replaced++;
   }
 
-  void mark_exec() {
-    double now = os::elapsedTime();
-    _idle_elapsed = now - _start_phase;
-    _start_phase = now;
-    _start_concurrent = now;
-    _exec++;
+  // Track number of strings removed from table.
+  void inc_deleted() {
+    _deleted++;
   }
 
-  void mark_block() {
-    double now = os::elapsedTime();
-    _exec_elapsed += now - _start_phase;
-    _start_phase = now;
-    _block++;
-  }
+  void report_idle_start();
+  void report_idle_end();
 
-  void mark_unblock() {
-    double now = os::elapsedTime();
-    _block_elapsed += now - _start_phase;
-    _start_phase = now;
-  }
+  void report_process_start();
+  void report_process_pause();
+  void report_process_resume();
+  void report_process_end();
 
-  void mark_done() {
-    double now = os::elapsedTime();
-    _exec_elapsed += now - _start_phase;
-    _end_concurrent = now;
-  }
+  void report_resize_table_start(size_t new_bucket_count,
+                                 size_t old_bucket_count,
+                                 size_t entry_count);
+  void report_resize_table_end();
 
-  virtual void reset();
-  virtual void add(const StringDedupStat* const stat);
-  virtual void print_statistics(bool total) const;
+  void report_cleanup_table_start(size_t entry_count, size_t dead_count);
+  void report_cleanup_table_end();
 
-  static void print_start(const StringDedupStat* last_stat);
-  static void print_end(const StringDedupStat* last_stat, const StringDedupStat* total_stat);
+  void report_concurrent_start();
+  void report_concurrent_end();
+
+  void block_phase(Phase phase);
+  void unblock_phase();
+
+  void add(const Stat* const stat);
+  void log_statistics(bool total) const;
+
+  static void log_summary(const Stat* last_stat, const Stat* total_stat);
 };
 
 #endif // SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPSTAT_HPP

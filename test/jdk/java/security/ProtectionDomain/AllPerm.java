@@ -26,6 +26,7 @@
  * @bug 6256734
  * @summary ProtectionDomain could optimize implies by first checking for
  *          AllPermission in internal collection
+ * @run main/othervm -Djava.security.manager=allow AllPerm
  */
 
 import java.io.*;

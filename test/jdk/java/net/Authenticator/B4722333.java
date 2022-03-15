@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,28 @@
 /**
  * @test
  * @bug 4722333
- * @modules java.base/sun.net.www
- * @library ../../../sun/net/www/httptest/
- * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
+ * @library /test/lib
  * @run main/othervm B4722333
  * @summary JRE Proxy Authentication Not Working with ISA2000
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.Authenticator;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.concurrent.Executors;
 
-public class B4722333 implements HttpCallback {
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
+
+public class B4722333 implements HttpHandler {
 
     static int count = 0;
 
@@ -47,46 +58,43 @@ public class B4722333 implements HttpCallback {
         {"digest", "foobiz"}
     };
 
-    public void request(HttpTransaction req) {
+    public void handle(HttpExchange req) {
         try {
             if (count % 2 == 1) {
-                req.setResponseEntityBody("Hello .");
-                req.sendResponse(200, "Ok");
-                req.orderlyClose();
+                req.sendResponseHeaders(200, 0);
+                try(PrintWriter pw = new PrintWriter(req.getResponseBody())) {
+                    pw.print("Hello .");
+                }
             } else {
                 switch (count) {
-                  case 0:
-                    req.addResponseHeader("Connection", "close");
-                    req.addResponseHeader("WWW-Authenticate", "Basic realm=\"foo\"");
-                    req.addResponseHeader("WWW-Authenticate", "Foo realm=\"bar\"");
-                    req.sendResponse(401, "Unauthorized");
-                    req.orderlyClose();
-                    break;
-                  case 2:
-                    req.addResponseHeader("Connection", "close");
-                    req.addResponseHeader("WWW-Authenticate", "Basic realm=\"foobar\" Foo realm=\"bar\"");
-                    req.sendResponse(401, "Unauthorized");
-                    break;
-                  case 4:
-                    req.addResponseHeader("Connection", "close");
-                    req.addResponseHeader("WWW-Authenticate", "Digest realm=biz domain=/foo nonce=thisisanonce ");
-                    req.addResponseHeader("WWW-Authenticate", "Basic realm=bizbar");
-                    req.sendResponse(401, "Unauthorized");
-                    req.orderlyClose();
-                    break;
-                  case 6:
-                    req.addResponseHeader("Connection", "close");
-                    req.addResponseHeader("WWW-Authenticate", "Digest realm=\"bizbar\" domain=/biz nonce=\"hereisanonce\" Basic realm=\"foobar\" Foo realm=\"bar\"");
-                    req.sendResponse(401, "Unauthorized");
-                    req.orderlyClose();
-                    break;
-                  case 8:
-                    req.addResponseHeader("Connection", "close");
-                    req.addResponseHeader("WWW-Authenticate", "Foo p1=1 p2=2 p3=3 p4=4 p5=5 p6=6 p7=7 p8=8 p9=10 Digest realm=foobiz domain=/foobiz nonce=newnonce");
-                    req.addResponseHeader("WWW-Authenticate", "Basic realm=bizbar");
-                    req.sendResponse(401, "Unauthorized");
-                    req.orderlyClose();
-                    break;
+                    case 0:
+                        req.getResponseHeaders().set("Connection", "close");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Basic realm=\"foo\"");
+                        req.getResponseHeaders().add("WWW-Authenticate", "Foo realm=\"bar\"");
+                        req.sendResponseHeaders(401, -1);
+                        break;
+                    case 2:
+                        req.getResponseHeaders().set("Connection", "close");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Basic realm=\"foobar\" Foo realm=\"bar\"");
+                        req.sendResponseHeaders(401, -1);
+                        break;
+                    case 4:
+                        req.getResponseHeaders().set("Connection", "close");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Digest realm=biz domain=/foo nonce=thisisanonce ");
+                        req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=bizbar");
+                        req.sendResponseHeaders(401, -1);
+                        break;
+                    case 6:
+                        req.getResponseHeaders().set("Connection", "close");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Digest realm=\"bizbar\" domain=/biz nonce=\"hereisanonce\" Basic realm=\"foobar\" Foo realm=\"bar\"");
+                        req.sendResponseHeaders(401, -1);
+                        break;
+                    case 8:
+                        req.getResponseHeaders().set("Connection", "close");
+                        req.getResponseHeaders().set("WWW-Authenticate", "Foo p1=1 p2=2 p3=3 p4=4 p5=5 p6=6 p7=7 p8=8 p9=10 Digest realm=foobiz domain=/foobiz nonce=newnonce");
+                        req.getResponseHeaders().add("WWW-Authenticate", "Basic realm=bizbar");
+                        req.sendResponseHeaders(401, -1);
+                        break;
                 }
             }
             count ++;
@@ -115,23 +123,34 @@ public class B4722333 implements HttpCallback {
         is.close();
     }
 
-    static TestHttpServer server;
+    static HttpServer server;
 
     public static void main(String[] args) throws Exception {
+        B4722333 b4722333 = new B4722333();
         MyAuthenticator auth = new MyAuthenticator();
         Authenticator.setDefault(auth);
         try {
             InetAddress loopback = InetAddress.getLoopbackAddress();
-            server = new TestHttpServer(new B4722333(), 1, 10, loopback, 0);
-            System.out.println("Server started: listening on port: " + server.getLocalPort());
-            client("http://" + server.getAuthority() + "/d1/d2/d3/foo.html");
-            client("http://" + server.getAuthority() + "/ASD/d3/x.html");
-            client("http://" + server.getAuthority() + "/biz/d3/x.html");
-            client("http://" + server.getAuthority() + "/bar/d3/x.html");
-            client("http://" + server.getAuthority() + "/fuzz/d3/x.html");
+            server = HttpServer.create(new InetSocketAddress(loopback, 0), 10);
+            server.createContext("/", b4722333);
+            server.setExecutor(Executors.newSingleThreadExecutor());
+            server.start();
+            System.out.println("Server started: listening on port: " + server.getAddress().getPort());
+            String serverURL = URIBuilder.newBuilder()
+                    .scheme("http")
+                    .loopback()
+                    .port(server.getAddress().getPort())
+                    .path("/")
+                    .build()
+                    .toString();
+            client(serverURL + "d1/d2/d3/foo.html");
+            client(serverURL + "ASD/d3/x.html");
+            client(serverURL + "biz/d3/x.html");
+            client(serverURL + "bar/d3/x.html");
+            client(serverURL + "fuzz/d3/x.html");
         } catch (Exception e) {
             if (server != null) {
-                server.terminate();
+                server.stop(1);
             }
             throw e;
         }
@@ -139,11 +158,11 @@ public class B4722333 implements HttpCallback {
         if (f != expected.length) {
             except("Authenticator was called "+f+" times. Should be " + expected.length);
         }
-        server.terminate();
+        server.stop(1);
     }
 
     public static void except(String s) {
-        server.terminate();
+        server.stop(1);
         throw new RuntimeException(s);
     }
 

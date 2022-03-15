@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -473,7 +473,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro_MD">lea fakamolitāvia</language>
 			<language type="rof">lea fakalomipō</language>
 			<language type="rom">lea fakalomani</language>
-			<language type="root">lea fakaʻilonga-tefito</language>
 			<language type="rtm">lea fakalotuma</language>
 			<language type="ru">lea fakalūsia</language>
 			<language type="rue">lea fakalusini</language>
@@ -2992,14 +2991,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic draft="unconfirmed">HTT</generic>
-					<standard draft="unconfirmed">HTT</standard>
-					<daylight draft="unconfirmed">HTL</daylight>
-				</short>
-				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>taimi fakaemāmani</standard>
@@ -3122,11 +3113,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Broken Hill</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melipoane</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Hobart</exemplarCity>
@@ -4156,6 +4147,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic draft="unconfirmed">HTT</generic>
+					<standard draft="unconfirmed">HTT</standard>
+					<daylight draft="unconfirmed">HTL</daylight>
+				</short>
+				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>Sionesitoni</exemplarCity>
@@ -7656,7 +7655,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kalati</displayName>
 				<unitPattern count="other">kalati ʻe {0}</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>milikalami he tesilita</displayName>
 				<unitPattern count="other">milikalami ʻe {0} he tesilita</unitPattern>
 			</unit>
@@ -8429,7 +8428,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kt</displayName>
 				<unitPattern count="other">kt ʻe {0}</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mk/tl</displayName>
 				<unitPattern count="other">mk ʻe {0}/tl</unitPattern>
 			</unit>
@@ -8705,8 +8704,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">mm ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="other">µm ʻe {0}</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="other">μm ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>
@@ -9195,7 +9194,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName draft="unconfirmed">mk/tl</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mk/tl</unitPattern>
 			</unit>
@@ -9470,8 +9469,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µm</displayName>
-				<unitPattern count="other">{0} µm</unitPattern>
+				<displayName>μm</displayName>
+				<unitPattern count="other">{0} μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
 				<displayName>nm</displayName>

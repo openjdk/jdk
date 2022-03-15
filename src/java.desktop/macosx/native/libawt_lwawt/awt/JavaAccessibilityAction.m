@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,12 @@
 #import "JavaAccessibilityUtilities.h"
 
 #import "ThreadUtilities.h"
+#import "JNIUtilities.h"
 
+NSMutableDictionary *sActions = nil;
+NSMutableDictionary *sActionSelectors = nil;
+NSMutableArray *sAllActionSelectors = nil;
+void initializeActions();
 
 @implementation JavaAxAction
 
@@ -35,9 +40,11 @@
 {
     self = [super init];
     if (self) {
-        fAccessibleAction = JNFNewWeakGlobalRef(env, accessibleAction);
+        fAccessibleAction = (*env)->NewWeakGlobalRef(env, accessibleAction);
+        CHECK_EXCEPTION();
         fIndex = index;
-        fComponent = JNFNewWeakGlobalRef(env, component);
+        fComponent = (*env)->NewWeakGlobalRef(env, component);
+        CHECK_EXCEPTION();
     }
     return self;
 }
@@ -46,10 +53,10 @@
 {
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
 
-    JNFDeleteWeakGlobalRef(env, fAccessibleAction);
+    (*env)->DeleteWeakGlobalRef(env, fAccessibleAction);
     fAccessibleAction = NULL;
 
-    JNFDeleteWeakGlobalRef(env, fComponent);
+    (*env)->DeleteWeakGlobalRef(env, fComponent);
     fComponent = NULL;
 
     [super dealloc];
@@ -57,35 +64,48 @@
 
 - (NSString *)getDescription
 {
-    static JNF_STATIC_MEMBER_CACHE(jm_getAccessibleActionDescription, sjc_CAccessibility, "getAccessibleActionDescription", "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)Ljava/lang/String;");
-
     JNIEnv* env = [ThreadUtilities getJNIEnv];
+    DECLARE_CLASS_RETURN(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility", nil);
+    DECLARE_STATIC_METHOD_RETURN(jm_getAccessibleActionDescription, sjc_CAccessibility,
+                          "getAccessibleActionDescription",
+                          "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)Ljava/lang/String;", nil);
 
+    /* WeakGlobalRefs can be cleared at any time, so first get strong local refs and use those */
     jobject fCompLocal = (*env)->NewLocalRef(env, fComponent);
     if ((*env)->IsSameObject(env, fCompLocal, NULL)) {
         return nil;
     }
+    jobject fAccessibleActionLocal = (*env)->NewLocalRef(env, fAccessibleAction);
+    if ((*env)->IsSameObject(env, fAccessibleActionLocal, NULL)) {
+        (*env)->DeleteLocalRef(env, fCompLocal);
+        return nil;
+    }
     NSString *str = nil;
-    jstring jstr = JNFCallStaticObjectMethod( env,
+    jstring jstr = (*env)->CallStaticObjectMethod(env, sjc_CAccessibility,
                                               jm_getAccessibleActionDescription,
-                                              fAccessibleAction,
+                                              fAccessibleActionLocal,
                                               fIndex,
                                               fCompLocal );
+    CHECK_EXCEPTION();
     if (jstr != NULL) {
-        str = JNFJavaToNSString(env, jstr); // AWT_THREADING Safe (AWTRunLoopMode)
+        str = JavaStringToNSString(env, jstr);
         (*env)->DeleteLocalRef(env, jstr);
     }
     (*env)->DeleteLocalRef(env, fCompLocal);
+    (*env)->DeleteLocalRef(env, fAccessibleActionLocal);
     return str;
 }
 
 - (void)perform
 {
-    static JNF_STATIC_MEMBER_CACHE(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction", "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V");
-
     JNIEnv* env = [ThreadUtilities getJNIEnv];
+    DECLARE_CLASS(sjc_CAccessibility, "sun/lwawt/macosx/CAccessibility");
+    DECLARE_STATIC_METHOD(jm_doAccessibleAction, sjc_CAccessibility, "doAccessibleAction",
+                    "(Ljavax/accessibility/AccessibleAction;ILjava/awt/Component;)V");
 
-    JNFCallStaticVoidMethod(env, jm_doAccessibleAction, fAccessibleAction, fIndex, fComponent); // AWT_THREADING Safe (AWTRunLoopMode)
+    (*env)->CallStaticVoidMethod(env, sjc_CAccessibility, jm_doAccessibleAction,
+             fAccessibleAction, fIndex, fComponent);
+    CHECK_EXCEPTION();
 }
 
 @end
@@ -97,9 +117,11 @@
 {
     self = [super init];
     if (self) {
-        fTabGroup = JNFNewWeakGlobalRef(env, tabGroup);
+        fTabGroup = (*env)->NewWeakGlobalRef(env, tabGroup);
+        CHECK_EXCEPTION();
         fIndex = index;
-        fComponent = JNFNewWeakGlobalRef(env, component);
+        fComponent = (*env)->NewWeakGlobalRef(env, component);
+        CHECK_EXCEPTION();
     }
     return self;
 }
@@ -108,10 +130,10 @@
 {
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
 
-    JNFDeleteWeakGlobalRef(env, fTabGroup);
+    (*env)->DeleteWeakGlobalRef(env, fTabGroup);
     fTabGroup = NULL;
 
-    JNFDeleteWeakGlobalRef(env, fComponent);
+    (*env)->DeleteWeakGlobalRef(env, fComponent);
     fComponent = NULL;
 
     [super dealloc];
@@ -130,3 +152,31 @@
 }
 
 @end
+
+void initializeActions() {
+    int actionsCount = 5;
+
+    sActions = [[NSMutableDictionary alloc] initWithCapacity:actionsCount];
+
+    [sActions setObject:NSAccessibilityPressAction forKey:@"click"];
+    [sActions setObject:NSAccessibilityIncrementAction forKey:@"increment"];
+    [sActions setObject:NSAccessibilityDecrementAction forKey:@"decrement"];
+    [sActions setObject:NSAccessibilityShowMenuAction forKey:@"toggle popup"];
+    [sActions setObject:NSAccessibilityPressAction forKey:@"toggleexpand"];
+
+    sActionSelectors = [[NSMutableDictionary alloc] initWithCapacity:actionsCount];
+
+    [sActionSelectors setObject:NSStringFromSelector(@selector(accessibilityPerformPress)) forKey:NSAccessibilityPressAction];
+    [sActionSelectors setObject:NSStringFromSelector(@selector(accessibilityPerformShowMenu)) forKey:NSAccessibilityShowMenuAction];
+    [sActionSelectors setObject:NSStringFromSelector(@selector(accessibilityPerformDecrement)) forKey:NSAccessibilityDecrementAction];
+    [sActionSelectors setObject:NSStringFromSelector(@selector(accessibilityPerformIncrement)) forKey:NSAccessibilityIncrementAction];
+    [sActionSelectors setObject:NSStringFromSelector(@selector(accessibilityPerformPick)) forKey:NSAccessibilityPickAction];
+
+    sAllActionSelectors = [[NSMutableArray alloc] initWithCapacity:actionsCount];
+
+    [sAllActionSelectors addObject:NSStringFromSelector(@selector(accessibilityPerformPick))];
+    [sAllActionSelectors addObject:NSStringFromSelector(@selector(accessibilityPerformIncrement))];
+    [sAllActionSelectors addObject:NSStringFromSelector(@selector(accessibilityPerformDecrement))];
+    [sAllActionSelectors addObject:NSStringFromSelector(@selector(accessibilityPerformShowMenu))];
+    [sAllActionSelectors addObject:NSStringFromSelector(@selector(accessibilityPerformPress))];
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public class SSLEchoTubeTest extends AbstractSSLTubeTest {
         final ConcurrentLinkedQueue<Consumer<Flow.Subscriber<? super List<ByteBuffer>>>> queue
                 = new ConcurrentLinkedQueue<>();
         AtomicReference<Flow.Subscriber<? super List<ByteBuffer>>> subscriberRef = new AtomicReference<>();
-        SequentialScheduler scheduler = SequentialScheduler.synchronizedScheduler(this::loop);
+        SequentialScheduler scheduler = SequentialScheduler.lockingScheduler(this::loop);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         private volatile boolean finished;
         private volatile boolean completed;

@@ -25,6 +25,7 @@ package pkg.b.t;
 
 import java.lang.reflect.Method;
 import java.lang.System.Logger;
+import java.time.Instant;
 import java.util.ResourceBundle;
 import java.util.ListResourceBundle;
 
@@ -37,9 +38,13 @@ public class TestB {
         assertTrue(args.length == 2);
         String loggerMode = args[0];
         String loggerClassName = args[1];
-
-        testLogger(loggerMode, loggerClassName);
-        testLog(loggerClassName);
+        System.err.println("TestB starting at " + Instant.now());
+        try {
+            testLogger(loggerMode, loggerClassName);
+            testLog(loggerClassName);
+        } finally {
+            System.err.println("TestB finished at " + Instant.now());
+        }
     }
 
     /*

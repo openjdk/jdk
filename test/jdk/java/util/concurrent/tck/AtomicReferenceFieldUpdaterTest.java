@@ -39,11 +39,11 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
-    volatile Integer x = null;
-    protected volatile Integer protectedField;
-    private volatile Integer privateField;
+    volatile Item x = null;
+    protected volatile Item protectedField;
+    private volatile Item privateField;
     Object z;
-    Integer w;
+    Item w;
     volatile int i;
 
     public static void main(String[] args) {
@@ -53,9 +53,9 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
         return new TestSuite(AtomicReferenceFieldUpdaterTest.class);
     }
 
-    static AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> updaterFor(String fieldName) {
+    static AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> updaterFor(String fieldName) {
         return AtomicReferenceFieldUpdater.newUpdater
-            (AtomicReferenceFieldUpdaterTest.class, Integer.class, fieldName);
+            (AtomicReferenceFieldUpdaterTest.class, Item.class, fieldName);
     }
 
     /**
@@ -121,43 +121,43 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
      * get returns the last value set or assigned
      */
     public void testGetSet() {
-        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
+        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> a;
         a = updaterFor("x");
         x = one;
         assertSame(one, a.get(this));
         a.set(this, two);
         assertSame(two, a.get(this));
-        a.set(this, m3);
-        assertSame(m3, a.get(this));
+        a.set(this, minusThree);
+        assertSame(minusThree, a.get(this));
     }
 
     /**
      * get returns the last value lazySet by same thread
      */
     public void testGetLazySet() {
-        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
+        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> a;
         a = updaterFor("x");
         x = one;
         assertSame(one, a.get(this));
         a.lazySet(this, two);
         assertSame(two, a.get(this));
-        a.lazySet(this, m3);
-        assertSame(m3, a.get(this));
+        a.lazySet(this, minusThree);
+        assertSame(minusThree, a.get(this));
     }
 
     /**
      * compareAndSet succeeds in changing value if same as expected else fails
      */
     public void testCompareAndSet() {
-        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
+        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> a;
         a = updaterFor("x");
         x = one;
         assertTrue(a.compareAndSet(this, one, two));
-        assertTrue(a.compareAndSet(this, two, m4));
-        assertSame(m4, a.get(this));
-        assertFalse(a.compareAndSet(this, m5, seven));
+        assertTrue(a.compareAndSet(this, two, minusFour));
+        assertSame(minusFour, a.get(this));
+        assertFalse(a.compareAndSet(this, minusFive, seven));
         assertNotSame(seven, a.get(this));
-        assertTrue(a.compareAndSet(this, m4, seven));
+        assertTrue(a.compareAndSet(this, minusFour, seven));
         assertSame(seven, a.get(this));
     }
 
@@ -176,7 +176,7 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
      */
     public void testCompareAndSetInMultipleThreads() throws Exception {
         x = one;
-        final AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
+        final AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> a;
         a = updaterFor("x");
 
         Thread t = new Thread(new CheckedRunnable() {
@@ -196,13 +196,13 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
      * repeated weakCompareAndSet succeeds in changing value when same as expected
      */
     public void testWeakCompareAndSet() {
-        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
+        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> a;
         a = updaterFor("x");
         x = one;
         do {} while (!a.weakCompareAndSet(this, one, two));
-        do {} while (!a.weakCompareAndSet(this, two, m4));
-        assertSame(m4, a.get(this));
-        do {} while (!a.weakCompareAndSet(this, m4, seven));
+        do {} while (!a.weakCompareAndSet(this, two, minusFour));
+        assertSame(minusFour, a.get(this));
+        do {} while (!a.weakCompareAndSet(this, minusFour, seven));
         assertSame(seven, a.get(this));
     }
 
@@ -210,12 +210,12 @@ public class AtomicReferenceFieldUpdaterTest extends JSR166TestCase {
      * getAndSet returns previous value and sets to given value
      */
     public void testGetAndSet() {
-        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Integer> a;
+        AtomicReferenceFieldUpdater<AtomicReferenceFieldUpdaterTest, Item> a;
         a = updaterFor("x");
         x = one;
         assertSame(one, a.getAndSet(this, zero));
-        assertSame(zero, a.getAndSet(this, m10));
-        assertSame(m10, a.getAndSet(this, 1));
+        assertSame(zero, a.getAndSet(this, minusTen));
+        assertSame(minusTen, a.getAndSet(this, one));
     }
 
 }

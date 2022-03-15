@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,28 @@ AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
     ])
 ])
 
+# Setup CLASSPATH environment variable
+AC_DEFUN([BOOTJDK_SETUP_CLASSPATH],
+[
+  AC_ARG_WITH([classpath], [AS_HELP_STRING([--with-classpath],
+      [Optional classpath to set as CLASSPATH to all Java invocations @<:@none@:>@])])
+
+  if test "x$CLASSPATH" != x; then
+    AC_MSG_WARN([CLASSPATH is set in the environment. This will be ignored. Use --with-classpath instead.])
+  fi
+
+  CLASSPATH=
+
+  if test "x$with_classpath" != x && test "x$with_classpath" != xyes &&
+      test "x$with_classpath" != xno ; then
+    CLASSPATH="$with_classpath"
+    AC_MSG_CHECKING([for classpath to use for all Java invocations])
+    AC_MSG_RESULT([$CLASSPATH])
+  fi
+
+  AC_SUBST(CLASSPATH)
+])
+
 ###############################################################################
 #
 # We need a Boot JDK to bootstrap the build.
@@ -357,6 +379,16 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # Finally, set some other options...
 
+  # Determine if the boot jdk jar supports the --date option
+  if $JAR --help 2>&1 | $GREP -q "\-\-date=TIMESTAMP"; then
+    BOOT_JDK_JAR_SUPPORTS_DATE=true
+  else
+    BOOT_JDK_JAR_SUPPORTS_DATE=false
+  fi
+  AC_MSG_CHECKING([if Boot JDK jar supports --date=TIMESTAMP])
+  AC_MSG_RESULT([$BOOT_JDK_JAR_SUPPORTS_DATE])
+  AC_SUBST(BOOT_JDK_JAR_SUPPORTS_DATE)
+
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.
   OLDEST_BOOT_JDK=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \
@@ -394,6 +426,8 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     BOOTJDK_USE_LOCAL_CDS=false
     AC_MSG_RESULT([no, -XX:SharedArchiveFile not supported])
   fi
+
+  BOOTJDK_SETUP_CLASSPATH
 ])
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
@@ -605,4 +639,29 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
   AC_SUBST(CREATE_BUILDJDK)
   AC_SUBST(BUILD_JDK)
   AC_SUBST(EXTERNAL_BUILDJDK)
+])
+
+# The docs-reference JDK is used to run javadoc for the docs-reference targets.
+# If not set, the reference docs will be built using the interim javadoc.
+AC_DEFUN([BOOTJDK_SETUP_DOCS_REFERENCE_JDK],
+[
+  AC_ARG_WITH(docs-reference-jdk, [AS_HELP_STRING([--with-docs-reference-jdk],
+      [path to JDK to use for building the reference documentation])])
+
+  AC_MSG_CHECKING([for docs-reference JDK])
+  if test "x$with_docs_reference_jdk" != "x"; then
+    DOCS_REFERENCE_JDK="$with_docs_reference_jdk"
+    AC_MSG_RESULT([$DOCS_REFERENCE_JDK])
+    DOCS_REFERENCE_JAVADOC="$DOCS_REFERENCE_JDK/bin/javadoc"
+    if test ! -x "$DOCS_REFERENCE_JAVADOC"; then
+      AC_MSG_ERROR([docs-reference JDK found at $DOCS_REFERENCE_JDK did not contain bin/javadoc])
+    fi
+    UTIL_FIXUP_EXECUTABLE(DOCS_REFERENCE_JAVADOC)
+  else
+    AC_MSG_RESULT([no, using interim javadoc for the docs-reference targets])
+    # By leaving this empty, Docs.gmk will revert to the default interim javadoc
+    DOCS_REFERENCE_JAVADOC=
+  fi
+
+  AC_SUBST(DOCS_REFERENCE_JAVADOC)
 ])

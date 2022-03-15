@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -61,12 +61,14 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef JVMTI_TRACE
@@ -110,12 +112,12 @@ private:
 public:
   JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
     if (thread->is_Java_thread()) {
-       _jthread = thread->as_Java_thread();
+       _jthread = JavaThread::cast(thread);
        _saved_state = _jthread->thread_state();
        if (_saved_state == _thread_in_Java) {
          ThreadStateTransition::transition_from_java(_jthread, _thread_in_native);
        } else {
-         ThreadStateTransition::transition(_jthread, _saved_state, _thread_in_native);
+         ThreadStateTransition::transition_from_vm(_jthread, _thread_in_native);
        }
     } else {
       _jthread = NULL;
@@ -139,20 +141,11 @@ private:
   JavaThread *_thread;
   JNIEnv* _jni_env;
   JvmtiThreadState::ExceptionState _saved_exception_state;
-#if 0
-  JNIHandleBlock* _hblock;
-#endif
 
 public:
   JvmtiEventMark(JavaThread *thread) :  _thread(thread),
                                         _jni_env(thread->jni_environment()),
                                         _saved_exception_state(JvmtiThreadState::ES_CLEARED) {
-#if 0
-    _hblock = thread->active_handles();
-    _hblock->clear_thoroughly(); // so we can be safe
-#else
-    // we want to use the code above - but that needs the JNIHandle changes - later...
-    // for now, steal JNI push local frame code
     JvmtiThreadState *state = thread->jvmti_thread_state();
     // we are before an event.
     // Save current jvmti thread exception state.
@@ -160,31 +153,13 @@ public:
       _saved_exception_state = state->get_exception_state();
     }
 
-    JNIHandleBlock* old_handles = thread->active_handles();
-    JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
-    assert(new_handles != NULL, "should not be NULL");
-    new_handles->set_pop_frame_link(old_handles);
-    thread->set_active_handles(new_handles);
-#endif
+    thread->push_jni_handle_block();
     assert(thread == JavaThread::current(), "thread must be current!");
     thread->frame_anchor()->make_walkable(thread);
   };
 
   ~JvmtiEventMark() {
-#if 0
-    _hblock->clear(); // for consistency with future correct behavior
-#else
-    // we want to use the code above - but that needs the JNIHandle changes - later...
-    // for now, steal JNI pop local frame code
-    JNIHandleBlock* old_handles = _thread->active_handles();
-    JNIHandleBlock* new_handles = old_handles->pop_frame_link();
-    assert(new_handles != NULL, "should not be NULL");
-    _thread->set_active_handles(new_handles);
-    // Note that we set the pop_frame_link to NULL explicitly, otherwise
-    // the release_block call will release the blocks.
-    old_handles->set_pop_frame_link(NULL);
-    JNIHandleBlock::release_block(old_handles, _thread); // may block
-#endif
+    _thread->pop_jni_handle_block();
 
     JvmtiThreadState* state = _thread->jvmti_thread_state();
     // we are continuing after an event.
@@ -194,13 +169,7 @@ public:
     }
   }
 
-#if 0
-  jobject to_jobject(oop obj) { return obj == NULL? NULL : _hblock->allocate_handle_fast(obj); }
-#else
-  // we want to use the code above - but that needs the JNIHandle changes - later...
-  // for now, use regular make_local
   jobject to_jobject(oop obj) { return JNIHandles::make_local(_thread,obj); }
-#endif
 
   jclass to_jclass(Klass* klass) { return (klass == NULL ? NULL : (jclass)to_jobject(klass->java_mirror())); }
 
@@ -389,7 +358,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
       break;
     default:
       // Starting from 13 we do not care about minor version anymore
-      if (major < 13 || major > Abstract_VM_Version::vm_major_version()) {
+      if (major < 13 || major > VM_Version::vm_major_version()) {
         return JNI_EVERSION;  // unsupported major version number
       }
   }
@@ -428,7 +397,7 @@ JvmtiExport::add_default_read_edges(Handle h_module, TRAPS) {
   // Invoke the transformedByAgent method
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::transformedByAgent_name(),
                          vmSymbols::transformedByAgent_signature(),
                          h_module,
@@ -455,7 +424,7 @@ JvmtiExport::add_module_reads(Handle module, Handle to_module, TRAPS) {
   // Invoke the addReads method
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::addReads_name(),
                          vmSymbols::addReads_signature(),
                          module,
@@ -485,7 +454,7 @@ JvmtiExport::add_module_exports(Handle module, Handle pkg_name, Handle to_module
   // Invoke the addExports method
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::addExports_name(),
                          vmSymbols::addExports_signature(),
                          module,
@@ -520,7 +489,7 @@ JvmtiExport::add_module_opens(Handle module, Handle pkg_name, Handle to_module, 
   // Invoke the addOpens method
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::addOpens_name(),
                          vmSymbols::addExports_signature(),
                          module,
@@ -554,7 +523,7 @@ JvmtiExport::add_module_uses(Handle module, Handle service, TRAPS) {
   // Invoke the addUses method
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::addUses_name(),
                          vmSymbols::addUses_signature(),
                          module,
@@ -584,7 +553,7 @@ JvmtiExport::add_module_provides(Handle module, Handle service, Handle impl_clas
   // Invoke the addProvides method
   JavaValue result(T_VOID);
   JavaCalls::call_static(&result,
-                         SystemDictionary::module_Modules_klass(),
+                         vmClasses::module_Modules_klass(),
                          vmSymbols::addProvides_name(),
                          vmSymbols::addProvides_signature(),
                          module,
@@ -697,8 +666,8 @@ OopStorage* JvmtiExport::weak_tag_storage() {
 void JvmtiExport::initialize_oop_storage() {
   // OopStorage needs to be created early in startup and unconditionally
   // because of OopStorageSet static array indices.
-  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage");
-  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage");
+  _jvmti_oop_storage = OopStorageSet::create_strong("JVMTI OopStorage", mtServiceability);
+  _weak_tag_storage  = OopStorageSet::create_weak("JVMTI Tag Weak OopStorage", mtServiceability);
   _weak_tag_storage->register_num_dead_callback(&JvmtiTagMap::gc_notification);
 }
 
@@ -784,7 +753,7 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   }
   // Looks like an oop at this point.
 
-  if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
+  if (!thread_oop->is_a(vmClasses::Thread_klass())) {
     // The oop is not a java.lang.Thread.
     return JVMTI_ERROR_INVALID_THREAD;
   }
@@ -833,7 +802,7 @@ JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
   assert(thread_oop != NULL, "must have an oop");
   assert(jt_pp != NULL, "must have a return JavaThread pointer");
 
-  if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
+  if (!thread_oop->is_a(vmClasses::Thread_klass())) {
     // The oop is not a java.lang.Thread.
     return JVMTI_ERROR_INVALID_THREAD;
   }
@@ -1073,7 +1042,7 @@ static inline Klass* oop_to_klass(oop obj) {
   Klass* k = obj->klass();
 
   // if the object is a java.lang.Class then return the java mirror
-  if (k == SystemDictionary::Class_klass()) {
+  if (k == vmClasses::Class_klass()) {
     if (!java_lang_Class::is_primitive(obj)) {
       k = java_lang_Class::as_Klass(obj);
       assert(k != NULL, "class for non-primitive mirror must exist");
@@ -1105,8 +1074,8 @@ class JvmtiCompiledMethodLoadEventMark : public JvmtiMethodEventMark {
  public:
   JvmtiCompiledMethodLoadEventMark(JavaThread *thread, nmethod *nm, void* compile_info_ptr = NULL)
           : JvmtiMethodEventMark(thread,methodHandle(thread, nm->method())) {
-    _code_data = nm->insts_begin();
-    _code_size = nm->insts_size();
+    _code_data = nm->code_begin();
+    _code_size = nm->code_size();
     _compile_info = compile_info_ptr; // Set void pointer of compiledMethodLoad Event. Default value is NULL.
     JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &_map, &_map_length);
   }
@@ -1504,6 +1473,9 @@ void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const c
 
   JavaThread *thread  = JavaThread::current();
 
+  log_error(jvmti)("Posting Resource Exhausted event: %s",
+                   description != nullptr ? description : "unknown");
+
   // JDK-8213834: handlers of ResourceExhausted may attempt some analysis
   // which often requires running java.
   // This will cause problems on threads not able to run java, e.g. compiler
@@ -1605,6 +1577,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // Deferred transition to VM, so we can stash away the return oop before GC
   // Note that this transition is not needed when throwing an exception, because
   // there is no oop to retain.
+  JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
     post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
   JRT_BLOCK_END
@@ -1873,24 +1846,7 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 oop JvmtiExport::jni_GetField_probe(JavaThread *thread, jobject jobj, oop obj,
                                     Klass* klass, jfieldID fieldID, bool is_static) {
   if (*((int *)get_field_access_count_addr()) > 0 && thread->has_last_Java_frame()) {
-    // At least one field access watch is set so we have more work
-    // to do. This wrapper is used by entry points that allow us
-    // to create handles in post_field_access_by_jni().
-    post_field_access_by_jni(thread, obj, klass, fieldID, is_static);
-    // event posting can block so refetch oop if we were passed a jobj
-    if (jobj != NULL) return JNIHandles::resolve_non_null(jobj);
-  }
-  return obj;
-}
-
-oop JvmtiExport::jni_GetField_probe_nh(JavaThread *thread, jobject jobj, oop obj,
-                                       Klass* klass, jfieldID fieldID, bool is_static) {
-  if (*((int *)get_field_access_count_addr()) > 0 && thread->has_last_Java_frame()) {
-    // At least one field access watch is set so we have more work
-    // to do. This wrapper is used by "quick" entry points that don't
-    // allow us to create handles in post_field_access_by_jni(). We
-    // override that with a ResetNoHandleMark.
-    ResetNoHandleMark rnhm;
+    // At least one field access watch is set so we have more work to do.
     post_field_access_by_jni(thread, obj, klass, fieldID, is_static);
     // event posting can block so refetch oop if we were passed a jobj
     if (jobj != NULL) return JNIHandles::resolve_non_null(jobj);
@@ -1967,25 +1923,7 @@ oop JvmtiExport::jni_SetField_probe(JavaThread *thread, jobject jobj, oop obj,
                                     Klass* klass, jfieldID fieldID, bool is_static,
                                     char sig_type, jvalue *value) {
   if (*((int *)get_field_modification_count_addr()) > 0 && thread->has_last_Java_frame()) {
-    // At least one field modification watch is set so we have more work
-    // to do. This wrapper is used by entry points that allow us
-    // to create handles in post_field_modification_by_jni().
-    post_field_modification_by_jni(thread, obj, klass, fieldID, is_static, sig_type, value);
-    // event posting can block so refetch oop if we were passed a jobj
-    if (jobj != NULL) return JNIHandles::resolve_non_null(jobj);
-  }
-  return obj;
-}
-
-oop JvmtiExport::jni_SetField_probe_nh(JavaThread *thread, jobject jobj, oop obj,
-                                       Klass* klass, jfieldID fieldID, bool is_static,
-                                       char sig_type, jvalue *value) {
-  if (*((int *)get_field_modification_count_addr()) > 0 && thread->has_last_Java_frame()) {
-    // At least one field modification watch is set so we have more work
-    // to do. This wrapper is used by "quick" entry points that don't
-    // allow us to create handles in post_field_modification_by_jni(). We
-    // override that with a ResetNoHandleMark.
-    ResetNoHandleMark rnhm;
+    // At least one field modification watch is set so we have more work to do.
     post_field_modification_by_jni(thread, obj, klass, fieldID, is_static, sig_type, value);
     // event posting can block so refetch oop if we were passed a jobj
     if (jobj != NULL) return JNIHandles::resolve_non_null(jobj);
@@ -2077,7 +2015,7 @@ void JvmtiExport::post_raw_field_modification(JavaThread *thread, Method* method
   // convert oop to JNI handle.
   if (sig_type == JVM_SIGNATURE_CLASS) {
     handle_created = true;
-    value->l = (jobject)JNIHandles::make_local(thread, (oop)value->l);
+    value->l = (jobject)JNIHandles::make_local(thread, cast_to_oop(value->l));
   }
 
   post_field_modification(thread, method, location, field_klass, object, field, sig_type, value);
@@ -2235,6 +2173,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   ResourceMark rm(thread);
   HandleMark hm(thread);
 
+  assert(!nm->is_zombie(), "nmethod zombie in post_compiled_method_load");
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
   // Pass inlining information through the void pointer
@@ -2318,13 +2257,15 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
   // register the stub with the current dynamic code event collector
   // Cannot take safepoint here so do not use state_for to get
   // jvmti thread state.
+  // The collector and/or state might be NULL if JvmtiDynamicCodeEventCollector
+  // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
   JvmtiThreadState* state = JavaThread::current()->jvmti_thread_state();
-  // state can only be NULL if the current thread is exiting which
-  // should not happen since we're trying to post an event
-  guarantee(state != NULL, "attempt to register stub via an exiting thread");
-  JvmtiDynamicCodeEventCollector* collector = state->get_dynamic_code_event_collector();
-  guarantee(collector != NULL, "attempt to register stub without event collector");
-  collector->register_stub(name, code_begin, code_end);
+  if (state != NULL) {
+    JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
+    if (collector != NULL) {
+      collector->register_stub(name, code_begin, code_end);
+    }
+  }
 }
 
 // Collect all the vm internally allocated objects which are visible to java world
@@ -2335,7 +2276,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
     NoSafepointVerifier no_sfpt;
     // Cannot take safepoint here so do not use state_for to get
     // jvmti thread state.
-    JvmtiThreadState *state = thread->as_Java_thread()->jvmti_thread_state();
+    JvmtiThreadState *state = JavaThread::cast(thread)->jvmti_thread_state();
     if (state != NULL) {
       // state is non NULL when VMObjectAllocEventCollector is enabled.
       JvmtiVMObjectAllocEventCollector *collector;
@@ -2343,7 +2284,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
       if (collector != NULL && collector->is_enabled()) {
         // Don't record classes as these will be notified via the ClassLoad
         // event.
-        if (obj->klass() != SystemDictionary::Class_klass()) {
+        if (obj->klass() != vmClasses::Class_klass()) {
           collector->record_allocation(obj);
         }
       }
@@ -2359,7 +2300,7 @@ void JvmtiExport::record_sampled_internal_object_allocation(oop obj) {
     NoSafepointVerifier no_sfpt;
     // Cannot take safepoint here so do not use state_for to get
     // jvmti thread state.
-    JvmtiThreadState *state = thread->as_Java_thread()->jvmti_thread_state();
+    JvmtiThreadState *state = JavaThread::cast(thread)->jvmti_thread_state();
     if (state != NULL) {
       // state is non NULL when SampledObjectAllocEventCollector is enabled.
       JvmtiSampledObjectAllocEventCollector *collector;
@@ -2716,7 +2657,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       delete agent_lib;
     } else {
       // Invoke the Agent_OnAttach function
-      JavaThread* THREAD = JavaThread::current();
+      JavaThread* THREAD = JavaThread::current(); // For exception macros.
       {
         extern struct JavaVM_ main_vm;
         JvmtiThreadEventMark jem(THREAD);
@@ -2735,6 +2676,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
       if (result == JNI_OK) {
         Arguments::add_loaded_agent(agent_lib);
       } else {
+        if (!agent_lib->is_static_lib()) {
+          os::dll_unload(library);
+        }
         delete agent_lib;
       }
 
@@ -2892,7 +2836,7 @@ NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(NULL) {
   }
   Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread())  {
-    JavaThread* current_thread = thread->as_Java_thread();
+    JavaThread* current_thread = JavaThread::cast(thread);
     JvmtiThreadState *state = current_thread->jvmti_thread_state();
     if (state != NULL) {
       JvmtiVMObjectAllocEventCollector *collector;

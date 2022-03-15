@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -109,6 +109,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummary) {
+        addPreviewSummary(member, tdSummary);
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
@@ -133,25 +134,22 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Add the summary link for the member.
      *
-     * @param mw the writer for the member being documented
      * @param member the member to be documented
      * @param contentTree the content tree to which the link will be added
      */
-    public void addSummaryLinkComment(AbstractMemberWriter mw, Element member, Content contentTree) {
+    public void addSummaryLinkComment(Element member, Content contentTree) {
         List<? extends DocTree> tags = utils.getFirstSentenceTrees(member);
-        addSummaryLinkComment(mw, member, tags, contentTree);
+        addSummaryLinkComment(member, tags, contentTree);
     }
 
     /**
      * Add the summary link comment.
      *
-     * @param mw the writer for the member being documented
      * @param member the member being documented
      * @param firstSentenceTags the first sentence tags for the member to be documented
      * @param tdSummary the content tree to which the comment will be added
      */
-    public void addSummaryLinkComment(AbstractMemberWriter mw,
-            Element member, List<? extends DocTree> firstSentenceTags, Content tdSummary) {
+    public void addSummaryLinkComment(Element member, List<? extends DocTree> firstSentenceTags, Content tdSummary) {
         addIndexComment(member, firstSentenceTags, tdSummary);
     }
 
@@ -208,9 +206,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a content tree for the member header
      */
     public Content getMemberTreeHeader() {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
-        return ul;
+        return HtmlTree.UL(HtmlStyle.blockList);
     }
 
     /**
@@ -219,7 +215,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a list to be used for the list of summaries for members of a given kind
      */
     public Content getSummariesList() {
-        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
     /**
@@ -239,7 +235,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a list to be used for the list of details for members of a given kind
      */
     public Content getDetailsList() {
-        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.detailsList);
+        return HtmlTree.UL(HtmlStyle.detailsList);
     }
 
     /**
@@ -258,7 +254,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @return a list to be used for the list of members of a given kind
      */
     public Content getMemberList() {
-        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.memberList);
+        return HtmlTree.UL(HtmlStyle.memberList);
     }
 
     /**
@@ -272,22 +268,20 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     public Content getMemberInheritedTree() {
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.inheritedList);
-        return div;
+        return HtmlTree.DIV(HtmlStyle.inheritedList);
     }
 
     /**
      * Adds a section for a summary tree with the given CSS {@code class} and {@code id} attribute.
      *
      * @param style         the CSS class for the section
-     * @param sectionName   the section name to use for the section id attribute
+     * @param htmlId        the id for the section
      * @param summariesList the list of summary sections to which the summary will be added
      * @param content       the content tree representing the summary
      */
-    public void addSummary(HtmlStyle style, SectionName sectionName, Content summariesList, Content content) {
+    public void addSummary(HtmlStyle style, HtmlId htmlId, Content summariesList, Content content) {
         HtmlTree htmlTree = HtmlTree.SECTION(style, content)
-                .setId(sectionName.getName());
+                .setId(htmlId);
         summariesList.add(getSummariesListItem(htmlTree));
     }
 
@@ -324,11 +318,12 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     /**
      * Get the member tree
      *
+     * @param id the id to be used for the content tree
      * @param style the style class to be added to the content tree
      * @param contentTree the tree used to generate the complete member tree
      * @return the member tree
      */
-    public Content getMemberTree(HtmlStyle style, Content contentTree) {
-        return HtmlTree.SECTION(style, contentTree);
+    public Content getMemberTree(HtmlId id, HtmlStyle style, Content contentTree) {
+        return HtmlTree.SECTION(style, contentTree).setId(id);
     }
 }

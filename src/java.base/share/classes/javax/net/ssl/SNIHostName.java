@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.charset.CharacterCodingException;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Instances of this class represent a server name of type
@@ -173,7 +174,8 @@ public final class SNIHostName extends SNIServerName {
                     .onUnmappableCharacter(CodingErrorAction.REPORT);
 
             this.hostname = IDN.toASCII(
-                    decoder.decode(ByteBuffer.wrap(encoded)).toString());
+                    decoder.decode(ByteBuffer.wrap(encoded)).toString(),
+                    IDN.USE_STD3_ASCII_RULES);
         } catch (RuntimeException | CharacterCodingException e) {
             throw new IllegalArgumentException(
                         "The encoded server name value is invalid", e);
@@ -296,7 +298,7 @@ public final class SNIHostName extends SNIServerName {
      * @return a {@code SNIMatcher} object for {@code SNIHostName}s
      * @throws NullPointerException if {@code regex} is
      *         {@code null}
-     * @throws java.util.regex.PatternSyntaxException if the regular expression's
+     * @throws PatternSyntaxException if the regular expression's
      *         syntax is invalid
      */
     public static SNIMatcher createSNIMatcher(String regex) {

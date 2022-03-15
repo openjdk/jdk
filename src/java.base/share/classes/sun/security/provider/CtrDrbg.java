@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.*;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Locale;
 
 public class CtrDrbg extends AbstractDrbg {
@@ -181,8 +182,8 @@ public class CtrDrbg extends AbstractDrbg {
 
     private void status() {
         if (debug != null) {
-            debug.println(this, "Key = " + hex(k));
-            debug.println(this, "V   = " + hex(v));
+            debug.println(this, "Key = " + HexFormat.of().formatHex(k));
+            debug.println(this, "V   = " + HexFormat.of().formatHex(v));
             debug.println(this, "reseed counter = " + reseedCounter);
         }
     }
@@ -494,13 +495,16 @@ public class CtrDrbg extends AbstractDrbg {
             // Step 4.1. Increment
             addOne(v, ctrLen);
             try {
-                // Step 4.2. Encrypt
                 cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(k, keyAlg));
-                byte[] out = cipher.doFinal(v);
-
+                // Step 4.2. Encrypt
                 // Step 4.3 and 5. Cat bytes and leftmost
-                System.arraycopy(out, 0, result, pos,
-                        (len > blockLen) ? blockLen : len);
+                if (len > blockLen) {
+                    cipher.doFinal(v, 0, blockLen, result, pos);
+                } else {
+                    byte[] out = cipher.doFinal(v);
+                    System.arraycopy(out, 0, result, pos, len);
+                    Arrays.fill(out, (byte)0);
+                }
             } catch (GeneralSecurityException e) {
                 throw new InternalError(e);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
- * 6786276 7066203 7085757 8008577 8030696 8170840 8255086
+ * 6786276 7066203 7085757 8008577 8030696 8170840 8255086 8263202
  * @summary test Locales
  * @library /java/text/testlib
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=JRE,SPI LocaleTest
+ * @run main/othervm -Djava.locale.providers=COMPAT,SPI LocaleTest
+ * @run main/othervm -Djava.locale.providers=COMPAT,SPI -Djava.locale.useOldISOCodes=true LocaleTest
  */
 /*
  *
@@ -677,7 +678,7 @@ test commented out pending API-change approval
     }
 
     /**
-     * @bug 4052404 4778440
+     * @bug 4052404 4778440 8263202
      */
     public void TestChangedISO639Codes() {
         Locale hebrewOld = new Locale("iw", "IL", "");
@@ -687,18 +688,34 @@ test commented out pending API-change approval
         Locale indonesianOld = new Locale("in", "", "");
         Locale indonesianNew = new Locale("id", "", "");
 
-        if (!hebrewNew.getLanguage().equals("iw")) {
-            errln("Got back wrong language code for Hebrew: expected \"iw\", got \""
-                    + hebrewNew.getLanguage() + "\"");
+        if ("true".equalsIgnoreCase(System.getProperty("java.locale.useOldISOCodes"))) {
+            if (!hebrewNew.getLanguage().equals("iw")) {
+                errln("Got back wrong language code for new Hebrew: expected \"iw\", got \""
+                        + hebrewNew.getLanguage() + "\"");
+            }
+            if (!yiddishNew.getLanguage().equals("ji")) {
+                errln("Got back wrong language code for new Yiddish: expected \"ji\", got \""
+                        + yiddishNew.getLanguage() + "\"");
+            }
+            if (!indonesianNew.getLanguage().equals("in")) {
+                errln("Got back wrong language code for new Indonesian: expected \"in\", got \""
+                        + indonesianNew.getLanguage() + "\"");
+            }
+        } else {
+            if (!hebrewOld.getLanguage().equals("he")) {
+                errln("Got back wrong language code for old Hebrew: expected \"he\", got \""
+                        + hebrewNew.getLanguage() + "\"");
+            }
+            if (!yiddishOld.getLanguage().equals("yi")) {
+                errln("Got back wrong language code for old Yiddish: expected \"yi\", got \""
+                        + yiddishNew.getLanguage() + "\"");
+            }
+            if (!indonesianOld.getLanguage().equals("id")) {
+                errln("Got back wrong language code for old Indonesian: expected \"id\", got \""
+                        + indonesianNew.getLanguage() + "\"");
+            }
         }
-        if (!yiddishNew.getLanguage().equals("ji")) {
-            errln("Got back wrong language code for Yiddish: expected \"ji\", got \""
-                    + yiddishNew.getLanguage() + "\"");
-        }
-        if (!indonesianNew.getLanguage().equals("in")) {
-            errln("Got back wrong language code for Indonesian: expected \"in\", got \""
-                    + indonesianNew.getLanguage() + "\"");
-        }
+
     }
 
     /**

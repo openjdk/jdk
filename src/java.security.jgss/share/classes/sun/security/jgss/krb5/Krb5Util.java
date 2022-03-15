@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
-import java.security.AccessControlContext;
 
 import sun.security.action.GetBooleanAction;
 import sun.security.jgss.GSSUtil;
@@ -62,13 +61,12 @@ public class Krb5Util {
      * pair from the Subject in the specified AccessControlContext.
      */
     static KerberosTicket getServiceTicket(GSSCaller caller,
-        String clientPrincipal, String serverPrincipal,
-        AccessControlContext acc) throws LoginException {
-
-        // Try to get ticket from acc's Subject
-        Subject accSubj = Subject.getSubject(acc);
+            String clientPrincipal, String serverPrincipal) {
+        // Try to get ticket from current Subject
+        @SuppressWarnings("removal")
+        Subject currSubj = Subject.current();
         KerberosTicket ticket =
-            SubjectComber.find(accSubj, serverPrincipal, clientPrincipal,
+            SubjectComber.find(currSubj, serverPrincipal, clientPrincipal,
                   KerberosTicket.class);
 
         return ticket;
@@ -82,13 +80,11 @@ public class Krb5Util {
      * a LoginContext.
      */
     static KerberosTicket getInitialTicket(GSSCaller caller,
-            String clientPrincipal,
-            AccessControlContext acc) throws LoginException {
+            String clientPrincipal) throws LoginException {
 
-        // Try to get ticket from acc's Subject
-        Subject accSubj = Subject.getSubject(acc);
+        Subject currSubj = Subject.current();
         KerberosTicket ticket =
-                SubjectComber.find(accSubj, null, clientPrincipal,
+                SubjectComber.find(currSubj, null, clientPrincipal,
                         KerberosTicket.class);
 
         // Try to get ticket from Subject obtained from GSSUtil
@@ -101,44 +97,17 @@ public class Krb5Util {
     }
 
     /**
-     * Retrieves the caller's Subject, or Subject obtained by logging in
-     * via the specified caller.
-     *
-     * Caller must have permission to:
-     *    - access the Subject
-     *    - create LoginContext
-     *    - read the auth.login.defaultCallbackHandler security property
-     *
-     * NOTE: This method is used by JSSE Kerberos Cipher Suites
-     */
-    public static Subject getSubject(GSSCaller caller,
-        AccessControlContext acc) throws LoginException {
-
-        // Try to get the Subject from acc
-        Subject subject = Subject.getSubject(acc);
-
-        // Try to get Subject obtained from GSSUtil
-        if (subject == null && !GSSUtil.useSubjectCredsOnly(caller)) {
-            subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);
-        }
-        return subject;
-    }
-
-    /**
      * Retrieves the ServiceCreds for the specified server principal from
      * the Subject in the specified AccessControlContext. If not found, and if
      * useSubjectCredsOnly is false, then obtain from a LoginContext.
-     *
-     * NOTE: This method is also used by JSSE Kerberos Cipher Suites
      */
     public static ServiceCreds getServiceCreds(GSSCaller caller,
-        String serverPrincipal, AccessControlContext acc)
-                throws LoginException {
+            String serverPrincipal) throws LoginException {
 
-        Subject accSubj = Subject.getSubject(acc);
+        Subject currSubj = Subject.current();
         ServiceCreds sc = null;
-        if (accSubj != null) {
-            sc = ServiceCreds.getInstance(accSubj, serverPrincipal);
+        if (currSubj != null) {
+            sc = ServiceCreds.getInstance(currSubj, serverPrincipal);
         }
         if (sc == null && !GSSUtil.useSubjectCredsOnly(caller)) {
             Subject subject = GSSUtil.login(caller, GSSUtil.GSS_KRB5_MECH_OID);

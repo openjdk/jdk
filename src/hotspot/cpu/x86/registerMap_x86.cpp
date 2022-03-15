@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,4 +60,8 @@ address RegisterMap::pd_location(VMReg reg) const {
     }
   }
   return NULL;
+}
+
+address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
+  return location(base_reg->next(slot_idx));
 }

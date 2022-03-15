@@ -441,21 +441,22 @@ networkaddress.cache.negative.ttl=10
 # Policy for failed Kerberos KDC lookups:
 #
 # When a KDC is unavailable (network error, service failure, etc), it is
-# put inside a blacklist and accessed less often for future requests. The
+# put inside a secondary list and accessed less often for future requests. The
 # value (case-insensitive) for this policy can be:
 #
 # tryLast
-#    KDCs in the blacklist are always tried after those not on the list.
+#    KDCs in the secondary list are always tried after those not on the list.
 #
 # tryLess[:max_retries,timeout]
-#    KDCs in the blacklist are still tried by their order in the configuration,
-#    but with smaller max_retries and timeout values. max_retries and timeout
-#    are optional numerical parameters (default 1 and 5000, which means once
-#    and 5 seconds). Please notes that if any of the values defined here is
-#    more than what is defined in krb5.conf, it will be ignored.
+#    KDCs in the secondary list are still tried by their order in the
+#    configuration, but with smaller max_retries and timeout values.
+#    max_retries and timeout are optional numerical parameters (default 1 and
+#    5000, which means once and 5 seconds). Please note that if any of the
+#    values defined here are more than what is defined in krb5.conf, it will be
+#    ignored.
 #
-# Whenever a KDC is detected as available, it is removed from the blacklist.
-# The blacklist is reset when krb5.conf is reloaded. You can add
+# Whenever a KDC is detected as available, it is removed from the secondary
+# list. The secondary list is reset when krb5.conf is reloaded. You can add
 # refreshKrb5Config=true to a JAAS configuration file so that krb5.conf is
 # reloaded whenever a JAAS authentication is attempted.
 #
@@ -557,7 +558,7 @@ sun.security.krb5.maxReferrals=5
 # can be included in the disabledAlgorithms properties.  These properties are
 # to help manage common actions easier across multiple disabledAlgorithm
 # properties.
-# There is one defined security property:  jdk.disabled.NamedCurves
+# There is one defined security property:  jdk.disabled.namedCurves
 # See the property for more specific details.
 #
 #
@@ -633,7 +634,8 @@ sun.security.krb5.maxReferrals=5
 #
 #
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
-    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
+    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
+    SHA1 usage SignedJAR & denyAfter 2019-01-01
 
 #
 # Legacy algorithms for certification path (CertPath) processing and
@@ -697,7 +699,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
-      DSA keySize < 1024
+      DSA keySize < 1024, SHA1 denyAfter 2019-01-01
 
 #
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
@@ -924,10 +926,11 @@ jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37
 crypto.policy=crypto.policydir-tbd
 
 #
-# The policy for the XML Signature secure validation mode. The mode is
-# enabled by setting the property "org.jcp.xml.dsig.secureValidation" to
-# true with the javax.xml.crypto.XMLCryptoContext.setProperty() method,
-# or by running the code with a SecurityManager.
+# The policy for the XML Signature secure validation mode. Validation of
+# XML Signatures that violate any of these constraints will fail. The
+# mode is enforced by default. The mode can be disabled by setting the
+# property "org.jcp.xml.dsig.secureValidation" to Boolean.FALSE with the
+# javax.xml.crypto.XMLCryptoContext.setProperty() method.
 #
 #   Policy:
 #       Constraint {"," Constraint }
@@ -954,14 +957,19 @@ crypto.policy=crypto.policydir-tbd
 # MaxReferencesConstraint or KeySizeConstraint (for the same key type) is
 # specified more than once, only the last entry is enforced.
 #
-# Note: This property is currently used by the JDK Reference implementation. It
-# is not guaranteed to be examined and used by other implementations.
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
 #
 jdk.xml.dsig.secureValidationPolicy=\
     disallowAlg http://www.w3.org/TR/1999/REC-xslt-19991116,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#rsa-md5,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#hmac-md5,\
     disallowAlg http://www.w3.org/2001/04/xmldsig-more#md5,\
+    disallowAlg http://www.w3.org/2000/09/xmldsig#sha1,\
+    disallowAlg http://www.w3.org/2000/09/xmldsig#dsa-sha1,\
+    disallowAlg http://www.w3.org/2000/09/xmldsig#rsa-sha1,\
+    disallowAlg http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1,\
+    disallowAlg http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1,\
     maxTransforms 5,\
     maxReferences 30,\
     disallowReferenceUriSchemes file http https,\
@@ -971,11 +979,27 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+
 #
-# Serialization system-wide filter
+# Deserialization JVM-wide filter factory
 #
-# A filter, if configured, is used by java.io.ObjectInputStream during
-# deserialization to check the contents of the stream.
+# A filter factory class name is used to configure the JVM-wide filter factory.
+# The class must be public, must have a public zero-argument constructor, implement the
+# java.util.function.BinaryOperator<java.io.ObjectInputFilter> interface, provide its
+# implementation and be accessible via the application class loader.
+# A builtin filter factory is used if no filter factory is defined.
+# See java.io.ObjectInputFilter.Config for more information.
+#
+# If the system property jdk.serialFilterFactory is also specified, it supersedes
+# the security property value defined here.
+#
+#jdk.serialFilterFactory=<classname>
+
+#
+# Deserialization JVM-wide filter
+#
+# A filter, if configured, is used by the filter factory to provide the filter used by
+# java.io.ObjectInputStream during deserialization to check the contents of the stream.
 # A filter is configured as a sequence of patterns, each pattern is either
 # matched against the name of a class in the stream or defines a limit.
 # Patterns are separated by ";" (semicolon).
@@ -1053,7 +1077,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    sun.rmi.server.UnicastRef;\
 #    sun.rmi.server.RMIClientSocketFactory;\
 #    sun.rmi.server.RMIServerSocketFactory;\
-#    java.rmi.activation.ActivationID;\
 #    java.rmi.server.UID
 #
 # RMI Distributed Garbage Collector (DGC) Serial Filter
@@ -1319,3 +1342,52 @@ jdk.io.permissionsUseCanonicalPath=false
 #
 # jdk.tls.alpnCharset=UTF-8
 jdk.tls.alpnCharset=ISO_8859_1
+
+#
+# JNDI Object Factories Filter
+#
+# This filter is used by the JNDI runtime to control the set of object factory classes
+# which will be allowed to instantiate objects from object references returned by
+# naming/directory systems. The factory class named by the reference instance will be
+# matched against this filter. The filter property supports pattern-based filter syntax
+# with the same format as jdk.serialFilter.
+#
+# Each pattern is matched against the factory class name to allow or disallow it's
+# instantiation. The access to a factory class is allowed unless the filter returns
+# REJECTED.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# If the system property jdk.jndi.object.factoriesFilter is also specified, it supersedes
+# the security property value defined here. The default value of the property is "*".
+#
+# The default pattern value allows any object factory class specified by the reference
+# instance to recreate the referenced object.
+#jdk.jndi.object.factoriesFilter=*
+
+#
+# Policy for non-forwardable service ticket in a S4U2proxy request
+#
+# The Service for User to Proxy (S4U2proxy) Kerberos extension enables a middle service
+# to obtain a service ticket to another service on behalf of a user. It requires that
+# the user's service ticket to the first service has the forwardable flag set [1].
+# However, some KDC implementations ignore this requirement and accept service tickets
+# with the flag unset.
+#
+# If this security property is set to "true", then
+#
+# 1) The user service ticket, when obtained by the middle service after a S4U2self
+#    impersonation, is not required to have the forwardable flag set; and,
+#
+# 2) If a S4U2proxy request receives a KRB_ERROR of the KDC_ERR_BADOPTION error code
+#    and the ticket to the middle service is not forwardable, OpenJDK will try the same
+#    request with another KDC instead of treating it as a fatal failure.
+#
+# The default value is "false".
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# [1] https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu/bde93b0e-f3c9-4ddf-9f44-e1453be7af5a
+#jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=false

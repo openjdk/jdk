@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,11 @@ import sun.security.action.GetPropertyAction;
  * A utility class to share the static methods.
  */
 final class Utilities {
-    static final char[] hexDigits = "0123456789ABCDEF".toCharArray();
     private static final String indent = "  ";
     private static final Pattern lineBreakPatern =
                 Pattern.compile("\\r\\n|\\n|\\r");
+    private static final HexFormat HEX_FORMATTER =
+            HexFormat.of().withUpperCase();
 
     /**
      * Puts {@code hostname} into the {@code serverNames} list.
@@ -100,14 +101,19 @@ final class Utilities {
      *         not look like a FQDN
      */
     private static SNIHostName rawToSNIHostName(String hostname) {
-        SNIHostName sniHostName = null;
+        // Is it a Fully-Qualified Domain Names (FQDN) ending with a dot?
+        if (hostname != null && hostname.endsWith(".")) {
+            // Remove the ending dot, which is not allowed in SNIHostName.
+            hostname = hostname.substring(0, hostname.length() - 1);
+        }
+
         if (hostname != null && hostname.indexOf('.') > 0 &&
                 !hostname.endsWith(".") &&
                 !IPAddressUtil.isIPv4LiteralAddress(hostname) &&
                 !IPAddressUtil.isIPv6LiteralAddress(hostname)) {
 
             try {
-                sniHostName = new SNIHostName(hostname);
+                return new SNIHostName(hostname);
             } catch (IllegalArgumentException iae) {
                 // don't bother to handle illegal host_name
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
@@ -117,7 +123,7 @@ final class Utilities {
             }
         }
 
-        return sniHostName;
+        return null;
     }
 
     /**
@@ -164,15 +170,8 @@ final class Utilities {
         return builder.toString();
     }
 
-    static String toHexString(byte b) {
-        return String.valueOf(hexDigits[(b >> 4) & 0x0F]) +
-                String.valueOf(hexDigits[b & 0x0F]);
-    }
-
     static String byte16HexString(int id) {
-        return "0x" +
-                hexDigits[(id >> 12) & 0x0F] + hexDigits[(id >> 8) & 0x0F] +
-                hexDigits[(id >> 4) & 0x0F] + hexDigits[id & 0x0F];
+        return "0x" + HEX_FORMATTER.toHexDigits((short)id);
     }
 
     static String toHexString(byte[] bytes) {
@@ -180,19 +179,7 @@ final class Utilities {
             return "";
         }
 
-        StringBuilder builder = new StringBuilder(bytes.length * 3);
-        boolean isFirst = true;
-        for (byte b : bytes) {
-            if (isFirst) {
-                isFirst = false;
-            } else {
-                builder.append(' ');
-            }
-
-            builder.append(hexDigits[(b >> 4) & 0x0F]);
-            builder.append(hexDigits[b & 0x0F]);
-        }
-        return builder.toString();
+        return HEX_FORMATTER.formatHex(bytes);
     }
 
     static String toHexString(long lv) {
@@ -206,10 +193,8 @@ final class Utilities {
                 builder.append(' ');
             }
 
-            builder.append(hexDigits[(int)(lv & 0x0F)]);
-            lv >>>= 4;
-            builder.append(hexDigits[(int)(lv & 0x0F)]);
-            lv >>>= 4;
+            HEX_FORMATTER.toHexDigits(builder, (byte)lv);
+            lv >>>= 8;
         } while (lv != 0);
         builder.reverse();
 

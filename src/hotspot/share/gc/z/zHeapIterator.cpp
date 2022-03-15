@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
@@ -122,12 +124,14 @@ public:
 };
 
 template <bool VisitReferents>
-class ZHeapIteratorOopClosure : public ClaimMetadataVisitingOopIterateClosure {
+class ZHeapIteratorOopClosure : public OopIterateClosure {
 private:
   const ZHeapIteratorContext& _context;
   const oop                   _base;
 
   oop load_oop(oop* p) {
+    assert(ZCollectedHeap::heap()->is_in(p), "Should be in heap");
+
     if (VisitReferents) {
       return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
     }
@@ -137,7 +141,7 @@ private:
 
 public:
   ZHeapIteratorOopClosure(const ZHeapIteratorContext& context, oop base) :
-      ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_other),
+      OopIterateClosure(),
       _context(context),
       _base(base) {}
 
@@ -152,6 +156,39 @@ public:
 
   virtual void do_oop(narrowOop* p) {
     ShouldNotReachHere();
+  }
+
+  virtual bool do_metadata() {
+    return true;
+  }
+
+  virtual void do_klass(Klass* k) {
+    ClassLoaderData* const cld = k->class_loader_data();
+    ZHeapIteratorOopClosure::do_cld(cld);
+  }
+
+  virtual void do_cld(ClassLoaderData* cld) {
+    class NativeAccessClosure : public OopClosure {
+    private:
+      const ZHeapIteratorContext& _context;
+
+    public:
+      explicit NativeAccessClosure(const ZHeapIteratorContext& context) :
+          _context(context) {}
+
+      virtual void do_oop(oop* p) {
+        assert(!ZCollectedHeap::heap()->is_in(p), "Should not be in heap");
+        const oop obj = NativeAccess<AS_NO_KEEPALIVE>::oop_load(p);
+        _context.mark_and_push(obj);
+      }
+
+      virtual void do_oop(narrowOop* p) {
+        ShouldNotReachHere();
+      }
+    };
+
+    NativeAccessClosure cl(_context);
+    cld->oops_do(&cl, ClassLoaderData::_claim_other);
   }
 };
 
@@ -169,14 +206,12 @@ ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
   // Create queues
   for (uint i = 0; i < _queues.size(); i++) {
     ZHeapIteratorQueue* const queue = new ZHeapIteratorQueue();
-    queue->initialize();
     _queues.register_queue(i, queue);
   }
 
   // Create array queues
   for (uint i = 0; i < _array_queues.size(); i++) {
     ZHeapIteratorArrayQueue* const array_queue = new ZHeapIteratorArrayQueue();
-    array_queue->initialize();
     _array_queues.register_queue(i, array_queue);
   }
 }

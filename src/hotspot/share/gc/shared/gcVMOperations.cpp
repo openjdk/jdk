@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
@@ -201,30 +203,6 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
   AllocTracer::send_allocation_requiring_gc_event(_size * HeapWordSize, GCId::peek());
 }
 
-// Returns true iff concurrent GCs unloads metadata.
-bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
-#if INCLUDE_G1GC
-  if (UseG1GC && ClassUnloadingWithConcurrentMark) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    g1h->policy()->collector_state()->set_initiate_conc_mark_if_possible(true);
-
-    GCCauseSetter x(g1h, _gc_cause);
-
-    // At this point we are supposed to start a concurrent cycle. We
-    // will do so if one is not already in progress.
-    bool should_start = g1h->policy()->force_concurrent_start_if_outside_cycle(_gc_cause);
-
-    if (should_start) {
-      double pause_target = g1h->policy()->max_pause_time_ms();
-      g1h->do_collection_pause_at_safepoint(pause_target);
-    }
-    return true;
-  }
-#endif
-
-  return false;
-}
-
 void VM_CollectForMetadataAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
@@ -241,7 +219,9 @@ void VM_CollectForMetadataAllocation::doit() {
     }
   }
 
-  if (initiate_concurrent_GC()) {
+#if INCLUDE_G1GC
+  if (UseG1GC && ClassUnloadingWithConcurrentMark) {
+    G1CollectedHeap::heap()->start_concurrent_gc_for_metadata_allocation(_gc_cause);
     // For G1 expand since the collection is going to be concurrent.
     _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
     if (_result != NULL) {
@@ -250,6 +230,7 @@ void VM_CollectForMetadataAllocation::doit() {
 
     log_debug(gc)("G1 full GC for Metaspace");
   }
+#endif
 
   // Don't clear the soft refs yet.
   heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);

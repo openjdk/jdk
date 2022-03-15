@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,8 +209,8 @@ public abstract class AsynchronousFileChannel
      * FileAttribute file-attributes} to set atomically when creating the file.
      *
      * <p> The new channel is created by invoking the {@link
-     * FileSystemProvider#newFileChannel newFileChannel} method on the
-     * provider that created the {@code Path}.
+     * FileSystemProvider#newAsynchronousFileChannel newAsynchronousFileChannel}
+     * method on the provider that created the {@code Path}.
      *
      * @param   file
      *          The path of the file to open or create
@@ -232,6 +232,12 @@ public abstract class AsynchronousFileChannel
      *          support creating asynchronous file channels, or an unsupported
      *          open option is specified, or the array contains an attribute that
      *          cannot be set atomically when creating the file
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          and the file is being opened for writing
+     *          <i>(<a href="../file/package-summary.html#optspecex">optional
+     *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -287,6 +293,12 @@ public abstract class AsynchronousFileChannel
      *          If the {@code file} is associated with a provider that does not
      *          support creating file channels, or an unsupported open option is
      *          specified
+     * @throws  FileAlreadyExistsException
+     *          If a file of that name already exists and the {@link
+     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
+     *          and the file is being opened for writing
+     *          <i>(<a href="../file/package-summary.html#optspecex">optional
+     *          specific exception</a>)</i>
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -413,10 +425,13 @@ public abstract class AsynchronousFileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The two-argument
      * {@link #lock(Object,CompletionHandler)} method simply locks a region
-     * of size {@link Long#MAX_VALUE}. If a lock that overlaps the requested
-     * region is already held by this Java virtual machine, or this method has
-     * been invoked to lock an overlapping region and that operation has not
-     * completed, then this method throws {@link OverlappingFileLockException}.
+     * of size {@link Long#MAX_VALUE}.  If the {@code position} is non-negative
+     * and the {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.  If a lock that
+     * overlaps the requested region is already held by this Java virtual
+     * machine, or this method has been invoked to lock an overlapping region
+     * and that operation has not completed, then this method throws
+     * {@link OverlappingFileLockException}.
      *
      * <p> Some operating systems do not support a mechanism to acquire a file
      * lock in an asynchronous manner. Consequently an implementation may
@@ -442,7 +457,10 @@ public abstract class AsynchronousFileChannel
      *          non-negative
      * @param   size
      *          The size of the locked region; must be non-negative, and the sum
-     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *          A value of zero means to lock all bytes from the specified
+     *          starting position to the end of the file, regardless of whether
+     *          the file is subsequently extended or truncated
      * @param   shared
      *          {@code true} to request a shared lock, in which case this
      *          channel must be open for reading (and possibly writing);
@@ -520,7 +538,10 @@ public abstract class AsynchronousFileChannel
      *          non-negative
      * @param   size
      *          The size of the locked region; must be non-negative, and the sum
-     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *          {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *          A value of zero means to lock all bytes from the specified
+     *          starting position to the end of the file, regardless of whether
+     *          the file is subsequently extended or truncated
      * @param   shared
      *          {@code true} to request a shared lock, in which case this
      *          channel must be open for reading (and possibly writing);
@@ -574,7 +595,9 @@ public abstract class AsynchronousFileChannel
      * either having acquired a lock on the requested region or having failed to
      * do so.  If it fails to acquire a lock because an overlapping lock is held
      * by another program then it returns {@code null}.  If it fails to acquire
-     * a lock for any other reason then an appropriate exception is thrown.
+     * a lock for any other reason then an appropriate exception is thrown.  If
+     * the {@code position} is non-negative and the {@code size} is zero, then a
+     * lock of size {@code Long.MAX_VALUE - position} is returned.
      *
      * @param  position
      *         The position at which the locked region is to start; must be
@@ -582,7 +605,10 @@ public abstract class AsynchronousFileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock,

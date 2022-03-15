@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -700,11 +700,11 @@ class SocketChannelImpl
     private SocketAddress unixBind(SocketAddress local) throws IOException {
         UnixDomainSockets.checkPermission();
         if (local == null) {
-            return UnixDomainSockets.UNNAMED;
+            return UnixDomainSockets.unnamed();
         } else {
             Path path = UnixDomainSockets.checkAddress(local).getPath();
             if (path.toString().isEmpty()) {
-                return UnixDomainSockets.UNNAMED;
+                return UnixDomainSockets.unnamed();
             } else {
                 // bind to non-empty path
                 UnixDomainSockets.bind(fd, path);
@@ -720,6 +720,7 @@ class SocketChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkListen(isa.getPort());
@@ -813,6 +814,7 @@ class SocketChannelImpl
             return UnixDomainSockets.checkAddress(sa);
         } else {
             InetSocketAddress isa = Net.checkAddress(sa, family);
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());

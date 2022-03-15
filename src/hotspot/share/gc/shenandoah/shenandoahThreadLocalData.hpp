@@ -27,6 +27,7 @@
 
 #include "gc/shared/plab.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
@@ -35,19 +36,14 @@
 #include "utilities/sizes.hpp"
 
 class ShenandoahThreadLocalData {
-public:
-  static const uint INVALID_WORKER_ID = uint(-1);
-
 private:
   char _gc_state;
   // Evacuation OOM state
   uint8_t                 _oom_scope_nesting_level;
   bool                    _oom_during_evac;
-  ShenandoahSATBMarkQueue _satb_mark_queue;
+  SATBMarkQueue           _satb_mark_queue;
   PLAB* _gclab;
   size_t _gclab_size;
-  uint  _worker_id;
-  bool _force_satb_flush;
   int  _disarmed_value;
   double _paced_time;
 
@@ -58,8 +54,6 @@ private:
     _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
     _gclab(NULL),
     _gclab_size(0),
-    _worker_id(INVALID_WORKER_ID),
-    _force_satb_flush(false),
     _disarmed_value(0),
     _paced_time(0) {
 
@@ -102,24 +96,6 @@ public:
 
   static char gc_state(Thread* thread) {
     return data(thread)->_gc_state;
-  }
-
-  static void set_worker_id(Thread* thread, uint id) {
-    assert(thread->is_Worker_thread(), "Must be a worker thread");
-    data(thread)->_worker_id = id;
-  }
-
-  static uint worker_id(Thread* thread) {
-    assert(thread->is_Worker_thread(), "Must be a worker thread");
-    return data(thread)->_worker_id;
-  }
-
-  static void set_force_satb_flush(Thread* thread, bool v) {
-    data(thread)->_force_satb_flush = v;
-  }
-
-  static bool is_force_satb_flush(Thread* thread) {
-    return data(thread)->_force_satb_flush;
   }
 
   static void initialize_gclab(Thread* thread) {

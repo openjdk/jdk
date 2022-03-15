@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ public class ContentBuilder extends Content {
     public ContentBuilder add(Content content) {
         Objects.requireNonNull(content);
         ensureMutableContents();
-        if (content instanceof ContentBuilder) {
-            contents.addAll(((ContentBuilder) content).contents);
+        if (content instanceof ContentBuilder cb) {
+            contents.addAll(cb.contents);
         } else
             contents.add(content);
         return this;
@@ -64,13 +64,13 @@ public class ContentBuilder extends Content {
         if (text.length() > 0) {
             ensureMutableContents();
             Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);
-            StringContent sc;
-            if (c != null && c instanceof StringContent) {
-                sc = (StringContent) c;
+            TextBuilder tb;
+            if (c instanceof TextBuilder tbi) {
+                tb = tbi;
             } else {
-                contents.add(sc = new StringContent());
+                contents.add(tb = new TextBuilder());
             }
-            sc.add(text);
+            tb.add(text);
         }
         return this;
     }
@@ -90,6 +90,23 @@ public class ContentBuilder extends Content {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * A content builder is valid if any of its content is; thus, it is
+     * valid to be added to an HtmlTree, which checks the validity of
+     * each content in this builder.
+     */
+    @Override
+    public boolean isValid() {
+        for (Content content: contents) {
+            if (content.isValid())
+                return true;
+        }
+        return false;
     }
 
     @Override

@@ -127,7 +127,7 @@ public class CRLExtensions {
                 throw new CRLException("Duplicate extensions not allowed");
             }
         } catch (InvocationTargetException invk) {
-            throw new CRLException(invk.getTargetException().getMessage());
+            throw new CRLException(invk.getCause().getMessage());
         } catch (Exception e) {
             throw new CRLException(e.toString());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.ThreadDeathEvent;
+import com.sun.jdi.event.ThreadStartEvent;
 import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
@@ -150,6 +152,39 @@ public class JDIBase {
         }
     }
 
+    // Special version of getEventSet for ThreadStartEvent/ThreadDeathEvent.
+    // When ThreadStartRequest and/or ThreadDeathRequest are enabled,
+    // we can get the events from system threads unexpected for tests.
+    // The method skips ThreadStartEvent/ThreadDeathEvent events
+    // for all threads except the expected one.
+    // Note: don't limit ThreadStartRequest/ThreadDeathRequest request by addCountFilter(),
+    // as it limits the requested event to be reported at most once.
+    protected void getEventSetForThreadStartDeath(String threadName) throws JDITestRuntimeException {
+        while (true) {
+            getEventSet();
+            Event event = eventIterator.nextEvent();
+            if (event instanceof ThreadStartEvent evt) {
+                if (evt.thread().name().equals(threadName)) {
+                    break;
+                }
+                log2("Got ThreadStartEvent for '" + evt.thread().name()
+                        + "' instead of '" + threadName + "', skipping");
+            } else if (event instanceof ThreadDeathEvent evt) {
+                if (evt.thread().name().equals(threadName)) {
+                    break;
+                }
+                log2("Got ThreadDeathEvent for '" + evt.thread().name()
+                        + "' instead of '" + threadName + "', skipping");
+            } else {
+                // not ThreadStartEvent nor ThreadDeathEvent
+                break;
+            }
+            eventSet.resume();
+        }
+        // reset the iterator before return
+        eventIterator = eventSet.eventIterator();
+    }
+
     protected void breakpointForCommunication() throws JDITestRuntimeException {
 
         log2("breakpointForCommunication");
@@ -162,6 +197,27 @@ public class JDIBase {
         }
 
         throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
+    }
+
+    // Similar to breakpointForCommunication, but skips Locatable events from unexpected locations.
+    // It's useful for cases when enabled event requests can cause notifications from system threads
+    // (like MethodEntryRequest, MethodExitRequest).
+    protected void breakpointForCommunication(String debuggeeName) throws JDITestRuntimeException {
+        log2("breakpointForCommunication");
+        while (true) {
+            getEventSet();
+
+            Event event = eventIterator.nextEvent();
+            if (event instanceof BreakpointEvent) {
+                return;
+            }
+            if (EventFilters.filtered(event, debuggeeName)) {
+                log2("  got unexpected event: " + event + ", skipping");
+                eventSet.resume();
+            } else {
+                throw new JDITestRuntimeException("** event '" + event + "' IS NOT a breakpoint **");
+            }
+        }
     }
 
 }

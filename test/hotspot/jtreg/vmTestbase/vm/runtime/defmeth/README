@@ -1,4 +1,4 @@
-Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -121,37 +121,25 @@ OVERVIEW
         - StressTest
         - SuperCallTest
 
-    Each test group can be executed in different modes. For each mode there's a
-    corresponding scenario in src/vm/runtime/defmeth/scenarios.
-
-    Scenarios are organized in the following manner:
-
-        .../scenarios/[test_group]_[majorVer]_[methodFlags]_[invocationType]_[shouldRedefine]
-
-    where
+    Additionally, each test enumerates test configurations and run every test case with them.
+    Test configuration consists of 4 parameters:
 
         majorVer - major version of class files for generated concrete classes
-            values: ver49, ver52
+            values: MIN_MAJOR_VER (49) ... MAX_MAJOR_VER (61)
 
         methodFlags - additional access flags for methods in generated classes
-            values:
-                none == no additional flags
-                sync == ACC_SYNCHRONIZED
-                strict == ACC_STRICT
-                syncstrict == ACC_SYNCHRONIZED | ACC_STRICT
+            values: no additional flags, ACC_SYNCHRONIZED
 
         invocationType - how methods in test hiearchies are invoked during testing
-            values:
-                direct - using invoke* bytecodes
-                reflect - using Reflection API
-                invoke - using invokedynamic & java.lang.invoke API (MethodHandles/JSR292)
+            DIRECT           - invoke* bytecodes
+            REFLECTION       - Reflection API
+            INDY             - invokedynamic bytecode
+            INVOKE_EXACT     - MethodHandle.invokeExact()
+            INVOKE_GENERIC   - MethodHandle.invoke()
+            INVOKE_WITH_ARGS - MethodHandle.invokeWithArguments()
 
         redefine - whether to preload and redefine classes before running individual tests
-            values: redefine, noredefine
-
-        testGroup - name of test group being used
-            values: BasicTests/BridgeMethod/etc
-
+            values: false, true
 
 STRESS TESTING
 

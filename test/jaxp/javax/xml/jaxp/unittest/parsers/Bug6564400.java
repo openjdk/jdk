@@ -50,7 +50,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6564400
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6564400
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6564400
  * @run testng/othervm parsers.Bug6564400
  * @summary Test ignorable whitespace handling with schema validation.
  */

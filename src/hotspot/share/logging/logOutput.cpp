@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 
 LogOutput::~LogOutput() {
   os::free(_config_string);
@@ -339,3 +339,41 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
   FREE_C_HEAP_ARRAY(Selection, selections);
 }
 
+bool LogOutput::parse_options(const char* options, outputStream* errstream) {
+  if (options == NULL || strlen(options) == 0) {
+    return true;
+  }
+  bool success = true;
+  char* opts = os::strdup_check_oom(options, mtLogging);
+
+  char* comma_pos;
+  char* pos = opts;
+  do {
+    comma_pos = strchr(pos, ',');
+    if (comma_pos != NULL) {
+      *comma_pos = '\0';
+    }
+    char* equals_pos = strchr(pos, '=');
+    if (equals_pos == NULL) {
+      errstream->print_cr("Invalid option '%s' for log output (%s).", pos, name());
+      success = false;
+      break;
+    }
+
+    char* key = pos;
+    char* value_str = equals_pos + 1;
+    *equals_pos = '\0';
+    julong errstream_count_before = errstream->count();
+    success = set_option(key, value_str, errstream);
+    if (!success) {
+      if (errstream->count() == errstream_count_before) {
+        errstream->print_cr("Invalid option '%s' for log output (%s).", key, name());
+      }
+      break;
+    }
+    pos = comma_pos + 1;
+  } while (comma_pos != NULL);
+
+  os::free(opts);
+  return success;
+}

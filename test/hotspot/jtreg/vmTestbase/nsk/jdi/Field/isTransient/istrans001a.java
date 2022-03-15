@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,14 +88,14 @@ public class istrans001a {
     public    Long LU0, LU1[]={LU0}, LU2[][]={LU1};
     protected Long LR0, LR1[]={LR0}, LR2[][]={LR1};
     volatile  Long LV0, LV1[]={LV0}, LV2[][]={LV1};
-    final     Long LF0 = new Long(999), LF1[]={LF0}, LF2[][]={LF1};
+    final     Long LF0 = Long.valueOf(999), LF1[]={LF0}, LF2[][]={LF1};
 
     transient static    Long LS0T, LS1T[]={LS0T}, LS2T[][]={LS1T};
     transient private   Long LP0T, LP1T[]={LP0T}, LP2T[][]={LP1T};
     transient public    Long LU0T, LU1T[]={LU0T}, LU2T[][]={LU1T};
     transient protected Long LR0T, LR1T[]={LR0T}, LR2T[][]={LR1T};
     transient volatile  Long LV0T, LV1T[]={LV0T}, LV2T[][]={LV1T};
-    transient final     Long LF0T = new Long(999), LF1T[]={LF0T},
+    transient final     Long LF0T = Long.valueOf(999), LF1T[]={LF0T},
                              LF2T[][]={LF1T};
 
     interface Inter {}

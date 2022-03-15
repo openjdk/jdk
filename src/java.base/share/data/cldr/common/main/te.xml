@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -410,7 +410,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ro_MD">మొల్డావియన్</language>
 			<language type="rof">రోంబో</language>
 			<language type="rom">రోమానీ</language>
-			<language type="root">రూట్</language>
 			<language type="ru">రష్యన్</language>
 			<language type="rup">ఆరోమేనియన్</language>
 			<language type="rw">కిన్యర్వాండా</language>
@@ -3266,9 +3265,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>శాంటా ఇసబెల్</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>హోనోలులు</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>సమన్వయ సార్వజనీన సమయం</standard>
@@ -3388,11 +3384,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>బ్రోకెన్ హిల్</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>కర్రీ</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>మెల్బోర్న్</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>కర్రీ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>హోబర్ట్</exemplarCity>
@@ -4425,6 +4421,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>నోమ్</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>హోనోలులు</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>జాన్సటన్</exemplarCity>
@@ -6749,7 +6748,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>పశ్చిమ ఆఫ్రికన్ సిఏఫ్ఏ ఫ్రాంక్</displayName>
 				<displayName count="one">పశ్చిమ ఆఫ్రికన్ సిఏఫ్ఏ ఫ్రాంక్</displayName>
 				<displayName count="other">పశ్చిమ ఆఫ్రికన్ సిఏఫ్ఏ ఫ్రాంక్‌లు</displayName>
-				<symbol draft="contributed">CFA</symbol>
+				<symbol draft="contributed">F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>సిఎఫ్‌పి ఫ్రాంక్</displayName>
@@ -6997,7 +6996,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} కేరట్</unitPattern>
 				<unitPattern count="other">{0} కేరట్లు</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>మిల్లీగ్రాములు/డెసిలీటర్</displayName>
 				<unitPattern count="one">{0} మిల్లీగ్రాము/డెసిలీటర్</unitPattern>
 				<unitPattern count="other">{0} మిల్లీగ్రాములు/డెసిలీటర్</unitPattern>
@@ -8022,7 +8021,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} కేర.</unitPattern>
 				<unitPattern count="other">{0} కేర.</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>మి.గ్రా./డె.లీ.</displayName>
 				<unitPattern count="one">{0} మి.గ్రా./డె.లీ.</unitPattern>
 				<unitPattern count="other">{0} మి.గ్రా./డె.లీ.</unitPattern>

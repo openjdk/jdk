@@ -969,7 +969,7 @@ public:
 
   // Help build instruction predicates.  Search for operand names.
   void count_instr_names( Dict &names );
-  int build_instr_pred( char *buf, const char *name, int cnt );
+  int build_instr_pred( char *buf, const char *name, int cnt, int path_bitmask, int level);
   void build_internalop( );
 
   // Return the name of the operands associated with reducing to this operand:

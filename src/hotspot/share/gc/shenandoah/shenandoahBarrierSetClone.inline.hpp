@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETCLONE_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETCLONE_INLINE_HPP
 
+// No shenandoahBarrierSetClone.hpp
+
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "memory/iterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.hpp"
 #include "oops/compressedOops.hpp"
 
@@ -52,7 +54,7 @@ private:
           fwd = _heap->evacuate_object(obj, _thread);
         }
         assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
-        ShenandoahHeap::cas_oop(fwd, p, o);
+        ShenandoahHeap::atomic_update_oop(fwd, p, o);
         obj = fwd;
       }
       if (ENQUEUE) {
@@ -74,7 +76,7 @@ public:
 
 void ShenandoahBarrierSet::clone_marking(oop obj) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
-  assert(ShenandoahStoreValEnqueueBarrier, "only with incremental-update");
+  assert(ShenandoahIUBarrier, "only with incremental-update");
   if (!_heap->marking_context()->allocated_after_mark_start(obj)) {
     ShenandoahUpdateRefsForOopClosure</* has_fwd = */ false, /* evac = */ false, /* enqueue */ true> cl;
     obj->oop_iterate(&cl);

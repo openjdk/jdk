@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,76 +26,79 @@
 package sun.net.httpserver;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import com.sun.net.httpserver.*;
 
-class UnmodifiableHeaders extends Headers {
+public class UnmodifiableHeaders extends Headers {
 
-        Headers map;
+    private final Headers headers;  // modifiable, but no reference to it escapes
+    private final Map<String, List<String>> map;  // unmodifiable
 
-        UnmodifiableHeaders(Headers map) {
-            this.map = map;
-        }
-
-        public int size() {return map.size();}
-
-        public boolean isEmpty() {return map.isEmpty();}
-
-        public boolean containsKey(Object key) {
-            return map.containsKey (key);
-        }
-
-        public boolean containsValue(Object value) {
-            return map.containsValue(value);
-        }
-
-        public List<String> get(Object key) {
-            return map.get(key);
-        }
-
-        public String getFirst (String key) {
-            return map.getFirst(key);
-        }
-
-
-        public List<String> put(String key, List<String> value) {
-            return map.put (key, value);
-        }
-
-        public void add (String key, String value) {
-            throw new UnsupportedOperationException ("unsupported operation");
-        }
-
-        public void set (String key, String value) {
-            throw new UnsupportedOperationException ("unsupported operation");
-        }
-
-        public List<String> remove(Object key) {
-            throw new UnsupportedOperationException ("unsupported operation");
-        }
-
-        public void putAll(Map<? extends String,? extends List<String>> t)  {
-            throw new UnsupportedOperationException ("unsupported operation");
-        }
-
-        public void clear() {
-            throw new UnsupportedOperationException ("unsupported operation");
-        }
-
-        public Set<String> keySet() {
-            return Collections.unmodifiableSet (map.keySet());
-        }
-
-        public Collection<List<String>> values() {
-            return Collections.unmodifiableCollection(map.values());
-        }
-
-        /* TODO check that contents of set are not modifable : security */
-
-        public Set<Map.Entry<String, List<String>>> entrySet() {
-            return Collections.unmodifiableSet (map.entrySet());
-        }
-
-        public boolean equals(Object o) {return map.equals(o);}
-
-        public int hashCode() {return map.hashCode();}
+    public UnmodifiableHeaders(Headers headers) {
+        var h = headers;
+        var unmodHeaders = new Headers();
+        h.forEach((k, v) -> unmodHeaders.put(k, Collections.unmodifiableList(v)));
+        this.map = Collections.unmodifiableMap(unmodHeaders);
+        this.headers = unmodHeaders;
     }
+
+    public int size() {return headers.size();}
+
+    public boolean isEmpty() {return headers.isEmpty();}
+
+    public boolean containsKey(Object key) { return headers.containsKey(key); }
+
+    public boolean containsValue(Object value) { return headers.containsValue(value); }
+
+    public List<String> get(Object key) { return headers.get(key); }
+
+    public String getFirst(String key) { return headers.getFirst(key); }
+
+    public List<String> put(String key, List<String> value) {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public void add(String key, String value) {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public void set(String key, String value) {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public List<String> remove(Object key) {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public void putAll(Map<? extends String,? extends List<String>> t)  {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public void clear() {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public Set<String> keySet() { return map.keySet(); }
+
+    public Collection<List<String>> values() { return map.values(); }
+
+    /* TODO check that contents of set are not modifable : security */
+
+    public Set<Map.Entry<String, List<String>>> entrySet() { return map.entrySet(); }
+
+    public List<String> replace(String key, List<String> value) {
+        throw new UnsupportedOperationException("unsupported operation");
+    }
+
+    public boolean replace(String key, List<String> oldValue, List<String> newValue) {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
+        throw new UnsupportedOperationException ("unsupported operation");
+    }
+
+    public boolean equals(Object o) {return headers.equals(o);}
+
+    public int hashCode() {return headers.hashCode();}
+}

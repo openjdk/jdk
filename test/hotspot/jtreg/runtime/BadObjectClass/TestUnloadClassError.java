@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,14 @@
  *          java.lang.Object class.
  *          Also, make sure the vm doesn't crash on notification for unloading an invalid
  *          java.lang.Object class.
- * @library /runtime/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  * @run main TestUnloadClassError
  */
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class TestUnloadClassError extends ClassLoader {
 

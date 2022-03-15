@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @requires vm.cds
  * @summary test that --patch-module works with CDS
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
@@ -35,6 +36,7 @@
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class PatchModuleCDS {
 
@@ -51,6 +53,7 @@ public class PatchModuleCDS {
             "-version");
         new OutputAnalyzer(pb.start())
             // --patch-module is not supported during CDS dumping
+            .shouldNotHaveExitValue(0)
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 2: Test that directory in --patch-module is supported for CDS dumping
@@ -75,6 +78,7 @@ public class PatchModuleCDS {
             "-version");
         new OutputAnalyzer(pb.start())
             // --patch-module is not supported during CDS dumping
+            .shouldNotHaveExitValue(0)
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3a: Test CDS dumping with jar file in --patch-module
@@ -90,6 +94,7 @@ public class PatchModuleCDS {
             "PatchModuleMain", "javax.naming.spi.NamingManager");
         new OutputAnalyzer(pb.start())
             // --patch-module is not supported during CDS dumping
+            .shouldNotHaveExitValue(0)
             .shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
         // Case 3b: Test CDS run with jar file in --patch-module

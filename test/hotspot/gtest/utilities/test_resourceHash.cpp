@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,21 @@ class CommonResourceHashtableTest : public ::testing::Test {
     }
   };
 
+  class DeleterTestIter {
+    int _val;
+   public:
+    DeleterTestIter(int i) : _val(i) {}
+
+    bool do_entry(K const& k, V const& v) {
+      if ((uintptr_t) k == (uintptr_t) _val) {
+        // Delete me!
+        return true;
+      } else {
+        return false; // continue iteration
+      }
+    }
+  };
+
 };
 
 class SmallResourceHashtableTest : public CommonResourceHashtableTest {
@@ -76,7 +91,7 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
 
     static void test(V step) {
       EqualityTestIter et;
-      ResourceHashtable<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE> rh;
+      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> rh;
 
       ASSERT_FALSE(rh.contains(as_K(step)));
 
@@ -208,7 +223,7 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
 
     static void test(unsigned num_elements = SIZE) {
       EqualityTestIter et;
-      ResourceHashtable<K, V, HASH, EQUALS, SIZE, ALLOC_TYPE, MEM_TYPE> rh;
+      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> rh;
 
       for (uintptr_t i = 0; i < num_elements; ++i) {
         ASSERT_TRUE(rh.put(as_K(i), i));
@@ -233,6 +248,15 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
         ASSERT_FALSE(rh.remove(as_K(index)));
       }
       rh.iterate(&et);
+
+      // Add more entries in and then delete one.
+      for (uintptr_t i = 10; i > 0; --i) {
+        uintptr_t index = i - 1;
+        ASSERT_TRUE(rh.put(as_K(index), index));
+      }
+      DeleterTestIter dt(5);
+      rh.unlink(&dt);
+      ASSERT_FALSE(rh.get(as_K(5)));
     }
   };
 };

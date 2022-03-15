@@ -309,7 +309,7 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "method", "See Also:", "sub()", "I.sub1()",
+                "public", "void", "method", "See Also:", "sub()", "sub1()",
                 "public", "void", "m", "Method in C. See", "I.length()"
                 );
 
@@ -325,9 +325,8 @@ public class TestVisibleMembers extends JavadocTester {
                 "METHOD DETAIL",
                 "Method sub in p.IImpl",
                 "Specified by:", "I.html",
+                "Specified by:", "II.html",
                 "END OF CLASS DATA");
-
-        checkUnique("p/IImpl.html", "Specified by:");
     }
 
     // see j.u.Spliterator

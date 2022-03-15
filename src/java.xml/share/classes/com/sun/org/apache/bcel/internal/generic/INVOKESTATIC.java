@@ -33,7 +33,7 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * <PRE>Stack: ..., [arg1, [arg2 ...]] -&gt; ...</PRE>
  *
  * @see
- * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokestatic">
+ * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokestatic">
  * The invokestatic instruction in The Java Virtual Machine Specification</a>
  */
 public class INVOKESTATIC extends InvokeInstruction {

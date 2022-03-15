@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6518733
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug6518733
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug6518733
  * @run testng/othervm parsers.Bug6518733
  * @summary Test SAX parser handles several attributes that each contain a newline within the attribute value.
  */

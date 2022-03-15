@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -31,6 +32,7 @@
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -44,6 +46,8 @@ static Symbol* on_retransform_method_sym = NULL;
 static Symbol* on_retransform_signature_sym = NULL;
 static Symbol* bytes_for_eager_instrumentation_sym = NULL;
 static Symbol* bytes_for_eager_instrumentation_sig_sym = NULL;
+static Symbol* unhide_internal_types_sym = NULL;
+static Symbol* unhide_internal_types_sig_sym = NULL;
 
 static bool initialize(TRAPS) {
   static bool initialized = false;
@@ -54,7 +58,9 @@ static bool initialize(TRAPS) {
     on_retransform_signature_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B");
     bytes_for_eager_instrumentation_sym = SymbolTable::new_permanent_symbol("bytesForEagerInstrumentation");
     bytes_for_eager_instrumentation_sig_sym = SymbolTable::new_permanent_symbol("(JZLjava/lang/Class;[B)[B");
-    initialized = bytes_for_eager_instrumentation_sig_sym != NULL;
+    unhide_internal_types_sym = SymbolTable::new_permanent_symbol("unhideInternalTypes");
+    unhide_internal_types_sig_sym = SymbolTable::new_permanent_symbol("()V");
+    initialized = unhide_internal_types_sig_sym != NULL;
   }
   return initialized;
 }
@@ -81,11 +87,12 @@ static const typeArrayOop invoke(jlong trace_id,
   args.push_oop(old_byte_array);
   JfrJavaSupport::call_static(&args, THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    log_error(jfr, system)("JfrUpcall failed");
+    ResourceMark rm(THREAD);
+    log_error(jfr, system)("JfrUpcall failed for %s", method_sym->as_C_string());
     return NULL;
   }
   // The result should be a [B
-  const oop res = (oop)result.get_jobject();
+  const oop res = result.get_oop();
   assert(res != NULL, "invariant");
   assert(res->is_typeArray(), "invariant");
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "invariant");
@@ -177,4 +184,20 @@ void JfrUpcalls::new_bytes_eager_instrumentation(jlong trace_id,
   memcpy(new_bytes, new_byte_array->byte_at_addr(0), (size_t)new_bytes_length);
   *new_class_data_len = new_bytes_length;
   *new_class_data = new_bytes;
+}
+
+bool JfrUpcalls::unhide_internal_types(TRAPS) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  JavaValue result(T_VOID);
+  const Klass* klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK_false);
+  assert(klass != NULL, "invariant");
+  JfrJavaArguments args(&result, klass, unhide_internal_types_sym, unhide_internal_types_sig_sym);
+  JfrJavaSupport::call_static(&args, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+    ResourceMark rm(THREAD);
+    log_error(jfr, system)("JfrUpcall failed for %s", unhide_internal_types_sym->as_C_string());
+    return false;
+  }
+  return true;
 }

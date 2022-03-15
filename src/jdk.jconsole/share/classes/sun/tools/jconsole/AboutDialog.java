@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,50 @@
 
 package sun.tools.jconsole;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Desktop;
+import java.awt.FlowLayout;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyVetoException;
 import java.net.URI;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Document;
+import javax.swing.text.Highlighter;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.View;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
+import static java.awt.BorderLayout.CENTER;
+import static java.awt.BorderLayout.NORTH;
+import static java.awt.BorderLayout.SOUTH;
 
-import static java.awt.BorderLayout.*;
-import static sun.tools.jconsole.Utilities.*;
+import static sun.tools.jconsole.Utilities.setAccessibleDescription;
+import static sun.tools.jconsole.Utilities.setAccessibleName;
 
 @SuppressWarnings("serial")
 public class AboutDialog extends InternalDialog {
@@ -51,6 +84,8 @@ public class AboutDialog extends InternalDialog {
 
     private JLabel statusBar;
     private Action closeAction;
+    private JEditorPane helpLink;
+    private final String urlStr = getOnlineDocUrl();
 
     public AboutDialog(JConsole jConsole) {
         super(jConsole, Messages.HELP_ABOUT_DIALOG_TITLE, false);
@@ -72,25 +107,49 @@ public class AboutDialog extends InternalDialog {
         String jConsoleVersion = Version.getVersion();
         String vmName = System.getProperty("java.vm.name");
         String vmVersion = System.getProperty("java.vm.version");
-        String urlStr = getOnlineDocUrl();
+        String locUrlStr = urlStr;
         if (isBrowseSupported()) {
-            urlStr = "<a style='color:#35556b' href=\"" + urlStr + "\">" + urlStr + "</a>";
+            locUrlStr = "<a style='color:#35556b' href=\"" + locUrlStr + "\">" + locUrlStr + "</a>";
         }
 
         JPanel infoAndLogoPanel = new JPanel(new BorderLayout(10, 10));
         infoAndLogoPanel.setBackground(bgColor);
 
         String colorStr = String.format("%06x", textColor.getRGB() & 0xFFFFFF);
-        JEditorPane helpLink = new JEditorPane("text/html",
+        helpLink = new JEditorPane("text/html",
                                 "<html><font color=#"+ colorStr + ">" +
                         Resources.format(Messages.HELP_ABOUT_DIALOG_JCONSOLE_VERSION, jConsoleVersion) +
                 "<p>" + Resources.format(Messages.HELP_ABOUT_DIALOG_JAVA_VERSION, (vmName +", "+ vmVersion)) +
-                "<p>" + urlStr + "</html>");
+                "<p>" + locUrlStr + "</html>");
+
         helpLink.setOpaque(false);
         helpLink.setEditable(false);
         helpLink.setForeground(textColor);
+
         mainPanel.setBorder(BorderFactory.createLineBorder(borderColor));
         infoAndLogoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        helpLink.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if ((e.getKeyCode() == KeyEvent.VK_ENTER) || (e.getKeyCode() == KeyEvent.VK_SPACE)) {
+                    browse(urlStr);
+                    e.consume();
+                }
+            }
+        });
+
+        helpLink.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                highlight();
+            }
+            @Override
+            public void focusLost(FocusEvent e) {
+                removeHighlights();
+            }
+        });
+
         helpLink.addHyperlinkListener(new HyperlinkListener() {
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
@@ -126,6 +185,25 @@ public class AboutDialog extends InternalDialog {
         pack();
         setLocationRelativeTo(jConsole);
         Utilities.updateTransparency(this);
+    }
+
+    public void highlight() {
+        try {
+            removeHighlights();
+
+            Highlighter hilite = helpLink.getHighlighter();
+            Document doc = helpLink.getDocument();
+            String text = doc.getText(0, doc.getLength());
+            int pos = text.indexOf(urlStr, 0);
+            hilite.addHighlight(pos, pos + urlStr.length(), new HighlightPainter());
+        } catch (BadLocationException e) {
+            // ignore
+        }
+    }
+
+    public void removeHighlights() {
+        Highlighter hilite = helpLink.getHighlighter();
+        hilite.removeAllHighlights();
     }
 
     public void showDialog() {
@@ -190,6 +268,36 @@ public class AboutDialog extends InternalDialog {
         TPanel(int hgap, int vgap) {
             super(new BorderLayout(hgap, vgap));
             setOpaque(false);
+        }
+    }
+
+    private static class HighlightPainter
+            extends DefaultHighlighter.DefaultHighlightPainter {
+
+        public HighlightPainter() {
+            super(null);
+        }
+        @Override
+        public Shape paintLayer(Graphics g, int offs0, int offs1, Shape bounds,
+                                JTextComponent c, View view) {
+            g.setColor(c.getSelectionColor());
+            Rectangle alloc;
+
+            if (bounds instanceof Rectangle) {
+                alloc = (Rectangle)bounds;
+            } else {
+                alloc = bounds.getBounds();
+            }
+
+            Graphics2D g2d = (Graphics2D)g;
+
+            float[] dash = { 2F, 2F };
+            Stroke dashedStroke = new BasicStroke(1F, BasicStroke.CAP_SQUARE,
+            BasicStroke.JOIN_MITER, 3F, dash, 0F);
+            g2d.fill(dashedStroke.createStrokedShape(
+                     new Rectangle2D.Float(alloc.x, alloc.y,
+                                           alloc.width - 1, alloc.height - 1)));
+            return alloc;
         }
     }
 }

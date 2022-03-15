@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class TestExceptionHandling extends TestRunner {
 
         String errString = "Destination directory is not a directory: " + out.toString();
         // check the regular message
-        assertPresent("javadoc: error - " + errString, tr.getOutputLines(Task.OutputKind.DIRECT));
+        assertPresent("error: " + errString, tr.getOutputLines(Task.OutputKind.DIRECT));
         // check that first line of the stack trace is present
         assertPresent("jdk.javadoc.internal.doclets.toolkit.util.SimpleDocletException: " +
                 errString, tr.getOutputLines(Task.OutputKind.STDERR));
@@ -102,7 +102,7 @@ public class TestExceptionHandling extends TestRunner {
         Task.Result tr = cmdTask.run(Task.Expect.FAIL);
 
         // check the regular message
-        assertPresent("javadoc: error - Cannot find doclet class NonExistentDoclet",
+        assertPresent("error: Cannot find doclet class NonExistentDoclet",
                 tr.getOutputLines(Task.OutputKind.DIRECT));
 
         // check that first line of the stack trace is present

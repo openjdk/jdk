@@ -57,7 +57,7 @@ void UnhandledOops::dump_oops(UnhandledOops *list) {
 // You don't want to turn it on in compiled code here.
 static Thread* unhandled_oop_print = NULL;
 
-void UnhandledOops::register_unhandled_oop(oop* op, address pc) {
+void UnhandledOops::register_unhandled_oop(oop* op) {
   if (!_thread->is_in_live_stack((address)op)) {
     return;
   }
@@ -67,7 +67,7 @@ void UnhandledOops::register_unhandled_oop(oop* op, address pc) {
     for (int i=0; i < _level; i++) tty->print(" ");
     tty->print_cr("r " INTPTR_FORMAT, p2i(op));
   }
-  UnhandledOopEntry entry(op, pc);
+  UnhandledOopEntry entry(op);
   _oop_list->push(entry);
 }
 
@@ -120,8 +120,7 @@ void UnhandledOops::clear_unhandled_oops() {
     // in the unhandled oop generator.
     if (!_thread->is_in_live_stack((address)entry._oop_ptr)) {
       tty->print_cr("oop_ptr is " INTPTR_FORMAT, p2i(entry._oop_ptr));
-      tty->print_cr("thread is " INTPTR_FORMAT " from pc " INTPTR_FORMAT,
-                     p2i(_thread), p2i(entry._pc));
+      tty->print_cr("thread is " INTPTR_FORMAT, p2i(_thread));
       assert(false, "heap is corrupted by the unhandled oop detector");
     }
     // Set unhandled oops to a pattern that will crash distinctively

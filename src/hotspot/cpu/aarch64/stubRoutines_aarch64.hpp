@@ -36,7 +36,7 @@ static bool    returns_to_call_stub(address return_pc)   {
 
 enum platform_dependent_constants {
   code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 28000           // simply increase if too small (assembler will crash if too small)
+  code_size2 = 45000           // simply increase if too small (assembler will crash if too small)
 };
 
 class aarch64 {
@@ -58,8 +58,6 @@ class aarch64 {
 
   static address _zero_blocks;
 
-  static address _has_negatives;
-  static address _has_negatives_long;
   static address _large_array_equals;
   static address _compare_long_string_LL;
   static address _compare_long_string_LU;
@@ -72,9 +70,14 @@ class aarch64 {
 
   static address _method_entry_barrier;
 
+  static address _spin_wait;
+
   static bool _completed;
 
  public:
+
+  static address _has_negatives;
+  static address _has_negatives_long;
 
   static address get_previous_sp_entry()
   {
@@ -175,6 +178,10 @@ class aarch64 {
 
   static address method_entry_barrier() {
     return _method_entry_barrier;
+  }
+
+  static address spin_wait() {
+    return _spin_wait;
   }
 
   static bool complete() {

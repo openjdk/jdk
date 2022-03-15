@@ -33,7 +33,7 @@ import javax.imageio.ImageIO;
  *          VM mode: it would not test the intended behavior.
  * @modules java.desktop
  *          java.logging
- * @run main/othervm TestLoggingWithMainAppContext
+ * @run main/othervm -Djava.security.manager=allow TestLoggingWithMainAppContext
  */
 public class TestLoggingWithMainAppContext {
 

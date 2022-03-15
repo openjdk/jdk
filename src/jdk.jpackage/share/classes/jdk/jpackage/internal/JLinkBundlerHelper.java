@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ final class JLinkBundlerHelper {
         String jlinkOut = writer.toString();
 
         args.add(0, "jlink");
-        Log.verbose(args, List.of(jlinkOut), retVal);
+        Log.verbose(args, List.of(jlinkOut), retVal, -1);
 
 
         if (retVal != 0) {
@@ -213,10 +213,10 @@ final class JLinkBundlerHelper {
     }
 
     // The token for "all modules on the module path".
-    private final static String ALL_MODULE_PATH = "ALL-MODULE-PATH";
+    private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
 
     // The token for "all valid runtime modules".
-    private final static String ALL_DEFAULT = "ALL-DEFAULT";
+    private static final String ALL_DEFAULT = "ALL-DEFAULT";
 
     private static class LazyLoad {
         static final ToolProvider JLINK_TOOL = ToolProvider.findFirst(

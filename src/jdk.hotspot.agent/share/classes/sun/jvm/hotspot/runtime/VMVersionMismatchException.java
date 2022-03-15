@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,25 @@ package sun.jvm.hotspot.runtime;
 /** An instance of this exception is thrown when debuggee VM version
     is not supported current version of SA. */
 public class VMVersionMismatchException extends RuntimeException {
-    public VMVersionMismatchException(String supported, String target) {
+    public VMVersionMismatchException(Runtime.Version supported, Runtime.Version target) {
         super();
         supportedVersions = supported;
         targetVersion = target;
     }
 
     public String getMessage() {
-        StringBuffer msg = new StringBuffer();
-        msg.append("Supported versions are ");
-        msg.append(supportedVersions);
-        msg.append(". Target VM is ");
-        msg.append(targetVersion);
-        return msg.toString();
+        return "Supported versions are " + supportedVersions +
+                ". Target VM is " + targetVersion;
     }
 
-    public String getSupportedVersions() {
+    public Runtime.Version getSupportedVersions() {
         return supportedVersions;
     }
 
-    public String getTargetVersion() {
+    public Runtime.Version getTargetVersion() {
         return targetVersion;
     }
 
-    private String supportedVersions;
-    private String targetVersion;
+    private final Runtime.Version supportedVersions;
+    private final Runtime.Version targetVersion;
 }

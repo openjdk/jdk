@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  *          caused by synchronization issues in Logger and LogManager.
  * @modules java.logging
  *          java.management
- * @run main/othervm TestLogConfigurationDeadLockWithConf
+ * @run main/othervm -Djava.security.manager=allow TestLogConfigurationDeadLockWithConf
  * @author danielfuchs
  * @key randomness
  */

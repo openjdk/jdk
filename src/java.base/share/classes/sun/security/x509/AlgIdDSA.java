@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,32 +100,6 @@ class AlgIdDSA extends AlgorithmId implements DSAParams
     @Deprecated
     public AlgIdDSA () {}
 
-    AlgIdDSA (DerValue val) throws IOException
-        { super(val.getOID()); }
-
-    /**
-     * Construct an AlgIdDSA from an X.509 encoded byte array.
-     */
-    public AlgIdDSA (byte[] encodedAlg) throws IOException
-        { super (new DerValue(encodedAlg).getOID()); }
-
-    /**
-     * Constructs a DSS/DSA Algorithm ID from unsigned integers that
-     * define the algorithm parameters.  Those integers are encoded
-     * as big-endian byte arrays.
-     *
-     * @param p the DSS/DSA parameter "P"
-     * @param q the DSS/DSA parameter "Q"
-     * @param g the DSS/DSA parameter "G"
-     */
-    public AlgIdDSA (byte[] p, byte[] q, byte[] g)
-    throws IOException
-    {
-        this (new BigInteger (1, p),
-            new BigInteger (1, q),
-            new BigInteger (1, g));
-    }
-
     /**
      * Constructs a DSS/DSA Algorithm ID from numeric parameters.
      * If all three are null, then the parameters portion of the algorithm id
@@ -135,8 +109,7 @@ class AlgIdDSA extends AlgorithmId implements DSAParams
      * @param q the DSS/DSA parameter "Q"
      * @param g the DSS/DSA parameter "G"
      */
-    public AlgIdDSA (BigInteger p, BigInteger q, BigInteger g)
-    {
+    public AlgIdDSA (BigInteger p, BigInteger q, BigInteger g) {
         super (DSA_oid);
 
         if (p != null || q != null || g != null) {
@@ -168,28 +141,29 @@ class AlgIdDSA extends AlgorithmId implements DSAParams
      * For algorithm IDs which haven't been created from a DER encoded
      * value, "params" must be created.
      */
-    private void initializeParams ()
-    throws IOException
-    {
-        DerOutputStream out = new DerOutputStream ();
-
+    private void initializeParams () throws IOException {
+        DerOutputStream out = new DerOutputStream();
         out.putInteger(p);
         out.putInteger(q);
         out.putInteger(g);
-        params = new DerValue (DerValue.tag_Sequence,out.toByteArray ());
+        DerOutputStream result = new DerOutputStream();
+        result.write(DerValue.tag_Sequence, out);
+        encodedParams = result.toByteArray();
     }
 
     /**
      * Parses algorithm parameters P, Q, and G.  They're found
      * in the "params" member, which never needs to be changed.
      */
-    protected void decodeParams ()
-    throws IOException
-    {
-        if (params == null)
+    protected void decodeParams () throws IOException {
+        if (encodedParams == null) {
             throw new IOException("DSA alg params are null");
-        if (params.tag != DerValue.tag_Sequence)
-            throw new  IOException("DSA alg parsing error");
+        }
+
+        DerValue params = new DerValue(encodedParams);
+        if (params.tag != DerValue.tag_Sequence) {
+            throw new IOException("DSA alg parsing error");
+        }
 
         params.data.reset ();
 
@@ -206,21 +180,21 @@ class AlgIdDSA extends AlgorithmId implements DSAParams
     /*
      * Returns a formatted string describing the parameters.
      */
-    public String toString ()
-        { return paramsToString (); }
+    public String toString () {
+        return paramsToString();
+    }
 
     /*
      * Returns a string describing the parameters.
      */
-    protected String paramsToString ()
-    {
-        if (params == null)
+    protected String paramsToString () {
+        if (encodedParams == null) {
             return " null\n";
-        else
-            return
-                "\n    p:\n" + Debug.toHexString(p) +
-                "\n    q:\n" + Debug.toHexString(q) +
-                "\n    g:\n" + Debug.toHexString(g) +
-                "\n";
+        } else {
+            return "\n    p:\n" + Debug.toHexString(p) +
+                    "\n    q:\n" + Debug.toHexString(q) +
+                    "\n    g:\n" + Debug.toHexString(g) +
+                    "\n";
+        }
     }
 }

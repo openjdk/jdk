@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.FocusTraversalPolicy;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.FocusTraversalPolicy;
 import java.awt.Window;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.io.*;
-
 
 /**
  * A FocusTraversalPolicy which provides support for legacy applications which
@@ -176,6 +181,7 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
 
         return true;
     }
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
 
@@ -191,6 +197,7 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
             out.writeObject(null);
         }
     }
+    @Serial
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ import jdk.test.lib.jfr.Events;
 public class TestSyncOnValueBasedClassEvent {
     static final String EVENT_NAME = EventNames.SyncOnValueBasedClass;
     static String[] classesWanted = {"java/lang/Character", "java/lang/Boolean", "java/lang/Byte", "java/lang/Short",
-                                     "java/lang/Integer", "java/lang/Long", "java/lang/Float", "java/lang/Double"};
+                                     "java/lang/Integer", "java/lang/Long", "java/lang/Float", "java/lang/Double",
+                                     "java/time/Duration", "java/util/OptionalInt", "java/lang/Runtime$Version"};
     static List<Object> testObjects = new ArrayList<Object>();
     static Integer counter = 0;
 
@@ -56,6 +57,9 @@ public class TestSyncOnValueBasedClassEvent {
         testObjects.add(Long.valueOf(0x4000000000000000L));
         testObjects.add(Float.valueOf(1.20f));
         testObjects.add(Double.valueOf(1.2345));
+        testObjects.add(Duration.ofMillis(5));
+        testObjects.add(OptionalInt.of(10));
+        testObjects.add(Runtime.version());
     }
 
     public static void main(String[] args) throws Throwable {

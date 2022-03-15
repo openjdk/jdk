@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,7 +241,7 @@ public:
   // Record an initial type for a node, the node's bottom type.
   void    set_type_bottom(const Node* n) {
     // Use this for initialization when bottom_type() (or better) is not handy.
-    // Usually the initialization shoudl be to n->Value(this) instead,
+    // Usually the initialization should be to n->Value(this) instead,
     // or a hand-optimized value like Type::MEMORY or Type::CONTROL.
     assert(_types[n->_idx] == NULL, "must set the initial type just once");
     _types.map(n->_idx, n->bottom_type());
@@ -429,8 +429,11 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   Node* apply_ideal(Node* i, bool can_reshape);
 
+#ifdef ASSERT
+  void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
-  DEBUG_ONLY(void dead_loop_check(Node *n);)
+  void dead_loop_check(Node *n);
+#endif
 };
 
 //------------------------------PhaseIterGVN-----------------------------------
@@ -448,7 +451,6 @@ private:
   void subsume_node( Node *old, Node *nn );
 
   Node_Stack _stack;      // Stack used to avoid recursion
-
 protected:
 
   // Shuffle worklist, for stress testing
@@ -481,7 +483,7 @@ public:
 #endif
 
 #ifdef ASSERT
-  void dump_infinite_loop_info(Node* n);
+  void dump_infinite_loop_info(Node* n, const char* where);
   void trace_PhaseIterGVN_verbose(Node* n, int num_processed);
 #endif
 
@@ -525,7 +527,7 @@ public:
   // Replace ith edge of "n" with "in"
   void replace_input_of(Node* n, int i, Node* in) {
     rehash_node_delayed(n);
-    n->set_req(i, in);
+    n->set_req_X(i, in, this);
   }
 
   // Delete ith edge of "n"
@@ -546,6 +548,7 @@ public:
   }
 
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
+  bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
 protected:

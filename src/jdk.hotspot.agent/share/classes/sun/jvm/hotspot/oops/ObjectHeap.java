@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,7 @@ public class ObjectHeap {
   }
 
   private void sortLiveRegions(List<Address> liveRegions) {
-    Collections.sort(liveRegions, new Comparator<Address>() {
+    liveRegions.sort(new Comparator<Address>() {
         public int compare(Address a1, Address a2) {
           if (AddressOps.lt(a1, a2)) {
             return -1;

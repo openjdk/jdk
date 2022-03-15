@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@ import javax.lang.model.util.*;
  * source of information is Java source code, then the elements will be
  * returned in source code order.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see DeclaredType
  * @since 1.6
  */
@@ -108,6 +105,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @jls 8.8.9 Default Constructor
      * @jls 8.9.3 Enum Members
+     * @jls 8.10.3 Record Members
      */
     @Override
     List<? extends Element> getEnclosedElements();
@@ -199,12 +197,6 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     }
 
     /**
-     * {@preview Associated with sealed classes, a preview feature of the Java language.
-     *
-     *           This method is associated with <i>sealed classes</i>, a preview
-     *           feature of the Java language. Preview features
-     *           may be removed in a future release, or upgraded to permanent
-     *           features of the Java language.}
      * Returns the permitted classes of this class or interface
      * element in declaration order.
      *
@@ -213,10 +205,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @return the permitted classes, or an empty list if there are none
      *
-     * @since 15
+     * @since 17
      */
-    @jdk.internal.PreviewFeature(feature=jdk.internal.PreviewFeature.Feature.SEALED_CLASSES,
-                                 essentialAPI=false)
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();
     }

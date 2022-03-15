@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public BreakIteratorProvider getBreakIteratorProvider() {
         if (breakIteratorProvider == null) {
+            @SuppressWarnings("removal")
             BreakIteratorProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<BreakIteratorProvider>) () ->
                     new BreakIteratorProviderImpl(
@@ -160,6 +161,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CollatorProvider getCollatorProvider() {
         if (collatorProvider == null) {
+            @SuppressWarnings("removal")
             CollatorProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CollatorProvider>) () ->
                     new CollatorProviderImpl(
@@ -178,6 +180,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public DateFormatProvider getDateFormatProvider() {
         if (dateFormatProvider == null) {
+            @SuppressWarnings("removal")
             DateFormatProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<DateFormatProvider>) () ->
                     new DateFormatProviderImpl(
@@ -196,6 +199,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public DateFormatSymbolsProvider getDateFormatSymbolsProvider() {
         if (dateFormatSymbolsProvider == null) {
+            @SuppressWarnings("removal")
             DateFormatSymbolsProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<DateFormatSymbolsProvider>) () ->
                     new DateFormatSymbolsProviderImpl(
@@ -214,6 +218,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public DecimalFormatSymbolsProvider getDecimalFormatSymbolsProvider() {
         if (decimalFormatSymbolsProvider == null) {
+            @SuppressWarnings("removal")
             DecimalFormatSymbolsProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<DecimalFormatSymbolsProvider>) () ->
                     new DecimalFormatSymbolsProviderImpl(
@@ -232,6 +237,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public NumberFormatProvider getNumberFormatProvider() {
         if (numberFormatProvider == null) {
+            @SuppressWarnings("removal")
             NumberFormatProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<NumberFormatProvider>) () ->
                     new NumberFormatProviderImpl(
@@ -253,6 +259,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CurrencyNameProvider getCurrencyNameProvider() {
         if (currencyNameProvider == null) {
+            @SuppressWarnings("removal")
             CurrencyNameProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CurrencyNameProvider>) () ->
                     new CurrencyNameProviderImpl(
@@ -271,6 +278,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public LocaleNameProvider getLocaleNameProvider() {
         if (localeNameProvider == null) {
+            @SuppressWarnings("removal")
             LocaleNameProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<LocaleNameProvider>) () ->
                     new LocaleNameProviderImpl(
@@ -289,6 +297,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public TimeZoneNameProvider getTimeZoneNameProvider() {
         if (timeZoneNameProvider == null) {
+            @SuppressWarnings("removal")
             TimeZoneNameProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<TimeZoneNameProvider>) () ->
                     new TimeZoneNameProviderImpl(
@@ -307,6 +316,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
+            @SuppressWarnings("removal")
             CalendarDataProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CalendarDataProvider>) () ->
                     new CalendarDataProviderImpl(
@@ -325,6 +335,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CalendarNameProvider getCalendarNameProvider() {
         if (calendarNameProvider == null) {
+            @SuppressWarnings("removal")
             CalendarNameProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CalendarNameProvider>) () ->
                     new CalendarNameProviderImpl(
@@ -346,6 +357,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public CalendarProvider getCalendarProvider() {
         if (calendarProvider == null) {
+            @SuppressWarnings("removal")
             CalendarProvider provider = AccessController.doPrivileged(
                 (PrivilegedAction<CalendarProvider>) () ->
                     new CalendarProviderImpl(
@@ -367,6 +379,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     public JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider() {
         if (javaTimeDateTimePatternProvider == null) {
+            @SuppressWarnings("removal")
             JavaTimeDateTimePatternProvider provider = AccessController.doPrivileged(
                     (PrivilegedAction<JavaTimeDateTimePatternProvider>) ()
                     -> new JavaTimeDateTimePatternImpl(
@@ -459,6 +472,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
 
         // Use ServiceLoader to dynamically acquire installed locales' tags.
         try {
+            @SuppressWarnings("removal")
             String nonBaseTags = AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
                 StringBuilder tags = new StringBuilder();
                 for (LocaleDataMetaInfo ldmi :

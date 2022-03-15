@@ -32,7 +32,7 @@ package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
 import sun.security.util.*;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.io.IOException;
 import java.math.BigInteger;
 
@@ -165,17 +165,17 @@ public class KDCReqBody {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
         der = encoding.getData().getDerValue();
-        Vector<Integer> v = new Vector<>();
         if ((der.getTag() & (byte)0x1F) == (byte)0x08) {
             subDer = der.getData().getDerValue();
 
             if (subDer.getTag() == DerValue.tag_SequenceOf) {
+                ArrayList<Integer> v = new ArrayList<>();
                 while(subDer.getData().available() > 0) {
-                    v.addElement(subDer.getData().getBigInteger().intValue());
+                    v.add(subDer.getData().getBigInteger().intValue());
                 }
                 eType = new int[v.size()];
                 for (int i = 0; i < v.size(); i++) {
-                    eType[i] = v.elementAt(i);
+                    eType[i] = v.get(i);
                 }
             } else {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -190,20 +190,19 @@ public class KDCReqBody {
             encAuthorizationData = EncryptedData.parse(encoding.getData(), (byte)0x0A, true);
         }
         if (encoding.getData().available() > 0) {
-            Vector<Ticket> tempTickets = new Vector<>();
             der = encoding.getData().getDerValue();
             if ((der.getTag() & (byte)0x1F) == (byte)0x0B) {
+                ArrayList<Ticket> tempTickets = new ArrayList<>();
                 subDer = der.getData().getDerValue();
                 if (subDer.getTag() == DerValue.tag_SequenceOf) {
                     while (subDer.getData().available() > 0) {
-                        tempTickets.addElement(new Ticket(subDer.getData().getDerValue()));
+                        tempTickets.add(new Ticket(subDer.getData().getDerValue()));
                     }
                 } else {
                     throw new Asn1Exception(Krb5.ASN1_BAD_ID);
                 }
                 if (tempTickets.size() > 0) {
-                    additionalTickets = new Ticket[tempTickets.size()];
-                    tempTickets.copyInto(additionalTickets);
+                    additionalTickets = tempTickets.toArray(new Ticket[0]);
                 }
             } else {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -223,29 +222,29 @@ public class KDCReqBody {
      *
      */
     public byte[] asn1Encode(int msgType) throws Asn1Exception, IOException {
-        Vector<DerValue> v = new Vector<>();
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), kdcOptions.asn1Encode()));
+        ArrayList<DerValue> v = new ArrayList<>();
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), kdcOptions.asn1Encode()));
         if (msgType == Krb5.KRB_AS_REQ) {
             if (cname != null) {
-                v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), cname.asn1Encode()));
+                v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x01), cname.asn1Encode()));
             }
         }
         if (sname != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), sname.getRealm().asn1Encode()));
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x03), sname.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), sname.getRealm().asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x03), sname.asn1Encode()));
         } else if (cname != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), cname.getRealm().asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x02), cname.getRealm().asn1Encode()));
         }
         if (from != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x04), from.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x04), from.asn1Encode()));
         }
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x05), till.asn1Encode()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x05), till.asn1Encode()));
         if (rtime != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x06), rtime.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x06), rtime.asn1Encode()));
         }
         DerOutputStream temp = new DerOutputStream();
         temp.putInteger(BigInteger.valueOf(nonce));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), temp.toByteArray()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x07), temp.toByteArray()));
         //revisit, if empty eType sequences are allowed
         temp = new DerOutputStream();
         for (int i = 0; i < eType.length; i++) {
@@ -253,12 +252,12 @@ public class KDCReqBody {
         }
         DerOutputStream eTypetemp = new DerOutputStream();
         eTypetemp.write(DerValue.tag_SequenceOf, temp);
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x08), eTypetemp.toByteArray()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x08), eTypetemp.toByteArray()));
         if (addresses != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x09), addresses.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x09), addresses.asn1Encode()));
         }
         if (encAuthorizationData != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0A), encAuthorizationData.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0A), encAuthorizationData.asn1Encode()));
         }
         if (additionalTickets != null && additionalTickets.length > 0) {
             temp = new DerOutputStream();
@@ -267,10 +266,9 @@ public class KDCReqBody {
             }
             DerOutputStream ticketsTemp = new DerOutputStream();
             ticketsTemp.write(DerValue.tag_SequenceOf, temp);
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0B), ticketsTemp.toByteArray()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0B), ticketsTemp.toByteArray()));
         }
-        DerValue[] der = new DerValue[v.size()];
-        v.copyInto(der);
+        DerValue[] der = v.toArray(new DerValue[0]);
         temp = new DerOutputStream();
         temp.putSequence(der);
         return temp.toByteArray();

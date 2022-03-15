@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP
 
+#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
-#include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
@@ -65,12 +66,16 @@ inline traceid set_used_and_get(const T* type) {
   return TRACE_ID(type);
 }
 
-inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
-  assert(klass != NULL, "invariant");
-  if (should_tag(klass)) {
+inline void JfrTraceIdLoadBarrier::load_barrier(const Klass* klass) {
     SET_USED_THIS_EPOCH(klass);
     enqueue(klass);
     JfrTraceIdEpoch::set_changed_tag_state();
+}
+
+inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
+  assert(klass != NULL, "invariant");
+  if (should_tag(klass)) {
+    load_barrier(klass);
   }
   assert(USED_THIS_EPOCH(klass), "invariant");
   return TRACE_ID(klass);
@@ -83,7 +88,7 @@ inline traceid JfrTraceIdLoadBarrier::load(const Method* method) {
 inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass, const Method* method) {
    assert(klass != NULL, "invariant");
    assert(method != NULL, "invariant");
-   if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
+   if (should_tag(method)) {
      SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
      SET_METHOD_FLAG_USED_THIS_EPOCH(method);
      assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
@@ -104,7 +109,14 @@ inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
 
 inline traceid JfrTraceIdLoadBarrier::load(const ClassLoaderData* cld) {
   assert(cld != NULL, "invariant");
-  return cld->has_class_mirror_holder() ? 0 : set_used_and_get(cld);
+  if (cld->has_class_mirror_holder()) {
+    return 0;
+  }
+  const Klass* const class_loader_klass = cld->class_loader_klass();
+  if (class_loader_klass != nullptr && should_tag(class_loader_klass)) {
+    load_barrier(class_loader_klass);
+  }
+  return set_used_and_get(cld);
 }
 
 inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Method* method) {
@@ -112,7 +124,7 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Metho
   assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
   assert(method != NULL, "invariant");
   assert(klass == method->method_holder(), "invariant");
-  if (METHOD_FLAG_NOT_USED_THIS_EPOCH(method)) {
+  if (should_tag(method)) {
     // the method is already logically tagged, just like the klass,
     // but because of redefinition, the latest Method*
     // representation might not have a reified tag.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
 #include "c1/c1_LIRGenerator.hpp"
+#include "compiler/oopMap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
@@ -436,6 +437,7 @@ class MoveResolver: public StackObj {
   void append_insertion_buffer();
   void insert_move(Interval* from_interval, Interval* to_interval);
   void insert_move(LIR_Opr from_opr, Interval* to_interval);
+  LIR_Opr get_virtual_register(Interval* interval);
 
   DEBUG_ONLY(void verify_before_resolve();)
   void resolve_mappings();
@@ -545,8 +547,8 @@ class Interval : public CompilationResourceObj {
   // accessors
   int              reg_num() const               { return _reg_num; }
   void             set_reg_num(int r)            { assert(_reg_num == -1, "cannot change reg_num"); _reg_num = r; }
-  BasicType        type() const                  { assert(_reg_num == -1 || _reg_num >= LIR_OprDesc::vreg_base, "cannot access type for fixed interval"); return _type; }
-  void             set_type(BasicType type)      { assert(_reg_num < LIR_OprDesc::vreg_base || _type == T_ILLEGAL || _type == type, "overwriting existing type"); _type = type; }
+  BasicType        type() const                  { assert(_reg_num == -1 || _reg_num >= LIR_Opr::vreg_base, "cannot access type for fixed interval"); return _type; }
+  void             set_type(BasicType type)      { assert(_reg_num < LIR_Opr::vreg_base || _type == T_ILLEGAL || _type == type, "overwriting existing type"); _type = type; }
 
   Range*           first() const                 { return _first; }
   int              from() const                  { return _first->from(); }

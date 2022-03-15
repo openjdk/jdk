@@ -39,7 +39,7 @@ import java.util.*;
 
 public class HierMemDirCtx implements DirContext {
 
-    static private final boolean debug = false;
+    private static final boolean debug = false;
     private static final NameParser defaultParser = new HierarchicalNameParser();
 
     protected Hashtable<String, Object> myEnv;

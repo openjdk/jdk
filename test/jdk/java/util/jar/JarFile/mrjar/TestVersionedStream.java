@@ -32,11 +32,6 @@
  * @run testng TestVersionedStream
  */
 
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +54,10 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import jdk.test.lib.util.FileUtils;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 public class TestVersionedStream {
     private final Path userdir;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug      4494033 7028815 7052425 8007338 8023608 8008164 8016549 8072461 8154261 8162363 8160196 8151743 8177417
  *           8175218 8176452 8181215 8182263 8183511 8169819 8183037 8185369 8182765 8196201 8184205 8223378 8241544
- *           8253117
+ *           8253117 8263528
  * @summary  Run tests on doclet stylesheet.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -98,10 +98,10 @@ public class TestStylesheet extends JavadocTester {
                         font-weight:bold;
                         clear:none;
                         overflow:hidden;
-                        padding:0px;
+                        padding:0;
                         padding-top:10px;
                         padding-left:1px;
-                        margin:0px;
+                        margin:0;
                         white-space:pre;
                     }""",
                 """
@@ -140,7 +140,7 @@ public class TestStylesheet extends JavadocTester {
                         overflow: auto;
                     }""",
                 """
-                    .summary-table > div {
+                    .summary-table > div, .details-table > div {
                         text-align:left;
                         padding: 8px 3px 3px 7px;
                     }""",
@@ -160,10 +160,7 @@ public class TestStylesheet extends JavadocTester {
                     .col-first a:link, .col-first a:visited,
                     .col-second a:link, .col-second a:visited,
                     .col-constructor-name a:link, .col-constructor-name a:visited,
-                    .col-deprecated-item-name a:link, .col-deprecated-item-name a:visited,
-                    .constant-values-container a:link, .constant-values-container a:visited,
-                    .all-classes-container a:link, .all-classes-container a:visited,
-                    .all-packages-container a:link, .all-packages-container a:visited {
+                    .col-summary-item-name a:link, .col-summary-item-name a:visited {
                         font-weight:bold;
                     }""",
                 """
@@ -179,23 +176,24 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    #reset {
-                        background-color: rgb(255,255,255);
+                    #reset-button {
+                        background-color: transparent;
                         background-image:url('resources/x.png');
-                        background-position:center;
                         background-repeat:no-repeat;
-                        background-size:12px;
-                        border:0 none;
-                        width:16px;
-                        height:16px;
-                        position:relative;
-                        left:-4px;
-                        top:-4px;
-                        font-size:0px;
+                        background-size:contain;
+                        border:0;
+                        border-radius:0;
+                        width:12px;
+                        height:12px;
+                        position:absolute;
+                        right:12px;
+                        top:10px;
+                        font-size:0;
                     }""",
                 """
-                    .watermark {
-                        color:#545454;
+                    ::placeholder {
+                        color:#909090;
+                        opacity: 1;
                     }""");
 
         checkOutput("pkg/A.html", true,
@@ -209,7 +207,7 @@ public class TestStylesheet extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="col-last even-row-color">
+                    <div class="col-last even-row-color class-summary class-summary-tab2">
                     <div class="block">Test comment for a class which has an <a name="named_anchor">anchor_with_name</a> and
                      an <a id="named_anchor1">anchor_with_id</a>.</div>
                     </div>""");
@@ -381,7 +379,7 @@ public class TestStylesheet extends JavadocTester {
         checking("Check CSS class names");
         CSSClassChecker c = new CSSClassChecker(out, this::readFile, styles);
         try {
-            c.checkDirectory(outputDir.toPath());
+            c.checkDirectory(outputDir);
             c.report();
             int errors = c.getErrorCount();
             if (errors == 0) {

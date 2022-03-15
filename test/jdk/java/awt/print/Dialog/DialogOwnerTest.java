@@ -98,7 +98,7 @@ public class DialogOwnerTest extends JPanel {
        "window, or on top of all windows.\n" +
        "For Owned tests the window titled 'Owner Window' should always \n" +
        "stay behind the print dialog.\n" +
-       "For On Top tests all windows should stay behind the owner window.\n" +
+       "For On Top tests all windows should stay behind the print dialog \n" +
        "This test tracks if you have checked all the scenarios and will\n" +
        "not allow the test to pass unless you have visited them all.\n";
 

@@ -14,5 +14,5 @@
     @Test(dataProvider = "$type$BinaryOpProvider")
     static void [[TEST]]$vectorteststype$Binary(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb) {
 [[KERNEL]]
-        assertArraysEquals(a, b, r, origin, $vectorteststype$::[[TEST]]);
+        assertArraysEquals(r, a, b, origin, $vectorteststype$::[[TEST]]);
     }

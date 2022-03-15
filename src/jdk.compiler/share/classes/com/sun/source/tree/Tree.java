@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.source.tree;
+
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Common interface for all nodes in an abstract syntax tree.
@@ -225,6 +227,30 @@ public interface Tree {
          * @since 16
          */
         BINDING_PATTERN(BindingPatternTree.class),
+
+        /**
+         * Used for instances of {@link GuardedPatternTree}.
+         *
+         * @since 17
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        GUARDED_PATTERN(GuardedPatternTree.class),
+
+        /**
+         * Used for instances of {@link ParenthesizedPatternTree}.
+         *
+         * @since 17
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        PARENTHESIZED_PATTERN(ParenthesizedPatternTree.class),
+
+        /**
+         * Used for instances of {@link DefaultCaseLabelTree}.
+         *
+         * @since 17
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
 
         /**
          * Used for instances of {@link PrimitiveTypeTree}.
@@ -659,7 +685,7 @@ public interface Tree {
         USES(UsesTree.class),
 
         /**
-         * An implementation-reserved node. This is the not the node
+         * An implementation-reserved node. This is not the node
          * you are looking for.
          */
         OTHER(null),

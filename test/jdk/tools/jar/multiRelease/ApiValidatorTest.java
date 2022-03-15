@@ -44,12 +44,17 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class ApiValidatorTest extends MRTestBase {
 
@@ -85,13 +90,19 @@ public class ApiValidatorTest extends MRTestBase {
                 "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(),
                 ".");
-        if (isAcceptable) {
-            result.shouldHaveExitValue(SUCCESS)
-                  .shouldBeEmptyIgnoreVMWarnings();
-        } else {
-            result.shouldNotHaveExitValue(SUCCESS)
-                    .shouldContain("contains a class with different api from earlier version");
-        }
+
+        String failureMessage = "contains a class with different api from earlier version";
+        checkResult(result, isAcceptable, failureMessage);
+        if (isAcceptable) result.shouldBeEmptyIgnoreVMWarnings();
+
+
+        Path malformed = root.resolve("zip").resolve("test.jar");
+        zip(malformed,
+            Map.entry("", classes.resolve("base")),
+            Map.entry("META-INF/versions/10", classes.resolve("v10")));
+
+        result = validateJar(malformed.toString(), isAcceptable, failureMessage);
+        if (isAcceptable) result.shouldBeEmptyIgnoreVMWarnings();
     }
 
     @DataProvider
@@ -127,11 +138,20 @@ public class ApiValidatorTest extends MRTestBase {
         compileTemplate(classes.resolve("base"), base);
         compileTemplate(classes.resolve("v10"), v10);
 
+        String failureMessage = "contains a class with different api from earlier version";
+
         String jarfile = root.resolve("test.jar").toString();
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
-                .shouldContain("contains a class with different api from earlier version");
+                .shouldContain(failureMessage);
+
+        Path malformed = root.resolve("zip").resolve("test.jar");
+        zip(malformed,
+            Map.entry("", classes.resolve("base")),
+            Map.entry("META-INF/versions/10", classes.resolve("v10")));
+
+        validateJar(malformed.toString(), false, failureMessage);
     }
 
     @DataProvider
@@ -163,14 +183,17 @@ public class ApiValidatorTest extends MRTestBase {
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldHaveExitValue(SUCCESS);
+        validateJar(jarfile);
         // add release
         jar("uf", jarfile,
                 "--release", "11", "-C", classes.resolve("v10").toString(), ".")
                 .shouldHaveExitValue(SUCCESS);
+        validateJar(jarfile);
         // replace release
         jar("uf", jarfile,
                 "--release", "11", "-C", classes.resolve("v10").toString(), ".")
                 .shouldHaveExitValue(SUCCESS);
+        validateJar(jarfile);
     }
 
     @DataProvider
@@ -201,20 +224,31 @@ public class ApiValidatorTest extends MRTestBase {
         compileModule(classes.resolve("base"), "module A { }");
         compileModule(classes.resolve("v10"), "module B { }");
 
+        String failureMessage = "incorrect name";
+
         String jarfile = root.resolve("test.jar").toString();
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
-                .shouldContain("incorrect name");
+                .shouldContain(failureMessage);
+
+        Path malformed = root.resolve("zip").resolve("test.jar");
+        zip(malformed,
+            Map.entry("", classes.resolve("base")),
+            Map.entry("META-INF/versions/10", classes.resolve("v10")));
+
+        validateJar(malformed.toString(), false, failureMessage);
 
         // update module-info release
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("base").toString(), ".")
                 .shouldHaveExitValue(SUCCESS);
+        validateJar(jarfile);
+
         jar("uf", jarfile,
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
-                .shouldContain("incorrect name");
+                .shouldContain(failureMessage);
     }
 
     //    @Test @ignore 8173370
@@ -233,6 +267,7 @@ public class ApiValidatorTest extends MRTestBase {
         jar("cf", jarfile, "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("base").toString(), ".")
                 .shouldHaveExitValue(SUCCESS);
+        validateJar(jarfile);
         jar("uf", jarfile,
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
@@ -378,12 +413,14 @@ public class ApiValidatorTest extends MRTestBase {
         OutputAnalyzer output = jar("cf", jarfile,
                 "-C", classes.resolve("base").toString(), ".",
                 "--release", "10", "-C", classes.resolve("v10").toString(), ".");
-        if (expectSuccess) {
-            output.shouldHaveExitValue(SUCCESS);
-        } else {
-            output.shouldNotHaveExitValue(SUCCESS)
-                    .shouldContain(expectedMessage);
-        }
+        checkResult(output, expectSuccess, expectedMessage);
+
+        Path malformed = root.resolve("zip").resolve("test.jar");
+        zip(malformed,
+            Map.entry("", classes.resolve("base")),
+            Map.entry("META-INF/versions/10", classes.resolve("v10")));
+
+        validateJar(malformed.toString(), expectSuccess, expectedMessage);
     }
 
     private void compileModule(Path classes, String moduleSource,
@@ -416,5 +453,53 @@ public class ApiValidatorTest extends MRTestBase {
         }
 
         javac(classes, sourceFiles);
+    }
+
+    @SafeVarargs
+    private void zip(Path file, Map.Entry<String, Path>... copies) throws IOException {
+        Files.createDirectories(file.getParent());
+        Files.deleteIfExists(file);
+        try (FileSystem zipfs = FileSystems.newFileSystem(file, Map.of("create", "true"))) {
+            for (var entry : copies) {
+                Path dstDir = zipfs.getPath(entry.getKey());
+                Path srcDir = entry.getValue();
+
+                Files.createDirectories(dstDir);
+
+                try (Stream<Path> stream = Files.walk(srcDir)) {
+                    stream.filter(Files::isRegularFile).forEach(srcFile -> {
+                        try {
+                            Path relativePath = srcDir.relativize(srcFile);
+                            Path dst = dstDir.resolve(relativePath.toString());
+                            Path dstParent = dst.getParent();
+                            if (dstParent != null)
+                                Files.createDirectories(dstParent);
+                            Files.copy(srcFile, dst);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    private static OutputAnalyzer checkResult(OutputAnalyzer result, boolean isAcceptable, String failureMessage) {
+        if (isAcceptable) {
+            result.shouldHaveExitValue(SUCCESS);
+        } else {
+            result.shouldNotHaveExitValue(SUCCESS)
+                    .shouldContain(failureMessage);
+        }
+
+        return result;
+    }
+
+    private OutputAnalyzer validateJar(String jarFile) throws Throwable {
+        return validateJar(jarFile, true, "");
+    }
+
+    private OutputAnalyzer validateJar(String jarFile, boolean shouldSucceed, String failureMessage) throws Throwable {
+        return checkResult(jar("--validate", "--file", jarFile), shouldSucceed, failureMessage);
     }
 }

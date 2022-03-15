@@ -38,7 +38,7 @@ import org.w3c.dom.NodeList;
  *
  * @see <A HREF="http://www.w3.org/TR/xmldsig-filter2/">XPath Filter v2.0 (TR)</A>
  */
-public class XPath2FilterContainer extends ElementProxy implements TransformParam {
+public final class XPath2FilterContainer extends ElementProxy implements TransformParam {
 
     /** Field _ATT_FILTER */
     private static final String _ATT_FILTER = "Filter";
@@ -109,7 +109,7 @@ public class XPath2FilterContainer extends ElementProxy implements TransformPara
         if (!filterStr.equals(XPath2FilterContainer._ATT_FILTER_VALUE_INTERSECT)
             && !filterStr.equals(XPath2FilterContainer._ATT_FILTER_VALUE_SUBTRACT)
             && !filterStr.equals(XPath2FilterContainer._ATT_FILTER_VALUE_UNION)) {
-            Object exArgs[] = { XPath2FilterContainer._ATT_FILTER, filterStr,
+            Object[] exArgs = { XPath2FilterContainer._ATT_FILTER, filterStr,
                                 XPath2FilterContainer._ATT_FILTER_VALUE_INTERSECT
                                 + ", "
                                 + XPath2FilterContainer._ATT_FILTER_VALUE_SUBTRACT

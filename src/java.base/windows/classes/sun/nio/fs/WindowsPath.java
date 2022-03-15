@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,38 +174,48 @@ class WindowsPath implements Path {
     // use this path for Win32 calls
     // This method will prefix long paths with \\?\ or \\?\UNC as required.
     String getPathForWin32Calls() throws WindowsException {
-        // short absolute paths can be used directly
-        if (isAbsolute() && path.length() <= MAX_PATH)
-            return path;
+        return getPathForWin32Calls(true);
+    }
 
-        // return cached values if available
-        WeakReference<String> ref = pathForWin32Calls;
-        String resolved = (ref != null) ? ref.get() : null;
-        if (resolved != null) {
-            // Win32 path already available
-            return resolved;
+    String getPathWithPrefixForWin32Calls() throws WindowsException {
+        return getPathForWin32Calls(false);
+    }
+
+    private String getPathForWin32Calls(boolean allowShortPath) throws WindowsException {
+        if (allowShortPath) {
+            // short absolute paths can be used directly
+            if (isAbsolute() && path.length() <= MAX_PATH)
+                return path;
+
+            // returned cached value if possible
+            WeakReference<String> ref = pathForWin32Calls;
+            String cached = (ref != null) ? ref.get() : null;
+            if (cached != null) {
+                // Win32 path already available
+                return cached;
+            }
         }
 
         // resolve against default directory
-        resolved = getAbsolutePath();
+        String resolved = getAbsolutePath();
 
         // Long paths need to have "." and ".." removed and be prefixed with
         // "\\?\". Note that it is okay to remove ".." even when it follows
         // a link - for example, it is okay for foo/link/../bar to be changed
         // to foo/bar. The reason is that Win32 APIs to access foo/link/../bar
         // will access foo/bar anyway (which differs to Unix systems)
-        if (resolved.length() > MAX_PATH) {
+        if (resolved.length() > MAX_PATH || !allowShortPath) {
             if (resolved.length() > MAX_LONG_PATH) {
                 throw new WindowsException("Cannot access file with path exceeding "
                     + MAX_LONG_PATH + " characters");
             }
-            resolved = addPrefixIfNeeded(GetFullPathName(resolved));
+            resolved = addPrefix(GetFullPathName(resolved));
         }
 
         // cache the resolved path (except drive relative paths as the working
         // directory on removal media devices can change during the lifetime
         // of the VM)
-        if (type != WindowsPathType.DRIVE_RELATIVE) {
+        if (allowShortPath && type != WindowsPathType.DRIVE_RELATIVE) {
             synchronized (this) {
                 pathForWin32Calls = new WeakReference<String>(resolved);
             }
@@ -279,14 +289,20 @@ class WindowsPath implements Path {
                Character.toUpperCase(root2.charAt(0));
     }
 
+    // Add long path prefix to path
+    static String addPrefix(String path) {
+        if (path.startsWith("\\\\")) {
+            path = "\\\\?\\UNC" + path.substring(1, path.length());
+        } else {
+            path = "\\\\?\\" + path;
+        }
+        return path;
+    }
+
     // Add long path prefix to path if required
     static String addPrefixIfNeeded(String path) {
         if (path.length() > MAX_PATH) {
-            if (path.startsWith("\\\\")) {
-                path = "\\\\?\\UNC" + path.substring(1, path.length());
-            } else {
-                path = "\\\\?\\" + path;
-            }
+            return addPrefix(path);
         }
         return path;
     }
@@ -798,8 +814,8 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof WindowsPath)) {
-            return compareTo((Path)obj) == 0;
+        if (obj instanceof WindowsPath path) {
+            return compareTo(path) == 0;
         }
         return false;
     }
@@ -831,15 +847,56 @@ class WindowsPath implements Path {
         int flags = FILE_FLAG_BACKUP_SEMANTICS;
         if (!followLinks)
             flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+        try {
+            return openFileForReadAttributeAccess(flags);
+        } catch (WindowsException e) {
+            if (followLinks && e.lastError() == ERROR_CANT_ACCESS_FILE) {
+                // Object could be a Unix domain socket
+                try {
+                    return openSocketForReadAttributeAccess();
+                } catch (WindowsException ignore) {}
+            }
+            throw e;
+        }
+    }
+
+    private long openFileForReadAttributeAccess(int flags)
+        throws WindowsException
+    {
         return CreateFile(getPathForWin32Calls(),
-                          FILE_READ_ATTRIBUTES,
-                          (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
-                          0L,
-                          OPEN_EXISTING,
-                          flags);
+                            FILE_READ_ATTRIBUTES,
+                            (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE),
+                            0L,
+                            OPEN_EXISTING,
+                            flags);
+    }
+
+    /**
+     * Returns a handle to the file if it is a socket.
+     * Throws WindowsException if file is not a socket
+     */
+    private long openSocketForReadAttributeAccess()
+        throws WindowsException
+    {
+        // needs to specify FILE_FLAG_OPEN_REPARSE_POINT if the file is a socket
+        int flags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
+
+        long handle = openFileForReadAttributeAccess(flags);
+
+        try {
+            WindowsFileAttributes attrs = WindowsFileAttributes.readAttributes(handle);
+            if (!attrs.isUnixDomainSocket()) {
+                throw new WindowsException("not a socket");
+            }
+            return handle;
+        } catch (WindowsException e) {
+            CloseHandle(handle);
+            throw e;
+        }
     }
 
     void checkRead() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkRead(getPathForPermissionCheck());
@@ -847,6 +904,7 @@ class WindowsPath implements Path {
     }
 
     void checkWrite() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkWrite(getPathForPermissionCheck());
@@ -854,6 +912,7 @@ class WindowsPath implements Path {
     }
 
     void checkDelete() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkDelete(getPathForPermissionCheck());
@@ -871,6 +930,7 @@ class WindowsPath implements Path {
             return this;
 
         // permission check as per spec
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertyAccess("user.dir");
@@ -905,6 +965,7 @@ class WindowsPath implements Path {
         // copy of the modifiers and check for the Windows specific FILE_TREE
         // modifier. When the modifier is present then check that permission
         // has been granted recursively.
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             boolean watchSubtree = false;

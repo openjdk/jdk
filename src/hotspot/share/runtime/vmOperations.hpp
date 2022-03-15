@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,165 +25,48 @@
 #ifndef SHARE_RUNTIME_VMOPERATIONS_HPP
 #define SHARE_RUNTIME_VMOPERATIONS_HPP
 
-#include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "runtime/vmOperation.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 
-// The following classes are used for operations
-// initiated by a Java thread but that must
-// take place in the VMThread.
+// A hodge podge of commonly used VM Operations
 
-#define VM_OP_ENUM(type)   VMOp_##type,
-
-// Note: When new VM_XXX comes up, add 'XXX' to the template table.
-#define VM_OPS_DO(template)                       \
-  template(None)                                  \
-  template(Cleanup)                               \
-  template(ThreadDump)                            \
-  template(PrintThreads)                          \
-  template(FindDeadlocks)                         \
-  template(ClearICs)                              \
-  template(ForceSafepoint)                        \
-  template(ForceAsyncSafepoint)                   \
-  template(DeoptimizeFrame)                       \
-  template(DeoptimizeAll)                         \
-  template(ZombieAll)                             \
-  template(Verify)                                \
-  template(PrintJNI)                              \
-  template(HeapDumper)                            \
-  template(DeoptimizeTheWorld)                    \
-  template(CollectForMetadataAllocation)          \
-  template(GC_HeapInspection)                     \
-  template(GenCollectFull)                        \
-  template(GenCollectFullConcurrent)              \
-  template(GenCollectForAllocation)               \
-  template(ParallelGCFailedAllocation)            \
-  template(ParallelGCSystemGC)                    \
-  template(G1CollectForAllocation)                \
-  template(G1CollectFull)                         \
-  template(G1Concurrent)                          \
-  template(G1TryInitiateConcMark)                 \
-  template(ZMarkStart)                            \
-  template(ZMarkEnd)                              \
-  template(ZRelocateStart)                        \
-  template(ZVerify)                               \
-  template(HandshakeOneThread)                    \
-  template(HandshakeAllThreads)                   \
-  template(HandshakeFallback)                     \
-  template(EnableBiasedLocking)                   \
-  template(BulkRevokeBias)                        \
-  template(PopulateDumpSharedSpace)               \
-  template(JNIFunctionTableCopier)                \
-  template(RedefineClasses)                       \
-  template(GetObjectMonitorUsage)                 \
-  template(GetAllStackTraces)                     \
-  template(GetThreadListStackTraces)              \
-  template(ChangeBreakpoints)                     \
-  template(GetOrSetLocal)                         \
-  template(ChangeSingleStep)                      \
-  template(HeapWalkOperation)                     \
-  template(HeapIterateOperation)                  \
-  template(ReportJavaOutOfMemory)                 \
-  template(JFRCheckpoint)                         \
-  template(ShenandoahFullGC)                      \
-  template(ShenandoahInitMark)                    \
-  template(ShenandoahFinalMarkStartEvac)          \
-  template(ShenandoahInitUpdateRefs)              \
-  template(ShenandoahFinalUpdateRefs)             \
-  template(ShenandoahDegeneratedGC)               \
-  template(Exit)                                  \
-  template(LinuxDllLoad)                          \
-  template(RotateGCLog)                           \
-  template(WhiteBoxOperation)                     \
-  template(JVMCIResizeCounters)                   \
-  template(ClassLoaderStatsOperation)             \
-  template(ClassLoaderHierarchyOperation)         \
-  template(DumpHashtable)                         \
-  template(DumpTouchedMethods)                    \
-  template(CleanClassLoaderDataMetaspaces)        \
-  template(PrintCompileQueue)                     \
-  template(PrintClassHierarchy)                   \
-  template(ThreadSuspend)                         \
-  template(ThreadsSuspendJVMTI)                   \
-  template(ICBufferFull)                          \
-  template(ScavengeMonitors)                      \
-  template(PrintMetadata)                         \
-  template(GTestExecuteAtSafepoint)               \
-  template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)
-
-class VM_Operation : public StackObj {
- public:
-  enum VMOp_Type {
-    VM_OPS_DO(VM_OP_ENUM)
-    VMOp_Terminating
-  };
-
- private:
-  Thread*         _calling_thread;
-
-  // The VM operation name array
-  static const char* _names[];
-
- public:
-  VM_Operation() : _calling_thread(NULL) {}
-
-  // VM operation support (used by VM thread)
-  Thread* calling_thread() const                 { return _calling_thread; }
-  void set_calling_thread(Thread* thread);
-
-  // Called by VM thread - does in turn invoke doit(). Do not override this
-  void evaluate();
-
-  // evaluate() is called by the VMThread and in turn calls doit().
-  // If the thread invoking VMThread::execute((VM_Operation*) is a JavaThread,
-  // doit_prologue() is called in that thread before transferring control to
-  // the VMThread.
-  // If doit_prologue() returns true the VM operation will proceed, and
-  // doit_epilogue() will be called by the JavaThread once the VM operation
-  // completes. If doit_prologue() returns false the VM operation is cancelled.
-  virtual void doit()                            = 0;
-  virtual bool doit_prologue()                   { return true; };
-  virtual void doit_epilogue()                   {};
-
-  // Configuration. Override these appropriately in subclasses.
-  virtual VMOp_Type type() const = 0;
-  virtual bool allow_nested_vm_operations() const { return false; }
-
-  // You may override skip_thread_oop_barriers to return true if the operation
-  // does not access thread-private oops (including frames).
-  virtual bool skip_thread_oop_barriers() const { return false; }
-
-  // An operation can either be done inside a safepoint
-  // or concurrently with Java threads running.
-  virtual bool evaluate_at_safepoint() const { return true; }
-
-  // Debugging
-  virtual void print_on_error(outputStream* st) const;
-  virtual const char* name() const  { return _names[type()]; }
-  static const char* name(int type) {
-    assert(type >= 0 && type < VMOp_Terminating, "invalid VM operation type");
-    return _names[type];
+class VM_EmptyOperation : public VM_Operation {
+public:
+  virtual void doit() final {}
+  virtual bool skip_thread_oop_barriers() const final {
+    // Neither the doit function nor the the safepoint
+    // cleanup tasks read oops in the Java threads.
+    return true;
   }
-#ifndef PRODUCT
-  void print_on(outputStream* st) const { print_on_error(st); }
-#endif
 };
 
-class VM_None: public VM_Operation {
-  const char* _reason;
+class VM_Halt: public VM_EmptyOperation {
  public:
-  VM_None(const char* reason) : _reason(reason) {}
-  const char* name() const { return _reason; }
-  VMOp_Type type() const { return VMOp_None; }
-  void doit() {};
+  VMOp_Type type() const { return VMOp_Halt; }
 };
 
-class VM_Cleanup: public VM_Operation {
+class VM_SafepointALot: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_SafepointALot; }
+};
+
+class VM_Cleanup: public VM_EmptyOperation {
  public:
   VMOp_Type type() const { return VMOp_Cleanup; }
-  void doit() {};
+};
+
+// empty vm op, evaluated just to force a safepoint
+class VM_ForceSafepoint: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_ForceSafepoint; }
+};
+
+// empty vm op, when forcing a safepoint due to inline cache buffers being full
+class VM_ICBufferFull: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_ICBufferFull; }
 };
 
 class VM_ClearICs: public VM_Operation {
@@ -193,32 +76,6 @@ class VM_ClearICs: public VM_Operation {
   VM_ClearICs(bool preserve_static_stubs) { _preserve_static_stubs = preserve_static_stubs; }
   void doit();
   VMOp_Type type() const { return VMOp_ClearICs; }
-};
-
-// empty vm op, evaluated just to force a safepoint
-class VM_ForceSafepoint: public VM_Operation {
- public:
-  void doit()         {}
-  VMOp_Type type() const { return VMOp_ForceSafepoint; }
-};
-
-// empty vm op, when forcing a safepoint to suspend a thread
-class VM_ThreadSuspend: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_ThreadSuspend; }
-};
-
-// empty vm op, when forcing a safepoint to suspend threads from jvmti
-class VM_ThreadsSuspendJVMTI: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_ThreadsSuspendJVMTI; }
-};
-
-// empty vm op, when forcing a safepoint due to inline cache buffers being full
-class VM_ICBufferFull: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_ICBufferFull; }
-  virtual bool skip_thread_oop_barriers() const { return true; }
 };
 
 // Base class for invoking parts of a gtest in a safepoint.
@@ -282,12 +139,14 @@ class VM_PrintThreads: public VM_Operation {
   outputStream* _out;
   bool _print_concurrent_locks;
   bool _print_extended_info;
+  bool _print_jni_handle_info;
  public:
   VM_PrintThreads()
-    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false)
+    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false), _print_jni_handle_info(false)
   {}
-  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
-    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info)
+  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info, bool print_jni_handle_info)
+    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info),
+      _print_jni_handle_info(print_jni_handle_info)
   {}
   VMOp_Type type() const {
     return VMOp_PrintThreads;
@@ -295,16 +154,6 @@ class VM_PrintThreads: public VM_Operation {
   void doit();
   bool doit_prologue();
   void doit_epilogue();
-};
-
-class VM_PrintJNI: public VM_Operation {
- private:
-  outputStream* _out;
- public:
-  VM_PrintJNI()                         { _out = tty; }
-  VM_PrintJNI(outputStream* out)        { _out = out; }
-  VMOp_Type type() const                { return VMOp_PrintJNI; }
-  void doit();
 };
 
 class VM_PrintMetadata : public VM_Operation {
@@ -354,7 +203,8 @@ class VM_ThreadDump : public VM_Operation {
   bool                           _with_locked_monitors;
   bool                           _with_locked_synchronizers;
 
-  void snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl);
+  void snapshot_thread(JavaThread* java_thread, ThreadConcurrentLocks* tcl,
+                       ObjectMonitorsHashtable* table);
 
  public:
   VM_ThreadDump(ThreadDumpResult* result,

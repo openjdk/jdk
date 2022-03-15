@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "opto/regmask.hpp"
 #include "utilities/growableArray.hpp"
 
-class BiasedLockingCounters;
 class BufferBlob;
 class CodeBuffer;
 class JVMState;
@@ -65,7 +64,7 @@ public:
   // Allocate right next to the MachNodes in the same arena
   void *operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    return C->node_arena()->Amalloc_D(x);
+    return C->node_arena()->AmallocWords(x);
   }
 
   // Opcode
@@ -103,6 +102,12 @@ public:
   }
 
 #if defined(IA32) || defined(AMD64)
+  KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
+    return ::as_KRegister(reg(ra_, node));
+  }
+  KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node, int idx)   const {
+    return ::as_KRegister(reg(ra_, node, idx));
+  }
   XMMRegister  as_XMMRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_XMMRegister(reg(ra_, node));
   }
@@ -269,9 +274,9 @@ public:
   // more leafs.  Must be set by MachNode constructor to point to an
   // internal array of MachOpers.  The MachOper array is sized by
   // specific MachNodes described in the ADL.
-  uint _num_opnds;
+  uint16_t _num_opnds;
   MachOper **_opnds;
-  uint  num_opnds() const { return _num_opnds; }
+  uint16_t num_opnds() const { return _num_opnds; }
 
   // Emit bytes into cbuf
   virtual void  emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
@@ -367,6 +372,8 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+  void set_removed() { add_flag(Flag_is_removed_by_peephole); }
+  bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 
 #ifndef PRODUCT
   virtual const char *Name() const = 0; // Machine-specific name
@@ -699,6 +706,7 @@ public:
     add_req(ctrl);
     add_req(memop);
   }
+  virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
 
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
@@ -788,7 +796,6 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  BiasedLockingCounters*        _counters;
   RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
   RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
@@ -903,8 +910,7 @@ public:
   virtual const RegMask &in_RegMask(uint) const;
   virtual int ret_addr_offset() { return 0; }
 
-  bool returns_long() const { return tf()->return_type() == T_LONG; }
-  bool return_value_is_used() const;
+  NOT_LP64(bool return_value_is_used() const;)
 
   // Similar to cousin class CallNode::returns_pointer
   bool returns_pointer() const;
@@ -925,7 +931,6 @@ protected:
 public:
   ciMethod* _method;                 // Method being direct called
   bool      _override_symbolic_info; // Override symbolic call site info from bytecode
-  int       _bci;                    // Byte Code index of call byte code
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
   bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list

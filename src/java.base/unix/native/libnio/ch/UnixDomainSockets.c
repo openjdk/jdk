@@ -95,7 +95,7 @@ jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray path, struct sockaddr_u
 }
 
 JNIEXPORT jboolean JNICALL
-Java_sun_nio_ch_UnixDomainSockets_socketSupported(JNIEnv *env, jclass cl)
+Java_sun_nio_ch_UnixDomainSockets_init(JNIEnv *env, jclass cl)
 {
     return JNI_TRUE;
 }

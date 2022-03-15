@@ -211,17 +211,6 @@ ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
     assert(_table != NULL && "allocation failed");
 }
 
-ImageFileReaderTable::~ImageFileReaderTable() {
-    for (u4 i = 0; i < _count; i++) {
-        ImageFileReader* image = _table[i];
-
-        if (image != NULL) {
-            delete image;
-        }
-    }
-    free(_table);
-}
-
 // Add a new image entry to the table.
 void ImageFileReaderTable::add(ImageFileReader* image) {
     if (_count == _max) {

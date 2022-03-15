@@ -28,10 +28,13 @@
  * @run main/othervm JarURLConnectionUseCaches
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
-import java.util.jar.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 public class JarURLConnectionUseCaches {
     public static void main( String[] args ) throws IOException {

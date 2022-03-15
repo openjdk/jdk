@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,9 +439,9 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             this.method = method;
             this.bci = bci;
         }
-        final public Method method;
-        final public int bci;
-        final public String toString() {
+        public final Method method;
+        public final int bci;
+        public final String toString() {
             return "@" + bci + " " + method;
         }
     }
@@ -973,7 +973,7 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             m.setHolder(type(search(atts, "holder")));
             m.setName(search(atts, "name"));
             m.setReturnType(type(search(atts, "return")));
-            String arguments = atts.getValue("arguments");;
+            String arguments = atts.getValue("arguments");
             if (arguments == null) {
                 m.setSignature("()" + sigtype(atts.getValue("return")));
             } else {
@@ -1000,10 +1000,13 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
             }
             methods.put(id, m);
         } else if (qname.equals("call")) {
-          if (scopes.peek() == null) {
-              Phase p = phaseStack.peek();
-              assert p != null && p.getName().equals("optimizer") : "should not be in parse here";
-          } else {
+            Phase p = phaseStack.peek();
+            if (scopes.peek() == null && p != null) {
+                // Do not process other phases when scopes is null
+                if (p.getName().equals("parse")) {
+                  reportInternalError( "should not be in parse here:" + p.getName());
+                }
+            } else {
               if (methodHandleSite != null) {
                   methodHandleSite = null;
               }
@@ -1054,9 +1057,12 @@ public class LogParser extends DefaultHandler implements ErrorHandler {
         } else if (qname.equals("replace_string_concat")) {
             expectStringConcatTrap = true;
         } else if (qname.equals("inline_fail")) {
-            if (scopes.peek() == null) {
-                Phase p = phaseStack.peek();
-                assert p != null && p.getName().equals("optimizer") : "should not be in parse here";
+            Phase p = phaseStack.peek();
+            if (scopes.peek() == null && p != null) {
+                // Do not process other phases when scopes is null
+                if (p.getName().equals("parse")) {
+                  reportInternalError( "should not be in parse here:" + p.getName());
+                }
             } else {
                 if (methodHandleSite != null) {
                     scopes.peek().add(methodHandleSite);

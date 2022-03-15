@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ import java.util.Properties;
 import javax.print.PrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
@@ -64,7 +63,6 @@ import javax.print.attribute.standard.DialogOwner;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.PrintQuality;
-import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.standard.Media;
@@ -72,8 +70,6 @@ import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
 
-import sun.print.SunPageSelection;
-import sun.print.SunMinMaxPage;
 
 /**
  * A class which initiates and executes a print job using
@@ -315,6 +311,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                                 JobAttributes jobAttributes,
                                 PageAttributes pageAttributes) {
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkPrintJobAccess();
@@ -453,8 +450,8 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
             Media media = (Media)attributes.get(Media.class);
             MediaSize mediaSize =  null;
-            if (media != null  && media instanceof MediaSizeName) {
-                mediaSize = MediaSize.getMediaSizeForName((MediaSizeName)media);
+            if (media instanceof MediaSizeName msn) {
+                mediaSize = MediaSize.getMediaSizeForName(msn);
             }
 
             Paper p = pageFormat.getPaper();
@@ -593,9 +590,9 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             pageAttributes.setPrintQuality(PrintQualityType.NORMAL);
         }
 
-        Media msn = (Media)attributes.get(Media.class);
-        if (msn != null && msn instanceof MediaSizeName) {
-            MediaType mType = unMapMedia((MediaSizeName)msn);
+        Media media = (Media)attributes.get(Media.class);
+        if (media instanceof MediaSizeName msn) {
+            MediaType mType = unMapMedia(msn);
 
             if (mType != null) {
                 pageAttributes.setMedia(mType);
@@ -943,7 +940,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
      * Ends this print job once it is no longer referenced.
      * @see #end
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
         end();
     }
@@ -1032,7 +1029,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
         graphicsDrawn.close();
     }
 
-    private class MessageQ {
+    private static class MessageQ {
 
         private String qid="noname";
 
@@ -1268,6 +1265,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     }
 
     private void throwPrintToFile() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         FilePermission printToFilePermission = null;
         if (security != null) {

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,23 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(CACERTS_FILE)
 
+  # Choose cacerts source folder for user provided PEM files
+  AC_ARG_WITH(cacerts-src, [AS_HELP_STRING([--with-cacerts-src],
+      [specify alternative cacerts source folder containing certificates])])
+  CACERTS_SRC=""
+  AC_MSG_CHECKING([for cacerts source])
+  if test "x$with_cacerts_src" == x; then
+    AC_MSG_RESULT([default])
+  else
+    CACERTS_SRC=$with_cacerts_src
+    if test ! -d "$CACERTS_SRC"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Specified cacerts source folder "$CACERTS_SRC" does not exist])
+    fi
+    AC_MSG_RESULT([$CACERTS_SRC])
+  fi
+  AC_SUBST(CACERTS_SRC)
+
   # Enable or disable unlimited crypto
   UTIL_ARG_ENABLE(NAME: unlimited-crypto, DEFAULT: true, RESULT: UNLIMITED_CRYPTO,
       DESC: [enable unlimited crypto policy])
@@ -194,11 +211,17 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Setup default copyright year. Mostly overridden when building close to a new year.
   AC_ARG_WITH(copyright-year, [AS_HELP_STRING([--with-copyright-year],
-      [Set copyright year value for build @<:@current year@:>@])])
+      [Set copyright year value for build @<:@current year/source-date@:>@])])
   if test "x$with_copyright_year" = xyes; then
     AC_MSG_ERROR([Copyright year must have a value])
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
+  elif test "x$SOURCE_DATE" != xupdated; then
+    if test "x$IS_GNU_DATE" = xyes; then
+      COPYRIGHT_YEAR=`$DATE --date=@$SOURCE_DATE +%Y`
+    else
+      COPYRIGHT_YEAR=`$DATE -j -f %s $SOURCE_DATE +%Y`
+    fi
   else
     COPYRIGHT_YEAR=`$DATE +'%Y'`
   fi
@@ -240,11 +263,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
       [AS_HELP_STRING([--with-native-debug-symbols],
       [set the native debug symbol configuration (none, internal, external, zipped) @<:@varying@:>@])],
       [
-        if test "x$OPENJDK_TARGET_OS" = xaix; then
-          if test "x$withval" = xexternal || test "x$withval" = xzipped; then
-            AC_MSG_ERROR([AIX only supports the parameters 'none' and 'internal' for --with-native-debug-symbols])
-          fi
-        elif test "x$OPENJDK_TARGET_OS" = xwindows; then
+        if test "x$OPENJDK_TARGET_OS" = xwindows; then
           if test "x$withval" = xinternal; then
             AC_MSG_ERROR([Windows does not support the parameter 'internal' for --with-native-debug-symbols])
           fi
@@ -254,12 +273,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
         if test "x$STATIC_BUILD" = xtrue; then
           with_native_debug_symbols="none"
         else
-          if test "x$OPENJDK_TARGET_OS" = xaix; then
-            # AIX doesn't support 'external' so use 'internal' as default
-            with_native_debug_symbols="internal"
-          else
-            with_native_debug_symbols="external"
-          fi
+          with_native_debug_symbols="external"
         fi
       ])
   AC_MSG_RESULT([$with_native_debug_symbols])
@@ -587,6 +601,30 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Enable the alternative CDS core region alignment
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],
+[
+  UTIL_ARG_ENABLE(NAME: compatible-cds-alignment, DEFAULT: false,
+      RESULT: ENABLE_COMPATIBLE_CDS_ALIGNMENT,
+      DESC: [enable use alternative compatible cds core region alignment],
+      DEFAULT_DESC: [disabled],
+      CHECKING_MSG: [if compatible cds region alignment enabled],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive is available])
+        if test "x$ENABLE_CDS" = "xfalse"; then
+          AVAILABLE=false
+          AC_MSG_RESULT([no (CDS is disabled)])
+        else
+          AVAILABLE=true
+          AC_MSG_RESULT([yes])
+        fi
+      ])
+  AC_SUBST(ENABLE_COMPATIBLE_CDS_ALIGNMENT)
+])
+
+################################################################################
+#
 # Disallow any output from containing absolute paths from the build system.
 # This setting defaults to allowed on debug builds and not allowed on release
 # builds.
@@ -624,15 +662,28 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 [
   AC_ARG_WITH([source-date], [AS_HELP_STRING([--with-source-date],
-      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated@:>@])],
+      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated/value of SOURCE_DATE_EPOCH@:>@])],
       [with_source_date_present=true], [with_source_date_present=false])
+
+  if test "x$SOURCE_DATE_EPOCH" != x && test "x$with_source_date" != x; then
+    AC_MSG_WARN([--with-source-date will override SOURCE_DATE_EPOCH])
+  fi
 
   AC_MSG_CHECKING([what source date to use])
 
   if test "x$with_source_date" = xyes; then
     AC_MSG_ERROR([--with-source-date must have a value])
-  elif test "x$with_source_date" = xupdated || test "x$with_source_date" = x; then
-    # Tell the makefiles to update at each build
+  elif test "x$with_source_date" = x; then
+    if test "x$SOURCE_DATE_EPOCH" != x; then
+      SOURCE_DATE=$SOURCE_DATE_EPOCH
+      with_source_date_present=true
+      AC_MSG_RESULT([$SOURCE_DATE, from SOURCE_DATE_EPOCH])
+    else
+      # Tell the makefiles to update at each build
+      SOURCE_DATE=updated
+      AC_MSG_RESULT([determined at build time (default)])
+    fi
+  elif test "x$with_source_date" = xupdated; then
     SOURCE_DATE=updated
     AC_MSG_RESULT([determined at build time, from 'updated'])
   elif test "x$with_source_date" = xcurrent; then
@@ -640,7 +691,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     SOURCE_DATE=$($DATE +"%s")
     AC_MSG_RESULT([$SOURCE_DATE, from 'current'])
   elif test "x$with_source_date" = xversion; then
-    # Use the date from version-numbers
+    # Use the date from version-numbers.conf
     UTIL_GET_EPOCH_TIMESTAMP(SOURCE_DATE, $DEFAULT_VERSION_DATE)
     if test "x$SOURCE_DATE" = x; then
       AC_MSG_RESULT([unavailable])
@@ -664,6 +715,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
+  ISO_8601_FORMAT_STRING="%Y-%m-%dT%H:%M:%SZ"
+  if test "x$SOURCE_DATE" != xupdated; then
+    # If we have a fixed value for SOURCE_DATE, we need to set SOURCE_DATE_EPOCH
+    # for the rest of configure.
+    SOURCE_DATE_EPOCH="$SOURCE_DATE"
+    if test "x$IS_GNU_DATE" = xyes; then
+      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    else
+      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    fi
+  fi
+
   REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
 
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
@@ -681,11 +744,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
       test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
       test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
     AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
     AC_MSG_ERROR([Cannot continue])
   fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
+  AC_SUBST(ISO_8601_FORMAT_STRING)
+  AC_SUBST(SOURCE_DATE_ISO_8601)
 ])

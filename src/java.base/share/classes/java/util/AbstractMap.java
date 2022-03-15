@@ -476,9 +476,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         if (o == this)
             return true;
 
-        if (!(o instanceof Map))
+        if (!(o instanceof Map<?, ?> m))
             return false;
-        Map<?,?> m = (Map<?,?>) o;
         if (m.size() != size())
             return false;
 
@@ -593,8 +592,11 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
     /**
      * An Entry maintaining a key and a value.  The value may be
-     * changed using the {@code setValue} method.  This class
-     * facilitates the process of building custom map
+     * changed using the {@code setValue} method. Instances of
+     * this class are not associated with any map's entry-set view.
+     *
+     * @apiNote
+     * This class facilitates the process of building custom map
      * implementations. For example, it may be convenient to return
      * arrays of {@code SimpleEntry} instances in method
      * {@code Map.entrySet().toArray}.
@@ -688,10 +690,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          * @see    #hashCode
          */
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-            return eq(key, e.getKey()) && eq(value, e.getValue());
+            return o instanceof Map.Entry<?, ?> e
+                    && eq(key, e.getKey())
+                    && eq(value, e.getValue());
         }
 
         /**
@@ -727,10 +728,21 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     }
 
     /**
-     * An Entry maintaining an immutable key and value.  This class
-     * does not support method {@code setValue}.  This class may be
-     * convenient in methods that return thread-safe snapshots of
-     * key-value mappings.
+     * An unmodifiable Entry maintaining a key and a value.  This class
+     * does not support the {@code setValue} method. Instances of
+     * this class are not associated with any map's entry-set view.
+     *
+     * @apiNote
+     * Instances of this class are not necessarily immutable, as the key
+     * and value may be mutable. An instance of <i>this specific class</i>
+     * is unmodifiable, because the key and value references cannot be
+     * changed. A reference of this <i>type</i> may not be unmodifiable,
+     * as a subclass may be modifiable or may provide the appearance of modifiability.
+     * <p>
+     * This class may be convenient in methods that return thread-safe snapshots of
+     * key-value mappings. For alternatives, see the
+     * {@link Map#entry Map::entry} and {@link Map.Entry#copyOf Map.Entry::copyOf}
+     * methods.
      *
      * @since 1.6
      */
@@ -790,7 +802,10 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          * Replaces the value corresponding to this entry with the specified
          * value (optional operation).  This implementation simply throws
          * {@code UnsupportedOperationException}, as this class implements
-         * an <i>immutable</i> map entry.
+         * an unmodifiable map entry.
+         *
+         * @implSpec
+         * The implementation in this class always throws {@code UnsupportedOperationException}.
          *
          * @param value new value to be stored in this entry
          * @return (Does not return)
@@ -822,10 +837,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
          * @see    #hashCode
          */
         public boolean equals(Object o) {
-            if (!(o instanceof Map.Entry))
-                return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
-            return eq(key, e.getKey()) && eq(value, e.getValue());
+            return o instanceof Map.Entry<?, ?> e
+                    && eq(key, e.getKey())
+                    && eq(value, e.getValue());
         }
 
         /**

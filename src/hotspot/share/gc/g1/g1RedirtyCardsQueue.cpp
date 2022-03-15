@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-// G1RedirtyCardsQueueBase::LocalQSet
+// G1RedirtyCardsLocalQueueSet
 
 G1RedirtyCardsLocalQueueSet::G1RedirtyCardsLocalQueueSet(G1RedirtyCardsQueueSet* shared_qset) :
   PtrQueueSet(shared_qset->allocator()),
   _shared_qset(shared_qset),
-  _buffers()
+  _buffers(),
+  _queue(this)
 {}
 
 #ifdef ASSERT
@@ -53,30 +54,33 @@ void G1RedirtyCardsLocalQueueSet::enqueue_completed_buffer(BufferNode* node) {
   }
 }
 
-void G1RedirtyCardsLocalQueueSet::flush() {
-  _shared_qset->add_bufferlist(_buffers);
-  _buffers = G1BufferNodeList();
+void G1RedirtyCardsLocalQueueSet::enqueue(void* value) {
+  if (!try_enqueue(_queue, value)) {
+    BufferNode* old_node = exchange_buffer_with_new(_queue);
+    if (old_node != nullptr) {
+      enqueue_completed_buffer(old_node);
+    }
+    retry_enqueue(_queue, value);
+  }
 }
 
-// G1RedirtyCardsQueue
+void G1RedirtyCardsLocalQueueSet::flush() {
+  flush_queue(_queue);
+  _shared_qset->add_bufferlist(_buffers);
+  _buffers = BufferNodeList();
+}
 
-G1RedirtyCardsQueue::G1RedirtyCardsQueue(G1RedirtyCardsLocalQueueSet* qset) :
-  PtrQueue(qset, true /* always active */)
+// G1RedirtyCardsLocalQueueSet::Queue
+
+G1RedirtyCardsLocalQueueSet::Queue::Queue(G1RedirtyCardsLocalQueueSet* qset) :
+  PtrQueue(qset)
 {}
 
 #ifdef ASSERT
-G1RedirtyCardsQueue::~G1RedirtyCardsQueue() {
-  assert(is_empty(), "unflushed queue");
+G1RedirtyCardsLocalQueueSet::Queue::~Queue() {
+  assert(buffer() == nullptr, "unflushed queue");
 }
 #endif // ASSERT
-
-void G1RedirtyCardsQueue::handle_completed_buffer() {
-  enqueue_completed_buffer();
-}
-
-void G1RedirtyCardsQueue::flush() {
-  flush_impl();
-}
 
 // G1RedirtyCardsQueueSet
 
@@ -105,9 +109,9 @@ BufferNode* G1RedirtyCardsQueueSet::all_completed_buffers() const {
   return _list.top();
 }
 
-G1BufferNodeList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
+BufferNodeList G1RedirtyCardsQueueSet::take_all_completed_buffers() {
   DEBUG_ONLY(_collecting = false;)
-  G1BufferNodeList result(_list.pop_all(), _tail, _entry_count);
+  BufferNodeList result(_list.pop_all(), _tail, _entry_count);
   _tail = NULL;
   _entry_count = 0;
   DEBUG_ONLY(_collecting = true;)
@@ -131,7 +135,7 @@ void G1RedirtyCardsQueueSet::enqueue_completed_buffer(BufferNode* node) {
   update_tail(node);
 }
 
-void G1RedirtyCardsQueueSet::add_bufferlist(const G1BufferNodeList& buffers) {
+void G1RedirtyCardsQueueSet::add_bufferlist(const BufferNodeList& buffers) {
   assert(_collecting, "precondition");
   if (buffers._head != NULL) {
     assert(buffers._tail != NULL, "invariant");

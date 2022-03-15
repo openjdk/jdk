@@ -27,7 +27,7 @@
  *          cannot be constructed if they override security-sensitive non-final
  *          methods.
  * @build AuditStreamSubclass
- * @run main/othervm AuditStreamSubclass
+ * @run main/othervm -Djava.security.manager=allow AuditStreamSubclass
  */
 import java.io.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/vmIntrinsics.hpp"
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -89,6 +90,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
     java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
     java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
+    java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1
   };
@@ -115,7 +117,6 @@ class AbstractInterpreter: AllStatic {
 
   // method entry points
   static address    _entry_table[number_of_method_entries];     // entry points for a given method
-  static address    _cds_entry_table[number_of_method_entries]; // entry points for methods in the CDS archive
   static address    _native_abi_to_tosca[number_of_result_handlers];  // for native method result handlers
   static address    _slow_signature_handler;                              // the native method generic (slow) signature handler
 
@@ -135,11 +136,6 @@ class AbstractInterpreter: AllStatic {
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
   static address    entry_for_method(const methodHandle& m)     { return entry_for_kind(method_kind(m)); }
 
-  // used by class data sharing
-  static address    entry_for_cds_method(const methodHandle& m) NOT_CDS_RETURN_(NULL);
-  static address    entry_for_cds_method(AbstractInterpreter::MethodKind kind) NOT_CDS_RETURN_(NULL);
-  static void       generate_entry_for_cds_method(MethodKind kind) NOT_CDS_RETURN;
-
   // used for bootstrapping method handles:
   static void       set_entry_for_kind(MethodKind k, address e);
 
@@ -154,6 +150,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dtan  : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
+      case vmIntrinsics::_dsqrt_strict : // fall thru
       case vmIntrinsics::_dlog  : // fall thru
       case vmIntrinsics::_dlog10: // fall thru
       case vmIntrinsics::_dpow  : // fall thru

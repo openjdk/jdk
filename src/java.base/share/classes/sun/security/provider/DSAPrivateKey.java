@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.AlgorithmParameters;
 import java.security.spec.DSAParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.interfaces.DSAParams;
+import java.util.Arrays;
 
 import sun.security.x509.AlgIdDSA;
 import sun.security.pkcs.PKCS8Key;
@@ -68,8 +69,11 @@ public final class DSAPrivateKey extends PKCS8Key
         algid = new AlgIdDSA(p, q, g);
 
         try {
-            key = new DerValue(DerValue.tag_Integer,
-                               x.toByteArray()).toByteArray();
+            byte[] xbytes = x.toByteArray();
+            DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
+            key = val.toByteArray();
+            val.clear();
+            Arrays.fill(xbytes, (byte)0);
         } catch (IOException e) {
             throw new AssertionError("Should not happen", e);
         }

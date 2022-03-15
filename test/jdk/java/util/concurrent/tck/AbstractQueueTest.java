@@ -49,26 +49,26 @@ public class AbstractQueueTest extends JSR166TestCase {
         return new TestSuite(AbstractQueueTest.class);
     }
 
-    static class Succeed extends AbstractQueue<Integer> {
-        public boolean offer(Integer x) {
+    static class Succeed extends AbstractQueue<Item> {
+        public boolean offer(Item x) {
             if (x == null) throw new NullPointerException();
             return true;
         }
-        public Integer peek() { return one; }
-        public Integer poll() { return one; }
+        public Item peek() { return one; }
+        public Item poll() { return one; }
         public int size() { return 0; }
-        public Iterator iterator() { return null; } // not needed
+        public Iterator<Item> iterator() { return null; } // not needed
     }
 
-    static class Fail extends AbstractQueue<Integer> {
-        public boolean offer(Integer x) {
+    static class Fail extends AbstractQueue<Item> {
+        public boolean offer(Item x) {
             if (x == null) throw new NullPointerException();
             return false;
         }
-        public Integer peek() { return null; }
-        public Integer poll() { return null; }
+        public Item peek() { return null; }
+        public Item poll() { return null; }
         public int size() { return 0; }
-        public Iterator iterator() { return null; } // not needed
+        public Iterator<Item> iterator() { return null; } // not needed
     }
 
     /**
@@ -166,9 +166,9 @@ public class AbstractQueueTest extends JSR166TestCase {
      */
     public void testAddAll2() {
         Succeed q = new Succeed();
-        Integer[] ints = new Integer[SIZE];
+        Item[] items = new Item[SIZE];
         try {
-            q.addAll(Arrays.asList(ints));
+            q.addAll(Arrays.asList(items));
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -179,11 +179,11 @@ public class AbstractQueueTest extends JSR166TestCase {
      */
     public void testAddAll3() {
         Succeed q = new Succeed();
-        Integer[] ints = new Integer[SIZE];
+        Item[] items = new Item[SIZE];
         for (int i = 0; i < SIZE - 1; ++i)
-            ints[i] = new Integer(i);
+            items[i] = itemFor(i);
         try {
-            q.addAll(Arrays.asList(ints));
+            q.addAll(Arrays.asList(items));
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -193,11 +193,9 @@ public class AbstractQueueTest extends JSR166TestCase {
      */
     public void testAddAll4() {
         Fail q = new Fail();
-        Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE; ++i)
-            ints[i] = new Integer(i);
+        Item[] items = seqItems(SIZE);
         try {
-            q.addAll(Arrays.asList(ints));
+            q.addAll(Arrays.asList(items));
             shouldThrow();
         } catch (IllegalStateException success) {}
     }

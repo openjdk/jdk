@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,8 +236,8 @@ final class Byte256Vector extends ByteVector {
 
     @ForceInline
     final @Override
-    byte rOp(byte v, FBinOp f) {
-        return super.rOpTemplate(v, f);  // specialize
+    byte rOp(byte v, VectorMask<Byte> m, FBinOp f) {
+        return super.rOpTemplate(v, m, f);  // specialize
     }
 
     @Override
@@ -275,8 +275,20 @@ final class Byte256Vector extends ByteVector {
 
     @Override
     @ForceInline
+    public Byte256Vector lanewise(Unary op, VectorMask<Byte> m) {
+        return (Byte256Vector) super.lanewiseTemplate(op, Byte256Mask.class, (Byte256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Byte256Vector lanewise(Binary op, Vector<Byte> v) {
         return (Byte256Vector) super.lanewiseTemplate(op, v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte256Vector lanewise(Binary op, Vector<Byte> v, VectorMask<Byte> m) {
+        return (Byte256Vector) super.lanewiseTemplate(op, Byte256Mask.class, v, (Byte256Mask) m);  // specialize
     }
 
     /*package-private*/
@@ -288,11 +300,26 @@ final class Byte256Vector extends ByteVector {
 
     /*package-private*/
     @Override
+    @ForceInline Byte256Vector
+    lanewiseShift(VectorOperators.Binary op, int e, VectorMask<Byte> m) {
+        return (Byte256Vector) super.lanewiseShiftTemplate(op, Byte256Mask.class, e, (Byte256Mask) m);  // specialize
+    }
+
+    /*package-private*/
+    @Override
     @ForceInline
     public final
     Byte256Vector
-    lanewise(VectorOperators.Ternary op, Vector<Byte> v1, Vector<Byte> v2) {
+    lanewise(Ternary op, Vector<Byte> v1, Vector<Byte> v2) {
         return (Byte256Vector) super.lanewiseTemplate(op, v1, v2);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final
+    Byte256Vector
+    lanewise(Ternary op, Vector<Byte> v1, Vector<Byte> v2, VectorMask<Byte> m) {
+        return (Byte256Vector) super.lanewiseTemplate(op, Byte256Mask.class, v1, v2, (Byte256Mask) m);  // specialize
     }
 
     @Override
@@ -314,7 +341,7 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public final byte reduceLanes(VectorOperators.Associative op,
                                     VectorMask<Byte> m) {
-        return super.reduceLanesTemplate(op, m);  // specialized
+        return super.reduceLanesTemplate(op, Byte256Mask.class, (Byte256Mask) m);  // specialized
     }
 
     @Override
@@ -327,18 +354,12 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public final long reduceLanesToLong(VectorOperators.Associative op,
                                         VectorMask<Byte> m) {
-        return (long) super.reduceLanesTemplate(op, m);  // specialized
+        return (long) super.reduceLanesTemplate(op, Byte256Mask.class, (Byte256Mask) m);  // specialized
     }
 
-    @Override
     @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        byte[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(VSPECIES, sa, 0);
+        return super.toShuffleTemplate(Byte256Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -347,6 +368,12 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     public final Byte256Mask test(Test op) {
         return super.testTemplate(Byte256Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Byte256Mask test(Test op, VectorMask<Byte> m) {
+        return super.testTemplate(Byte256Mask.class, op, (Byte256Mask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -371,6 +398,13 @@ final class Byte256Vector extends ByteVector {
 
     @Override
     @ForceInline
+    public final Byte256Mask compare(Comparison op, Vector<Byte> v, VectorMask<Byte> m) {
+        return super.compareTemplate(Byte256Mask.class, op, v, (Byte256Mask) m);
+    }
+
+
+    @Override
+    @ForceInline
     public Byte256Vector blend(Vector<Byte> v, VectorMask<Byte> m) {
         return (Byte256Vector)
             super.blendTemplate(Byte256Mask.class,
@@ -387,14 +421,7 @@ final class Byte256Vector extends ByteVector {
     @Override
     @ForceInline
     public Byte256Vector slice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Byte256Shuffle Iota = iotaShuffle();
-         VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(VLENGTH-origin))));
-         Iota = iotaShuffle(origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Byte256Vector) super.sliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -415,14 +442,7 @@ final class Byte256Vector extends ByteVector {
     @Override
     @ForceInline
     public Byte256Vector unslice(int origin) {
-       if ((origin < 0) || (origin >= VLENGTH)) {
-         throw new ArrayIndexOutOfBoundsException("Index " + origin + " out of bounds for vector length " + VLENGTH);
-       } else {
-         Byte256Shuffle Iota = iotaShuffle();
-         VectorMask<Byte> BlendMask = Iota.toVector().compare(VectorOperators.GE, (broadcast((byte)(origin))));
-         Iota = iotaShuffle(-origin, 1, true);
-         return ZERO.blend(this.rearrange(Iota), BlendMask);
-       }
+        return (Byte256Vector) super.unsliceTemplate(origin);  // specialize
     }
 
     @Override
@@ -439,6 +459,7 @@ final class Byte256Vector extends ByteVector {
                                   VectorMask<Byte> m) {
         return (Byte256Vector)
             super.rearrangeTemplate(Byte256Shuffle.class,
+                                    Byte256Mask.class,
                                     (Byte256Shuffle) shuffle,
                                     (Byte256Mask) m);  // specialize
     }
@@ -645,31 +666,39 @@ final class Byte256Vector extends ByteVector {
             return (Byte256Vector) super.toVectorTemplate();  // specialize
         }
 
-        @Override
+        /**
+         * Helper function for lane-wise mask conversions.
+         * This function kicks in after intrinsic failure.
+         */
         @ForceInline
-        public <E> VectorMask<E> cast(VectorSpecies<E> s) {
-            AbstractSpecies<E> species = (AbstractSpecies<E>) s;
-            if (length() != species.laneCount())
+        private final <E>
+        VectorMask<E> defaultMaskCast(AbstractSpecies<E> dsp) {
+            if (length() != dsp.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
             boolean[] maskArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Mask(maskArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Mask(maskArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Mask(maskArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Mask(maskArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Mask(maskArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Mask(maskArray).check(species);
-            }
+            return  dsp.maskFactory(maskArray).check(dsp);
+        }
 
-            // Should not reach here.
-            throw new AssertionError(species);
+        @Override
+        @ForceInline
+        public <E> VectorMask<E> cast(VectorSpecies<E> dsp) {
+            AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorMask length and species length differ");
+
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                this.getClass(), ETYPE, VLENGTH,
+                species.maskType(), species.elementType(), VLENGTH,
+                this, species,
+                (m, s) -> s.maskFactory(m.toArray()).check(s));
+        }
+
+        @Override
+        @ForceInline
+        public Byte256Mask eq(VectorMask<Byte> mask) {
+            Objects.requireNonNull(mask);
+            Byte256Mask m = (Byte256Mask)mask;
+            return xor(m.not());
         }
 
         // Unary operations
@@ -687,9 +716,9 @@ final class Byte256Vector extends ByteVector {
         public Byte256Mask and(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte256Mask m = (Byte256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, Byte256Mask.class, byte.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a & b));
+            return VectorSupport.binaryOp(VECTOR_OP_AND, Byte256Mask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
 
         @Override
@@ -697,9 +726,9 @@ final class Byte256Vector extends ByteVector {
         public Byte256Mask or(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte256Mask m = (Byte256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, Byte256Mask.class, byte.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a | b));
+            return VectorSupport.binaryOp(VECTOR_OP_OR, Byte256Mask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
         @ForceInline
@@ -707,9 +736,42 @@ final class Byte256Vector extends ByteVector {
         Byte256Mask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte256Mask m = (Byte256Mask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte256Mask.class, byte.class, VLENGTH,
-                                          this, m,
-                                          (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte256Mask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+        }
+
+        // Mask Query operations
+
+        @Override
+        @ForceInline
+        public int trueCount() {
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, Byte256Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int firstTrue() {
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, Byte256Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public int lastTrue() {
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, Byte256Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public long toLong() {
+            if (length() > Long.SIZE) {
+                throw new UnsupportedOperationException("too many lanes for one long");
+            }
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Byte256Mask.class, byte.class, VLENGTH, this,
+                                                      (m) -> toLongHelper(m.getBits()));
         }
 
         // Reductions
@@ -733,9 +795,9 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         /*package-private*/
         static Byte256Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Byte256Mask.class, byte.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Byte256Mask.class, byte.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Byte256Mask  TRUE_MASK = new Byte256Mask(true);
         private static final Byte256Mask FALSE_MASK = new Byte256Mask(false);
@@ -791,24 +853,7 @@ final class Byte256Vector extends ByteVector {
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
-            // enum-switches don't optimize properly JDK-8161245
-            switch (species.laneType.switchKey) {
-            case LaneType.SK_BYTE:
-                return new Byte256Vector.Byte256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_SHORT:
-                return new Short256Vector.Short256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_INT:
-                return new Int256Vector.Int256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_LONG:
-                return new Long256Vector.Long256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_FLOAT:
-                return new Float256Vector.Float256Shuffle(shuffleArray).check(species);
-            case LaneType.SK_DOUBLE:
-                return new Double256Vector.Double256Shuffle(shuffleArray).check(species);
-            }
-
-            // Should not reach here.
-            throw new AssertionError(species);
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
         @ForceInline
@@ -840,8 +885,38 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);  // specialize
+    }
+
+
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset) {
+        return super.fromBooleanArray0Template(a, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
+        return super.fromBooleanArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     ByteVector fromByteArray0(byte[] a, int offset) {
         return super.fromByteArray0Template(a, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        return super.fromByteArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);  // specialize
     }
 
     @ForceInline
@@ -854,8 +929,30 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
+        return super.fromByteBuffer0Template(Byte256Mask.class, bb, offset, (Byte256Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     void intoArray0(byte[] a, int offset) {
         super.intoArray0Template(a, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        super.intoArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);
+    }
+
+
+    @ForceInline
+    @Override
+    final
+    void intoBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
+        super.intoBooleanArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);
     }
 
     @ForceInline
@@ -864,6 +961,21 @@ final class Byte256Vector extends ByteVector {
     void intoByteArray0(byte[] a, int offset) {
         super.intoByteArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        super.intoByteArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
+        super.intoByteBuffer0Template(Byte256Mask.class, bb, offset, (Byte256Mask) m);
+    }
+
 
     // End of specialized low-level memory operations.
 

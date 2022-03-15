@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 package sun.net.www;
+
 import jdk.internal.util.StaticProperty;
 
 import java.io.*;
@@ -36,38 +37,24 @@ import java.util.StringTokenizer;
 public class MimeTable implements FileNameMap {
     /** Keyed by content type, returns MimeEntries */
     private Hashtable<String, MimeEntry> entries
-        = new Hashtable<String, MimeEntry>();
+        = new Hashtable<>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
     private Hashtable<String, MimeEntry> extensionMap
-        = new Hashtable<String, MimeEntry>();
+        = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
-    private static String tempFileTemplate;
-
-    static {
+    @SuppressWarnings("removal")
+    private static String tempFileTemplate =
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                tempFileTemplate =
-                    System.getProperty("content.types.temp.file.template",
-                                       "/tmp/%s");
-
-                mailcapLocations = new String[] {
-                    System.getProperty("user.mailcap"),
-                    StaticProperty.userHome() + "/.mailcap",
-                    "/etc/mailcap",
-                    "/usr/etc/mailcap",
-                    "/usr/local/etc/mailcap",
-                };
-                return null;
-            }
-        });
-    }
-
+                new java.security.PrivilegedAction<String>() {
+                    public String run() {
+                        return System.getProperty("content.types.temp.file.template",
+                                "/tmp/%s");
+                    }
+                });
 
     private static final String filePreamble = "sun.net.www MIME content-types table";
-    private static final String fileMagic = "#" + filePreamble;
 
     MimeTable() {
         load();
@@ -76,9 +63,10 @@ public class MimeTable implements FileNameMap {
     private static class DefaultInstanceHolder {
         static final MimeTable defaultInstance = getDefaultInstance();
 
+        @SuppressWarnings("removal")
         static MimeTable getDefaultInstance() {
             return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<MimeTable>() {
+                new java.security.PrivilegedAction<>() {
                 public MimeTable run() {
                     MimeTable instance = new MimeTable();
                     URLConnection.setFileNameMap(instance);
@@ -101,7 +89,7 @@ public class MimeTable implements FileNameMap {
      */
     public static FileNameMap loadTable() {
         MimeTable mt = getDefaultTable();
-        return (FileNameMap)mt;
+        return mt;
     }
 
     public synchronized int getSize() {
@@ -219,7 +207,20 @@ public class MimeTable implements FileNameMap {
     // For backward compatibility -- mailcap format files
     // This is not currently used, but may in the future when we add ability
     // to read BOTH the properties format and the mailcap format.
-    protected static String[] mailcapLocations;
+    @SuppressWarnings("removal")
+    protected static String[] mailcapLocations =
+        java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<String[]>() {
+                    public String[] run() {
+                        return new String[]{
+                                System.getProperty("user.mailcap"),
+                                StaticProperty.userHome() + "/.mailcap",
+                                "/etc/mailcap",
+                                "/usr/etc/mailcap",
+                                "/usr/local/etc/mailcap",
+                        };
+                    }
+                });
 
     public synchronized void load() {
         Properties entries = new Properties();
@@ -242,8 +243,8 @@ public class MimeTable implements FileNameMap {
                 throw new InternalError("default mime table not found");
         }
 
-        try (BufferedInputStream bin = new BufferedInputStream(in)) {
-            entries.load(bin);
+        try (in) {
+            entries.load(in);
         } catch (IOException e) {
             System.err.println("Warning: " + e.getMessage());
         }
@@ -347,17 +348,6 @@ public class MimeTable implements FileNameMap {
         // else illegal name exception
     }
 
-    String[] getExtensions(String list) {
-        StringTokenizer tokenizer = new StringTokenizer(list, ",");
-        int n = tokenizer.countTokens();
-        String[] extensions = new String[n];
-        for (int i = 0; i < n; i++) {
-            extensions[i] = tokenizer.nextToken();
-        }
-
-        return extensions;
-    }
-
     int getActionCode(String action) {
         for (int i = 0; i < MimeEntry.actionKeywords.length; i++) {
             if (action.equalsIgnoreCase(MimeEntry.actionKeywords[i])) {
@@ -380,13 +370,12 @@ public class MimeTable implements FileNameMap {
     }
 
     protected boolean saveAsProperties(File file) {
-        FileOutputStream os = null;
-        try {
-            os = new FileOutputStream(file);
+        try (FileOutputStream os = new FileOutputStream(file)) {
             Properties properties = getAsProperties();
             properties.put("temp.file.template", tempFileTemplate);
             String tag;
             // Perform the property security check for user.name
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPropertyAccess("user.name");
@@ -403,11 +392,6 @@ public class MimeTable implements FileNameMap {
         catch (IOException e) {
             e.printStackTrace();
             return false;
-        }
-        finally {
-            if (os != null) {
-                try { os.close(); } catch (IOException e) {}
-            }
         }
 
         return true;

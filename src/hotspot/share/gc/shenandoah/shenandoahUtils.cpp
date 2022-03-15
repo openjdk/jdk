@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,12 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahMarkCompact.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "utilities/debug.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
@@ -66,6 +67,7 @@ ShenandoahGCSession::~ShenandoahGCSession() {
   _heap->heuristics()->record_cycle_end();
   _timer->register_gc_end();
   _heap->trace_heap_after_gc(_tracer);
+  _tracer->report_gc_reference_stats(_heap->ref_processor()->reference_process_stats());
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
   _heap->set_gc_cause(GCCause::_no_gc);
@@ -109,9 +111,7 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
 
 ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase) :
   _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
-  assert(!Thread::current()->is_Worker_thread() &&
-              (Thread::current()->is_VM_thread() ||
-               Thread::current()->is_ConcurrentGC_thread()),
+  assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
           "Must be set by these threads");
   _parent_phase = _current_phase;
   _current_phase = phase;
@@ -146,10 +146,8 @@ ShenandoahGCWorkerPhase::~ShenandoahGCWorkerPhase() {
   _timings->record_workers_end(_phase);
 }
 
-ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) : _worker_id(worker_id) {
-  Thread* thr = Thread::current();
-  assert(ShenandoahThreadLocalData::worker_id(thr) == ShenandoahThreadLocalData::INVALID_WORKER_ID, "Already set");
-  ShenandoahThreadLocalData::set_worker_id(thr, worker_id);
+ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) {
+  assert(worker_id == WorkerThread::worker_id(), "Wrong worker id");
 }
 
 ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
@@ -157,12 +155,5 @@ ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
 }
 
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
-  _event.commit(GCId::current(), _worker_id, ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
-}
-ShenandoahWorkerSession::~ShenandoahWorkerSession() {
-#ifdef ASSERT
-  Thread* thr = Thread::current();
-  assert(ShenandoahThreadLocalData::worker_id(thr) != ShenandoahThreadLocalData::INVALID_WORKER_ID, "Must be set");
-  ShenandoahThreadLocalData::set_worker_id(thr, ShenandoahThreadLocalData::INVALID_WORKER_ID);
-#endif
+  _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,13 @@ public class BytecodeIinc extends BytecodeWideable {
   }
 
   public String toString() {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("iinc");
     buf.append(spaces);
     buf.append('#');
-    buf.append(Integer.toString(getLocalVarIndex()));
+    buf.append(getLocalVarIndex());
     buf.append(" by ");
-    buf.append(Integer.toString(getIncrement()));
+    buf.append(getIncrement());
     return buf.toString();
   }
 }

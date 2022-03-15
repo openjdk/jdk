@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,52 +145,14 @@ public abstract class SAXParserFactory {
     }
 
     /**
-     * Obtain a new instance of a {@code SAXParserFactory}. This
-     * static method creates a new factory instance
-     * This method uses the following ordered lookup procedure to determine
-     * the {@code SAXParserFactory} implementation class to
-     * load:
-     * <ul>
-     * <li>
-     * Use the {@code javax.xml.parsers.SAXParserFactory} system
-     * property.
-     * </li>
-     * <li>
-     * <p>
-     * Use the configuration file "jaxp.properties". The file is in standard
-     * {@link java.util.Properties} format and typically located in the
-     * {@code conf} directory of the Java installation. It contains the fully qualified
-     * name of the implementation class with the key being the system property
-     * defined above.
-     * <p>
-     * The jaxp.properties file is read only once by the JAXP implementation
-     * and its values are then cached for future use.  If the file does not exist
-     * when the first attempt is made to read from it, no further attempts are
-     * made to check for its existence.  It is not possible to change the value
-     * of any property in jaxp.properties after it has been read for the first time.
-     * </li>
-     * <li>
-     * <p>
-     * Use the service-provider loading facility, defined by the
-     * {@link java.util.ServiceLoader} class, to attempt to locate and load an
-     * implementation of the service using the {@linkplain
-     * java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
-     * the service-provider loading facility will use the {@linkplain
-     * java.lang.Thread#getContextClassLoader() current thread's context class loader}
-     * to attempt to load the service. If the context class
-     * loader is null, the {@linkplain
-     * ClassLoader#getSystemClassLoader() system class loader} will be used.
-     * </li>
-     * <li>
-     * <p>
-     * Otherwise, the {@linkplain #newDefaultInstance() system-default}
-     * implementation is returned.
-     * </li>
-     * </ul>
+     * Obtains a new instance of a {@code SAXParserFactory}.
+     * This method uses the
+     * <a href="../../../module-summary.html#LookupMechanism">JAXP Lookup Mechanism</a>
+     * to determine the {@code SAXParserFactory} implementation class to load.
      *
      * <p>
      * Once an application has obtained a reference to a
-     * {@code SAXParserFactory} it can use the factory to
+     * {@code SAXParserFactory}, it can use the factory to
      * configure and obtain parser instances.
      *
      *

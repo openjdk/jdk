@@ -3,5 +3,5 @@
     static void [[TEST]]$vectorteststype$BroadcastMaskedLongSmokeTest(IntFunction<$type$[]> fa, IntFunction<$type$[]> fb,
                                           IntFunction<boolean[]> fm) {
 [[KERNEL]]
-        assertBroadcastLongArraysEquals(a, b, r, mask, $vectorteststype$::[[TEST]]);
+        assertBroadcastLongArraysEquals(r, a, b, mask, $vectorteststype$::[[TEST]]);
     }

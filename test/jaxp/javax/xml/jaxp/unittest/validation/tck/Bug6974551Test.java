@@ -44,7 +44,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 6974551
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6974551Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.tck.Bug6974551Test
  * @run testng/othervm validation.tck.Bug6974551Test
  * @summary Test Validation for SAXParser can expose whitespace facet for xs:anySimpleType.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,18 +107,6 @@ public class LockUnlock {
      */
     @Benchmark
     public void testRecursiveSynchronization() {
-        factorial = fact(10);
-    }
-
-    /**
-     * Same as {@link #testRecursiveSynchronization()} but the first call
-     * to this method will generate the identity hashcode for this object
-     * which effectively disables biased locking as they occupy the same
-     * bits in the object header.
-     */
-    @Benchmark
-    public void testRecursiveSynchronizationNoBias() {
-        System.identityHashCode(this);
         factorial = fact(10);
     }
 

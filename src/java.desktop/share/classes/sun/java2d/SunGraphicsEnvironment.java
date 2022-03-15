@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,13 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     /** Establish the default font to be used by SG2D. */
     private final Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
-    private static final boolean uiScaleEnabled;
-    private static final double debugScale;
+    @SuppressWarnings("removal")
+    private static final boolean uiScaleEnabled
+            = "true".equals(AccessController.doPrivileged(
+            new GetPropertyAction("sun.java2d.uiScale.enabled", "true")));
 
-    static {
-        uiScaleEnabled = "true".equals(AccessController.doPrivileged(
-                new GetPropertyAction("sun.java2d.uiScale.enabled", "true")));
-        debugScale = uiScaleEnabled ? getScaleFactor("sun.java2d.uiScale") : -1;
-    }
+    private static final double debugScale =
+            uiScaleEnabled ? getScaleFactor("sun.java2d.uiScale") : -1;
 
     protected GraphicsDevice[] screens;
 
@@ -187,11 +186,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
                 map.put(installed[i].toLowerCase(requestedLocale),
                         installed[i]);
             }
-            String[] retval =  new String[map.size()];
-            Object [] keyNames = map.keySet().toArray();
-            for (int i=0; i < keyNames.length; i++) {
-                retval[i] = map.get(keyNames[i]);
-            }
+            String[] retval = map.values().toArray(new String[0]);
             return retval;
         }
     }
@@ -298,6 +293,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
 
     public static double getScaleFactor(String propertyName) {
 
+        @SuppressWarnings("removal")
         String scaleFactor = AccessController.doPrivileged(
                 new GetPropertyAction(propertyName, "-1"));
 

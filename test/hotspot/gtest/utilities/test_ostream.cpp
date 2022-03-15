@@ -31,7 +31,7 @@
 
 #include "unittest.hpp"
 
-static size_t print_lorem(outputStream* st, bool short_len) {
+static size_t print_lorem(outputStream* st) {
   // Create a ResourceMark just to make sure the stream does not use ResourceArea
   ResourceMark rm;
   static const char* const lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
@@ -39,12 +39,9 @@ static size_t print_lorem(outputStream* st, bool short_len) {
       "risus sed vulputate odio ut enim blandit. Amet risus nullam eget felis eget. Viverra "
       "orci sagittis eu volutpat odio facilisis mauris sit. Erat velit scelerisque in dictum non.";
   static const size_t len_lorem = strlen(lorem);
-  size_t len;
-  if (short_len) {
-    len = os::random() % 10;
-  } else {
-    len = MAX2(1, (int)(os::random() % len_lorem));
-  }
+  // Randomly alternate between short and long writes at a ratio of 9:1.
+  const bool short_write = (os::random() % 10) > 0;
+  const size_t len = os::random() % (short_write ? 10 : len_lorem);
   st->write(lorem, len);
   return len;
 }
@@ -53,12 +50,11 @@ static void test_stringStream_is_zero_terminated(const stringStream* ss) {
   ASSERT_EQ(ss->base()[ss->size()], '\0');
 }
 
-
-static void do_test_stringStream(stringStream* ss, bool short_len, size_t expected_cap) {
+static void do_test_stringStream(stringStream* ss, size_t expected_cap) {
   test_stringStream_is_zero_terminated(ss);
   size_t written = 0;
   for (int i = 0; i < 1000; i ++) {
-    written += print_lorem(ss, short_len);
+    written += print_lorem(ss);
     if (expected_cap > 0 && written >= expected_cap) {
       ASSERT_EQ(ss->size(), expected_cap - 1);
     } else {
@@ -73,14 +69,18 @@ static void do_test_stringStream(stringStream* ss, bool short_len, size_t expect
   test_stringStream_is_zero_terminated(ss);
 }
 
-TEST_VM(ostream, stringStream_dynamic_realloc_1) {
-  stringStream ss(2); // dynamic buffer with very small starting size
-  do_test_stringStream(&ss, false, 0);
+TEST_VM(ostream, stringStream_dynamic_start_with_internal_buffer) {
+  stringStream ss;
+  do_test_stringStream(&ss, 0);
+  ss.reset();
+  do_test_stringStream(&ss, 0);
 }
 
-TEST_VM(ostream, stringStream_dynamic_realloc_2) {
-  stringStream ss(2); // dynamic buffer with very small starting size
-  do_test_stringStream(&ss, true, 0);
+TEST_VM(ostream, stringStream_dynamic_start_with_malloced_buffer) {
+  stringStream ss(128);
+  do_test_stringStream(&ss, 0);
+  ss.reset();
+  do_test_stringStream(&ss, 0);
 }
 
 TEST_VM(ostream, stringStream_static) {
@@ -89,7 +89,7 @@ TEST_VM(ostream, stringStream_static) {
   *canary_at = 'X';
   size_t stream_buf_size = sizeof(buffer) - 1;
   stringStream ss(buffer, stream_buf_size);
-  do_test_stringStream(&ss, false, stream_buf_size);
+  do_test_stringStream(&ss, stream_buf_size);
   ASSERT_EQ(*canary_at, 'X'); // canary
 }
 
@@ -101,7 +101,7 @@ TEST_VM(ostream, bufferedStream_static) {
   bufferedStream bs(buf, stream_buf_size);
   size_t written = 0;
   for (int i = 0; i < 100; i ++) {
-    written += print_lorem(&bs, true);
+    written += print_lorem(&bs);
     if (written < stream_buf_size) {
       ASSERT_EQ(bs.size(), written);
     } else {
@@ -116,7 +116,7 @@ TEST_VM(ostream, bufferedStream_dynamic_small) {
   size_t written = 0;
   // The max cap imposed is 100M, we should be safely below this in this test.
   for (int i = 0; i < 10; i ++) {
-    written += print_lorem(&bs, true);
+    written += print_lorem(&bs);
     ASSERT_EQ(bs.size(), written);
   }
 }
@@ -130,7 +130,7 @@ TEST_VM(ostream, bufferedStream_dynamic_large) {
   // Note that this will assert in debug builds which is the expected behavior.
   size_t expected_cap_at = 100 * M;
   for (int i = 0; i < 10000000; i ++) {
-    written += print_lorem(&bs, false);
+    written += print_lorem(&bs);
     if (written < expected_cap_at) {
       ASSERT_EQ(bs.size(), written);
     } else {

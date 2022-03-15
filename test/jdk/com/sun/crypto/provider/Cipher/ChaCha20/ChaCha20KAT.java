@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,9 @@ public class ChaCha20KAT {
         public TestData(String name, String keyStr, String nonceStr, int ctr,
                 int dir, String inputStr, String aadStr, String outStr) {
             testName = Objects.requireNonNull(name);
-            key = Convert.hexStringToByteArray(Objects.requireNonNull(keyStr));
-            nonce = Convert.hexStringToByteArray(
-                    Objects.requireNonNull(nonceStr));
+            HexFormat hex = HexFormat.of();
+            key = hex.parseHex(Objects.requireNonNull(keyStr));
+            nonce = hex.parseHex(Objects.requireNonNull(nonceStr));
             if ((counter = ctr) < 0) {
                 throw new IllegalArgumentException(
                         "counter must be 0 or greater");
@@ -58,12 +58,9 @@ public class ChaCha20KAT {
                 throw new IllegalArgumentException(
                         "Direction must be ENCRYPT_MODE or DECRYPT_MODE");
             }
-            input = Convert.hexStringToByteArray(
-                    Objects.requireNonNull(inputStr));
-            aad = (aadStr != null) ?
-                Convert.hexStringToByteArray(aadStr) : null;
-            expOutput = Convert.hexStringToByteArray(
-                    Objects.requireNonNull(outStr));
+            input = hex.parseHex(Objects.requireNonNull(inputStr));
+            aad = (aadStr != null) ? hex.parseHex(aadStr) : null;
+            expOutput = hex.parseHex(Objects.requireNonNull(outStr));
         }
 
         public final String testName;

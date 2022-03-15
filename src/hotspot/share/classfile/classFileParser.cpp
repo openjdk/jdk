@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,12 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "aot/aotLoader.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/defaultMethods.hpp"
-#include "classfile/dictionary.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
@@ -39,6 +37,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -76,6 +75,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -137,6 +137,10 @@
 
 #define JAVA_17_VERSION                   61
 
+#define JAVA_18_VERSION                   62
+
+#define JAVA_19_VERSION                   63
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -159,7 +163,7 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
   const ClassFileStream cfs1 = *stream;
   const ClassFileStream* const cfs = &cfs1;
 
-  assert(cfs->allocated_on_stack(), "should be local");
+  assert(cfs->allocated_on_stack_or_embedded(), "should be local");
   debug_only(const u1* const old_current = stream->current();)
 
   // Used for batching symbol allocations.
@@ -320,18 +324,6 @@ void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const s
         // Before storing the symbol, make sure it's legal
         if (_need_verify) {
           verify_legal_utf8(utf8_buffer, utf8_length, CHECK);
-        }
-
-        if (has_cp_patch_at(index)) {
-          Handle patch = clear_cp_patch_at(index);
-          guarantee_property(java_lang_String::is_instance(patch()),
-                             "Illegal utf8 patch at %d in class file %s",
-                             index,
-                             CHECK);
-          const char* const str = java_lang_String::as_utf8_string(patch());
-          // (could use java_lang_String::as_symbol instead, but might as well batch them)
-          utf8_buffer = (const u1*) str;
-          utf8_length = (u2) strlen(str);
         }
 
         unsigned int hash;
@@ -616,37 +608,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
     } // switch(tag)
   } // end of for
 
-  _first_patched_klass_resolved_index = num_klasses;
-  cp->allocate_resolved_klasses(_loader_data, num_klasses + _max_num_patched_klasses, CHECK);
-
-  if (_cp_patches != NULL) {
-    // need to treat this_class specially...
-
-    // Add dummy utf8 entries in the space reserved for names of patched classes. We'll use "*"
-    // for now. These will be replaced with actual names of the patched classes in patch_class().
-    Symbol* s = vmSymbols::star_name();
-    for (int n=_orig_cp_size; n<cp->length(); n++) {
-      cp->symbol_at_put(n, s);
-    }
-
-    int this_class_index;
-    {
-      stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len
-      const u1* const mark = stream->current();
-      stream->skip_u2_fast(1); // skip flags
-      this_class_index = stream->get_u2_fast();
-      stream->set_current(mark);  // revert to mark
-    }
-
-    for (index = 1; index < length; index++) {          // Index 0 is unused
-      if (has_cp_patch_at(index)) {
-        guarantee_property(index != this_class_index,
-          "Illegal constant pool patch to self at %d in class file %s",
-          index, CHECK);
-        patch_constant_pool(cp, index, cp_patch_at(index), CHECK);
-      }
-    }
-  }
+  cp->allocate_resolved_klasses(_loader_data, num_klasses, CHECK);
 
   if (!_need_verify) {
     return;
@@ -659,7 +621,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
     switch (tag) {
       case JVM_CONSTANT_UnresolvedClass: {
         const Symbol* const class_name = cp->klass_name_at(index);
-        // check the name, even if _cp_patches will overwrite it
+        // check the name
         verify_legal_class_name(class_name, CHECK);
         break;
       }
@@ -732,22 +694,25 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           }
         } else {
           if (_need_verify) {
-            // Method name and signature are verified above, when iterating NameAndType_info.
-            // Need only to be sure signature is non-zero length and the right type.
+            // Method name and signature are individually verified above, when iterating
+            // NameAndType_info.  Need to check here that signature is non-zero length and
+            // the right type.
             if (!Signature::is_method(signature)) {
               throwIllegalSignature("Method", name, signature, CHECK);
             }
           }
-          // 4509014: If a class method name begins with '<', it must be "<init>"
+          // If a class method name begins with '<', it must be "<init>" and have void signature.
           const unsigned int name_len = name->utf8_length();
-          if (tag == JVM_CONSTANT_Methodref &&
-              name_len != 0 &&
-              name->char_at(0) == JVM_SIGNATURE_SPECIAL &&
-              name != vmSymbols::object_initializer_name()) {
-            classfile_parse_error(
-              "Bad method name at constant pool index %u in class file %s",
-              name_ref_index, THREAD);
-            return;
+          if (tag == JVM_CONSTANT_Methodref && name_len != 0 &&
+              name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
+            if (name != vmSymbols::object_initializer_name()) {
+              classfile_parse_error(
+                "Bad method name at constant pool index %u in class file %s",
+                name_ref_index, THREAD);
+              return;
+            } else if (!Signature::is_void_method(signature)) { // must have void signature.
+              throwIllegalSignature("Method", name, signature, CHECK);
+            }
           }
         }
         break;
@@ -799,88 +764,6 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
   }  // end of for
 }
 
-Handle ClassFileParser::clear_cp_patch_at(int index) {
-  Handle patch = cp_patch_at(index);
-  _cp_patches->at_put(index, Handle());
-  assert(!has_cp_patch_at(index), "");
-  return patch;
-}
-
-void ClassFileParser::patch_class(ConstantPool* cp, int class_index, Klass* k, Symbol* name) {
-  int name_index = _orig_cp_size + _num_patched_klasses;
-  int resolved_klass_index = _first_patched_klass_resolved_index + _num_patched_klasses;
-
-  cp->klass_at_put(class_index, name_index, resolved_klass_index, k, name);
-  _num_patched_klasses ++;
-}
-
-void ClassFileParser::patch_constant_pool(ConstantPool* cp,
-                                          int index,
-                                          Handle patch,
-                                          TRAPS) {
-  assert(cp != NULL, "invariant");
-
-  BasicType patch_type = T_VOID;
-
-  switch (cp->tag_at(index).value()) {
-
-    case JVM_CONSTANT_UnresolvedClass: {
-      // Patching a class means pre-resolving it.
-      // The name in the constant pool is ignored.
-      if (java_lang_Class::is_instance(patch())) {
-        guarantee_property(!java_lang_Class::is_primitive(patch()),
-                           "Illegal class patch at %d in class file %s",
-                           index, CHECK);
-        Klass* k = java_lang_Class::as_Klass(patch());
-        patch_class(cp, index, k, k->name());
-      } else {
-        guarantee_property(java_lang_String::is_instance(patch()),
-                           "Illegal class patch at %d in class file %s",
-                           index, CHECK);
-        Symbol* const name = java_lang_String::as_symbol(patch());
-        patch_class(cp, index, NULL, name);
-      }
-      break;
-    }
-
-    case JVM_CONSTANT_String: {
-      // skip this patch and don't clear it.  Needs the oop array for resolved
-      // references to be created first.
-      return;
-    }
-    case JVM_CONSTANT_Integer: patch_type = T_INT;    goto patch_prim;
-    case JVM_CONSTANT_Float:   patch_type = T_FLOAT;  goto patch_prim;
-    case JVM_CONSTANT_Long:    patch_type = T_LONG;   goto patch_prim;
-    case JVM_CONSTANT_Double:  patch_type = T_DOUBLE; goto patch_prim;
-    patch_prim:
-    {
-      jvalue value;
-      BasicType value_type = java_lang_boxing_object::get_value(patch(), &value);
-      guarantee_property(value_type == patch_type,
-                         "Illegal primitive patch at %d in class file %s",
-                         index, CHECK);
-      switch (value_type) {
-        case T_INT:    cp->int_at_put(index,   value.i); break;
-        case T_FLOAT:  cp->float_at_put(index, value.f); break;
-        case T_LONG:   cp->long_at_put(index,  value.j); break;
-        case T_DOUBLE: cp->double_at_put(index, value.d); break;
-        default:       assert(false, "");
-      }
-    } // end patch_prim label
-    break;
-
-    default: {
-      // %%% TODO: put method handles into CONSTANT_InterfaceMethodref, etc.
-      guarantee_property(!has_cp_patch_at(index),
-                         "Illegal unexpected patch at %d in class file %s",
-                         index, CHECK);
-      return;
-    }
-  } // end of switch(tag)
-
-  // On fall-through, mark the patch as used.
-  clear_cp_patch_at(index);
-}
 class NameSigHash: public ResourceObj {
  public:
   const Symbol*       _name;       // name
@@ -966,7 +849,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         guarantee_property(unresolved_klass->char_at(0) != JVM_SIGNATURE_ARRAY,
                            "Bad interface name in class file %s", CHECK);
 
-        // Call resolve_super so classcircularity is checked
+        // Call resolve_super so class circularity is checked
         interf = SystemDictionary::resolve_super_or_fail(
                                                   _class_name,
                                                   unresolved_klass,
@@ -1101,7 +984,7 @@ public:
   u2 _contended_group;
 
   AnnotationCollector(Location location)
-    : _location(location), _annotations_present(0)
+    : _location(location), _annotations_present(0), _contended_group(0)
   {
     assert((int)_annotation_LIMIT <= (int)sizeof(_annotations_present) * BitsPerByte, "");
   }
@@ -1239,8 +1122,7 @@ static void parse_annotations(const ConstantPool* const cp,
                               const u1* buffer, int limit,
                               AnnotationCollector* coll,
                               ClassLoaderData* loader_data,
-                              const bool can_access_vm_annotations,
-                              TRAPS) {
+                              const bool can_access_vm_annotations) {
 
   assert(cp != NULL, "invariant");
   assert(buffer != NULL, "invariant");
@@ -1417,8 +1299,7 @@ void ClassFileParser::parse_field_attributes(const ClassFileStream* const cfs,
                           runtime_visible_annotations_length,
                           parsed_annotations,
                           _loader_data,
-                          _can_access_vm_annotations,
-                          CHECK);
+                          _can_access_vm_annotations);
         cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
         if (runtime_invisible_annotations_exists) {
@@ -2205,7 +2086,6 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
     ik->set_has_value_based_class_annotation();
     if (DiagnoseSyncOnValueBasedClasses) {
       ik->set_is_value_based();
-      ik->set_prototype_header(markWord::prototype());
     }
   }
 }
@@ -2239,6 +2119,7 @@ void ClassFileParser::copy_localvariable_table(const ConstMethod* cm,
   ResourceMark rm(THREAD);
 
   typedef ResourceHashtable<LocalVariableTableElement, LocalVariableTableElement*,
+                            256, ResourceObj::RESOURCE_AREA, mtInternal,
                             &LVT_Hash::hash, &LVT_Hash::equals> LVT_HashTable;
 
   LVT_HashTable* const table = new LVT_HashTable();
@@ -2402,7 +2283,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     if (_major_version < 51) { // backward compatibility
       flags = JVM_ACC_STATIC;
     } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
-      flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+      flags &= JVM_ACC_STATIC | (_major_version <= JAVA_16_VERSION ? JVM_ACC_STRICT : 0);
     } else {
       classfile_parse_error("Method <clinit> is not static in class file %s", THREAD);
       return NULL;
@@ -2418,6 +2299,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   int args_size = -1;  // only used when _need_verify is true
   if (_need_verify) {
+    verify_legal_name_with_signature(name, signature, CHECK_NULL);
     args_size = ((flags & JVM_ACC_STATIC) ? 0 : 1) +
                  verify_legal_method_signature(name, signature, CHECK_NULL);
     if (args_size > MAX_ARGS_SIZE) {
@@ -2684,7 +2566,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
-      if (!SystemDictionary::Parameter_klass_loaded())
+      if (!vmClasses::Parameter_klass_loaded())
         method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
@@ -2733,8 +2615,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                           runtime_visible_annotations_length,
                           &parsed_annotations,
                           _loader_data,
-                          _can_access_vm_annotations,
-                          CHECK_NULL);
+                          _can_access_vm_annotations);
         cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (method_attribute_name == vmSymbols::tag_runtime_invisible_annotations()) {
         if (runtime_invisible_annotations_exists) {
@@ -2860,6 +2741,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                      access_flags,
                                      &sizes,
                                      ConstMethod::NORMAL,
+                                     _cp->symbol_at(name_index),
                                      CHECK_NULL);
 
   ClassLoadingService::add_class_method_size(m->size()*wordSize);
@@ -2956,7 +2838,8 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                           annotation_default_length,
                           CHECK_NULL);
 
-  if (name == vmSymbols::finalize_method_name() &&
+  if (InstanceKlass::is_finalization_enabled() &&
+      name == vmSymbols::finalize_method_name() &&
       signature == vmSymbols::void_method_signature()) {
     if (m->is_empty_method()) {
       _has_empty_finalizer = true;
@@ -3171,6 +3054,7 @@ static int inner_classes_jump_to_outer(const Array<u2>* inner_classes, int inner
 static bool inner_classes_check_loop_through_outer(const Array<u2>* inner_classes, int idx, const ConstantPool* cp, int length) {
   int slow = inner_classes->at(idx + InstanceKlass::inner_class_inner_class_info_offset);
   int fast = inner_classes->at(idx + InstanceKlass::inner_class_outer_class_info_offset);
+
   while (fast != -1 && fast != 0) {
     if (slow != 0 && (cp->klass_name_at(slow) == cp->klass_name_at(fast))) {
       return true;  // found a circularity
@@ -3200,14 +3084,15 @@ bool ClassFileParser::check_inner_classes_circularity(const ConstantPool* cp, in
     for (int y = idx + InstanceKlass::inner_class_next_offset; y < length;
          y += InstanceKlass::inner_class_next_offset) {
 
-      // To maintain compatibility, throw an exception if duplicate inner classes
-      // entries are found.
-      guarantee_property((_inner_classes->at(idx) != _inner_classes->at(y) ||
-                          _inner_classes->at(idx+1) != _inner_classes->at(y+1) ||
-                          _inner_classes->at(idx+2) != _inner_classes->at(y+2) ||
-                          _inner_classes->at(idx+3) != _inner_classes->at(y+3)),
-                         "Duplicate entry in InnerClasses attribute in class file %s",
-                         CHECK_(true));
+      // 4347400: make sure there's no duplicate entry in the classes array
+      if (_major_version >= JAVA_1_5_VERSION) {
+        guarantee_property((_inner_classes->at(idx) != _inner_classes->at(y) ||
+                            _inner_classes->at(idx+1) != _inner_classes->at(y+1) ||
+                            _inner_classes->at(idx+2) != _inner_classes->at(y+2) ||
+                            _inner_classes->at(idx+3) != _inner_classes->at(y+3)),
+                           "Duplicate entry in InnerClasses attribute in class file %s",
+                           CHECK_(true));
+      }
       // Return true if there are two entries with the same inner_class_info_index.
       if (_inner_classes->at(y) == _inner_classes->at(idx)) {
         return true;
@@ -3262,6 +3147,13 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
         valid_klass_reference_at(outer_class_info_index),
       "outer_class_info_index %u has bad constant type in class file %s",
       outer_class_info_index, CHECK_0);
+
+    if (outer_class_info_index != 0) {
+      const Symbol* const outer_class_name = cp->klass_name_at(outer_class_info_index);
+      char* bytes = (char*)outer_class_name->bytes();
+      guarantee_property(bytes[0] != JVM_SIGNATURE_ARRAY,
+                         "Outer class is an array class in class file %s", CHECK_0);
+    }
     // Inner class name
     const u2 inner_name_index = cfs->get_u2_fast();
     check_property(
@@ -3293,10 +3185,9 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
     inner_classes->at_put(index++, inner_access_flags.as_short());
   }
 
-  // 4347400: make sure there's no duplicate entry in the classes array
-  // Also, check for circular entries.
+  // Check for circular and duplicate entries.
   bool has_circularity = false;
-  if (_need_verify && _major_version >= JAVA_1_5_VERSION) {
+  if (_need_verify) {
     has_circularity = check_inner_classes_circularity(cp, length * 4, CHECK_0);
     if (has_circularity) {
       // If circularity check failed then ignore InnerClasses attribute.
@@ -3562,7 +3453,7 @@ u2 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* cons
   return calculate_attr_size;
 }
 
-void ClassFileParser::parse_classfile_synthetic_attribute(TRAPS) {
+void ClassFileParser::parse_classfile_synthetic_attribute() {
   set_class_synthetic_flag(true);
 }
 
@@ -3657,12 +3548,6 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   guarantee_property(current_start + attribute_byte_length == cfs->current(),
                      "Bad length on BootstrapMethods in class file %s",
                      CHECK);
-}
-
-bool ClassFileParser::supports_sealed_types() {
-  return _major_version == JVM_CLASSFILE_MAJOR_VERSION &&
-         _minor_version == JAVA_PREVIEW_MINOR_VERSION &&
-         Arguments::enable_preview();
 }
 
 void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cfs,
@@ -3762,9 +3647,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
           attribute_length, THREAD);
         return;
       }
-      parse_classfile_synthetic_attribute(CHECK);
+      parse_classfile_synthetic_attribute();
     } else if (tag == vmSymbols::tag_deprecated()) {
-      // Check for Deprecatd tag - 4276120
+      // Check for Deprecated tag - 4276120
       if (attribute_length != 0) {
         classfile_parse_error(
           "Invalid Deprecated classfile attribute length %u in class file %s",
@@ -3800,8 +3685,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                           runtime_visible_annotations_length,
                           parsed_annotations,
                           _loader_data,
-                          _can_access_vm_annotations,
-                          CHECK);
+                          _can_access_vm_annotations);
         cfs->skip_u1_fast(runtime_visible_annotations_length);
       } else if (tag == vmSymbols::tag_runtime_invisible_annotations()) {
         if (runtime_invisible_annotations_exists) {
@@ -3922,8 +3806,8 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
             parsed_record_attribute = true;
             record_attribute_start = cfs->current();
             record_attribute_length = attribute_length;
-          } else if (tag == vmSymbols::tag_permitted_subclasses()) {
-            if (supports_sealed_types()) {
+          } else if (_major_version >= JAVA_17_VERSION) {
+            if (tag == vmSymbols::tag_permitted_subclasses()) {
               if (parsed_permitted_subclasses_attribute) {
                 classfile_parse_error("Multiple PermittedSubclasses attributes in class file %s", CHECK);
                 return;
@@ -3938,7 +3822,7 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
               permitted_subclasses_attribute_length = attribute_length;
             }
           }
-          // Skip attribute_length for any attribute where major_verson >= JAVA_16_VERSION
+          // Skip attribute_length for any attribute where major_verson >= JAVA_17_VERSION
           cfs->skip_u1(attribute_length, CHECK);
         } else {
           // Unknown attribute
@@ -4071,8 +3955,7 @@ void ClassFileParser::create_combined_annotations(TRAPS) {
 // Transfer ownership of metadata allocated to the InstanceKlass.
 void ClassFileParser::apply_parsed_class_metadata(
                                             InstanceKlass* this_klass,
-                                            int java_fields_count,
-                                            TRAPS) {
+                                            int java_fields_count) {
   assert(this_klass != NULL, "invariant");
 
   _cp->set_pool_holder(this_klass);
@@ -4293,7 +4176,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   bool f = false;
   const Method* const m = ik->lookup_method(vmSymbols::finalize_method_name(),
                                            vmSymbols::void_method_signature());
-  if (m != NULL && !m->is_empty_method()) {
+  if (InstanceKlass::is_finalization_enabled() &&
+      (m != NULL) && !m->is_empty_method()) {
       f = true;
   }
 
@@ -4306,8 +4190,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (SystemDictionary::Cloneable_klass_loaded()) {
-    if (ik->is_subtype_of(SystemDictionary::Cloneable_klass())) {
+  if (vmClasses::Cloneable_klass_loaded()) {
+    if (ik->is_subtype_of(vmClasses::Cloneable_klass())) {
       ik->set_is_cloneable();
     }
   }
@@ -4647,7 +4531,6 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
-  const bool major_gte_14  = _major_version >= JAVA_14_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
@@ -4784,6 +4667,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
   const bool is_protected    = (flags & JVM_ACC_PROTECTED)    != 0;
   const bool major_gte_1_5   = _major_version >= JAVA_1_5_VERSION;
   const bool major_gte_8     = _major_version >= JAVA_8_VERSION;
+  const bool major_gte_17    = _major_version >= JAVA_17_VERSION;
   const bool is_initializer  = (name == vmSymbols::object_initializer_name());
 
   bool is_illegal = false;
@@ -4802,7 +4686,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
           // ACC_STRICT, or ACC_SYNCHRONIZED flags set.  No need to
           // check for ACC_FINAL, ACC_NATIVE or ACC_SYNCHRONIZED as
           // those flags are illegal irrespective of ACC_ABSTRACT being set or not.
-          (is_abstract && (is_private || is_static || is_strict))) {
+          (is_abstract && (is_private || is_static || (!major_gte_17 && is_strict)))) {
         is_illegal = true;
       }
     } else if (major_gte_1_5) {
@@ -4829,7 +4713,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
       } else { // not initializer
         if (is_abstract) {
           if ((is_final || is_native || is_private || is_static ||
-              (major_gte_1_5 && (is_synchronized || is_strict)))) {
+              (major_gte_1_5 && (is_synchronized || (!major_gte_17 && is_strict))))) {
             is_illegal = true;
           }
         }
@@ -4902,7 +4786,7 @@ bool ClassFileParser::verify_unqualified_name(const char* name,
 
 // Take pointer to a UTF8 byte string (not NUL-terminated).
 // Skip over the longest part of the string that could
-// be taken as a fieldname. Allow '/' if slash_ok is true.
+// be taken as a fieldname. Allow non-trailing '/'s if slash_ok is true.
 // Return a pointer to just past the fieldname.
 // Return NULL if no fieldname at all was found, or in the case of slash_ok
 // being true, we saw consecutive slashes (meaning we were looking for a
@@ -4952,7 +4836,7 @@ static const char* skip_over_field_name(const char* const name,
       if (not_first_ch) {
         // public static boolean isJavaIdentifierPart(char ch);
         JavaCalls::call_static(&result,
-          SystemDictionary::Character_klass(),
+          vmClasses::Character_klass(),
           vmSymbols::isJavaIdentifierPart_name(),
           vmSymbols::int_bool_signature(),
           &args,
@@ -4960,7 +4844,7 @@ static const char* skip_over_field_name(const char* const name,
       } else {
         // public static boolean isJavaIdentifierStart(char ch);
         JavaCalls::call_static(&result,
-          SystemDictionary::Character_klass(),
+          vmClasses::Character_klass(),
           vmSymbols::isJavaIdentifierStart_name(),
           vmSymbols::int_bool_signature(),
           &args,
@@ -4976,7 +4860,7 @@ static const char* skip_over_field_name(const char* const name,
     }
     return (not_first_ch) ? old_p : NULL;
   }
-  return (not_first_ch) ? p : NULL;
+  return (not_first_ch && !last_is_slash) ? p : NULL;
 }
 
 // Take pointer to a UTF8 byte string (not NUL-terminated).
@@ -5175,6 +5059,32 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
   }
 }
 
+// Check that the signature is compatible with the method name.  For example,
+// check that <init> has a void signature.
+void ClassFileParser::verify_legal_name_with_signature(const Symbol* name,
+                                                       const Symbol* signature,
+                                                       TRAPS) const {
+  if (!_need_verify) {
+    return;
+  }
+
+  // Class initializers cannot have args for class format version >= 51.
+  if (name == vmSymbols::class_initializer_name() &&
+      signature != vmSymbols::void_method_signature() &&
+      _major_version >= JAVA_7_VERSION) {
+    throwIllegalSignature("Method", name, signature, THREAD);
+    return;
+  }
+
+  int sig_length = signature->utf8_length();
+  if (name->utf8_length() > 0 &&
+      name->char_at(0) == JVM_SIGNATURE_SPECIAL &&
+      sig_length > 0 &&
+      signature->char_at(sig_length - 1) != JVM_SIGNATURE_VOID) {
+    throwIllegalSignature("Method", name, signature, THREAD);
+  }
+}
+
 // Checks if signature is a legal method signature.
 // Returns number of parameters
 int ClassFileParser::verify_legal_method_signature(const Symbol* name,
@@ -5184,14 +5094,6 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
     // make sure caller's args_size will be less than 0 even for non-static
     // method so it will be recomputed in compute_size_of_parameters().
     return -2;
-  }
-
-  // Class initializers cannot have args for class format version >= 51.
-  if (name == vmSymbols::class_initializer_name() &&
-      signature != vmSymbols::void_method_signature() &&
-      _major_version >= JAVA_7_VERSION) {
-    throwIllegalSignature("Method", name, signature, CHECK_0);
-    return 0;
   }
 
   unsigned int args_size = 0;
@@ -5216,22 +5118,15 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name->utf8_length() > 0 && name->char_at(0) == JVM_SIGNATURE_SPECIAL) {
-        // All internal methods must return void
-        if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
-          return args_size;
-        }
-      } else {
-        // Now we better just have a return value
-        nextp = skip_over_field_signature(p, true, length, CHECK_0);
-        if (nextp && ((int)length == (nextp - p))) {
-          return args_size;
-        }
+      // Now we better just have a return value
+      nextp = skip_over_field_signature(p, true, length, CHECK_0);
+      if (nextp && ((int)length == (nextp - p))) {
+        return args_size;
       }
     }
   }
   // Report error
-  throwIllegalSignature("Method", name, signature, CHECK_0);
+  throwIllegalSignature("Method", name, signature, THREAD);
   return 0;
 }
 
@@ -5264,7 +5159,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
   if (klass_id != vmSymbolID::NO_SID) {
     for (int j = 0; j < methods->length(); ++j) {
       Method* method = methods->at(j);
-      method->init_intrinsic_id();
+      method->init_intrinsic_id(klass_id);
 
       if (CheckIntrinsics) {
         // Check if an intrinsic is defined for method 'method',
@@ -5302,7 +5197,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
       // The check is potentially expensive, therefore it is available
       // only in debug builds.
 
-      for (vmIntrinsicID id : EnumRange<vmIntrinsicID>{}) {
+      for (auto id : EnumRange<vmIntrinsicID>{}) {
         if (vmIntrinsics::_compiledLambdaForm == id) {
           // The _compiledLamdbdaForm intrinsic is a special marker for bytecode
           // generated for the JVM from a LambdaForm and therefore no method
@@ -5363,25 +5258,6 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook,
 
   assert(_klass == ik, "invariant");
 
-
-  if (ik->should_store_fingerprint()) {
-    ik->store_fingerprint(_stream->compute_fingerprint());
-  }
-
-  ik->set_has_passed_fingerprint_check(false);
-  if (UseAOT && ik->supers_have_passed_fingerprint_checks()) {
-    uint64_t aot_fp = AOTLoader::get_saved_fingerprint(ik);
-    uint64_t fp = ik->has_stored_fingerprint() ? ik->get_stored_fingerprint() : _stream->compute_fingerprint();
-    if (aot_fp != 0 && aot_fp == fp) {
-      // This class matches with a class saved in an AOT library
-      ik->set_has_passed_fingerprint_check(true);
-    } else {
-      ResourceMark rm;
-      log_info(class, fingerprint)("%s :  expected = " PTR64_FORMAT " actual = " PTR64_FORMAT,
-                                 ik->external_name(), aot_fp, _stream->compute_fingerprint());
-    }
-  }
-
   return ik;
 }
 
@@ -5422,11 +5298,11 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   // this transfers ownership of a lot of arrays from
   // the parser onto the InstanceKlass*
-  apply_parsed_class_metadata(ik, _java_fields_count, CHECK);
+  apply_parsed_class_metadata(ik, _java_fields_count);
 
   // can only set dynamic nest-host after static nest information is set
   if (cl_inst_info.dynamic_nest_host() != NULL) {
-    ik->set_nest_host(cl_inst_info.dynamic_nest_host(), THREAD);
+    ik->set_nest_host(cl_inst_info.dynamic_nest_host());
   }
 
   // note that is not safe to use the fields in the parser from this point on
@@ -5453,11 +5329,11 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   ik->set_this_class_index(_this_class_index);
 
-  if (_is_hidden || is_unsafe_anonymous()) {
+  if (_is_hidden) {
     // _this_class_index is a CONSTANT_Class entry that refers to this
-    // hidden or anonymous class itself. If this class needs to refer to its own
-    // methods or fields, it would use a CONSTANT_MethodRef, etc, which would reference
-    // _this_class_index. However, because this class is hidden or anonymous (it's
+    // hidden class itself. If this class needs to refer to its own methods
+    // or fields, it would use a CONSTANT_MethodRef, etc, which would reference
+    // _this_class_index. However, because this class is hidden (it's
     // not stored in SystemDictionary), _this_class_index cannot be resolved
     // with ConstantPool::klass_at_impl, which does a SystemDictionary lookup.
     // Therefore, we must eagerly resolve _this_class_index now.
@@ -5469,10 +5345,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ik->set_has_nonstatic_concrete_methods(_has_nonstatic_concrete_methods);
   ik->set_declares_nonstatic_concrete_methods(_declares_nonstatic_concrete_methods);
 
-  if (_unsafe_anonymous_host != NULL) {
-    assert (ik->is_unsafe_anonymous(), "should be the same");
-    ik->set_unsafe_anonymous_host(_unsafe_anonymous_host);
-  }
   if (_is_hidden) {
     ik->set_is_hidden();
   }
@@ -5638,57 +5510,6 @@ void ClassFileParser::update_class_name(Symbol* new_class_name) {
   _class_name->increment_refcount();
 }
 
-// For an unsafe anonymous class that is in the unnamed package, move it to its host class's
-// package by prepending its host class's package name to its class name and setting
-// its _class_name field.
-void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host, TRAPS) {
-  ResourceMark rm(THREAD);
-  assert(strrchr(_class_name->as_C_string(), JVM_SIGNATURE_SLASH) == NULL,
-         "Unsafe anonymous class should not be in a package");
-  TempNewSymbol host_pkg_name =
-    ClassLoader::package_from_class_name(unsafe_anonymous_host->name());
-
-  if (host_pkg_name != NULL) {
-    int host_pkg_len = host_pkg_name->utf8_length();
-    int class_name_len = _class_name->utf8_length();
-    int symbol_len = host_pkg_len + 1 + class_name_len;
-    char* new_anon_name = NEW_RESOURCE_ARRAY(char, symbol_len + 1);
-    int n = os::snprintf(new_anon_name, symbol_len + 1, "%.*s/%.*s",
-                         host_pkg_len, host_pkg_name->base(), class_name_len, _class_name->base());
-    assert(n == symbol_len, "Unexpected number of characters in string");
-
-    // Decrement old _class_name to avoid leaking.
-    _class_name->decrement_refcount();
-
-    // Create a symbol and update the anonymous class name.
-    // The new class name is created with a refcount of one. When installed into the InstanceKlass,
-    // it'll be two and when the ClassFileParser destructor runs, it'll go back to one and get deleted
-    // when the class is unloaded.
-    _class_name = SymbolTable::new_symbol(new_anon_name, symbol_len);
-  }
-}
-
-// If the host class and the anonymous class are in the same package then do
-// nothing.  If the anonymous class is in the unnamed package then move it to its
-// host's package.  If the classes are in different packages then throw an IAE
-// exception.
-void ClassFileParser::fix_unsafe_anonymous_class_name(TRAPS) {
-  assert(_unsafe_anonymous_host != NULL, "Expected an unsafe anonymous class");
-
-  const jbyte* anon_last_slash = UTF8::strrchr((const jbyte*)_class_name->base(),
-                                               _class_name->utf8_length(), JVM_SIGNATURE_SLASH);
-  if (anon_last_slash == NULL) {  // Unnamed package
-    prepend_host_package_name(_unsafe_anonymous_host, CHECK);
-  } else {
-    if (!_unsafe_anonymous_host->is_same_class_package(_unsafe_anonymous_host->class_loader(), _class_name)) {
-      ResourceMark rm(THREAD);
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-        err_msg("Host class %s and anonymous class %s are in different packages",
-        _unsafe_anonymous_host->name()->as_C_string(), _class_name->as_C_string()));
-    }
-  }
-}
-
 static bool relax_format_check_for(ClassLoaderData* loader_data) {
   bool trusted = loader_data->is_boot_class_loader_data() ||
                  loader_data->is_platform_class_loader_data();
@@ -5709,14 +5530,9 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _stream(stream),
   _class_name(NULL),
   _loader_data(loader_data),
-  _unsafe_anonymous_host(cl_info->unsafe_anonymous_host()),
-  _cp_patches(cl_info->cp_patches()),
   _is_hidden(cl_info->is_hidden()),
   _can_access_vm_annotations(cl_info->can_access_vm_annotations()),
-  _num_patched_klasses(0),
-  _max_num_patched_klasses(0),
   _orig_cp_size(0),
-  _first_patched_klass_resolved_index(0),
   _super_klass(),
   _cp(NULL),
   _fields(NULL),
@@ -5773,7 +5589,6 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _class_name = name != NULL ? name : vmSymbols::unknown_class_name();
   _class_name->increment_refcount();
 
-  assert(THREAD->is_Java_thread(), "invariant");
   assert(_loader_data != NULL, "invariant");
   assert(stream != NULL, "invariant");
   assert(_stream != NULL, "invariant");
@@ -5792,25 +5607,6 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   else {
     _need_verify = Verifier::should_verify_for(_loader_data->class_loader(),
                                                stream->need_verify());
-  }
-  if (_cp_patches != NULL) {
-    int len = _cp_patches->length();
-    for (int i=0; i<len; i++) {
-      if (has_cp_patch_at(i)) {
-        Handle patch = cp_patch_at(i);
-        if (java_lang_String::is_instance(patch()) || java_lang_Class::is_instance(patch())) {
-          // We need to append the names of the patched classes to the end of the constant pool,
-          // because a patched class may have a Utf8 name that's not already included in the
-          // original constant pool. These class names are used when patch_constant_pool()
-          // calls patch_class().
-          //
-          // Note that a String in cp_patch_at(i) may be used to patch a Utf8, a String, or a Class.
-          // At this point, we don't know the tag for index i yet, because we haven't parsed the
-          // constant pool. So we can only assume the worst -- every String is used to patch a Class.
-          _max_num_patched_klasses++;
-        }
-      }
-    }
   }
 
   // synch back verification state to stream
@@ -5929,18 +5725,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   _minor_version = stream->get_u2_fast();
   _major_version = stream->get_u2_fast();
 
-  if (DumpSharedSpaces && _major_version < JAVA_6_VERSION) {
-    ResourceMark rm;
-    warning("Pre JDK 6 class not supported by CDS: %u.%u %s",
-            _major_version,  _minor_version, _class_name->as_C_string());
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_UnsupportedClassVersionError(),
-      "Unsupported major.minor version for dump time %u.%u",
-      _major_version,
-      _minor_version);
-  }
-
   // Check version numbers - we check this even with verifier off
   verify_class_version(_major_version, _minor_version, _class_name, CHECK);
 
@@ -5953,13 +5737,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   _orig_cp_size = cp_size;
   if (is_hidden()) { // Add a slot for hidden class name.
-    assert(_max_num_patched_klasses == 0, "Sanity check");
     cp_size++;
-  } else {
-    if (int(cp_size) + _max_num_patched_klasses > 0xffff) {
-      THROW_MSG(vmSymbols::java_lang_InternalError(), "not enough space for patched classes");
-    }
-    cp_size += _max_num_patched_klasses;
   }
 
   _cp = ConstantPool::allocate(_loader_data,
@@ -6023,18 +5801,12 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
 #ifdef ASSERT
   // Basic sanity checks
-  assert(!(_is_hidden && (_unsafe_anonymous_host != NULL)), "mutually exclusive variants");
-
-  if (_unsafe_anonymous_host != NULL) {
-    assert(_class_name == vmSymbols::unknown_class_name(), "A named anonymous class???");
-  }
   if (_is_hidden) {
     assert(_class_name != vmSymbols::unknown_class_name(), "hidden classes should have a special name");
   }
 #endif
 
-  // Update the _class_name as needed depending on whether this is a named,
-  // un-named, hidden or unsafe-anonymous class.
+  // Update the _class_name as needed depending on whether this is a named, un-named, or hidden class.
 
   if (_is_hidden) {
     assert(_class_name != NULL, "Unexpected null _class_name");
@@ -6043,16 +5815,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
       verify_legal_class_name(_class_name, CHECK);
     }
 #endif
-
-  // NOTE: !_is_hidden does not imply "findable" as it could be an old-style
-  //       "hidden" unsafe-anonymous class
-
-  // If this is an anonymous class fix up its name if it is in the unnamed
-  // package.  Otherwise, throw IAE if it is in a different package than
-  // its host class.
-  } else if (_unsafe_anonymous_host != NULL) {
-    update_class_name(class_name_in_cp);
-    fix_unsafe_anonymous_class_name(CHECK);
 
   } else {
     // Check if name in class file matches given name
@@ -6211,7 +5973,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                    CHECK);
   }
   // We check super class after class file is parsed and format is checked
-  if (_super_class_index > 0 && NULL ==_super_klass) {
+  if (_super_class_index > 0 && NULL == _super_klass) {
     Symbol* const super_class_name = cp->klass_name_at(_super_class_index);
     if (_access_flags.is_interface()) {
       // Before attempting to resolve the superclass, check for class format
@@ -6265,8 +6027,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                     _major_version,
                                                     loader,
                                                     _class_name,
-                                                    _local_interfaces,
-                                                    CHECK);
+                                                    _local_interfaces);
 
   // Size of Java itable (in words)
   _itable_size = _access_flags.is_interface() ? 0 :

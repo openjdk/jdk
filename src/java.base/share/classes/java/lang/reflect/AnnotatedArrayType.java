@@ -46,8 +46,8 @@ public interface AnnotatedArrayType extends AnnotatedType {
 
     /**
      * Returns the potentially annotated type that this type is a member of, if
-     * this type represents a nested type. For example, if this type is
-     * {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
+     * this type represents a nested class or interface. For example, if this
+     * type is {@code @TA O<T>.I<S>}, return a representation of {@code @TA O<T>}.
      *
      * <p>Returns {@code null} for an {@code AnnotatedType} that is an instance
      *     of {@code AnnotatedArrayType}.

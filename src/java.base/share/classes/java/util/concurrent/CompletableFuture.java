@@ -43,6 +43,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.Objects;
 
 /**
  * A {@link Future} that may be explicitly completed (setting its
@@ -438,7 +439,10 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
     static final class ThreadPerTaskExecutor implements Executor {
-        public void execute(Runnable r) { new Thread(r).start(); }
+        public void execute(Runnable r) {
+            Objects.requireNonNull(r);
+            new Thread(r).start();
+        }
     }
 
     /**
@@ -1911,45 +1915,49 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * throws TimeoutException on timeout.
      */
     private Object timedGet(long nanos) throws TimeoutException {
-        if (Thread.interrupted())
-            return null;
-        if (nanos > 0L) {
-            long d = System.nanoTime() + nanos;
-            long deadline = (d == 0L) ? 1L : d; // avoid 0
-            Signaller q = null;
-            boolean queued = false;
-            Object r;
-            while ((r = result) == null) { // similar to untimed
-                if (q == null) {
-                    q = new Signaller(true, nanos, deadline);
-                    if (Thread.currentThread() instanceof ForkJoinWorkerThread)
-                        ForkJoinPool.helpAsyncBlocker(defaultExecutor(), q);
-                }
-                else if (!queued)
-                    queued = tryPushStack(q);
-                else if (q.nanos <= 0L)
-                    break;
-                else {
-                    try {
-                        ForkJoinPool.managedBlock(q);
-                    } catch (InterruptedException ie) {
-                        q.interrupted = true;
-                    }
-                    if (q.interrupted)
-                        break;
+        long d = System.nanoTime() + nanos;
+        long deadline = (d == 0L) ? 1L : d; // avoid 0
+        boolean interrupted = false, queued = false;
+        Signaller q = null;
+        Object r = null;
+        for (;;) { // order of checking interrupt, result, timeout matters
+            if (interrupted || (interrupted = Thread.interrupted()))
+                break;
+            else if ((r = result) != null)
+                break;
+            else if (nanos <= 0L)
+                break;
+            else if (q == null) {
+                q = new Signaller(true, nanos, deadline);
+                if (Thread.currentThread() instanceof ForkJoinWorkerThread)
+                    ForkJoinPool.helpAsyncBlocker(defaultExecutor(), q);
+            }
+            else if (!queued)
+                queued = tryPushStack(q);
+            else {
+                try {
+                    ForkJoinPool.managedBlock(q);
+                    interrupted = q.interrupted;
+                    nanos = q.nanos;
+                } catch (InterruptedException ie) {
+                    interrupted = true;
                 }
             }
-            if (q != null && queued) {
-                q.thread = null;
-                if (r == null)
-                    cleanStack();
-            }
-            if (r != null || (r = result) != null)
-                postComplete();
-            if (r != null || (q != null && q.interrupted))
-                return r;
         }
-        throw new TimeoutException();
+        if (q != null) {
+            q.thread = null;
+            if (r == null)
+                cleanStack();
+        }
+        if (r != null) {
+            if (interrupted)
+                Thread.currentThread().interrupt();
+            postComplete();
+            return r;
+        } else if (interrupted)
+            return null;
+        else
+            throw new TimeoutException();
     }
 
     /* ------------- public methods -------------- */

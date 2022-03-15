@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +64,8 @@ public class IBM33722
 
     protected static class Decoder extends CharsetDecoder {
 
-        private final int G0 = 0;
-        private final int G1 = 1;
-        private final int G2 = 2;
-        private final int G3 = 3;
-        private final int G4 = 4;
-        private final int SS2 =  0x8E;
-        private final int SS3 =  0x8F;
-
-        private int firstByte, state;
+        private static final int SS2 =  0x8E;
+        private static final int SS3 =  0x8F;
 
         public Decoder(Charset cs) {
                 super(cs, 1.0f, 1.0f);
@@ -83,19 +75,16 @@ public class IBM33722
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
+
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             try {
             while (sp < sl) {
                 int byte1, byte2;
                 int inputSize = 1;
-                char outputChar = '\uFFFD';
+                char outputChar;
                 byte1 = sa[sp] & 0xff;
 
                 if (byte1 == SS2) {
@@ -157,7 +146,7 @@ public class IBM33722
                 while (src.hasRemaining()) {
                     int byte1, byte2;
                     int inputSize = 1;
-                    char outputChar = '\uFFFD';
+                    char outputChar;
                     byte1 = src.get() & 0xff;
 
                     if (byte1 == SS2) {
@@ -212,16 +201,16 @@ public class IBM33722
         }
 
         protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
-            if (true && src.hasArray() && dst.hasArray())
+            if (src.hasArray() && dst.hasArray())
                 return decodeArrayLoop(src, dst);
             else
                 return decodeBufferLoop(src, dst);
         }
 
-        private final static String byteToCharTable;
-        private final static String mappingTableG1;
-        private final static String mappingTableG2;
-        private final static String mappingTableG3;
+        private static final String byteToCharTable;
+        private static final String mappingTableG1;
+        private static final String mappingTableG2;
+        private static final String mappingTableG3;
         static {
             byteToCharTable =
                 "\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007" +
@@ -2749,9 +2738,9 @@ public class IBM33722
                 21792,   192,    73, 21824,    41,  2344,  2344,     0,
         };
 
-        private final static String index2;
-        private final static String index2a;
-        private final static String index2b;
+        private static final String index2;
+        private static final String index2a;
+        private static final String index2b;
         static {
             index2 =
                 "\u0000\uA1F1\u0000\uA1F2\u0000\uA2CC\u0000\uA1B1\u0000\uA2C3" + //     0 -     4

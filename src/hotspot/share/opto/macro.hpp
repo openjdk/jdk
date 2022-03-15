@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,14 +82,7 @@ public:
 
 private:
   // projections extracted from a call node
-  ProjNode *_fallthroughproj;
-  ProjNode *_fallthroughcatchproj;
-  ProjNode *_ioproj_fallthrough;
-  ProjNode *_ioproj_catchall;
-  ProjNode *_catchallcatchproj;
-  ProjNode *_memproj_fallthrough;
-  ProjNode *_memproj_catchall;
-  ProjNode *_resproj;
+  CallProjections _callprojs;
 
   // Additional data collected during macro expansion
   bool _has_locks;
@@ -99,8 +92,8 @@ private:
   void expand_allocate_common(AllocateNode* alloc,
                               Node* length,
                               const TypeFunc* slow_call_type,
-                              address slow_call_address);
-  void yank_initalize_node(InitializeNode* node);
+                              address slow_call_address,
+                              Node* valid_length_test);
   void yank_alloc_node(AllocateNode* alloc);
   Node *value_from_mem(Node *mem, Node *ctl, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc);
   Node *value_from_mem_phi(Node *mem, BasicType ft, const Type *ftype, const TypeOopPtr *adr_t, AllocateNode *alloc, Node_Stack *value_phis, int level);
@@ -193,13 +186,11 @@ private:
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);
-  void copy_call_debug_info(CallNode *oldcall, CallNode * newcall);
   Node* opt_bits_test(Node* ctrl, Node* region, int edge, Node* word, int mask, int bits, bool return_fast_path = false);
   void copy_predefined_input_for_runtime_call(Node * ctrl, CallNode* oldcall, CallNode* call);
   CallNode* make_slow_call(CallNode *oldcall, const TypeFunc* slow_call_type, address slow_call,
                            const char* leaf_name, Node* slow_path, Node* parm0, Node* parm1,
                            Node* parm2);
-  void extract_call_projections(CallNode *call);
 
   Node* initialize_object(AllocateNode* alloc,
                           Node* control, Node* rawmem, Node* object,

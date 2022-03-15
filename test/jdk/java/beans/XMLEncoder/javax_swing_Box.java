@@ -25,6 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests Box value encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_Box
  * @author Sergey Malenkov
  */
 

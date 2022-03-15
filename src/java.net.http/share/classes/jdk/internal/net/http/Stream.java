@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,11 +97,12 @@ import jdk.internal.net.http.hpack.DecodingCallback;
  */
 class Stream<T> extends ExchangeImpl<T> {
 
+    private static final String COOKIE_HEADER = "Cookie";
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     final ConcurrentLinkedQueue<Http2Frame> inputQ = new ConcurrentLinkedQueue<>();
     final SequentialScheduler sched =
-            SequentialScheduler.synchronizedScheduler(this::schedule);
+            SequentialScheduler.lockingScheduler(this::schedule);
     final SubscriptionBase userSubscription =
             new SubscriptionBase(sched, this::cancel, this::onSubscriptionError);
 
@@ -245,7 +246,7 @@ class Stream<T> extends ExchangeImpl<T> {
                         debug.log("already completed: dropping error %s", (Object) t);
                 }
             } catch (Throwable x) {
-                Log.logError("Subscriber::onError threw exception: {0}", (Object) t);
+                Log.logError("Subscriber::onError threw exception: {0}", t);
             } finally {
                 cancelImpl(t);
                 drainInputQueue();
@@ -328,10 +329,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("streamid: ")
-                .append(streamid);
-        return sb.toString();
+        return "streamid: " + streamid;
     }
 
     private void receiveDataFrame(DataFrame df) {
@@ -398,7 +396,6 @@ class Stream<T> extends ExchangeImpl<T> {
         return sendBodyImpl().thenApply( v -> this);
     }
 
-    @SuppressWarnings("unchecked")
     Stream(Http2Connection connection,
            Exchange<T> e,
            WindowController windowController)
@@ -455,7 +452,7 @@ class Stream<T> extends ExchangeImpl<T> {
             case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
             case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
 
-            default -> throw new IOException("Unexpected frame: " + frame.toString());
+            default -> throw new IOException("Unexpected frame: " + frame);
         }
     }
 
@@ -652,10 +649,16 @@ class Stream<T> extends ExchangeImpl<T> {
         // Filter context restricted from userHeaders
         userh = HttpHeaders.of(userh.map(), Utils.CONTEXT_RESTRICTED(client()));
 
+        // Don't override Cookie values that have been set by the CookieHandler.
         final HttpHeaders uh = userh;
+        BiPredicate<String, String> overrides =
+                (k, v) -> COOKIE_HEADER.equalsIgnoreCase(k)
+                          || uh.firstValue(k).isEmpty();
 
         // Filter any headers from systemHeaders that are set in userHeaders
-        sysh = HttpHeaders.of(sysh.map(), (k,v) -> uh.firstValue(k).isEmpty());
+        //   except for "Cookie:" - user cookies will be appended to system
+        //   cookies
+        sysh = HttpHeaders.of(sysh.map(), overrides);
 
         OutgoingHeaders<Stream<T>> f = new OutgoingHeaders<>(sysh, userh, this);
         if (contentLength == 0) {
@@ -840,7 +843,7 @@ class Stream<T> extends ExchangeImpl<T> {
             this.contentLength = contentLen;
             this.remainingContentLength = contentLen;
             this.sendScheduler =
-                    SequentialScheduler.synchronizedScheduler(this::trySend);
+                    SequentialScheduler.lockingScheduler(this::trySend);
         }
 
         @Override
@@ -926,7 +929,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     // handle bytes to send downstream
                     while (item.hasRemaining() && state == 0) {
                         if (debug.on()) debug.log("trySend: %d", item.remaining());
-                        assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         DataFrame df = getDataFrame(item);
                         if (df == null) {
                             if (debug.on())
@@ -947,9 +949,12 @@ class Stream<T> extends ExchangeImpl<T> {
                                 connection.resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                                 throw new IOException(msg);
                             } else if (remainingContentLength == 0) {
+                                assert !endStreamSent : "internal error, send data after END_STREAM flag";
                                 df.setFlag(DataFrame.END_STREAM);
                                 endStreamSent = true;
                             }
+                        } else {
+                            assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         }
                         if ((state = streamState) != 0) {
                             if (debug.on()) debug.log("trySend: cancelled: %s", String.valueOf(t));

@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6582545
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug6582545Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6582545Test
  * @run testng/othervm dom.Bug6582545Test
  * @summary Test the value is correct when iterating attributes.
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,8 +63,8 @@ public class SATestUtils {
                     throw new SkippedException("SA Attach not expected to work. Ptrace attach not supported.");
                 }
             } else if (Platform.isOSX()) {
-                if (Platform.isSignedOSX()) {
-                    throw new SkippedException("SA Attach not expected to work. JDK is signed.");
+                if (Platform.isHardenedOSX()) {
+                    throw new SkippedException("SA Attach not expected to work. JDK is hardened.");
                 }
                 if (!Platform.isRoot() && !canAddPrivileges()) {
                     throw new SkippedException("SA Attach not expected to work. Insufficient privileges (not root and can't use sudo).");
@@ -159,6 +159,7 @@ public class SATestUtils {
      * if we are root, so return true.  Then return false for an expected denial
      * if "ptrace_scope" is 1, and true otherwise.
      */
+    @SuppressWarnings("removal")
     private static boolean canPtraceAttachLinux() throws IOException {
         // SELinux deny_ptrace:
         var deny_ptrace = Paths.get("/sys/fs/selinux/booleans/deny_ptrace");
@@ -206,5 +207,21 @@ public class SATestUtils {
         }
         // Otherwise expect to be permitted:
         return true;
+    }
+
+    /**
+     * This tests has issues if you try adding privileges on OSX. The debugd process cannot
+     * be killed if you do this (because it is a root process and the test is not), so the destroy()
+     * call fails to do anything, and then waitFor() will time out. If you try to manually kill it with
+     * a "sudo kill" command, that seems to work, but then leaves the LingeredApp it was
+     * attached to in a stuck state for some unknown reason, causing the stopApp() call
+     * to timeout. For that reason we don't run this test when privileges are needed. Note
+     * it does appear to run fine as root, so we still allow it to run on OSX when privileges
+     * are not required.
+     */
+    public static void validateSADebugDPrivileges() {
+        if (needsPrivileges()) {
+            throw new SkippedException("Cannot run this test on OSX if adding privileges is required.");
+        }
     }
 }

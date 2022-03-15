@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,22 +40,24 @@ public class B6206527 {
     public static void main (String[] args) throws Exception {
         Inet6Address addr = getLocalAddr();
         if (addr == null) {
-            System.out.println ("Could not find a link-local address");
+            System.out.println("Could not find a link-local address");
             return;
         }
 
-        ServerSocket ss = new ServerSocket();
-        System.out.println ("trying LL addr: " + addr);
-        ss.bind(new InetSocketAddress(addr, 0));
+        try (ServerSocket ss = new ServerSocket()) {
+            System.out.println("trying LL addr: " + addr);
+            ss.bind(new InetSocketAddress(addr, 0));
+        }
 
         // need to remove the %scope suffix
-        addr = (Inet6Address)InetAddress.getByAddress (
+        addr = (Inet6Address) InetAddress.getByAddress (
             addr.getAddress()
         );
 
-        System.out.println ("trying LL addr: " + addr);
-        ss = new ServerSocket();
-        ss.bind(new InetSocketAddress(addr, 0));
+        try (ServerSocket ss = new ServerSocket()) {
+            System.out.println("trying LL addr: " + addr);
+            ss.bind(new InetSocketAddress(addr, 0));
+        }
     }
 
     public static Inet6Address getLocalAddr() throws Exception {

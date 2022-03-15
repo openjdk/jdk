@@ -32,6 +32,7 @@
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.InvokeDynamicPrintArgs --check-output
  * @run main/othervm
+ *      -Djava.security.manager=allow
  *      indify.Indify
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.InvokeDynamicPrintArgs --security-manager

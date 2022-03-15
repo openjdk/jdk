@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ header exports jdk/incubator/vector requires name\u0020;java.base\u0020;flags\u0
 class name jdk/incubator/vector/AbstractVector
 header extends jdk/incubator/vector/Vector flags 420 signature <E:Ljava/lang/Object;>Ljdk/incubator/vector/Vector<TE;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Conversion outerClass jdk/incubator/vector/VectorOperators innerClassName Conversion flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Binary outerClass jdk/incubator/vector/VectorOperators innerClassName Binary flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
@@ -49,10 +51,13 @@ method name castShape descriptor (Ljdk/incubator/vector/VectorSpecies;I)Ljdk/inc
 method name convertShape descriptor (Ljdk/incubator/vector/VectorOperators$Conversion;Ljdk/incubator/vector/VectorSpecies;I)Ljdk/incubator/vector/Vector; flags 401 signature <F:Ljava/lang/Object;>(Ljdk/incubator/vector/VectorOperators$Conversion<TE;TF;>;Ljdk/incubator/vector/VectorSpecies<TF;>;I)Ljdk/incubator/vector/Vector<TF;>; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name slice descriptor (ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/AbstractVector; flags 401 signature (ILjdk/incubator/vector/Vector<TE;>;)Ljdk/incubator/vector/AbstractVector<TE;>;
 method name slice descriptor (ILjdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 401 signature (I)Ljdk/incubator/vector/AbstractVector<TE;>;
+method name slice descriptor (I)Ljdk/incubator/vector/Vector; flags 1041
 
 class name jdk/incubator/vector/ByteVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Byte;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
@@ -223,10 +228,12 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/DoubleVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Double;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
@@ -394,10 +401,12 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/FloatVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Float;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
@@ -565,10 +574,12 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/IntVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Integer;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
@@ -740,10 +751,12 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/LongVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Long;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
@@ -908,10 +921,12 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/ShortVector
 header extends jdk/incubator/vector/AbstractVector flags 421 signature Ljdk/incubator/vector/AbstractVector<Ljava/lang/Short;>;
 innerclass innerClass jdk/incubator/vector/VectorOperators$Operator outerClass jdk/incubator/vector/VectorOperators innerClassName Operator flags 609
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/incubator/vector/VectorOperators$Unary outerClass jdk/incubator/vector/VectorOperators innerClassName Unary flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Comparison outerClass jdk/incubator/vector/VectorOperators innerClassName Comparison flags 609
 innerclass innerClass jdk/incubator/vector/VectorOperators$Associative outerClass jdk/incubator/vector/VectorOperators innerClassName Associative flags 609
@@ -1082,6 +1097,7 @@ method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Lj
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Binary;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;Ljdk/incubator/vector/VectorMask;)Ljdk/incubator/vector/Vector; flags 1041 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
 method name lanewise descriptor (Ljdk/incubator/vector/VectorOperators$Unary;)Ljdk/incubator/vector/Vector; flags 1041
+method name slice descriptor (I)Ljdk/incubator/vector/AbstractVector; flags 1041
 
 class name jdk/incubator/vector/Vector
 header extends jdk/internal/vm/vector/VectorSupport$Vector flags 421 signature <E:Ljava/lang/Object;>Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;
@@ -1176,6 +1192,7 @@ method name hashCode descriptor ()I flags 401
 class name jdk/incubator/vector/VectorMask
 header extends jdk/internal/vm/vector/VectorSupport$VectorMask flags 421 signature <E:Ljava/lang/Object;>Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;
 innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name vectorSpecies descriptor ()Ljdk/incubator/vector/VectorSpecies; flags 401 signature ()Ljdk/incubator/vector/VectorSpecies<TE;>;
 method name length descriptor ()I flags 11 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;

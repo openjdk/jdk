@@ -37,6 +37,7 @@
 #include <io.h>
 #include <limits.h>
 #include <wchar.h>
+#include <Winioctl.h>
 
 #include "jni.h"
 #include "io_util.h"
@@ -188,6 +189,60 @@ static BOOL getFileInformation(const WCHAR *path,
 }
 
 /**
+ * path is likely to be a Unix domain socket.
+ * Verify and if it is return its attributes
+ */
+static DWORD getFinalAttributesUnixSocket(const WCHAR *path)
+{
+    DWORD result;
+    BY_HANDLE_FILE_INFORMATION finfo;
+    REPARSE_GUID_DATA_BUFFER reparse;
+
+    HANDLE h = CreateFileW(path,
+                           FILE_READ_ATTRIBUTES,
+                           FILE_SHARE_DELETE |
+                               FILE_SHARE_READ | FILE_SHARE_WRITE,
+                           NULL,
+                           OPEN_EXISTING,
+                           FILE_FLAG_BACKUP_SEMANTICS |
+                               FILE_FLAG_OPEN_REPARSE_POINT,
+                           NULL);
+
+    if (h == INVALID_HANDLE_VALUE)
+        return INVALID_FILE_ATTRIBUTES;
+
+
+    if (!GetFileInformationByHandle(h, &finfo)) {
+        DWORD error = GetLastError();
+        if (CloseHandle(h)) {
+            SetLastError(error);
+        }
+        return INVALID_FILE_ATTRIBUTES;
+    }
+
+    if ((finfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
+        CloseHandle(h);
+        return INVALID_FILE_ATTRIBUTES;
+    }
+
+    /* check the reparse tag */
+
+    if (DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL, 0, &reparse,
+                (DWORD)sizeof(reparse), &result, NULL) == 0) {
+        CloseHandle(h);
+        return INVALID_FILE_ATTRIBUTES;
+    }
+
+    if (reparse.ReparseTag != IO_REPARSE_TAG_AF_UNIX) {
+        CloseHandle(h);
+        return INVALID_FILE_ATTRIBUTES;
+    }
+
+    CloseHandle(h);
+    return finfo.dwFileAttributes;
+}
+
+/**
  * If the given attributes are the attributes of a reparse point, then
  * read and return the attributes of the special cases.
  */
@@ -217,6 +272,11 @@ DWORD getFinalAttributes(WCHAR *path)
 
     if (GetFileAttributesExW(path, GetFileExInfoStandard, &wfad)) {
         attr = getFinalAttributesIfReparsePoint(path, wfad.dwFileAttributes);
+        if (attr == INVALID_FILE_ATTRIBUTES) {
+            if (GetLastError() == ERROR_CANT_ACCESS_FILE) {
+                attr = getFinalAttributesUnixSocket(path);
+            }
+        }
     } else {
         DWORD lerr = GetLastError();
         if ((lerr == ERROR_SHARING_VIOLATION || lerr == ERROR_ACCESS_DENIED) &&

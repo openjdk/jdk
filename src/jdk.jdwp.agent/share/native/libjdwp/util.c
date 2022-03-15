@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1981,6 +1981,60 @@ eventIndex2jvmti(EventIndex i)
     }
     return index2jvmti[i-EI_min];
 }
+
+#ifdef DEBUG
+
+char*
+eventIndex2EventName(EventIndex ei)
+{
+    switch ( ei ) {
+        case EI_SINGLE_STEP:
+            return "EI_SINGLE_STEP";
+        case EI_BREAKPOINT:
+            return "EI_BREAKPOINT";
+        case EI_FRAME_POP:
+            return "EI_FRAME_POP";
+        case EI_EXCEPTION:
+            return "EI_EXCEPTION";
+        case EI_THREAD_START:
+            return "EI_THREAD_START";
+        case EI_THREAD_END:
+            return "EI_THREAD_END";
+        case EI_CLASS_PREPARE:
+            return "EI_CLASS_PREPARE";
+        case EI_GC_FINISH:
+            return "EI_GC_FINISH";
+        case EI_CLASS_LOAD:
+            return "EI_CLASS_LOAD";
+        case EI_FIELD_ACCESS:
+            return "EI_FIELD_ACCESS";
+        case EI_FIELD_MODIFICATION:
+            return "EI_FIELD_MODIFICATION";
+        case EI_EXCEPTION_CATCH:
+            return "EI_EXCEPTION_CATCH";
+        case EI_METHOD_ENTRY:
+            return "EI_METHOD_ENTRY";
+        case EI_METHOD_EXIT:
+            return "EI_METHOD_EXIT";
+        case EI_MONITOR_CONTENDED_ENTER:
+            return "EI_MONITOR_CONTENDED_ENTER";
+        case EI_MONITOR_CONTENDED_ENTERED:
+            return "EI_MONITOR_CONTENDED_ENTERED";
+        case EI_MONITOR_WAIT:
+            return "EI_MONITOR_WAIT";
+        case EI_MONITOR_WAITED:
+            return "EI_MONITOR_WAITED";
+        case EI_VM_INIT:
+            return "EI_VM_INIT";
+        case EI_VM_DEATH:
+            return "EI_VM_DEATH";
+        default:
+            JDI_ASSERT(JNI_FALSE);
+            return "Bad EI";
+    }
+}
+
+#endif
 
 EventIndex
 jdwp2EventIndex(jdwpEvent eventType)

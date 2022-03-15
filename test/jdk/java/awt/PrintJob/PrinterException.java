@@ -39,11 +39,11 @@ public class PrinterException {
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         Thread t = new Thread (() -> {
-            robot.waitForIdle();
             robot.delay(2000);
             robot.keyPress(KeyEvent.VK_ESCAPE);
             robot.keyRelease(KeyEvent.VK_ESCAPE);
-           });
+            robot.waitForIdle();
+        });
         Toolkit tk = Toolkit.getDefaultToolkit();
         PrintJob pj = null;
 

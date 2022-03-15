@@ -41,7 +41,6 @@ import com.sun.source.util.Plugin;
 public abstract class DocLint implements Plugin {
     public static final String XMSGS_OPTION = "-Xmsgs";
     public static final String XMSGS_CUSTOM_PREFIX = "-Xmsgs:";
-    public static final String XHTML_VERSION_PREFIX = "-XhtmlVersion:";
     public static final String XCHECK_PACKAGE = "-XcheckPackage:";
 
     private static ServiceLoader.Provider<DocLint> docLintProvider;
@@ -50,7 +49,7 @@ public abstract class DocLint implements Plugin {
 
     public static synchronized DocLint newDocLint() {
         if (docLintProvider == null) {
-            docLintProvider = ServiceLoader.load(DocLint.class).stream()
+            docLintProvider = ServiceLoader.load(DocLint.class, ClassLoader.getSystemClassLoader()).stream()
                     .filter(p_ -> p_.get().getName().equals("doclint"))
                     .findFirst()
                     .orElse(new ServiceLoader.Provider<>() {
@@ -76,12 +75,15 @@ public abstract class DocLint implements Plugin {
 
         @Override
         public void init(JavacTask task, String... args) {
-            // ignore
+            throw new IllegalStateException("doclint not available");
         }
 
         @Override
         public boolean isValidOption(String s) {
-            return false;
+            // passively accept all "plausible" options
+            return s.equals(XMSGS_OPTION)
+                    || s.startsWith(XMSGS_CUSTOM_PREFIX)
+                    || s.startsWith(XCHECK_PACKAGE);
         }
     }
 }

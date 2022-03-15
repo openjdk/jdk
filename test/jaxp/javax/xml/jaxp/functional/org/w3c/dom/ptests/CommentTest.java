@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/functional
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.CommentTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.CommentTest
  * @run testng/othervm org.w3c.dom.ptests.CommentTest
  * @summary Test for Comment implementation returned by Document.createComment(String)
  */

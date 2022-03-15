@@ -360,7 +360,6 @@ public class IteratorMicroBenchmark {
     }
 
     Stream<Job> jobs(Collection<Integer> x) {
-        final String klazz = goodClassName(x);
         return concatStreams(
             collectionJobs(x),
 

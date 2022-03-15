@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1045,12 +1045,12 @@ eventHelper_reportEvents(jbyte sessionID, struct bag *eventBag)
 
 void
 eventHelper_recordEvent(EventInfo *evinfo, jint id, jbyte suspendPolicy,
-                         struct bag *eventBag)
+                        struct bag *eventBag)
 {
     JNIEnv *env = getEnv();
     CommandSingle *command = bagAdd(eventBag);
     if (command == NULL) {
-        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"badAdd(eventBag)");
+        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"bagAdd(eventBag)");
     }
 
     command->singleKind = COMMAND_SINGLE_EVENT;

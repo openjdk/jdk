@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -64,6 +64,7 @@ public class FuncExtFunction extends Function
    *  order to allow caching of the method.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   Object m_methodKey;
 
   /**
@@ -71,6 +72,7 @@ public class FuncExtFunction extends Function
    *  function.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   List<Expression> m_argVec = new ArrayList<>();
 
   /**

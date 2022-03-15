@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SERIAL_SERIALHEAP_INLINE_HPP
 #define SHARE_GC_SERIAL_SERIALHEAP_INLINE_HPP
 
-#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialHeap.hpp"
+
+#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 
 template <typename OopClosureType1, typename OopClosureType2>

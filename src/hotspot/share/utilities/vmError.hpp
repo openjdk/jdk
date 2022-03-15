@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +51,10 @@ class VMError : public AllStatic {
   static void*       _context;          // ContextRecord on Windows,
                                         // ucontext_t on Solaris/Linux
 
+  // records if VMError::print_native_stack was used to
+  // print the native stack instead of os::platform_print_native_stack
+  static bool        _print_native_stack_used;
+
   // additional info for VM internal errors
   static const char* _filename;
   static int         _lineno;
@@ -84,13 +89,9 @@ class VMError : public AllStatic {
   // Whether or not the last error reporting step did timeout.
   static volatile bool _step_did_timeout;
 
-  static bool _error_reported;
-
- public:
-
-  // set signal handlers on Solaris/Linux or the default exception filter
-  // on Windows, to handle recursive crashes.
-  static void reset_signal_handlers();
+  // Install secondary signal handler to handle secondary faults during error reporting
+  // (see VMError::crash_handler)
+  static void install_secondary_signal_handler();
 
   // handle -XX:+ShowMessageBoxOnError. buf is used to format the message string
   static void show_message_box(char* buf, int buflen);
@@ -110,6 +111,10 @@ class VMError : public AllStatic {
 
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
+  }
+
+  static bool should_submit_bug_report(unsigned int id) {
+    return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
   }
 
   // Write a hint to the stream in case siginfo relates to a segv/bus error
@@ -163,30 +168,33 @@ public:
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
 
-  // returns original flags for signal, if it was resetted, or -1 if
-  // signal was not changed by error reporter
-  static int get_resetted_sigflags(int sig);
-
-  // returns original handler for signal, if it was resetted, or NULL if
-  // signal was not changed by error reporter
-  static address get_resetted_sighandler(int sig);
-
-  // check to see if fatal error reporting is in progress
-  static bool fatal_error_in_progress() { return _first_error_tid != -1; }
-
-  static intptr_t get_first_error_tid() { return _first_error_tid; }
-
   // Called by the WatcherThread to check if error reporting has timed-out.
   //  Returns true if error reporting has not completed within the ErrorLogTimeout limit.
   static bool check_timeout();
 
-  // Support for avoiding multiple asserts
+  // Returns true if at least one thread reported a fatal error and
+  //  fatal error handling is in process.
   static bool is_error_reported();
+
+  // Returns true if the current thread reported a fatal error.
+  static bool is_error_reported_in_current_thread();
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // returns an address which is guaranteed to generate a SIGSEGV on read,
-  // for test purposes, which is not NULL and contains bits in every word
-  static void* get_segfault_address();
+  // Address which is guaranteed to generate a fault on read, for test purposes,
+  // which is not NULL and contains bits in every word.
+  static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+
+  // Max value for the ErrorLogPrintCodeLimit flag.
+  static const int max_error_log_print_code = 10;
+
+  // Needed when printing signal handlers.
+  NOT_WINDOWS(static const void* crash_handler_address;)
+
+  // Construct file name for a log file and return it's file descriptor.
+  // Name and location depends on pattern, default_pattern params and access
+  // permissions.
+  static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
+
 };
 #endif // SHARE_UTILITIES_VMERROR_HPP

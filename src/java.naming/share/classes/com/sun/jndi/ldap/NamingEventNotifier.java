@@ -48,7 +48,7 @@ import com.sun.jndi.toolkit.ctx.Continuation;
   * @author Rosanna Lee
   */
 final class NamingEventNotifier implements Runnable {
-    private final static boolean debug = false;
+    private static final boolean debug = false;
 
     private Vector<NamingListener> namingListeners;
     private Thread worker;

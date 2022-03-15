@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.event.ActionEvent;
 import java.awt.peer.MenuComponentPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 
@@ -113,12 +114,14 @@ public abstract class MenuComponent implements java.io.Serializable {
     /*
      * The menu's AccessControlContext.
      */
+    @SuppressWarnings("removal")
     private transient volatile AccessControlContext acc =
             AccessController.getContext();
 
     /*
      * Returns the acc this menu component was constructed with.
      */
+    @SuppressWarnings("removal")
     final AccessControlContext getAccessControlContext() {
         if (acc == null) {
             throw new SecurityException(
@@ -133,9 +136,10 @@ public abstract class MenuComponent implements java.io.Serializable {
     static final String actionListenerK = Component.actionListenerK;
     static final String itemListenerK = Component.itemListenerK;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -4536902356223894379L;
 
     static {
@@ -369,8 +373,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         Toolkit.getDefaultToolkit().notifyAWTEventListeners(e);
 
         if (newEventsOnly ||
-            (parent != null && parent instanceof MenuComponent &&
-             ((MenuComponent)parent).newEventsOnly)) {
+            (parent instanceof MenuComponent mc && mc.newEventsOnly)) {
             if (eventEnabled(e)) {
                 processEvent(e);
             } else if (e instanceof ActionEvent && parent != null) {
@@ -447,6 +450,8 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @serial
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("removal")
+    @Serial
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException, HeadlessException
     {
@@ -507,9 +512,10 @@ public abstract class MenuComponent implements java.io.Serializable {
         implements java.io.Serializable, AccessibleComponent,
                    AccessibleSelection
     {
-        /*
-         * JDK 1.3 serialVersionUID
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
          */
+        @Serial
         private static final long serialVersionUID = -4269533416223798698L;
 
         /**
@@ -736,7 +742,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Gets the {@code Font} of this object.
          *
-         * @return the {@code Font},if supported, for the object;
+         * @return the {@code Font}, if supported, for the object;
          *     otherwise, {@code null}
          */
         public Font getFont() {

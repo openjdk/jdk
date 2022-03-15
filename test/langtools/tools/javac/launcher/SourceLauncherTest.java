@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -213,48 +213,22 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testPermissions(Path base) throws IOException {
-        // does not work on exploded image, because the default policy file assumes jrt:; skip the test
-        if (Files.exists(Path.of(System.getProperty("java.home")).resolve("modules"))) {
-            out.println("JDK using exploded modules; test skipped");
-            return;
-        }
-
-        Path policyFile = base.resolve("test.policy");
-        Path sourceFile = base.resolve("TestPermissions.java");
-
-        tb.writeFile(policyFile,
-            "grant codeBase \"jrt:/jdk.compiler\" {\n" +
-            "    permission java.security.AllPermission;\n" +
-            "};\n" +
-            "grant codeBase \"" + sourceFile.toUri().toURL() + "\" {\n" +
-            "    permission java.util.PropertyPermission \"user.dir\", \"read\";\n" +
-            "};\n");
-
+    public void testSecurityManager(Path base) throws IOException {
+        Path sourceFile = base.resolve("HelloWorld.java");
         tb.writeJavaFiles(base,
-            "import java.net.URL;\n" +
-            "class TestPermissions {\n" +
-            "    public static void main(String... args) {\n" +
-            "        System.out.println(\"user.dir=\" + System.getProperty(\"user.dir\"));\n" +
-            "        try {\n" +
-            "            System.setProperty(\"user.dir\", \"\");\n" +
-            "            System.out.println(\"no exception\");\n" +
-            "            System.exit(1);\n" +
-            "        } catch (SecurityException e) {\n" +
-            "            System.out.println(\"exception: \" + e);\n" +
-            "        }\n" +
-            "    }\n" +
-            "}");
+                "class HelloWorld {\n" +
+                        "    public static void main(String... args) {\n" +
+                        "        System.out.println(\"Hello World!\");\n" +
+                        "    }\n" +
+                        "}");
 
         String log = new JavaTask(tb)
-                .vmOptions("-Djava.security.manager", "-Djava.security.policy=" + policyFile)
+                .vmOptions("-Djava.security.manager=default")
                 .className(sourceFile.toString())
-                .run(Task.Expect.SUCCESS)
-                .getOutput(Task.OutputKind.STDOUT);
-        checkEqual("stdout", log.trim(),
-                "user.dir=" + System.getProperty("user.dir") + "\n" +
-                "exception: java.security.AccessControlException: " +
-                    "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
+                .run(Task.Expect.FAIL)
+                .getOutput(Task.OutputKind.STDERR);
+        checkContains("stderr", log,
+                "error: cannot use source-code launcher with a security manager enabled");
     }
 
     public void testSystemProperty(Path base) throws IOException {
@@ -598,6 +572,52 @@ public class SourceLauncherTest extends TestRunner {
                 "error: compilation failed");
     }
 
+    @Test
+    public void testNoRecompileWithSuggestions(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "class NoRecompile {\n" +
+            "    void use(String s) {}\n" +
+            "    void test() {\n" +
+            "        use(1);\n" +
+            "    }\n" +
+            "    <T> void test(T t, Object o) {\n" +
+            "        T t1 = (T) o;\n" +
+            "    }\n" +
+            "    static class Generic<T> {\n" +
+            "        T t;\n" +
+            "        void raw(Generic raw) {\n" +
+            "            raw.t = \"\";\n" +
+            "        }\n" +
+            "    }\n" +
+            "    void deprecation() {\n" +
+            "        Thread.currentThread().stop();\n" +
+            "    }\n" +
+            "    void preview(Object o) {\n" +
+            "      if (o instanceof String s) {\n" +
+            "          System.out.println(s);\n" +
+            "      }\n" +
+            "    }\n" +
+            "}");
+        Result r = run(base.resolve("NoRecompile.java"), Collections.emptyList(), Collections.emptyList());
+        if (r.stdErr.contains("recompile with")) {
+            error("Unexpected recompile suggestions in error output: " + r.stdErr);
+        }
+    }
+
+    @Test
+    public void testNoOptionsWarnings(Path base) throws IOException {
+        tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
+        String log = new JavaTask(tb)
+                .vmOptions("--source", "7")
+                .className(base.resolve("Main.java").toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDERR);
+
+        if (log.contains("warning: [options]")) {
+            error("Unexpected options warning in error output: " + log);
+        }
+    }
+
     void testError(Path file, String expectStdErr, String expectFault) throws IOException {
         Result r = run(file, Collections.emptyList(), List.of("1", "2", "3"));
         checkEmpty("stdout", r.stdOut);
@@ -661,6 +681,14 @@ public class SourceLauncherTest extends TestRunner {
         out.println(name + ": " + found);
         if (!expect.equals(found)) {
             error("Unexpected output; expected: " + expect);
+        }
+    }
+
+    void checkContains(String name, String found, String expect) {
+        expect = expect.replace("\n", tb.lineSeparator);
+        out.println(name + ": " + found);
+        if (!found.contains(expect)) {
+            error("Expected output not found: " + expect);
         }
     }
 

@@ -42,7 +42,7 @@ import jdk.jfr.internal.Utils;
 @Description("Record event with duration above or equal to threshold")
 @Timespan
 public final class ThresholdSetting extends JDKSettingControl {
-    private final static long typeId = Type.getTypeId(ThresholdSetting.class);
+    private static final long typeId = Type.getTypeId(ThresholdSetting.class);
     private String value = "0 ns";
     private final PlatformEventType eventType;
 

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,7 +25,7 @@
  * SealedCompilationTests
  *
  * @test
- * @bug 8246353
+ * @bug 8246353 8273257
  * @summary Negative compilation tests, and positive compilation (smoke) tests for sealed classes
  * @library /lib/combo /tools/lib
  * @modules
@@ -35,9 +33,8 @@
  *     jdk.compiler/com.sun.tools.javac.api
  *     jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JavacTask
- * @compile --enable-preview -source ${jdk.version} SealedCompilationTests.java
- * @run testng/othervm -DuseAP=false --enable-preview SealedCompilationTests
- * @run testng/othervm -DuseAP=true --enable-preview SealedCompilationTests
+ * @run testng/othervm -DuseAP=false SealedCompilationTests
+ * @run testng/othervm -DuseAP=true SealedCompilationTests
  */
 
 import java.lang.constant.ClassDesc;
@@ -79,17 +76,7 @@ public class SealedCompilationTests extends CompilationTestCase {
 
     ToolBox tb = new ToolBox();
 
-    // When sealed classes become a permanent feature, we don't need these any more
-    private static String[] PREVIEW_OPTIONS = {
-            "--enable-preview",
-            "-source", Integer.toString(Runtime.version().feature())
-    };
-
-    private static String[] PREVIEW_OPTIONS_WITH_AP = {
-            "--enable-preview",
-            "-source", Integer.toString(Runtime.version().feature()),
-            "-processor", SimplestAP.class.getName()
-    };
+    private static String[] OPTIONS_WITH_AP = { "-processor", SimplestAP.class.getName() };
 
     /* simplest annotation processor just to force a round of annotation processing for all tests
      */
@@ -110,7 +97,7 @@ public class SealedCompilationTests extends CompilationTestCase {
     public SealedCompilationTests() {
         boolean useAP = System.getProperty("useAP") == null ? false : System.getProperty("useAP").equals("true");
         setDefaultFilename("SealedTest.java");
-        setCompileOptions(useAP ? PREVIEW_OPTIONS_WITH_AP : PREVIEW_OPTIONS);
+        setCompileOptions(useAP ? OPTIONS_WITH_AP : new String[]{});
         System.out.println(useAP ? "running all tests using an annotation processor" : "running all tests without annotation processor");
     }
 
@@ -260,30 +247,8 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class SealedTest { int sealed = 0; int non = 0; int ns = non-sealed; }",
                 "class SealedTest { void test(String sealed) { } }",
                 "class SealedTest { void sealed(String sealed) { } }",
-                "class SealedTest { void test() { String sealed = null; } }"
-        )) {
-            assertOK(s);
-        }
+                "class SealedTest { void test() { String sealed = null; } }",
 
-        for (String s : List.of(
-                "class sealed {}",
-                "enum sealed {}",
-                "record sealed() {}",
-                "interface sealed {}",
-                "@interface sealed {}"
-        )) {
-            assertFail("compiler.err.restricted.type.not.allowed", s);
-        }
-
-        for (String s : List.of(
-                "class Foo { sealed m() {} }",
-                "class Foo { sealed i; }",
-                "class Foo { void m(sealed i) {} }"
-                )) {
-            assertFail("compiler.err.restricted.type.not.allowed.here", s);
-        }
-
-        for (String s : List.of(
                 "class SealedTest { String permits; }",
                 "class SealedTest { int permits = 0; }",
                 "class SealedTest { void test(String permits) { } }",
@@ -294,6 +259,12 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
 
         for (String s : List.of(
+                "class sealed {}",
+                "enum sealed {}",
+                "record sealed() {}",
+                "interface sealed {}",
+                "@interface sealed {}",
+
                 "class permits {}",
                 "enum permits {}",
                 "record permits() {}",
@@ -304,28 +275,18 @@ public class SealedCompilationTests extends CompilationTestCase {
         }
 
         for (String s : List.of(
+                "class Foo { sealed m() {} }",
+                "class Foo { sealed i; }",
+                "class Foo { void m() { sealed i; } }",
+                "class Foo { void m(sealed i) {} }",
+
                 "class Foo { permits m() {} }",
                 "class Foo { permits i; }",
+                "class Foo { void m() { permits i; } }",
                 "class Foo { void m(permits i) {} }"
-        )) {
+                )) {
             assertFail("compiler.err.restricted.type.not.allowed.here", s);
         }
-
-        String[] testOptions = {/* no options */};
-        String[] previousCompOptions = getCompileOptions();
-        setCompileOptions(testOptions);
-        // now testing with preview disabled
-        for (String s : List.of(
-                "sealed class S {}",
-                "class Outer { sealed class S {} }",
-                "class Outer { void m() { sealed class S {} } }",
-                "non-sealed class S {}",
-                "class Outer { non-sealed class S {} }",
-                "class Outer { void m() { non-sealed class S {} } }"
-        )) {
-            assertFail("compiler.err.preview.feature.disabled.plural", s);
-        }
-        setCompileOptions(previousCompOptions);
     }
 
     public void testRejectPermitsInNonSealedClass() {
@@ -378,7 +339,8 @@ public class SealedCompilationTests extends CompilationTestCase {
                 "class SealedTest {\n" +
                 "    sealed class Super {}\n" +
                 "    sealed non-sealed class Sub extends Super {}\n" +
-                "}"))
+                "}",
+                "sealed public @interface SealedTest { }"))
             assertFail("compiler.err.illegal.combination.of.modifiers", s);
     }
 
@@ -686,7 +648,7 @@ public class SealedCompilationTests extends CompilationTestCase {
 
         List<String> output = new JavacTask(tb)
             .outdir(out)
-            .options("--enable-preview", "-source", Integer.toString(Runtime.version().feature()), "-Xprint")
+            .options("-Xprint")
             .files(findJavaFiles(test))
             .run()
             .writeAll()
@@ -762,6 +724,18 @@ public class SealedCompilationTests extends CompilationTestCase {
                    },
                    """
                    non-sealed class C extends Undefined {}
+                   """);
+    }
+
+    public void testNonSealedErroneousSuperInterface() {
+        assertFail("compiler.err.cant.resolve",
+                   d -> {
+                       if (diags.keys().size() != 1) {
+                           fail("Unexpected errors: " + diags.toString());
+                       }
+                   },
+                   """
+                   non-sealed class C implements Undefined {}
                    """);
     }
 
@@ -1249,9 +1223,45 @@ public class SealedCompilationTests extends CompilationTestCase {
                      a = (A)c;
                   }
                 }
+                """,
+                """
+                sealed interface A<T> {
+                    final class B implements A<Object> { }
+                }
+
+                class Test {
+                    void f(A.B a, A<Object> b) {
+                        a = (A.B)b;
+                    }
+                }
                 """
         )) {
             assertOK(s);
         }
+    }
+
+    public void testIntersectionWithSealedClasses() {
+        assertOK(
+                """
+                class A { }
+                sealed interface I permits B { }
+                final class B extends A implements I { }
+
+                class Foo<X extends A & I> {}
+                """
+        );
+        assertOK(
+                """
+                class Outer {
+                    abstract class Base {}
+                    interface Marker {}
+                    sealed class B extends Base {}
+                    final class C extends B implements Marker {}
+                    private <T extends Base & Marker> void test(T obj) {
+                        B b = (B) obj;
+                    }
+                }
+                """
+        );
     }
 }

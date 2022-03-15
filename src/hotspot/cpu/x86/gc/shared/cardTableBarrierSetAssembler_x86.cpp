@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 #define __ masm->
 
@@ -59,8 +60,8 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 #ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
-  __ shrptr(addr, CardTable::card_shift);
-  __ shrptr(end, CardTable::card_shift);
+  __ shrptr(addr, CardTable::card_shift());
+  __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
   __ mov64(tmp, disp);
@@ -71,8 +72,8 @@ __ BIND(L_loop);
   __ jcc(Assembler::greaterEqual, L_loop);
 #else
   __ lea(end,  Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift);
-  __ shrptr(end,   CardTable::card_shift);
+  __ shrptr(addr, CardTable::card_shift());
+  __ shrptr(end,   CardTable::card_shift());
   __ subptr(end, addr); // end --> count
 __ BIND(L_loop);
   Address cardtable(addr, count, Address::times_1, disp);
@@ -92,7 +93,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
 
-  __ shrptr(obj, CardTable::card_shift);
+  __ shrptr(obj, CardTable::card_shift());
 
   Address card_addr;
 
@@ -117,9 +118,6 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
   int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
     Label L_already_dirty;
-    if (ct->scanned_concurrently()) {
-      __ membar(Assembler::StoreLoad);
-    }
     __ cmpb(card_addr, dirty);
     __ jcc(Assembler::equal, L_already_dirty);
     __ movb(card_addr, dirty);

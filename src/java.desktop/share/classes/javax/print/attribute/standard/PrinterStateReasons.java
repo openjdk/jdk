@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.print.attribute.standard;
 
+import java.io.Serial;
 import java.util.AbstractSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -88,6 +89,7 @@ public final class PrinterStateReasons
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -3731791085163619457L;
 
     /**
@@ -225,7 +227,7 @@ public final class PrinterStateReasons
         return new PrinterStateReasonSet (severity, entrySet());
     }
 
-    private class PrinterStateReasonSet
+    private static class PrinterStateReasonSet
         extends AbstractSet<PrinterStateReason>
     {
         private Severity mySeverity;
@@ -240,9 +242,7 @@ public final class PrinterStateReasons
 
         public int size() {
             int result = 0;
-            Iterator<PrinterStateReason> iter = iterator();
-            while (iter.hasNext()) {
-                iter.next();
+            for (PrinterStateReason ignored : this) {
                 ++ result;
             }
             return result;
@@ -254,7 +254,7 @@ public final class PrinterStateReasons
         }
     }
 
-    private class PrinterStateReasonSetIterator implements Iterator<PrinterStateReason> {
+    private static class PrinterStateReasonSetIterator implements Iterator<PrinterStateReason> {
         private Severity mySeverity;
         private Iterator<Map.Entry<PrinterStateReason, Severity>> myIterator;
         private Map.Entry<PrinterStateReason, Severity> myEntry;

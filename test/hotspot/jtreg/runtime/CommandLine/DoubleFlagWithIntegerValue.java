@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class DoubleFlagWithIntegerValue {
   public static void testDoubleFlagWithValue(String value) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:G1ConcMarkStepDurationMillis=" + value, "-version");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:SweeperThreshold=" + value, "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotContain("Improperly specified VM option");
     output.shouldHaveExitValue(0);

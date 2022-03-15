@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,19 +201,19 @@ class valuetobe002aCheckedClass {
         C0  = flag ? C0  : new Character(java.lang.Character.MIN_VALUE);
         C1  = flag ? C1  : new Character[] {C0};
         C2  = flag ? C2  : new Character[][]{C1};
-        D0  = flag ? D0  : new Double(java.lang.Double.MIN_VALUE);
+        D0  = flag ? D0  : Double.valueOf(java.lang.Double.MIN_VALUE);
         D1  = flag ? D1  : new Double[]    {D0};
         D2  = flag ? D2  : new Double[][]  {D1};
-        F0  = flag ? F0  : new Float(java.lang.Float.MIN_VALUE);
+        F0  = flag ? F0  : Float.valueOf(java.lang.Float.MIN_VALUE);
         F1  = flag ? F1  : new Float[]     {F0};
         F2  = flag ? F2  : new Float[][]   {F1};
-        I0  = flag ? I0  : new Integer(java.lang.Integer.MIN_VALUE);
+        I0  = flag ? I0  : Integer.valueOf(java.lang.Integer.MIN_VALUE);
         I1  = flag ? I1  : new Integer[]   {I0};
         I2  = flag ? I2  : new Integer[][] {I1};
-        L0  = flag ? L0  : new Long(java.lang.Long.MIN_VALUE);
+        L0  = flag ? L0  : Long.valueOf(java.lang.Long.MIN_VALUE);
         L1  = flag ? L1  : new Long[]      {L0};
         L2  = flag ? L2  : new Long[][]    {L1};
-        S0  = flag ? S0  : new Short(java.lang.Short.MIN_VALUE);
+        S0  = flag ? S0  : Short.valueOf(java.lang.Short.MIN_VALUE);
         S1  = flag ? S1  : new Short[]     {S0};
         S2  = flag ? S2  : new Short[][]   {S1};
         W0  = flag ? W0  : new String();
@@ -223,22 +223,22 @@ class valuetobe002aCheckedClass {
         O1  = flag ? O1  : new Object[]    {O0};
         O2  = flag ? O2  : new Object[][]  {O1};
 
-        LS0 = flag ? LS0 : new Long(java.lang.Long.MAX_VALUE);
+        LS0 = flag ? LS0 : Long.valueOf(java.lang.Long.MAX_VALUE);
         LS1 = flag ? LS1 : new Long[]      {LS0};
         LS2 = flag ? LS2 : new Long[][]    {LS1};
-        LP0 = flag ? LP0 : new Long(java.lang.Long.MAX_VALUE);
+        LP0 = flag ? LP0 : Long.valueOf(java.lang.Long.MAX_VALUE);
         LP1 = flag ? LP1 : new Long[]      {LP0};
         LP2 = flag ? LP2 : new Long[][]    {LP1};
-        LU0 = flag ? LU0 : new Long(java.lang.Long.MAX_VALUE);
+        LU0 = flag ? LU0 : Long.valueOf(java.lang.Long.MAX_VALUE);
         LU1 = flag ? LU1 : new Long[]      {LU0};
         LU2 = flag ? LU2 : new Long[][]    {LU1};
-        LR0 = flag ? LR0 : new Long(java.lang.Long.MAX_VALUE);
+        LR0 = flag ? LR0 : Long.valueOf(java.lang.Long.MAX_VALUE);
         LR1 = flag ? LR1 : new Long[]      {LR0};
         LR2 = flag ? LR2 : new Long[][]    {LR1};
-        LT0 = flag ? LT0 : new Long(java.lang.Long.MAX_VALUE);
+        LT0 = flag ? LT0 : Long.valueOf(java.lang.Long.MAX_VALUE);
         LT1 = flag ? LT1 : new Long[]      {LT0};
         LT2 = flag ? LT2 : new Long[][]    {LT1};
-        LV0 = flag ? LV0 : new Long(java.lang.Long.MAX_VALUE);
+        LV0 = flag ? LV0 : Long.valueOf(java.lang.Long.MAX_VALUE);
         LV1 = flag ? LV1 : new Long[]      {LV0};
         LV2 = flag ? LV2 : new Long[][]    {LV1};
 

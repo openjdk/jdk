@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,14 +70,14 @@ public class locationsofline_i002t {
     static Class longCls = Long.TYPE;
     static Class shortCls = Short.TYPE;
 
-    static Boolean boolClsArr[] = {new Boolean(false)};
-    static Byte byteClsArr[] = {new Byte((byte) 127)};
-    static Character charClsArr[] = {new Character('a')};
-    static Double doubleClsArr[] = {new Double(6.2D)};
-    static Float floatClsArr[] = {new Float(5.1F)};
-    static Integer intClsArr[] = {new Integer(2147483647)};
-    static Long longClsArr[] = {new Long(9223372036854775807L)};
-    static Short shortClsArr[] = {new Short((short) -32768)};
+    static Boolean boolClsArr[] = {Boolean.valueOf(false)};
+    static Byte byteClsArr[] = {Byte.valueOf((byte) 127)};
+    static Character charClsArr[] = {Character.valueOf('a')};
+    static Double doubleClsArr[] = {Double.valueOf(6.2D)};
+    static Float floatClsArr[] = {Float.valueOf(5.1F)};
+    static Integer intClsArr[] = {Integer.valueOf(2147483647)};
+    static Long longClsArr[] = {Long.valueOf(9223372036854775807L)};
+    static Short shortClsArr[] = {Short.valueOf((short) -32768)};
 
     static boolean boolArr[] = {true};
     static byte byteArr[] = {Byte.MAX_VALUE};

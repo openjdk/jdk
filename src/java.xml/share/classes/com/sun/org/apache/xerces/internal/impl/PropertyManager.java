@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import javax.xml.catalog.CatalogFeatures;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLResolver;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlUtils;
 
 /**
@@ -59,7 +61,7 @@ public class PropertyManager {
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     HashMap<String, Object> supportedProps = new HashMap<>();
 
@@ -144,7 +146,7 @@ public class PropertyManager {
             supportedProps.put(f.getPropertyName(), null);
         }
 
-        supportedProps.put(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
+        supportedProps.put(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
     }
 
     private void initWriterProps(){
@@ -166,7 +168,10 @@ public class PropertyManager {
     }
 
     public Object getProperty(String property){
-        return supportedProps.get(property);
+        /** Check to see if the property is managed by the security manager **/
+        String propertyValue = (fSecurityManager != null) ?
+                fSecurityManager.getLimitAsString(property) : null;
+        return propertyValue != null ? propertyValue : supportedProps.get(property);
     }
 
     public void setProperty(String property, Object value){
@@ -198,19 +203,19 @@ public class PropertyManager {
             supportedProps.put(Constants.SECURITY_MANAGER, fSecurityManager);
             return;
         }
-        if (property.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+        if (property.equals(JdkConstants.XML_SECURITY_PROPERTY_MANAGER)) {
             if (value == null) {
                 fSecurityPropertyMgr = new XMLSecurityPropertyManager();
             } else {
                 fSecurityPropertyMgr = (XMLSecurityPropertyManager)value;
             }
-            supportedProps.put(Constants.XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
+            supportedProps.put(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
             return;
         }
 
         //check if the property is managed by security manager
         if (fSecurityManager == null ||
-                !fSecurityManager.setLimit(property, XMLSecurityManager.State.APIPROPERTY, value)) {
+                !fSecurityManager.setLimit(property, JdkProperty.State.APIPROPERTY, value)) {
             //check if the property is managed by security property manager
             if (fSecurityPropertyMgr == null ||
                     !fSecurityPropertyMgr.setValue(property, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {

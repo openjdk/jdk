@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,9 +24,8 @@
  */
 #include "precompiled.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/reflectionAccessorImplKlassHelper.hpp"
+#include "oops/klass.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -46,13 +45,6 @@ void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
 
   ResourceMark rm;
   _out->print("  %s", k->external_name());
-
-  // Special treatment for generated core reflection accessor classes: print invocation target.
-  if (ReflectionAccessorImplKlassHelper::is_generated_accessor(k)) {
-    _out->print(" (invokes: ");
-    ReflectionAccessorImplKlassHelper::print_invocation_target(_out, k);
-    _out->print(")");
-  }
 }
 
 } // namespace metaspace

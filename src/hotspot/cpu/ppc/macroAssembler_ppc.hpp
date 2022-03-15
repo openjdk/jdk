@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,14 @@ class ciTypeArray;
 class MacroAssembler: public Assembler {
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
+
+  // Indicates whether and, if so, which registers must be preserved when calling runtime code.
+  enum PreservationLevel {
+    PRESERVATION_NONE,
+    PRESERVATION_FRAME_LR,
+    PRESERVATION_FRAME_LR_GP_REGS,
+    PRESERVATION_FRAME_LR_GP_FP_REGS
+  };
 
   //
   // Optimized instruction emitters
@@ -79,6 +87,16 @@ class MacroAssembler: public Assembler {
 
   // nop padding
   void align(int modulus, int max = 252, int rem = 0);
+
+  // Align prefix opcode to make sure it's not on the last word of a
+  // 64-byte block.
+  //
+  // Note: do not call align_prefix() in a .ad file (e.g. ppc.ad).  Instead
+  // add ins_alignment(2) to the instruct definition and implement the
+  // compute_padding() method of the instruct node to use
+  // compute_prefix_padding().  See loadConI32Node::compute_padding() in
+  // ppc.ad for an example.
+  void align_prefix();
 
   //
   // Constants, loading constants, TOC support
@@ -260,11 +278,26 @@ class MacroAssembler: public Assembler {
   //
 
   // some ABI-related functions
+
+  // Clobbers all volatile, (non-floating-point) general-purpose registers for debugging purposes.
+  // This is especially useful for making calls to the JRT in places in which this hasn't been done before;
+  // e.g. with the introduction of LRBs (load reference barriers) for concurrent garbage collection.
+  void clobber_volatile_gprs(Register excluded_register = noreg);
+  void clobber_carg_stack_slots(Register tmp);
+
   void save_nonvolatile_gprs(   Register dst_base, int offset);
   void restore_nonvolatile_gprs(Register src_base, int offset);
-  enum { num_volatile_regs = 11 + 14 }; // GPR + FPR
-  void save_volatile_gprs(   Register dst_base, int offset);
-  void restore_volatile_gprs(Register src_base, int offset);
+
+  enum {
+    num_volatile_gp_regs = 11,
+    num_volatile_fp_regs = 14,
+    num_volatile_regs = num_volatile_gp_regs + num_volatile_fp_regs
+  };
+
+  void save_volatile_gprs(   Register dst_base, int offset,
+                             bool include_fp_regs = true, bool include_R3_RET_reg = true);
+  void restore_volatile_gprs(Register src_base, int offset,
+                             bool include_fp_regs = true, bool include_R3_RET_reg = true);
   void save_LR_CR(   Register tmp);     // tmp contains LR on return.
   void restore_LR_CR(Register tmp);
 
@@ -566,24 +599,6 @@ class MacroAssembler: public Assembler {
   // Method handle support (JSR 292).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot, Register temp_reg, int extra_slot_offset = 0);
 
-  // Biased locking support
-  // Upon entry,obj_reg must contain the target object, and mark_reg
-  // must contain the target object's header.
-  // Destroys mark_reg if an attempt is made to bias an anonymously
-  // biased lock. In this case a failure will go either to the slow
-  // case or fall through with the notEqual condition code set with
-  // the expectation that the slow case in the runtime will be called.
-  // In the fall-through case where the CAS-based lock is done,
-  // mark_reg is not destroyed.
-  void biased_locking_enter(ConditionRegister cr_reg, Register obj_reg, Register mark_reg, Register temp_reg,
-                            Register temp2_reg, Label& done, Label* slow_case = NULL);
-  // Upon entry, the base register of mark_addr must contain the oop.
-  // Destroys temp_reg.
-  // If allow_delay_slot_filling is set to true, the next instruction
-  // emitted after this one will go in an annulled delay slot if the
-  // biased locking exit case failed.
-  void biased_locking_exit(ConditionRegister cr_reg, Register mark_addr, Register temp_reg, Label& done);
-
   // allocation (for C1)
   void eden_allocate(
     Register obj,                      // result: pointer to object after successful allocation
@@ -632,7 +647,6 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                  Register tmp1, Register tmp2, Register tmp3,
-                                 bool try_bias = UseBiasedLocking,
                                  RTMLockingCounters* rtm_counters = NULL,
                                  RTMLockingCounters* stack_rtm_counters = NULL,
                                  Metadata* method_data = NULL,
@@ -640,12 +654,13 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3,
-                                   bool try_bias = UseBiasedLocking, bool use_rtm = false);
+                                   bool use_rtm = false);
 
   // Check if safepoint requested and if so branch
-  void safepoint_poll(Label& slow_path, Register temp_reg);
+  void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
 
-  void resolve_jobject(Register value, Register tmp1, Register tmp2, bool needs_frame);
+  void resolve_jobject(Register value, Register tmp1, Register tmp2,
+                       MacroAssembler::PreservationLevel preservation_level);
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
@@ -686,21 +701,24 @@ class MacroAssembler: public Assembler {
  private:
   inline void access_store_at(BasicType type, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs, Register val,
-                              Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
+                              Register tmp1, Register tmp2, Register tmp3,
+                              MacroAssembler::PreservationLevel preservation_level);
   inline void access_load_at(BasicType type, DecoratorSet decorators,
                              Register base, RegisterOrConstant ind_or_offs, Register dst,
-                             Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null = NULL);
+                             Register tmp1, Register tmp2,
+                             MacroAssembler::PreservationLevel preservation_level, Label *L_handle_null = NULL);
 
  public:
   // Specify tmp1 for better code in certain compressed oops cases. Specify Label to bail out on null oop.
   // tmp1, tmp2 and needs_frame are used with decorators ON_PHANTOM_OOP_REF or ON_WEAK_OOP_REF.
   inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1,
-                            Register tmp1, Register tmp2, bool needs_frame,
+                            Register tmp1, Register tmp2,
+                            MacroAssembler::PreservationLevel preservation_level,
                             DecoratorSet decorators = 0, Label *L_handle_null = NULL);
 
   inline void store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
-                             Register tmp1, Register tmp2, Register tmp3, bool needs_frame,
-                             DecoratorSet decorators = 0);
+                             Register tmp1, Register tmp2, Register tmp3,
+                             MacroAssembler::PreservationLevel preservation_level, DecoratorSet decorators = 0);
 
   // Encode/decode heap oop. Oop may not be null, else en/decoding goes wrong.
   // src == d allowed.
@@ -716,8 +734,10 @@ class MacroAssembler: public Assembler {
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 
-  void resolve_oop_handle(Register result);
-  void load_mirror_from_const_method(Register mirror, Register const_method);
+  void resolve_oop_handle(Register result, Register tmp1, Register tmp2,
+                          MacroAssembler::PreservationLevel preservation_level);
+  void resolve_weak_handle(Register result, Register tmp1, Register tmp2,
+                           MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
   static int instr_size_for_decode_klass_not_null();

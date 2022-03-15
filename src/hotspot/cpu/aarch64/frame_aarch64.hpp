@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -124,6 +124,11 @@
   intptr_t*     _unextended_sp;
   void adjust_unextended_sp();
 
+  // true means _sp value is correct and we can use it to get the sender's sp
+  // of the compiled frame, otherwise, _sp value may be invalid and we can use
+  // _fp to get the sender's sp if PreserveFramePointer is enabled.
+  bool _sp_is_trusted;
+
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
   }
@@ -149,6 +154,7 @@
   intptr_t*   fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
+  inline address  sender_pc_maybe_signed() const;
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;
@@ -163,5 +169,7 @@
 
   // returns the sending frame, without applying any barriers
   frame sender_raw(RegisterMap* map) const;
+
+  void set_sp_is_trusted() { _sp_is_trusted = true; }
 
 #endif // CPU_AARCH64_FRAME_AARCH64_HPP

@@ -44,6 +44,7 @@ final class Version extends Command {
         System.out.println("1.0");
     }
 
+    @Override
     protected List<String> getAliases() {
         return List.of("--version");
     }

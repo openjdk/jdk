@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
 
 #include "gc/shared/partialArrayTaskStepper.hpp"
+
 #include "oops/arrayOop.hpp"
 #include "runtime/atomic.hpp"
 

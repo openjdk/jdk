@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,13 +264,6 @@ uint32_t
 dbgsysNetworkToHostLong(uint32_t netlong) {
     return (uint32_t)ntohl((u_long)netlong);
 }
-
-/*
- * Below Adapted from PlainSocketImpl.c, win32 version 1.18. Changed exception
- * throws to returns of SYS_ERR; we should improve the error codes
- * eventually. Changed java objects to values the debugger back end can
- * more easily deal with.
- */
 
 int
 dbgsysSetSocketOption(int fd, jint cmd, jboolean on, jvalue value)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,28 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.cert.CRLException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertStore;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
@@ -59,6 +68,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -629,5 +639,68 @@ public class CertUtils {
         } catch (IOException e) {
             throw new RuntimeException("Cannot read file", e);
         }
+    }
+
+    /**
+     * This class is useful for overriding one or more methods of an
+     * X509Certificate for testing purposes.
+     */
+    public static class ForwardingX509Certificate extends X509Certificate {
+        private final X509Certificate cert;
+        public ForwardingX509Certificate(X509Certificate cert) {
+            this.cert = cert;
+        }
+        public Set<String> getCriticalExtensionOIDs() {
+           return cert.getCriticalExtensionOIDs();
+        }
+        public byte[] getExtensionValue(String oid) {
+            return cert.getExtensionValue(oid);
+        }
+        public Set<String> getNonCriticalExtensionOIDs() {
+            return cert.getNonCriticalExtensionOIDs();
+        }
+        public boolean hasUnsupportedCriticalExtension() {
+            return cert.hasUnsupportedCriticalExtension();
+        }
+        public void checkValidity() throws CertificateExpiredException,
+            CertificateNotYetValidException { /* always pass */ }
+        public void checkValidity(Date date) throws CertificateExpiredException,
+            CertificateNotYetValidException { /* always pass */ }
+        public int getVersion() { return cert.getVersion(); }
+        public BigInteger getSerialNumber() { return cert.getSerialNumber(); }
+        public Principal getIssuerDN() { return cert.getIssuerDN(); }
+        public Principal getSubjectDN() { return cert.getSubjectDN(); }
+        public Date getNotBefore() { return cert.getNotBefore(); }
+        public Date getNotAfter() { return cert.getNotAfter(); }
+        public byte[] getTBSCertificate() throws CertificateEncodingException {
+            return cert.getTBSCertificate();
+        }
+        public byte[] getSignature() { return cert.getSignature(); }
+        public String getSigAlgName() { return cert.getSigAlgName(); }
+        public String getSigAlgOID() { return cert.getSigAlgOID(); }
+        public byte[] getSigAlgParams() { return cert.getSigAlgParams(); }
+        public boolean[] getIssuerUniqueID() {
+            return cert.getIssuerUniqueID();
+        }
+        public boolean[] getSubjectUniqueID() {
+            return cert.getSubjectUniqueID();
+        }
+        public boolean[] getKeyUsage() { return cert.getKeyUsage(); }
+        public int getBasicConstraints() { return cert.getBasicConstraints(); }
+        public byte[] getEncoded() throws CertificateEncodingException {
+            return cert.getEncoded();
+        }
+        public void verify(PublicKey key) throws CertificateException,
+            InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchProviderException, SignatureException {
+            cert.verify(key);
+        }
+        public void verify(PublicKey key, String sigProvider) throws
+            CertificateException, InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchProviderException, SignatureException {
+            cert.verify(key, sigProvider);
+        }
+        public PublicKey getPublicKey() { return cert.getPublicKey(); }
+        public String toString() { return cert.toString(); }
     }
 }

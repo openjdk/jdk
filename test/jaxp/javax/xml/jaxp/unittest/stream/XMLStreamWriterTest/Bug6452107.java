@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6452107
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.Bug6452107
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.Bug6452107
  * @run testng/othervm stream.XMLStreamWriterTest.Bug6452107
  * @summary Test StAX can write ISO-8859-1 encoding XML.
  */

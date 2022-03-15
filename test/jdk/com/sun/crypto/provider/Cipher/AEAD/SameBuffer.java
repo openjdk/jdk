@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.Provider;
 import java.security.Security;
+import java.util.HexFormat;
 import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -102,7 +103,7 @@ public class SameBuffer {
             String padding, int keyLength, int textLength, int AADLength,
             int offset) throws Exception {
         System.out.println("Testing " + keyLength + " key length; "
-                + textLength + " text lenght; " + AADLength + " AAD length; "
+                + textLength + " text length; " + AADLength + " AAD length; "
                 + offset + " offset");
         if (keyLength > Cipher.getMaxAllowedKeyLength(algo)) {
             // skip this if this key length is larger than what's
@@ -239,12 +240,12 @@ public class SameBuffer {
      * Check if two results are equal
      */
     private void runGCMWithSeparateArray(int mode, byte[] AAD, byte[] text,
-            int txtOffset, int lenght, int offset, AlgorithmParameters params)
+            int txtOffset, int length, int offset, AlgorithmParameters params)
             throws Exception {
         // first, generate the cipher text at an allocated buffer
         Cipher cipher = createCipher(mode, params);
         cipher.updateAAD(AAD);
-        byte[] outputText = cipher.doFinal(text, txtOffset, lenght);
+        byte[] outputText = cipher.doFinal(text, txtOffset, length);
 
         // new cipher for encrypt operation
         Cipher anotherCipher = createCipher(mode, params);
@@ -252,17 +253,17 @@ public class SameBuffer {
 
         // next, generate cipher text again at the same buffer of plain text
         int myoff = offset;
-        int off = anotherCipher.update(text, txtOffset, lenght, text, myoff);
+        int off = anotherCipher.update(text, txtOffset, length, text, myoff);
         anotherCipher.doFinal(text, myoff + off);
 
         // check if two resutls are equal
         if (!isEqual(text, myoff, outputText, 0, outputText.length)) {
             System.err.println(
                 "\noutputText:   len = " + outputText.length + "  txtOffset = " + txtOffset + "\n" +
-                jdk.test.lib.Convert.byteArrayToHexString(outputText) + "\n" +
+                HexFormat.of().withUpperCase().formatHex(outputText) + "\n" +
                 "text:  len = " + text.length + "  myoff = " + myoff + "\n" +
-                jdk.test.lib.Convert.byteArrayToHexString(text) + "\n" +
-                    "lenght " + lenght);
+                HexFormat.of().withUpperCase().formatHex(text) + "\n" +
+                "length " + length);
             System.err.println("tlen = " + params.getParameterSpec(GCMParameterSpec.class).getTLen() / 8);
             throw new RuntimeException("Two results not equal, mode:" + mode);
         }

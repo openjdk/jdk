@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ public class Big5_HKSCS_2001 extends Charset
         private static DoubleByte.Decoder big5 =
             (DoubleByte.Decoder)new Big5().newDecoder();
 
-        private static char[][] b2cBmp = new char[0x100][];
-        private static char[][] b2cSupp = new char[0x100][];
+        private static final char[][] b2cBmp = new char[0x100][];
+        private static final char[][] b2cSupp = new char[0x100][];
         static {
             initb2c(b2cBmp, HKSCS2001Mapping.b2cBmpStr);
             initb2c(b2cSupp, HKSCS2001Mapping.b2cSuppStr);
@@ -72,8 +72,8 @@ public class Big5_HKSCS_2001 extends Charset
         private static DoubleByte.Encoder big5 =
             (DoubleByte.Encoder)new Big5().newEncoder();
 
-        static char[][] c2bBmp = new char[0x100][];
-        static char[][] c2bSupp = new char[0x100][];
+        static final char[][] c2bBmp = new char[0x100][];
+        static final char[][] c2bSupp = new char[0x100][];
         static {
             initc2b(c2bBmp, HKSCS2001Mapping.b2cBmpStr,
                     HKSCS2001Mapping.pua);

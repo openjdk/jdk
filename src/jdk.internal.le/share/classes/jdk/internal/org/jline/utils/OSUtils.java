@@ -32,6 +32,7 @@ public class OSUtils {
             && System.getenv("ConEmuPID") != null;
 
     public static final boolean IS_OSX = System.getProperty("os.name").toLowerCase().contains("mac");
+    public static final boolean IS_AIX = System.getProperty("os.name").equals("AIX");
 
     public static String TTY_COMMAND;
     public static String STTY_COMMAND;

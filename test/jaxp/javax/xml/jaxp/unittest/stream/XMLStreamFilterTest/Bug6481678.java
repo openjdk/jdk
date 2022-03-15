@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6481678
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamFilterTest.Bug6481678
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamFilterTest.Bug6481678
  * @run testng/othervm stream.XMLStreamFilterTest.Bug6481678
  * @summary Test Filtered XMLStreamReader parses namespace correctly.
  */

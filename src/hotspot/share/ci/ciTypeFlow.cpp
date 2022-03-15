@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -720,24 +720,32 @@ void ciTypeFlow::StateVector::do_jsr(ciBytecodeStream* str) {
 // ------------------------------------------------------------------
 // ciTypeFlow::StateVector::do_ldc
 void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
-  ciConstant con = str->get_constant();
-  BasicType basic_type = con.basic_type();
-  if (basic_type == T_ILLEGAL) {
-    // OutOfMemoryError in the CI while loading constant
-    push_null();
-    outer()->record_failure("ldc did not link");
+  if (str->is_in_error()) {
+    trap(str, NULL, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                      Deoptimization::Action_none));
     return;
   }
-  if (is_reference_type(basic_type)) {
-    ciObject* obj = con.as_object();
-    if (obj->is_null_object()) {
-      push_null();
+  ciConstant con = str->get_constant();
+  if (con.is_valid()) {
+    int index = str->get_constant_pool_index();
+    BasicType basic_type = str->get_basic_type_for_constant_at(index);
+    if (is_reference_type(basic_type)) {
+      ciObject* obj = con.as_object();
+      if (obj->is_null_object()) {
+        push_null();
+      } else {
+        assert(obj->is_instance() || obj->is_array(), "must be java_mirror of klass");
+        push_object(obj->klass());
+      }
     } else {
-      assert(obj->is_instance() || obj->is_array(), "must be java_mirror of klass");
-      push_object(obj->klass());
+      assert(basic_type == con.basic_type() || con.basic_type() == T_OBJECT,
+             "not a boxed form: %s vs %s", type2name(basic_type), type2name(con.basic_type()));
+      push_translate(ciType::make(basic_type));
     }
   } else {
-    push_translate(ciType::make(basic_type));
+    // OutOfMemoryError in the CI while loading a String constant.
+    push_null();
+    outer()->record_failure("ldc did not link");
   }
 }
 
@@ -2168,6 +2176,8 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
     case Bytecodes::_ldc:
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
+      return str.is_in_error();
+
     case Bytecodes::_aload_0:
       // These bytecodes can trap for rewriting.  We need to assume that
       // they do not throw exceptions to make the monitor analysis work.
@@ -2195,10 +2205,10 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
 // ciTypeFlow::clone_loop_heads
 //
 // Clone the loop heads
-bool ciTypeFlow::clone_loop_heads(Loop* lp, StateVector* temp_vector, JsrSet* temp_set) {
+bool ciTypeFlow::clone_loop_heads(StateVector* temp_vector, JsrSet* temp_set) {
   bool rslt = false;
   for (PreorderLoops iter(loop_tree_root()); !iter.done(); iter.next()) {
-    lp = iter.current();
+    Loop* lp = iter.current();
     Block* head = lp->head();
     if (lp == loop_tree_root() ||
         lp->is_irreducible() ||
@@ -2443,6 +2453,102 @@ void ciTypeFlow::PreorderLoops::next() {
   }
 }
 
+// If the tail is a branch to the head, retrieve how many times that path was taken from profiling
+int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
+  ciMethodData* methodData = method()->method_data();
+  if (!methodData->is_mature()) {
+    return 0;
+  }
+  ciTypeFlow::Block* tail = loop->tail();
+  if (tail->control() == -1) {
+    return 0;
+  }
+
+  ciProfileData* data = methodData->bci_to_data(tail->control());
+
+  if (data == NULL || !data->is_JumpData()) {
+    return 0;
+  }
+
+  ciBytecodeStream iter(method());
+  iter.reset_to_bci(tail->control());
+
+  bool is_an_if = false;
+  bool wide = false;
+  Bytecodes::Code bc = iter.next();
+  switch (bc) {
+    case Bytecodes::_ifeq:
+    case Bytecodes::_ifne:
+    case Bytecodes::_iflt:
+    case Bytecodes::_ifge:
+    case Bytecodes::_ifgt:
+    case Bytecodes::_ifle:
+    case Bytecodes::_if_icmpeq:
+    case Bytecodes::_if_icmpne:
+    case Bytecodes::_if_icmplt:
+    case Bytecodes::_if_icmpge:
+    case Bytecodes::_if_icmpgt:
+    case Bytecodes::_if_icmple:
+    case Bytecodes::_if_acmpeq:
+    case Bytecodes::_if_acmpne:
+    case Bytecodes::_ifnull:
+    case Bytecodes::_ifnonnull:
+      is_an_if = true;
+      break;
+    case Bytecodes::_goto_w:
+    case Bytecodes::_jsr_w:
+      wide = true;
+      break;
+    case Bytecodes::_goto:
+    case Bytecodes::_jsr:
+      break;
+    default:
+      fatal(" invalid bytecode: %s", Bytecodes::name(iter.cur_bc()));
+  }
+
+  GrowableArray<ciTypeFlow::Block*>* succs = tail->successors();
+
+  if (!is_an_if) {
+    assert(((wide ? iter.get_far_dest() : iter.get_dest()) == loop->head()->start()) == (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()), "branch should lead to loop head");
+    if (succs->at(ciTypeFlow::GOTO_TARGET) == loop->head()) {
+      return method()->scale_count(data->as_JumpData()->taken());
+    }
+  } else {
+    assert((iter.get_dest() == loop->head()->start()) == (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()), "bytecode and CFG not consistent");
+    assert((tail->limit() == loop->head()->start()) == (succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()), "bytecode and CFG not consistent");
+    if (succs->at(ciTypeFlow::IF_TAKEN) == loop->head()) {
+      return method()->scale_count(data->as_JumpData()->taken());
+    } else if (succs->at(ciTypeFlow::IF_NOT_TAKEN) == loop->head()) {
+      return method()->scale_count(data->as_BranchData()->not_taken());
+    }
+  }
+
+  return 0;
+}
+
+bool ciTypeFlow::Loop::at_insertion_point(Loop* lp, Loop* current) {
+  int lp_pre_order = lp->head()->pre_order();
+  if (current->head()->pre_order() < lp_pre_order) {
+    return true;
+  } else if (current->head()->pre_order() > lp_pre_order) {
+    return false;
+  }
+  // In the case of a shared head, make the most frequent head/tail (as reported by profiling) the inner loop
+  if (current->head() == lp->head()) {
+    int lp_count = outer()->profiled_count(lp);
+    int current_count = outer()->profiled_count(current);
+    if (current_count < lp_count) {
+      return true;
+    } else if (current_count > lp_count) {
+      return false;
+    }
+  }
+  if (current->tail()->pre_order() > lp->tail()->pre_order()) {
+    return true;
+  }
+  return false;
+}
+
 // ------------------------------------------------------------------
 // ciTypeFlow::Loop::sorted_merge
 //
@@ -2460,12 +2566,10 @@ ciTypeFlow::Loop* ciTypeFlow::Loop::sorted_merge(Loop* lp) {
     int lp_pre_order = lp->head()->pre_order();
     // Find insertion point for "lp"
     while (current != NULL) {
-      if (current == lp)
+      if (current == lp) {
         return leaf; // Already in list
-      if (current->head()->pre_order() < lp_pre_order)
-        break;
-      if (current->head()->pre_order() == lp_pre_order &&
-          current->tail()->pre_order() > lp->tail()->pre_order()) {
+      }
+      if (at_insertion_point(lp, current)) {
         break;
       }
       prev = current;
@@ -2725,7 +2829,7 @@ void ciTypeFlow::flow_types() {
       env()->comp_level() >= CompLevel_full_optimization) {
       // Loop optimizations are not performed on Tier1 compiles.
 
-    bool changed = clone_loop_heads(loop_tree_root(), temp_vector, temp_set);
+    bool changed = clone_loop_heads(temp_vector, temp_set);
 
     // If some loop heads were cloned, recompute postorder and loop tree
     if (changed) {

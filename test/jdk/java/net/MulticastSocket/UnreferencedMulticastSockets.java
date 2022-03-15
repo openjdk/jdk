@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @modules java.management java.base/java.io:+open java.base/java.net:+open
  *          java.base/sun.net java.base/sun.nio.ch:+open
  * @run main/othervm -Djava.net.preferIPv4Stack=true UnreferencedMulticastSockets
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl UnreferencedMulticastSockets
  * @run main/othervm UnreferencedMulticastSockets
  * @summary Check that unreferenced multicast sockets are closed
  */

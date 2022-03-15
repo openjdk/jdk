@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import java.net.*;
  * in order to obtain client sockets for RMI calls.  A remote object can be
  * associated with an <code>RMIClientSocketFactory</code> when it is
  * created/exported via the constructors or <code>exportObject</code> methods
- * of <code>java.rmi.server.UnicastRemoteObject</code> and
- * <code>java.rmi.activation.Activatable</code> .
+ * of <code>java.rmi.server.UnicastRemoteObject</code>.
  *
  * <p>An <code>RMIClientSocketFactory</code> instance associated with a remote
  * object will be downloaded to clients when the remote object's reference is
@@ -56,7 +55,6 @@ import java.net.*;
  * @author  Peter Jones
  * @since   1.2
  * @see     java.rmi.server.UnicastRemoteObject
- * @see     java.rmi.activation.Activatable
  * @see     java.rmi.registry.LocateRegistry
  */
 public interface RMIClientSocketFactory {

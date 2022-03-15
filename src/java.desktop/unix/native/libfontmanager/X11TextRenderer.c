@@ -57,11 +57,13 @@ JNIEXPORT void JNICALL Java_sun_font_X11TextRenderer_doDrawGlyphList
      jlong dstData, jlong xgc, jobject clip,
      jobject glyphlist)
 {
+    jint glyphCount;
     GlyphBlitVector* gbv;
     SurfaceDataBounds bounds;
     Region_GetBounds(env, clip, &bounds);
 
-    if ((gbv = setupBlitVector(env, glyphlist)) == NULL) {
+    glyphCount =  (*env)->GetIntField(env, glyphlist, sunFontIDs.glyphListLen);
+    if ((gbv = setupBlitVector(env, glyphlist, 0, glyphCount)) == NULL) {
         return;
     }
     if (!RefineBounds(gbv, &bounds)) {

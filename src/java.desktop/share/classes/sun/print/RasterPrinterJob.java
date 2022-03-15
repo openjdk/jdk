@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.print;
 import java.io.FilePermission;
 
 import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.Frame;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
@@ -175,6 +173,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * use a particular pipeline. Either the raster
          * pipeline or the pdl pipeline can be forced.
          */
+        @SuppressWarnings("removal")
         String forceStr = java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
 
@@ -186,6 +185,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
+        @SuppressWarnings("removal")
         String shapeTextStr =java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(SHAPE_TEXT_PROP));
 
@@ -302,7 +302,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * The redrawing code needs to look at sx, sy to calculate the scale
      * to device resolution.
      */
-    private class GraphicsState {
+    private static class GraphicsState {
         Rectangle2D region;  // Area of page to repaint
         Shape theClip;       // image drawing clip.
         AffineTransform theTransform; // to transform clip to dev coords.
@@ -729,6 +729,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
           GraphicsEnvironment.getLocalGraphicsEnvironment().
           getDefaultScreenDevice().getDefaultConfiguration();
 
+        @SuppressWarnings("removal")
         PrintService service = java.security.AccessController.doPrivileged(
                                new java.security.PrivilegedAction<PrintService>() {
                 public PrintService run() {
@@ -809,6 +810,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
+        @SuppressWarnings("removal")
         PrintService service = java.security.AccessController.doPrivileged(
                                new java.security.PrivilegedAction<PrintService>() {
                 public PrintService run() {
@@ -949,6 +951,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
+    @SuppressWarnings("removal")
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -1542,7 +1545,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * PrintRequestAttributeSet while calling print(attributes)
          */
         JobSheets js = (JobSheets)psvc.getDefaultAttributeValue(JobSheets.class);
-        if (js != null && js.equals(JobSheets.NONE)) {
+        if (JobSheets.NONE.equals(js)) {
             noJobSheet = true;
         }
 
@@ -2554,6 +2557,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * to throw a SecurityException if the permission is not granted
      */
     private void throwPrintToFile() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (printToFilePermission == null) {

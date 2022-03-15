@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  */
 int CgroupV2Subsystem::cpu_shares() {
   GET_CONTAINER_INFO(int, _unified, "/cpu.weight",
-                     "Raw value for CPU shares is: %d", "%d", shares);
+                     "Raw value for CPU Shares is: %d", "%d", shares);
   // Convert default value of 100 to no shares setup
   if (shares == 100) {
     log_debug(os, container)("CPU Shares is: %d", -1);
@@ -203,24 +203,6 @@ jlong CgroupV2Subsystem::read_memory_limit_in_bytes() {
   return limit;
 }
 
-jlong CgroupV2Subsystem::limit_from_str(char* limit_str) {
-  if (limit_str == NULL) {
-    return OSCONTAINER_ERROR;
-  }
-  // Unlimited memory in Cgroups V2 is the literal string 'max'
-  if (strcmp("max", limit_str) == 0) {
-    os::free(limit_str);
-    return (jlong)-1;
-  }
-  julong limit;
-  if (sscanf(limit_str, JULONG_FORMAT, &limit) != 1) {
-    os::free(limit_str);
-    return OSCONTAINER_ERROR;
-  }
-  os::free(limit_str);
-  return (jlong)limit;
-}
-
 char* CgroupV2Subsystem::mem_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.max",
                          "Raw value for memory limit is: %s", "%s", mem_limit_str, 1024);
@@ -244,3 +226,39 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   return os::strdup(buf);
 }
 
+char* CgroupV2Subsystem::pids_max_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _unified, "/pids.max",
+                     "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
+  if (pidsmax == NULL) {
+    return NULL;
+  }
+  return os::strdup(pidsmax);
+}
+
+/* pids_max
+ *
+ * Return the maximum number of tasks available to the process
+ *
+ * return:
+ *    maximum number of tasks
+ *    -1 for unlimited
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV2Subsystem::pids_max() {
+  char * pidsmax_str = pids_max_val();
+  return limit_from_str(pidsmax_str);
+}
+
+/* pids_current
+ *
+ * The number of tasks currently in the cgroup (and its descendants) of the process
+ *
+ * return:
+ *    current number of tasks
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV2Subsystem::pids_current() {
+  GET_CONTAINER_INFO(jlong, _unified, "/pids.current",
+                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+  return pids_current;
+}

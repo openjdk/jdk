@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package javax.sound.sampled;
 
+import java.io.Serial;
+
 /**
  * A {@code LineUnavailableException} is an exception indicating that a line
  * cannot be opened because it is unavailable. This situation arises most
@@ -38,6 +40,7 @@ public class LineUnavailableException extends Exception {
     /**
      * Use serialVersionUID from JDK 1.3 for interoperability.
      */
+    @Serial
     private static final long serialVersionUID = -2046718279487432130L;
 
     /**

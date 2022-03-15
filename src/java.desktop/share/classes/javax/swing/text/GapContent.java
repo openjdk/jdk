@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package javax.swing.text;
 
+import java.io.Serial;
+import java.util.Arrays;
 import java.util.Vector;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -103,6 +105,12 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         return carray.length;
     }
 
+    @Override
+    void resize(int nsize) {
+        char[] carray = (char[]) getArray();
+        super.resize(nsize);
+        Arrays.fill(carray, '\u0000');
+    }
     // --- AbstractDocument.Content methods -------------------------
 
     /**
@@ -195,10 +203,12 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
         if ((where + len) <= g0) {
             // below gap
             chars.array = array;
+            chars.copy = false;
             chars.offset = where;
         } else if (where >= g0) {
             // above gap
             chars.array = array;
+            chars.copy = false;
             chars.offset = g1 + where - g0;
         } else {
             // spans the gap
@@ -206,12 +216,14 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
             if (chars.isPartialReturn()) {
                 // partial return allowed, return amount before the gap
                 chars.array = array;
+                chars.copy = false;
                 chars.offset = where;
                 chars.count = before;
                 return;
             }
             // partial return not allowed, must copy
             chars.array = new char[len];
+            chars.copy = true;
             chars.offset = 0;
             System.arraycopy(array, where, chars.array, 0, before);
             System.arraycopy(array, g1, chars.array, before, len - before);
@@ -492,13 +504,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
      * @return < 0 if o1 < o2, 0 if the same, > 0 if o1 > o2
      */
     final int compare(MarkData o1, MarkData o2) {
-        if (o1.index < o2.index) {
-            return -1;
-        } else if (o1.index > o2.index) {
-            return 1;
-        } else {
-            return 0;
-        }
+      return Integer.compare(o1.index, o2.index);
     }
 
     /**
@@ -687,6 +693,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
     // --- serialization -------------------------------------
 
+    @Serial
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException {
         s.defaultReadObject();

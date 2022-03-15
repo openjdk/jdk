@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,15 +211,20 @@ public class RepaintManager
             }
         });
 
-        volatileImageBufferEnabled = "true".equals(AccessController.
+        @SuppressWarnings("removal")
+        var t1 = "true".equals(AccessController.
                 doPrivileged(new GetPropertyAction(
                 "swing.volatileImageBufferEnabled", "true")));
+        volatileImageBufferEnabled = t1;
         boolean headless = GraphicsEnvironment.isHeadless();
         if (volatileImageBufferEnabled && headless) {
             volatileImageBufferEnabled = false;
         }
-        nativeDoubleBuffering = "true".equals(AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        var t2 = "true".equals(AccessController.doPrivileged(
                     new GetPropertyAction("awt.nativeDoubleBuffering")));
+        nativeDoubleBuffering = t2;
+        @SuppressWarnings("removal")
         String bs = AccessController.doPrivileged(
                           new GetPropertyAction("swing.bufferPerWindow"));
         if (headless) {
@@ -234,8 +239,10 @@ public class RepaintManager
         else {
             BUFFER_STRATEGY_TYPE = BUFFER_STRATEGY_SPECIFIED_OFF;
         }
-        HANDLE_TOP_LEVEL_PAINT = "true".equals(AccessController.doPrivileged(
+        @SuppressWarnings("removal")
+        var t3 = "true".equals(AccessController.doPrivileged(
                new GetPropertyAction("swing.handleTopLevelPaint", "true")));
+        HANDLE_TOP_LEVEL_PAINT = t3;
         GraphicsEnvironment ge = GraphicsEnvironment.
                 getLocalGraphicsEnvironment();
         if (ge instanceof SunGraphicsEnvironment) {
@@ -420,7 +427,7 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -538,12 +545,13 @@ public class RepaintManager
      * <a href="../../java/applet/package-summary.html"> java.applet package
      * documentation</a> for further information.
      */
-    @Deprecated(since = "9")
+    @Deprecated(since = "9", forRemoval = true)
+    @SuppressWarnings("removal")
     public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
         addDirtyRegion0(applet, x, y, w, h);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 
@@ -605,7 +613,9 @@ public class RepaintManager
             }
             runnableList.add(new Runnable() {
                 public void run() {
+                    @SuppressWarnings("removal")
                     AccessControlContext stack = AccessController.getContext();
+                    @SuppressWarnings("removal")
                     AccessControlContext acc =
                         AWTAccessor.getComponentAccessor().getAccessControlContext(c);
                     javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
@@ -736,7 +746,9 @@ public class RepaintManager
         int n = ic.size();
         for(int i = 0; i < n; i++) {
             final Component c = ic.get(i);
+            @SuppressWarnings("removal")
             AccessControlContext stack = AccessController.getContext();
+            @SuppressWarnings("removal")
             AccessControlContext acc =
                 AWTAccessor.getComponentAccessor().getAccessControlContext(c);
             javaSecurityAccess.doIntersectionPrivilege(
@@ -787,8 +799,7 @@ public class RepaintManager
 
         Set<Window> windows = new HashSet<Window>();
         Set<Component> dirtyComps = dirtyComponents.keySet();
-        for (Iterator<Component> it = dirtyComps.iterator(); it.hasNext();) {
-            Component dirty = it.next();
+        for (Component dirty : dirtyComps) {
             Window window = dirty instanceof Window ?
                 (Window)dirty :
                 SwingUtilities.getWindowAncestor(dirty);
@@ -842,7 +853,9 @@ public class RepaintManager
             for (int j=0 ; j < count.get(); j++) {
                 final int i = j;
                 final Component dirtyComponent = roots.get(j);
+                @SuppressWarnings("removal")
                 AccessControlContext stack = AccessController.getContext();
+                @SuppressWarnings("removal")
                 AccessControlContext acc =
                     AWTAccessor.getComponentAccessor().getAccessControlContext(dirtyComponent);
                 javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Void>() {
@@ -915,7 +928,7 @@ public class RepaintManager
         for (int i = roots.size() - 1; i >= index; i--) {
             Component c = roots.get(i);
             for(;;) {
-                if (c == root || c == null || !(c instanceof JComponent)) {
+                if (c == root || !(c instanceof JComponent)) {
                     break;
                 }
                 c = c.getParent();
@@ -953,7 +966,7 @@ public class RepaintManager
         tmp.setBounds(dirtyComponents.get(dirtyComponent));
 
         // System.out.println("Collect dirty component for bound " + tmp +
-        //                                   "component bounds is " + cBounds);;
+        //                                   "component bounds is " + cBounds);
         SwingUtilities.computeIntersection(0,0,w,h,tmp);
 
         if (tmp.isEmpty()) {
@@ -1799,7 +1812,7 @@ public class RepaintManager
         }
     }
 
-    private class DoubleBufferInfo {
+    private static class DoubleBufferInfo {
         public Image image;
         public Dimension size;
         public boolean needsReset = false;

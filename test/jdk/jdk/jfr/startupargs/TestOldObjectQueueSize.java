@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -36,15 +34,15 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @summary Test -XX:FlightRecorderOptions=old-object-queue-size
+ * @summary Test -XX:FlightRecorderOptions:old-object-queue-size
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib
  * @key jfr
  *
- * @run main/othervm -XX:TLABSize=2k -XX:FlightRecorderOptions=old-object-queue-size=0 jdk.jfr.startupargs.TestOldObjectQueueSize off
- * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:FlightRecorderOptions=old-object-queue-size=10000 jdk.jfr.startupargs.TestOldObjectQueueSize many
- * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:FlightRecorderOptions=old-object-queue-size=1000000 jdk.jfr.startupargs.TestOldObjectQueueSize many
+ * @run main/othervm -XX:TLABSize=2k -XX:FlightRecorderOptions:old-object-queue-size=0 jdk.jfr.startupargs.TestOldObjectQueueSize off
+ * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:FlightRecorderOptions:old-object-queue-size=10000 jdk.jfr.startupargs.TestOldObjectQueueSize many
+ * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:FlightRecorderOptions:old-object-queue-size=1000000 jdk.jfr.startupargs.TestOldObjectQueueSize many
  */
 public class TestOldObjectQueueSize {
 

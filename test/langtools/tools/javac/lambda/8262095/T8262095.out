@@ -1,0 +1,2 @@
+T8262095.java:17:42: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.assignment.exists: U, (compiler.misc.inconvertible.types: java.util.function.Function<java.util.Map.Entry<java.lang.Long,java.util.List<java.lang.String>>,java.lang.Integer>, java.util.function.Function<? super java.util.Map.Entry<K,java.lang.Object>,? extends java.lang.Integer>))
+1 error

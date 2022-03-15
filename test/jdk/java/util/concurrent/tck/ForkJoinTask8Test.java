@@ -118,7 +118,7 @@ public class ForkJoinTask8Test extends JSR166TestCase {
         }
     }
 
-    void checkNotDone(ForkJoinTask a) {
+    void checkNotDone(ForkJoinTask<?> a) {
         assertFalse(a.isDone());
         assertFalse(a.isCompletedNormally());
         assertFalse(a.isCompletedAbnormally());
@@ -179,7 +179,7 @@ public class ForkJoinTask8Test extends JSR166TestCase {
         assertSame(expectedValue, v2);
     }
 
-    void checkCompletedAbnormally(ForkJoinTask a, Throwable t) {
+    void checkCompletedAbnormally(ForkJoinTask<?> a, Throwable t) {
         assertTrue(a.isDone());
         assertFalse(a.isCancelled());
         assertFalse(a.isCompletedNormally());
@@ -950,7 +950,7 @@ public class ForkJoinTask8Test extends JSR166TestCase {
             protected void realCompute() {
                 AsyncFib f = new AsyncFib(8);
                 FailingAsyncFib g = new FailingAsyncFib(9);
-                ForkJoinTask[] tasks = { f, g };
+                ForkJoinTask<?>[] tasks = { f, g };
                 shuffle(tasks);
                 try {
                     invokeAll(tasks[0], tasks[1]);
@@ -977,7 +977,7 @@ public class ForkJoinTask8Test extends JSR166TestCase {
                 AsyncFib f = new AsyncFib(8);
                 FailingAsyncFib g = new FailingAsyncFib(9);
                 AsyncFib h = new AsyncFib(7);
-                ForkJoinTask[] tasks = { f, g, h };
+                ForkJoinTask<?>[] tasks = { f, g, h };
                 shuffle(tasks);
                 try {
                     invokeAll(tasks[0], tasks[1], tasks[2]);
@@ -1004,7 +1004,7 @@ public class ForkJoinTask8Test extends JSR166TestCase {
                 FailingAsyncFib f = new FailingAsyncFib(8);
                 AsyncFib g = new AsyncFib(9);
                 AsyncFib h = new AsyncFib(7);
-                ForkJoinTask[] tasks = { f, g, h };
+                ForkJoinTask<?>[] tasks = { f, g, h };
                 shuffle(tasks);
                 try {
                     invokeAll(Arrays.asList(tasks));
@@ -1199,9 +1199,9 @@ public class ForkJoinTask8Test extends JSR166TestCase {
      */
     public void testPollSubmission() {
         final CountDownLatch done = new CountDownLatch(1);
-        final ForkJoinTask a = ForkJoinTask.adapt(awaiter(done));
-        final ForkJoinTask b = ForkJoinTask.adapt(awaiter(done));
-        final ForkJoinTask c = ForkJoinTask.adapt(awaiter(done));
+        final ForkJoinTask<?> a = ForkJoinTask.adapt(awaiter(done));
+        final ForkJoinTask<?> b = ForkJoinTask.adapt(awaiter(done));
+        final ForkJoinTask<?> c = ForkJoinTask.adapt(awaiter(done));
         final ForkJoinPool p = singletonPool();
         try (PoolCleaner cleaner = cleaner(p, done)) {
             Thread external = new Thread(new CheckedRunnable() {
@@ -1220,7 +1220,7 @@ public class ForkJoinTask8Test extends JSR166TestCase {
                     }
                     assertTrue(p.hasQueuedSubmissions());
                     assertTrue(Thread.currentThread() instanceof ForkJoinWorkerThread);
-                    ForkJoinTask r = ForkJoinTask.pollSubmission();
+                    ForkJoinTask<?> r = ForkJoinTask.pollSubmission();
                     assertTrue(r == a || r == b || r == c);
                     assertFalse(r.isDone());
                 }};

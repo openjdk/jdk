@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
+import java.nio.file.Path;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
@@ -77,6 +78,9 @@ public abstract class DocFileFactory {
 
     /** Create a DocFile for a file that will be opened for reading. */
     abstract DocFile createFileForInput(String file);
+
+    /** Create a DocFile for a file that will be opened for reading. */
+    abstract DocFile createFileForInput(Path file);
 
     /** Create a DocFile for a file that will be opened for writing. */
     abstract DocFile createFileForOutput(DocPath path);

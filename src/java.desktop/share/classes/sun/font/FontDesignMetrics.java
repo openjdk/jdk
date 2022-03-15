@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,7 +104,11 @@ import sun.java2d.DisposerRecord;
 
 public final class FontDesignMetrics extends FontMetrics {
 
-    static final long serialVersionUID = 4480069578560887773L;
+    /**
+     * Use serialVersionUID from JDK 1.3 for interoperability.
+     */
+    @Serial
+    private static final long serialVersionUID = 4480069578560887773L;
 
     private static final float UNKNOWN_WIDTH = -1;
     private static final int CURRENT_VERSION = 1;
@@ -183,16 +188,10 @@ public final class FontDesignMetrics extends FontMetrics {
         /* It is possible that since this reference object has been
          * enqueued, that a new metrics has been put into the table
          * for the same key value. So we'll test to see if the table maps
-         * to THIS reference. If its a new one, we'll leave it alone.
-         * It is possible that a new entry comes in after our test, but
-         * it is unlikely and if this were a problem we would need to
-         * synchronize all 'put' and 'remove' accesses to the cache which
-         * I would prefer not to do.
+         * to THIS reference. If it's a new one, we'll leave it alone.
          */
         public void dispose() {
-            if (metricsCache.get(key) == this) {
-                metricsCache.remove(key);
-            }
+            metricsCache.remove(key, this);
         }
     }
 
@@ -371,6 +370,7 @@ public final class FontDesignMetrics extends FontMetrics {
         }
     }
 
+    @Serial
     private void readObject(ObjectInputStream in) throws IOException,
                                                   ClassNotFoundException {
 
@@ -396,6 +396,7 @@ public final class FontDesignMetrics extends FontMetrics {
         initAdvCache();
     }
 
+    @Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
 
         cache = new int[256];
@@ -588,7 +589,7 @@ public final class FontDesignMetrics extends FontMetrics {
         // if the calculations in any other methods change this needs
         // to be changed too.
         // the 0.95 value used here and in the other methods allows some
-        // tiny fraction of leeway before rouding up. A higher value (0.99)
+        // tiny fraction of leeway before rounding up. A higher value (0.99)
         // caused some excessive rounding up.
         return
             (int)(roundingUpValue + descent + leading) -

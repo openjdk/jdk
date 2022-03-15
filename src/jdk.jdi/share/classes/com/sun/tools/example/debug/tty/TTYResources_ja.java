@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
         {"dbgtrace command value must be an integer:", "dbgtrace\u30B3\u30DE\u30F3\u30C9\u5024\u306F\u6574\u6570\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059: {0}"},
         {"Deferring.", "\u9045\u5EF6\u3057\u305F{0}\u3002\n\u30AF\u30E9\u30B9\u304C\u30ED\u30FC\u30C9\u3055\u308C\u305F\u5F8C\u306B\u8A2D\u5B9A\u3055\u308C\u307E\u3059\u3002"},
         {"End of stack.", "\u30B9\u30BF\u30C3\u30AF\u306E\u7D42\u308F\u308A\u3002"},
+        {"EOF", "EOF"},
         {"Error popping frame", "\u30D5\u30EC\u30FC\u30E0\u306E\u30DD\u30C3\u30D7\u4E2D\u306E\u30A8\u30E9\u30FC - {0}"},
         {"Error reading file", "''{0}''\u306E\u8AAD\u53D6\u308A\u30A8\u30E9\u30FC - {1}"},
         {"Error redefining class to file", "{0}\u3092{1}\u306B\u518D\u5B9A\u7FA9\u4E2D\u306E\u30A8\u30E9\u30FC - {2}"},
@@ -252,6 +253,9 @@ public class TTYResources_ja extends java.util.ListResourceBundle {
          "\u4F7F\u7528\u65B9\u6CD5: stop [go|thread] [<thread_id>] <at|in> <location>\n  \"go\"\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u308B\u5834\u5408\u306F\u3001\u505C\u6B62\u5F8C\u3059\u3050\u306B\u518D\u958B\u3057\u307E\u3059\n  \"thread\"\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u308B\u5834\u5408\u306F\u3001\u505C\u6B62\u3057\u305F\u30B9\u30EC\u30C3\u30C9\u306E\u307F\u4E2D\u65AD\u3057\u307E\u3059\n  \"go\"\u3082\"thread\"\u3082\u6307\u5B9A\u3055\u308C\u3066\u3044\u306A\u3044\u5834\u5408\u306F\u3001\u3059\u3079\u3066\u306E\u30B9\u30EC\u30C3\u30C9\u3092\u4E2D\u65AD\u3057\u307E\u3059\n  \u6574\u6570\u306E<thread_id>\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u308B\u5834\u5408\u306F\u3001\u6307\u5B9A\u3055\u308C\u305F\u30B9\u30EC\u30C3\u30C9\u3067\u306E\u307F\u505C\u6B62\u3057\u307E\u3059\n  \"at\"\u3068\"in\"\u306F\u540C\u3058\u610F\u5473\u3092\u6301\u3061\u307E\u3059\n  <location>\u306F\u884C\u756A\u53F7\u307E\u305F\u306F\u30E1\u30BD\u30C3\u30C9\u306B\u3059\u308B\u3053\u3068\u304C\u3067\u304D\u307E\u3059:\n    <class_id>:<line_number>\n    <class_id>.<method>[(argument_type,...)]"
         },
         {"Removed:", "{0}\u306F\u524A\u9664\u3055\u308C\u307E\u3057\u305F"},
+        {"repeat is on", "Repeat is on"},
+        {"repeat is off", "Repeat is off"},
+        {"repeat usage", "Usage: repeat <on|off>"},
         {"Requested stack frame is no longer active:", "\u30EA\u30AF\u30A8\u30B9\u30C8\u3055\u308C\u305F\u30B9\u30BF\u30C3\u30AF\u30FB\u30D5\u30EC\u30FC\u30E0\u306F\u73FE\u5728\u30A2\u30AF\u30C6\u30A3\u30D6\u3067\u306F\u3042\u308A\u307E\u305B\u3093: {0,number,integer}"},
         {"run <args> command is valid only with launched VMs", "'run <args>'\u30B3\u30DE\u30F3\u30C9\u306F\u8D77\u52D5\u6E08\u306EVM\u3067\u306E\u307F\u6709\u52B9\u3067\u3059"},
         {"run", "{0}\u306E\u5B9F\u884C"},

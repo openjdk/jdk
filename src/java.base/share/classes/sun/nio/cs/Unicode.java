@@ -86,7 +86,6 @@ abstract class Unicode extends Charset
                 || (cs.name().equals("ISO-2022-KR"))
                 || (cs.name().equals("x-ISO-2022-CN-CNS"))
                 || (cs.name().equals("x-ISO-2022-CN-GB"))
-                || (cs.name().equals("Big5-HKSCS"))
                 || (cs.name().equals("x-Johab"))
                 || (cs.name().equals("Shift_JIS")));
     }

@@ -38,7 +38,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * @test
  * @bug 6451633
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.sax.Bug6451633
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.sax.Bug6451633
  * @run testng/othervm transform.sax.Bug6451633
  * @summary Test TransformerHandler ignores empty text node.
  */

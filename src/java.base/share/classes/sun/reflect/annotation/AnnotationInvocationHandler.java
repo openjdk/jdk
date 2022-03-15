@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (!type.isAnnotation() ||
             superInterfaces.length != 1 ||
             superInterfaces[0] != java.lang.annotation.Annotation.class)
-            throw new AnnotationFormatError("Attempt to create proxy for a non-annotation type.");
+            throw new AnnotationFormatError("Attempt to create proxy for a non-annotation type: " +
+                                            type.getName());
         this.type = type;
         this.memberValues = memberValues;
     }
@@ -144,7 +145,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private String toStringImpl() {
         StringBuilder result = new StringBuilder(128);
         result.append('@');
-        result.append(type.getName());
+        // Guard against null canonical name; shouldn't happen
+        result.append(Objects.toString(type.getCanonicalName(),
+                                       "<no canonical name>"));
         result.append('(');
         boolean firstMember = true;
         Set<Map.Entry<String, Object>> entries = memberValues.entrySet();
@@ -188,6 +191,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 return  toSourceString((long) value);
             else if (type == Byte.class)
                 return  toSourceString((byte) value);
+            else if (value instanceof Enum<?> v)
+                // Predicate above covers enum constants, including
+                // those with specialized class bodies.
+                return toSourceString(v);
             else
                 return value.toString();
         } else {
@@ -218,6 +225,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 stringStream =
                     Arrays.stream((String[])value).
                     map(AnnotationInvocationHandler::toSourceString);
+            else if (type.getComponentType().isEnum())
+                stringStream =
+                    Arrays.stream((Enum<?>[])value).
+                    map(AnnotationInvocationHandler::toSourceString);
             else
                 stringStream = Arrays.stream((Object[])value).map(Objects::toString);
 
@@ -230,15 +241,9 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * string representation of an annotation.
      */
     private static String toSourceString(Class<?> clazz) {
-        Class<?> finalComponent = clazz;
-        StringBuilder arrayBrackets = new StringBuilder();
-
-        while(finalComponent.isArray()) {
-            finalComponent = finalComponent.getComponentType();
-            arrayBrackets.append("[]");
-        }
-
-        return finalComponent.getName() + arrayBrackets.toString() + ".class";
+        // Guard against null canonical name; shouldn't happen
+        return Objects.toString(clazz.getCanonicalName(),
+                                "<no canonical name>") + ".class";
     }
 
     private static String toSourceString(float f) {
@@ -306,6 +311,10 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         return String.valueOf(ell) + "L";
     }
 
+    private static String toSourceString(Enum<?> enumConstant) {
+        return enumConstant.name();
+    }
+
     /**
      * Return a string suitable for use in the string representation
      * of an annotation.
@@ -370,6 +379,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (!type.isInstance(o))
             return false;
         for (Method memberMethod : getMemberMethods()) {
+            if (memberMethod.isSynthetic())
+                continue;
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
             Object hisValue = null;
@@ -464,6 +475,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         return value;
     }
 
+    @SuppressWarnings("removal")
     private Method[] computeMemberMethods() {
         return AccessController.doPrivileged(
             new PrivilegedAction<Method[]>() {
@@ -490,7 +502,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
          * 9.6.1. Annotation Type Elements
          */
         boolean valid = true;
+        Method currentMethod = null;
         for(Method method : memberMethods) {
+            currentMethod = method;
+            int modifiers = method.getModifiers();
+            // Skip over methods that may be a static initializer or
+            // similar construct. A static initializer may be used for
+            // purposes such as initializing a lambda stored in an
+            // interface field.
+            if (method.isSynthetic() &&
+                (modifiers & (Modifier.STATIC | Modifier.PRIVATE)) != 0 &&
+                method.getParameterCount() == 0) {
+                continue;
+            }
+
             /*
              * "By virtue of the AnnotationTypeElementDeclaration
              * production, a method declaration in an annotation type
@@ -501,7 +526,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
              * production, a method declaration in an annotation type
              * declaration cannot be default or static."
              */
-            if (method.getModifiers() != (Modifier.PUBLIC | Modifier.ABSTRACT) ||
+            if (modifiers != (Modifier.PUBLIC | Modifier.ABSTRACT) ||
                 method.isDefault() ||
                 method.getParameterCount() != 0 ||
                 method.getExceptionTypes().length != 0) {
@@ -562,7 +587,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (valid)
             return;
         else
-            throw new AnnotationFormatError("Malformed method on an annotation type");
+            throw new AnnotationFormatError("Malformed method on an annotation type: " +
+                                            currentMethod.toString());
     }
 
     /**

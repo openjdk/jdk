@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ public class TestLambdaFeature extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 """
-                    <div class="col-first even-row-color method-summary-table-tab2 method-summary-ta\
-                    ble-tab5 method-summary-table"><code>default void</code></div>""",
+                    <div class="col-first even-row-color method-summary-table method-summary-table-t\
+                    ab2 method-summary-table-tab5"><code>default void</code></div>""",
                 """
                     <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span \
                     class="return-type">void</span>&nbsp;<span class="element-name">defaultMethod</span>()</\

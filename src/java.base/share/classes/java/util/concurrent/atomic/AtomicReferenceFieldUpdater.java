@@ -40,7 +40,6 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import jdk.internal.misc.Unsafe;
@@ -62,7 +61,7 @@ import java.lang.invoke.VarHandle;
  *
  *   private static final AtomicReferenceFieldUpdater<Node, Node> leftUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
- *   private static AtomicReferenceFieldUpdater<Node, Node> rightUpdater =
+ *   private static final AtomicReferenceFieldUpdater<Node, Node> rightUpdater =
  *     AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
  *
  *   Node getLeft() { return left; }
@@ -321,6 +320,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
          * screenings fail.
          */
 
+        @SuppressWarnings("removal")
         AtomicReferenceFieldUpdaterImpl(final Class<T> tclass,
                                         final Class<V> vclass,
                                         final String fieldName,
@@ -397,7 +397,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
          */
         private static boolean isSamePackage(Class<?> class1, Class<?> class2) {
             return class1.getClassLoader() == class2.getClassLoader()
-                   && Objects.equals(class1.getPackageName(), class2.getPackageName());
+                   && class1.getPackageName() == class2.getPackageName();
         }
 
         /**

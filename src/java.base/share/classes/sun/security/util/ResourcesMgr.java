@@ -34,7 +34,7 @@ import jdk.internal.misc.VM;
  */
 public class ResourcesMgr {
     // intended for java.security, javax.security and sun.security resources
-    private final static Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
+    private static final Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
 
     public static String getString(String s) {
         return getBundle("sun.security.util.Resources").getString(s);

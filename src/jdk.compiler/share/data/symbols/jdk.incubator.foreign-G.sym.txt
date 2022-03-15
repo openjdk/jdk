@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -264,12 +264,12 @@ header extends java/lang/Object implements jdk/incubator/foreign/Addressable,jav
 innerclass innerClass java/nio/channels/FileChannel$MapMode outerClass java/nio/channels/FileChannel innerClassName MapMode flags 9
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -field name ACQUIRE descriptor I
-field name SHARE descriptor I constantValue 8 flags 19
 -method name baseAddress descriptor ()Ljdk/incubator/foreign/MemoryAddress;
 -method name spliterator descriptor (Ljdk/incubator/foreign/MemorySegment;Ljdk/incubator/foreign/SequenceLayout;)Ljava/util/Spliterator;
 -method name withOwnerThread descriptor (Ljava/lang/Thread;)Ljdk/incubator/foreign/MemorySegment;
 -method name mapFromPath descriptor (Ljava/nio/file/Path;JJLjava/nio/channels/FileChannel$MapMode;)Ljdk/incubator/foreign/MappedMemorySegment;
 -method name ofNativeRestricted descriptor (Ljdk/incubator/foreign/MemoryAddress;JLjava/lang/Thread;Ljava/lang/Runnable;Ljava/lang/Object;)Ljdk/incubator/foreign/MemorySegment;
+field name SHARE descriptor I constantValue 8 flags 19
 method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress; flags 401
 method name spliterator descriptor (Ljdk/incubator/foreign/SequenceLayout;)Ljava/util/Spliterator; flags 401 signature (Ljdk/incubator/foreign/SequenceLayout;)Ljava/util/Spliterator<Ljdk/incubator/foreign/MemorySegment;>;
 method name asSlice descriptor (Ljdk/incubator/foreign/MemoryAddress;J)Ljdk/incubator/foreign/MemorySegment; flags 1

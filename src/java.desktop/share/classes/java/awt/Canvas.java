@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.image.BufferStrategy;
 import java.awt.peer.CanvasPeer;
-import javax.accessibility.*;
+import java.io.Serial;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 /**
  * A {@code Canvas} component represents a blank rectangular
@@ -46,9 +51,10 @@ public class Canvas extends Component implements Accessible {
     private static final String base = "canvas";
     private static int nameCounter = 0;
 
-    /*
-     * JDK 1.1 serialVersionUID
+    /**
+     * Use serialVersionUID from JDK 1.1 for interoperability.
      */
+     @Serial
      private static final long serialVersionUID = -2284879212465893870L;
 
     /**
@@ -238,6 +244,10 @@ public class Canvas extends Component implements Accessible {
      */
     protected class AccessibleAWTCanvas extends AccessibleAWTComponent
     {
+        /**
+         * Use serialVersionUID from JDK 1.3 for interoperability.
+         */
+        @Serial
         private static final long serialVersionUID = -6325592262103146699L;
 
         /**

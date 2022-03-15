@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,10 +240,11 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *
  * <p>
  * A dynamic module can read the modules of all of the superinterfaces of a proxy
- * class and the modules of the types referenced by all public method signatures
- * of a proxy class.  If a superinterface or a referenced type, say {@code T},
- * is in a non-exported package, the {@linkplain Module module} of {@code T} is
- * updated to export the package of {@code T} to the dynamic module.
+ * class and the modules of the classes and interfaces referenced by
+ * all public method signatures of a proxy class.  If a superinterface or
+ * a referenced class or interface, say {@code T}, is in a non-exported package,
+ * the {@linkplain Module module} of {@code T} is updated to export the
+ * package of {@code T} to the dynamic module.
  *
  * <h3>Methods Duplicated in Multiple Proxy Interfaces</h3>
  *
@@ -389,6 +390,7 @@ public class Proxy implements java.io.Serializable {
                                          Class<?>... interfaces)
         throws IllegalArgumentException
     {
+        @SuppressWarnings("removal")
         Class<?> caller = System.getSecurityManager() == null
                               ? null
                               : Reflection.getCallerClass();
@@ -462,6 +464,7 @@ public class Proxy implements java.io.Serializable {
                                          ClassLoader loader,
                                          Class<?> ... interfaces)
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader ccl = caller.getClassLoader();
@@ -524,7 +527,7 @@ public class Proxy implements java.io.Serializable {
             if (proxyPkg == null) {
                 // all proxy interfaces are public and exported
                 if (!m.isNamed())
-                    throw new InternalError("ununamed module: " + m);
+                    throw new InternalError("unnamed module: " + m);
                 proxyPkg = nonExported ? PROXY_PACKAGE_PREFIX + "." + m.getName()
                                        : m.getName();
             } else if (proxyPkg.isEmpty() && m.isNamed()) {
@@ -662,6 +665,7 @@ public class Proxy implements java.io.Serializable {
          * Must call the checkProxyAccess method to perform permission checks
          * before calling this.
          */
+        @SuppressWarnings("removal")
         Constructor<?> build() {
             Class<?> proxyClass = defineProxyClass(module, interfaces);
             assert !module.isNamed() || module.isOpen(proxyClass.getPackageName(), Proxy.class.getModule());
@@ -704,6 +708,10 @@ public class Proxy implements java.io.Serializable {
 
                 if (intf.isHidden()) {
                     throw new IllegalArgumentException(intf.getName() + " is a hidden interface");
+                }
+
+                if (intf.isSealed()) {
+                    throw new IllegalArgumentException(intf.getName() + " is a sealed interface");
                 }
 
                 /*
@@ -926,7 +934,8 @@ public class Proxy implements java.io.Serializable {
      * if any of the following restrictions is violated:</a>
      * <ul>
      * <li>All of {@code Class} objects in the given {@code interfaces} array
-     * must represent {@linkplain Class#isHidden() non-hidden} interfaces,
+     * must represent {@linkplain Class#isHidden() non-hidden} and
+     * {@linkplain Class#isSealed() non-sealed} interfaces,
      * not classes or primitive types.
      *
      * <li>No two elements in the {@code interfaces} array may
@@ -1017,6 +1026,7 @@ public class Proxy implements java.io.Serializable {
                                           InvocationHandler h) {
         Objects.requireNonNull(h);
 
+        @SuppressWarnings("removal")
         final Class<?> caller = System.getSecurityManager() == null
                                     ? null
                                     : Reflection.getCallerClass();
@@ -1054,6 +1064,7 @@ public class Proxy implements java.io.Serializable {
     }
 
     private static void checkNewProxyPermission(Class<?> caller, Class<?> proxyClass) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             if (ReflectUtil.isNonPublicProxyClass(proxyClass)) {
@@ -1075,6 +1086,7 @@ public class Proxy implements java.io.Serializable {
     /**
      * Returns the class loader for the given module.
      */
+    @SuppressWarnings("removal")
     private static ClassLoader getLoader(Module m) {
         PrivilegedAction<ClassLoader> pa = m::getClassLoader;
         return AccessController.doPrivileged(pa);
@@ -1112,6 +1124,7 @@ public class Proxy implements java.io.Serializable {
      *          s.checkPackageAccess()} denies access to the invocation
      *          handler's class.
      */
+    @SuppressWarnings("removal")
     @CallerSensitive
     public static InvocationHandler getInvocationHandler(Object proxy)
         throws IllegalArgumentException
@@ -1285,6 +1298,7 @@ public class Proxy implements java.io.Serializable {
      *
      * @return a lookup for proxy class of this proxy instance
      */
+    @SuppressWarnings("removal")
     private static MethodHandles.Lookup proxyClassLookup(MethodHandles.Lookup caller, Class<?> proxyClass) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
@@ -1298,6 +1312,46 @@ public class Proxy implements java.io.Serializable {
                 }
             }
         });
+    }
+
+    /*
+     * Invoke the default method of the given proxy with an explicit caller class.
+     *
+     * @throws IllegalAccessException if the proxy interface is inaccessible to the caller
+     *         if caller is non-null
+     */
+    static Object invokeDefault(Object proxy, Method method, Object[] args, Class<?> caller)
+            throws Throwable {
+        // verify that the object is actually a proxy instance
+        if (!Proxy.isProxyClass(proxy.getClass())) {
+            throw new IllegalArgumentException("'proxy' is not a proxy instance");
+        }
+        if (!method.isDefault()) {
+            throw new IllegalArgumentException("\"" + method + "\" is not a default method");
+        }
+        @SuppressWarnings("unchecked")
+        Class<? extends Proxy> proxyClass = (Class<? extends Proxy>)proxy.getClass();
+
+        // skip access check if caller is null
+        if (caller != null) {
+            Class<?> intf = method.getDeclaringClass();
+            // access check on the default method
+            method.checkAccess(caller, intf, proxyClass, method.getModifiers());
+        }
+
+        MethodHandle mh = Proxy.defaultMethodHandle(proxyClass, method);
+        // invoke the super method
+        try {
+            // the args array can be null if the number of formal parameters required by
+            // the method is zero (consistent with Method::invoke)
+            Object[] params = args != null ? args : Proxy.EMPTY_ARGS;
+            return mh.invokeExact(proxy, params);
+        } catch (ClassCastException | NullPointerException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        } catch (Proxy.InvocationException e) {
+            // unwrap and throw the exception thrown by the default method
+            throw e.getCause();
+        }
     }
 
     /**

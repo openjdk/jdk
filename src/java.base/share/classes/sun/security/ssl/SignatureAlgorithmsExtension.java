@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import javax.net.ssl.SSLProtocolException;
@@ -280,6 +279,10 @@ final class SignatureAlgorithmsExtension {
                             shc.sslConfig,
                             shc.algorithmConstraints, shc.negotiatedProtocol,
                             spec.signatureSchemes);
+            if (sss == null || sss.isEmpty()) {
+                throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
             shc.peerRequestedSignatureSchemes = sss;
 
             // If no "signature_algorithms_cert" extension is present, then
@@ -331,7 +334,7 @@ final class SignatureAlgorithmsExtension {
             if (shc.negotiatedProtocol.useTLS13PlusSpec()) {
                 throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
                     "No mandatory signature_algorithms extension in the " +
-                    "received CertificateRequest handshake message");
+                    "received ClientHello handshake message");
             }
         }
     }
@@ -462,16 +465,10 @@ final class SignatureAlgorithmsExtension {
             // Parse the extension.
             SignatureSchemesSpec spec = new SignatureSchemesSpec(chc, buffer);
 
-            List<SignatureScheme> knownSignatureSchemes = new LinkedList<>();
-            for (int id : spec.signatureSchemes) {
-                SignatureScheme ss = SignatureScheme.valueOf(id);
-                if (ss != null) {
-                    knownSignatureSchemes.add(ss);
-                }
-            }
-
             // Update the context.
-            // chc.peerRequestedSignatureSchemes = knownSignatureSchemes;
+            //
+            // Note: the chc.peerRequestedSignatureSchemes will be updated
+            // in the CRSignatureSchemesUpdate.consume() implementation.
             chc.handshakeExtensions.put(
                     SSLExtension.CR_SIGNATURE_ALGORITHMS, spec);
 
@@ -510,6 +507,10 @@ final class SignatureAlgorithmsExtension {
                             chc.sslConfig,
                             chc.algorithmConstraints, chc.negotiatedProtocol,
                             spec.signatureSchemes);
+            if (sss == null || sss.isEmpty()) {
+                throw chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "No supported signature algorithm");
+            }
             chc.peerRequestedSignatureSchemes = sss;
 
             // If no "signature_algorithms_cert" extension is present, then

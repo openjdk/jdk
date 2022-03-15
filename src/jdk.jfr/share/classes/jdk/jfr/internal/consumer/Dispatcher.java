@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,8 @@ import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
 
 final class Dispatcher {
 
-    public final static RecordedEvent FLUSH_MARKER = JdkJfrConsumer.instance().newRecordedEvent(null, null, 0L, 0L);
-
-    final static class EventDispatcher {
-        private final static EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
+    static final class EventDispatcher {
+        private static final EventDispatcher[] NO_DISPATCHERS = new EventDispatcher[0];
 
         private final String eventName;
         private final Consumer<RecordedEvent> action;
@@ -87,7 +85,7 @@ final class Dispatcher {
         this.errorActions = c.errorActions.toArray(new Consumer[0]);
         this.metadataActions = c.metadataActions.toArray(new Consumer[0]);
         this.dispatchers = c.eventActions.toArray(new EventDispatcher[0]);
-        this.parserConfiguration = new ParserConfiguration(0, Long.MAX_VALUE, c.reuse, c.ordered, buildFilter(dispatchers));
+        this.parserConfiguration = new ParserConfiguration(0, Long.MAX_VALUE, c.reuse, c.ordered, buildFilter(dispatchers), null);
         this.startTime = c.startTime;
         this.endTime = c.endTime;
         this.startNanos = c.startNanos;
@@ -162,6 +160,7 @@ final class Dispatcher {
                 dispatcherLookup.put(type.getId(), dispatchers);
             }
             cacheDispatchers = dispatchers;
+            cacheEventType = type;
         }
         // Expected behavior if exception occurs in onEvent:
         //

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,14 +94,14 @@ class ClassToCheck {
     static Class     X0S, X1S[]={X0S}, X2S[][]={X1S};
     static Object    O0S, O1S[]={O0S}, O2S[][]={O1S};
 
-    final     Long LF0 = new Long(1), LF1[]={LF0}, LF2[][]={LF1};
+    final     Long LF0 = Long.valueOf(1), LF1[]={LF0}, LF2[][]={LF1};
     private   Long LP0,               LP1[]={LP0}, LP2[][]={LP1};
     public    Long LU0,               LU1[]={LU0}, LU2[][]={LU1};
     protected Long LR0,               LR1[]={LR0}, LR2[][]={LR1};
     transient Long LT0,               LT1[]={LT0}, LT2[][]={LT1};
     volatile  Long LV0,               LV1[]={LV0}, LV2[][]={LV1};
 
-    static final     Long LF0S = new Long(1), LF1S[]={LF0S}, LF2S[][]={LF1S};
+    static final     Long LF0S = Long.valueOf(1), LF1S[]={LF0S}, LF2S[][]={LF1S};
     static private   Long LP0S,               LP1S[]={LP0S}, LP2S[][]={LP1S};
     static public    Long LU0S,               LU1S[]={LU0S}, LU2S[][]={LU1S};
     static protected Long LR0S,               LR1S[]={LR0S}, LR2S[][]={LR1S};

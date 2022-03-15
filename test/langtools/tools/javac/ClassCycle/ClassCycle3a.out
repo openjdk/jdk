@@ -1,2 +1,2 @@
-ClassCycle3b.java:28:1: compiler.err.cyclic.inheritance: ClassCycle3b
+ClassCycle3b.java:6:1: compiler.err.cyclic.inheritance: ClassCycle3b
 1 error

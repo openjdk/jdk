@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,7 +362,6 @@ public final class WPrinterJob extends RasterPrinterJob
 
     private java.awt.peer.ComponentPeer dialogOwnerPeer = null;
 
-    private static final float precisionScale = 1000.0f;
     private int graphicsMode;
     private double[] worldTransform = new double[6];
 
@@ -732,8 +731,7 @@ public final class WPrinterJob extends RasterPrinterJob
                      */
                     if (attr.getCategory() == SunAlternateMedia.class) {
                         Media media = (Media)attributes.get(Media.class);
-                        if (media == null ||
-                            !(media instanceof MediaTray)) {
+                        if (!(media instanceof MediaTray)) {
                             attr = ((SunAlternateMedia)attr).getMedia();
                         }
                     }
@@ -957,31 +955,20 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     protected void beginPath() {
-        precisionScaleBegin();
         beginPath(getPrintDC());
     }
 
     protected void endPath() {
         endPath(getPrintDC());
-        precisionScaleEnd();
     }
 
-    protected float precisionScaleUp(float value) {
-        return value * precisionScale;
-    }
-
-    protected float precisionScaleDown(float value) {
-        return value / precisionScale;
-    }
-
-    protected void precisionScaleBegin() {
+    protected void scaleTransform(float scale) {
         graphicsMode = setAdvancedGraphicsMode();
         getWorldTransform(worldTransform);
-        float invPrecisionScale = 1.0f / precisionScale;
-        scale(invPrecisionScale, invPrecisionScale);
+        scale(scale, scale);
     }
 
-    protected void precisionScaleEnd() {
+    protected void restoreTransform() {
         setWorldTransform(worldTransform);
         setGraphicsMode(graphicsMode);
     }
@@ -995,23 +982,20 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     protected void moveTo(float x, float y) {
-        moveTo(getPrintDC(),
-               precisionScaleUp(x), precisionScaleUp(y));
+        moveTo(getPrintDC(), x, y);
     }
 
     protected void lineTo(float x, float y) {
-        lineTo(getPrintDC(),
-               precisionScaleUp(x), precisionScaleUp(y));
+        lineTo(getPrintDC(), x, y);
     }
 
     protected void polyBezierTo(float control1x, float control1y,
                                 float control2x, float control2y,
                                 float endX, float endY) {
 
-        polyBezierTo(getPrintDC(),
-                     precisionScaleUp(control1x), precisionScaleUp(control1y),
-                     precisionScaleUp(control2x), precisionScaleUp(control2y),
-                     precisionScaleUp(endX), precisionScaleUp(endY));
+        polyBezierTo(getPrintDC(),  control1x, control1y,
+                               control2x, control2y,
+                               endX, endY);
     }
 
     /**
@@ -1037,8 +1021,8 @@ public final class WPrinterJob extends RasterPrinterJob
      * be one of the following Windows constants:
      * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
      */
-    private int setGraphicsMode(int mode) {
-        return setGraphicsMode(getPrintDC(), mode);
+    private void setGraphicsMode(int mode) {
+        setGraphicsMode(getPrintDC(), mode);
     }
 
     /**
@@ -1087,9 +1071,9 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the x coordinate of the current pen
      * position in the print device context.
      */
-    protected float getPenX() {
+    protected int getPenX() {
 
-        return precisionScaleDown(getPenX(getPrintDC()));
+        return getPenX(getPrintDC());
     }
 
 
@@ -1097,9 +1081,9 @@ public final class WPrinterJob extends RasterPrinterJob
      * Return the y coordinate of the current pen
      * position in the print device context.
      */
-    protected float getPenY() {
+    protected int getPenY() {
 
-        return precisionScaleDown(getPenY(getPrintDC()));
+        return getPenY(getPrintDC());
     }
 
     /**
@@ -1171,6 +1155,10 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     protected boolean setFont(String family, float size, int style,
                               int rotation, float awScale) {
+
+        if (family.isEmpty()) {
+            return false;
+        }
 
         boolean didSetFont = true;
 
@@ -1544,13 +1532,13 @@ public final class WPrinterJob extends RasterPrinterJob
     protected native int setAdvancedGraphicsMode(long printDC);
 
     /**
-     * Set the GDI graphics mode to {@code GM_ADVANCED}
+     * Set the GDI graphics {@code mode}
      * into the device context {@code printDC}.
      * The {@code mode} should
      * be one of the following Windows constants:
      * {@code GM_COMPATIBLE} or {@code GM_ADVANCED}.
      */
-    protected native int setGraphicsMode(long printDC, int mode);
+    protected native void setGraphicsMode(long printDC, int mode);
 
     /**
      * Scale the GDI World Transform
@@ -1921,6 +1909,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
     private boolean getPrintToFileEnabled() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             FilePermission printToFilePermission =
@@ -2307,7 +2296,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
 @SuppressWarnings("serial") // JDK-implementation class
-class PrintToFileErrorDialog extends Dialog implements ActionListener{
+static class PrintToFileErrorDialog extends Dialog implements ActionListener {
     public PrintToFileErrorDialog(Frame parent, String title, String message,
                            String buttonText) {
         super(parent, title, true);

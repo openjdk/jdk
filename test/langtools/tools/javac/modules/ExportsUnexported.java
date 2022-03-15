@@ -53,27 +53,37 @@ public class ExportsUnexported extends ModuleTestBase {
 
     @Test
     public void testLocations(Path base) throws Exception {
-        String warningsTest = "package api;\n" +
-                      "import impl.impl.*;\n" +
-                      "@impl.impl^.DocAnn\n" +
-                      "public abstract class Api<T extends impl.impl^.Cls&impl.impl^.Intf> extends impl.impl^.Cls implements impl.impl^.Intf, impl.impl^.NonDocAnn, impl.impl^.DocAnn {\n" +
-                      "    public static <E extends impl.impl^.Cls&impl.impl^.Intf> impl.impl^.Cls m(impl.impl^.Intf i, impl.impl^.Cls c) throws impl.impl^.Exc { return null; }\n" +
-                      "    public static impl.impl^.Cls f;\n" +
-                      "}";
-        String noWarningsTest = "package api;\n" +
-                      "import impl.impl.*;\n" +
-                      "@impl.impl.NonDocAnn\n" +
-                      "public abstract class Api {\n" +
-                      "    private static abstract class I <T extends impl.impl.Cls&impl.impl.Intf> extends impl.impl.Cls implements impl.impl.Intf, impl.impl.NonDocAnn, impl.impl.DocAnn {\n" +
-                      "        public static abstract class II <T extends impl.impl.Cls&impl.impl.Intf> extends impl.impl.Cls implements impl.impl.Intf, impl.impl.NonDocAnn, impl.impl.DocAnn { }\n" +
-                      "        public static <E extends impl.impl.Cls&impl.impl.Intf> impl.impl.Cls m(impl.impl.Intf i, impl.impl.Cls c) throws impl.impl.Exc { return null; }\n" +
-                      "        public static impl.impl.Cls f;\n" +
-                      "    }\n" +
-                      "    private static <E extends impl.impl.Cls&impl.impl.Intf> impl.impl.Cls m(impl.impl.Intf i, impl.impl.Cls c) throws impl.impl.Exc { return null; }\n" +
-                      "    private static impl.impl.Cls f1;\n" +
-                      "    public static void m() { new impl.impl.Cls(); }\n" +
-                      "    public static Object f2 = new impl.impl.Cls();\n" +
-                      "}";
+        String warningsTest = """
+            package api;
+            import impl.impl.*;
+            @impl.impl^.DocAnn
+            public abstract class Api<T extends impl.impl^.Cls&impl.impl^.Intf> extends impl\
+            .impl^.Cls implements impl.impl^.Intf, impl.impl^.NonDocAnn, impl.impl^.DocAnn {
+                public static <E extends impl.impl^.Cls&impl.impl^.Intf> impl.impl^.Cls m(im\
+            pl.impl^.Intf i, impl.impl^.Cls c) throws impl.impl^.Exc { return null; }
+                public static impl.impl^.Cls f;
+            }""";
+        String noWarningsTest = """
+            package api;
+            import impl.impl.*;
+            @impl.impl.NonDocAnn
+            public abstract class Api {
+                private static abstract class I <T extends impl.impl.Cls&impl.impl.Intf> ext\
+            ends impl.impl.Cls implements impl.impl.Intf, impl.impl.NonDocAnn, impl.impl.Doc\
+            Ann {
+                    public static abstract class II <T extends impl.impl.Cls&impl.impl.Intf>\
+             extends impl.impl.Cls implements impl.impl.Intf, impl.impl.NonDocAnn, impl.impl\
+            .DocAnn { }
+                    public static <E extends impl.impl.Cls&impl.impl.Intf> impl.impl.Cls m(i\
+            mpl.impl.Intf i, impl.impl.Cls c) throws impl.impl.Exc { return null; }
+                    public static impl.impl.Cls f;
+                }
+                private static <E extends impl.impl.Cls&impl.impl.Intf> impl.impl.Cls m(impl\
+            .impl.Intf i, impl.impl.Cls c) throws impl.impl.Exc { return null; }
+                private static impl.impl.Cls f1;
+                public static void m() { new impl.impl.Cls(); }
+                public static Object f2 = new impl.impl.Cls();
+            }""";
         for (String genericTest : new String[] {warningsTest, noWarningsTest}) {
             for (String test : new String[] {genericTest, genericTest.replaceAll("impl\\.impl\\^.([A-Za-z])", "^$1").replaceAll("impl\\.impl\\.([A-Za-z])", "$1")}) {
                 System.err.println("testing: " + test);
@@ -171,31 +181,37 @@ public class ExportsUnexported extends ModuleTestBase {
                           "package lib2; public class Lib2 {}");
         Path src_api = src.resolve("api");
         tb.writeJavaFiles(src_api,
-                          "module api {\n" +
-                          "    exports api;\n" +
-                          "    exports qapi1 to qual1x;\n" +
-                          "    exports qapi2 to qual1x, qual2x;\n" +
-                          "    requires transitive lib1x;\n" +
-                          "    requires lib2x;\n" +
-                          "}\n",
-                          "package api;\n" +
-                          "public class Api {\n" +
-                          "    public lib1.Lib1 lib1;\n" +
-                          "    public lib2.Lib2 lib2;\n" +
-                          "    public qapi1.QApi1 qapi1;\n" +
-                          "    public impl.Impl impl;\n" +
-                          "}",
-                          "package qapi1;\n" +
-                          "public class QApi1 {\n" +
-                          "    public qapi2.QApi2 qapi2;\n" +
-                          "}",
-                          "package qapi2;\n" +
-                          "public class QApi2 {\n" +
-                          "    public qapi1.QApi1 qapi1;\n" +
-                          "}",
-                          "package impl;\n" +
-                          "public class Impl {\n" +
-                          "}");
+                          """
+                              module api {
+                                  exports api;
+                                  exports qapi1 to qual1x;
+                                  exports qapi2 to qual1x, qual2x;
+                                  requires transitive lib1x;
+                                  requires lib2x;
+                              }
+                              """,
+                          """
+                              package api;
+                              public class Api {
+                                  public lib1.Lib1 lib1;
+                                  public lib2.Lib2 lib2;
+                                  public qapi1.QApi1 qapi1;
+                                  public impl.Impl impl;
+                              }""",
+                          """
+                              package qapi1;
+                              public class QApi1 {
+                                  public qapi2.QApi2 qapi2;
+                              }""",
+                          """
+                              package qapi2;
+                              public class QApi2 {
+                                  public qapi1.QApi1 qapi1;
+                              }""",
+                          """
+                              package impl;
+                              public class Impl {
+                              }""");
         Path src_qual1 = src.resolve("qual1x");
         tb.writeJavaFiles(src_qual1, "module qual1x { }");
         Path src_qual2 = src.resolve("qual2x");
@@ -232,21 +248,24 @@ public class ExportsUnexported extends ModuleTestBase {
         Path src = base.resolve("src");
         Path src_api = src.resolve("api");
         tb.writeJavaFiles(src_api,
-                          "module api {\n" +
-                          "    exports api;\n" +
-                          "}\n",
-                          "package api;\n" +
-                          "import impl.Impl.Nested;\n" +
-                          "public class Api {\n" +
-                          "    public impl.Impl impl1;\n" +
-                          "    public impl.Impl.Nested impl2;\n" +
-                          "    public Nested impl3;\n" +
-                          "}",
-                          "package impl;\n" +
-                          "public class Impl {\n" +
-                          "    public static class Nested {\n" +
-                          "    }\n" +
-                          "}");
+                          """
+                              module api {
+                                  exports api;
+                              }""",
+                          """
+                              package api;
+                              import impl.Impl.Nested;
+                              public class Api {
+                                  public impl.Impl impl1;
+                                  public impl.Impl.Nested impl2;
+                                  public Nested impl3;
+                              }""",
+                          """
+                              package impl;
+                              public class Impl {
+                                  public static class Nested {
+                                  }
+                              }""");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -279,25 +298,29 @@ public class ExportsUnexported extends ModuleTestBase {
         Path src = base.resolve("src");
         Path src_api = src.resolve("api");
         tb.writeJavaFiles(src_api,
-                          "module api {\n" +
-                          "    exports api;\n" +
-                          "}\n",
-                          "package api;\n" +
-                          "public class Api extends PackagePrivateClass<PackagePrivateInterface> implements PackagePrivateInterface<PackagePrivateClass> {\n" +
-                          "    protected PackagePrivateClass<?> f1;\n" +
-                          "    protected PackagePrivateInterface<?> f2;\n" +
-                          "    protected Inner f3;\n" +
-                          "    protected PrivateInner f4;\n" +
-                          "    protected impl.Impl f5;\n" +
-                          "    public static class InnerClass extends PrivateInner {}\n" +
-                          "    protected static class Inner {}\n" +
-                          "    private static class PrivateInner {}\n" +
-                          "}\n" +
-                          "class PackagePrivateClass<T> {}\n" +
-                          "interface PackagePrivateInterface<T> {}",
-                          "package impl;\n" +
-                          "public class Impl {\n" +
-                          "}");
+                          """
+                              module api {
+                                  exports api;
+                              }""",
+                          """
+                              package api;
+                              public class Api extends PackagePrivateClass<PackagePrivateInterface> implements\
+                               PackagePrivateInterface<PackagePrivateClass> {
+                                  protected PackagePrivateClass<?> f1;
+                                  protected PackagePrivateInterface<?> f2;
+                                  protected Inner f3;
+                                  protected PrivateInner f4;
+                                  protected impl.Impl f5;
+                                  public static class InnerClass extends PrivateInner {}
+                                  protected static class Inner {}
+                                  private static class PrivateInner {}
+                              }
+                              class PackagePrivateClass<T> {}
+                              interface PackagePrivateInterface<T> {}""",
+                          """
+                              package impl;
+                              public class Impl {
+                              }""");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -333,24 +356,27 @@ public class ExportsUnexported extends ModuleTestBase {
         Path src = base.resolve("src");
         Path src_api = src.resolve("api");
         tb.writeJavaFiles(src_api,
-                          "module api {\n" +
-                          "    exports api;\n" +
-                          "}\n",
-                          "package api;\n" +
-                          "public class Api {\n" +
-                          "    @SuppressWarnings(\"exports\")\n" +
-                          "    public PackagePrivateClass f1;\n" +
-                          "    public PackagePrivateClass f2;\n" +
-                          "    @SuppressWarnings(\"exports\")\n" +
-                          "    public void t() {}\n" +
-                          "    public PackagePrivateClass f3;\n" +
-                          "    @SuppressWarnings(\"exports\")\n" +
-                          "    public static class C {\n" +
-                          "        public PackagePrivateClass f4;\n" +
-                          "    }\n" +
-                          "    public PackagePrivateClass f5;\n" +
-                          "}\n" +
-                          "class PackagePrivateClass<T> {}\n");
+                          """
+                              module api {
+                                  exports api;
+                              }""",
+                          """
+                              package api;
+                              public class Api {
+                                  @SuppressWarnings("exports")
+                                  public PackagePrivateClass f1;
+                                  public PackagePrivateClass f2;
+                                  @SuppressWarnings("exports")
+                                  public void t() {}
+                                  public PackagePrivateClass f3;
+                                  @SuppressWarnings("exports")
+                                  public static class C {
+                                      public PackagePrivateClass f4;
+                                  }
+                                  public PackagePrivateClass f5;
+                              }
+                              class PackagePrivateClass<T> {}
+                              """);
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
@@ -397,21 +423,29 @@ public class ExportsUnexported extends ModuleTestBase {
         Path src = base.resolve("src");
         Path src_api = src.resolve("api");
         tb.writeJavaFiles(src_api,
-                          "module api {\n" +
-                          "    requires transitive dep;\n" +
-                          "    requires transitive api.one;\n" +
-                          "    exports api;\n" +
-                          "}\n",
-                          "package api;\n" +
-                          "public class Api extends dep.Dep implements api2.Api2 {}\n");
+                          """
+                              module api {
+                                  requires transitive dep;
+                                  requires transitive api.one;
+                                  exports api;
+                              }
+                              """,
+                          """
+                              package api;
+                              public class Api extends dep.Dep implements api2.Api2 {}
+                              """);
         Path src_dep = src.resolve("dep");
         tb.writeJavaFiles(src_dep,
-                          "module dep {\n" +
-                          "    requires transitive api.one;\n" +
-                          "    exports dep;\n" +
-                          "}\n",
-                          "package dep;\n" +
-                          "public class Dep {}\n");
+                          """
+                              module dep {
+                                  requires transitive api.one;
+                                  exports dep;
+                              }
+                              """,
+                          """
+                              package dep;
+                              public class Dep {}
+                              """);
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 

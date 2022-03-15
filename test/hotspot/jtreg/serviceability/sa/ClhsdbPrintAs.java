@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,13 @@ public class ClhsdbPrintAs {
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             // Run the 'jstack -v' command to get the address of a the Method*
-            // representing LingeredApp.main
+            // representing LingeredApp.steadyState
             List<String> cmds = List.of("jstack -v");
             Map<String, List<String>> expStrMap;
 
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
 
-            String[] snippets = jstackOutput.split("LingeredApp.main");
+            String[] snippets = jstackOutput.split("LingeredApp.steadyState");
             String addressString = null;
 
             String[] tokens = snippets[1].split("Method\\*=");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "ci/ciMethodData.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -218,17 +218,6 @@ IfNode* Parse::jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask, float pro
   return iff;
 }
 
-// return Region node
-Node* Parse::jump_if_join(Node* iffalse, Node* iftrue) {
-  Node *region  = new RegionNode(3); // 2 results
-  record_for_igvn(region);
-  region->init_req(1, iffalse);
-  region->init_req(2, iftrue );
-  _gvn.set_type(region, Type::CONTROL);
-  region = _gvn.transform(region);
-  set_control (region);
-  return region;
-}
 
 // sentinel value for the target bci to mark never taken branches
 // (according to profiling)
@@ -419,16 +408,16 @@ static void merge_ranges(SwitchRange* ranges, int& rp) {
 
 //-------------------------------do_tableswitch--------------------------------
 void Parse::do_tableswitch() {
-  Node* lookup = pop();
   // Get information about tableswitch
   int default_dest = iter().get_dest_table(0);
-  int lo_index     = iter().get_int_table(1);
-  int hi_index     = iter().get_int_table(2);
+  jint lo_index    = iter().get_int_table(1);
+  jint hi_index    = iter().get_int_table(2);
   int len          = hi_index - lo_index + 1;
 
   if (len < 1) {
     // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    pop(); // the effect of the instruction execution on the operand stack
     merge(default_dest);
     return;
   }
@@ -449,9 +438,9 @@ void Parse::do_tableswitch() {
   SwitchRange* ranges = NEW_RESOURCE_ARRAY(SwitchRange, rnum);
   int rp = -1;
   if (lo_index != min_jint) {
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->default_count() / (hi_index != max_jint ? 2 : 1);
+      cnt = (float)profile->default_count() / (hi_index != max_jint ? 2.0F : 1.0F);
     }
     ranges[++rp].setRange(min_jint, lo_index-1, default_dest, cnt);
   }
@@ -459,9 +448,9 @@ void Parse::do_tableswitch() {
     jint match_int = lo_index+j;
     int  dest      = iter().get_dest_table(j+3);
     makes_backward_branch |= (dest <= bci());
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->count_at(j);
+      cnt = (float)profile->count_at(j);
     }
     if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
       ranges[++rp].set(match_int, dest, cnt);
@@ -470,9 +459,9 @@ void Parse::do_tableswitch() {
   jint highest = lo_index+(len-1);
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint) {
-    uint cnt = 1;
+    float cnt = 1.0F;
     if (profile != NULL) {
-      cnt = profile->default_count() / (lo_index != min_jint ? 2 : 1);
+      cnt = (float)profile->default_count() / (lo_index != min_jint ? 2.0F : 1.0F);
     }
     if (!ranges[rp].adjoinRange(highest+1, max_jint, default_dest, cnt, trim_ranges)) {
       ranges[++rp].setRange(highest+1, max_jint, default_dest, cnt);
@@ -485,22 +474,24 @@ void Parse::do_tableswitch() {
   }
 
   // Safepoint in case if backward branch observed
-  if( makes_backward_branch && UseLoopSafepoints )
+  if (makes_backward_branch) {
     add_safepoint();
+  }
 
+  Node* lookup = pop(); // lookup value
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
 
 //------------------------------do_lookupswitch--------------------------------
 void Parse::do_lookupswitch() {
-  Node *lookup = pop();         // lookup value
   // Get information about lookupswitch
   int default_dest = iter().get_dest_table(0);
-  int len          = iter().get_int_table(1);
+  jint len          = iter().get_int_table(1);
 
   if (len < 1) {    // If this is a backward branch, add safepoint
     maybe_add_safepoint(default_dest);
+    pop(); // the effect of the instruction execution on the operand stack
     merge(default_dest);
     return;
   }
@@ -522,26 +513,15 @@ void Parse::do_lookupswitch() {
       table[3*j+0] = iter().get_int_table(2+2*j);
       table[3*j+1] = iter().get_dest_table(2+2*j+1);
       // Handle overflow when converting from uint to jint
-      table[3*j+2] = (profile == NULL) ? 1 : MIN2<uint>(max_jint, profile->count_at(j));
+      table[3*j+2] = (profile == NULL) ? 1 : (jint)MIN2<uint>((uint)max_jint, profile->count_at(j));
     }
     qsort(table, len, 3*sizeof(table[0]), jint_cmp);
   }
 
-  float defaults = 0;
-  jint prev = min_jint;
-  for (int j = 0; j < len; j++) {
-    jint match_int = table[3*j+0];
-    if (match_int != prev) {
-      defaults += (float)match_int - prev;
-    }
-    prev = match_int+1;
-  }
-  if (prev-1 != max_jint) {
-    defaults += (float)max_jint - prev + 1;
-  }
-  float default_cnt = 1;
+  float default_cnt = 1.0F;
   if (profile != NULL) {
-    default_cnt = profile->default_count()/defaults;
+    juint defaults = max_juint - len;
+    default_cnt = (float)profile->default_count()/(float)defaults;
   }
 
   int rnum = len*2+1;
@@ -550,25 +530,25 @@ void Parse::do_lookupswitch() {
   int rp = -1;
   for (int j = 0; j < len; j++) {
     jint match_int   = table[3*j+0];
-    int  dest        = table[3*j+1];
-    int  cnt         = table[3*j+2];
-    int  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
+    jint  dest        = table[3*j+1];
+    jint  cnt         = table[3*j+2];
+    jint  next_lo     = rp < 0 ? min_jint : ranges[rp].hi()+1;
     makes_backward_branch |= (dest <= bci());
-    float c = default_cnt * ((float)match_int - next_lo);
+    float c = default_cnt * ((float)match_int - (float)next_lo);
     if (match_int != next_lo && (rp < 0 || !ranges[rp].adjoinRange(next_lo, match_int-1, default_dest, c, trim_ranges))) {
       assert(default_dest != never_reached, "sentinel value for dead destinations");
       ranges[++rp].setRange(next_lo, match_int-1, default_dest, c);
     }
-    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
+    if (rp < 0 || !ranges[rp].adjoin(match_int, dest, (float)cnt, trim_ranges)) {
       assert(dest != never_reached, "sentinel value for dead destinations");
-      ranges[++rp].set(match_int, dest, cnt);
+      ranges[++rp].set(match_int, dest,  (float)cnt);
     }
   }
   jint highest = table[3*(len-1)];
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint &&
-      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest), trim_ranges)) {
-    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - highest));
+      !ranges[rp].adjoinRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - (float)highest), trim_ranges)) {
+    ranges[++rp].setRange(highest+1, max_jint, default_dest, default_cnt * ((float)max_jint - (float)highest));
   }
   assert(rp < rnum, "not too many ranges");
 
@@ -577,9 +557,11 @@ void Parse::do_lookupswitch() {
   }
 
   // Safepoint in case backward branch observed
-  if (makes_backward_branch && UseLoopSafepoints)
+  if (makes_backward_branch) {
     add_safepoint();
+  }
 
+  Node *lookup = pop(); // lookup value
   jump_switch_ranges(lookup, &ranges[0], &ranges[rp]);
 }
 
@@ -859,10 +841,16 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
 
   // Clean the 32-bit int into a real 64-bit offset.
   // Otherwise, the jint value 0 might turn into an offset of 0x0800000000.
-  const TypeInt* ikeytype = TypeInt::make(0, num_cases, Type::WidenMin);
   // Make I2L conversion control dependent to prevent it from
   // floating above the range check during loop optimizations.
-  key_val = C->conv_I2X_index(&_gvn, key_val, ikeytype, control());
+  // Do not use a narrow int type here to prevent the data path from dying
+  // while the control path is not removed. This can happen if the type of key_val
+  // is later known to be out of bounds of [0, num_cases] and therefore a narrow cast
+  // would be replaced by TOP while C2 is not able to fold the corresponding range checks.
+  // Set _carry_dependency for the cast to avoid being removed by IGVN.
+#ifdef _LP64
+  key_val = C->constrained_convI2L(&_gvn, key_val, TypeInt::INT, control(), true /* carry_dependency */);
+#endif
 
   // Shift the value by wordsize so we have an index into the table, rather
   // than a switch value
@@ -975,7 +963,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 #ifndef PRODUCT
   if (switch_depth == 0) {
     _max_switch_depth = 0;
-    _est_switch_depth = log2_intptr((hi-lo+1)-1)+1;
+    _est_switch_depth = log2i_graceful((hi - lo + 1) - 1) + 1;
   }
 #endif
 
@@ -1146,50 +1134,6 @@ void Parse::l2f() {
   Node* res = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
 
   push(res);
-}
-
-void Parse::do_irem() {
-  // Must keep both values on the expression-stack during null-check
-  zero_check_int(peek());
-  // Compile-time detect of null-exception?
-  if (stopped())  return;
-
-  Node* b = pop();
-  Node* a = pop();
-
-  const Type *t = _gvn.type(b);
-  if (t != Type::TOP) {
-    const TypeInt *ti = t->is_int();
-    if (ti->is_con()) {
-      int divisor = ti->get_con();
-      // check for positive power of 2
-      if (divisor > 0 &&
-          (divisor & ~(divisor-1)) == divisor) {
-        // yes !
-        Node *mask = _gvn.intcon((divisor - 1));
-        // Sigh, must handle negative dividends
-        Node *zero = _gvn.intcon(0);
-        IfNode *ifff = jump_if_fork_int(a, zero, BoolTest::lt, PROB_FAIR, COUNT_UNKNOWN);
-        Node *iff = _gvn.transform( new IfFalseNode(ifff) );
-        Node *ift = _gvn.transform( new IfTrueNode (ifff) );
-        Node *reg = jump_if_join(ift, iff);
-        Node *phi = PhiNode::make(reg, NULL, TypeInt::INT);
-        // Negative path; negate/and/negate
-        Node *neg = _gvn.transform( new SubINode(zero, a) );
-        Node *andn= _gvn.transform( new AndINode(neg, mask) );
-        Node *negn= _gvn.transform( new SubINode(zero, andn) );
-        phi->init_req(1, negn);
-        // Fast positive case
-        Node *andx = _gvn.transform( new AndINode(a, mask) );
-        phi->init_req(2, andx);
-        // Push the merge
-        push( _gvn.transform(phi) );
-        return;
-      }
-    }
-  }
-  // Default case
-  push( _gvn.transform( new ModINode(control(),a,b) ) );
 }
 
 // Handle jsr and jsr_w bytecode
@@ -1921,33 +1865,33 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_bipush:   push(intcon(iter().get_constant_u1())); break;
   case Bytecodes::_sipush:   push(intcon(iter().get_constant_u2())); break;
   case Bytecodes::_aconst_null: push(null());  break;
+
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-    // If the constant is unresolved, run this BC once in the interpreter.
-    {
-      ciConstant constant = iter().get_constant();
-      if (!constant.is_valid() ||
-          (constant.basic_type() == T_OBJECT &&
-           !constant.as_object()->is_loaded())) {
-        int index = iter().get_constant_pool_index();
-        constantTag tag = iter().get_constant_pool_tag(index);
-        uncommon_trap(Deoptimization::make_trap_request
-                      (Deoptimization::Reason_unloaded,
-                       Deoptimization::Action_reinterpret,
-                       index),
-                      NULL, tag.internal_name());
-        break;
-      }
-      assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
-             "must be java_mirror of klass");
+  case Bytecodes::_ldc2_w: {
+    ciConstant constant = iter().get_constant();
+    if (constant.is_loaded()) {
       const Type* con_type = Type::make_from_constant(constant);
       if (con_type != NULL) {
         push_node(con_type->basic_type(), makecon(con_type));
       }
-    }
+    } else {
+      // If the constant is unresolved or in error state, run this BC in the interpreter.
+      if (iter().is_in_error()) {
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
+                                                        Deoptimization::Action_none),
+                      NULL, "constant in error state", true /* must_throw */);
 
+      } else {
+        int index = iter().get_constant_pool_index();
+        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                        Deoptimization::Action_reinterpret,
+                                                        index),
+                      NULL, "unresolved constant", false /* must_throw */);
+      }
+    }
     break;
+  }
 
   case Bytecodes::_aload_0:
     push( local(0) );
@@ -2060,19 +2004,19 @@ void Parse::do_one_bytecode() {
 
   // double stores
   case Bytecodes::_dstore_0:
-    set_pair_local( 0, dstore_rounding(pop_pair()) );
+    set_pair_local( 0, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_1:
-    set_pair_local( 1, dstore_rounding(pop_pair()) );
+    set_pair_local( 1, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_2:
-    set_pair_local( 2, dstore_rounding(pop_pair()) );
+    set_pair_local( 2, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore_3:
-    set_pair_local( 3, dstore_rounding(pop_pair()) );
+    set_pair_local( 3, dprecision_rounding(pop_pair()) );
     break;
   case Bytecodes::_dstore:
-    set_pair_local( iter().get_index(), dstore_rounding(pop_pair()) );
+    set_pair_local( iter().get_index(), dprecision_rounding(pop_pair()) );
     break;
 
   case Bytecodes::_pop:  dec_sp(1);   break;
@@ -2186,7 +2130,13 @@ void Parse::do_one_bytecode() {
     break;
 
   case Bytecodes::_irem:
-    do_irem();
+    // Must keep both values on the expression-stack during null-check
+    zero_check_int(peek());
+    // Compile-time detect of null-exception?
+    if (stopped())  return;
+    b = pop();
+    a = pop();
+    push(_gvn.transform(new ModINode(control(), a, b)));
     break;
   case Bytecodes::_idiv:
     // Must keep both values on the expression-stack during null-check
@@ -2345,8 +2295,7 @@ void Parse::do_one_bytecode() {
       // out to memory to round, the machine instruction that implements
       // ConvL2D is responsible for rounding.
       // c = precision_rounding(b);
-      c = _gvn.transform(b);
-      push(c);
+      push(b);
     } else {
       l2f();
     }
@@ -2357,8 +2306,7 @@ void Parse::do_one_bytecode() {
     b = _gvn.transform( new ConvL2DNode(a));
     // For x86_32.ad, rounding is always necessary (see _l2f above).
     // c = dprecision_rounding(b);
-    c = _gvn.transform(b);
-    push_pair(c);
+    push_pair(b);
     break;
 
   case Bytecodes::_f2l:
@@ -2545,8 +2493,7 @@ void Parse::do_one_bytecode() {
     // a SafePoint here and have it dominate and kill the safepoint added at a
     // following backwards branch.  At this point the JVM state merely holds 2
     // longs but not the 3-way value.
-    if( UseLoopSafepoints ) {
-      switch( iter().next_bc() ) {
+    switch (iter().next_bc()) {
       case Bytecodes::_ifgt:
       case Bytecodes::_iflt:
       case Bytecodes::_ifge:
@@ -2557,7 +2504,6 @@ void Parse::do_one_bytecode() {
         maybe_add_safepoint(iter().next_get_dest());
       default:
         break;
-      }
     }
     b = pop_pair();
     a = pop_pair();
@@ -2582,19 +2528,18 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(24)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(24)) );
-    push( a );
+    a = Compile::narrow_value(T_BYTE, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = _gvn.transform( new LShiftINode(a,_gvn.intcon(16)) );
-    a = _gvn.transform( new RShiftINode(a,_gvn.intcon(16)) );
-    push( a );
+    a = Compile::narrow_value(T_SHORT, a, NULL, &_gvn, true);
+    push(a);
     break;
   case Bytecodes::_i2c:
     a = pop();
-    push( _gvn.transform( new AndINode(a,_gvn.intcon(0xFFFF)) ) );
+    a = Compile::narrow_value(T_CHAR, a, NULL, &_gvn, true);
+    push(a);
     break;
 
   case Bytecodes::_i2f:
@@ -2807,8 +2752,8 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  if (C->should_print(1)) {
-    IdealGraphPrinter* printer = C->printer();
+  if (C->should_print_igv(1)) {
+    IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();

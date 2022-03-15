@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,6 @@ void MethodLiveness::compute_liveness() {
 
 
 void MethodLiveness::init_basic_blocks() {
-  bool bailout = false;
-
   int method_len = method()->code_size();
   ciMethodBlocks *mblocks = method()->get_method_blocks();
 
@@ -254,10 +252,6 @@ void MethodLiveness::init_basic_blocks() {
       case Bytecodes::_ret:
         // We will patch up jsr/rets in a subsequent pass.
         ret_list->append(current_block);
-        break;
-      case Bytecodes::_breakpoint:
-        // Bail out of there are breakpoints in here.
-        bailout = true;
         break;
       default:
         // Do nothing.
@@ -467,8 +461,6 @@ void MethodLiveness::BasicBlock::compute_gen_kill_range(ciBytecodeStream *bytes)
 }
 
 void MethodLiveness::BasicBlock::compute_gen_kill_single(ciBytecodeStream *instruction) {
-  int localNum;
-
   // We prohibit _gen and _kill from having locals in common.  If we
   // know that one is definitely going to be applied before the other,
   // we could save some computation time by relaxing this prohibition.
@@ -693,7 +685,7 @@ void MethodLiveness::BasicBlock::compute_gen_kill_single(ciBytecodeStream *instr
 
     case Bytecodes::_lstore:
     case Bytecodes::_dstore:
-      store_two(localNum = instruction->get_index());
+      store_two(instruction->get_index());
       break;
 
     case Bytecodes::_lstore_0:

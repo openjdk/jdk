@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,15 +55,7 @@ public interface Metrics {
      * @return Metrics object or null if not supported on this platform.
      */
     public static Metrics systemMetrics() {
-        try {
-            Class<?> c = Class.forName("jdk.internal.platform.CgroupMetrics");
-            Method m = c.getMethod("getInstance");
-            return (Metrics) m.invoke(null);
-        } catch (ClassNotFoundException e) {
-            return null;
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError(e);
-        }
+        return SystemMetrics.instance();
     }
 
     /**
@@ -359,6 +351,27 @@ public interface Metrics {
      *
      */
     public long getMemorySoftLimit();
+
+    /*****************************************************************
+     * pids subsystem
+     ****************************************************************/
+
+    /**
+     * Returns the maximum number of tasks that may be created in the Isolation Group.
+     *
+     * @return The maximum number of tasks, -1 if the quota is unlimited or
+     *         -2 if not supported.
+     *
+     */
+    public long getPidsMax();
+
+    /**
+     * Returns the current number of tasks in the Isolation Group.
+     *
+     * @return The current number of tasks or -2 if not supported
+     *
+     */
+    public long getPidsCurrent();
 
     /*****************************************************************
      * BlKIO Subsystem

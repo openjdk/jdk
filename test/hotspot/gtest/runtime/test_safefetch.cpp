@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,14 +24,21 @@
 
 #include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/vmError.hpp"
 #include "unittest.hpp"
 
 static const intptr_t pattern = LP64_ONLY(0xABCDABCDABCDABCDULL) NOT_LP64(0xABCDABCD);
-static intptr_t* invalid_address = (intptr_t*)(intptr_t) NOT_AIX(os::min_page_size()) AIX_ONLY(-1);
+static intptr_t* invalid_address = (intptr_t*)VMError::segfault_address;
+
+TEST_VM(os, safefetch_can_use) {
+  // Once VM initialization is through,
+  // safefetch should work on every platform.
+  ASSERT_TRUE(CanUseSafeFetch32());
+}
 
 TEST_VM(os, safefetch_positive) {
   intptr_t v = pattern;
@@ -39,15 +46,12 @@ TEST_VM(os, safefetch_positive) {
   ASSERT_EQ(v, a);
 }
 
-#ifndef _WIN32
-// Needs JDK-8185734 to be solved
 TEST_VM(os, safefetch_negative) {
   intptr_t a = SafeFetchN(invalid_address, pattern);
   ASSERT_EQ(pattern, a);
   a = SafeFetchN(invalid_address, ~pattern);
   ASSERT_EQ(~pattern, a);
 }
-#endif // _WIN32
 
 class VM_TestSafeFetchAtSafePoint : public VM_GTestExecuteAtSafepoint {
 public:

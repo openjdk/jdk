@@ -34,8 +34,8 @@ import java.nio.file.Paths;
  * @key headful
  * @bug 6522586
  * @summary Enforce limits on font creation
- * @run main BigFont 1 A.ttf
- * @run main BigFont 2 A.ttf
+ * @run main/othervm -Djava.security.manager=allow BigFont 1 A.ttf
+ * @run main/othervm -Djava.security.manager=allow BigFont 2 A.ttf
  */
 public class BigFont {
 

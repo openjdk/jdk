@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.beans.PropertyChangeListener;
-import java.util.Locale;
-import java.util.Vector;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Graphics;
+import java.awt.Rectangle;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serial;
 
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 /**
  * This class is inserted in between cell renderers and the components that
@@ -195,7 +200,8 @@ public class CellRendererPane extends Container implements Accessible
 
 
     /**
-     * Calls this.paintComponent() with the rectangles x,y,width,height fields.
+     * Calls this.paintComponent(g, c, p, r.x, r.y, r.width, r.height) where
+     * {@code r} is the input {@code Rectangle} parameter.
      *
      * @param g  the {@code Graphics} object to draw on
      * @param c  the {@code Component} to draw
@@ -207,6 +213,7 @@ public class CellRendererPane extends Container implements Accessible
     }
 
 
+    @Serial
     private void writeObject(ObjectOutputStream s) throws IOException {
         removeAll();
         s.defaultWriteObject();

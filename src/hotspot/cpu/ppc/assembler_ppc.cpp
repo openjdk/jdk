@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
-#include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -81,13 +80,13 @@ int Assembler::branch_destination(int inst, int pos) {
 void Assembler::andi(Register a, Register s, const long ui16) {
   if (is_power_of_2(((jlong) ui16)+1)) {
     // pow2minus1
-    clrldi(a, s, 64-log2_long((((jlong) ui16)+1)));
+    clrldi(a, s, 64 - log2i_exact((((jlong) ui16)+1)));
   } else if (is_power_of_2((jlong) ui16)) {
     // pow2
-    rlwinm(a, s, 0, 31-log2_long((jlong) ui16), 31-log2_long((jlong) ui16));
+    rlwinm(a, s, 0, 31 - log2i_exact((jlong) ui16), 31 - log2i_exact((jlong) ui16));
   } else if (is_power_of_2((jlong)-ui16)) {
     // negpow2
-    clrrdi(a, s, log2_long((jlong)-ui16));
+    clrrdi(a, s, log2i_exact((jlong)-ui16));
   } else {
     assert(is_uimm(ui16, 16), "must be 16-bit unsigned immediate");
     andi_(a, s, ui16);

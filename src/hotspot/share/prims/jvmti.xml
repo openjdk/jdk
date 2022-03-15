@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -686,9 +686,11 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     The library will be unloaded (unless it is statically linked into the
     executable) and this function will be called if some platform specific
     mechanism causes the unload (an unload mechanism is not specified in this document)
-    or the library is (in effect) unloaded by the termination of the VM whether through
-    normal termination or VM failure, including start-up failure.
-    Uncontrolled shutdown is, of course, an exception to this rule.
+    or the library is (in effect) unloaded by the termination of the VM.
+    VM termination includes normal termination and VM failure, including start-up failure,
+    but not, of course, uncontrolled shutdown. An implementation may also
+    choose to not call this function if the <code>Agent_OnAttach</code>/
+    <code>Agent_OnAttach_L</code> function reported an error (returned a non-zero value).
     Note the distinction between this function and the
     <eventlink id="VMDeath">VM Death event</eventlink>: for the VM Death event
     to be sent, the VM must have run at least to the point of initialization and a valid
@@ -4961,7 +4963,9 @@ class C2 extends C1 implements I2 {
     <intro>
       <b>
         These functions and data types were introduced in the original
-        <jvmti/> version 1.0 and have been superseded by more
+        <jvmti/> version 1.0. They are deprecated and will be changed 
+        to return an error in a future release. They were superseded in
+        <jvmti/> version 1.2 (Java SE 6) by more 
       </b>
       <internallink id="Heap"><b>powerful and flexible versions</b></internallink>
       <b>
@@ -6857,7 +6861,7 @@ class C2 extends C1 implements I2 {
         <ul>
         <li>By loading and deriving a class from a <code>class</code> file representation
             using a class loader (see <vmspec chapter="5.3"/>).</li>
-        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
+        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
             that creates a hidden class or interface from a <code>class</code> file representation.</li>
         <li>By invoking methods in certain Java SE Platform APIs such as reflection.</li>
          </ul>
@@ -6919,7 +6923,7 @@ class C2 extends C1 implements I2 {
         <code>class_count_ptr</code>, and the array itself via
         <code>classes_ptr</code>.
         <p/>
-        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
+        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6969,7 +6973,7 @@ class C2 extends C1 implements I2 {
           <code>"L" + N + "." +  S + ";"</code>
           where <code>N</code> is the binary name encoded in internal form (JVMS 4.2.1)
           indicated by the <code>class</code> file passed to
-          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
+          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
           and <code>S</code> is an unqualified name.
           The returned name is not a type descriptor and does not conform to JVMS 4.3.2.
           For example, com.foo.Foo/AnySuffix is "Lcom/foo/Foo.AnySuffix;"
@@ -15031,6 +15035,14 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for new class file PermittedSubclasses attribute:
         - Specify that RedefineClasses and RetransformClasses are not allowed
           to change the class file PermittedSubclasses attribute.
+  </change>
+  <change date="15 January 2021" version="17.0.0">
+      Minor clarification in the section "Agent Shutdown" that says the
+      implementation may choose to not call the Agent_OnUnload function
+      if the Agent_OnAttach/Agent_OnAttach_L function reported an error. 
+  </change>
+  <change date="8 June 2021" version="17.0.0">
+      Minor update to deprecate Heap functions 1.0.
   </change>
 </changehistory>
 

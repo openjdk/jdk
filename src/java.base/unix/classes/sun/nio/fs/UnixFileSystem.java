@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,7 @@ abstract class UnixFileSystem
         return new Iterable<>() {
             public Iterator<Path> iterator() {
                 try {
+                    @SuppressWarnings("removal")
                     SecurityManager sm = System.getSecurityManager();
                     if (sm != null)
                         sm.checkRead(rootDirectory.toString());
@@ -195,6 +196,7 @@ abstract class UnixFileSystem
                     continue;
 
                 // check permission to read mount point
+                @SuppressWarnings("removal")
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     try {
@@ -240,6 +242,7 @@ abstract class UnixFileSystem
 
     @Override
     public final Iterable<FileStore> getFileStores() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -343,7 +346,7 @@ abstract class UnixFileSystem
     // Override if the platform uses different Unicode normalization form
     // for native file path. For example on MacOSX, the native path is stored
     // in Unicode NFD form.
-    char[] normalizeNativePath(char[] path) {
+    String normalizeNativePath(String path) {
         return path;
     }
 

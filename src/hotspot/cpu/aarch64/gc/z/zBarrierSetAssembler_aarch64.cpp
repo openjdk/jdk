@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
   __ tst(dst, rscratch1);
   __ br(Assembler::EQ, done);
 
-  __ enter();
+  __ enter(/*strip_ret_addr*/true);
 
   __ push_call_clobbered_registers_except(RegSet::of(dst));
 
@@ -314,7 +314,8 @@ class ZSaveLiveRegisters {
 private:
   MacroAssembler* const _masm;
   RegSet                _gp_regs;
-  RegSet                _fp_regs;
+  FloatRegSet           _fp_regs;
+  PRegSet               _p_regs;
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
@@ -327,7 +328,9 @@ public:
         if (vm_reg->is_Register()) {
           _gp_regs += RegSet::of(vm_reg->as_Register());
         } else if (vm_reg->is_FloatRegister()) {
-          _fp_regs += RegSet::of((Register)vm_reg->as_FloatRegister());
+          _fp_regs += FloatRegSet::of(vm_reg->as_FloatRegister());
+        } else if (vm_reg->is_PRegister()) {
+          _p_regs += PRegSet::of(vm_reg->as_PRegister());
         } else {
           fatal("Unknown register type");
         }
@@ -341,7 +344,8 @@ public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
       _masm(masm),
       _gp_regs(),
-      _fp_regs() {
+      _fp_regs(),
+      _p_regs() {
 
     // Figure out what registers to save/restore
     initialize(stub);
@@ -349,11 +353,17 @@ public:
     // Save registers
     __ push(_gp_regs, sp);
     __ push_fp(_fp_regs, sp);
+    __ push_p(_p_regs, sp);
   }
 
   ~ZSaveLiveRegisters() {
     // Restore registers
+    __ pop_p(_p_regs, sp);
     __ pop_fp(_fp_regs, sp);
+
+    // External runtime call may clobber ptrue reg
+    __ reinitialize_ptrue();
+
     __ pop(_gp_regs, sp);
   }
 };
@@ -428,11 +438,6 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
     ZSetupArguments setup_arguments(masm, stub);
     __ mov(rscratch1, stub->slow_path());
     __ blr(rscratch1);
-    if (UseSVE > 0) {
-      // Reinitialize the ptrue predicate register, in case the external runtime
-      // call clobbers ptrue reg, as we may return to SVE compiled code.
-      __ reinitialize_ptrue();
-    }
   }
   // Stub exit
   __ b(*stub->continuation());

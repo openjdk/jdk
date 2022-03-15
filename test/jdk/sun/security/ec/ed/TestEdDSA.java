@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class TestEdDSA {
             "09351fc9ac90b3ecfdfbc7c66431e0303dca179c138ac17ad9bef1177331a704");
 
         // Ed25519ctx
-        byte[] context = Convert.hexStringToByteArray("666f6f");
+        byte[] context = HexFormat.of().parseHex("666f6f");
         runSignTest("Ed25519", new EdDSAParameterSpec(false, context),
             "0305334e381af78f141cb666f6199f57bc3495335a256a95bd2a55bf546663f6",
             "dfc9425e4f968f7f0c29f0259cf5f9aed6851c2bb4ad8bfb860cfee0ab248292",
@@ -124,7 +124,7 @@ public class TestEdDSA {
             "55a4cc2f70a54e04288c5f4cd1e45a7bb520b36292911876cada7323198dd87a" +
             "8b36950b95130022907a7fb7c4e9b2d5f6cca685a587b4b21f4b888e4e7edb0d");
 
-       context = Convert.hexStringToByteArray("626172");
+       context = HexFormat.of().parseHex("626172");
         runSignTest("Ed25519", new EdDSAParameterSpec(false, context),
             "0305334e381af78f141cb666f6199f57bc3495335a256a95bd2a55bf546663f6",
             "dfc9425e4f968f7f0c29f0259cf5f9aed6851c2bb4ad8bfb860cfee0ab248292",
@@ -132,7 +132,7 @@ public class TestEdDSA {
             "fc60d5872fc46b3aa69f8b5b4351d5808f92bcc044606db097abab6dbcb1aee3" +
             "216c48e8b3b66431b5b186d1d28f8ee15a5ca2df6668346291c2043d4eb3e90d");
 
-        context = Convert.hexStringToByteArray("666f6f");
+        context = HexFormat.of().parseHex("666f6f");
         runSignTest("Ed25519", new EdDSAParameterSpec(false, context),
             "0305334e381af78f141cb666f6199f57bc3495335a256a95bd2a55bf546663f6",
             "dfc9425e4f968f7f0c29f0259cf5f9aed6851c2bb4ad8bfb860cfee0ab248292",
@@ -140,7 +140,7 @@ public class TestEdDSA {
             "8b70c1cc8310e1de20ac53ce28ae6e7207f33c3295e03bb5c0732a1d20dc6490" +
             "8922a8b052cf99b7c4fe107a5abb5b2c4085ae75890d02df26269d8945f84b0b");
 
-        context = Convert.hexStringToByteArray("666f6f");
+        context = HexFormat.of().parseHex("666f6f");
         runSignTest("Ed25519", new EdDSAParameterSpec(false, context),
             "ab9c2853ce297ddab85c993b3ae14bcad39b2c682beabc27d6d4eb20711d6560",
             "0f1d1274943b91415889152e893d80e93275a1fc0b65fd71b4b0dda10ad7d772",
@@ -179,7 +179,7 @@ public class TestEdDSA {
             "cee1afb2e027df36bc04dcecbf154336c19f0af7e0a6472905e799f1953d2a0f" +
             "f3348ab21aa4adafd1d234441cf807c03a00");
 
-        context = Convert.hexStringToByteArray("666f6f");
+        context = HexFormat.of().parseHex("666f6f");
         runSignTest("Ed448", new EdDSAParameterSpec(false, context),
             "c4eab05d357007c632f3dbb48489924d552b08fe0c353a0d4a1f00acda2c463a" +
             "fbea67c5e8d2877c5e3bc397a659949ef8021e954e0a12274e",
@@ -325,9 +325,9 @@ public class TestEdDSA {
             AlgorithmParameterSpec params, String privateKey, String publicKey,
             String message, String signature) throws Exception {
 
-        byte[] privKeyBytes = Convert.hexStringToByteArray(privateKey);
+        byte[] privKeyBytes = HexFormat.of().parseHex(privateKey);
         EdECPoint pubKeyPoint = Convert.hexStringToEdPoint(publicKey);
-        byte[] msgBytes = Convert.hexStringToByteArray(message);
+        byte[] msgBytes = HexFormat.of().parseHex(message);
         byte[] computedSig;
 
         NamedParameterSpec namedSpec = new NamedParameterSpec(algorithm);
@@ -342,8 +342,7 @@ public class TestEdDSA {
         sig.initSign(privKey);
         sig.update(msgBytes);
         computedSig = sig.sign();
-        if (!Arrays.equals(computedSig,
-            Convert.hexStringToByteArray(signature))) {
+        if (!Arrays.equals(computedSig, HexFormat.of().parseHex(signature))) {
             throw new RuntimeException("Incorrect signature");
         }
 

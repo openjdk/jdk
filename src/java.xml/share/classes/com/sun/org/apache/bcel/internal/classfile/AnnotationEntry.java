@@ -37,17 +37,17 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public class AnnotationEntry implements Node {
 
-    private final int type_index;
-    private final ConstantPool constant_pool;
+    private final int typeIndex;
+    private final ConstantPool constantPool;
     private final boolean isRuntimeVisible;
 
-    private List<ElementValuePair> element_value_pairs;
+    private List<ElementValuePair> elementValuePairs;
 
     /*
      * Factory method to create an AnnotionEntry from a DataInput
      *
      * @param input
-     * @param constant_pool
+     * @param constantPool
      * @param isRuntimeVisible
      * @return the entry
      * @throws IOException
@@ -56,9 +56,9 @@ public class AnnotationEntry implements Node {
 
         final AnnotationEntry annotationEntry = new AnnotationEntry(input.readUnsignedShort(), constant_pool, isRuntimeVisible);
         final int num_element_value_pairs = input.readUnsignedShort();
-        annotationEntry.element_value_pairs = new ArrayList<>();
+        annotationEntry.elementValuePairs = new ArrayList<>();
         for (int i = 0; i < num_element_value_pairs; i++) {
-            annotationEntry.element_value_pairs.add(
+            annotationEntry.elementValuePairs.add(
                     new ElementValuePair(input.readUnsignedShort(), ElementValue.readElementValue(input, constant_pool),
                     constant_pool));
         }
@@ -66,17 +66,17 @@ public class AnnotationEntry implements Node {
     }
 
     public AnnotationEntry(final int type_index, final ConstantPool constant_pool, final boolean isRuntimeVisible) {
-        this.type_index = type_index;
-        this.constant_pool = constant_pool;
+        this.typeIndex = type_index;
+        this.constantPool = constant_pool;
         this.isRuntimeVisible = isRuntimeVisible;
     }
 
     public int getTypeIndex() {
-        return type_index;
+        return typeIndex;
     }
 
     public ConstantPool getConstantPool() {
-        return constant_pool;
+        return constantPool;
     }
 
     public boolean isRuntimeVisible() {
@@ -98,7 +98,7 @@ public class AnnotationEntry implements Node {
      * @return the annotation type name
      */
     public String getAnnotationType() {
-        final ConstantUtf8 c = (ConstantUtf8) constant_pool.getConstant(type_index, Const.CONSTANT_Utf8);
+        final ConstantUtf8 c = (ConstantUtf8) constantPool.getConstant(typeIndex, Const.CONSTANT_Utf8);
         return c.getBytes();
     }
 
@@ -106,14 +106,14 @@ public class AnnotationEntry implements Node {
      * @return the annotation type index
      */
     public int getAnnotationTypeIndex() {
-        return type_index;
+        return typeIndex;
     }
 
     /**
      * @return the number of element value pairs in this annotation entry
      */
     public final int getNumElementValuePairs() {
-        return element_value_pairs.size();
+        return elementValuePairs.size();
     }
 
     /**
@@ -121,20 +121,20 @@ public class AnnotationEntry implements Node {
      */
     public ElementValuePair[] getElementValuePairs() {
         // TODO return List
-        return element_value_pairs.toArray(new ElementValuePair[element_value_pairs.size()]);
+        return elementValuePairs.toArray(new ElementValuePair[elementValuePairs.size()]);
     }
 
     public void dump(final DataOutputStream dos) throws IOException {
-        dos.writeShort(type_index); // u2 index of type name in cpool
-        dos.writeShort(element_value_pairs.size()); // u2 element_value pair
+        dos.writeShort(typeIndex); // u2 index of type name in cpool
+        dos.writeShort(elementValuePairs.size()); // u2 element_value pair
         // count
-        for (final ElementValuePair envp : element_value_pairs) {
+        for (final ElementValuePair envp : elementValuePairs) {
             envp.dump(dos);
         }
     }
 
     public void addElementNameValuePair(final ElementValuePair elementNameValuePair) {
-        element_value_pairs.add(elementNameValuePair);
+        elementValuePairs.add(elementNameValuePair);
     }
 
     public String toShortString() {

@@ -28,12 +28,12 @@ package jdk.jfr.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.internal.module.Checks;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
@@ -57,7 +57,7 @@ public class Type implements Comparable<Type> {
     // To bootstrap the type system, the supported Java types
     // are available here as statics. When metadata.xml is parsed
     // fields are added to THREAD and STACK_TRACE.
-    private final static Map<Type, Class<?>> knownTypes = new LinkedHashMap<>();
+    private static final Map<Type, Class<?>> knownTypes = new LinkedHashMap<>();
     static final Type BOOLEAN = createKnownType(boolean.class);
     static final Type CHAR = createKnownType(char.class);
     static final Type FLOAT = createKnownType(float.class);
@@ -77,7 +77,7 @@ public class Type implements Comparable<Type> {
 
     private static Type createKnownType(String name, Class<?> clazz) {
         long id = JVM.getJVM().getTypeId(name);
-        Type t =  new Type(name, null, id);
+        Type t =  new Type(name, null, id, null);
         knownTypes.put(t, clazz);
         return t;
     }
@@ -89,6 +89,8 @@ public class Type implements Comparable<Type> {
     private Boolean simpleType; // calculated lazy
     private boolean remove = true;
     private long id;
+    private boolean visible = true;
+    private boolean internal;
 
     /**
      * Creates a type
@@ -100,14 +102,14 @@ public class Type implements Comparable<Type> {
      */
     public Type(String javaTypeName, String superType, long typeId) {
         this(javaTypeName, superType, typeId, null);
+        if (!Checks.isClassName(javaTypeName)) {
+            // Should not be able to come here with an invalid type name
+            throw new InternalError(javaTypeName + " is not a valid Java type");
+        }
     }
 
     Type(String javaTypeName, String superType, long typeId, Boolean simpleType) {
         Objects.requireNonNull(javaTypeName);
-
-        if (!isValidJavaIdentifier(javaTypeName)) {
-            throw new IllegalArgumentException(javaTypeName + " is not a valid Java identifier");
-        }
         this.superType = superType;
         this.name = javaTypeName;
         this.id = typeId;
@@ -125,24 +127,6 @@ public class Type implements Comparable<Type> {
 
     static Collection<Type> getKnownTypes() {
         return knownTypes.keySet();
-    }
-
-    public static boolean isValidJavaIdentifier(String identifier) {
-        if (identifier.isEmpty()) {
-            return false;
-        }
-        if (!Character.isJavaIdentifierStart(identifier.charAt(0))) {
-            return false;
-        }
-        for (int i = 1; i < identifier.length(); i++) {
-            char c = identifier.charAt(i);
-            if (c != '.') {
-                if (!Character.isJavaIdentifierPart(c)) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     public static boolean isValidJavaFieldType(String name) {
@@ -212,8 +196,8 @@ public class Type implements Comparable<Type> {
     }
 
     public List<ValueDescriptor> getFields() {
-        if (fields instanceof ArrayList) {
-            ((ArrayList<ValueDescriptor>) fields).trimToSize();
+        if (fields instanceof ArrayList<?> list) {
+            list.trimToSize();
             fields = Collections.unmodifiableList(fields);
         }
         return fields;
@@ -291,8 +275,7 @@ public class Type implements Comparable<Type> {
 
     @Override
     public boolean equals(Object object) {
-        if (object instanceof Type) {
-            Type that = (Type) object;
+        if (object instanceof Type that) {
             return that.id == this.id;
         }
         return false;
@@ -355,5 +338,21 @@ public class Type implements Comparable<Type> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setInternal(boolean internal) {
+        this.internal = internal;
+    }
+
+    public boolean isInternal() {
+        return internal;
     }
 }

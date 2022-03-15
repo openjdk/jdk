@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -337,7 +337,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ro">रूमानीयन्</language>
 			<language type="ro_MD">मोल्डेवियन्</language>
 			<language type="rom">रुमानी</language>
-			<language type="root">रुट</language>
 			<language type="ru">रुसी</language>
 			<language type="rup">आरोमानी</language>
 			<language type="rw">किन्यारुआण्डा</language>
@@ -1204,9 +1203,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>होनोलुलु</exemplarCity>
-			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>अज्ञात</exemplarCity>
 			</zone>
@@ -1315,11 +1311,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ब्रोकन हिल्</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>करी</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>मेलबोर्न्</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>करी</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>होबार्ट्</exemplarCity>
@@ -2211,6 +2207,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>नोम</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>होनोलुलु</exemplarCity>
 			</zone>
 			<zone type="Pacific/Johnston">
 				<exemplarCity>जौन्स्टन</exemplarCity>

@@ -59,7 +59,7 @@ public class DescriptorCache {
         return get(ImmutableDescriptor.union(descriptors));
     }
 
-    private final static DescriptorCache instance = new DescriptorCache();
+    private static final DescriptorCache instance = new DescriptorCache();
     private final WeakHashMap<ImmutableDescriptor,
                               WeakReference<ImmutableDescriptor>>
         map = new WeakHashMap<ImmutableDescriptor,

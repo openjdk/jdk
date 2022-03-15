@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 /*
  * @test
  * @bug 8228888
  * @summary Test PhaseIdealLoop::has_local_phi_input() with phi input with non-dominating control.
+ * @library /test/lib
  * @compile StrangeControl.jasm
  * @run main/othervm -Xbatch -XX:CompileCommand=inline,compiler.loopopts.StrangeControl::test
  *                   compiler.loopopts.TestStrangeControl
  */
 
 package compiler.loopopts;
+
+import jdk.test.lib.Utils;
 
 public class TestStrangeControl {
 
@@ -42,8 +44,9 @@ public class TestStrangeControl {
                 StrangeControl.test(42);
             }
         };
+        thread.setDaemon(true);
         thread.start();
         // Give thread executing strange control loop enough time to trigger OSR compilation
-        Thread.sleep(4000);
+        Thread.sleep(Utils.adjustTimeout(4000));
     }
 }

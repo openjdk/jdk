@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
@@ -36,8 +37,10 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
@@ -57,8 +60,8 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("VM operation took too long: " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
-            delay, AbortVMOnVMOperationTimeoutDelay);
+      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: " INTX_FORMAT " ms)",
+            _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }
 }
@@ -67,20 +70,34 @@ bool VMOperationTimeoutTask::is_armed() {
   return Atomic::load_acquire(&_armed) != 0;
 }
 
-void VMOperationTimeoutTask::arm() {
+void VMOperationTimeoutTask::arm(const char* vm_op_name) {
+  _vm_op_name = vm_op_name;
   _arm_time = os::javaTimeNanos();
   Atomic::release_store_fence(&_armed, 1);
 }
 
 void VMOperationTimeoutTask::disarm() {
   Atomic::release_store_fence(&_armed, 0);
+
+  // The two stores to `_armed` are counted in VM-op, but they should be
+  // insignificant compared to the actual VM-op duration.
+  jlong vm_op_duration = nanos_to_millis(os::javaTimeNanos() - _arm_time);
+
+  // Repeat the timeout-check logic on the VM thread, because
+  // VMOperationTimeoutTask might miss the arm-disarm window depending on
+  // the scheduling.
+  if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
+    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
+          _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
+  }
+  _vm_op_name = nullptr;
 }
 
 //------------------------------------------------------------------------------------------------------------------
 // Implementation of VMThread stuff
 
-static VM_None    safepointALot_op("SafepointALot");
-static VM_Cleanup cleanup_op;
+static VM_SafepointALot safepointALot_op;
+static VM_Cleanup       cleanup_op;
 
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
@@ -111,19 +128,18 @@ void VMThread::create() {
     assert(_timeout_task == NULL, "sanity");
   }
 
-  _terminate_lock = new Monitor(Mutex::safepoint, "VMThread::_terminate_lock", true,
-                                Monitor::_safepoint_check_never);
+  _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock");
 
   if (UsePerfData) {
     // jvmstat performance counters
-    Thread* THREAD = Thread::current();
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
     _perf_accumulated_vm_operation_time =
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
   }
 }
 
-VMThread::VMThread() : NamedThread() {
+VMThread::VMThread() : NamedThread(), _is_running(false) {
   set_name("VM Thread");
 }
 
@@ -131,15 +147,15 @@ void VMThread::destroy() {
   _vm_thread = NULL;      // VM thread is gone
 }
 
-static VM_None halt_op("Halt");
+static VM_Halt halt_op;
 
 void VMThread::run() {
   assert(this == vm_thread(), "check");
 
-  // Notify_lock wait checks on active_handles() to rewait in
+  // Notify_lock wait checks on is_running() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify
-  this->set_active_handles(JNIHandleBlock::allocate_block());
+  Atomic::store(&_is_running, true);
 
   {
     MutexLocker ml(Notify_lock);
@@ -280,7 +296,7 @@ class HandshakeALotClosure : public HandshakeClosure {
   HandshakeALotClosure() : HandshakeClosure("HandshakeALot") {}
   void do_thread(Thread* thread) {
 #ifdef ASSERT
-    thread->as_Java_thread()->verify_states_for_handshake();
+    JavaThread::cast(thread)->verify_states_for_handshake();
 #endif
   }
 };
@@ -392,7 +408,7 @@ void VMThread::inner_execute(VM_Operation* op) {
   _cur_vm_operation = op;
 
   HandleMark hm(VMThread::vm_thread());
-  EventMark em("Executing %s VM operation: %s", prev_vm_operation != NULL ? "nested" : "", op->name());
+  EventMarkVMOperation em("Executing %sVM operation: %s", prev_vm_operation != NULL ? "nested " : "", op->name());
 
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
                        prev_vm_operation != NULL ? "nested" : "",
@@ -400,11 +416,12 @@ void VMThread::inner_execute(VM_Operation* op) {
                       _cur_vm_operation->name());
 
   bool end_safepoint = false;
+  bool has_timeout_task = (_timeout_task != nullptr);
   if (_cur_vm_operation->evaluate_at_safepoint() &&
       !SafepointSynchronize::is_at_safepoint()) {
     SafepointSynchronize::begin();
-    if (_timeout_task != NULL) {
-      _timeout_task->arm();
+    if (has_timeout_task) {
+      _timeout_task->arm(_cur_vm_operation->name());
     }
     end_safepoint = true;
   }
@@ -412,7 +429,7 @@ void VMThread::inner_execute(VM_Operation* op) {
   evaluate_operation(_cur_vm_operation);
 
   if (end_safepoint) {
-    if (_timeout_task != NULL) {
+    if (has_timeout_task) {
       _timeout_task->disarm();
     }
     SafepointSynchronize::end();
@@ -518,7 +535,9 @@ void VMThread::execute(VM_Operation* op) {
   SkipGCALot sgcalot(t);
 
   // JavaThread or WatcherThread
-  t->check_for_valid_safepoint_state();
+  if (t->is_Java_thread()) {
+    JavaThread::cast(t)->check_for_valid_safepoint_state();
+  }
 
   // New request from Java thread, evaluate prologue
   if (!op->doit_prologue()) {

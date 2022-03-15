@@ -151,7 +151,7 @@ public class LSRDataTest {
                         + " A region/variant subtag \"" + preferred
                         + "\" is registered for more than one subtags.");
             }
-        } else { // language, extlang, grandfathered, and redundant
+        } else { // language, extlang, legacy, and redundant
             if (!singleLangEquivMap.containsKey(preferred)
                     && !multiLangEquivsMap.containsKey(preferred)) {
                 // new entry add it into single equiv map

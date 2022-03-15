@@ -37,16 +37,13 @@
 # Please see the notes below for the controversy about "EST" versus "AEST" etc.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Aus	1917	only	-	Jan	 1	0:01	1:00	D
-Rule	Aus	1917	only	-	Mar	25	2:00	0	S
-Rule	Aus	1942	only	-	Jan	 1	2:00	1:00	D
-Rule	Aus	1942	only	-	Mar	29	2:00	0	S
-Rule	Aus	1942	only	-	Sep	27	2:00	1:00	D
-Rule	Aus	1943	1944	-	Mar	lastSun	2:00	0	S
-Rule	Aus	1943	only	-	Oct	 3	2:00	1:00	D
-# Go with Whitman and the Australian National Standards Commission, which
-# says W Australia didn't use DST in 1943/1944.  Ignore Whitman's claim that
-# 1944/1945 was just like 1943/1944.
+Rule	Aus	1917	only	-	Jan	 1	2:00s	1:00	D
+Rule	Aus	1917	only	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1942	only	-	Jan	 1	2:00s	1:00	D
+Rule	Aus	1942	only	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1942	only	-	Sep	27	2:00s	1:00	D
+Rule	Aus	1943	1944	-	Mar	lastSun	2:00s	0	S
+Rule	Aus	1943	only	-	Oct	 3	2:00s	1:00	D
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Northern Territory
@@ -138,8 +135,12 @@ Zone Australia/Adelaide	9:14:20 -	LMT	1895 Feb
 # says King Island didn't observe DST from WWII until late 1971.
 #
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	AT	1916	only	-	Oct	Sun>=1	2:00s	1:00	D
+Rule	AT	1917	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1917	1918	-	Oct	Sun>=22	2:00s	1:00	D
+Rule	AT	1918	1919	-	Mar	Sun>=1	2:00s	0	S
 Rule	AT	1967	only	-	Oct	Sun>=1	2:00s	1:00	D
-Rule	AT	1968	only	-	Mar	lastSun	2:00s	0	S
+Rule	AT	1968	only	-	Mar	Sun>=29	2:00s	0	S
 Rule	AT	1968	1985	-	Oct	lastSun	2:00s	1:00	D
 Rule	AT	1969	1971	-	Mar	Sun>=8	2:00s	0	S
 Rule	AT	1972	only	-	Feb	lastSun	2:00s	0	S
@@ -159,14 +160,8 @@ Rule	AT	2007	only	-	Mar	lastSun	2:00s	0	S
 Rule	AT	2008	max	-	Apr	Sun>=1	2:00s	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Australia/Hobart	9:49:16	-	LMT	1895 Sep
-			10:00	-	AEST	1916 Oct  1  2:00
-			10:00	1:00	AEDT	1917 Feb
+			10:00	AT	AE%sT	1919 Oct 24
 			10:00	Aus	AE%sT	1967
-			10:00	AT	AE%sT
-Zone Australia/Currie	9:35:28	-	LMT	1895 Sep
-			10:00	-	AEST	1916 Oct  1  2:00
-			10:00	1:00	AEDT	1917 Feb
-			10:00	Aus	AE%sT	1971 Jul
 			10:00	AT	AE%sT
 
 # Victoria
@@ -413,9 +408,22 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # "Minister for Employment, Parveen Bala says they had never thought of
 # stopping daylight saving. He says it was just to decide on when it should
 # start and end.  Bala says it is a short period..."
-# Since the end date is still in line with our ongoing predictions, assume for
-# now that the later-than-usual start date is a one-time departure from the
-# recent second Sunday in November pattern.
+#
+# From Tim Parenti (2021-10-11), per Jashneel Kumar (2021-10-11) and P Chan
+# (2021-10-12):
+# https://www.fiji.gov.fj/Media-Centre/Speeches/English/PM-BAINIMARAMA-S-COVID-19-ANNOUNCEMENT-10-10-21
+# https://www.fbcnews.com.fj/news/covid-19/curfew-moved-back-to-11pm/
+# In a 2021-10-10 speech concerning updated Covid-19 mitigation measures in
+# Fiji, prime minister Josaia Voreqe "Frank" Bainimarama announced the
+# suspension of DST for the 2021/2022 season: "Given that we are in the process
+# of readjusting in the midst of so many changes, we will also put Daylight
+# Savings Time on hold for this year. It will also make the reopening of
+# scheduled commercial air service much smoother if we don't have to be
+# concerned shifting arrival and departure times, which may look like a simple
+# thing but requires some significant logistical adjustments domestically and
+# internationally."
+# Assume for now that DST will resume with the recent pre-2020 rules for the
+# 2022/2023 season.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	-
@@ -427,10 +435,11 @@ Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2012	2013	-	Jan	Sun>=18	3:00	0	-
 Rule	Fiji	2014	only	-	Jan	Sun>=18	2:00	0	-
 Rule	Fiji	2014	2018	-	Nov	Sun>=1	2:00	1:00	-
-Rule	Fiji	2015	max	-	Jan	Sun>=12	3:00	0	-
+Rule	Fiji	2015	2021	-	Jan	Sun>=12	3:00	0	-
 Rule	Fiji	2019	only	-	Nov	Sun>=8	2:00	1:00	-
 Rule	Fiji	2020	only	-	Dec	20	2:00	1:00	-
-Rule	Fiji	2021	max	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2022	max	-	Nov	Sun>=8	2:00	1:00	-
+Rule	Fiji	2023	max	-	Jan	Sun>=12	3:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
 			12:00	Fiji	+12/+13
@@ -492,7 +501,7 @@ Link Pacific/Guam Pacific/Saipan # N Mariana Is
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
 			 12:00	-	+12
-Zone Pacific/Enderbury	-11:24:20 -	LMT	1901
+Zone Pacific/Kanton	  0	-	-00	1937 Aug 31
 			-12:00	-	-12	1979 Oct
 			-11:00	-	-11	1994 Dec 31
 			 13:00	-	+13
@@ -625,13 +634,46 @@ Link Pacific/Auckland Antarctica/McMurdo
 # was probably like Pacific/Auckland
 
 # Cook Is
-# From Shanks & Pottenger:
+#
+# From Alexander Krivenyshev (2021-03-24):
+# In 1899 the Cook Islands celebrated Christmas twice to correct the calendar.
+# According to the old books, missionaries were unaware of
+# the International Date line, when they came from Sydney.
+# Thus the Cook Islands were one day ahead....
+# http://nzetc.victoria.ac.nz/tm/scholarly/tei-KloDisc-t1-body-d18.html
+# ... Appendix to the Journals of the House of Representatives, 1900
+# https://atojs.natlib.govt.nz/cgi-bin/atojs?a=d&d=AJHR1900-I.2.1.2.3
+# (page 20)
+#
+# From Michael Deckers (2021-03-24):
+# ... in the Cook Island Act of 1915-10-11, online at
+# http://www.paclii.org/ck/legis/ck-nz_act/cia1915132/
+# "651. The hour of the day shall in each of the islands included in the
+#  Cook Islands be determined in accordance with the meridian of that island."
+# so that local (mean?) time was still used in Rarotonga (and Niue) in 1915.
+# This was changed in the Cook Island Amendment Act of 1952-10-16 ...
+# http://www.paclii.org/ck/legis/ck-nz_act/ciaa1952212/
+# "651 (1) The hour of the day in each of the islands included in the Cook
+#  Islands, other than Niue, shall be determined as if each island were
+#  situated on the meridian one hundred and fifty-seven degrees thirty minutes
+#  West of Greenwich.  (2) The hour of the day in the Island of Niue shall be
+#  determined as if that island were situated on the meridian one hundred and
+#  seventy degrees West of Greenwich."
+# This act does not state when it takes effect, so one has to assume it
+# applies since 1952-10-16.  But there is the possibility that the act just
+# legalized prior existing practice, as we had seen with the Guernsey law of
+# 1913-06-18 for the switch in 1909-04-19.
+#
+# From Paul Eggert (2021-03-24):
+# Transitions after 1952 are from Shanks & Pottenger.
+#
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Cook	1978	only	-	Nov	12	0:00	0:30	-
 Rule	Cook	1979	1991	-	Mar	Sun>=1	0:00	0	-
 Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
+Zone Pacific/Rarotonga	13:20:56 -	LMT	1899 Dec 26 # Avarua
+			-10:39:04 -	LMT	1952 Oct 16
 			-10:30	-	-1030	1978 Nov 12
 			-10:00	Cook	-10/-0930
 
@@ -639,10 +681,18 @@ Zone Pacific/Rarotonga	-10:39:04 -	LMT	1901        # Avarua
 
 
 # Niue
+# See Pacific/Raratonga comments for 1952 transition.
+#
+# From Tim Parenti (2021-09-13):
+# Consecutive contemporaneous editions of The Air Almanac listed -11:20 for
+# Niue as of Apr 1964 but -11 as of Aug 1964:
+#   Apr 1964: https://books.google.com/books?id=_1So677Y5vUC&pg=SL1-PA23
+#   Aug 1964: https://books.google.com/books?id=MbJloqd-zyUC&pg=SL1-PA23
+# Without greater specificity, guess 1964-07-01 for this transition.
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Niue	-11:19:40 -	LMT	1901        # Alofi
-			-11:20	-	-1120	1951
-			-11:30	-	-1130	1978 Oct  1
+Zone	Pacific/Niue	-11:19:40 -	LMT	1952 Oct 16	# Alofi
+			-11:20	-	-1120	1964 Jul
 			-11:00	-	-11
 
 # Norfolk
@@ -666,6 +716,7 @@ Zone Pacific/Palau	-15:02:04 -	LMT	1844 Dec 31	# Koror
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
 			10:00	-	+10
+Link Pacific/Port_Moresby Antarctica/DumontDUrville
 #
 # From Paul Eggert (2014-10-13):
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
@@ -770,13 +821,17 @@ Link Pacific/Pago_Pago Pacific/Midway # in US minor outlying islands
 # From Paul Eggert (2014-07-08):
 # That web page currently lists transitions for 2012/3 and 2013/4.
 # Assume the pattern instituted in 2012 will continue indefinitely.
+#
+# From Geoffrey D. Bennett (2021-09-20):
+# https://www.mcil.gov.ws/storage/2021/09/MCIL-Scan_20210920_120553.pdf
+# DST has been cancelled for this year.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	WS	2010	only	-	Sep	lastSun	0:00	1	-
 Rule	WS	2011	only	-	Apr	Sat>=1	4:00	0	-
 Rule	WS	2011	only	-	Sep	lastSat	3:00	1	-
-Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	-
-Rule	WS	2012	max	-	Sep	lastSun	3:00	1	-
+Rule	WS	2012	2021	-	Apr	Sun>=1	4:00	0	-
+Rule	WS	2012	2020	-	Sep	lastSun	3:00	1	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 			-11:26:56 -	LMT	1911
@@ -823,8 +878,8 @@ Rule	Tonga	2001	2002	-	Jan	lastSun	2:00	0	-
 Rule	Tonga	2016	only	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Tonga	2017	only	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Pacific/Tongatapu	12:19:20 -	LMT	1901
-			12:20	-	+1220	1941
+Zone Pacific/Tongatapu	12:19:12 -	LMT	1945 Sep 10
+			12:20	-	+1220	1961
 			13:00	-	+13	1999
 			13:00	Tonga	+13/+14
 
@@ -896,13 +951,36 @@ Zone	Pacific/Wake	11:06:28 -	LMT	1901
 
 
 # Vanuatu
+
+# From P Chan (2020-11-27):
+# Joint Daylight Saving Regulation No 59 of 1973
+# New Hebrides Condominium Gazette No 336. December 1973
+# http://www.paclii.org/vu/other/VUNHGovGaz//1973/11.pdf#page=15
+#
+# Joint Daylight Saving (Repeal) Regulation No 10 of 1974
+# New Hebrides Condominium Gazette No 336. March 1974
+# http://www.paclii.org/vu/other/VUNHGovGaz//1974/3.pdf#page=11
+#
+# Summer Time Act No. 35 of 1982 [commenced 1983-09-01]
+# http://www.paclii.org/vu/other/VUGovGaz/1982/32.pdf#page=48
+#
+# Summer Time Act (Cap 157)
+# Laws of the Republic of Vanuatu Revised Edition 1988
+# http://www.paclii.org/cgi-bin/sinodisp/vu/legis/consol_act1988/sta147/sta147.html
+#
+# Summer Time (Amendment) Act No. 6 of 1991 [commenced 1991-11-11]
+# http://www.paclii.org/vu/legis/num_act/sta1991227/
+#
+# Summer Time (Repeal) Act No. 4 of 1993 [commenced 1993-05-03]
+# http://www.paclii.org/vu/other/VUGovGaz/1993/15.pdf#page=59
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Vanuatu	1983	only	-	Sep	25	0:00	1:00	-
-Rule	Vanuatu	1984	1991	-	Mar	Sun>=23	0:00	0	-
-Rule	Vanuatu	1984	only	-	Oct	23	0:00	1:00	-
-Rule	Vanuatu	1985	1991	-	Sep	Sun>=23	0:00	1:00	-
-Rule	Vanuatu	1992	1993	-	Jan	Sun>=23	0:00	0	-
-Rule	Vanuatu	1992	only	-	Oct	Sun>=23	0:00	1:00	-
+Rule	Vanuatu	1973	only	-	Dec	22	12:00u	1:00	-
+Rule	Vanuatu	1974	only	-	Mar	30	12:00u	0	-
+Rule	Vanuatu	1983	1991	-	Sep	Sat>=22	24:00	1:00	-
+Rule	Vanuatu	1984	1991	-	Mar	Sat>=22	24:00	0	-
+Rule	Vanuatu	1992	1993	-	Jan	Sat>=22	24:00	0	-
+Rule	Vanuatu	1992	only	-	Oct	Sat>=22	24:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 			11:00	Vanuatu	+11/+12
@@ -980,6 +1058,25 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # about fading curtains and crazed farm animals."
 # Electronic Journal of Australian and New Zealand History (1997-03-03)
 # http://www.jcu.edu.au/aff/history/reviews/davison.htm
+
+# From P Chan (2020-11-20):
+# Daylight Saving Act 1916 (No. 40 of 1916) [1916-12-21, commenced 1917-01-01]
+# http://classic.austlii.edu.au/au/legis/cth/num_act/dsa1916401916192/
+#
+# Daylight Saving Repeal Act 1917 (No. 35 of 1917) [1917-09-25]
+# http://classic.austlii.edu.au/au/legis/cth/num_act/dsra1917351917243/
+#
+# Statutory Rules 1941, No. 323 [1941-12-24]
+# https://www.legislation.gov.au/Details/C1941L00323
+#
+# Statutory Rules 1942, No. 392 [1942-09-10]
+# https://www.legislation.gov.au/Details/C1942L00392
+#
+# Statutory Rules 1943, No. 241 [1943-09-29]
+# https://www.legislation.gov.au/Details/C1943L00241
+#
+# All transition times should be 02:00 standard time.
+
 
 # From Paul Eggert (2005-12-08):
 # Implementation Dates of Daylight Saving Time within Australia
@@ -1373,6 +1470,27 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # Tasmania
 
+# From P Chan (2020-11-20):
+# Tasmania observed DST in 1916-1919.
+#
+# Daylight Saving Act, 1916 (7 Geo V, No 2) [1916-09-22]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsa19167gvn2267/
+#
+# Daylight Saving Amendment Act, 1917 (8 Geo V, No 5) [1917-10-01]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsaa19178gvn5347/
+#
+# Daylight Saving Act Repeal Act, 1919 (10 Geo V, No 9) [1919-10-24]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/tdsara191910gvn9339/
+#
+# King Island is mentioned in the 1967 Act but not the 1968 Act.
+# Therefore it possibly observed DST from 1968/69.
+#
+# Daylight Saving Act 1967 (No. 33 of 1967) [1967-09-22]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/dsa196733o1967211/
+#
+# Daylight Saving Act 1968 (No. 42 of 1968) [1968-10-15]
+# http://classic.austlii.edu.au/au/legis/tas/num_act/dsa196842o1968211/
+
 # The rules for 1967 through 1991 were reported by George Shepherd
 # via Simon Woodhead via Robert Elz (1991-03-06):
 # #  The state of TASMANIA.. [Courtesy Tasmanian Dept of Premier + Cabinet ]
@@ -1703,6 +1821,23 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # One source for this is page 202 of: Bartky IR. One Time Fits All:
 # The Campaigns for Global Uniformity (2007).
 
+# Kanton
+
+# From Paul Eggert (2021-05-27):
+# Kiribati's +13 timezone is represented by Kanton, its only populated
+# island.  (It was formerly spelled "Canton", but Gilbertese lacks "C".)
+# Kanton was settled on 1937-08-31 by two British radio operators
+# <https://history.state.gov/historicaldocuments/frus1937v02/d94>;
+# Americans came the next year and built an airfield, partly to
+# establish airline service and perhaps partly anticipating the
+# next war.  Aside from the war, the airfield was used by commercial
+# airlines until long-range jets became standard; although currently
+# for emergency use only, China says it is considering rebuilding the
+# airfield for high-end niche tourism.  Kanton has about two dozen
+# people, caretakers who rotate in from the rest of Kiribati in 2-5
+# year shifts, and who use some of the leftover structures
+# <http://pipa.neaq.org/2012/06/images-of-kanton-island.html>.
+
 # Kwajalein
 
 # From an AP article (1993-08-22):
@@ -1986,6 +2121,17 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # Tonga
 
+# From Paul Eggert (2021-03-04):
+# In 1943 "The standard time kept is 12 hrs. 19 min. 12 sec. fast
+# on Greenwich mean time." according to the Admiralty's Hydrographic
+# Dept., Pacific Islands Pilot, Vol. II, 7th ed., 1943, p 360.
+
+# From Michael Deckers (2021-03-03):
+# [Ian R Bartky: "One Time Fits All: The Campaigns for Global Uniformity".
+# Stanford University Press. 2007. p. 255]:
+# On 10 September 1945 Tonga adopted a standard time 12 hours,
+# 20 minutes in advance of Greenwich.
+
 # From Paul Eggert (1996-01-22):
 # Today's _Wall Street Journal_ (p 1) reports that "Tonga has been plotting
 # to sneak ahead of [New Zealanders] by introducing daylight-saving time."
@@ -2014,9 +2160,26 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # The Crown Prince, presented an unanswerable argument: "Remember that
 # on the World Day of Prayer, you would be the first people on Earth
 # to say your prayers in the morning."
-
-# From Paul Eggert (2006-03-22):
-# Shanks & Pottenger say the transition was on 1968-10-01; go with Mundell.
+#
+# From Tim Parenti (2021-09-13), per Paul Eggert (2006-03-22) and Michael
+# Deckers (2021-03-03):
+# Mundell places the transition from +12:20 to +13 in 1941, while Shanks &
+# Pottenger say the transition was on 1968-10-01.
+#
+# The Air Almanac published contemporaneous tables of standard times,
+# which listed +12:20 as of Nov 1960 and +13 as of Mar 1961:
+#   Nov 1960: https://books.google.com/books?id=bVgtWM6kPZUC&pg=SL1-PA19
+#   Mar 1961: https://books.google.com/books?id=W2nItAul4g0C&pg=SL1-PA19
+# (Thanks to P Chan for pointing us toward these sources.)
+# This agrees with Bartky, who writes that "since 1961 [Tonga's] official time
+# has been thirteen hours in advance of Greenwich time" (p. 202) and further
+# writes in an endnote that this was because "the legislation was amended" on
+# 1960-10-19. (p. 255)
+#
+# Without greater specificity, presume that Bartky and the Air Almanac point to
+# a 1961-01-01 transition, as Tāufaʻāhau Tupou IV was still Crown Prince in
+# 1961 and this still jives with the gist of Mundell's telling, and go with
+# this over Shanks & Pottenger.
 
 # From Eric Ulevik (1999-05-03):
 # Tonga's director of tourism, who is also secretary of the National Millennium

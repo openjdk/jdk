@@ -69,7 +69,7 @@ public interface Manifest extends XMLStructure {
      * specified as the value of the <code>type</code> parameter of the
      * {@link Reference} class to identify the referent's type).
      */
-    final static String TYPE = "http://www.w3.org/2000/09/xmldsig#Manifest";
+    static final String TYPE = "http://www.w3.org/2000/09/xmldsig#Manifest";
 
     /**
      * Returns the Id of this <code>Manifest</code>.

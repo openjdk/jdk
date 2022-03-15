@@ -51,10 +51,6 @@ void* getProcessHandle() {
     return procHandle;
 }
 
-void* findEntryInProcess(const char* name) {
-    return JVM_FindLibraryEntry(RTLD_DEFAULT, name);
-}
-
 void buildJniFunctionName(const char *sym, const char *cname,
                           char *jniEntryName) {
     strcpy(jniEntryName, sym);

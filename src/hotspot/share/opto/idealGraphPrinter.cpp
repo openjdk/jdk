@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "opto/parse.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/stringUtils.hpp"
 
 #ifndef PRODUCT
 
@@ -47,6 +48,8 @@ const char *IdealGraphPrinter::NODE_ELEMENT = "node";
 const char *IdealGraphPrinter::NODES_ELEMENT = "nodes";
 const char *IdealGraphPrinter::REMOVE_EDGE_ELEMENT = "removeEdge";
 const char *IdealGraphPrinter::REMOVE_NODE_ELEMENT = "removeNode";
+const char *IdealGraphPrinter::COMPILATION_ID_PROPERTY = "compilationId";
+const char *IdealGraphPrinter::COMPILATION_OSR_PROPERTY = "osr";
 const char *IdealGraphPrinter::METHOD_NAME_PROPERTY = "name";
 const char *IdealGraphPrinter::METHOD_IS_PUBLIC_PROPERTY = "public";
 const char *IdealGraphPrinter::METHOD_IS_STATIC_PROPERTY = "static";
@@ -312,6 +315,14 @@ void IdealGraphPrinter::begin_method() {
     print_prop(METHOD_IS_STATIC_PROPERTY, TRUE_VALUE);
   }
 
+  if (C->is_osr_compilation()) {
+      stringStream ss;
+      ss.print("bci: %d, line: %d", C->entry_bci(), method->line_number_from_bci(C->entry_bci()));
+      print_prop(COMPILATION_OSR_PROPERTY, ss.as_string());
+  }
+
+  print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
+
   tail(PROPERTIES_ELEMENT);
 
   _should_send_method = true;
@@ -339,14 +350,12 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
   if (edges) {
 
-    // Output edge
-    node_idx_t dest_id = n->_idx;
-    for ( uint i = 0; i < n->len(); i++ ) {
-      if ( n->in(i) ) {
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i)) {
         Node *source = n->in(i);
         begin_elem(EDGE_ELEMENT);
-        print_attr(FROM_PROPERTY, source->_idx);
-        print_attr(TO_PROPERTY, dest_id);
+        print_attr(FROM_PROPERTY, source->_igv_idx);
+        print_attr(TO_PROPERTY, n->_igv_idx);
         print_attr(INDEX_PROPERTY, i);
         end_elem();
       }
@@ -356,7 +365,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     // Output node
     begin_head(NODE_ELEMENT);
-    print_attr(NODE_ID_PROPERTY, n->_idx);
+    print_attr(NODE_ID_PROPERTY, n->_igv_idx);
     end_head();
 
     head(PROPERTIES_ELEMENT);
@@ -378,7 +387,45 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
+        // Print estimated execution frequency, normalized within a [0,1] range.
+        buffer[0] = 0;
+        stringStream freq(buffer, sizeof(buffer) - 1);
+        // Higher precision has no practical effect in visualizations.
+        freq.print("%.8f", block->_freq / _max_freq);
+        assert(freq.size() < sizeof(buffer), "size in range");
+        // Enforce dots as decimal separators, as required by IGV.
+        StringUtils::replace_no_expand(buffer, ",", ".");
+        print_prop("frequency", buffer);
       }
+    }
+
+    switch (t->category()) {
+      case Type::Category::Data:
+        print_prop("category", "data");
+        break;
+      case Type::Category::Memory:
+        print_prop("category", "memory");
+        break;
+      case Type::Category::Mixed:
+        print_prop("category", "mixed");
+        break;
+      case Type::Category::Control:
+        print_prop("category", "control");
+        break;
+      case Type::Category::Other:
+        print_prop("category", "other");
+        break;
+      case Type::Category::Undef:
+        print_prop("category", "undef");
+        break;
+    }
+
+    Node_Notes* nn = C->node_notes_at(node->_idx);
+    if (nn != NULL && !nn->is_clear() && nn->jvms() != NULL) {
+      buffer[0] = 0;
+      stringStream ss(buffer, sizeof(buffer) - 1);
+      nn->jvms()->dump_spec(&ss);
+      print_prop("jvms", buffer);
     }
 
     const jushort flags = node->flags();
@@ -421,13 +468,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       } else {
         print_prop("is_dontcare", "false");
       }
-
-#ifdef ASSERT
       Node* old = C->matcher()->find_old_node(node);
       if (old != NULL) {
         print_prop("old_node_idx", old->_idx);
       }
-#endif
     }
 
     if (node->is_Proj()) {
@@ -437,6 +481,8 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (node->is_Mach()) {
       print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
     }
+
+    print_field(node);
 
     buffer[0] = 0;
     stringStream s2(buffer, sizeof(buffer) - 1);
@@ -511,7 +557,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         } else {
           print_prop(short_name, "L");
         }
-      } else if (t->base() == Type::KlassPtr) {
+      } else if (t->base() == Type::KlassPtr || t->base() == Type::InstKlassPtr || t->base() == Type::AryKlassPtr) {
         const TypeKlassPtr *typeKlass = t->is_klassptr();
         print_prop(short_name, "CP");
       } else if (t->base() == Type::Control) {
@@ -586,9 +632,96 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
   }
 }
 
-void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set) {
+void IdealGraphPrinter::print_field(const Node* node) {
+  buffer[0] = 0;
+  stringStream ss(buffer, sizeof(buffer) - 1);
+  ciField* field = get_field(node);
+  uint depth = 0;
+  if (field == NULL) {
+    depth++;
+    field = find_source_field_of_array_access(node, depth);
+  }
 
+  if (field != NULL) {
+    // Either direct field access or array access
+    field->print_name_on(&ss);
+    for (uint i = 0; i < depth; i++) {
+      // For arrays: Add [] for each dimension
+      ss.print("[]");
+    }
+    if (node->is_Store()) {
+      print_prop("destination", buffer);
+    } else {
+      print_prop("source", buffer);
+    }
+  }
+}
 
+ciField* IdealGraphPrinter::get_field(const Node* node) {
+  const TypePtr* adr_type = node->adr_type();
+  Compile::AliasType* atp = NULL;
+  if (C->have_alias_type(adr_type)) {
+    atp = C->alias_type(adr_type);
+  }
+  if (atp != NULL) {
+    ciField* field = atp->field();
+    if (field != NULL) {
+      // Found field associated with 'node'.
+      return field;
+    }
+  }
+  return NULL;
+}
+
+// Try to find the field that is associated with a memory node belonging to an array access.
+ciField* IdealGraphPrinter::find_source_field_of_array_access(const Node* node, uint& depth) {
+  if (!node->is_Mem()) {
+    // Not an array access
+    return NULL;
+  }
+
+  do {
+    if (node->adr_type() != NULL && node->adr_type()->isa_aryptr()) {
+      // Only process array accesses. Pattern match to find actual field source access.
+      node = get_load_node(node);
+      if (node != NULL) {
+        ciField* field = get_field(node);
+        if (field != NULL) {
+          return field;
+        }
+        // Could be a multi-dimensional array. Repeat loop.
+        depth++;
+        continue;
+      }
+    }
+    // Not an array access with a field source.
+    break;
+  } while (depth < 256); // Cannot have more than 255 dimensions
+
+  return NULL;
+}
+
+// Pattern match on the inputs of 'node' to find load node for the field access.
+Node* IdealGraphPrinter::get_load_node(const Node* node) {
+  Node* load = NULL;
+  Node* addr = node->as_Mem()->in(MemNode::Address);
+  if (addr != NULL && addr->is_AddP()) {
+    Node* base = addr->as_AddP()->base_node();
+    if (base != NULL) {
+      base = base->uncast();
+      if (base->is_Load()) {
+        // Mem(AddP([ConstraintCast*](LoadP))) for non-compressed oops.
+        load = base;
+      } else if (base->is_DecodeN() && base->in(1)->is_Load()) {
+        // Mem(AddP([ConstraintCast*](DecodeN(LoadN)))) for compressed oops.
+        load = base->in(1);
+      }
+    }
+  }
+  return load;
+}
+
+void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set) {
   VectorSet visited;
   GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
   nodeStack.push(start);
@@ -629,7 +762,7 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
 }
 
 void IdealGraphPrinter::print_method(const char *name, int level) {
-  if (C->should_print(level)) {
+  if (C->should_print_igv(level)) {
     print(name, (Node *) C->root());
   }
 }
@@ -649,6 +782,16 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   VectorSet temp_set;
 
   head(NODES_ELEMENT);
+  if (C->cfg() != NULL) {
+    // Compute the maximum estimated frequency in the current graph.
+    _max_freq = 1.0e-6;
+    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+      Block* block = C->cfg()->get_block(i);
+      if (block->_freq > _max_freq) {
+        _max_freq = block->_freq;
+      }
+    }
+  }
   walk_nodes(node, false, &temp_set);
   tail(NODES_ELEMENT);
 
@@ -674,7 +817,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
       head(NODES_ELEMENT);
       for (uint s = 0; s < block->number_of_nodes(); s++) {
         begin_elem(NODE_ELEMENT);
-        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_idx);
+        print_attr(NODE_ID_PROPERTY, block->get_node(s)->_igv_idx);
         end_elem();
       }
       tail(NODES_ELEMENT);

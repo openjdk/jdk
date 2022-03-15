@@ -22,7 +22,7 @@
  *
  */
 
-/* @test TestWrongBarrierEnable
+/* @test
  * @summary Test that disabling wrong barriers fails early
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -38,7 +38,7 @@ public class TestWrongBarrierEnable {
 
     public static void main(String[] args) throws Exception {
         String[] concurrent = {
-                "ShenandoahStoreValEnqueueBarrier",
+                "ShenandoahIUBarrier",
         };
         String[] iu = {
                 "ShenandoahSATBBarrier",

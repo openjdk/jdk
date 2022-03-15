@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,6 @@ import java.awt.Color;
 
 /** PNG - Portable Network Graphics - image file reader.
     See <a href=http://www.ietf.org/rfc/rfc2083.txt>RFC2083</a> for details. */
-
-/* this is changed
-public class PNGImageDecoder extends FilterInputStream implements Runnable
-{ */
-
 public class PNGImageDecoder extends ImageDecoder
 {
     private static final int GRAY=0;
@@ -69,18 +64,11 @@ public class PNGImageDecoder extends ImageDecoder
     private int interlaceMethod;
     private int gamma = 100000;
     private java.util.Hashtable<String, Object> properties;
-  /* this is not needed
-    ImageConsumer target;
-    */
     private ColorModel cm;
     private byte[] red_map, green_map, blue_map, alpha_map;
     private int transparentPixel = -1;
     private byte[]  transparentPixel_16 = null; // we need 6 bytes to store 16bpp value
     private static ColorModel[] greyModels = new ColorModel[4];
-  /* this is not needed
-     PNGImageDecoder next;
-     */
-
     private void property(String key,Object value) {
         if(value==null) return;
         if(properties==null) properties=new java.util.Hashtable<>();
@@ -153,9 +141,6 @@ public class PNGImageDecoder extends ImageDecoder
                 compressionMethod = getByte(st+10);
                 filterMethod = getByte(st+11);
                 interlaceMethod = getByte(st+12);
-                /* this is not needed
-                  if(target!=null) target.setDimensions(width,height);
-                  */
                 break;
             case PLTEChunk:
                 {   int tsize = len/3;
@@ -235,14 +220,7 @@ public class PNGImageDecoder extends ImageDecoder
     public class PNGException extends IOException {
         PNGException(String s) { super(s); }
     }
-  /* this is changed
-     public void run() {
-     */
   public void produceImage() throws IOException, ImageFormatException {
-    /* this is not needed
-       ImageConsumer t = target;
-       if(t!=null) try {
-       */
     try {
             for(int i=0; i<signature.length; i++)
               if((signature[i]&0xFF)!=underlyingInputStream.read())
@@ -310,14 +288,6 @@ public class PNGImageDecoder extends ImageDecoder
                 default:
                     throw new PNGException("invalid color type");
             }
-            /* this is going to be set in the pixel store
-              t.setColorModel(cm);
-            t.setHints(interlaceMethod !=0
-                       ? ImageConsumer.TOPDOWNLEFTRIGHT | ImageConsumer.COMPLETESCANLINES
-                       : ImageConsumer.TOPDOWNLEFTRIGHT | ImageConsumer.COMPLETESCANLINES |
-                         ImageConsumer.SINGLEPASS | ImageConsumer.SINGLEFRAME);
-                         */
-            // code added to make it work with ImageDecoder architecture
             setDimensions(width, height);
             setColorModel(cm);
             int flags = (interlaceMethod !=0
@@ -326,7 +296,6 @@ public class PNGImageDecoder extends ImageDecoder
                          ImageConsumer.SINGLEPASS | ImageConsumer.SINGLEFRAME);
             setHints(flags);
             headerComplete();
-            // end of adding
 
             int samplesPerPixel = ((colorType&PALETTE)!=0 ? 1
                                  : ((colorType&COLOR)!=0 ? 3 : 1)+((colorType&ALPHA)!=0?1:0));
@@ -335,11 +304,6 @@ public class PNGImageDecoder extends ImageDecoder
             int pass, passLimit;
             if(interlaceMethod==0) { pass = -1; passLimit = 0; }
             else { pass = 0; passLimit = 7; }
-            // These loops are far from being tuned.  They're this way to make them easy to
-            // debug.  Tuning comes later.
-            /* code changed. target not needed here
-               while(++pass<=passLimit && (t=target)!=null) {
-               */
             while(++pass<=passLimit) {
                 int row = startingRow[pass];
                 int rowInc = rowIncrement[pass];
@@ -356,9 +320,6 @@ public class PNGImageDecoder extends ImageDecoder
 
                 byte[] rowByteBuffer = new byte[rowByteWidth];
                 byte[] prevRowByteBuffer = new byte[rowByteWidth];
-                /* code changed. target not needed here
-                   while (row < height && (t=target)!=null) {
-                   */
                 while (row < height) {
                     int rowFilter = is.read();
                     for (int rowFillPos=0;rowFillPos<rowByteWidth; ) {
@@ -457,27 +418,13 @@ public class PNGImageDecoder extends ImageDecoder
                                 break;
                             default: throw new PNGException("illegal type/depth");
                         }
-                        /*visit (row, col,
-                            min (bHeight, height - row),
-                            min (bWidth, width - col)); */
                         col += colInc;
                     }
                     if(interlaceMethod==0)
                       if(wPixels!=null) {
-                        /* code changed. target not needed here
-                          t.setPixels(0,row,width,1,cm,wPixels,0,width);
-                          */
-                       // code added to make it work with ImageDecoder arch
                         sendPixels(0,row,width,1,wPixels,0,width);
-                        // end of adding
-                      }
-                      else {
-                        /* code changed. target not needed here
-                           t.setPixels(0,row,width,1,cm,bPixels,0,width);
-                           */
-                        // code added to make it work with ImageDecoder arch
+                      } else {
                         sendPixels(0,row,width,1,bPixels,0,width);
-                        //end of adding
                       }
                     row += rowInc;
                     rowOffset += rowInc*rowStride;
@@ -488,20 +435,9 @@ public class PNGImageDecoder extends ImageDecoder
                 }
                 if(interlaceMethod!=0)
                   if(wPixels!=null) {
-                    /* code changed. target not needed here
-                       t.setPixels(0,0,width,height,cm,wPixels,0,width);
-                       */
-                    // code added to make it work with ImageDecoder arch
                       sendPixels(0,0,width,height,wPixels,0,width);
-                      //end of adding
-                  }
-                  else {
-                     /* code changed. target not needed here
-                        t.setPixels(0,0,width,height,cm,bPixels,0,width);
-                        */
-                    // code added to make it work with ImageDecoder arch
+                  } else {
                       sendPixels(0,0,width,height,bPixels,0,width);
-                      //end of adding
                   }
             }
 
@@ -511,37 +447,15 @@ public class PNGImageDecoder extends ImageDecoder
       and column, using the color indicated by the pixel.  Note that row
       and column are measured from 0,0 at the upper left corner. */
 
-            /* code not needed, don't deal with target
-             if((t=target)!=null) {
-               if(properties!=null) t.setProperties(properties);
-                 t.imageComplete(ImageConsumer.STATICIMAGEDONE);
-                 */
-
               imageComplete(ImageConsumer.STATICIMAGEDONE, true);
-
-              /* code not needed }
-               is.close();
-               */
         } catch(IOException e) {
             if(!aborted) {
-                /* code not needed
-                   if((t=target)!=null) {
-                   PNGEncoder.prChunk(e.toString(),inbuf,pos,limit-pos,true);
-                */
                 property("error", e);
-                /* code not needed
-                   t.setProperties(properties);
-                   t.imageComplete(ImageConsumer.IMAGEERROR|ImageConsumer.STATICIMAGEDONE);
-                */
                 imageComplete(ImageConsumer.IMAGEERROR|ImageConsumer.STATICIMAGEDONE, true);
                 throw e;
             }
         } finally {
           try { close(); } catch(Throwable e){}
-          /* code not needed
-             target = null;
-             endTurn();
-             */
         }
     }
 
@@ -620,47 +534,22 @@ public class PNGImageDecoder extends ImageDecoder
     private static final byte[] blockHeight =  { 1, 8, 8, 4, 4, 2, 2, 1 };
     private static final byte[] blockWidth =   { 1, 8, 4, 4, 2, 2, 1, 1 };
 
-    //abstract public class ChunkReader extends FilterInputStream {
-  int pos, limit;
+    int pos, limit;
     int chunkStart;
-   int chunkKey, chunkLength, chunkCRC;
+    int chunkKey, chunkLength, chunkCRC;
     boolean seenEOF;
 
     private static final byte[] signature = { (byte) 137, (byte) 80, (byte) 78,
         (byte) 71, (byte) 13, (byte) 10, (byte) 26, (byte) 10 };
 
-  PNGFilterInputStream inputStream;
-  InputStream underlyingInputStream;
+    PNGFilterInputStream inputStream;
+    InputStream underlyingInputStream;
 
-  /* code changed
-    public PNGImageDecoder(InputStream in, ImageConsumer t) throws IOException {
-    */
   public PNGImageDecoder(InputStreamImageSource src, InputStream input) throws IOException {
-    // code added
     super(src, input);
     inputStream = new PNGFilterInputStream(this, input);
     underlyingInputStream = inputStream.underlyingInputStream;
-    // end of adding
-    /* code changed
-       super(in);
-       target = t;
-       waitTurn();
-       new Thread(this).start();
-       */
     }
-  /* code changed to make it work with ImageDecoder architecture
-    static int ThreadLimit = 10;
-    private static synchronized void waitTurn() {
-        try {
-            while(ThreadLimit<=0) PNGImageDecoder.class.wait(1000);
-        } catch(InterruptedException e){}
-        ThreadLimit--;
-    }
-    private static synchronized void endTurn() {
-        if(ThreadLimit<=0) PNGImageDecoder.class.notify();
-        ThreadLimit++;
-    }
-    */
     byte[] inbuf = new byte[4096];
     private void fill() throws IOException {
         if(!seenEOF) {
@@ -728,8 +617,6 @@ public class PNGImageDecoder extends ImageDecoder
                 chunkLength = 0;
         return chunkLength>0;
     }
-    //abstract protected boolean handleChunk(int key, byte[] buf, int st, int len)
-    //    throws IOException;
     private static boolean checkCRC = true;
     public static boolean getCheckCRC() { return checkCRC; }
     public static void setCheckCRC(boolean c) { checkCRC = c; }

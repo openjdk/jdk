@@ -90,7 +90,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testNewCachedThreadPool3() {
         try {
-            ExecutorService e = Executors.newCachedThreadPool(null);
+            ExecutorService unused = Executors.newCachedThreadPool(null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -124,7 +124,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testNewSingleThreadExecutor3() {
         try {
-            ExecutorService e = Executors.newSingleThreadExecutor(null);
+            ExecutorService unused = Executors.newSingleThreadExecutor(null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -172,7 +172,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testNewFixedThreadPool3() {
         try {
-            ExecutorService e = Executors.newFixedThreadPool(2, null);
+            ExecutorService unused = Executors.newFixedThreadPool(2, null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -182,7 +182,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testNewFixedThreadPool4() {
         try {
-            ExecutorService e = Executors.newFixedThreadPool(0);
+            ExecutorService unused = Executors.newFixedThreadPool(0);
             shouldThrow();
         } catch (IllegalArgumentException success) {}
     }
@@ -204,7 +204,8 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testUnconfigurableExecutorServiceNPE() {
         try {
-            ExecutorService e = Executors.unconfigurableExecutorService(null);
+            ExecutorService unused =
+                Executors.unconfigurableExecutorService(null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -214,7 +215,8 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testUnconfigurableScheduledExecutorServiceNPE() {
         try {
-            ExecutorService e = Executors.unconfigurableScheduledExecutorService(null);
+            ExecutorService unused =
+                Executors.unconfigurableScheduledExecutorService(null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -231,7 +233,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     await(proceed);
                 }};
             long startTime = System.nanoTime();
-            Future f = p.schedule(Executors.callable(task, Boolean.TRUE),
+            Future<?> f = p.schedule(Executors.callable(task, Boolean.TRUE),
                                   timeoutMillis(), MILLISECONDS);
             assertFalse(f.isDone());
             proceed.countDown();
@@ -255,7 +257,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     await(proceed);
                 }};
             long startTime = System.nanoTime();
-            Future f = p.schedule(Executors.callable(task, Boolean.TRUE),
+            Future<?> f = p.schedule(Executors.callable(task, Boolean.TRUE),
                                   timeoutMillis(), MILLISECONDS);
             assertFalse(f.isDone());
             proceed.countDown();
@@ -281,7 +283,7 @@ public class ExecutorsTest extends JSR166TestCase {
                     await(proceed);
                 }};
             long startTime = System.nanoTime();
-            Future f = p.schedule(Executors.callable(task, Boolean.TRUE),
+            Future<?> f = p.schedule(Executors.callable(task, Boolean.TRUE),
                                   timeoutMillis(), MILLISECONDS);
             assertFalse(f.isDone());
             proceed.countDown();
@@ -304,21 +306,24 @@ public class ExecutorsTest extends JSR166TestCase {
             Executors.newScheduledThreadPool(2),
         };
 
-        final Runnable sleeper = new CheckedInterruptedRunnable() {
+        final CountDownLatch done = new CountDownLatch(1);
+
+        final Runnable sleeper = new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                delay(LONG_DELAY_MS);
+                done.await(LONG_DELAY_MS, MILLISECONDS);
             }};
 
         List<Thread> threads = new ArrayList<>();
         for (final ExecutorService executor : executors) {
             threads.add(newStartedThread(new CheckedRunnable() {
                 public void realRun() {
-                    Future future = executor.submit(sleeper);
+                    Future<?> future = executor.submit(sleeper);
                     assertFutureTimesOut(future);
                 }}));
         }
         for (Thread thread : threads)
             awaitTermination(thread);
+        done.countDown();
         for (ExecutorService executor : executors)
             joinPool(executor);
     }
@@ -464,7 +469,7 @@ public class ExecutorsTest extends JSR166TestCase {
             public void realRun() throws Exception {
                 if (System.getSecurityManager() == null)
                     return;
-                Callable task = Executors.privilegedCallable(new CheckCCL());
+                Callable<?> task = Executors.privilegedCallable(new CheckCCL());
                 try {
                     task.call();
                     shouldThrow();
@@ -543,7 +548,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(Runnable) returns null when called
      */
     public void testCallable1() throws Exception {
-        Callable c = Executors.callable(new NoOpRunnable());
+        Callable<?> c = Executors.callable(new NoOpRunnable());
         assertNull(c.call());
     }
 
@@ -551,7 +556,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(Runnable, result) returns result when called
      */
     public void testCallable2() throws Exception {
-        Callable c = Executors.callable(new NoOpRunnable(), one);
+        Callable<?> c = Executors.callable(new NoOpRunnable(), one);
         assertSame(one, c.call());
     }
 
@@ -559,7 +564,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(PrivilegedAction) returns its result when called
      */
     public void testCallable3() throws Exception {
-        Callable c = Executors.callable(new PrivilegedAction() {
+        Callable<?> c = Executors.callable(new PrivilegedAction() {
                 public Object run() { return one; }});
         assertSame(one, c.call());
     }
@@ -568,7 +573,7 @@ public class ExecutorsTest extends JSR166TestCase {
      * callable(PrivilegedExceptionAction) returns its result when called
      */
     public void testCallable4() throws Exception {
-        Callable c = Executors.callable(new PrivilegedExceptionAction() {
+        Callable<?> c = Executors.callable(new PrivilegedExceptionAction() {
                 public Object run() { return one; }});
         assertSame(one, c.call());
     }
@@ -578,7 +583,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE1() {
         try {
-            Callable c = Executors.callable((Runnable) null);
+            Callable<?> unused = Executors.callable((Runnable) null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -588,7 +593,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE2() {
         try {
-            Callable c = Executors.callable((Runnable) null, one);
+            Callable<?> unused = Executors.callable((Runnable) null, one);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -598,7 +603,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE3() {
         try {
-            Callable c = Executors.callable((PrivilegedAction) null);
+            Callable<?> unused = Executors.callable((PrivilegedAction) null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
@@ -608,7 +613,7 @@ public class ExecutorsTest extends JSR166TestCase {
      */
     public void testCallableNPE4() {
         try {
-            Callable c = Executors.callable((PrivilegedExceptionAction) null);
+            Callable<?> unused = Executors.callable((PrivilegedExceptionAction) null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }

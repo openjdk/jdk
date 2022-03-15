@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6378043
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6378043
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6378043
  * @run testng/othervm validation.Bug6378043
  * @summary Test XPath expression "child::" can be parsed.
  */

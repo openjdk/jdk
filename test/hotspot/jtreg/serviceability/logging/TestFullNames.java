@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test TestFullNames
- * @summary Ensure proper parsing of unquoted full output names for -Xlog arguments.
  * @bug 8215398
+ * @summary Ensure proper parsing of unquoted full output names for -Xlog arguments.
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestFullNames
@@ -60,6 +61,7 @@ public class TestFullNames {
             fileName
         };
         for (String logOutput : validOutputs) {
+            Asserts.assertFalse(file.exists());
             // Run with logging=trace on stdout so that we can verify the log configuration afterwards.
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:logging=trace",
                                                                       "-Xlog:all=trace:" + logOutput,
@@ -67,7 +69,7 @@ public class TestFullNames {
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
             Asserts.assertTrue(file.exists());
-            file.deleteOnExit(); // Clean up after test
+            file.delete();
             output.shouldMatch("\\[logging *\\].*" + baseName); // Expect to see the log output listed
         }
     }

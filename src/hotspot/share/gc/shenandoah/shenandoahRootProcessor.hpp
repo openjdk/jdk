@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,25 @@ public:
   void oops_do(T* cl, uint worker_id);
 };
 
+class ShenandoahJavaThreadsIterator {
+private:
+  static const uint _chunks_per_worker = 16; // educated guess
+
+  ThreadsListHandle             _threads;
+  uint const                    _length;
+  uint const                    _stride;
+  volatile uint                 _claimed;
+  ShenandoahPhaseTimings::Phase _phase;
+
+  uint claim();
+public:
+  ShenandoahJavaThreadsIterator(ShenandoahPhaseTimings::Phase phase, uint n_workers);
+  void threads_do(ThreadClosure* cl, uint worker_id);
+
+  uint length() const { return _length; }
+  Thread* thread_at(uint index) const { return _threads.thread_at(index); }
+};
+
 class ShenandoahThreadRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
@@ -77,49 +96,23 @@ public:
   void threads_do(ThreadClosure* tc, uint worker_id);
 };
 
-class ShenandoahStringDedupRoots {
-private:
-  ShenandoahPhaseTimings::Phase _phase;
-public:
-  ShenandoahStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahStringDedupRoots();
-
-  void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
-};
-
-class ShenandoahConcurrentStringDedupRoots {
-private:
-  ShenandoahPhaseTimings::Phase _phase;
-
-public:
-  ShenandoahConcurrentStringDedupRoots(ShenandoahPhaseTimings::Phase phase);
-
-  void prologue();
-  void epilogue();
-
-  void oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, uint worker_id);
-};
-
 class ShenandoahCodeCacheRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
   ShenandoahCodeRootsIterator   _coderoots_iterator;
 public:
   ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahCodeCacheRoots();
 
   void code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id);
 };
 
-template <bool CONCURRENT, bool SINGLE_THREADED>
+template <bool CONCURRENT>
 class ShenandoahClassLoaderDataRoots {
 private:
   ShenandoahSharedSemaphore     _semaphore;
   ShenandoahPhaseTimings::Phase _phase;
 
   static uint worker_count(uint n_workers) {
-    if (SINGLE_THREADED) return 1u;
-
     // Limit concurrency a bit, otherwise it wastes resources when workers are tripping
     // over each other. This also leaves free workers to process other parts of the root
     // set, while admitted workers are busy with doing the CLDG walk.
@@ -127,7 +120,7 @@ private:
   }
 
 public:
-  ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers);
+  ShenandoahClassLoaderDataRoots(ShenandoahPhaseTimings::Phase phase, uint n_workers, bool heap_iteration);
   ~ShenandoahClassLoaderDataRoots();
 
   void always_strong_cld_do(CLDClosure* clds, uint worker_id);
@@ -149,25 +142,28 @@ public:
   ShenandoahHeap* heap() const { return _heap; }
 };
 
-class ShenandoahRootScanner : public ShenandoahRootProcessor {
+// STW root scanner
+class ShenandoahSTWRootScanner : public ShenandoahRootProcessor {
 private:
-  ShenandoahThreadRoots                                     _thread_roots;
-
+  ShenandoahThreadRoots           _thread_roots;
+  ShenandoahCodeCacheRoots        _code_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/>
+                                  _cld_roots;
+  ShenandoahVMRoots<false /*concurrent*/>
+                                  _vm_roots;
+  const bool                      _unload_classes;
 public:
-  ShenandoahRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootScanner();
+  ShenandoahSTWRootScanner(ShenandoahPhaseTimings::Phase phase);
 
-  void roots_do(uint worker_id, OopClosure* cl);
-
-private:
-  void roots_do(uint worker_id, OopClosure* oops, CodeBlobClosure* code, ThreadClosure* tc = NULL);
+  template <typename T>
+  void roots_do(T* oops, uint worker_id);
 };
 
-template <bool CONCURRENT>
-class ShenandoahConcurrentRootScanner {
+class ShenandoahConcurrentRootScanner : public ShenandoahRootProcessor {
 private:
-  ShenandoahVMRoots<CONCURRENT>            _vm_roots;
-  ShenandoahClassLoaderDataRoots<CONCURRENT, false /* single-threaded*/>
+  ShenandoahJavaThreadsIterator             _java_threads;
+  ShenandoahVMRoots<true /*concurrent*/>    _vm_roots;
+  ShenandoahClassLoaderDataRoots<true /*concurrent*/>
                                            _cld_roots;
   ShenandoahNMethodTableSnapshot*          _codecache_snapshot;
   ShenandoahPhaseTimings::Phase            _phase;
@@ -176,7 +172,10 @@ public:
   ShenandoahConcurrentRootScanner(uint n_workers, ShenandoahPhaseTimings::Phase phase);
   ~ShenandoahConcurrentRootScanner();
 
-  void oops_do(OopClosure* oops, uint worker_id);
+  void roots_do(OopClosure* oops, uint worker_id);
+
+private:
+  void update_tlab_stats();
 };
 
 // This scanner is only for SH::object_iteration() and only supports single-threaded
@@ -185,39 +184,23 @@ class ShenandoahHeapIterationRootScanner : public ShenandoahRootProcessor {
 private:
   ShenandoahThreadRoots                                    _thread_roots;
   ShenandoahVMRoots<false /*concurrent*/>                  _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/, true /*single threaded*/>
-                                                           _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/>     _cld_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>              _weak_roots;
-  ShenandoahConcurrentStringDedupRoots                     _dedup_roots;
   ShenandoahCodeCacheRoots                                 _code_roots;
 
 public:
-  ShenandoahHeapIterationRootScanner();
-  ~ShenandoahHeapIterationRootScanner();
+  ShenandoahHeapIterationRootScanner(uint n_workers);
 
   void roots_do(OopClosure* cl);
-};
-
-// Evacuate all roots at a safepoint
-class ShenandoahRootEvacuator : public ShenandoahRootProcessor {
-private:
-  ShenandoahThreadRoots                                     _thread_roots;
-public:
-  ShenandoahRootEvacuator(uint n_workers, ShenandoahPhaseTimings::Phase phase);
-  ~ShenandoahRootEvacuator();
-
-  void roots_do(uint worker_id, OopClosure* oops);
 };
 
 // Update all roots at a safepoint
 class ShenandoahRootUpdater : public ShenandoahRootProcessor {
 private:
   ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
-                                                            _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/>      _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
 
 public:
@@ -231,11 +214,9 @@ public:
 class ShenandoahRootAdjuster : public ShenandoahRootProcessor {
 private:
   ShenandoahVMRoots<false /*concurrent*/>                   _vm_roots;
-  ShenandoahClassLoaderDataRoots<false /*concurrent*/, false /*single threaded*/>
-                                                            _cld_roots;
+  ShenandoahClassLoaderDataRoots<false /*concurrent*/>      _cld_roots;
   ShenandoahThreadRoots                                     _thread_roots;
   ShenandoahVMWeakRoots<false /*concurrent*/>               _weak_roots;
-  ShenandoahStringDedupRoots                                _dedup_roots;
   ShenandoahCodeCacheRoots                                  _code_roots;
 
 public:

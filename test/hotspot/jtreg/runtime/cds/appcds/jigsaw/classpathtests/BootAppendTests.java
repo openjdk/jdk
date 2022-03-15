@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ public class BootAppendTests {
     private static final Path CLASSES_DIR = Paths.get("classes");
 
     private static final String MAIN_CLASS = "jdk.test.Main";
-    private static final String APP_MODULE_CLASS = "com/sun/tools/javac/MyMain";
-    private static final String BOOT_APPEND_MODULE_CLASS = "sun/nio/cs/ext/MyClass";
+    private static final String APP_MODULE_CLASS = "com/sun/tools/javac/MyMain";     // in module jdk.compiler (app loader)
+    private static final String BOOT_APPEND_MODULE_CLASS = "sun/nio/cs/ext/MyClass"; // in module jdk.charsets (platform loader)
     private static final String BOOT_APPEND_CLASS = "sun/nio/cs/ext1/MyClass";
     private static final String[] ARCHIVE_CLASSES =
          {APP_MODULE_CLASS, BOOT_APPEND_MODULE_CLASS, BOOT_APPEND_CLASS};
@@ -104,10 +104,21 @@ public class BootAppendTests {
             appJar, TestCommon.list(ARCHIVE_CLASSES), "-Xbootclasspath/a:" + bootAppendJar);
         TestCommon.checkDump(output1);
 
-        if (!TestCommon.isUnableToMap(output1)) {
+        if (!TestCommon.isUnableToMap(output1) &&
+            !CDSTestUtils.DYNAMIC_DUMP // these messages aren't available in dynamic dump model
+            ) {
             // Make sure all the classes were successfully archived.
             for (String archiveClass : ARCHIVE_CLASSES) {
-                output1.shouldNotContain("Preload Warning: Cannot find " + archiveClass);
+                String msg = "Preload Warning: Cannot find " + archiveClass;
+                if (archiveClass.equals(BOOT_APPEND_CLASS)) {
+                    // This class is in a package (sun/nio/cs/ext1) that doesn't belong to any
+                    // of the built-in modules. We can load it from -Xbootclasspath/a:
+                    output1.shouldNotContain(msg);
+                } else {
+                    // This class belongs a package that belongs to a built-in module.
+                    // We shouldn't load it from -Xbootclasspath/a:
+                    output1.shouldContain(msg);
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,13 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                """);
     }
 
     @Test
@@ -72,14 +71,13 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "-sourcepath", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed interface </sp\
-                    an><span class="element-name type-name-label">A</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed interface </span><span class="element-name type-name-label">A</span></div>
+                """);
     }
 
     @Test
@@ -91,19 +89,18 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                """);
 
         checkOutput("p/B.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public non-sealed class </span><\
-                    span class="element-name type-name-label">B</span>""");
+                <div class="type-signature"><span class="modifiers">public non-sealed class </span><span class="element-name type-name-label">B</span>
+                """);
     }
 
     @Test
@@ -115,19 +112,19 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed interface </span><\
-                    span class="element-name type-name-label">A</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed interface </span><span class="element-name type-name-label">A</span>
+                """);
 
         checkOutput("p/B.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public non-sealed interface </span><\
-                    span class="element-name type-name-label">B</span>""");
+                <div class="type-signature"><span class="modifiers">public non-sealed interface </span><span class="element-name type-name-label">B</span><span class="extends-implements">
+                extends <a href="A.html" title="interface in p">A</a></span></div>
+                """);
     }
 
     @Test
@@ -139,19 +136,18 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                """);
 
         checkOutput("p/B.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public abstract sealed class\
-                     </span><span class="element-name type-name-label">B</span>""");
+                <div class="type-signature"><span class="modifiers">public abstract sealed class </span><span class="element-name type-name-label">B</span>
+                """);
     }
 
     @Test
@@ -163,19 +159,19 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed interface </sp\
-                    an><span class="element-name type-name-label">A</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed interface </span><span class="element-name type-name-label">A</span>
+                """);
 
         checkOutput("p/B.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed interface </sp\
-                    an><span class="element-name type-name-label">B</span>""");
+                <div class="type-signature"><span class="modifiers">public sealed interface </span><span class="element-name type-name-label">B</span><span class="extends-implements">
+                extends <a href="A.html" title="interface in p">A</a></span></div>
+                """);
     }
 
     @Test
@@ -188,16 +184,15 @@ public class TestSealedTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "--no-platform-links",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>
-                    <span class="extends-implements">extends java.lang.Object</span>
-                    <span class="permits">permits <a href="B.html" title="class in p">B</a></span></div>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                <span class="extends-implements">extends java.lang.Object</span>
+                <span class="permits">permits <a href="B.html" title="class in p">B</a></span></div>
+                """);
     }
 
     @Test
@@ -212,18 +207,15 @@ public class TestSealedTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "--no-platform-links",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>
-                    <span class="extends-implements">extends java.lang.Object</span>
-                    <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href\
-                    ="C.html" title="class in p">C</a>, <a href="D.html" title="class in p">D</a></s\
-                    pan></div>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                <span class="extends-implements">extends java.lang.Object</span>
+                <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href="C.html" title="class in p">C</a>, <a href="D.html" title="class in p">D</a></span></div>
+                """);
     }
 
     @Test
@@ -238,21 +230,18 @@ public class TestSealedTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "--no-platform-links",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>
-                    <span class="extends-implements">extends java.lang.Object</span>
-                    <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href\
-                    ="C.html" title="class in p">C</a> <span class="permits-note">(not exhaustive)</\
-                    span></span></div>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                <span class="extends-implements">extends java.lang.Object</span>
+                <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href="C.html" title="class in p">C</a> <span class="permits-note">(not exhaustive)</span></span></div>
+                """);
     }
 
-    // @Test // javac incorrectly rejects the source
+    @Test
     public void testPartialMultiplePermitsWithSubtypes1(Path base) throws IOException {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
@@ -265,18 +254,16 @@ public class TestSealedTypes extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
-                "--enable-preview", "--source", thisRelease,
+                "--no-platform-links",
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>
-                    <span class="extends-implements">extends java.lang.Object</span>
-                    <span class="permits">permits <a href="A.B.html" title="class in p">A.B</a>, <a \
-                    href="A.C.html" title="class in p">A.C</a>, <a href="A.D.html" title="class in p\
-                    ">A.D</a></span></div>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                <span class="extends-implements">extends java.lang.Object</span>
+                <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href="C.html" title="class in p">C</a> <span class="permits-note">(not exhaustive)</span></span></div>
+                """);
     }
 
     @Test
@@ -293,18 +280,15 @@ public class TestSealedTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "--no-platform-links",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                <div class="type-signature"><span class="modifiers">public sealed class </span><span\
-                 class="element-name type-name-label">A</span>
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
                 <span class="extends-implements">extends java.lang.Object</span>
-                <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href="C.\
-                html" title="class in p">C</a> <span class="permits-note">(not exhaustive)</span></s\
-                pan></div>""");
+                <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href="C.html" title="class in p">C</a> <span class="permits-note">(not exhaustive)</span></span></div>
+                """);
     }
 
     @Test
@@ -320,18 +304,15 @@ public class TestSealedTypes extends JavadocTester {
                 "--source-path", src.toString(),
                 "--no-platform-links",
                 "-package",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>
-                    <span class="extends-implements">extends java.lang.Object</span>
-                    <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href\
-                    ="C.html" title="class in p">C</a>, <a href="D.html" title="class in p">D</a></s\
-                    pan></div>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                <span class="extends-implements">extends java.lang.Object</span>
+                <span class="permits">permits <a href="B.html" title="class in p">B</a>, <a href="C.html" title="class in p">C</a>, <a href="D.html" title="class in p">D</a></span></div>
+                """);
     }
 
     @Test
@@ -347,17 +328,14 @@ public class TestSealedTypes extends JavadocTester {
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "--no-platform-links",
-                "--enable-preview", "--source", thisRelease,
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/A.html", true,
                 """
-                    <div class="type-signature"><span class="modifiers">public sealed class </span><\
-                    span class="element-name type-name-label">A</span>
-                    <span class="extends-implements">extends java.lang.Object</span>
-                    <span class="permits">permits <a href="A.B.html" title="class in p">A.B</a>, <a \
-                    href="A.C.html" title="class in p">A.C</a>, <a href="A.D.html" title="class in p\
-                    ">A.D</a></span></div>""");
+                <div class="type-signature"><span class="modifiers">public sealed class </span><span class="element-name type-name-label">A</span>
+                <span class="extends-implements">extends java.lang.Object</span>
+                <span class="permits">permits <a href="A.B.html" title="class in p">A.B</a>, <a href="A.C.html" title="class in p">A.C</a>, <a href="A.D.html" title="class in p">A.D</a></span></div>
+                """);
     }
 }

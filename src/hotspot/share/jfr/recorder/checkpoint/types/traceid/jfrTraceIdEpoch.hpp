@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDEPOCH_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDEPOCH_HPP
 
+#include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 
 #define BIT                                  1
@@ -54,28 +55,20 @@
 class JfrTraceIdEpoch : AllStatic {
   friend class JfrCheckpointManager;
  private:
+  static JfrSignal _tag_state;
   static bool _epoch_state;
   static bool _synchronizing;
-  static volatile bool _changed_tag_state;
 
   static void begin_epoch_shift();
   static void end_epoch_shift();
-
-  static bool changed_tag_state() {
-    return Atomic::load_acquire(&_changed_tag_state);
-  }
-
-  static void set_tag_state(bool value) {
-    Atomic::release_store(&_changed_tag_state, value);
-  }
 
  public:
   static bool epoch() {
     return _epoch_state;
   }
 
-  static jlong epoch_address() {
-    return (jlong)&_epoch_state;
+  static address epoch_address() {
+    return (address)&_epoch_state;
   }
 
   static u1 current() {
@@ -115,17 +108,19 @@ class JfrTraceIdEpoch : AllStatic {
   }
 
   static bool has_changed_tag_state() {
-    if (changed_tag_state()) {
-      set_tag_state(false);
-      return true;
-    }
-    return false;
+    return _tag_state.is_signaled_with_reset();
+  }
+
+  static bool has_changed_tag_state_no_reset() {
+    return _tag_state.is_signaled();
   }
 
   static void set_changed_tag_state() {
-    if (!changed_tag_state()) {
-      set_tag_state(true);
-    }
+    _tag_state.signal();
+  }
+
+  static address signal_address() {
+    return _tag_state.signaled_address();
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
@@ -39,11 +40,13 @@ import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
+import com.sun.source.doctree.SnippetTree;
 import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.ThrowsTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
+import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -175,6 +178,19 @@ public abstract class TagletWriter {
     protected abstract Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header);
 
     /**
+     * Returns the output for a {@code {@snippet ...}} tag.
+     *
+     * @param element    The element that owns the doc comment
+     * @param snippetTag the snippet tag
+     * @param id         the value of the id attribute, or null if not defined
+     * @param lang       the value of the lang attribute, or null if not defined
+     *
+     * @return the output
+     */
+    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text,
+                                                String id, String lang);
+
+    /**
      * Returns the output for a {@code {@systemProperty...}} tag.
      *
      * @param element           The element that owns the doc comment
@@ -225,6 +241,17 @@ public abstract class TagletWriter {
         String constantVal, boolean includeLink);
 
     /**
+     * Returns the output for an invalid tag. The returned content uses special styling to
+     * highlight the problem. Depending on the presence of the {@code detail} string the method
+     * returns a plain text span or an expandable component.
+     *
+     * @param summary the single-line summary message
+     * @param detail the optional detail message which may contain preformatted text
+     * @return the output
+     */
+    protected abstract Content invalidTagOutput(String summary, Optional<String> detail);
+
+    /**
      * Returns the main type element of the current page or null for pages that don't have one.
      *
      * @return the type element of the current page or null.
@@ -263,8 +290,7 @@ public abstract class TagletWriter {
                 continue;
             }
 
-            if (element.getKind() == ElementKind.MODULE && taglet instanceof BaseTaglet) {
-                BaseTaglet t = (BaseTaglet) taglet;
+            if (element.getKind() == ElementKind.MODULE && taglet instanceof BaseTaglet t) {
                 switch (t.getTagKind()) {
                     // @uses and @provides are handled separately, so skip here.
                     // See ModuleWriterImpl.computeModulesData
@@ -280,7 +306,7 @@ public abstract class TagletWriter {
                 continue;
             }
 
-            if (taglet instanceof SimpleTaglet && !((SimpleTaglet) taglet).enabled) {
+            if (taglet instanceof SimpleTaglet st && !st.enabled) {
                 // taglet has been disabled
                 continue;
             }

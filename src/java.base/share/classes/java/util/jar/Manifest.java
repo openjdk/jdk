@@ -379,13 +379,9 @@ public class Manifest implements Cloneable {
      * the same main Attributes and entries
      */
     public boolean equals(Object o) {
-        if (o instanceof Manifest) {
-            Manifest m = (Manifest)o;
-            return attr.equals(m.getMainAttributes()) &&
-                   entries.equals(m.getEntries());
-        } else {
-            return false;
-        }
+        return o instanceof Manifest m
+                && attr.equals(m.getMainAttributes())
+                && entries.equals(m.getEntries());
     }
 
     /**

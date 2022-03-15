@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.TCKEncodingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.TCKEncodingTest
  * @run testng/othervm dom.TCKEncodingTest
  * @summary Test Document.getInputEncoding().
  */

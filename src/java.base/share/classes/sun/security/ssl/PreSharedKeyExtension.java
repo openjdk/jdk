@@ -31,7 +31,6 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Arrays;
 import java.util.Collection;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
@@ -372,9 +371,11 @@ final class PreSharedKeyExtension {
                 SSLSessionImpl s = null;
 
                 for (PskIdentity requestedId : pskSpec.identities) {
-                    // If we are keeping state, see if the identity is in the cache
+                    // If we are keeping state, see if the identity is in the
+                    // cache. Note that for TLS 1.3, we would also clean
+                    // up the cached session if it is not rejoinable.
                     if (requestedId.identity.length == SessionId.MAX_LENGTH) {
-                        s = sessionCache.get(requestedId.identity);
+                        s = sessionCache.pull(requestedId.identity);
                     }
                     // See if the identity is a stateless ticket
                     if (s == null &&
@@ -567,7 +568,7 @@ final class PreSharedKeyExtension {
         SecretKey binderKey = deriveBinderKey(shc, psk, session);
         byte[] computedBinder =
                 computeBinder(shc, binderKey, session, pskBinderHash);
-        if (!Arrays.equals(binder, computedBinder)) {
+        if (!MessageDigest.isEqual(binder, computedBinder)) {
             throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                     "Incorect PSK binder value");
         }

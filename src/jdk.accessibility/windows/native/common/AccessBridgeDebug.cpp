@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <windows.h>
 #include <cstdlib>
-#include <chrono>
 #include <cstring>
 
 #ifdef __cplusplus
@@ -41,7 +40,7 @@ extern "C" {
 
 static FILE* logFP = nullptr;
 
-void initializeFileLogger(char * fileName) {
+void initializeFileLogger(const char * fileName) {
     auto var = "JAVA_ACCESSBRIDGE_LOGDIR";
     const auto envfilePath = getenv(var);
     if (envfilePath != nullptr && fileName != nullptr) {
@@ -72,17 +71,19 @@ void finalizeFileLogger() {
     }
 }
 
-auto getTimeStamp() -> long long {
-    using namespace std::chrono;
-    auto timeNow = duration_cast<milliseconds>(steady_clock::now().time_since_epoch());
-
-    return timeNow.count();
+unsigned long long getTimeStamp() {
+    FILETIME ft;
+    ULARGE_INTEGER uli;
+    GetSystemTimeAsFileTime(&ft);
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+    return (uli.QuadPart / 10000ULL) - 11644473600000ULL; // Rebase Epoch from 1601 to 1970
 }
 
 /**
  * print a GetLastError message
  */
-char *printError(char *msg) {
+char *printError(const char *msg) {
     LPVOID lpMsgBuf = nullptr;
     static char retbuf[256] = {0};
 
@@ -118,7 +119,7 @@ char *printError(char *msg) {
     /**
      * Send debugging info to the appropriate place
      */
-    void PrintDebugString(char *msg, ...) {
+    void PrintDebugString(const char *msg, ...) {
 #ifdef DEBUGGING_ON
         char buf[1024] = {0};
         va_list argprt;
@@ -146,7 +147,7 @@ char *printError(char *msg) {
     /**
      * Send Java debugging info to the appropriate place
      */
-    void PrintJavaDebugString2(char *msg, ...) {
+    void PrintJavaDebugString2(const char *msg, ...) {
 #ifdef JAVA_DEBUGGING_ON
         char buf[1024] = {0};
         va_list argprt;
@@ -173,7 +174,7 @@ char *printError(char *msg) {
     /**
      * Wide version of the method to send debugging info to the appropriate place
      */
-    void wPrintDebugString(wchar_t *msg, ...) {
+    void wPrintDebugString(const wchar_t *msg, ...) {
 #ifdef DEBUGGING_ON
         char buf[1024] = {0};
         char charmsg[256];
@@ -203,7 +204,7 @@ char *printError(char *msg) {
     /**
      * Wide version of the method to send Java debugging info to the appropriate place
      */
-    void wPrintJavaDebugString(wchar_t *msg, ...) {
+    void wPrintJavaDebugString(const wchar_t *msg, ...) {
 #ifdef JAVA_DEBUGGING_ON
         char buf[1024] = {0};
         char charmsg[256] = {0};

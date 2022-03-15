@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,26 +55,6 @@ G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   set_name("G1 Main Marker");
   create_and_start();
 }
-
-class CMRemark : public VoidClosure {
-  G1ConcurrentMark* _cm;
-public:
-  CMRemark(G1ConcurrentMark* cm) : _cm(cm) {}
-
-  void do_void(){
-    _cm->remark();
-  }
-};
-
-class CMCleanup : public VoidClosure {
-  G1ConcurrentMark* _cm;
-public:
-  CMCleanup(G1ConcurrentMark* cm) : _cm(cm) {}
-
-  void do_void(){
-    _cm->cleanup();
-  }
-};
 
 double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* policy, bool remark) {
   // There are 3 reasons to use SuspendibleThreadSetJoiner.
@@ -139,8 +119,8 @@ void G1ConcurrentMarkThread::run_service() {
     assert(in_progress(), "must be");
 
     GCIdMark gc_id_mark;
-    GCTraceConcTime(Info, gc) tt(FormatBuffer<128>("Concurrent %s Cycle",
-                                                   _state == FullMark ? "Mark" : "Undo"));
+    FormatBuffer<128> title("Concurrent %s Cycle", _state == FullMark ? "Mark" : "Undo");
+    GCTraceConcTime(Info, gc) tt(title);
 
     concurrent_cycle_start();
 
@@ -159,6 +139,15 @@ void G1ConcurrentMarkThread::run_service() {
 }
 
 void G1ConcurrentMarkThread::stop_service() {
+  if (in_progress()) {
+    // We are not allowed to abort the marking threads during root region scan.
+    // Needs to be done separately.
+    _cm->root_regions()->abort();
+    _cm->root_regions()->wait_until_scan_finished();
+
+    _cm->abort_marking_threads();
+  }
+
   MutexLocker ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
 }
@@ -239,8 +228,7 @@ bool G1ConcurrentMarkThread::subphase_delay_to_keep_mmu_before_remark() {
 
 bool G1ConcurrentMarkThread::subphase_remark() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
-  CMRemark cl(_cm);
-  VM_G1Concurrent op(&cl, "Pause Remark");
+  VM_G1PauseRemark op;
   VMThread::execute(&op);
   return _cm->has_aborted();
 }
@@ -257,8 +245,7 @@ bool G1ConcurrentMarkThread::phase_delay_to_keep_mmu_before_cleanup() {
 }
 
 bool G1ConcurrentMarkThread::phase_cleanup() {
-  CMCleanup cl(_cm);
-  VM_G1Concurrent op(&cl, "Pause Cleanup");
+  VM_G1PauseCleanup op;
   VMThread::execute(&op);
   return _cm->has_aborted();
 }
@@ -323,6 +310,8 @@ void G1ConcurrentMarkThread::concurrent_undo_cycle_do() {
   // We can (and should) abort if there has been a concurrent cycle abort for
   // some reason.
   if (_cm->has_aborted()) { return; }
+
+  _cm->flush_all_task_caches();
 
   // Phase 1: Clear bitmap for next mark.
   phase_clear_bitmap_for_next_mark();

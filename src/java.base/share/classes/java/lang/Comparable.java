@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,11 +62,15 @@ import java.util.*;
  * because {@code a} and {@code b} are equivalent from the sorted set's
  * perspective.<p>
  *
- * Virtually all Java core classes that implement {@code Comparable} have natural
- * orderings that are consistent with equals.  One exception is
- * {@code java.math.BigDecimal}, whose natural ordering equates
- * {@code BigDecimal} objects with equal values and different precisions
- * (such as 4.0 and 4.00).<p>
+ * Virtually all Java core classes that implement {@code Comparable}
+ * have natural orderings that are consistent with equals.  One
+ * exception is {@link java.math.BigDecimal}, whose {@linkplain
+ * java.math.BigDecimal#compareTo natural ordering} equates {@code
+ * BigDecimal} objects with equal numerical values and different
+ * representations (such as 4.0 and 4.00). For {@link
+ * java.math.BigDecimal#equals BigDecimal.equals()} to return true,
+ * the representation and numerical value of the two {@code
+ * BigDecimal} objects must be the same.<p>
  *
  * For the mathematically inclined, the <i>relation</i> that defines
  * the natural ordering on a given class C is:<pre>{@code
@@ -83,7 +87,12 @@ import java.util.*;
  * the class's {@link Object#equals(Object) equals(Object)} method:<pre>
  *     {(x, y) such that x.equals(y)}. </pre><p>
  *
- * This interface is a member of the
+ * In other words, when a class's natural ordering is consistent with
+ * equals, the equivalence classes defined by the equivalence relation
+ * of the {@code equals} method and the equivalence classes defined by
+ * the quotient of the {@code compareTo} method are the same.
+ *
+ * <p>This interface is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
@@ -99,32 +108,27 @@ public interface Comparable<T> {
      * negative integer, zero, or a positive integer as this object is less
      * than, equal to, or greater than the specified object.
      *
-     * <p>The implementor must ensure
-     * {@code sgn(x.compareTo(y)) == -sgn(y.compareTo(x))}
-     * for all {@code x} and {@code y}.  (This
-     * implies that {@code x.compareTo(y)} must throw an exception iff
-     * {@code y.compareTo(x)} throws an exception.)
+     * <p>The implementor must ensure {@link Integer#signum
+     * signum}{@code (x.compareTo(y)) == -signum(y.compareTo(x))} for
+     * all {@code x} and {@code y}.  (This implies that {@code
+     * x.compareTo(y)} must throw an exception if and only if {@code
+     * y.compareTo(x)} throws an exception.)
      *
      * <p>The implementor must also ensure that the relation is transitive:
      * {@code (x.compareTo(y) > 0 && y.compareTo(z) > 0)} implies
      * {@code x.compareTo(z) > 0}.
      *
-     * <p>Finally, the implementor must ensure that {@code x.compareTo(y)==0}
-     * implies that {@code sgn(x.compareTo(z)) == sgn(y.compareTo(z))}, for
-     * all {@code z}.
+     * <p>Finally, the implementor must ensure that {@code
+     * x.compareTo(y)==0} implies that {@code signum(x.compareTo(z))
+     * == signum(y.compareTo(z))}, for all {@code z}.
      *
-     * <p>It is strongly recommended, but <i>not</i> strictly required that
+     * @apiNote
+     * It is strongly recommended, but <i>not</i> strictly required that
      * {@code (x.compareTo(y)==0) == (x.equals(y))}.  Generally speaking, any
      * class that implements the {@code Comparable} interface and violates
      * this condition should clearly indicate this fact.  The recommended
      * language is "Note: this class has a natural ordering that is
      * inconsistent with equals."
-     *
-     * <p>In the foregoing description, the notation
-     * {@code sgn(}<i>expression</i>{@code )} designates the mathematical
-     * <i>signum</i> function, which is defined to return one of {@code -1},
-     * {@code 0}, or {@code 1} according to whether the value of
-     * <i>expression</i> is negative, zero, or positive, respectively.
      *
      * @param   o the object to be compared.
      * @return  a negative integer, zero, or a positive integer as this object

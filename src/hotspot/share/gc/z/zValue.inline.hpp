@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,14 @@
 #ifndef SHARE_GC_Z_ZVALUE_INLINE_HPP
 #define SHARE_GC_Z_ZVALUE_INLINE_HPP
 
+#include "gc/z/zValue.hpp"
+
+#include "gc/shared/gc_globals.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zUtils.hpp"
-#include "gc/z/zValue.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 
@@ -104,7 +106,7 @@ inline size_t ZPerWorkerStorage::alignment() {
 }
 
 inline uint32_t ZPerWorkerStorage::count() {
-  return MAX2(ParallelGCThreads, ConcGCThreads);
+  return UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads);
 }
 
 inline uint32_t ZPerWorkerStorage::id() {

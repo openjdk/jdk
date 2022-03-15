@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ import jdk.internal.access.foreign.MemorySegmentProxy;
  * instance of this class rather than of the superclass.
 #end[rw]
  */
-
 class Heap$Type$Buffer$RW$
     extends {#if[ro]?Heap}$Type$Buffer
 {
+#if[rw]
     // Cached array base offset
     private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
 
@@ -53,11 +53,10 @@ class Heap$Type$Buffer$RW$
     // For speed these fields are actually declared in X-Buffer;
     // these declarations are here as documentation
     /*
-#if[rw]
     protected final $type$[] hb;
     protected final int offset;
-#end[rw]
     */
+#end[rw]
 
     Heap$Type$Buffer$RW$(int cap, int lim, MemorySegmentProxy segment) {            // package-private
 #if[rw]
@@ -272,11 +271,10 @@ class Heap$Type$Buffer$RW$
 #if[char]
 
     public $Type$Buffer put(String src, int start, int end) {
+#if[rw]
         checkScope();
         int length = end - start;
         Objects.checkFromIndexSize(start, length, src.length());
-        if (isReadOnly())
-            throw new ReadOnlyBufferException();
         int pos = position();
         int lim = limit();
         int rem = (pos <= lim) ? lim - pos : 0;
@@ -285,6 +283,9 @@ class Heap$Type$Buffer$RW$
         src.getChars(start, end, hb, ix(pos));
         position(pos + length);
         return this;
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
     }
 
 #end[char]
@@ -292,7 +293,9 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer compact() {
 #if[rw]
         int pos = position();
-        int rem = limit() - pos;
+        int lim = limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
         System.arraycopy(hb, ix(pos), hb, ix(0), rem);
         position(rem);
         limit(capacity());

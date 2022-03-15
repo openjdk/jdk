@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.awt.util.ThreadGroupUtils;
+import sun.java2d.metal.MTLRenderQueue;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.lwawt.LWComponentPeer;
 import sun.lwawt.LWCursorManager;
@@ -145,6 +146,7 @@ public final class LWCToolkit extends LWToolkit {
     static {
         System.err.flush();
 
+        @SuppressWarnings("removal")
         ResourceBundle platformResources = java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<ResourceBundle>() {
             @Override
@@ -174,20 +176,23 @@ public final class LWCToolkit extends LWToolkit {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
-        inAWT = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            @Override
-            public Boolean run() {
-                return !Boolean.parseBoolean(System.getProperty("javafx.embed.singleThread", "false"));
-            }
-        });
     }
 
     /*
      * If true  we operate in normal mode and nested runloop is executed in JavaRunLoopMode
      * If false we operate in singleThreaded FX/AWT interop mode and nested loop uses NSDefaultRunLoopMode
      */
-    private static final boolean inAWT;
+    @SuppressWarnings("removal")
+    private static final boolean inAWT
+            = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        @Override
+        public Boolean run() {
+            return !Boolean.parseBoolean(
+                    System.getProperty("javafx.embed.singleThread", "false"));
+        }
+    });
 
+    @SuppressWarnings("removal")
     public LWCToolkit() {
         final String extraButtons = "sun.awt.enableExtraMouseButtons";
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -204,14 +209,16 @@ public final class LWCToolkit extends LWToolkit {
     /*
      * System colors with default initial values, overwritten by toolkit if system values differ and are available.
      */
-    private static final int NUM_APPLE_COLORS = 3;
+    private static final int NUM_APPLE_COLORS = 4;
     public static final int KEYBOARD_FOCUS_COLOR = 0;
     public static final int INACTIVE_SELECTION_BACKGROUND_COLOR = 1;
     public static final int INACTIVE_SELECTION_FOREGROUND_COLOR = 2;
+    public static final int SELECTED_CONTROL_TEXT_COLOR = 3;
     private static int[] appleColors = {
         0xFF808080, // keyboardFocusColor = Color.gray;
         0xFFC0C0C0, // secondarySelectedControlColor
         0xFF303030, // controlDarkShadowColor
+        0xFFFFFFFF, // controlTextColor
     };
 
     private native void loadNativeColors(final int[] systemColors, final int[] appleColors);
@@ -244,6 +251,7 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     // This is only called from native code.
+    @SuppressWarnings("removal")
     static void systemColorsChanged() {
         EventQueue.invokeLater(() -> {
             AccessController.doPrivileged( (PrivilegedAction<Object>) () -> {
@@ -418,8 +426,7 @@ public final class LWCToolkit extends LWToolkit {
         // TODO Auto-generated method stub
     }
 
-    class OSXPlatformFont extends sun.awt.PlatformFont
-    {
+    static class OSXPlatformFont extends sun.awt.PlatformFont {
         OSXPlatformFont(String name, int style)
         {
             super(name, style);
@@ -446,7 +453,7 @@ public final class LWCToolkit extends LWToolkit {
         desktopProperties.put("awt.multiClickInterval", getMultiClickTime());
 
         // These DnD properties must be set, otherwise Swing ends up spewing NPEs
-        // all over the place. The values came straight off of MToolkit.
+        // all over the place. The values came straight off of XToolkit.
         desktopProperties.put("DnD.Autoscroll.initialDelay", Integer.valueOf(50));
         desktopProperties.put("DnD.Autoscroll.interval", Integer.valueOf(50));
         desktopProperties.put("DnD.Autoscroll.cursorHysteresis", Integer.valueOf(5));
@@ -498,8 +505,12 @@ public final class LWCToolkit extends LWToolkit {
 
     @Override
     public void sync() {
-        // flush the OGL pipeline (this is a no-op if OGL is not enabled)
-        OGLRenderQueue.sync();
+        // flush the rendering pipeline
+        if (CGraphicsDevice.usingMetalPipeline()) {
+            MTLRenderQueue.sync();
+        } else {
+            OGLRenderQueue.sync();
+        }
         // setNeedsDisplay() selector was sent to the appropriate CALayer so now
         // we have to flush the native selectors queue.
         flushNativeSelectors();
@@ -578,6 +589,7 @@ public final class LWCToolkit extends LWToolkit {
     private static final String APPKIT_THREAD_NAME = "AppKit Thread";
 
     // Intended to be called from the LWCToolkit.m only.
+    @SuppressWarnings("removal")
     private static void installToolkitThreadInJava() {
         Thread.currentThread().setName(APPKIT_THREAD_NAME);
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {

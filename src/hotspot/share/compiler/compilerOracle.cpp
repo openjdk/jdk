@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,16 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/symbolTable.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -99,6 +101,25 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = NULL;
 static bool any_set = false;
+
+// A filter for quick lookup if an option is set
+static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
+
+void command_set_in_filter(enum CompileCommand option) {
+  assert(option != CompileCommand::Unknown, "sanity");
+  assert(option2type(option) != OptionType::Unknown, "sanity");
+
+  if ((option != CompileCommand::DontInline) &&
+      (option != CompileCommand::Inline) &&
+      (option != CompileCommand::Log)) {
+    any_set = true;
+  }
+  option_filter[static_cast<int>(option)] = true;
+}
+
+bool has_command(enum CompileCommand option) {
+  return option_filter[static_cast<int>(option)];
+}
 
 class TypedMethodOptionMatcher : public MethodMatcher {
  private:
@@ -286,21 +307,18 @@ static void register_command(TypedMethodOptionMatcher* matcher,
   }
   assert(CompilerOracle::option_matches_type(option, value), "Value must match option type");
 
-  if (option == CompileCommand::Blackhole && !UnlockDiagnosticVMOptions) {
-    warning("Blackhole compile option is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions");
+  if (option == CompileCommand::Blackhole && !UnlockExperimentalVMOptions) {
+    warning("Blackhole compile option is experimental and must be enabled via -XX:+UnlockExperimentalVMOptions");
     return;
   }
 
   matcher->init(option, option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
-  if ((option != CompileCommand::DontInline) &&
-      (option != CompileCommand::Inline) &&
-      (option != CompileCommand::Log)) {
-    any_set = true;
-  }
+  command_set_in_filter(option);
+
   if (!CompilerOracle::be_quiet()) {
-    // Print out the succesful registration of a comile command
+    // Print out the successful registration of a compile command
     ttyLocker ttyl;
     tty->print("CompileCommand: %s ", option2name(option));
     matcher->print();
@@ -311,6 +329,9 @@ static void register_command(TypedMethodOptionMatcher* matcher,
 template<typename T>
 bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCommand option, T& value) {
   assert(option_matches_type(option, value), "Value must match option type");
+  if (!has_command(option)) {
+    return false;
+  }
   if (option_list != NULL) {
     TypedMethodOptionMatcher* m = option_list->match(method, option);
     if (m != NULL) {
@@ -321,22 +342,52 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   return false;
 }
 
+static bool resolve_inlining_predicate(enum CompileCommand option, const methodHandle& method) {
+  assert(option == CompileCommand::Inline || option == CompileCommand::DontInline, "Sanity");
+  bool v1 = false;
+  bool v2 = false;
+  bool has_inline = CompilerOracle::has_option_value(method, CompileCommand::Inline, v1);
+  bool has_dnotinline = CompilerOracle::has_option_value(method, CompileCommand::DontInline, v2);
+  if (has_inline && has_dnotinline) {
+    if (v1 && v2) {
+      // Conflict options detected
+      // Find the last one for that method and return the predicate accordingly
+      // option_list lists options in reverse order. So the first option we find is the last which was specified.
+      enum CompileCommand last_one = CompileCommand::Unknown;
+      TypedMethodOptionMatcher* current = option_list;
+      while (current != NULL) {
+        last_one = current->option();
+        if (last_one == CompileCommand::Inline || last_one == CompileCommand::DontInline) {
+          if (current->matches(method)) {
+            return last_one == option;
+          }
+        }
+        current = current->next();
+      }
+      ShouldNotReachHere();
+      return false;
+    } else {
+      // No conflicts
+      return option == CompileCommand::Inline ? v1 : v2;
+    }
+  } else {
+    if (option == CompileCommand::Inline) {
+      return has_inline ? v1 : false;
+    } else {
+      return has_dnotinline ? v2 : false;
+    }
+  }
+}
+
 static bool check_predicate(enum CompileCommand option, const methodHandle& method) {
+  // Special handling for Inline and DontInline since conflict options may be specified
+  if (option == CompileCommand::Inline || option == CompileCommand::DontInline) {
+    return resolve_inlining_predicate(option, method);
+  }
+
   bool value = false;
   if (CompilerOracle::has_option_value(method, option, value)) {
     return value;
-  }
-  return false;
-}
-
-static bool has_command(enum CompileCommand option) {
-  TypedMethodOptionMatcher* m = option_list;
-  while (m != NULL) {
-    if (m->option() == option) {
-      return true;
-    } else {
-      m = m->next();
-    }
   }
   return false;
 }
@@ -414,26 +465,44 @@ bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(CompileCommand::Break, method);
 }
 
-bool CompilerOracle::should_blackhole(const methodHandle& method) {
+void CompilerOracle::tag_blackhole_if_possible(const methodHandle& method) {
   if (!check_predicate(CompileCommand::Blackhole, method)) {
-    return false;
+    return;
   }
-  guarantee(UnlockDiagnosticVMOptions, "Checked during initial parsing");
+  guarantee(UnlockExperimentalVMOptions, "Checked during initial parsing");
   if (method->result_type() != T_VOID) {
     warning("Blackhole compile option only works for methods with void type: %s",
             method->name_and_sig_as_C_string());
-    return false;
+    return;
   }
-  return true;
+  if (!method->is_empty_method()) {
+    warning("Blackhole compile option only works for empty methods: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (!method->is_static()) {
+    warning("Blackhole compile option only works for static methods: %s",
+            method->name_and_sig_as_C_string());
+    return;
+  }
+  if (method->intrinsic_id() == vmIntrinsics::_blackhole) {
+    return;
+  }
+  if (method->intrinsic_id() != vmIntrinsics::_none) {
+    warning("Blackhole compile option only works for methods that do not have intrinsic set: %s, %s",
+            method->name_and_sig_as_C_string(), vmIntrinsics::name_at(method->intrinsic_id()));
+    return;
+  }
+  method->set_intrinsic_id(vmIntrinsics::_blackhole);
 }
 
-static enum CompileCommand parse_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
+static enum CompileCommand match_option_name(const char* line, int* bytes_read, char* errorbuf, int bufsize) {
   assert(ARRAY_SIZE(option_names) == static_cast<int>(CompileCommand::Count), "option_names size mismatch");
 
   *bytes_read = 0;
   char option_buf[256];
   int matches = sscanf(line, "%255[a-zA-Z0-9]%n", option_buf, bytes_read);
-  if (matches > 0) {
+  if (matches > 0 && strcasecmp(option_buf, "unknown") != 0) {
     for (uint i = 0; i < ARRAY_SIZE(option_names); i++) {
       if (strcasecmp(option_buf, option_names[i]) == 0) {
         return static_cast<enum CompileCommand>(i);
@@ -442,6 +511,25 @@ static enum CompileCommand parse_option_name(const char* line, int* bytes_read, 
   }
   jio_snprintf(errorbuf, bufsize, "Unrecognized option '%s'", option_buf);
   return CompileCommand::Unknown;
+}
+
+// match exactly and don't mess with errorbuf
+enum CompileCommand CompilerOracle::parse_option_name(const char* line) {
+  for (uint i = 0; i < ARRAY_SIZE(option_names); i++) {
+    if (strcasecmp(line, option_names[i]) == 0) {
+      return static_cast<enum CompileCommand>(i);
+    }
+  }
+  return CompileCommand::Unknown;
+}
+
+enum OptionType CompilerOracle::parse_option_type(const char* type_str) {
+  for (uint i = 0; i < ARRAY_SIZE(optiontype_names); i++) {
+    if (strcasecmp(type_str, optiontype_names[i]) == 0) {
+      return static_cast<enum OptionType>(i);
+    }
+  }
+  return OptionType::Unknown;
 }
 
 void print_tip() { // CMH Update info
@@ -588,6 +676,30 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
         next_value += bytes_read;
         end_value = next_value-1;
       }
+
+      if (option == CompileCommand::ControlIntrinsic || option == CompileCommand::DisableIntrinsic) {
+        ControlIntrinsicValidator validator(value, (option == CompileCommand::DisableIntrinsic));
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
+        }
+      }
+#ifndef PRODUCT
+      else if (option == CompileCommand::PrintIdealPhase) {
+        uint64_t mask = 0;
+        PhaseNameValidator validator(value, mask);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::TestOptionList) {
+        // all values are ok
+      }
+#endif
+      else {
+        assert(false, "Ccstrlist type option missing validator");
+      }
+
       register_command(matcher, option, (ccstr) value);
       return;
     } else {
@@ -653,7 +765,7 @@ static void scan_option_and_value(enum OptionType type, char* line, int& total_b
     total_bytes_read += bytes_read;
     int bytes_read2 = 0;
     total_bytes_read += skip_whitespace(line);
-    enum CompileCommand option = parse_option_name(option_buf, &bytes_read2, errorbuf, buf_size);
+    enum CompileCommand option = match_option_name(option_buf, &bytes_read2, errorbuf, buf_size);
     if (option == CompileCommand::Unknown) {
       assert(*errorbuf != '\0', "error must have been set");
       return;
@@ -682,15 +794,6 @@ void CompilerOracle::print_parse_error(char* error_msg, char* original_line) {
   print_tip();
 }
 
-enum OptionType parse_option_type(const char* type_str) {
-  for (uint i = 0; i < ARRAY_SIZE(optiontype_names); i++) {
-    if (strcasecmp(type_str, optiontype_names[i]) == 0) {
-      return static_cast<enum OptionType>(i);
-    }
-  }
-  return OptionType::Unknown;
-}
-
 class LineCopy : StackObj {
   const char* _copy;
 public:
@@ -713,7 +816,7 @@ void CompilerOracle::parse_from_line(char* line) {
   int bytes_read;
   char error_buf[1024] = {0};
 
-  enum CompileCommand option = parse_option_name(line, &bytes_read, error_buf, sizeof(error_buf));
+  enum CompileCommand option = match_option_name(line, &bytes_read, error_buf, sizeof(error_buf));
   line += bytes_read;
   ResourceMark rm;
 
@@ -774,12 +877,19 @@ void CompilerOracle::parse_from_line(char* line) {
       } else {
         // Type (1) option - option_type contains the option name -> bool value = true is implied
         int bytes_read;
-        enum CompileCommand option = parse_option_name(option_type, &bytes_read, error_buf, sizeof(error_buf));
+        enum CompileCommand option = match_option_name(option_type, &bytes_read, error_buf, sizeof(error_buf));
         if (option == CompileCommand::Unknown) {
           print_parse_error(error_buf, original.get());
           return;
         }
-        register_command(typed_matcher, option, true);
+        if (option2type(option) == OptionType::Bool) {
+          register_command(typed_matcher, option, true);
+        } else {
+          jio_snprintf(error_buf, sizeof(error_buf), "  Missing type '%s' before option '%s'",
+                       optiontype2name(option2type(option)), option2name(option));
+          print_parse_error(error_buf, original.get());
+          return;
+        }
       }
       assert(typed_matcher != NULL, "sanity");
       assert(*error_buf == '\0', "No error here");
@@ -838,7 +948,7 @@ bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
   assert(has_command_file(), "command file must be specified");
-  FILE* stream = fopen(cc_file(), "rt");
+  FILE* stream = os::fopen(cc_file(), "rt");
   if (stream == NULL) return;
 
   char token[1024];
@@ -895,9 +1005,6 @@ void compilerOracle_init() {
   if (has_command(CompileCommand::Print)) {
     if (PrintAssembly) {
       warning("CompileCommand and/or %s file contains 'print' commands, but PrintAssembly is also enabled", default_cc_file);
-    } else if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
-      warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
-      DebugNonSafepoints = true;
     }
   }
 }
@@ -991,5 +1098,5 @@ void CompilerOracle::parse_compile_only(char* line) {
 enum CompileCommand CompilerOracle::string_to_option(const char* name) {
   int bytes_read = 0;
   char errorbuf[1024] = {0};
-  return parse_option_name(name, &bytes_read, errorbuf, sizeof(errorbuf));
+  return match_option_name(name, &bytes_read, errorbuf, sizeof(errorbuf));
 }

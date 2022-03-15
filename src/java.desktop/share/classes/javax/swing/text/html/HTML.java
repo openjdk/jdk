@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing.text.html;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Hashtable;
+
 import javax.swing.text.AttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -54,7 +59,11 @@ public class HTML {
      */
     public static class Tag {
 
-        /** @since 1.3 */
+        /**
+         * Constructs a {@code Tag}.
+         *
+         * @since 1.3
+         */
         public Tag() {}
 
         /**
@@ -618,6 +627,7 @@ public class HTML {
             return false;
         }
 
+        @Serial
         private void writeObject(java.io.ObjectOutputStream s)
                      throws IOException {
             s.defaultWriteObject();
@@ -627,6 +637,7 @@ public class HTML {
             s.writeObject(name);
         }
 
+        @Serial
         private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException {
             s.defaultReadObject();
@@ -1255,7 +1266,7 @@ public class HTML {
         String istr = (String) attr.getAttribute(key);
         if (istr != null) {
             try {
-                value = Integer.valueOf(istr).intValue();
+                value = Integer.parseInt(istr);
             } catch (NumberFormatException e) {
                 value = def;
             }

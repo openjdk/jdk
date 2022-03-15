@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2020 Unicode, Inc.
+<!-- Copyright © 1991-2021 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1845,11 +1845,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>𞤄𞤪𞤮𞤳𞤭𞤲-𞤖𞤭𞥅𞤤</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>𞤑𞤵𞥅𞤪𞤭𞥅</exemplarCity>
-			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>𞤃𞤫𞤤𞤦𞤵𞥅𞤪𞤲𞤵</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>𞤑𞤵𞥅𞤪𞤭𞥅</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>𞤖𞤵𞥅𞤦𞤢𞤪𞤼𞤵</exemplarCity>
@@ -4953,7 +4953,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} 𞤣𞤵𞥅𞤲𞤢𞤥𞤵</unitPattern>
 				<unitPattern count="other">{0} 𞤣𞤵𞥅𞤲𞤢𞤥𞤭</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-per-deciliter">
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>𞤥𞤭𞤤𞤭𞤺𞤢𞤪𞤬𞤭 𞤲𞤣𞤫𞤪 𞤣𞤫𞥅𞤧𞤭𞤤𞤭𞥅𞤼𞤵</displayName>
 			</unit>
 			<unit type="digital-petabyte">

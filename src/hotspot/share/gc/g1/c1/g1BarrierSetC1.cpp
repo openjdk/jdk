@@ -107,7 +107,7 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
   __ branch_destination(slow->continuation());
 }
 
-void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprDesc* new_val) {
+void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
   LIRGenerator* gen = access.gen();
   DecoratorSet decorators = access.decorators();
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -152,13 +152,13 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprD
     __ unsigned_shift_right(xor_shift_res,
                             LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
                             xor_shift_res,
-                            LIR_OprDesc::illegalOpr());
+                            LIR_Opr::illegalOpr());
   } else {
     __ logical_xor(addr, new_val, xor_res);
     __ unsigned_shift_right(xor_res,
                             LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
                             xor_shift_res,
-                            LIR_OprDesc::illegalOpr());
+                            LIR_Opr::illegalOpr());
   }
 
   if (!new_val->is_register()) {

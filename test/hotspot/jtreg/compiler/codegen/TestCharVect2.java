@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8001183
  * @summary incorrect results of char vectors right shift operation
  *
- * @run main/othervm/timeout=400 -Xbatch -Xmx128m compiler.codegen.TestCharVect2
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m compiler.codegen.TestCharVect2
  */
 
 /**
@@ -35,9 +35,9 @@
  * @summary incorrect results of char vectors right shift operation
  * @requires vm.compiler2.enabled | vm.graal.enabled
  *
- * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=8 compiler.codegen.TestCharVect2
- * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=16 compiler.codegen.TestCharVect2
- * @run main/othervm/timeout=400 -Xbatch -Xmx128m -XX:MaxVectorSize=32 compiler.codegen.TestCharVect2
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=8 compiler.codegen.TestCharVect2
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=16 compiler.codegen.TestCharVect2
+ * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=32 compiler.codegen.TestCharVect2
  */
 
 package compiler.codegen;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef SHARE_SERVICES_MEMREPORTER_HPP
 #define SHARE_SERVICES_MEMREPORTER_HPP
 
-#if INCLUDE_NMT
-
 #include "memory/metaspace.hpp"
 #include "oops/instanceKlass.hpp"
 #include "services/memBaseline.hpp"
@@ -39,20 +37,26 @@
 */
 class MemReporterBase : public StackObj {
  private:
-  size_t        _scale;  // report in this scale
-  outputStream* _output; // destination
+  const size_t  _scale;         // report in this scale
+  outputStream* const _output;  // destination
 
  public:
-  MemReporterBase(outputStream* out = NULL, size_t scale = K)
-    : _scale(scale) {
-    _output = (out == NULL) ? tty : out;
-  }
+
+  // Default scale to use if no scale given.
+  static const size_t default_scale = K;
+
+  MemReporterBase(outputStream* out, size_t scale = default_scale) :
+    _scale(scale), _output(out)
+  {}
 
  protected:
   inline outputStream* output() const {
     return _output;
   }
   // Current reporting scale
+  size_t scale() const {
+    return _scale;
+  }
   inline const char* current_scale() const {
     return NMTUtil::scale_name(_scale);
   }
@@ -73,7 +77,6 @@ class MemReporterBase : public StackObj {
   // Calculate total reserved and committed amount
   size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
   size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const;
-
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed) const;
@@ -100,7 +103,7 @@ class MemSummaryReporter : public MemReporterBase {
  public:
   // This constructor is for normal reporting from a recent baseline.
   MemSummaryReporter(MemBaseline& baseline, outputStream* output,
-    size_t scale = K) : MemReporterBase(output, scale),
+    size_t scale = default_scale) : MemReporterBase(output, scale),
     _malloc_snapshot(baseline.malloc_memory_snapshot()),
     _vm_snapshot(baseline.virtual_memory_snapshot()),
     _instance_class_count(baseline.instance_class_count()),
@@ -125,7 +128,7 @@ class MemDetailReporter : public MemSummaryReporter {
   MemBaseline&   _baseline;
 
  public:
-  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = K) :
+  MemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = default_scale) :
     MemSummaryReporter(baseline, output, scale),
      _baseline(baseline) { }
 
@@ -142,10 +145,10 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_detail();
   // Report virtual memory map
   void report_virtual_memory_map();
-  // Report malloc allocation sites
-  void report_malloc_sites();
-  // Report virtual memory reservation sites
-  void report_virtual_memory_allocation_sites();
+  // Report malloc allocation sites; returns number of omitted sites
+  int report_malloc_sites();
+  // Report virtual memory reservation sites; returns number of omitted sites
+  int report_virtual_memory_allocation_sites();
 
   // Report a virtual memory region
   void report_virtual_memory_region(const ReservedMemoryRegion* rgn);
@@ -162,7 +165,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  public:
   MemSummaryDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    outputStream* output, size_t scale = K) : MemReporterBase(output, scale),
+    outputStream* output, size_t scale = default_scale) : MemReporterBase(output, scale),
     _early_baseline(early_baseline), _current_baseline(current_baseline) {
     assert(early_baseline.baseline_type()   != MemBaseline::Not_baselined, "Not baselined");
     assert(current_baseline.baseline_type() != MemBaseline::Not_baselined, "Not baselined");
@@ -175,9 +178,9 @@ class MemSummaryDiffReporter : public MemReporterBase {
   // report the comparison of each memory type
   void diff_summary_of_type(MEMFLAGS type,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
-    const MetaspaceSnapshot* early_ms,
+    const MetaspaceCombinedStats& early_ms,
     const MallocMemory* current_malloc, const VirtualMemory* current_vm,
-    const MetaspaceSnapshot* current_ms) const;
+    const MetaspaceCombinedStats& current_ms) const;
 
  protected:
   void print_malloc_diff(size_t current_amount, size_t current_count,
@@ -187,10 +190,11 @@ class MemSummaryDiffReporter : public MemReporterBase {
   void print_arena_diff(size_t current_amount, size_t current_count,
     size_t early_amount, size_t early_count) const;
 
-  void print_metaspace_diff(const MetaspaceSnapshot* current_ms,
-                            const MetaspaceSnapshot* early_ms) const;
-  void print_metaspace_diff(Metaspace::MetadataType type,
-    const MetaspaceSnapshot* current_ms, const MetaspaceSnapshot* early_ms) const;
+  void print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
+                            const MetaspaceCombinedStats& early_ms) const;
+  void print_metaspace_diff(const char* header,
+                            const MetaspaceStats& current_ms,
+                            const MetaspaceStats& early_ms) const;
 };
 
 /*
@@ -201,7 +205,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 class MemDetailDiffReporter : public MemSummaryDiffReporter {
  public:
   MemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    outputStream* output, size_t scale = K) :
+    outputStream* output, size_t scale = default_scale) :
     MemSummaryDiffReporter(early_baseline, current_baseline, output, scale) { }
 
   // Generate detail comparison report
@@ -232,7 +236,5 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
     size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMREPORTER_HPP

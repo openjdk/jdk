@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,23 @@
 
 package sun.awt.shell;
 
-import javax.swing.*;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.io.*;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serial;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Callable;
+
+import javax.swing.SwingConstants;
+import sun.awt.OSInfo;
 
 /**
  * @author Michael Martak
@@ -75,6 +80,7 @@ public abstract class ShellFolder extends File {
      * @return a java.io.File replacement object, or null
      *         if no suitable replacement can be found.
      */
+    @Serial
     protected abstract Object writeReplace() throws java.io.ObjectStreamException;
 
     /**
@@ -130,11 +136,11 @@ public abstract class ShellFolder extends File {
         File[] files = super.listFiles();
 
         if (!includeHiddenFiles) {
-            Vector<File> v = new Vector<>();
+            ArrayList<File> v = new ArrayList<>();
             int nameCount = (files == null) ? 0 : files.length;
             for (int i = 0; i < nameCount; i++) {
                 if (!files[i].isHidden()) {
-                    v.addElement(files[i]);
+                    v.add(files[i]);
                 }
             }
             files = v.toArray(new File[v.size()]);
@@ -176,9 +182,7 @@ public abstract class ShellFolder extends File {
      * @see #compareTo(Object)
      */
     public int compareTo(File file2) {
-        if (file2 == null || !(file2 instanceof ShellFolder)
-            || ((file2 instanceof ShellFolder) && ((ShellFolder)file2).isFileSystem())) {
-
+        if (!(file2 instanceof ShellFolder sf) || sf.isFileSystem()) {
             if (isFileSystem()) {
                 return super.compareTo(file2);
             } else {
@@ -201,6 +205,16 @@ public abstract class ShellFolder extends File {
         return null;
     }
 
+    /**
+     * Returns the icon of the specified size used to display this shell folder.
+     *
+     * @param width width of the icon > 0
+     * @param height height of the icon > 0
+     * @return The icon of the specified size used to display this shell folder
+     */
+    public Image getIcon(int width, int height) {
+        return null;
+    }
 
     // Static
 
@@ -282,7 +296,7 @@ public abstract class ShellFolder extends File {
      */
     public static File getNormalizedFile(File f) throws IOException {
         File canonical = f.getCanonicalFile();
-        if (f.equals(canonical)) {
+        if (f.equals(canonical) || OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
             // path of f doesn't contain symbolic links
             return canonical;
         }
@@ -330,7 +344,7 @@ public abstract class ShellFolder extends File {
                 if (commonParent instanceof ShellFolder) {
                     ((ShellFolder) commonParent).sortChildren(files);
                 } else {
-                    Collections.sort(files, FILE_COMPARATOR);
+                    files.sort(FILE_COMPARATOR);
                 }
 
                 return null;
@@ -343,7 +357,7 @@ public abstract class ShellFolder extends File {
         // synchronize the whole code of the sort method once
         invoke(new Callable<Void>() {
             public Void call() {
-                Collections.sort(files, FILE_COMPARATOR);
+                files.sort(FILE_COMPARATOR);
 
                 return null;
             }

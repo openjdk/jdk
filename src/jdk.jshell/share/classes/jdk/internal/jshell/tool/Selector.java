@@ -31,7 +31,6 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  * Selector is the representation of the selector in a "/set format" command.  This class, among other things, provides
@@ -277,7 +276,7 @@ class Selector {
 
     @Override
     public int hashCode() {
-        return (int) (asBits() ^ (asBits() >>> 32));
+        return Long.hashCode(asBits());
     }
 
     /**
@@ -303,7 +302,7 @@ class Selector {
 
         <E extends Enum<E> & SelectorInstanceWithDoc<E>>
         SelectorKind(Class<E> k) {
-            this.all = EnumSet.allOf(FormatCase.class);;
+            this.all = EnumSet.allOf(FormatCase.class);
             this.k = k;
         }
     }

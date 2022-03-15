@@ -230,8 +230,6 @@ public class TestOptionsWithRanges {
          */
         excludeTestMaxRange("ConcGCThreads");
         excludeTestMaxRange("G1ConcRefinementThreads");
-        excludeTestMaxRange("G1RSetRegionEntries");
-        excludeTestMaxRange("G1RSetSparseRegionEntries");
         excludeTestMaxRange("G1UpdateBufferSize");
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");

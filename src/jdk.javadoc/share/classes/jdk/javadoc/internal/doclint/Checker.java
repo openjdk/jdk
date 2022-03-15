@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,17 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
@@ -91,6 +95,7 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 import jdk.javadoc.internal.doclint.HtmlTag.AttrKind;
+import jdk.javadoc.internal.doclint.HtmlTag.ElemKind;
 import static jdk.javadoc.internal.doclint.Messages.Group.*;
 
 
@@ -143,6 +148,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private HtmlTag currHeadingTag;
 
     private int implicitHeadingRank;
+    private boolean inIndex;
+    private boolean inLink;
+    private boolean inSummary;
 
     // <editor-fold defaultstate="collapsed" desc="Top level">
 
@@ -180,9 +188,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
         } else {
             if (tree == null) {
-                if (!isSynthetic() && !isOverridingMethod)
+                if (isDefaultConstructor()) {
+                    if (isNormalClass(p.getParentPath())) {
+                        reportMissing("dc.default.constructor");
+                    }
+                } else if (!isOverridingMethod && !isSynthetic() && !isAnonymous()) {
                     reportMissing("dc.missing.comment");
+                }
                 return null;
+            } else if (tree.getFirstSentence().isEmpty() && !isOverridingMethod) {
+                if (tree.getBlockTags().isEmpty()) {
+                    reportMissing("dc.empty.comment");
+                    return null;
+                } else {
+                    // Don't report an empty description if the comment contains @deprecated,
+                    // because javadoc will use the content of that tag in summary tables.
+                    if (tree.getBlockTags().stream().allMatch(t -> t.getKind() != DocTree.Kind.DEPRECATED)) {
+                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.description");
+                    }
+                }
             }
         }
 
@@ -265,7 +289,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree tree, Void ignore) {
-        super.visitDocComment(tree, ignore);
+        scan(tree.getFirstSentence(), ignore);
+        scan(tree.getBody(), ignore);
+        checkTagStack();
+
+        for (DocTree blockTag : tree.getBlockTags()) {
+            tagStack.clear();
+            scan(blockTag, ignore);
+            checkTagStack();
+        }
+
+        return null;
+    }
+
+    private void checkTagStack() {
         for (TagStackItem tsi: tagStack) {
             warnIfEmpty(tsi, null);
             if (tsi.tree.getKind() == DocTree.Kind.START_ELEMENT
@@ -274,7 +311,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 env.messages.error(HTML, t, "dc.tag.not.closed", t.getName());
             }
         }
-        return null;
     }
     // </editor-fold>
 
@@ -324,8 +360,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         final HtmlTag t = HtmlTag.get(treeName);
         if (t == null) {
             env.messages.error(HTML, tree, "dc.tag.unknown", treeName);
-        } else if (t.allowedVersion != HtmlVersion.ALL && t.allowedVersion != env.htmlVersion) {
-            env.messages.error(HTML, tree, "dc.tag.not.supported", treeName);
+        } else if (t.elemKind == ElemKind.HTML4) {
+            env.messages.error(HTML, tree, "dc.tag.not.supported.html5", treeName);
         } else {
             boolean done = false;
             for (TagStackItem tsi: tagStack) {
@@ -367,11 +403,11 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     }
                 }
             }
-        }
 
-        // check for self closing tags, such as <a id="name"/>
-        if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
-            env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            // check for self closing tags, such as <a id="name"/>
+            if (tree.isSelfClosing() && !isSelfClosingAllowed(t)) {
+                env.messages.error(HTML, tree, "dc.tag.self.closing", treeName);
+            }
         }
 
         try {
@@ -413,8 +449,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     // so-called "self-closing" tags are only permitted in HTML 5, for void elements
     // https://html.spec.whatwg.org/multipage/syntax.html#start-tags
     private boolean isSelfClosingAllowed(HtmlTag tag) {
-        return env.htmlVersion == HtmlVersion.HTML5
-                && tag.endKind == HtmlTag.EndKind.NONE;
+        return tag.endKind == HtmlTag.EndKind.NONE;
     }
 
     private void checkStructure(StartElementTree tree, HtmlTag t) {
@@ -535,7 +570,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
                         case SECTION:
                         case ARTICLE:
-                            if (env.htmlVersion == HtmlVersion.HTML5 && !top.flags.contains(Flag.HAS_HEADING)) {
+                            if (!top.flags.contains(Flag.HAS_HEADING)) {
                                 env.messages.error(HTML, tree, "dc.tag.requires.heading", treeName);
                             }
                             break;
@@ -545,6 +580,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     done = true;
                     break;
                 } else if (top.tag == null || top.tag.endKind != HtmlTag.EndKind.REQUIRED) {
+                    warnIfEmpty(top, null);
                     tagStack.pop();
                 } else {
                     boolean found = false;
@@ -575,13 +611,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     void warnIfEmpty(TagStackItem tsi, DocTree endTree) {
-        if (tsi.tag != null && tsi.tree instanceof StartElementTree) {
+        if (tsi.tag != null && tsi.tree instanceof StartElementTree startTree) {
             if (tsi.tag.flags.contains(HtmlTag.Flag.EXPECT_CONTENT)
                     && !tsi.flags.contains(Flag.HAS_TEXT)
                     && !tsi.flags.contains(Flag.HAS_ELEMENT)
-                    && !tsi.flags.contains(Flag.HAS_INLINE_TAG)) {
-                DocTree tree = (endTree != null) ? endTree : tsi.tree;
-                Name treeName = ((StartElementTree) tsi.tree).getName();
+                    && !tsi.flags.contains(Flag.HAS_INLINE_TAG)
+                    && !(tsi.tag.elemKind == ElemKind.HTML4)) {
+                DocTree tree = (endTree != null) ? endTree : startTree;
+                Name treeName = startTree.getName();
                 env.messages.warning(HTML, tree, "dc.tag.empty", treeName);
             }
         }
@@ -593,14 +630,17 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
+        // for now, ensure we're in an HTML StartElementTree;
+        // in time, we might check uses of attributes in other tree nodes
+        if (getParentKind() != DocTree.Kind.START_ELEMENT) {
+            return null;
+        }
+
         HtmlTag currTag = tagStack.peek().tag;
-        if (currTag != null) {
+        if (currTag != null && currTag.elemKind != ElemKind.HTML4) {
             Name name = tree.getName();
             HtmlTag.Attr attr = currTag.getAttr(name);
             if (attr != null) {
-                if (env.htmlVersion == HtmlVersion.HTML4 && attr.name().contains("-")) {
-                    env.messages.error(HTML, tree, "dc.attr.not.supported.html4", name);
-                }
                 boolean first = tagStack.peek().attrs.add(attr);
                 if (!first)
                     env.messages.error(HTML, tree, "dc.attr.repeated", name);
@@ -609,30 +649,29 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             // without checking the validity or applicability of the name
             if (!name.toString().startsWith("on")) {
                 AttrKind k = currTag.getAttrKind(name);
-                switch (env.htmlVersion) {
-                    case HTML4:
-                        validateHtml4Attrs(tree, name, k);
+                switch (k) {
+                    case OK:
                         break;
-
-                    case HTML5:
-                        validateHtml5Attrs(tree, name, k);
+                    case OBSOLETE:
+                        env.messages.warning(HTML, tree, "dc.attr.obsolete", name);
+                        break;
+                    case HTML4:
+                        env.messages.error(HTML, tree, "dc.attr.not.supported.html5", name);
+                        break;
+                    case INVALID:
+                        env.messages.error(HTML, tree, "dc.attr.unknown", name);
                         break;
                 }
             }
 
             if (attr != null) {
                 switch (attr) {
-                    case NAME:
-                        if (currTag != HtmlTag.A) {
-                            break;
-                        }
-                        // fallthrough
                     case ID:
                         String value = getAttrValue(tree);
                         if (value == null) {
                             env.messages.error(HTML, tree, "dc.anchor.value.missing");
                         } else {
-                            if (!validName.matcher(value).matches()) {
+                            if (!validId.matcher(value).matches()) {
                                 env.messages.error(HTML, tree, "dc.invalid.anchor", value);
                             }
                             if (!checkAnchor(value)) {
@@ -674,12 +713,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                         if (currTag == HtmlTag.TABLE) {
                             String v = getAttrValue(tree);
                             try {
-                                if (env.htmlVersion == HtmlVersion.HTML5
-                                        && (v == null || (!v.isEmpty() && Integer.parseInt(v) != 1))) {
-                                    env.messages.error(HTML, tree, "dc.attr.table.border.html5", attr);
+                                if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 1)) {
+                                    env.messages.error(HTML, tree, "dc.attr.table.border.not.valid", attr);
                                 }
                             } catch (NumberFormatException ex) {
-                                env.messages.error(HTML, tree, "dc.attr.table.border.html5", attr);
+                                env.messages.error(HTML, tree, "dc.attr.table.border.not.number", attr);
+                            }
+                        } else if (currTag == HtmlTag.IMG) {
+                            String v = getAttrValue(tree);
+                            try {
+                                if (v == null || (!v.isEmpty() && Integer.parseInt(v) != 0)) {
+                                    env.messages.error(HTML, tree, "dc.attr.img.border.not.valid", attr);
+                                }
+                            } catch (NumberFormatException ex) {
+                                env.messages.error(HTML, tree, "dc.attr.img.border.not.number", attr);
                             }
                         }
                         break;
@@ -701,44 +748,6 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return null;
     }
 
-    private void validateHtml4Attrs(AttributeTree tree, Name name, AttrKind k) {
-        switch (k) {
-            case ALL:
-            case HTML4:
-                break;
-
-            case INVALID:
-                env.messages.error(HTML, tree, "dc.attr.unknown", name);
-                break;
-
-            case OBSOLETE:
-                env.messages.warning(HTML, tree, "dc.attr.obsolete", name);
-                break;
-
-            case USE_CSS:
-                env.messages.warning(HTML, tree, "dc.attr.obsolete.use.css", name);
-                break;
-
-            case HTML5:
-                env.messages.error(HTML, tree, "dc.attr.not.supported.html4", name);
-                break;
-        }
-    }
-
-    private void validateHtml5Attrs(AttributeTree tree, Name name, AttrKind k) {
-        switch (k) {
-            case ALL:
-            case HTML5:
-                break;
-
-            case INVALID:
-            case OBSOLETE:
-            case USE_CSS:
-            case HTML4:
-                env.messages.error(HTML, tree, "dc.attr.not.supported.html5", name);
-                break;
-        }
-    }
 
     private boolean checkAnchor(String name) {
         Element e = getEnclosingPackageOrClass(env.currElement);
@@ -765,8 +774,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return e;
     }
 
-    // http://www.w3.org/TR/html401/types.html#type-name
-    private static final Pattern validName = Pattern.compile("[A-Za-z][A-Za-z0-9-_:.]*");
+    // https://html.spec.whatwg.org/#the-id-attribute
+    private static final Pattern validId = Pattern.compile("[^\\s]+");
 
     private static final Pattern validNumber = Pattern.compile("-?[0-9]+");
 
@@ -816,6 +825,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitIndex(IndexTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
+        if (inIndex) {
+            env.messages.warning(HTML, tree, "dc.tag.nested.tag", "@" + tree.getTagName());
+        }
         for (TagStackItem tsi : tagStack) {
             if (tsi.tag == HtmlTag.A) {
                 env.messages.warning(HTML, tree, "dc.tag.a.within.a",
@@ -823,7 +835,13 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 break;
             }
         }
-        return super.visitIndex(tree, ignore);
+        boolean prevInIndex = inIndex;
+        try {
+            inIndex = true;
+            return super.visitIndex(tree, ignore);
+        } finally {
+            inIndex = prevInIndex;
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -837,14 +855,20 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLink(LinkTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
+        if (inLink) {
+            env.messages.warning(HTML, tree, "dc.tag.nested.tag", "@" + tree.getTagName());
+        }
+        boolean prevInLink = inLink;
         // simulate inline context on tag stack
         HtmlTag t = (tree.getKind() == DocTree.Kind.LINK)
                 ? HtmlTag.CODE : HtmlTag.SPAN;
         tagStack.push(new TagStackItem(tree, t));
         try {
+            inLink = true;
             return super.visitLink(tree, ignore);
         } finally {
             tagStack.pop();
+            inLink = prevInLink;
         }
     }
 
@@ -929,9 +953,29 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         Element e = env.trees.getElement(getCurrentPath());
-        if (e == null)
-            env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        if (e == null) {
+            reportBadReference(tree);
+        }
         return super.visitReference(tree, ignore);
+    }
+
+    private void reportBadReference(ReferenceTree tree) {
+        if (!env.strictReferenceChecks) {
+            String refSig = tree.getSignature();
+            int sep = refSig.indexOf("/");
+            if (sep > 0) {
+                String moduleName = refSig.substring(0, sep);
+                if (SourceVersion.isName(moduleName)) {
+                    Element m = env.elements.getModuleElement(moduleName);
+                    if (m == null) {
+                        env.messages.warning(REFERENCE, tree, "dc.ref.in.missing.module", moduleName);
+                        return;
+                    }
+                }
+            }
+        }
+
+        env.messages.error(REFERENCE, tree, "dc.ref.not.found");
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -974,15 +1018,24 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public Void visitSummary(SummaryTree node, Void aVoid) {
+    public Void visitSummary(SummaryTree tree, Void aVoid) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
-        int idx = env.currDocComment.getFullBody().indexOf(node);
+        if (inSummary) {
+            env.messages.warning(HTML, tree, "dc.tag.nested.tag", "@" + tree.getTagName());
+        }
+        int idx = env.currDocComment.getFullBody().indexOf(tree);
         // Warn if the node is preceded by non-whitespace characters,
         // or other non-text nodes.
         if ((idx == 1 && hasNonWhitespaceText) || idx > 1) {
-            env.messages.warning(SYNTAX, node, "dc.invalid.summary", node.getTagName());
+            env.messages.warning(SYNTAX, tree, "dc.invalid.summary", tree.getTagName());
         }
-        return super.visitSummary(node, aVoid);
+        boolean prevInSummary = inSummary;
+        try {
+            inSummary = true;
+            return super.visitSummary(tree, aVoid);
+        } finally {
+            inSummary = prevInSummary;
+        }
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1130,12 +1183,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="Utility methods">
 
+    private DocTree.Kind getParentKind() {
+        return getCurrentPath().getParentPath().getLeaf().getKind();
+    }
+
     private boolean isCheckedException(TypeMirror t) {
         return !(env.types.isAssignable(t, env.java_lang_Error)
                 || env.types.isAssignable(t, env.java_lang_RuntimeException));
     }
 
     private boolean isSynthetic() {
+        return env.elements.getOrigin(env.currElement) == Elements.Origin.SYNTHETIC;
+    }
+
+    private boolean isAnonymous() {
+        return (env.currElement instanceof TypeElement te)
+                && te.getNestingKind() == NestingKind.ANONYMOUS;
+    }
+
+    private boolean isDefaultConstructor() {
         switch (env.currElement.getKind()) {
             case CONSTRUCTOR:
                 // A synthetic default constructor has the same pos as the
@@ -1144,6 +1210,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 return env.getPos(p) == env.getPos(p.getParentPath());
         }
         return false;
+    }
+
+    private boolean isNormalClass(TreePath p) {
+        return switch (p.getLeaf().getKind()) {
+            case ENUM, RECORD -> false;
+            case CLASS -> true;
+            default -> throw new IllegalArgumentException(p.getLeaf().getKind().name());
+        };
     }
 
     void markEnclosingTag(Flag flag) {
@@ -1183,13 +1257,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     boolean hasNonWhitespace(TextTree tree) {
-        String s = tree.getBody();
-        for (int i = 0; i < s.length(); i++) {
-            Character c = s.charAt(i);
-            if (!Character.isWhitespace(s.charAt(i)))
-                return true;
-        }
-        return false;
+        return !tree.getBody().isBlank();
     }
 
     // </editor-fold>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,31 +641,31 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             final int ci = i;
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
-                checkIOOBE(am, () -> {
+                checkAIOOBE(am, () -> {
                     String x = (String) hs.get(am).invokeExact(array, ci);
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
-                checkIOOBE(am, () -> {
+                checkAIOOBE(am, () -> {
                     hs.get(am).invokeExact(array, ci, "foo");
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
-                checkIOOBE(am, () -> {
+                checkAIOOBE(am, () -> {
                     boolean r = (boolean) hs.get(am).invokeExact(array, ci, "foo", "bar");
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
-                checkIOOBE(am, () -> {
+                checkAIOOBE(am, () -> {
                     String r = (String) hs.get(am).invokeExact(array, ci, "bar", "foo");
                 });
             }
 
             for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
-                checkIOOBE(am, () -> {
+                checkAIOOBE(am, () -> {
                     String o = (String) hs.get(am).invokeExact(array, ci, "foo");
                 });
             }

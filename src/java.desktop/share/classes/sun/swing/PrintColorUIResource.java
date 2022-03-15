@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.swing;
 
 import java.awt.Color;
+import java.io.Serial;
+
 import javax.swing.plaf.ColorUIResource;
 
 /**
@@ -86,6 +88,7 @@ public class PrintColorUIResource extends ColorUIResource {
      * back a {@code PrintColorUIResource}. This is acceptable since we
      * don't have a requirement for that in Swing.
      */
+    @Serial
     private Object writeReplace() {
         return new ColorUIResource(this);
     }

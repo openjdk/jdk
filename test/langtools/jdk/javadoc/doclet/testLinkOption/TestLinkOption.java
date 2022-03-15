@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,19 @@ public class TestLinkOption extends JavadocTester {
                 "<code><b>getSystemClassLoader()</b></code>",
                 "<code>createTempFile(prefix,&nbsp;suffix,&nbsp;null)</code>",
                 """
-                    <dd><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
-                     transformation format of ISO 10646</i></a>, <br><a href="http://www.ietf.org/rf\
-                    c/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
-                     Architecture</i></a>, <br><a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
-                     Resource Identifiers (URI): Generic Syntax</i></a>, <br><a href="http://www.iet\
-                    f.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
-                     Literal IPv6 Addresses in URLs</i></a>, <br><a href="C.html">A nearby file</a></dd>
+                    <dd>
+                    <ul class="see-list-long">
+                    <li><a href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279: UTF-8, a
+                     transformation format of ISO 10646</i></a></li>
+                    <li><a href="http://www.ietf.org/rfc/rfc2373.txt"><i>RFC&nbsp;2373: IPv6 Addressing
+                     Architecture</i></a></li>
+                    <li><a href="http://www.ietf.org/rfc/rfc2396.txt"><i>RFC&nbsp;2396: Uniform
+                     Resource Identifiers (URI): Generic Syntax</i></a></li>
+                    <li><a href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
+                     Literal IPv6 Addresses in URLs</i></a></li>
+                    <li><a href="C.html">A nearby file</a></li>
+                    </ul>
+                    </dd>
                     </dl>""");
 
         checkOutput("mylib/lang/StringBuilderChild.html", true,

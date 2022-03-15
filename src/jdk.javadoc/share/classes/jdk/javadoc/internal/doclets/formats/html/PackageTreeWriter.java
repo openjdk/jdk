@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected void generatePackageTreeFile() throws DocFileIOException {
         HtmlTree body = getPackageTreeHeader();
         Content mainContent = new ContentBuilder();
-        Content headContent = contents.getContent("doclet.Hierarchy_For_Package",
-                utils.getPackageName(packageElement));
+        Content headContent = packageElement.isUnnamed()
+                ? contents.getContent("doclet.Hierarchy_For_Unnamed_Package")
+                : contents.getContent("doclet.Hierarchy_For_Package",
+                getLocalizedPackageName(packageElement));
         Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         Content div = HtmlTree.DIV(HtmlStyle.header, heading);
@@ -145,8 +147,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                 contents.packageHierarchies);
         div.add(span);
-        HtmlTree ul = new HtmlTree (TagName.UL);
-        ul.setStyle(HtmlStyle.horizontal);
+        HtmlTree ul = HtmlTree.UL(HtmlStyle.horizontal);
         ul.add(getNavLinkMainTree(resources.getText("doclet.All_Packages")));
         div.add(ul);
     }

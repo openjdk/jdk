@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2394,8 +2394,8 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             if (defaultIcon instanceof Accessible) {
                 AccessibleContext ac =
                     ((Accessible)defaultIcon).getAccessibleContext();
-                if (ac != null && ac instanceof AccessibleIcon) {
-                    return new AccessibleIcon[] { (AccessibleIcon)ac };
+                if (ac instanceof AccessibleIcon ai) {
+                    return new AccessibleIcon[] { ai };
                 }
             }
             return null;
@@ -2441,8 +2441,8 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
             if (!relationSet.contains(AccessibleRelation.MEMBER_OF)) {
                 // get the members of the button group if one exists
                 ButtonModel model = getModel();
-                if (model != null && model instanceof DefaultButtonModel) {
-                    ButtonGroup group = ((DefaultButtonModel)model).getGroup();
+                if (model instanceof DefaultButtonModel defaultModel) {
+                    ButtonGroup group = defaultModel.getGroup();
                     if (group != null) {
                         // set the target of the MEMBER_OF relation to be
                         // the members of the button group.

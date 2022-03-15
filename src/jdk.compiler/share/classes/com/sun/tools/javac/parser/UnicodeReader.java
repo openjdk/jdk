@@ -86,6 +86,11 @@ public class UnicodeReader {
     private boolean wasBackslash;
 
     /**
+     * true if the last character was derived from an unicode escape sequence.
+     */
+    private boolean wasUnicodeEscape;
+
+    /**
      * Log for error reporting.
      */
     private final Log log;
@@ -105,6 +110,7 @@ public class UnicodeReader {
         this.character = '\0';
         this.codepoint = 0;
         this.wasBackslash = false;
+        this.wasUnicodeEscape = false;
         this.log = sf.log;
 
         nextCodePoint();
@@ -161,13 +167,22 @@ public class UnicodeReader {
         // Fetch next character.
         nextCodeUnit();
 
-        // If second backslash is detected.
-        if (wasBackslash) {
-            // Treat like a normal character (not part of unicode escape.)
+        if (character == '\\' && (!wasBackslash || wasUnicodeEscape)) {
+            // Is a backslash and may be an unicode escape.
+            switch (unicodeEscape()) {
+                case BACKSLASH -> {
+                    wasUnicodeEscape = false;
+                    wasBackslash = !wasBackslash;
+                }
+                case VALID_ESCAPE -> {
+                    wasUnicodeEscape = true;
+                    wasBackslash = character == '\\' && !wasBackslash;
+                }
+                case BROKEN_ESCAPE -> nextUnicodeInputCharacter(); //skip broken unicode escapes
+            }
+        } else {
             wasBackslash = false;
-        } else if (character == '\\') {
-            // May be an unicode escape.
-            wasBackslash = !unicodeEscape();
+            wasUnicodeEscape = false;
         }
 
         // Codepoint and character match if not surrogate.
@@ -218,7 +233,7 @@ public class UnicodeReader {
      *
      * @return true if was an unicode escape.
      */
-    private boolean unicodeEscape() {
+    private UnicodeEscapeResult unicodeEscape() {
         // Start of unicode escape (past backslash.)
         int start = position + width;
 
@@ -236,7 +251,7 @@ public class UnicodeReader {
 
         // Needs to have been at least one u.
         if (index == start) {
-            return false;
+            return UnicodeEscapeResult.BACKSLASH;
         }
 
         int code = 0;
@@ -261,12 +276,17 @@ public class UnicodeReader {
         // If all digits are good.
         if (code >= 0) {
             character = (char)code;
+            return UnicodeEscapeResult.VALID_ESCAPE;
         } else {
-            log.error(position, Errors.IllegalUnicodeEsc);
+            log.error(index, Errors.IllegalUnicodeEsc);
+            return UnicodeEscapeResult.BROKEN_ESCAPE;
         }
+    }
 
-        // Return true even if error so that the invalid unicode escape is skipped.
-        return true;
+    private enum UnicodeEscapeResult {
+        BACKSLASH,
+        VALID_ESCAPE,
+        BROKEN_ESCAPE;
     }
 
     /**
@@ -288,6 +308,7 @@ public class UnicodeReader {
         position = pos;
         width = 0;
         wasBackslash = false;
+        wasUnicodeEscape = false;
         nextCodePoint();
     }
 

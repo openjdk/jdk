@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class Source implements Comparable<Source> {
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof Source) && name.equals(((Source)o).name);
+        return (o instanceof Source source) && name.equals(source.name);
     }
 
     @Override
@@ -148,7 +148,7 @@ public class Source implements Comparable<Source> {
     }
     // Parse a line that looks like this:
     // S C /code/alfa/A.java 1357631228000
-    static public Source load(Package lastPackage, String l, boolean isGenerated) {
+    public static Source load(Package lastPackage, String l, boolean isGenerated) {
         int sp = l.indexOf(' ',4);
         if (sp == -1) return null;
         String name = l.substring(4,sp);
@@ -185,7 +185,7 @@ public class Source implements Comparable<Source> {
      * Detects the existence of module-info.java files and presumes that the directory it resides in
      * is the name of the current module.
      */
-    static public void scanRoot(File root,
+    public static void scanRoot(File root,
                                 Set<String> suffixes,
                                 List<String> excludes,
                                 List<String> includes,

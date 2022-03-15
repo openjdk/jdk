@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -74,8 +75,8 @@ public class ThrowsTaglet extends BaseTaglet
         Element exception;
         CommentHelper ch = utils.getCommentHelper(input.element);
         if (input.tagId == null) {
-            exception = input.docTreeInfo.docTree instanceof ThrowsTree
-                    ? ch.getException((ThrowsTree) input.docTreeInfo.docTree) : null;
+            exception = input.docTreeInfo.docTree instanceof ThrowsTree tt
+                    ? ch.getException(tt) : null;
             input.tagId = exception == null
                     ? ch.getExceptionName(input.docTreeInfo.docTree).getSignature()
                     : utils.getFullyQualifiedName(exception);
@@ -148,7 +149,7 @@ public class ThrowsTaglet extends BaseTaglet
                     }
                     List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
                             .map(t -> (ThrowsTree) t)
-                            .collect(Collectors.toList());
+                            .toList();
                     declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
                 }
             }
@@ -166,7 +167,9 @@ public class ThrowsTaglet extends BaseTaglet
                 writer.getCurrentPageElement(), (ExecutableElement)holder);
         List<? extends TypeMirror> thrownTypes = instantiatedType.getThrownTypes();
         Map<String, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
-                ((ExecutableElement) holder).getThrownTypes(), thrownTypes);
+                writer.configuration().utils.typeUtils,
+                ((ExecutableElement) holder).getThrownTypes(),
+                thrownTypes);
         Map<List<? extends ThrowsTree>, ExecutableElement> tagsMap = new LinkedHashMap<>();
         tagsMap.put(utils.getThrowsTrees(execHolder), execHolder);
         Content result = writer.getOutputInstance();
@@ -233,7 +236,8 @@ public class ThrowsTaglet extends BaseTaglet
      * @param instantiatedThrownTypes the thrown types in the context of the current type.
      * @return map of declared to instantiated thrown types or an empty map.
      */
-    private Map<String, TypeMirror> getSubstitutedThrownTypes(List<? extends TypeMirror> declaredThrownTypes,
+    private Map<String, TypeMirror> getSubstitutedThrownTypes(Types types,
+                                                              List<? extends TypeMirror> declaredThrownTypes,
                                                               List<? extends TypeMirror> instantiatedThrownTypes) {
         if (!instantiatedThrownTypes.equals(declaredThrownTypes)) {
             Map<String, TypeMirror> map = new HashMap<>();
@@ -242,7 +246,7 @@ public class ThrowsTaglet extends BaseTaglet
             while (i1.hasNext() && i2.hasNext()) {
                 TypeMirror t1 = i1.next();
                 TypeMirror t2 = i2.next();
-                if (!t1.equals(t2))
+                if (!types.isSameType(t1, t2))
                     map.put(t2.toString(), t1);
             }
             return map;
