@@ -23,6 +23,10 @@
 
 /*
  * @test
+ * @bug 8263031
+ * @summary Tests that the HttpClient can correctly receive a Push Promise
+ *          Frame with the END_HEADERS flag unset followed by one or more
+ *          Continuation Frames.
  * @library /test/lib server
  * @build jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
@@ -37,6 +41,7 @@ import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
 import org.testng.TestException;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -50,7 +55,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,17 +66,28 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiPredicate;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertEquals;
 
 public class PushPromiseContinuation {
 
     static HttpHeaders testHeaders;
     static HttpHeadersBuilder testHeadersBuilder;
+    static int continuationCount;
     Http2TestServer server;
     URI uri;
 
+    // Set up simple client-side push promise handler
+    ConcurrentMap<HttpRequest, HttpRequest> resultMap = new ConcurrentHashMap<>();
+    HttpResponse.PushPromiseHandler<String> pph = (initial, pushRequest, acceptor) -> {
+        HttpResponse.BodyHandler<String> s = HttpResponse.BodyHandlers.ofString(UTF_8);
+        acceptor.apply(s);
+        resultMap.put(initial, pushRequest);
+    };
+
     @BeforeTest
     public void setup() throws Exception {
+        resultMap = new ConcurrentHashMap<>();
+
         server = new Http2TestServer(false, 0);
         server.addHandler(new ServerPushHandler("Main Response Body", "/promise"), "/");
 
@@ -85,6 +101,11 @@ public class PushPromiseContinuation {
         uri = new URI("http://localhost:" + port + "/");
     }
 
+    @AfterTest
+    public void teardown() {
+        resultMap = null;
+    }
+
     /**
      * Tests that when the client receives PushPromise Frame with the END_HEADERS
      * flag set to 0x0 and subsequently receives a continuation frame, no exception
@@ -92,22 +113,40 @@ public class PushPromiseContinuation {
      * by the server arrive at the client.
      */
     @Test
-    public void test() throws IOException, InterruptedException {
-        ConcurrentMap<HttpRequest, HttpRequest> resultMap = new ConcurrentHashMap<>();
+    public void testOneContinuation() {
+        continuationCount = 1;
         HttpClient client = HttpClient.newHttpClient();
+
+        // Carry out request
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
-
-        // Set up simple client-side push promise handler
-        HttpResponse.PushPromiseHandler<String> pph = (initial, pushRequest, acceptor) -> {
-            HttpResponse.BodyHandler<String> s = HttpResponse.BodyHandlers.ofString(UTF_8);
-            acceptor.apply(s);
-            resultMap.put(initial, pushRequest);
-        };
-
         CompletableFuture<HttpResponse<String>> cf =
                 client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
         cf.join();
 
+        // Verify results
+        verify();
+    }
+
+    /**
+     * Same as above, but tests for the case where two Continuation Frames are sent
+     * with the END_HEADERS flag set only on the last frame.
+     */
+    @Test
+    public void testTwoContinuations() {
+        continuationCount = 2;
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Carry out request
+        HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
+        CompletableFuture<HttpResponse<String>> cf =
+                client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
+        cf.join();
+
+        // Verify results
+        verify();
+    }
+
+    private void verify() {
         if (resultMap.size() > 1) {
             throw new TestException("Results map size is greater than 1");
         } else {
@@ -116,7 +155,7 @@ public class PushPromiseContinuation {
                 HttpRequest serverPushReq = resultMap.get(r);
                 // Received headers should be the same as the combined PushPromise
                 // frame headers combined with the Continuation frame headers
-                assertTrue(serverPushReq.headers().equals(testHeaders));
+                assertEquals(testHeaders, serverPushReq.headers());
             }
         }
     }
@@ -124,9 +163,12 @@ public class PushPromiseContinuation {
     static class Http2LPPTestExchangeImpl extends Http2TestExchangeImpl {
 
         HttpHeadersBuilder pushPromiseHeadersBuilder;
-        HttpHeadersBuilder continuationHeadersBuilder;
+        List<ContinuationFrame> cfs;
 
-        Http2LPPTestExchangeImpl(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
+        Http2LPPTestExchangeImpl(int streamid, String method, HttpHeaders reqheaders,
+                                 HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is,
+                                 SSLSession sslSession, BodyOutputStream os,
+                                 Http2TestServerConnection conn, boolean pushAllowed) {
             super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
         }
 
@@ -135,16 +177,29 @@ public class PushPromiseContinuation {
             testHeadersBuilder.setHeader(name, value);
         }
 
-        private  void  setContHeaders(String name, String value) {
-            continuationHeadersBuilder.setHeader(name, value);
-            testHeadersBuilder.setHeader(name, value);
+        private void assembleContinuations() {
+            for (int i = 0; i < continuationCount; i++) {
+                HttpHeadersBuilder builder = new HttpHeadersBuilder();
+                for (int j = 0; j < 10; j++) {
+                    String name = "x-cont-" + i + "-" + j;
+                    builder.setHeader(name, "data_" + j);
+                    testHeadersBuilder.setHeader(name, "data_" + j);
+                }
+
+                ContinuationFrame cf = new ContinuationFrame(streamid, 0x0, conn.encodeHeaders(builder.build()));
+                // If this is the last Continuation Frame, set the END_HEADERS flag.
+                if (i >= continuationCount - 1) {
+                    cf.setFlag(HeaderFrame.END_HEADERS);
+                }
+                cfs.add(cf);
+            }
         }
 
         @Override
         public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
             pushPromiseHeadersBuilder = new HttpHeadersBuilder();
-            continuationHeadersBuilder = new HttpHeadersBuilder();
             testHeadersBuilder = new HttpHeadersBuilder();
+            cfs = new ArrayList<>();
 
             setPushHeaders(":method", "GET");
             setPushHeaders(":scheme", uri.getScheme());
@@ -158,27 +213,29 @@ public class PushPromiseContinuation {
 
             for (int i = 0; i < 10; i++) {
                 setPushHeaders("x-push-header-" + i, "data_" + i);
-                setContHeaders("x-cont-header-" + i, "data_" + i);
             }
-            HttpHeaders pushPromiseHeaders = pushPromiseHeadersBuilder.build();
-            HttpHeaders continuationHeaders = continuationHeadersBuilder.build();
-            testHeaders = testHeadersBuilder.build();
 
+            // Create the Continuation Frame/s, done before Push Promise Frame for test purposes
+            // as testHeaders contains all headers used in all frames
+            assembleContinuations();
+
+            HttpHeaders pushPromiseHeaders = pushPromiseHeadersBuilder.build();
+            testHeaders = testHeadersBuilder.build();
             // Create the Push Promise Frame
             OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, pushPromiseHeaders, content);
             // Indicates to the client that a continuation should be expected
             pp.setFlag(0x0);
 
-            // Create the continuation frame
-            List<ByteBuffer> encodedHeaders = conn.encodeHeaders(continuationHeaders);
-            ContinuationFrame cf = new ContinuationFrame(streamid, HeaderFrame.END_HEADERS, encodedHeaders);
-
             try {
                 // Schedule push promise and continuation for sending
                 conn.outputQ.put(pp);
-                conn.outputQ.put(cf);
+                System.err.println("Server: Scheduled a Continuation to Send");
+                for (ContinuationFrame cf : cfs) {
+                    conn.outputQ.put(cf);
+                    System.err.println("Server: Scheduled a Continuation to Send");
+                }
             } catch (IOException ex) {
-                System.err.println("TestServer: pushPromise exception: " + ex);
+                System.err.println("Server: pushPromise exception: " + ex);
             }
         }
     }
