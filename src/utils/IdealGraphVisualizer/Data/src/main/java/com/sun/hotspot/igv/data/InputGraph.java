@@ -145,6 +145,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public void clearBlocks() {
         blocks.clear();
+        blockEdges.clear();
         nodeToBlock.clear();
     }
 
