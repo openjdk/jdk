@@ -53,6 +53,7 @@ public class ServerCompilerScheduler implements Scheduler {
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
+        public int rank; // Rank for local scheduling priority.
 
         public Node(InputNode n) {
             inputNode = n;
@@ -60,6 +61,24 @@ public class ServerCompilerScheduler implements Scheduler {
             isBlockProjection = (p != null && p.equals("true"));
             p = n.getProperties().get("is_block_start");
             isBlockStart = (p != null && p.equals("true"));
+            computeRank();
+        }
+
+        // Rank by local scheduling priority.
+        private void computeRank() {
+            if (isBlockStart || isOtherBlockStart(this)) {
+                rank = 1;
+            } else if (isPhi(this)) {
+                rank = 2;
+            } else if (isParm(this)) {
+                rank = 3;
+            } else if (isProj(this)) {
+                rank = 4;
+            } else if (!isControl(this)) { // Every other node except terminators.
+                rank = 5;
+            } else {
+                rank = 6;
+            }
         }
 
         @Override
@@ -281,64 +300,36 @@ public class ServerCompilerScheduler implements Scheduler {
     }
 
     private void scheduleLocal() {
-            Map<String, Set<Node>> blockNodes =
-                new HashMap<>(blocks.size());
-            Map<InputNode, Node> inputNodeToLocalNode =
-                new HashMap<>(graph.getNodes().size());
-            // Create local nodes for each block.
-            for (InputNode n : graph.getNodes()) {
-                Node node = new Node(n);
-                InputBlock b = graph.getBlock(n);
-                String blockName = b.getName();
-                if (!blockNodes.containsKey(blockName)) {
-                    blockNodes.put(blockName,
-                                   new HashSet<Node>(b.getNodes().size()));
-                }
-                blockNodes.get(blockName).add(node);
-                inputNodeToLocalNode.put(n, node);
-            }
-            // Add local predecessors and successors.
-            for (InputBlock b : blocks) {
-                String blockName = b.getName();
-                for (Node n : blockNodes.get(blockName)) {
-                    Node global = inputNodeToNode.get(n.inputNode);
-                    Predicate<Node> excludePredecessors =
-                        node -> isPhi(node) || node.isBlockStart;
-                    for (Node p : global.preds) {
-                        if (p.block == b && p != global &&
-                            !excludePredecessors.test(n)) {
-                            n.preds.add(inputNodeToLocalNode.get(p.inputNode));
-                        }
-                    }
-                    for (Node s : global.succs) {
-                        if (s.block == b && s != global &&
-                            !excludePredecessors.test(s)) {
-                            n.succs.add(inputNodeToLocalNode.get(s.inputNode));
-                        }
+        // Leave only local predecessors and successors.
+        for (InputBlock b : blocks) {
+            for (InputNode in : b.getNodes()) {
+                Node n = inputNodeToNode.get(in);
+                Predicate<Node> excludePredecessors =
+                    node -> isPhi(node) || node.isBlockStart;
+                List<Node> localPreds = new ArrayList<>(n.preds.size());
+                for (Node p : n.preds) {
+                    if (p.block == b && p != n && !excludePredecessors.test(n)) {
+                        localPreds.add(p);
                     }
                 }
+                n.preds = localPreds;
+                Set<Node> localSuccs = new HashSet<>(n.succs.size());
+                for (Node s : n.succs) {
+                    if (s.block == b && s != n && !excludePredecessors.test(s)) {
+                        localSuccs.add(s);
+                    }
+                }
+                n.succs = localSuccs;
             }
-            // Finally schedule each block.
-            for (InputBlock b : blocks) {
-                List<InputNode> schedule = scheduleBlock(blockNodes.get(b.getName()));
-                b.setNodes(schedule);
+        }
+        // Schedule each block independently.
+        for (InputBlock b : blocks) {
+            List<Node> nodes = new ArrayList<>(b.getNodes().size());
+            for (InputNode n : b.getNodes()) {
+                nodes.add(inputNodeToNode.get(n));
             }
-    }
-
-    // Ranks a node by local scheduling priority.
-    private static int rank(Node n) {
-        if (n.isBlockStart || isOtherBlockStart(n)) {
-            return 1;
-        } else if (isPhi(n)) {
-            return 2;
-        } else if (isParm(n)) {
-            return 3;
-        } else if (isProj(n)) {
-            return 4;
-        } else if (!isControl(n)) { // Every other node except terminators.
-            return 5;
-        } else {
-            return 6;
+            List<InputNode> schedule = scheduleBlock(nodes);
+            b.setNodes(schedule);
         }
     }
 
@@ -346,7 +337,7 @@ public class ServerCompilerScheduler implements Scheduler {
             @Override
             public int compare(Node n1, Node n2) {
                 // Order by rank, then idx.
-                int r1 = rank(n1), r2 = rank(n2);
+                int r1 = n1.rank, r2 = n2.rank;
                 int o1, o2;
                 if (r1 != r2) { // Different rank.
                     o1 = r1;
@@ -359,7 +350,7 @@ public class ServerCompilerScheduler implements Scheduler {
             };
         };
 
-    private List<InputNode> scheduleBlock(Set<Node> nodes) {
+    private List<InputNode> scheduleBlock(Collection<Node> nodes) {
         List<InputNode> schedule = new ArrayList<InputNode>();
 
         // Initialize ready priority queue with nodes without predecessors.
