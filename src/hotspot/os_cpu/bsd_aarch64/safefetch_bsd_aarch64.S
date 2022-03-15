@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +22,37 @@
  *
  */
 
-#ifndef OS_BSD_SAFEFETCH_BSD_HPP
-#define OS_BSD_SAFEFETCH_BSD_HPP
-
-#include "utilities/globalDefinitions.hpp"
-
 #ifdef __APPLE__
 
-#define HAVE_STATIC_SAFEFETCH
+#define SYMBOL(x) _##x
 
-extern "C" int _SafeFetch32(int* adr, int errValue);
-extern "C" char _SafeFetch32_continuation[] __attribute__ ((visibility ("hidden")));
-extern "C" char _SafeFetch32_fault[] __attribute__ ((visibility ("hidden")));
+        .global SYMBOL(_SafeFetch64)
+        .global SYMBOL(_SafeFetch64_fault)
+        .global SYMBOL(_SafeFetch64_continuation)
+        .global SYMBOL(_SafeFetch32)
+        .global SYMBOL(_SafeFetch32_fault)
+        .global SYMBOL(_SafeFetch32_continuation)
 
-#ifdef _LP64
-extern "C" uint64_t _SafeFetch64(uint64_t* adr, uint64_t errValue);
-extern "C" char _SafeFetch64_continuation[] __attribute__ ((visibility ("hidden")));
-extern "C" char _SafeFetch64_fault[] __attribute__ ((visibility ("hidden")));
-#endif // _LP64
+		# needed to align function start to 4 byte
+		.align  6
+SYMBOL(_SafeFetch64):
+		# x0: suspicious address
+		# x1: default return value
+SYMBOL(_SafeFetch64_fault):
+        ldr      x1, [x0]
+SYMBOL(_SafeFetch64_continuation):
+        mov      x0, x1
+        ret
 
-#endif // __APPLE__
+		# needed to align function start to 4 byte
+		.align  6
+SYMBOL(_SafeFetch32):
+		# x0: suspicious address
+		# x1: default return value
+SYMBOL(_SafeFetch32_fault):
+        ldr      w1, [x0]
+SYMBOL(_SafeFetch32_continuation):
+        mov      x0, x1
+        ret
 
 #endif
