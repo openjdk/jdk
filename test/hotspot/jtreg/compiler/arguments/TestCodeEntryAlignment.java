@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -73,12 +74,14 @@ public class TestCodeEntryAlignment {
                 "-XX:CodeEntryAlignment=" + align
             );
         }
-        for (int align = 256; align <= 1024; align *= 2) {
-            shouldPass(
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:CodeCacheSegmentSize=" + align,
-                "-XX:CodeEntryAlignment=" + align
-            );
+        if (Platform.isDebugBuild()) {
+            for (int align = 256; align <= 1024; align *= 2) {
+                shouldPass(
+                    "-XX:+UnlockExperimentalVMOptions",
+                    "-XX:CodeCacheSegmentSize=" + align,
+                    "-XX:CodeEntryAlignment=" + align
+                );
+            }
         }
     }
 
