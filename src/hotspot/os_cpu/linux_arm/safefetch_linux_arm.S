@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +22,15 @@
  *
  */
 
-#ifndef OS_LINUX_SAFEFETCH_LINUX_HPP
-#define OS_LINUX_SAFEFETCH_LINUX_HPP
+		.globl _SafeFetch32
+		.globl _SafeFetch32_fault
+		.globl _SafeFetch32_continuation
 
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
-
-#ifndef ZERO
-#if defined(AARCH64) || defined(ARM) || defined(X86)
-
-#define HAVE_STATIC_SAFEFETCH
-
-extern "C" int _SafeFetch32(int* adr, int errValue);
-extern "C" char _SafeFetch32_continuation[] __attribute__ ((visibility ("hidden")));
-extern "C" char _SafeFetch32_fault[] __attribute__ ((visibility ("hidden")));
-
-#ifdef _LP64
-extern "C" uint64_t _SafeFetch64(uint64_t* adr, uint64_t errValue);
-extern "C" char _SafeFetch64_continuation[] __attribute__ ((visibility ("hidden")));
-extern "C" char _SafeFetch64_fault[] __attribute__ ((visibility ("hidden")));
-#endif // _LP64
-
-#endif // aarch64 or x64 or x86
-#endif // !ZERO
-
-#endif
+_SafeFetch32:
+		# x0: suspicious address
+		# x1: default return value
+_SafeFetch32_fault:
+        ldr      r1, [r0]
+_SafeFetch32_continuation:
+        mov      r0, r1
+        bx       lr

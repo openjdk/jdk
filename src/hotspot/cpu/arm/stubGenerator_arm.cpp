@@ -37,6 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -2837,6 +2838,8 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+#ifndef HAVE_STATIC_SAFEFETCH
+
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry, address* fault_pc, address* continuation_pc) {
     // safefetch signatures:
@@ -2876,6 +2879,8 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(R0, R1);
     __ ret();
   }
+
+#endif // !HAVE_STATIC_SAFEFETCH
 
   void generate_arraycopy_stubs() {
 
@@ -3029,6 +3034,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_load_long_entry = generate_atomic_load_long();
     StubRoutines::_atomic_store_long_entry = generate_atomic_store_long();
 
+
+#ifndef HAVE_STATIC_SAFEFETCH
     // Safefetch stubs.
     generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
                                                    &StubRoutines::_safefetch32_fault_pc,
@@ -3037,7 +3044,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
     StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
     StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
+#endif // ! HAVE_STATIC_SAFEFETCH
+
   }
+
 
   void generate_all() {
     // Generates all stubs and initializes the entry points
