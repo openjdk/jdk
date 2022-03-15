@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public sealed interface ClassDesc
     default ClassDesc arrayType(int rank) {
         int netRank;
         if (rank <= 0) {
-            throw new IllegalArgumentException("rank " + rank + "is not a positive value");
+            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
         }
         try {
             int currentDepth = ConstantUtils.arrayDepth(descriptorString());
