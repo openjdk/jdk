@@ -135,10 +135,23 @@ public final class Math {
 
     /**
      * The {@code double} value that is closer than any other to
-     * <i>pi</i>, the ratio of the circumference of a circle to its
-     * diameter.
+     * <i>pi</i> (&pi;), the ratio of the circumference of a circle to
+     * its diameter.
      */
     public static final double PI = 3.141592653589793;
+
+    /**
+     * The {@code double} value that is closer than any other to
+     * <i>tau</i> (&tau;), the ratio of the circumference of a circle
+     * to its radius.
+     *
+     * @apiNote
+     * The value of <i>pi</i> is one half that of <i>tau</i>; in other
+     * words, <i>tau</i> is double <i>pi</i> .
+     *
+     * @since 19
+     */
+    public static final double TAU = 2.0 * PI;
 
     /**
      * Constant by which to multiply an angular value in degrees to obtain an
