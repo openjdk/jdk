@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8282633
- * @summary jarsigner should display the disabled named curve to better explain why
- *          an EC key is disabled.
+ * @summary jarsigner should display the named curve to better explain why
+ *          an EC key is disabled or will be disabled.
  * @library /test/lib
  */
 
@@ -49,9 +49,8 @@ public class DisableCurveTest {
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("ks"));
 
         Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
-                "jdk.disabled.namedCurves=secp256r1\n" +
-                "jdk.jar.disabledAlgorithms=include jdk.disabled.namedCurves\n" +
-                "jdk.certpath.disabledAlgorithms=include jdk.disabled.namedCurves\n");
+                "jdk.jar.disabledAlgorithms=secp256r1\n" +
+                "jdk.certpath.disabledAlgorithms=secp256r1\n");
 
         SecurityTools.jarsigner("-keystore ks -storepass changeit " +
                 "-signedjar signeda.jar -verbose " +
@@ -71,6 +70,31 @@ public class DisableCurveTest {
                 .shouldContain("- Signed by")
                 .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (disabled)")
                 .shouldContain("WARNING: The jar will be treated as unsigned")
+                .shouldHaveExitValue(0);
+
+        Files.deleteIfExists(Paths.get(JAVA_SECURITY_FILE));
+        Files.writeString(Files.createFile(Paths.get(JAVA_SECURITY_FILE)),
+                "jdk.security.legacyAlgorithms=secp256r1\n");
+
+        SecurityTools.jarsigner("-keystore ks -storepass changeit " +
+                "-signedjar signeda.jar -verbose " +
+                "-J-Djava.security.properties=" +
+                JAVA_SECURITY_FILE +
+                " a.jar ca")
+                .shouldContain(">>> Signer")
+                .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (weak)")
+                .shouldContain("Warning:")
+                .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk. This key size will be disabled in a future update")
+                .shouldHaveExitValue(0);
+
+        SecurityTools.jarsigner("-verify signeda.jar " +
+                "-J-Djava.security.properties=" +
+                JAVA_SECURITY_FILE +
+                " -keystore ks -storepass changeit -verbose -debug")
+                .shouldContain("- Signed by")
+                .shouldContain("Signature algorithm: SHA256withECDSA, 256-bit EC (secp256r1) key (weak)")
+                .shouldContain("jar verified")
+                .shouldContain("The EC (secp256r1) signing key has a keysize of 256 which is considered a security risk. This key size will be disabled in a future update")
                 .shouldHaveExitValue(0);
     }
 }
