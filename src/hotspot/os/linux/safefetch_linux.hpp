@@ -29,6 +29,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+#ifndef ZERO
 #if defined(AARCH64) || defined(X86)
 
 #define HAVE_STATIC_SAFEFETCH
@@ -43,6 +44,7 @@ extern "C" char _SafeFetch64_continuation[] __attribute__ ((visibility ("hidden"
 extern "C" char _SafeFetch64_fault[] __attribute__ ((visibility ("hidden")));
 #endif // _LP64
 
+#endif // aarch64 or x64 or x86
 #endif // !ZERO
 
 #endif

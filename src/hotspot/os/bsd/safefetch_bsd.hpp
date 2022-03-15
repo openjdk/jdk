@@ -30,6 +30,7 @@
 
 #ifdef __APPLE__
 
+#ifdef X86
 #define HAVE_STATIC_SAFEFETCH
 
 extern "C" int _SafeFetch32(int* adr, int errValue);
@@ -42,6 +43,7 @@ extern "C" char _SafeFetch64_continuation[] __attribute__ ((visibility ("hidden"
 extern "C" char _SafeFetch64_fault[] __attribute__ ((visibility ("hidden")));
 #endif // _LP64
 
-#endif // !ZERO
+#endif // X86
+#endif // __APPLE__
 
 #endif
