@@ -27,8 +27,9 @@
 #define OS_LINUX_SAFEFETCH_LINUX_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
-#ifndef ZERO
+#if defined(AARCH64) || defined(X86)
 
 #define HAVE_STATIC_SAFEFETCH
 

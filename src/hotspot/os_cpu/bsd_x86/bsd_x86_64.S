@@ -44,6 +44,13 @@
         .globl SYMBOL(_Copy_arrayof_conjoint_jlongs)
         .globl SYMBOL(_Copy_conjoint_jlongs_atomic)
 
+		.globl SYMBOL(_SafeFetch32)
+		.globl SYMBOL(_SafeFetch64)
+		.globl SYMBOL(_SafeFetch32_fault)
+		.globl SYMBOL(_SafeFetch64_fault)
+		.globl SYMBOL(_SafeFetch32_continuation)
+		.globl SYMBOL(_SafeFetch64_continuation)
+
 	.text
 
         .globl SYMBOL(SpinPause)
@@ -386,3 +393,33 @@ acl_CopyLeft:
         addq     $4,%rdx
         jg       4b
         ret
+
+	ELF_TYPE(_SafeFetch64,@function)
+SYMBOL(_SafeFetch64:)
+		# rdi: suspicious address
+		# rsi: default return value
+
+		# 1) try loading from suspicious address.
+		#    - If successful, we overwrite default return value in rsi
+        #    - If error, we fault, rsi stays unchanged, signal handler will jump to continuation point
+        #    - at continuation point we return rsi
+SYMBOL(_SafeFetch64_fault:)
+		movq (%rdi), %rsi
+SYMBOL(_SafeFetch64_continuation:)
+		movq %rsi, %rax
+		ret
+
+	ELF_TYPE(_SafeFetch32,@function)
+SYMBOL(_SafeFetch32:)
+		# rdi: suspicious address
+		# esi: default return value
+
+		# 1) try loading from suspicious address.
+		#    - If successful, we overwrite default return value in rsi
+        #    - If error, we fault, rsi stays unchanged, signal handler will jump to continuation point
+        #    - at continuation point we return rsi
+SYMBOL(_SafeFetch32_fault:)
+		movl (%rdi), %esi
+SYMBOL(_SafeFetch32_continuation:)
+		movl %esi, %eax
+		ret
