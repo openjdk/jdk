@@ -33,16 +33,9 @@ import java.util.Optional;
 /**
  * A padding layout. A padding layout specifies the size of extra space which is typically not accessed by applications,
  * and is typically used for aligning member layouts around word boundaries.
- * <p>
- * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
- * This class is immutable and thread-safe.
+ * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  */
 /* package-private */ final class PaddingLayout extends AbstractLayout implements MemoryLayout {
 

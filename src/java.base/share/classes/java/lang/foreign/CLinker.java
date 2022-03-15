@@ -45,7 +45,7 @@ import jdk.internal.reflect.Reflection;
  * On unsupported platforms this class will fail to initialize with an {@link ExceptionInInitializerError}.
  * <p>
  * Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
- * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown.</p>
+ * elements to a method in this class causes a {@link NullPointerException} to be thrown.</p>
  *
  * <h2><a id = "downcall-method-handles">Downcall method handles</a></h2>
  * <p>
@@ -103,7 +103,7 @@ import jdk.internal.reflect.Reflection;
  * </ul>
  * Upcall stubs are modelled by instances of type {@link MemorySegment}; upcall stubs can be passed by reference to other
  * downcall method handles (as {@link MemorySegment} implements the {@link Addressable} interface) and,
- * when no longer required, they can be {@link MemorySession#close() released}, via their associated {@linkplain MemorySession session}.
+ * when no longer required, they can be {@linkplain MemorySession#close() released}, via their associated {@linkplain MemorySession session}.
  *
  * <h2>Safety considerations</h2>
  *
@@ -117,9 +117,9 @@ import jdk.internal.reflect.Reflection;
  * <ul>
  *     <li>The memory session of {@code R} is {@linkplain MemorySession#isAlive() alive}. Otherwise, the invocation throws
  *     {@link IllegalStateException};</li>
- *     <li>The invocation occurs in same thread as the one {@link MemorySession#ownerThread() owning} the memory session of {@code R},
+ *     <li>The invocation occurs in same thread as the one {@linkplain MemorySession#ownerThread() owning} the memory session of {@code R},</li>
  *     if said session is confined. Otherwise, the invocation throws {@link IllegalStateException}; and</li>
- *     <li>The memory session of {@code R} is {@linkplain MemorySession#whileAlive(Runnable) kept alive} (and cannot be closed) during the invocation.
+ *     <li>The memory session of {@code R} is {@linkplain MemorySession#whileAlive(Runnable) kept alive} (and cannot be closed) during the invocation.</li>
  *</ul>
  * <p>
  * When creating upcall stubs the linker runtime validates the type of the target method handle against the provided

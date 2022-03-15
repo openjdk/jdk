@@ -495,6 +495,27 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         return "MemorySegment{ id=0x" + Long.toHexString(id()) + " limit: " + length + " }";
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof AbstractMemorySegmentImpl that &&
+                isNative() == that.isNative() &&
+                unsafeGetOffset() == that.unsafeGetOffset() &&
+                unsafeGetBase() == that.unsafeGetBase() &&
+                length == that.length &&
+                session.equals(that.session);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                isNative(),
+                unsafeGetOffset(),
+                unsafeGetBase(),
+                length,
+                session
+        );
+    }
+
     public static AbstractMemorySegmentImpl ofBuffer(ByteBuffer bb) {
         Objects.requireNonNull(bb);
         long bbAddress = nioAccess.getBufferAddress(bb);

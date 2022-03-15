@@ -49,13 +49,6 @@ import sun.invoke.util.Wrapper;
  * The layout constants in this class make implicit alignment and byte-ordering assumption: all layout
  * constants in this class are byte-aligned, and their byte order is set to the {@linkplain ByteOrder#nativeOrder() platform default},
  * thus making it easy to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
- * <p>
- * This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * This class and its subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

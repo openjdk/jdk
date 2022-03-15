@@ -188,7 +188,7 @@ public class TestWindowsCallArranger extends CallArrangerTestBase {
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(
                 C_INT, C_DOUBLE).asVariadic(C_INT, C_DOUBLE, C_DOUBLE);
         FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(
-                ADDRESS, C_INT, C_DOUBLE).asVariadic(C_INT, C_DOUBLE, C_DOUBLE);
+                ADDRESS, C_INT, C_DOUBLE, C_INT, C_DOUBLE, C_DOUBLE);
         CallArranger.Bindings bindings = CallArranger.getBindings(mt, fd, false);
 
         assertFalse(bindings.isInMemoryReturn);

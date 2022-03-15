@@ -30,6 +30,7 @@ import java.lang.ref.Cleaner;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.javac.PreviewFeature;
@@ -40,21 +41,19 @@ import jdk.internal.javac.PreviewFeature;
  * and by the {@linkplain #ownerThread() thread} associated with the memory session (if any).
  * <p>
  * Memory sessions can be closed, either implicitly (e.g. when a session is no longer reachable), or explicitly.
- * When a memory session is closed, it is no longer {@link #isAlive() alive}, and subsequent operations on resources
+ * When a memory session is closed, it is no longer {@linkplain #isAlive() alive}, and subsequent operations on resources
  * associated with that session (e.g. attempting to access a {@link MemorySegment} instance) will fail with {@link IllegalStateException}.
  * <p>
- * When a memory session is closed (either explicitly, or implicitly), all the {@linkplain #addCloseAction(Runnable) close actions} associated with that session will be called.
- * and underlying memory resources associated with said session might be released; for instance:
- * <ul>
- *     <li>closing the memory session associated with a {@linkplain MemorySegment#allocateNative(long, long, MemorySession) native memory segment}
- *     results in <em>freeing</em> the native memory associated with it;</li>
- *     <li>closing the memory session associated with a {@linkplain FileChannel#map(FileChannel.MapMode, long, long, MemorySession) mapped memory segment}
- *     results in the backing memory-mapped file to be unmapped;</li>
- *     <li>closing the memory session associated with an {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stub}
- *     results in releasing the stub;</li>
- *     <li>closing the memory session associated with a {@linkplain VaList variable arity list} results in releasing the memory
- *     associated with that variable arity list instance.</li>
- * </ul>
+ * A memory session is associated with one or more {@linkplain #addCloseAction(Runnable) close actions}. Close actions
+ * can be used to specify the cleanup code that must run when a given resource (or set of resources) is no longer in use.
+ * When a memory session is closed (either explicitly, or implicitly), the {@linkplain #addCloseAction(Runnable) close actions}
+ * associated with that session are executed (in unspecified order). For instance, closing the memory session associated with
+ * one or more {@linkplain MemorySegment#allocateNative(long, long, MemorySession) native memory segments} results in releasing
+ * the off-heap memory associated with said segments.
+ * <p>
+ * The {@linkplain #global() global session} is a memory session that cannot be closed, either explicitly or implicitly.
+ * As a result, resources associated with the global session are never released. Examples of resources associated with
+ * the global memory session are {@linkplain MemorySegment#ofArray(int[]) heap segments}.
  *
  * <h2><a id = "thread-confinement">Thread confinement</a></h2>
  *
@@ -76,7 +75,7 @@ import jdk.internal.javac.PreviewFeature;
  * When a session is associated with off-heap resources, it is often desirable for said resources to be released in a timely fashion,
  * rather than waiting for the session to be deemed <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>
  * by the garbage collector. In this scenario, a client might consider using a {@linkplain #isCloseable() <em>closeable</em>} memory session.
- * Closeable memory sessions are memory sessions that can be {@link MemorySession#close() closed} explicitly, as demonstrated
+ * Closeable memory sessions are memory sessions that can be {@linkplain MemorySession#close() closed} explicitly, as demonstrated
  * in the following example:
  *
  * {@snippet lang=java :
@@ -101,13 +100,6 @@ import jdk.internal.javac.PreviewFeature;
  * the session becomes unreachable; that is, {@linkplain #addCloseAction(Runnable) close actions} associated with a
  * memory session, whether managed or not, are called <em>exactly once</em>.
  *
- * <h2>Global session</h2>
- *
- * An important memory session is the so called {@linkplain #global() global session}; the global session is
- * a memory session that cannot be closed, either explicitly or implicitly. As a result, the global session will never
- * attempt to release resources associated with it. Examples of resources associated with the global memory session are
- * {@linkplain MemorySegment#ofArray(int[]) heap segments}.
- *
  * <h2>Restricting access to memory sessions</h2>
  *
  * There are situations in which it might not be desirable for a memory session to be reachable from one or
@@ -130,6 +122,11 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @implSpec
  * Implementations of this interface are thread-safe.
+ *
+ * @see MemorySegment
+ * @see SymbolLookup
+ * @see CLinker
+ * @see VaList
  *
  * @since 19
  */

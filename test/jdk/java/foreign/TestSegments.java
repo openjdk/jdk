@@ -114,6 +114,32 @@ public class TestSegments {
         }
     }
 
+    @Test
+    public void testEqualsOffHeap() {
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(100, session);
+            assertEquals(segment, segment.asReadOnly());
+            assertEquals(segment, segment.asSlice(0, 100));
+            assertNotEquals(segment, segment.asSlice(10, 90));
+            assertNotEquals(segment, segment.asSlice(0, 90));
+            assertEquals(segment, MemorySegment.ofAddress(segment.address(), 100, session.asNonCloseable()));
+            assertNotEquals(segment, MemorySegment.ofAddress(segment.address(), 100, MemorySession.global()));
+            MemorySegment segment2 = MemorySegment.allocateNative(100, session);
+            assertNotEquals(segment, segment2);
+        }
+    }
+
+    @Test
+    public void testEqualsOnHeap() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+        assertEquals(segment, segment.asReadOnly());
+        assertEquals(segment, segment.asSlice(0, 100));
+        assertNotEquals(segment, segment.asSlice(10, 90));
+        assertNotEquals(segment, segment.asSlice(0, 90));
+        MemorySegment segment2 = MemorySegment.ofArray(new byte[100]);
+        assertNotEquals(segment, segment2);
+    }
+
     @Test(expectedExceptions = IndexOutOfBoundsException.class)
     public void testSmallSegmentMax() {
         long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when casted to int

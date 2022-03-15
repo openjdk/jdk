@@ -503,7 +503,7 @@ public sealed interface MemoryLayout extends Constable permits AbstractLayout, S
      * sequence path elements, it acquires additional <em>free dimensions</em>.
      *
      * <p> Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
-     * elements to a method in this class causes a {@link NullPointerException NullPointerException} to be thrown.</p>
+     * elements to a method in this class causes a {@link NullPointerException} to be thrown.</p>
      *
      * @implSpec
      * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

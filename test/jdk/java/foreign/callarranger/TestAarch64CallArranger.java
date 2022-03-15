@@ -399,7 +399,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
     public void testVarArgsInRegs() {
         MethodType mt = MethodType.methodType(void.class, int.class, int.class, float.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT).asVariadic(C_INT, C_FLOAT);
-        FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT).asVariadic(C_INT, C_FLOAT);
+        FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_INT, C_FLOAT);
         CallArranger.Bindings bindings = CallArranger.LINUX.getBindings(mt, fd, false);
 
         assertFalse(bindings.isInMemoryReturn);
@@ -422,7 +422,7 @@ public class TestAarch64CallArranger extends CallArrangerTestBase {
     public void testVarArgsOnStack() {
         MethodType mt = MethodType.methodType(void.class, int.class, int.class, float.class);
         FunctionDescriptor fd = FunctionDescriptor.ofVoid(C_INT).asVariadic(C_INT, C_FLOAT);
-        FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT).asVariadic(C_INT, C_FLOAT);
+        FunctionDescriptor fdExpected = FunctionDescriptor.ofVoid(ADDRESS, C_INT, C_INT, C_FLOAT);
         CallArranger.Bindings bindings = CallArranger.MACOS.getBindings(mt, fd, false);
 
         assertFalse(bindings.isInMemoryReturn);

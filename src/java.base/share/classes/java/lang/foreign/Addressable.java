@@ -31,8 +31,8 @@ import jdk.internal.javac.PreviewFeature;
  * An object that may be projected down to a {@linkplain #address() memory address}.
  * Examples of addressable types are {@link MemorySegment}, {@link MemoryAddress} and {@link VaList}.
  * <p>
- * The {@link Addressable} type is used by the {@link CLinker C linker} to model the types of
- * {@link CLinker#downcallHandle(FunctionDescriptor) downcall handle} parameters that must be passed <em>by reference</em>
+ * The {@link Addressable} type is used by the {@linkplain CLinker C linker} to model the types of
+ * {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall handle} parameters that must be passed <em>by reference</em>
  * (e.g. memory addresses, va lists and upcall stubs).
  *
  * @since 19

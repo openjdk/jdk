@@ -37,6 +37,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class TestFunctionDescriptor extends NativeTestHelper {
@@ -92,5 +93,15 @@ public class TestFunctionDescriptor extends NativeTestHelper {
         assertEquals(fd.argumentLayouts(), List.of(C_DOUBLE, C_LONG_LONG));
         Optional<MemoryLayout> returnLayoutOp = fd.returnLayout();
         assertFalse(returnLayoutOp.isPresent());
+    }
+
+    @Test
+    public void testEquals() {
+        FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT, C_INT);
+        FunctionDescriptor fd_va1 = FunctionDescriptor.of(C_INT).asVariadic(C_INT, C_INT);
+        FunctionDescriptor fd_va2 = FunctionDescriptor.of(C_INT, C_INT).asVariadic(C_INT);
+        assertEquals(fd, fd);
+        assertNotEquals(fd, fd_va1);
+        assertNotEquals(fd, fd_va2);
     }
 }

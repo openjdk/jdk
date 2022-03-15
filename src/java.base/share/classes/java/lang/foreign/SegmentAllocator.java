@@ -204,7 +204,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given byte array.
+     * Allocates a memory segment with the given layout and initializes it with the given byte elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the byte elements to be copied to the newly allocated memory block.
@@ -215,7 +215,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given short array.
+     * Allocates a memory segment with the given layout and initializes it with the given short elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the short elements to be copied to the newly allocated memory block.
@@ -226,7 +226,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given char array.
+     * Allocates a memory segment with the given layout and initializes it with the given char elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the char elements to be copied to the newly allocated memory block.
@@ -237,7 +237,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given int array.
+     * Allocates a memory segment with the given layout and initializes it with the given int elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the int elements to be copied to the newly allocated memory block.
@@ -248,7 +248,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given float array.
+     * Allocates a memory segment with the given layout and initializes it with the given float elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the float elements to be copied to the newly allocated memory block.
@@ -259,7 +259,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given long array.
+     * Allocates a memory segment with the given layout and initializes it with the given long elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the long elements to be copied to the newly allocated memory block.
@@ -270,7 +270,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given double array.
+     * Allocates a memory segment with the given layout and initializes it with the given double elements.
      * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements the double elements to be copied to the newly allocated memory block.

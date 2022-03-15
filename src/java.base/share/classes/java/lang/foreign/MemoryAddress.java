@@ -39,8 +39,8 @@ import java.lang.invoke.MethodHandle;
  * <ul>
  *     <li>By calling {@link Addressable#address()} on an instance of type {@link Addressable} (e.g. a memory segment);</li>
  *     <li>By invoking a {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handle} which returns a pointer;</li>
- *     <li>By reading an address from memory, e.g. via {@link MemorySegment#get(ValueLayout.OfAddress, long)}.</li>
- *     <li>By the invocation of an {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stub} which accepts a pointer.
+ *     <li>By reading an address from memory, e.g. via {@link MemorySegment#get(ValueLayout.OfAddress, long)}; and</li>
+ *     <li>By the invocation of an {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stub} which accepts a pointer.</li>
  * </ul>
  * A memory address is backed by a raw machine pointer, expressed as a {@linkplain #toRawLongValue() long value}.
  *
@@ -49,7 +49,7 @@ import java.lang.invoke.MethodHandle;
  * A memory address can be read or written using various methods provided in this class (e.g. {@link #get(ValueLayout.OfInt, long)}).
  * Each dereference method takes a {@linkplain ValueLayout value layout}, which specifies the size,
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
- * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
+ * For instance, to read an int from a segment, using {@linkplain ByteOrder#nativeOrder() default endianness}, the following code can be used:
  * {@snippet lang=java :
  * MemoryAddress address = ...
  * int value = address.get(ValueLayout.JAVA_INT, 0);
@@ -65,11 +65,6 @@ import java.lang.invoke.MethodHandle;
  * All the dereference methods in this class are <a href="package-summary.html#restricted"><em>restricted</em></a>: since
  * a memory address does not feature temporal nor spatial bounds, the runtime has no way to check the correctness
  * of the memory dereference operation.
- * <p>
- * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
- * programmers should treat instances that are {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
- * synchronization may fail. The {@code equals} method should be used for comparisons.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

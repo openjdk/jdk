@@ -53,71 +53,51 @@ import jdk.internal.vm.annotation.ForceInline;
  * and temporal bounds (e.g. a {@link MemorySession}). Spatial bounds ensure that memory access operations on a memory segment cannot affect a memory location
  * which falls <em>outside</em> the boundaries of the memory segment being accessed. Temporal bounds ensure that memory access
  * operations on a segment cannot occur after the memory session associated with a memory segment has been closed (see {@link MemorySession#close()}).
- * <p>
- * All implementations of this interface must be <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>;
- * programmers should treat instances that are {@linkplain Object#equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may occur. For example, in a future release,
- * synchronization may fail. The {@code equals} method should be used for comparisons.
- * <p>
- * Non-platform classes should not implement {@linkplain MemorySegment} directly.
  *
- * <h2>Constructing memory segments</h2>
+ * There are many kinds of memory segments:
+ * <ul>
+ *     <li>{@linkplain MemorySegment#allocateNative(long, long, MemorySession) native memory segments}, backed by off-heap memory;</li>
+ *     <li>{@linkplain FileChannel#map(FileChannel.MapMode, long, long, MemorySession) mapped memory segments}, obtained by mapping
+ * a file into main memory ({@code mmap}); tha contents of a mapped memory segments can be {@linkplain #force() persisted} and
+ * {@linkplain #load() loaded} to and from the underlying memory-mapped file;</li>
+ *     <li>{@linkplain MemorySegment#ofArray(int[]) array segments}, wrapping an existing, heap-allocated Java array; and</li>
+ *     <li>{@linkplain MemorySegment#ofByteBuffer(ByteBuffer) buffer segments}, wrapping an existing {@link ByteBuffer} instance;
+ * buffer memory segments might be backed by either off-heap memory or on-heap memory, depending on the characteristics of the
+ * wrapped byte buffer instance. For instance, a buffer memory segment obtained from a byte buffer created with the
+ * {@link ByteBuffer#allocateDirect(int)} method will be backed by off-heap memory.</li>
+ * </ul>
  *
- * There are multiple ways to obtain a memory segment. First, memory segments backed by off-heap memory can
- * be allocated using one of the many factory methods provided (see {@link MemorySegment#allocateNative(MemoryLayout, MemorySession)},
- * {@link MemorySegment#allocateNative(long, MemorySession)} and {@link MemorySegment#allocateNative(long, long, MemorySession)}). Memory segments obtained
- * in this way are called <em>native memory segments</em>.
+ * <h2>Lifecycle and confinement</h2>
+ *
+ * Memory segments are associated with a {@linkplain MemorySegment#session() memory session}. As for all resources associated
+ * with a memory session, a segment cannot be accessed after its underlying session has been closed. For instance,
+ * the following code will result in an exception:
+ * {@snippet lang=java :
+ * MemorySegment segment = null;
+ * try (MemorySession session = MemorySession.openConfined()) {
+ *     segment = MemorySegment.allocateNative(8, session);
+ * }
+ * segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
+ * }
+ * Additionally, access to a memory segment is subject to the thread-confinement checks enforced by the owning memory
+ * session; that is, if the segment is associated with a shared session, it can be accessed by multiple threads;
+ * if it is associated with a confined session, it can only be accessed by the thread which owns the memory session.
  * <p>
- * It is also possible to obtain a memory segment backed by an existing heap-allocated Java array,
- * using one of the provided factory methods (e.g. {@link MemorySegment#ofArray(int[])}). Memory segments obtained
- * in this way are called <em>array memory segments</em>.
- * <p>
- * It is possible to obtain a memory segment backed by an existing Java byte buffer (see {@link ByteBuffer}),
- * using the factory method {@link MemorySegment#ofByteBuffer(ByteBuffer)}.
- * Memory segments obtained in this way are called <em>buffer memory segments</em>. Note that buffer memory segments might
- * be backed by native memory (as in the case of native memory segments) or heap memory (as in the case of array memory segments),
- * depending on the characteristics of the byte buffer instance the segment is associated with. For instance, a buffer memory
- * segment obtained from a byte buffer created with the {@link ByteBuffer#allocateDirect(int)} method will be backed
- * by native memory.
- *
- * <h2>Mapping memory segments from files</h2>
- *
- * It is also possible to obtain a native memory segment backed by a memory-mapped file using the factory method
- * {@link FileChannel#map(FileChannel.MapMode, long, long, MemorySession)}. Such native memory segments are called
- * <em>mapped memory segments</em>; mapped memory segments are associated with an underlying file descriptor.
- * <p>
- * Contents of mapped memory segments can be {@linkplain #force() persisted} and {@linkplain #load() loaded} to and from the underlying file;
- * these capabilities are suitable replacements for some capabilities in the {@link java.nio.MappedByteBuffer} class.
- * Note that, while it is possible to map a segment into a byte buffer (see {@link MemorySegment#asByteBuffer()}),
- * and then call e.g. {@link java.nio.MappedByteBuffer#force()} that way, this can only be done when the source segment
- * is small enough, due to the size limitation inherent to the ByteBuffer API.
- * <p>
- * Clients requiring sophisticated, low-level control over mapped memory segments, should consider writing
- * custom mapped memory segment factories; using {@link CLinker}, e.g. on Linux, it is possible to call {@code mmap}
- * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
- * {@link MemoryAddress#ofLong(long)} and {@link MemorySegment#ofAddress(MemoryAddress, long, MemorySession)}.
- *
- * <h2>Restricted native segments</h2>
- *
- * Sometimes it is necessary to turn a memory address obtained from native code into a memory segment with
- * full spatial, temporal and confinement bounds. To do this, clients can {@link #ofAddress(MemoryAddress, long, MemorySession) obtain}
- * a native segment <em>unsafely</em> from a give memory address, by providing the segment size, as well as the segment {@linkplain MemorySession session}.
- * This is a <a href="package-summary.html#restricted"><em>restricted</em></a> operation and should be used with
- * caution: for instance, an incorrect segment size could result in a VM crash when attempting to dereference
- * the memory segment.
+ * Heap and buffer segments are always associated with a <em>global</em>, shared memory session. This session cannot be closed,
+ * and segments associated with it can be considered as <em>always alive</em>.
  *
  * <h2><a id = "segment-deref">Dereferencing memory segments</a></h2>
  *
  * A memory segment can be read or written using various methods provided in this class (e.g. {@link #get(ValueLayout.OfInt, long)}).
  * Each dereference method takes a {@linkplain ValueLayout value layout}, which specifies the size,
  * alignment constraints, byte order as well as the Java type associated with the dereference operation, and an offset.
- * For instance, to read an int from a segment, using {@link ByteOrder#nativeOrder() default endianness}, the following code can be used:
+ * For instance, to read an int from a segment, using {@linkplain ByteOrder#nativeOrder() default endianness}, the following code can be used:
  * {@snippet lang=java :
  * MemorySegment segment = ...
  * int value = segment.get(ValueLayout.JAVA_INT, 0);
  * }
  *
- * If the value to be read is stored in memory using {@link ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
+ * If the value to be read is stored in memory using {@linkplain ByteOrder#BIG_ENDIAN big-endian} encoding, the dereference operation
  * can be expressed as follows:
  * {@snippet lang=java :
  * MemorySegment segment = ...
@@ -151,6 +131,40 @@ import jdk.internal.vm.annotation.ForceInline;
  * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
+ * <h2>Slicing memory segments</h2>
+ *
+ * Memory segments support <em>slicing</em>. A memory segment can be used to {@linkplain MemorySegment#asSlice(long, long) obtain}
+ * other segments backed by the same underlying memory region, but with <em>stricter</em> spatial bounds than the ones
+ * of the original segment:
+ * {@snippet lang=java :
+ * MemorySession session = ...
+ * MemorySegment segment = MemorySegment.allocateNative(100, session);
+ * MemorySegment slice = segment.asSlice(50, 10);
+ * slice.get(ValueLayout.JAVA_INT, 20); // Out of bounds!
+ * session.close();
+ * slice.get(ValueLayout.JAVA_INT, 0); // Already closed!
+ * }
+ * The above code creates a native segment that is 100 bytes long; then, it creates a slice that starts at offset 50
+ * of {@code segment}, and is 10 bytes long. As a result, attempting to read an int value at offset 20 of the
+ * {@code slice} segment will result in an exception. The {@linkplain MemorySession temporal bounds} of the original segment
+ * are inherited by its slices; that is, when the memory session associated with {@code segment} is closed, {@code slice}
+ * will also be become inaccessible.
+ * <p>
+ * A client might obtain a {@link Stream} from a segment, which can then be used to slice the segment (according to a given
+ * element layout) and even allow multiple threads to work in parallel on disjoint segment slices
+ * (to do this, the segment has to be associated with a shared memory session). The following code can be used to sum all int
+ * values in a memory segment in parallel:
+ *
+ * {@snippet lang=java :
+ * try (MemorySession session = MemorySession.openShared()) {
+ *     SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
+ *     MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, session);
+ *     int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
+ *                      .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
+ *                      .sum();
+ * }
+ * }
+ *
  * <h2 id="segment-alignment">Alignment</h2>
  *
  * When dereferencing a memory segment using a layout, the runtime must check that the segment address being dereferenced
@@ -158,11 +172,11 @@ import jdk.internal.vm.annotation.ForceInline;
  * dereferenced is a native segment, then it has a concrete {@linkplain #address() base address}, which can
  * be used to perform the alignment check. The pseudo-function below demonstrates this:
  *
- * <blockquote><pre>{@code
-boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
-   return ((segment.address().toRawLongValue() + offset) % layout.byteAlignment()) == 0
-}
- * }</pre></blockquote>
+ * {@snippet lang=java :
+ * boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
+ *   return ((segment.address().toRawLongValue() + offset) % layout.byteAlignment()) == 0
+ * }
+ * }
  *
  * If, however, the segment being dereferenced is a heap segment, the above function will not work: a heap
  * segment's base address is <em>virtualized</em> and, as such, cannot be used to construct an alignment check. Instead,
@@ -201,59 +215,18 @@ boolean isAligned(MemorySegment segment, long offset, MemoryLayout layout) {
  * constructed from a {@code byte[]} might have a subset of addresses {@code S} which happen to be 8-byte aligned. But determining
  * which segment addresses belong to {@code S} requires reasoning about details which are ultimately implementation-dependent.
  *
- * <h2>Lifecycle and confinement</h2>
- *
- * Memory segments are associated with a {@link MemorySegment#session() memory session}. As for all resources associated
- * with a memory session, a segment cannot be accessed after its underlying session has been closed. For instance,
- * the following code will result in an exception:
- * {@snippet lang=java :
- * MemorySegment segment = null;
- * try (MemorySession session = MemorySession.openConfined()) {
- *     segment = MemorySegment.allocateNative(8, session);
- * }
- * segment.get(ValueLayout.JAVA_LONG, 0); // already closed!
- * }
- * Additionally, access to a memory segment is subject to the thread-confinement checks enforced by the owning memory
- * session; that is, if the segment is associated with a shared session, it can be accessed by multiple threads;
- * if it is associated with a confined session, it can only be accessed by the thread which owns the memory session.
+ * <h2>Restricted memory segments</h2>
+ * Sometimes it is necessary to turn a memory address obtained from native code into a memory segment with
+ * full spatial, temporal and confinement bounds. To do this, clients can {@linkplain #ofAddress(MemoryAddress, long, MemorySession) obtain}
+ * a native segment <em>unsafely</em> from a give memory address, by providing the segment size, as well as the segment {@linkplain MemorySession session}.
+ * This is a <a href="package-summary.html#restricted"><em>restricted</em></a> operation and should be used with
+ * caution: for instance, an incorrect segment size could result in a VM crash when attempting to dereference
+ * the memory segment.
  * <p>
- * Heap and buffer segments are always associated with a <em>global</em>, shared memory session. This session cannot be closed,
- * and segments associated with it can be considered as <em>always alive</em>.
- *
- * <h2>Memory segment views</h2>
- *
- * Memory segments support <em>views</em>. For instance, it is possible to create an <em>immutable</em> view of a memory segment, as follows:
- * {@snippet lang=java :
- * MemorySegment segment = ...
- * MemorySegment roSegment = segment.asReadOnly();
- * }
- * It is also possible to create views whose spatial bounds are stricter than the ones of the original segment
- * (see {@link MemorySegment#asSlice(long, long)}).
- * <p>
- * Temporal bounds of the original segment are inherited by the views; that is, when the memory session associated with a segment
- * is closed, all the views associated with that segment will also be rendered inaccessible.
- * <p>
- * To allow for interoperability with existing code, a byte buffer view can be obtained from a memory segment
- * (see {@link #asByteBuffer()}). This can be useful, for instance, for those clients that want to keep using the
- * {@link ByteBuffer} API, but need to operate on large memory segments. Byte buffers obtained in such a way support
- * the same spatial and temporal access restrictions associated with the memory segment from which they originated.
- *
- * <h2>Stream support</h2>
- *
- * A client might obtain a {@link Stream} from a segment, which can then be used to slice the segment (according to a given
- * element layout) and even allow multiple threads to work in parallel on disjoint segment slices
- * (to do this, the segment has to be associated with a shared memory session). The following code can be used to sum all int
- * values in a memory segment in parallel:
- *
- * {@snippet lang=java :
- * try (MemorySession session = MemorySession.openShared()) {
- *     SequenceLayout SEQUENCE_LAYOUT = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
- *     MemorySegment segment = MemorySegment.allocateNative(SEQUENCE_LAYOUT, session);
- *     int sum = segment.elements(ValueLayout.JAVA_INT).parallel()
- *                      .mapToInt(s -> s.get(ValueLayout.JAVA_INT, 0))
- *                      .sum();
- * }
- * }
+ * Clients requiring sophisticated, low-level control over mapped memory segments, might consider writing
+ * custom mapped memory segment factories; using {@link CLinker}, e.g. on Linux, it is possible to call {@code mmap}
+ * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
+ * {@link MemoryAddress#ofLong(long)} and {@link MemorySegment#ofAddress(MemoryAddress, long, MemorySession)}.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -370,7 +343,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Returns {@code true} if this segment is a native segment. A native memory segment is
      * created using the {@link #allocateNative(long, MemorySession)} (and related) factory, or a buffer segment
-     * derived from a direct {@link java.nio.ByteBuffer} using the {@link #ofByteBuffer(ByteBuffer)} factory,
+     * derived from a {@linkplain ByteBuffer#allocateDirect(int) direct byte buffer} using the {@link #ofByteBuffer(ByteBuffer)} factory,
      * or if this is a {@linkplain #isMapped() mapped} segment.
      * @return {@code true} if this segment is native segment.
      */
@@ -391,7 +364,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * <p>Two segments {@code S1} and {@code S2} are said to overlap if it is possible to find
      * at least two slices {@code L1} (from {@code S1}) and {@code L2} (from {@code S2}) that are backed by the
      * same memory region. As such, it is not possible for a
-     * {@link #isNative() native} segment to overlap with a heap segment; in
+     * {@linkplain #isNative() native} segment to overlap with a heap segment; in
      * this case, or when no overlap occurs, {@code null} is returned.
      *
      * @param other the segment to test for an overlap with this segment.
@@ -737,8 +710,8 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * buffer. The segment starts relative to the buffer's position (inclusive)
      * and ends relative to the buffer's limit (exclusive).
      * <p>
-     * If the buffer is {@link ByteBuffer#isReadOnly() read-only}, the resulting segment will also be
-     * {@link ByteBuffer#isReadOnly() read-only}. The memory session associated with this segment can either be the
+     * If the buffer is {@linkplain ByteBuffer#isReadOnly() read-only}, the resulting segment will also be
+     * {@linkplain ByteBuffer#isReadOnly() read-only}. The memory session associated with this segment can either be the
      * {@linkplain MemorySession#global() global} memory session, in case the buffer has been created independently,
      * or some other memory session, in case the buffer has been obtained using {@link #asByteBuffer()}.
      * <p>
@@ -1720,6 +1693,36 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
         // note: we know size is a small value (as it comes from ValueLayout::byteSize())
         layout.accessHandle().set(this, index * layout.byteSize(), value.address());
     }
+
+    /**
+     * Compares the specified object with this memory segment for equality. Returns {@code true} if and only if the specified
+     * object is also a memory segment, and if that segment refers to the same memory region as this segment. More specifically,
+     * for two segments to be considered equals, all the following must be true:
+     * <ul>
+     *     <li>the two segments must be of the same kind; either both are {@linkplain #isNative() native segments},
+     *     backed by off-heap memory, or both are backed by on-heap memory;
+     *     <li>if the two segments are {@linkplain #isNative() native segments}, their {@link #address() base address}
+     *     must be {@linkplain MemoryAddress#equals(Object) equal}. Otherwise, the two segments must wrap the
+     *     same Java array instance, at the same starting offset;</li>
+     *     <li>the two segments must have the same {@linkplain #byteSize() size}; and</li>
+     *     <li>the two segments must have the {@linkplain MemorySession#equals(Object) same} {@linkplain #session() temporal bounds}.
+     * </ul>
+     * @apiNote This method does not perform a structural comparison of the contents of the two memory segments. Clients can
+     * compare memory segments structurally by using the {@link #mismatch(MemorySegment)} method instead.
+     *
+     * @param that the object to be compared for equality with this memory segment.
+     * @return {@code true} if the specified object is equal to this memory segment.
+     * @see #mismatch(MemorySegment)
+     * @see #asOverlappingSlice(MemorySegment)
+     */
+    @Override
+    boolean equals(Object that);
+
+    /**
+     * {@return the hash code value for this memory segment}
+     */
+    @Override
+    int hashCode();
 
 
     /**
