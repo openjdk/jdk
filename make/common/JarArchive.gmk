@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ define SetupJarArchiveBody
   $1_UPDATE_CONTENTS=\
       if [ "`$(WC) -l $$($1_BIN)/_the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'`" -gt "0" ]; then \
         $(ECHO) "  updating" `$(WC) -l $$($1_BIN)/_the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'` files && \
-        $$($1_JAR_CMD) $$($1_JAR_UPDATE_OPTIONS) $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents; \
+        $$($1_JAR_CMD) --update $$($1_JAR_OPTIONS) --file $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents; \
       fi $$(NEWLINE)
   # The s-variants of the above macros are used when the jar is created from scratch.
   # NOTICE: please leave the parentheses space separated otherwise the AIX build will break!
@@ -212,25 +212,27 @@ define SetupJarArchiveBody
             | $(SED) 's|$$(src)/|-C $$(src) |g' >> \
         $$($1_BIN)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
   endif
-  $1_SUPDATE_CONTENTS=$$($1_JAR_CMD) $$($1_JAR_UPDATE_OPTIONS) $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents $$(NEWLINE)
+  $1_SUPDATE_CONTENTS=$$($1_JAR_CMD) --update $$($1_JAR_OPTIONS) --file $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents $$(NEWLINE)
 
   # Use a slightly shorter name for logging, but with enough path to identify this jar.
   $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_JAR))
 
-  ifneq (,$$($1_CHECK_COMPRESS_JAR))
-    $1_JAR_CREATE_OPTIONS := c0fm
-    $1_JAR_UPDATE_OPTIONS := u0f
-    ifeq ($(COMPRESS_JARS), true)
-      $1_JAR_CREATE_OPTIONS := cfm
-      $1_JAR_UPDATE_OPTIONS := uf
+  # If reproducible build and the boot jdk jar supports --date option
+  # then specify the --date using SOURCE_DATE in ISO-8601
+  $1_JAR_OPTIONS :=
+  ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
+    ifeq ($$(BOOT_JDK_JAR_SUPPORTS_DATE), true)
+      $1_JAR_OPTIONS += --date $(SOURCE_DATE_ISO_8601)
     endif
-  else
-    $1_JAR_CREATE_OPTIONS := cfm
-    $1_JAR_UPDATE_OPTIONS := uf
+  endif
+  ifneq (,$$($1_CHECK_COMPRESS_JAR))
+    ifneq ($(COMPRESS_JARS), true)
+      $1_JAR_OPTIONS += --no-compress
+    endif
   endif
 
   # Include all variables of significance in the vardeps file
-  $1_VARDEPS := $$($1_JAR_CMD) $$($1_JAR_CREATE_OPTIONS) $$($1_MANIFEST) \
+  $1_VARDEPS := $$($1_JAR_CMD) $$($1_JAR_OPTIONS) $$($1_MANIFEST) \
       $$($1_JARMAIN) $$($1_EXTRA_MANIFEST_ATTR) $$($1_ORIG_DEPS) $$($1_SRCS) \
       $$($1_INCLUDES) $$($1_EXCLUDES) $$($1_EXCLUDE_FILES) $$($1_EXTRA_FILES)
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$$($1_JARNAME).vardeps)
@@ -255,7 +257,7 @@ define SetupJarArchiveBody
 	  $$(if $$($1_EXTRA_MANIFEST_ATTR), \
 	    $(PRINTF) "$$($1_EXTRA_MANIFEST_ATTR)\n" >> $$($1_MANIFEST_FILE) $$(NEWLINE)) \
 	  $(ECHO) Creating $$($1_NAME) $$(NEWLINE) \
-	  $$($1_JAR_CMD) $$($1_JAR_CREATE_OPTIONS) $$@ $$($1_MANIFEST_FILE) $$(NEWLINE) \
+	  $$($1_JAR_CMD) --create $$($1_JAR_OPTIONS) --file $$@ --manifest $$($1_MANIFEST_FILE) $$(NEWLINE) \
 	  $$($1_SCAPTURE_CONTENTS) \
 	  $$($1_SCAPTURE_METAINF) \
 	  $$($1_SUPDATE_CONTENTS) \
