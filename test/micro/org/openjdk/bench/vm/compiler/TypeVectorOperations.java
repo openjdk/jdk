@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,62 @@ public abstract class TypeVectorOperations {
     public void convert_d2l() {
         for (int i = 0; i < COUNT; i++) {
             resL[i] = (long) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_d2f() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_d2i() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_f2d() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_f2l() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_i2d() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_i2l() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_l2f() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_l2i() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) longs[i];
         }
     }
 
