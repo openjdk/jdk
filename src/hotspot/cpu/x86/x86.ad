@@ -4182,7 +4182,7 @@ instruct ReplL_reg(vec dst, rRegL src) %{
       __ evpbroadcastq($dst$$XMMRegister, $src$$Register, vlen_enc);
     } else if (vlen == 2) {
       __ movdq($dst$$XMMRegister, $src$$Register);
-      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);      
+      __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
     } else {
       assert(vlen == 4 && UseAVX >= 2, "sanity");
       __ movdq($dst$$XMMRegister, $src$$Register);
@@ -4254,8 +4254,8 @@ instruct ReplL_mem(vec dst, memory mem) %{
     int vlen_enc = vector_length_encoding(this);
     if (VM_Version::supports_avx2()) {
       __ vpbroadcastq($dst$$XMMRegister, $mem$$Address, vlen_enc);
-    } else if (VM_Version::supports_avx()) {
-      __ vbroadcastsd($dst$$XMMRegister, $mem$$Address, vlen_enc);
+    } else if (VM_Version::supports_sse3()) {
+      __ movddup($dst$$XMMRegister, $mem$$Address);
     } else {
       __ movq($dst$$XMMRegister, $mem$$Address);
       __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
@@ -4312,13 +4312,13 @@ instruct ReplF_reg(vec dst, vlRegF src) %{
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
     if (vlen <= 4) {
-      __ shufps($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+      __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
     } else if (VM_Version::supports_avx2()) {
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastss($dst$$XMMRegister, $src$$XMMRegister, vlen_enc); // reg-to-reg variant requires AVX2
     } else {
       assert(vlen == 8, "sanity");
-      __ shufps($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+      __ vpermilps($dst$$XMMRegister, $src$$XMMRegister, 0x00, Assembler::AVX_128bit);
       __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
@@ -4373,13 +4373,13 @@ instruct ReplD_reg(vec dst, vlRegD src) %{
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      __ shufps($dst$$XMMRegister, $src$$XMMRegister, 0x44);
+      __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
     } else if (VM_Version::supports_avx2()) {
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastsd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc); // reg-to-reg variant requires AVX2
     } else {
       assert(vlen == 4, "sanity");
-      __ shufps($dst$$XMMRegister, $src$$XMMRegister, 0x44);
+      __ vpermilps($dst$$XMMRegister, $src$$XMMRegister, 0x44, Assembler::AVX_128bit);
       __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
     }
   %}
@@ -4391,7 +4391,7 @@ instruct ReplD_mem(vec dst, memory mem) %{
   match(Set dst (ReplicateD (LoadD mem)));
   format %{ "replicateD $dst,$mem" %}
   ins_encode %{
-    if (VM_Version::supports_avx()) {
+    if (Matcher::vector_length(this) >= 4) {
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastsd($dst$$XMMRegister, $mem$$Address, vlen_enc);
     } else {
@@ -4409,7 +4409,7 @@ instruct ReplD_imm(vec dst, immD con) %{
     InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant,
         VM_Version::supports_sse3() ? 1 : 2));
     int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_avx()) {
+    if (Matcher::vector_length(this) >= 4) {
       __ vbroadcastsd($dst$$XMMRegister, addr, vlen_enc);
     } else if (VM_Version::supports_sse3()) {
       __ movddup($dst$$XMMRegister, addr);
