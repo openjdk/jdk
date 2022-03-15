@@ -46,7 +46,7 @@ public class TestSuperwordFailsUnrolling {
             TestFramework.runWithFlags("-XX:UseAVX=2");
         }
         TestFramework.run();
-            
+
     }
 
     @Test
@@ -58,7 +58,7 @@ public class TestSuperwordFailsUnrolling {
         }
         return v;
     }
-    
+
     @Run(test = "test")
     void test_runner() {
         long[] array = new long[1000];
