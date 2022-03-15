@@ -1500,7 +1500,7 @@ void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, Address src, 
       case 8:  movq(dst, src);    break;
       case 16: movdqu(dst, src);  break;
       case 32: vmovdqu(dst, src); break;
-      case 64: evmovdquq(dst, src, Assembler::AVX_512bit); break;
+      case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
       default: ShouldNotReachHere();
     }
   } else {

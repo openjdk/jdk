@@ -4057,7 +4057,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 }
 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
-  if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
+  if (vector_len == Assembler::AVX_512bit) {
     vpternlogd(dst, 0xFF, dst, dst, vector_len);
   } else if (UseAVX > 0) {
     vpcmpeqd(dst, dst, dst, vector_len);

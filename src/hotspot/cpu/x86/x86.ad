@@ -4311,8 +4311,10 @@ instruct ReplF_reg(vec dst, vlRegF src) %{
   format %{ "replicateF $dst,$src" %}
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
-    if (vlen <= 4) {
+    if (UseAVX == 0) {
       __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+    } else if (vlen <= 4) {
+      __ vpermilps($dst$$XMMRegister, $src$$XMMRegister, 0x00, Assembler::AVX_128bit);
     } else if (VM_Version::supports_avx2()) {
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastss($dst$$XMMRegister, $src$$XMMRegister, vlen_enc); // reg-to-reg variant requires AVX2
@@ -4372,8 +4374,10 @@ instruct ReplD_reg(vec dst, vlRegD src) %{
   format %{ "replicateD $dst,$src" %}
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
-    if (vlen == 2) {
+    if (UseAVX == 0) {
       __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
+    } else if (vlen <= 2) {
+      __ vpermilps($dst$$XMMRegister, $src$$XMMRegister, 0x44, Assembler::AVX_128bit);
     } else if (VM_Version::supports_avx2()) {
       int vlen_enc = vector_length_encoding(this);
       __ vbroadcastsd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc); // reg-to-reg variant requires AVX2
