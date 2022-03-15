@@ -99,7 +99,7 @@ class DigestAuthentication extends AuthenticationInfo {
     private static final String enabledAlgPropName =
         propPrefix + "reEnabledAlgorithms";
 
-    private static final Set<String> disabledAlgorithms = new HashSet<>();
+    private static final Set<String> disabledAlgorithms;
 
     // true if http.auth.digest.quoteParameters Net property is true
     private static final boolean delimCompatFlag;
@@ -118,15 +118,19 @@ class DigestAuthentication extends AuthenticationInfo {
         String secprops = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> Security.getProperty(secPropName)
         );
+
+        Set<String> algs = new HashSet<>();
+
         // add the default insecure algorithms to set
-        processPropValue(secprops, disabledAlgorithms, (set, elem) -> set.add(elem));
+        processPropValue(secprops, algs, (set, elem) -> set.add(elem));
 
         @SuppressWarnings("removal")
         String netprops = AccessController.doPrivileged(
             (PrivilegedAction<String>) () -> NetProperties.get(enabledAlgPropName)
         );
         // remove any algorithms from disabled set that were opted-in by user
-        processPropValue(netprops, disabledAlgorithms, (set, elem) -> set.remove(elem));
+        processPropValue(netprops, algs, (set, elem) -> set.remove(elem));
+        disabledAlgorithms = Set.copyOf(algs);
     }
 
     // Authentication parameters defined in RFC2617.
