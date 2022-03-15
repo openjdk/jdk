@@ -118,7 +118,7 @@ public final class SecurityProviderConstants {
                 if (v > max)  {
                     v = max;
                 }
-            } catch (NullPointerException | NoSuchAlgorithmException ne) {
+            } catch (NoSuchAlgorithmException ne) {
                 // should never happen; ignore and use the default
             }
             DEF_AES_KEY_SIZE.compareAndSet(-1, v);
