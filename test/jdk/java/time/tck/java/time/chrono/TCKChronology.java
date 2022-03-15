@@ -80,6 +80,7 @@ import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahEra;
+import java.time.chrono.IsoBasedChronology;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.IsoEra;
 import java.time.chrono.JapaneseChronology;
@@ -424,8 +425,8 @@ public class TCKChronology {
         chrono.epochSecond(y, m, d, h, min, s, offset);
     }
 
-    @DataProvider(name = "data_isIsoBased")
-    Object[][]  data_isIsoBased() {
+    @DataProvider(name = "data_IsoBasedChronology")
+    Object[][]  data_IsoBasedChronology() {
         return new Object[][] {
                 {IsoChronology.INSTANCE, true},
                 {JapaneseChronology.INSTANCE, true},
@@ -436,10 +437,10 @@ public class TCKChronology {
     }
 
     //-----------------------------------------------------------------------
-    // isIsoBased()
+    // IsoBasedChronology
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "data_isIsoBased")
-    public void test_isIsoBased(Chronology chrono, boolean expected) {
-        assertEquals(chrono.isIsoBased(), expected);
+    @Test(dataProvider = "data_IsoBasedChronology")
+    public void test_IsoBasedChronology(Chronology chrono, boolean expected) {
+        assertEquals(chrono instanceof IsoBasedChronology, expected);
     }
 }

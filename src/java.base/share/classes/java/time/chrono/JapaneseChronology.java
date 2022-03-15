@@ -119,7 +119,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  *
  * @since 1.8
  */
-public final class JapaneseChronology extends AbstractChronology implements Serializable {
+public final class JapaneseChronology extends AbstractChronology implements Serializable, IsoBasedChronology {
 
     static final LocalGregorianCalendar JCAL =
         (LocalGregorianCalendar) CalendarSystem.forName("japanese");
@@ -502,19 +502,6 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
         }
         int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);
         return dateYearDay(era, yoe, doy);  // smart is same as strict
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * {@code JapaneseChronology} is an ISO based chronology, which supports fields,
-     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
-     * @implSpec The implementation always returns {@code true}.
-     * @return {@code true}
-     * @since 19
-     */
-    @Override
-    public boolean isIsoBased() {
-        return true;
     }
 
     //-----------------------------------------------------------------------

@@ -74,6 +74,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
+import java.time.chrono.IsoBasedChronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.ResolverStyle;
 import java.util.Locale;
@@ -736,6 +737,6 @@ public final class IsoFields {
     }
 
     static boolean isIsoBased(TemporalAccessor temporal) {
-        return Chronology.from(temporal).isIsoBased();
+        return Chronology.from(temporal) instanceof IsoBasedChronology;
     }
 }

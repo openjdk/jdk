@@ -64,6 +64,7 @@ import static org.testng.Assert.assertEquals;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
+import java.time.chrono.IsoBasedChronology;
 
 import org.testng.annotations.Test;
 
@@ -80,7 +81,7 @@ public class TCKTestServiceLoader {
         ChronoLocalDate copticDate = chrono.date(1729, 4, 27);
         LocalDate ld = LocalDate.from(copticDate);
         assertEquals(ld, LocalDate.of(2013, 1, 5), "CopticDate does not match LocalDate");
-        assertEquals(chrono.isIsoBased(), false);
+        assertEquals(chrono instanceof IsoBasedChronology, false);
     }
 
 }
