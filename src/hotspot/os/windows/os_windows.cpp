@@ -2495,8 +2495,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   Thread* t = Thread::current_or_null_safe();
 
   // Handle SafeFetch32 and SafeFetchN exceptions.
-  if (StubRoutines::is_safefetch_fault(pc)) {
-    return Handle_Exception(exceptionInfo, StubRoutines::continuation_for_safefetch_fault(pc));
+  if (SafeFetchHelper::is_safefetch_fault(pc)) {
+    return Handle_Exception(exceptionInfo, SafeFetchHelper::continuation_for_safefetch_fault(pc));
   }
 
 #ifndef _WIN64

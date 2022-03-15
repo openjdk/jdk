@@ -32,8 +32,8 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safefetch.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
@@ -604,8 +604,8 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 #ifndef ZERO
     if (uc != NULL) {
       address pc = os::Posix::ucontext_get_pc(uc);
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+      if (SafeFetchHelper::is_safefetch_fault(pc)) {
+        os::Posix::ucontext_set_pc(uc, SafeFetchHelper::continuation_for_safefetch_fault(pc));
         signal_was_handled = true;
       }
     }

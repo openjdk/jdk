@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,45 @@
 #define SHARE_RUNTIME_SAFEFETCH_INLINE_HPP
 
 // No safefetch.hpp
+#include "memory/allStatic.hpp"
+#include OS_HEADER(safefetch)
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#ifdef HAVE_STATIC_SAFEFETCH
+
+inline int SafeFetch32(int* adr, int errValue) {
+  return _SafeFetch32(adr, errValue);
+}
+
+inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
+  return
+      LP64_ONLY((intptr_t)_SafeFetch64((uint64_t*)adr, (uint64_t) errValue))
+      NOT_LP64((intptr_t)_SafeFetch32((int*)adr, (int) errValue));
+}
+
+inline bool CanUseSafeFetch32() { return true; }
+inline bool CanUseSafeFetchN()  { return true; }
+
+class SafeFetchHelper : public AllStatic {
+  static bool is_safefetch32_fault(address pc) { return pc == (address)_SafeFetch32_fault; }
+  LP64_ONLY(static bool is_safefetch64_fault(address pc) { return pc == (address)_SafeFetch64_fault; })
+public:
+  static bool is_safefetch_fault(address pc) {
+    return is_safefetch32_fault(pc) LP64_ONLY(|| is_safefetch64_fault(pc));
+  }
+  static address continuation_for_safefetch_fault(address pc) {
+    assert(is_safefetch_fault(pc), "not a safefetch fault pc");
+#ifdef _LP64
+    return is_safefetch32_fault(pc) ? (address)_SafeFetch32_continuation : (address)_SafeFetch64_continuation;
+#else
+    return (address)_SafeFetch32_continuation;
+#endif
+  }
+};
+
+#else
 
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
@@ -60,5 +100,17 @@ inline bool CanUseSafeFetch32() {
 inline bool CanUseSafeFetchN() {
   return StubRoutines::SafeFetchN_stub() ? true : false;
 }
+
+class SafeFetchHelper : public AllStatic {
+public:
+  static bool is_safefetch_fault(address pc) {
+    return StubRoutines::is_safefetch_fault(pc);
+  }
+  static address continuation_for_safefetch_fault(address pc) {
+    return StubRoutines::continuation_for_safefetch_fault(pc);
+  }
+};
+
+#endif // HAVE_STATIC_SAFEFETCH
 
 #endif // SHARE_RUNTIME_SAFEFETCH_INLINE_HPP

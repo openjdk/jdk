@@ -428,6 +428,8 @@ class StubRoutines: AllStatic {
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
+#ifndef HAVE_STATIC_SAFEFETCH
+
   //
   // Safefetch stub support
   //
@@ -455,6 +457,8 @@ class StubRoutines: AllStatic {
     ShouldNotReachHere();
     return NULL;
   }
+
+#endif // !HAVE_STATIC_SAFEFETCH
 
   //
   // Default versions of the above arraycopy functions for platforms which do
