@@ -64,10 +64,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -80,7 +76,6 @@ import java.time.chrono.Chronology;
 import java.time.chrono.Era;
 import java.time.chrono.HijrahChronology;
 import java.time.chrono.HijrahEra;
-import java.time.chrono.IsoBasedChronology;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.IsoEra;
 import java.time.chrono.JapaneseChronology;
@@ -428,7 +423,7 @@ public class TCKChronology {
     @DataProvider(name = "data_IsoBasedChronology")
     Object[][]  data_IsoBasedChronology() {
         return new Object[][] {
-                {IsoChronology.INSTANCE, true},
+                {IsoChronology.INSTANCE, false},
                 {JapaneseChronology.INSTANCE, true},
                 {MinguoChronology.INSTANCE, true},
                 {ThaiBuddhistChronology.INSTANCE, true},
@@ -437,10 +432,10 @@ public class TCKChronology {
     }
 
     //-----------------------------------------------------------------------
-    // IsoBasedChronology
+    // IsoChronology.IsoBasedChronology
     //-----------------------------------------------------------------------
     @Test(dataProvider = "data_IsoBasedChronology")
     public void test_IsoBasedChronology(Chronology chrono, boolean expected) {
-        assertEquals(chrono instanceof IsoBasedChronology, expected);
+        assertEquals(chrono instanceof IsoChronology.IsoBasedChronology, expected);
     }
 }

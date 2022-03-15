@@ -123,7 +123,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
-public final class IsoChronology extends AbstractChronology implements Serializable, IsoBasedChronology {
+public final class IsoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the ISO chronology.
@@ -675,6 +675,29 @@ public final class IsoChronology extends AbstractChronology implements Serializa
     @Override  // override with covariant return type
     public Period period(int years, int months, int days) {
         return Period.of(years, months, days);
+    }
+
+    /**
+     * An interface that confirms chronologies implementing this interface
+     * are ISO based.
+     * <p>
+     * An ISO based chronology has the same basic structure of days and
+     * months as the ISO chronology, with month lengths generally aligned
+     * with those in the ISO January to December definitions. For example,
+     * the Minguo, ThaiBuddhist and Japanese chronologies. Such
+     * chronology supports fields defined in {@code IsoFields}
+     *
+     * @implSpec
+     * {@code IsoChronology} itself does not implement this interface, as
+     * it *is* ISO chronology.
+     *
+     * @see JapaneseChronology
+     * @see MinguoChronology
+     * @see ThaiBuddhistChronology
+     * @see java.time.temporal.IsoFields
+     * @since 19
+     */
+    public interface IsoBasedChronology {
     }
 
     //-----------------------------------------------------------------------
