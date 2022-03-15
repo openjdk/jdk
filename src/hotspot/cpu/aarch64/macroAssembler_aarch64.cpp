@@ -388,7 +388,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
 
 static inline bool target_needs_far_branch(address addr) {
   // codecache size <= 128M
-  if (!MacroAssembler::codecache_branch_needs_far_jump()) {
+  if (!MacroAssembler::far_branches()) {
     return false;
   }
   // codecache size > 240M
@@ -569,7 +569,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
   // We need a trampoline if branches are far.
-  if (codecache_branch_needs_far_jump()) {
+  if (far_branches()) {
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
     // We don't want to emit a trampoline if C2 is generating dummy
@@ -590,7 +590,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (!codecache_branch_needs_far_jump()) {
+  if (!far_branches()) {
     bl(entry.target());
   } else {
     bl(pc());

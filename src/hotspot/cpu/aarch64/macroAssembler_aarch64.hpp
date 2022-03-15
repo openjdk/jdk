@@ -1069,11 +1069,7 @@ public:
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   // Jumps that can reach anywhere in the code cache.
-  static bool codecache_branch_needs_far_jump() {
-    return ReservedCodeCacheSize > branch_range;
-  }
-
-  static bool is_trampoline_needed() {
+  static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
 

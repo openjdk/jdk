@@ -34,7 +34,7 @@
 #include "oops/oop.inline.hpp"
 
 int InlineCacheBuffer::ic_stub_code_size() {
-  return (MacroAssembler::codecache_branch_needs_far_jump() ? 6 : 4) * NativeInstruction::instruction_size;
+  return (MacroAssembler::far_branches() ? 6 : 4) * NativeInstruction::instruction_size;
 }
 
 #define __ masm->
