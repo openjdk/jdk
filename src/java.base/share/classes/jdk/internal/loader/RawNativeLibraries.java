@@ -35,9 +35,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static jdk.internal.loader.NativeLibraries.*;
-
-
 /**
  * RawNativeLibraries has the following properties:
  * 1. Native libraries loaded in this RawNativeLibraries instance are
@@ -136,7 +133,7 @@ public final class RawNativeLibraries {
         nl.close();
     }
 
-    static class RawNativeLibraryImpl implements NativeLibrary {
+    static class RawNativeLibraryImpl extends NativeLibrary {
         // the name of the raw native library.
         final String name;
         // opaque handle to raw native library, used in native code.
@@ -153,7 +150,7 @@ public final class RawNativeLibraries {
 
         @Override
         public long find(String name) {
-            return findEntry0(this, name);
+            return findEntry0(handle, name);
         }
 
         /*

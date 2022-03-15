@@ -218,24 +218,18 @@ Java_jdk_internal_loader_NativeLibraries_unload
     JNU_ReleaseStringPlatformChars(env, name, cname);
 }
 
-
 /*
- * Class:     jdk_internal_loader_NativeLibraries
+ * Class:     jdk_internal_loader_NativeLibrary
  * Method:    findEntry0
- * Signature: (Ljdk/internal/loader/NativeLibrary;Ljava/lang/String;)J
+ * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_jdk_internal_loader_NativeLibraries_findEntry0
-  (JNIEnv *env, jclass cls, jobject lib, jstring name)
+Java_jdk_internal_loader_NativeLibrary_findEntry0
+  (JNIEnv *env, jclass cls, jlong handle, jstring name)
 {
-    jlong handle;
     const char *cname;
     jlong res;
 
-    if (!initIDs(env))
-        return jlong_zero;
-
-    handle = (*env)->GetLongField(env, lib, handleID);
     cname = (*env)->GetStringUTFChars(env, name, 0);
     if (cname == 0)
         return jlong_zero;
