@@ -63,6 +63,14 @@ public class HiDPIRobotScreenCaptureTest {
         }
 
         Frame frame = new Frame();
+
+        // Position the frame such that color picker will work with
+        // prime number coordinates (mind the offset) to avoid them being
+        // multiple of the desktop scale; this tests Linux color picker better.
+        // Also, the position should be far enough from the top left
+        // corner of the screen to reduce the chance of being repositioned
+        // by the system because that area's occupied by the global
+        // menu bar and such.
         frame.setBounds(83, 97, 100, 100);
         frame.setUndecorated(true);
 

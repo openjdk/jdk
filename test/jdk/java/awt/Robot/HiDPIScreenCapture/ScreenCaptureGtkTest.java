@@ -59,8 +59,8 @@ public class ScreenCaptureGtkTest {
 
         Frame frame = new Frame();
         // Position the frame such that color picker will work with
-        // prime number coordinates to avoid them being multiple
-        // of the desktop scale; this tests Linux color picker better.
+        // prime number coordinates (mind the offset) to avoid them being
+        // multiple of the desktop scale; this tests Linux color picker better.
         // Also, the position should be far enough from the top left
         // corner of the screen to reduce the chance of being repositioned
         // by the system because that area's occupied by the global
@@ -79,7 +79,7 @@ public class ScreenCaptureGtkTest {
                 g.fillRect(0, 0, w, h);
                 // Paint several distinct pixels next to one another
                 // in order to test color picker's precision.
-                for (int i = 1; i < 4; i++) {
+                for (int i = 1; i < COLORS.length; i++) {
                     g.setColor(COLORS[i]);
                     g.fillRect(leftOffset + i, topOffset, 1, 1);
                 }
@@ -106,7 +106,7 @@ public class ScreenCaptureGtkTest {
     }
 
     static void checkPixelColors(Robot robot, int x, int y) {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < COLORS.length; i++) {
             final Color actualColor = robot.getPixelColor(x + i, y);
             System.out.print("Checking color at " + (x + i) + ", " + y + " to be equal to " + COLORS[i]);
             if (!actualColor.equals(COLORS[i])) {
