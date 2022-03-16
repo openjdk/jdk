@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 # Generate StandardCharsets.java and individul sun.nio.cs charset class using
 # the charsetmapping tool
 #
-CHARSET_DATA_DIR := $(MODULE_SRC)/share/data/charsetmapping
+CHARSET_DATA_DIR := $(TOPDIR)/make/data/charsetmapping
 CHARSET_EXTSRC_DIR := $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext
 CHARSET_GENSRC_JAVA_DIR_BASE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/cs
 CHARSET_DONE_BASE := $(CHARSET_GENSRC_JAVA_DIR_BASE)/_the.charsetmapping

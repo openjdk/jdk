@@ -29,7 +29,7 @@ include GensrcCommonJdk.gmk
 #
 # Generate files using the charsetmapping tool
 #
-CHARSET_DATA_DIR := $(TOPDIR)/src/java.base/share/data/charsetmapping
+CHARSET_DATA_DIR := $(TOPDIR)/make/data/charsetmapping
 
 CHARSET_GENSRC_JAVA_DIR_CS := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.charsets/sun/nio/cs/ext
 CHARSET_DONE_CS := $(CHARSET_GENSRC_JAVA_DIR_CS)/_the.charsetmapping
