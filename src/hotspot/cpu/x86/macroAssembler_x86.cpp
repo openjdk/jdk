@@ -3684,7 +3684,7 @@ void MacroAssembler::push_set(RegSet set) {
   subptr(rsp, aligned_size);
 
   size_t spill_offset = 0;
-  for (auto it = set.begin(); *it != noreg; ++it) {
+  for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
     movptr(Address(rsp, spill_offset), *it);
     spill_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
   }
@@ -3692,7 +3692,7 @@ void MacroAssembler::push_set(RegSet set) {
 
 void MacroAssembler::pop_set(RegSet set) {
   size_t restore_offset = 0;
-  for (auto it = set.begin(); *it != noreg; ++it) {
+  for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
     movptr(*it, Address(rsp, restore_offset));
     restore_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
   }
