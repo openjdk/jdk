@@ -258,8 +258,8 @@ private:
   // to the new container. Transfer is achieved by transfer_cards.
   // Returns true if this was the thread that coarsened the container (and added the card).
   bool coarsen_container(ContainerPtr volatile* container_addr,
-                        ContainerPtr cur_container,
-                        uint card_in_region, bool within_howl = false);
+                         ContainerPtr cur_container,
+                         uint card_in_region, bool within_howl = false);
 
   ContainerPtr create_coarsened_array_of_cards(uint card_in_region, bool within_howl);
 
