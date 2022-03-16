@@ -131,8 +131,7 @@ public:
     }
   #endif // _LP64
 
-  void print_on(outputStream* os) const;
-private:
+    private:
   void pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
