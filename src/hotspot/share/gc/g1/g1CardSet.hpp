@@ -223,7 +223,7 @@ public:
   // reinterpret_casts are forbidden in constexprs. Use a regular static instead.
   static ContainerPtr FullCardSet;
 
-  static const uintptr_t ContainerPtrTypeMask  = ((uintptr_t)1 << ContainerPtrHeaderSize) - 1;
+  static const uintptr_t ContainerPtrTypeMask = ((uintptr_t)1 << ContainerPtrHeaderSize) - 1;
 
   static ContainerPtr strip_container_type(ContainerPtr ptr) { return (ContainerPtr)((uintptr_t)ptr & ~ContainerPtrTypeMask); }
 
