@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import sun.hotspot.WhiteBox;
  * @build sun.hotspot.WhiteBox
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -XX:+UseTLAB -XX:TLABSize=2k -XX:-ResizeTLAB
  *                   jdk.jfr.event.allocation.TestObjectAllocationSampleEventThrottling
  */
