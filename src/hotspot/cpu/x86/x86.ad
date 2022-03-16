@@ -4154,7 +4154,7 @@ instruct ReplI_zero(vec dst, immI_0 zero) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
     }
@@ -4295,7 +4295,7 @@ instruct ReplL_zero(vec dst, immL0 zero) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
     }
@@ -4373,7 +4373,7 @@ instruct ReplF_zero(vec dst, immF0 zero) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
     }
@@ -4445,7 +4445,7 @@ instruct ReplD_zero(vec dst, immD0 zero) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
     } else {
       __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
     }
