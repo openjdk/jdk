@@ -31,7 +31,7 @@
   * @run main JEditorPaneSetTextNullTest
   */
  public class JEditorPaneSetTextNullTest {
-     public static void main(String[] s) throws Exception {
+     public static void main(String[] args) throws Exception {
          try {
              SwingUtilities.invokeAndWait(() -> new JEditorPane().setText(null));
              System.out.println("Test passed");
