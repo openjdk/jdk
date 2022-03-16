@@ -5832,8 +5832,7 @@ address generate_avx_ghash_processBlocks() {
     // another.  The result is that all 4 blocks will be in their
     // proper order when serialized.
     __ evmovdqul(zmm_scratch, ExternalAddress(StubRoutines::x86::chacha20_scattermask_avx512()), Assembler::AVX_512bit, rax);
-    __ mov64(rax, -1);
-    __ kmovwl(writeMask, rax);
+    __ kxnorwl(writeMask, writeMask, writeMask);
     __ evpscatterdd(Address(result, zmm_scratch, Address::times_4), writeMask, zmm_aVec, Assembler::AVX_512bit);
     __ knotwl(writeMask, writeMask);
     __ evpscatterdd(Address(result, zmm_scratch, Address::times_4, 16), writeMask, zmm_bVec, Assembler::AVX_512bit);

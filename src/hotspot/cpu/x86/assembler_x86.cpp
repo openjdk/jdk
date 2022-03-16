@@ -2790,6 +2790,13 @@ void Assembler::kxnorbl(KRegister dst, KRegister src1, KRegister src2) {
   emit_int16(0x46, (0xC0 | encode));
 }
 
+void Assembler::kxnorwl(KRegister dst, KRegister src1, KRegister src2) {
+  assert(VM_Version::supports_evex(), "");
+  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x46, (0xC0 | encode));
+}
+
 void Assembler::kshiftlbl(KRegister dst, KRegister src, int imm8) {
   assert(VM_Version::supports_avx512dq(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
