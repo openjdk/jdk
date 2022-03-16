@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
       ls.print("%s, ", null_safe_string(type2name(basic_type[i])));
     }
     ls.print_cr("}");
-    ls.print_cr("shadow_space_bytes = %d", abi._shadow_space_bytes);
     ls.print("input_registers { ");
     for (int i = 0; i < input_regs.length(); i++) {
       VMReg reg = input_regs.at(i);
