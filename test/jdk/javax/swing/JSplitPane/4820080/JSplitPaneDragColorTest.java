@@ -51,12 +51,14 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @test
  * @key headful
  * @bug 4820080
- * @summary This test confirms that the Drag color of JSplitPane divider should be the user specified one(Red here).
+ * @summary This test confirms that the Drag color of JSplitPane divider should
+ *          be the user specified one(Red here).
  * @run main JSplitPaneDragColorTest
  */
 public class JSplitPaneDragColorTest {
 
-    // Tolerance is set inorder to negate small differences in pixel color values, especially in Mac machines.
+    // Tolerance is set inorder to negate small differences in pixel color values,
+    // especially in Mac machines.
     private final static int COLOR_TOLERANCE = 9;
     private static final Color EXPECTED_DRAG_COLOR = Color.RED;
     private static JFrame frame;
@@ -68,11 +70,13 @@ public class JSplitPaneDragColorTest {
         robot = new Robot();
         robot.setAutoWaitForIdle(true);
         robot.setAutoDelay(200);
-        // Skipping NimbusLookAndFeel & GTKLookAndFeel as both are not supported for this feature - JDK-8075914
+        // Skipping NimbusLookAndFeel & GTKLookAndFeel,
+        // as both are not supported for this feature - JDK-8075914, JDK-8075608
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
-                                  .filter(laf -> !(laf.getName().contains("GTK") || laf.getName().contains("Nimbus")))
-                                  .map(LookAndFeelInfo::getClassName)
-                                  .collect(Collectors.toList());
+                .filter(laf -> !(laf.getName().contains("GTK")
+                        || laf.getName().contains("Nimbus")))
+                .map(LookAndFeelInfo::getClassName)
+                .collect(Collectors.toList());
         for (final String laf : lafs) {
             try {
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
@@ -95,9 +99,11 @@ public class JSplitPaneDragColorTest {
                 robot.mouseMove(dividerRect.x + 15, dividerRect.y + 36);
                 robot.mouseMove(dividerRect.x + 5, dividerRect.y + 36);
 
-                // Get the color of one of the pixels of the splitpane divider after the drag has started
-                // Ideally it should be the SplitPaneDivider.draggingColor set by user, otherwise the test fails
-                final Color actualDragColor = robot.getPixelColor(dividerRect.x + 2, dividerRect.y + 2);
+                // Get the color of one of the pixels of the splitpane divider
+                // after the drag has started. Ideally it should be the
+                // SplitPaneDivider.draggingColor set by user, otherwise the test fails
+                final Color actualDragColor = robot.getPixelColor(dividerRect.x + 2,
+                        dividerRect.y + 2);
                 if (checkDragColor(actualDragColor)) {
                     System.out.println("Test passed in " + laf);
                 } else {
@@ -107,7 +113,8 @@ public class JSplitPaneDragColorTest {
                     System.out.printf("%X", actualDragColor.getRGB());
                     System.out.println();
                     captureScreen();
-                    throw new RuntimeException("Test failed, drag color is wrong in " + laf);
+                    throw new RuntimeException("Test failed, drag color is wrong in "
+                            + laf);
                 }
             } finally {
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -124,9 +131,10 @@ public class JSplitPaneDragColorTest {
         int expectedGreen = EXPECTED_DRAG_COLOR.getGreen();
         int expectedBlue = EXPECTED_DRAG_COLOR.getBlue();
 
-        final double tolerance = Math.sqrt((actualRed - expectedRed) * (actualRed - expectedRed) +
-                (actualGreen - expectedGreen) * (actualGreen - expectedGreen) +
-                (actualBlue - expectedBlue) * (actualBlue - expectedBlue));
+        final double tolerance = Math.sqrt(
+                (actualRed - expectedRed) * (actualRed - expectedRed) +
+                        (actualGreen - expectedGreen) * (actualGreen - expectedGreen) +
+                        (actualBlue - expectedBlue) * (actualBlue - expectedBlue));
         return (tolerance <= COLOR_TOLERANCE);
     }
 
@@ -138,7 +146,8 @@ public class JSplitPaneDragColorTest {
 
             javax.swing.plaf.basic.BasicSplitPaneDivider divider = ui.getDivider();
             Point dividerLoc = divider.getLocationOnScreen();
-            rect.set(new Rectangle(dividerLoc.x, dividerLoc.y, divider.getWidth(), divider.getHeight()));
+            rect.set(new Rectangle(dividerLoc.x, dividerLoc.y, divider.getWidth(),
+                    divider.getHeight()));
         });
         robot.waitForIdle();
         return rect.get();
@@ -148,7 +157,9 @@ public class JSplitPaneDragColorTest {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         try {
             ImageIO.write(
-                    robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                    robot.createScreenCapture(new Rectangle(0, 0,
+                            screenSize.width,
+                            screenSize.height)),
                     "png",
                     new File("screen1.png")
             );
