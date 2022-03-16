@@ -1137,6 +1137,8 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
   }
   BLOCK_COMMENT("verify_oop {");
 
+  strip_return_address(); // This might happen within a stack frame.
+  protect_return_address();
   stp(r0, rscratch1, Address(pre(sp, -2 * wordSize)));
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
@@ -1150,6 +1152,7 @@ void MacroAssembler::verify_oop(Register reg, const char* s) {
 
   ldp(rscratch2, lr, Address(post(sp, 2 * wordSize)));
   ldp(r0, rscratch1, Address(post(sp, 2 * wordSize)));
+  authenticate_return_address();
 
   BLOCK_COMMENT("} verify_oop");
 }
@@ -1166,6 +1169,8 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
+  strip_return_address(); // This might happen within a stack frame.
+  protect_return_address();
   stp(r0, rscratch1, Address(pre(sp, -2 * wordSize)));
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
@@ -1186,6 +1191,7 @@ void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
 
   ldp(rscratch2, lr, Address(post(sp, 2 * wordSize)));
   ldp(r0, rscratch1, Address(post(sp, 2 * wordSize)));
+  authenticate_return_address();
 
   BLOCK_COMMENT("} verify_oop_addr");
 }
@@ -4296,6 +4302,7 @@ void MacroAssembler::load_byte_map_base(Register reg) {
 void MacroAssembler::build_frame(int framesize) {
   assert(framesize >= 2 * wordSize, "framesize must include space for FP/LR");
   assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
+  protect_return_address();
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     sub(sp, sp, framesize);
     stp(rfp, lr, Address(sp, framesize - 2 * wordSize));
@@ -4328,6 +4335,7 @@ void MacroAssembler::remove_frame(int framesize) {
     }
     ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
   }
+  authenticate_return_address();
 }
 
 
@@ -5169,6 +5177,7 @@ void MacroAssembler::get_thread(Register dst) {
     LINUX_ONLY(RegSet::range(r0, r1)  + lr - dst)
     NOT_LINUX (RegSet::range(r0, r17) + lr - dst);
 
+  protect_return_address();
   push(saved_regs, sp);
 
   mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));
@@ -5178,6 +5187,7 @@ void MacroAssembler::get_thread(Register dst) {
   }
 
   pop(saved_regs, sp);
+  authenticate_return_address();
 }
 
 void MacroAssembler::cache_wb(Address line) {
@@ -5269,3 +5279,102 @@ void MacroAssembler::spin_wait() {
     }
   }
 }
+
+// Stack frame creation/removal
+
+void MacroAssembler::enter(bool strip_ret_addr) {
+  if (strip_ret_addr) {
+    // Addresses can only be signed once. If there are multiple nested frames being created
+    // in the same function, then the return address needs stripping first.
+    strip_return_address();
+  }
+  protect_return_address();
+  stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+  mov(rfp, sp);
+}
+
+void MacroAssembler::leave() {
+  mov(sp, rfp);
+  ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+  authenticate_return_address();
+}
+
+// ROP Protection
+// Use the AArch64 PAC feature to add ROP protection for generated code. Use whenever creating/
+// destroying stack frames or whenever directly loading/storing the LR to memory.
+// If ROP protection is not set then these functions are no-ops.
+// For more details on PAC see pauth_aarch64.hpp.
+
+// Sign the LR. Use during construction of a stack frame, before storing the LR to memory.
+// Uses the FP as the modifier.
+//
+void MacroAssembler::protect_return_address() {
+  if (VM_Version::use_rop_protection()) {
+    check_return_address();
+    // The standard convention for C code is to use paciasp, which uses SP as the modifier. This
+    // works because in C code, FP and SP match on function entry. In the JDK, SP and FP may not
+    // match, so instead explicitly use the FP.
+    pacia(lr, rfp);
+  }
+}
+
+// Sign the return value in the given register. Use before updating the LR in the exisiting stack
+// frame for the current function.
+// Uses the FP from the start of the function as the modifier - which is stored at the address of
+// the current FP.
+//
+void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
+  if (VM_Version::use_rop_protection()) {
+    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
+    check_return_address(return_reg);
+    ldr(temp_reg, Address(rfp));
+    pacia(return_reg, temp_reg);
+  }
+}
+
+// Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
+//
+void MacroAssembler::authenticate_return_address(Register return_reg) {
+  if (VM_Version::use_rop_protection()) {
+    autia(return_reg, rfp);
+    check_return_address(return_reg);
+  }
+}
+
+// Authenticate the return value in the given register. Use before updating the LR in the exisiting
+// stack frame for the current function.
+// Uses the FP from the start of the function as the modifier - which is stored at the address of
+// the current FP.
+//
+void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
+  if (VM_Version::use_rop_protection()) {
+    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
+    ldr(temp_reg, Address(rfp));
+    autia(return_reg, temp_reg);
+    check_return_address(return_reg);
+  }
+}
+
+// Strip any PAC data from LR without performing any authentication. Use with caution - only if
+// there is no guaranteed way of authenticating the LR.
+//
+void MacroAssembler::strip_return_address() {
+  if (VM_Version::use_rop_protection()) {
+    xpaclri();
+  }
+}
+
+#ifndef PRODUCT
+// PAC failures can be difficult to debug. After an authentication failure, a segfault will only
+// occur when the pointer is used - ie when the program returns to the invalid LR. At this point
+// it is difficult to debug back to the callee function.
+// This function simply loads from the address in the given register.
+// Use directly after authentication to catch authentication failures.
+// Also use before signing to check that the pointer is valid and hasn't already been signed.
+//
+void MacroAssembler::check_return_address(Register return_reg) {
+  if (VM_Version::use_rop_protection()) {
+    ldr(zr, Address(return_reg));
+  }
+}
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,12 +108,12 @@ public class ClassBuilder extends AbstractBuilder {
         buildClassDoc();
     }
 
-     /**
-      * Handles the {@literal <TypeElement>} tag.
-      *
-      * @throws DocletException if there is a problem while building the documentation
-      */
-     protected void buildClassDoc() throws DocletException {
+    /**
+     * Handles the {@literal <TypeElement>} tag.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    protected void buildClassDoc() throws DocletException {
         String key = switch (typeElement.getKind()) {
             case INTERFACE       -> "doclet.Interface";
             case ENUM            -> "doclet.Enum";
@@ -122,7 +122,7 @@ public class ClassBuilder extends AbstractBuilder {
             case CLASS           -> "doclet.Class";
             default -> throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
         };
-         Content contentTree = writer.getHeader(resources.getText(key) + " "
+        Content contentTree = writer.getHeader(resources.getText(key) + " "
                 + utils.getSimpleName(typeElement));
         Content classContentTree = writer.getClassContentHeader();
 
@@ -137,11 +137,11 @@ public class ClassBuilder extends AbstractBuilder {
         copyDocFiles();
     }
 
-     /**
-      * Build the class tree documentation.
-      *
-      * @param classContentTree the content tree to which the documentation will be added
-      */
+    /**
+     * Build the class tree documentation.
+     *
+     * @param classContentTree the content tree to which the documentation will be added
+     */
     protected void buildClassTree(Content classContentTree) {
         writer.addClassTree(classContentTree);
     }
@@ -256,7 +256,7 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @throws DocFileIOException if there is a problem while copying the files
      */
-     private void copyDocFiles() throws DocletException {
+    private void copyDocFiles() throws DocletException {
         PackageElement containingPackage = utils.containingPackage(typeElement);
         if ((configuration.packages == null ||
             !configuration.packages.contains(containingPackage)) &&
@@ -270,7 +270,7 @@ public class ClassBuilder extends AbstractBuilder {
             docFilesHandler.copyDocFiles();
             containingPackagesSeen.add(containingPackage);
         }
-     }
+    }
 
     /**
      * Build the signature of the current class.
@@ -287,7 +287,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @param classInfoTree the content tree to which the documentation will be added
      */
     protected void buildClassDescription(Content classInfoTree) {
-       writer.addClassDescription(classInfoTree);
+        writer.addClassDescription(classInfoTree);
     }
 
     /**
@@ -296,7 +296,7 @@ public class ClassBuilder extends AbstractBuilder {
      * @param classInfoTree the content tree to which the documentation will be added
      */
     protected void buildClassTagInfo(Content classInfoTree) {
-       writer.addClassTagInfo(classInfoTree);
+        writer.addClassTagInfo(classInfoTree);
     }
 
     /**

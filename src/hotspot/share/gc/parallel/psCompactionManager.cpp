@@ -113,7 +113,19 @@ ParCompactionManager::gc_thread_compaction_manager(uint index) {
   return _manager_array[index];
 }
 
-bool ParCompactionManager::transfer_from_overflow_stack(ObjArrayTask& task) {
+inline void ParCompactionManager::publish_and_drain_oop_tasks() {
+  oop obj;
+  while (marking_stack()->pop_overflow(obj)) {
+    if (!marking_stack()->try_push_to_taskqueue(obj)) {
+      follow_contents(obj);
+    }
+  }
+  while (marking_stack()->pop_local(obj)) {
+    follow_contents(obj);
+  }
+}
+
+bool ParCompactionManager::publish_or_pop_objarray_tasks(ObjArrayTask& task) {
   while (_objarray_stack.pop_overflow(task)) {
     if (!_objarray_stack.try_push_to_taskqueue(task)) {
       return true;
@@ -126,19 +138,12 @@ void ParCompactionManager::follow_marking_stacks() {
   do {
     // First, try to move tasks from the overflow stack into the shared buffer, so
     // that other threads can steal. Otherwise process the overflow stack first.
-    oop obj;
-    while (marking_stack()->pop_overflow(obj)) {
-      if (!marking_stack()->try_push_to_taskqueue(obj)) {
-        follow_contents(obj);
-      }
-    }
-    while (marking_stack()->pop_local(obj)) {
-      follow_contents(obj);
-    }
+    publish_and_drain_oop_tasks();
 
     // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    if (transfer_from_overflow_stack(task) || _objarray_stack.pop_local(task)) {
+    if (publish_or_pop_objarray_tasks(task) ||
+        _objarray_stack.pop_local(task)) {
       follow_array((objArrayOop)task.obj(), task.index());
     }
   } while (!marking_stacks_empty());

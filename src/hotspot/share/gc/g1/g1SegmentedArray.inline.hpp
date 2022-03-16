@@ -115,8 +115,8 @@ void G1SegmentedArrayFreeList<flag>::free_all() {
   Atomic::sub(&_mem_size, mem_size_freed, memory_order_relaxed);
 }
 
-template <class Slot, MEMFLAGS flag>
-G1SegmentedArraySegment<flag>* G1SegmentedArray<Slot, flag>::create_new_segment(G1SegmentedArraySegment<flag>* const prev) {
+template <MEMFLAGS flag>
+G1SegmentedArraySegment<flag>* G1SegmentedArray<flag>::create_new_segment(G1SegmentedArraySegment<flag>* const prev) {
   // Take an existing segment if available.
   G1SegmentedArraySegment<flag>* next = _free_segment_list->get();
   if (next == nullptr) {
@@ -125,7 +125,7 @@ G1SegmentedArraySegment<flag>* G1SegmentedArray<Slot, flag>::create_new_segment(
     next = new G1SegmentedArraySegment<flag>(slot_size(), num_slots, prev);
   } else {
     assert(slot_size() == next->slot_size() ,
-           "Mismatch %d != %d Slot %zu", slot_size(), next->slot_size(), sizeof(Slot));
+           "Mismatch %d != %d", slot_size(), next->slot_size());
     next->reset(prev);
   }
 
@@ -148,14 +148,14 @@ G1SegmentedArraySegment<flag>* G1SegmentedArray<Slot, flag>::create_new_segment(
   }
 }
 
-template <class Slot, MEMFLAGS flag>
-uint G1SegmentedArray<Slot, flag>::slot_size() const {
+template <MEMFLAGS flag>
+uint G1SegmentedArray<flag>::slot_size() const {
   return _alloc_options->slot_size();
 }
 
-template <class Slot, MEMFLAGS flag>
-G1SegmentedArray<Slot, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* alloc_options,
-                                               G1SegmentedArrayFreeList<flag>* free_segment_list) :
+template <MEMFLAGS flag>
+G1SegmentedArray<flag>::G1SegmentedArray(const G1SegmentedArrayAllocOptions* alloc_options,
+                                         G1SegmentedArrayFreeList<flag>* free_segment_list) :
      _alloc_options(alloc_options),
      _first(nullptr),
      _last(nullptr),
@@ -167,13 +167,13 @@ G1SegmentedArray<Slot, flag>::G1SegmentedArray(const G1SegmentedArrayAllocOption
   assert(_free_segment_list != nullptr, "precondition!");
 }
 
-template <class Slot, MEMFLAGS flag>
-G1SegmentedArray<Slot, flag>::~G1SegmentedArray() {
+template <MEMFLAGS flag>
+G1SegmentedArray<flag>::~G1SegmentedArray() {
   drop_all();
 }
 
-template <class Slot, MEMFLAGS flag>
-void G1SegmentedArray<Slot, flag>::drop_all() {
+template <MEMFLAGS flag>
+void G1SegmentedArray<flag>::drop_all() {
   G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);
 
   if (cur != nullptr) {
@@ -209,8 +209,8 @@ void G1SegmentedArray<Slot, flag>::drop_all() {
   _num_allocated_slots = 0;
 }
 
-template <class Slot, MEMFLAGS flag>
-Slot* G1SegmentedArray<Slot, flag>::allocate() {
+template <MEMFLAGS flag>
+void* G1SegmentedArray<flag>::allocate() {
   assert(slot_size() > 0, "instance size not set.");
 
   G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);
@@ -219,7 +219,7 @@ Slot* G1SegmentedArray<Slot, flag>::allocate() {
   }
 
   while (true) {
-    Slot* slot = (Slot*)cur->get_new_slot();
+    void* slot = cur->get_new_slot();
     if (slot != nullptr) {
       Atomic::inc(&_num_allocated_slots, memory_order_relaxed);
       guarantee(is_aligned(slot, _alloc_options->slot_alignment()),
@@ -232,8 +232,8 @@ Slot* G1SegmentedArray<Slot, flag>::allocate() {
   }
 }
 
-template <class Slot, MEMFLAGS flag>
-inline uint G1SegmentedArray<Slot, flag>::num_segments() const {
+template <MEMFLAGS flag>
+inline uint G1SegmentedArray<flag>::num_segments() const {
   return Atomic::load(&_num_segments);
 }
 
@@ -251,17 +251,17 @@ public:
   }
 };
 
-template <class Slot, MEMFLAGS flag>
-uint G1SegmentedArray<Slot, flag>::calculate_length() const {
+template <MEMFLAGS flag>
+uint G1SegmentedArray<flag>::calculate_length() const {
   LengthClosure<flag> closure;
   iterate_segments(closure);
   return closure.length();
 }
 #endif
 
-template <class Slot, MEMFLAGS flag>
+template <MEMFLAGS flag>
 template <typename SegmentClosure>
-void G1SegmentedArray<Slot, flag>::iterate_segments(SegmentClosure& closure) const {
+void G1SegmentedArray<flag>::iterate_segments(SegmentClosure& closure) const {
   G1SegmentedArraySegment<flag>* cur = Atomic::load_acquire(&_first);
 
   assert((cur != nullptr) == (_last != nullptr),
