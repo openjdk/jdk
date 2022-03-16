@@ -218,7 +218,7 @@ public:
   static const uintptr_t CardSetHowl           = 0x3;
 
   // The special sentinel values
-  static constexpr ContainerPtr FreeCardSet    = nullptr;
+  static constexpr ContainerPtr FreeCardSet = nullptr;
   // Unfortunately we can't make (G1CardSet::ContainerPtr)-1 constexpr because
   // reinterpret_casts are forbidden in constexprs. Use a regular static instead.
   static ContainerPtr FullCardSet;
