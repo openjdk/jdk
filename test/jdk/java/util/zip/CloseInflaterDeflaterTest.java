@@ -55,7 +55,7 @@ public class CloseInflaterDeflaterTest {
             throw new IOException();
         }
         @Override
-        public void write(byte b[]) throws IOException {}
+        public void write(byte[] b) throws IOException {}
         @Override
         public void write(int b) throws IOException {}
     };
@@ -67,7 +67,7 @@ public class CloseInflaterDeflaterTest {
             throw new IOException();
         }
         @Override
-        public int read(byte b[]) throws IOException { throw new IOException();}
+        public int read(byte[] b) throws IOException { throw new IOException();}
         @Override
         public int read() throws IOException { throw new IOException();}
     };
