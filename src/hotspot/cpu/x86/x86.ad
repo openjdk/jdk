@@ -4152,7 +4152,12 @@ instruct ReplI_zero(vec dst, immI_0 zero) %{
   match(Set dst (ReplicateI zero));
   format %{ "replicateI $dst,$zero" %}
   ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    int vlen_enc = vector_length_encoding(this);
+    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    } else {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -4288,7 +4293,12 @@ instruct ReplL_zero(vec dst, immL0 zero) %{
   match(Set dst (ReplicateL zero));
   format %{ "replicateL $dst,$zero" %}
   ins_encode %{
-    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    int vlen_enc = vector_length_encoding(this);
+    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    } else {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -4361,7 +4371,12 @@ instruct ReplF_zero(vec dst, immF0 zero) %{
   match(Set dst (ReplicateF zero));
   format %{ "replicateF $dst,$zero" %}
   ins_encode %{
-    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    int vlen_enc = vector_length_encoding(this);
+    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    } else {
+      __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    }
   %}
   ins_pipe( fpu_reg_reg );
 %}
@@ -4428,7 +4443,12 @@ instruct ReplD_zero(vec dst, immD0 zero) %{
   match(Set dst (ReplicateD zero));
   format %{ "replicateD $dst,$zero" %}
   ins_encode %{
-    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    int vlen_enc = vector_length_encoding(this);
+    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    } else {
+      __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    }
   %}
   ins_pipe( fpu_reg_reg );
 %}
