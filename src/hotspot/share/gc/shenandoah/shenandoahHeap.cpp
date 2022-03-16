@@ -981,9 +981,26 @@ void ShenandoahHeap::retire_plab(PLAB* plab) {
   }
 }
 
-void ShenandoahHeap::cancel_mixed_collections() {
+void ShenandoahHeap::cancel_old_gc() {
+  shenandoah_assert_safepoint();
   assert(_old_generation != NULL, "Should only have mixed collections in generation mode.");
+  log_info(gc)("Terminating old gc cycle.");
+
+  // Stop marking
+  old_generation()->cancel_marking();
+  // Stop coalescing undead objects
+  set_concurrent_prep_for_mixed_evacuation_in_progress(false);
+  // Stop tracking old regions
   old_heuristics()->abandon_collection_candidates();
+  // Remove old generation access to young generation mark queues
+  young_generation()->set_old_gen_task_queues(nullptr);
+}
+
+bool ShenandoahHeap::is_old_gc_active() {
+  return is_concurrent_old_mark_in_progress()
+      || is_concurrent_prep_for_mixed_evacuation_in_progress()
+      || old_heuristics()->unprocessed_old_or_hidden_collection_candidates() > 0
+      || young_generation()->old_gen_task_queues() != nullptr;
 }
 
 void ShenandoahHeap::coalesce_and_fill_old_regions() {
@@ -2111,18 +2128,10 @@ bool ShenandoahHeap::try_cancel_gc() {
     assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
     Thread* thread = Thread::current();
     if (thread->is_Java_thread()) {
-      JavaThread* java_thread = JavaThread::cast(thread);
-      if (java_thread->thread_state() == _thread_in_Java) {
-        // ThreadBlockInVM requires thread state to be _thread_in_vm.  If we are in Java, safely transition thread state.
-        ThreadInVMfromJava transition(java_thread);
-        // We need to provide a safepoint here.  Otherwise we might spin forever if a SP is pending.
-        ThreadBlockInVM sp(JavaThread::cast(thread));
-        SpinPause();
-      } else {
-        // We need to provide a safepoint here.  Otherwise we might spin forever if a SP is pending.
-        ThreadBlockInVM sp(JavaThread::cast(thread));
-        SpinPause();
-      }
+      // We need to provide a safepoint here, otherwise we might
+      // spin forever if a SP is pending.
+      ThreadBlockInVM sp(JavaThread::cast(thread));
+      SpinPause();
     }
   }
 }
@@ -2810,8 +2819,8 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
   }
 }
 
-void ShenandoahHeap::purge_old_satb_buffers(bool abandon) {
-  ((ShenandoahOldGeneration*)_old_generation)->purge_satb_buffers(abandon);
+void ShenandoahHeap::transfer_old_pointers_from_satb() {
+  ((ShenandoahOldGeneration*) _old_generation)->transfer_pointers_from_satb();
 }
 
 template<>

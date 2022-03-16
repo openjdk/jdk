@@ -109,13 +109,13 @@ protected:
   void merge_write_table();
 
   // Used by concurrent and degenerated GC to reset regions.
-  virtual void prepare_gc(bool do_old_gc_bootstrap);
+  void prepare_gc(bool do_old_gc_bootstrap);
 
   // Return true iff prepared collection set includes at least one old-gen HeapRegion.
   virtual bool prepare_regions_and_collection_set(bool concurrent);
 
   // Cancel marking (used by Full collect and when cancelling cycle).
-  void cancel_marking();
+  virtual void cancel_marking();
 
   // Return true if this region is affiliated with this generation.
   virtual bool contains(ShenandoahHeapRegion* region) const = 0;

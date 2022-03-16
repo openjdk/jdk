@@ -810,7 +810,8 @@ public:
   void clear_cards(HeapWord* start, HeapWord* end);
   void mark_card_as_dirty(void* location);
   void retire_plab(PLAB* plab);
-  void cancel_mixed_collections();
+  void cancel_old_gc();
+  bool is_old_gc_active();
   void coalesce_and_fill_old_regions();
 
 // ---------- Helper functions
@@ -838,7 +839,7 @@ public:
 
   static inline void increase_object_age(oop obj, uint additional_age);
 
-  void purge_old_satb_buffers(bool abandon);
+  void transfer_old_pointers_from_satb();
 private:
   void trash_cset_regions();
 

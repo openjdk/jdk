@@ -89,7 +89,7 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
            "Region " SIZE_FORMAT ", bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
            idx, p2i(old_tams), p2i(new_tams));
 
-    log_debug(gc)("Capturing TAMS for %s Region " SIZE_FORMAT ", was: %llx, now: %llx\n",
+    log_debug(gc)("Capturing TAMS for %s Region " SIZE_FORMAT ", was: %llx, now: %llx",
                   affiliation_name(r->affiliation()), idx, (unsigned long long) old_tams, (unsigned long long) new_tams);
 
     if ((old_tams == r->bottom()) && (new_tams > old_tams)) {

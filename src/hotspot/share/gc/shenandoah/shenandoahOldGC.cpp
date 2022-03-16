@@ -146,7 +146,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
       }
     }
 
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_mark)) {
+    if (heap->cancelled_gc()) {
       return false;
     }
 
@@ -183,29 +183,32 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
     heap->set_concurrent_prep_for_mixed_evacuation_in_progress(true);
   }
 
+
+  assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
+
+  // We must execute this vm operation if we completed final mark. We cannot
+  // return from here with weak roots in progress. This is not a valid gc state
+  // for any young collections (or allocation failures) that interrupt the old
+  // collection.
+  vmop_entry_final_roots(false);
+
   // Coalesce and fill objects _after_ weak root processing and class unloading.
   // Weak root and reference processing makes assertions about unmarked referents
   // that will fail if they've been overwritten with filler objects. There is also
   // a case in the LRB that permits access to from-space objects for the purpose
   // of class unloading that is unlikely to function correctly if the object has
   // been filled.
-
   _allow_preemption.set();
 
-  if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_evac)) {
+  if (heap->cancelled_gc()) {
     return false;
   }
 
-  assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
-
-  vmop_entry_final_roots(false);
-
   if (heap->is_concurrent_prep_for_mixed_evacuation_in_progress()) {
     if (!entry_coalesce_and_fill()) {
-      // If old-gen degenerates instead of resuming, we'll just start up an out-of-cycle degenerated GC.
-      // This should be a rare event.  Normally, we'll resume the coalesce-and-fill effort after the
-      // preempting young-gen GC finishes.
-      check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_outside_cycle);
+      // If an allocation failure occurs during coalescing, we will run a degenerated
+      // cycle for the young generation. This should be a rare event.  Normally, we'll
+      // resume the coalesce-and-fill effort after the preempting young-gen GC finishes.
       return false;
     }
   }

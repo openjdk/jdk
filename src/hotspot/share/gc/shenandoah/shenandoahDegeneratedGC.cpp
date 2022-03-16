@@ -90,13 +90,21 @@ void ShenandoahDegenGC::op_degenerated() {
   // some phase, we have to upgrade the Degenerate GC to Full GC.
   heap->clear_cancelled_gc(true /* clear oom handler */);
 
-  // We can't easily clear the old mark in progress flag because it must be done
-  // on a safepoint (not sure if that is a hard requirement). At any rate, once
-  // we are in a degenerated cycle, there should be no more old marking.
-  if (heap->is_concurrent_old_mark_in_progress()) {
-    heap->old_generation()->cancel_marking();
+#ifdef ASSERT
+  if (heap->mode()->is_generational()) {
+    if (_generation->generation_mode() == GenerationMode::GLOBAL) {
+      // We can only get to a degenerated global cycle _after_ a concurrent global cycle
+      // has been cancelled. In which case, we expect the concurrent global cycle to have
+      // cancelled the old gc already.
+      assert(!heap->is_old_gc_active(), "Old GC should not be active during global cycle.");
+    }
+
+    if (!heap->is_concurrent_old_mark_in_progress()) {
+      // If we are not marking the old generation, there should be nothing in the old mark queues
+      assert(heap->old_generation()->task_queues()->is_empty(), "Old gen task queues should be empty.");
+    }
   }
-  assert(heap->old_generation()->task_queues()->is_empty(), "Old gen task queues should be empty.");
+#endif
 
   ShenandoahMetricsSnapshot metrics;
   metrics.snap_before();
@@ -113,6 +121,14 @@ void ShenandoahDegenGC::op_degenerated() {
       // we can do the most aggressive degen cycle, which includes processing references and
       // class unloading, unless those features are explicitly disabled.
 
+      if (heap->is_concurrent_old_mark_in_progress()) {
+        // We have come straight into a degenerated cycle without running a concurrent cycle
+        // first and the SATB barrier is enabled to support concurrent old marking. The SATB buffer
+        // may hold a mix of old and young pointers. The old pointers need to be transferred
+        // to the old generation mark queues and the young pointers are _not_ part of this
+        // snapshot, so they must be dropped here.
+        heap->transfer_old_pointers_from_satb();
+      }
 
       // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
       // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
@@ -125,8 +141,17 @@ void ShenandoahDegenGC::op_degenerated() {
 
     case _degenerated_roots:
       // Degenerated from concurrent root mark, reset the flag for STW mark
-      if (heap->is_concurrent_mark_in_progress()) {
-        heap->cancel_concurrent_mark();
+      if (!heap->mode()->is_generational()) {
+        if (heap->is_concurrent_mark_in_progress()) {
+          heap->cancel_concurrent_mark();
+        }
+      } else {
+        if (_generation->is_concurrent_mark_in_progress()) {
+          // We want to allow old generation marking to be punctuated by young collections
+          // (even if they have degenerated). If this is a global cycle, we'd have cancelled
+          // the entire old gc before coming into this switch.
+          _generation->cancel_marking();
+        }
       }
 
       if (_degen_point == ShenandoahDegenPoint::_degenerated_roots) {
@@ -293,7 +318,7 @@ void ShenandoahDegenGC::op_reset() {
 }
 
 void ShenandoahDegenGC::op_mark() {
-  assert(!ShenandoahHeap::heap()->is_concurrent_mark_in_progress(), "Should be reset");
+  assert(!_generation->is_concurrent_mark_in_progress(), "Should be reset");
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_stw_mark);
   ShenandoahSTWMark mark(_generation, false /*full gc*/);
   mark.mark();

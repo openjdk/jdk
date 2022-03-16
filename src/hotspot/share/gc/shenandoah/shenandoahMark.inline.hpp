@@ -300,8 +300,10 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       // Old mark, found a young pointer.
       // TODO:  Rethink this: may be redundant with dirtying of cards identified during young-gen remembered set scanning
       // and by mutator write barriers.  Assert
-      assert(heap->is_in_young(obj), "Expected young object.");
-      heap->mark_card_as_dirty(p);
+      if (heap->is_in(p)) {
+        assert(heap->is_in_young(obj), "Expected young object.");
+        heap->mark_card_as_dirty(p);
+      }
     }
   }
 }

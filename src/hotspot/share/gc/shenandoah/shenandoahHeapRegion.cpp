@@ -825,7 +825,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahRegionAffiliation new_affil
   {
     ShenandoahMarkingContext* const ctx = heap->complete_marking_context();
     log_debug(gc)("Setting affiliation of Region " SIZE_FORMAT " from %s to %s, top: " PTR_FORMAT ", TAMS: " PTR_FORMAT
-                  ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT "\n",
+                  ", watermark: " PTR_FORMAT ", top_bitmap: " PTR_FORMAT,
                   index(), affiliation_name(_affiliation), affiliation_name(new_affiliation),
                   p2i(top()), p2i(ctx->top_at_mark_start(this)), p2i(_update_watermark), p2i(ctx->top_bitmap(this)));
   }

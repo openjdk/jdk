@@ -309,14 +309,6 @@ void ShenandoahConcurrentGC::entry_init_mark() {
                               ShenandoahWorkerPolicy::calc_workers_for_init_marking(),
                               "init marking");
 
-  if (ShenandoahHeap::heap()->mode()->is_generational()
-    && (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify))) {
-    // The current implementation of swap_remembered_set() copies the write-card-table
-    // to the read-card-table. The remembered sets are also swapped for GLOBAL collections
-    // so that the verifier works with the correct copy of the card table when verifying.
-    _generation->swap_remembered_set();
-  }
-
   op_init_mark();
 }
 
@@ -606,6 +598,25 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(_generation->is_bitmap_clear(), "need clear marking bitmap");
   assert(!_generation->is_mark_complete(), "should not be complete");
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
+
+
+  if (heap->mode()->is_generational()) {
+      if (_generation->generation_mode() == YOUNG || (_generation->generation_mode() == GLOBAL && ShenandoahVerify)) {
+      // The current implementation of swap_remembered_set() copies the write-card-table
+      // to the read-card-table. The remembered sets are also swapped for GLOBAL collections
+      // so that the verifier works with the correct copy of the card table when verifying.
+      _generation->swap_remembered_set();
+    }
+
+    if (_generation->generation_mode() == GLOBAL) {
+      heap->cancel_old_gc();
+    } else if (heap->is_concurrent_old_mark_in_progress()) {
+      // Purge the SATB buffers, transferring any valid, old pointers to the
+      // old generation mark queue. Any pointers in a young region will be
+      // abandoned.
+      heap->transfer_old_pointers_from_satb();
+    }
+  }
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_concmark();
@@ -1130,13 +1141,6 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   }
 
   heap->update_heap_region_states(true /*concurrent*/);
-
-  if (heap->is_concurrent_old_mark_in_progress()) {
-    // Purge the SATB buffers, transferring any valid, old pointers to the
-    // old generation mark queue. From here on, no mutator will have access
-    // to anything that will be trashed and recycled.
-    heap->purge_old_satb_buffers(false /* abandon */);
-  }
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);

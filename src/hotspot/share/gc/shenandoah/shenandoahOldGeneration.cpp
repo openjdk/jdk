@@ -81,12 +81,10 @@ class ShenandoahProcessOldSATB : public SATBBufferClosure {
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
       ShenandoahHeapRegion* region = _heap->heap_region_containing(*p);
-      if (region->is_old()) {
-        if (!region->is_trash()) {
+      if (region->is_old() && region->is_active()) {
           ShenandoahMark::mark_through_ref<oop, OLD>(p, _queue, NULL, _mark_context, false);
-        } else {
-          ++_trashed_oops;
-        }
+      } else {
+        ++_trashed_oops;
       }
     }
   }
@@ -158,20 +156,24 @@ bool ShenandoahOldGeneration::is_concurrent_mark_in_progress() {
   return ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress();
 }
 
-void ShenandoahOldGeneration::purge_satb_buffers(bool abandon) {
+void ShenandoahOldGeneration::cancel_marking() {
+  if (is_concurrent_mark_in_progress()) {
+    ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
+  }
+
+  ShenandoahGeneration::cancel_marking();
+}
+
+void ShenandoahOldGeneration::transfer_pointers_from_satb() {
   ShenandoahHeap *heap = ShenandoahHeap::heap();
   shenandoah_assert_safepoint();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
 
-  if (abandon) {
-    ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
-  } else {
-    uint nworkers = heap->workers()->active_workers();
-    StrongRootsScope scope(nworkers);
+  uint nworkers = heap->workers()->active_workers();
+  StrongRootsScope scope(nworkers);
 
-    ShenandoahPurgeSATBTask purge_satb_task(task_queues());
-    heap->workers()->run_task(&purge_satb_task);
-  }
+  ShenandoahPurgeSATBTask purge_satb_task(task_queues());
+  heap->workers()->run_task(&purge_satb_task);
 }
 
 bool ShenandoahOldGeneration::contains(oop obj) const {

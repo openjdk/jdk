@@ -58,14 +58,12 @@ size_t ShenandoahGlobalGeneration::available() const {
 
 void ShenandoahGlobalGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (in_progress && heap->is_concurrent_old_mark_in_progress()) {
+  if (in_progress && heap->mode()->is_generational()) {
     // Global collection has preempted an old generation mark. This is fine
     // because the global generation includes the old generation, but we
     // want the global collect to start from a clean slate and we don't want
     // any stale state in the old generation.
-    heap->purge_old_satb_buffers(true /* abandon */);
-    heap->old_generation()->cancel_marking();
-    heap->young_generation()->set_old_gen_task_queues(nullptr);
+    heap->cancel_old_gc();
   }
 
   heap->set_concurrent_young_mark_in_progress(in_progress);
@@ -88,13 +86,3 @@ bool ShenandoahGlobalGeneration::is_concurrent_mark_in_progress() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   return heap->is_concurrent_mark_in_progress();
 }
-
-void ShenandoahGlobalGeneration::prepare_gc(bool do_old_gc_bootstrap) {
-  ShenandoahGeneration::prepare_gc(do_old_gc_bootstrap);
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->mode()->is_generational()) {
-    heap->cancel_mixed_collections();
-  }
-}
-

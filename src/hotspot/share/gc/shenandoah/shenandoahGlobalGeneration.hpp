@@ -42,8 +42,6 @@ public:
   virtual size_t used() const override;
   virtual size_t available() const override;
 
-  virtual void prepare_gc(bool do_old_gc_bootstrap) override;
-
   virtual void set_concurrent_mark_in_progress(bool in_progress)  override;
 
   bool contains(ShenandoahHeapRegion* region) const  override;
