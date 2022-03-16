@@ -318,6 +318,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * @param generator the {@code RandomGenerator} calls are delegated to
      * @return the delegating {@code Random} instance
      * @throws NullPointerException if generator is null
+     * @since 19
      */
     public static Random from(RandomGenerator generator) {
         Objects.requireNonNull(generator);
