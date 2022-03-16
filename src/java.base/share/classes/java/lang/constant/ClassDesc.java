@@ -116,7 +116,7 @@ public sealed interface ClassDesc
      * followed by the field descriptor for the component type.  Examples of
      * valid type descriptor strings include {@code "Ljava/lang/String;"}, {@code "I"},
      * {@code "[I"}, {@code "V"}, {@code "[Ljava/lang/String;"}, etc.
-     * See JVMS 4.3.2 ("Field Descriptors") for more detail.
+     * See JVMS {@jvms 4.3.2 }("Field Descriptors") for more detail.
      *
      * @param descriptor a field descriptor string
      * @return a {@linkplain ClassDesc} describing the desired class
