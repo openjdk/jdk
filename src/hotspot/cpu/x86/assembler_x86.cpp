@@ -861,6 +861,8 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       tail_size = 1;
       break;
 
+    case 0x10: // movups
+    case 0x11: // movups
     case 0x12: // movlps
     case 0x28: // movaps
     case 0x2E: // ucomiss
