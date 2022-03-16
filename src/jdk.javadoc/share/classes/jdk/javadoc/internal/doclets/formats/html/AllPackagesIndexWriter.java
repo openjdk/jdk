@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,11 +89,11 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Add all the packages to the content tree.
+     * Add all the packages to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addPackages(Content content) {
+    protected void addPackages(Content target) {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setCaption(Text.of(contents.packageSummaryLabel.toString()))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
@@ -106,6 +106,6 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
                 table.addRow(pkg, packageLinkContent, summaryContent);
             }
         }
-        content.add(table);
+        target.add(table);
     }
 }

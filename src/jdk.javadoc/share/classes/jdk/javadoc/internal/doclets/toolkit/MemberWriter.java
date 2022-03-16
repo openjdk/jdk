@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public interface MemberWriter {
     /**
      * Returns an item for the list of elements of a given kind.
      *
-     * @param content the content tree of the member to be documented
+     * @param content the content of the member to be documented
      * @return an item for the list of elements of a given kind
      * @see #getMemberList()
      */

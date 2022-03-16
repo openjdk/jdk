@@ -120,7 +120,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     /**
      * Get the package tree header.
      *
-     * @return a content tree for the header
+     * @return a content for the header
      */
     protected HtmlTree getPackageTreeHeader() {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
@@ -141,7 +141,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     /**
      * Add a link to the tree for all the packages.
      *
-     * @param div the content tree to which the link will be added
+     * @param div the content to which the link will be added
      */
     protected void addLinkToMainTree(Content div) {
         Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,

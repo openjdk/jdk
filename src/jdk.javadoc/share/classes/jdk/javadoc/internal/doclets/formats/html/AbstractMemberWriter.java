@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,9 +91,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     /**
      * Adds the summary label for the member.
      *
-     * @param memberTree the content tree to which the label will be added
+     * @param content the content to which the label will be added
      */
-    public abstract void addSummaryLabel(Content memberTree);
+    public abstract void addSummaryLabel(Content content);
 
     /**
      * Returns the summary table header for the member.
@@ -126,28 +126,28 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     /**
      * Adds inherited summary label for the member.
      *
-     * @param typeElement   the type element to which to link to
-     * @param inheritedTree the content tree to which the inherited summary label will be added
+     * @param typeElement the type element to which to link to
+     * @param content     the content to which the inherited summary label will be added
      */
-    public abstract void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree);
+    public abstract void addInheritedSummaryLabel(TypeElement typeElement, Content content);
 
     /**
      * Adds the summary type for the member.
      *
-     * @param member        the member to be documented
-     * @param tdSummaryType the content tree to which the type will be added
+     * @param member  the member to be documented
+     * @param content the content to which the type will be added
      */
-    protected abstract void addSummaryType(Element member, Content tdSummaryType);
+    protected abstract void addSummaryType(Element member, Content content);
 
     /**
      * Adds the summary link for the member.
      *
      * @param typeElement the type element to be documented
      * @param member      the member to be documented
-     * @param tdSummary   the content tree to which the link will be added
+     * @param content     the content to which the link will be added
      */
-    protected void addSummaryLink(TypeElement typeElement, Element member, Content tdSummary) {
-        addSummaryLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member, tdSummary);
+    protected void addSummaryLink(TypeElement typeElement, Element member, Content content) {
+        addSummaryLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member, content);
     }
 
     /**
@@ -156,39 +156,39 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param context     the id of the context where the link will be printed
      * @param typeElement the type element to be documented
      * @param member      the member to be documented
-     * @param tdSummary   the content tree to which the summary link will be added
+     * @param content     the content to which the summary link will be added
      */
     protected abstract void addSummaryLink(HtmlLinkInfo.Kind context,
-                                           TypeElement typeElement, Element member, Content tdSummary);
+                                           TypeElement typeElement, Element member, Content content);
 
     /**
      * Adds the inherited summary link for the member.
      *
      * @param typeElement the type element to be documented
      * @param member      the member to be documented
-     * @param linksTree   the content tree to which the inherited summary link will be added
+     * @param target      the content to which the inherited summary link will be added
      */
     protected abstract void addInheritedSummaryLink(TypeElement typeElement,
-            Element member, Content linksTree);
+            Element member, Content target);
 
     /**
      * Returns a link for summary (deprecated, preview) pages.
      *
      * @param member the member being linked to
      *
-     * @return a content tree representing the link
+     * @return a content representing the link
      */
     protected abstract Content getSummaryLink(Element member);
 
     /**
      * Adds the modifier and type for the member in the member summary.
      *
-     * @param member        the member to add the type for
-     * @param type          the type to add
-     * @param tdSummaryType the content tree to which the modified and type will be added
+     * @param member  the member to add the type for
+     * @param type    the type to add
+     * @param content the content to which the modified and type will be added
      */
     protected void addModifierAndType(Element member, TypeMirror type,
-            Content tdSummaryType) {
+            Content content) {
         HtmlTree code = new HtmlTree(TagName.CODE);
         addModifier(member, code);
         if (type == null) {
@@ -219,14 +219,14 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                     writer.getLink(new HtmlLinkInfo(configuration,
                             HtmlLinkInfo.Kind.SUMMARY_RETURN_TYPE, type)));
         }
-        tdSummaryType.add(code);
+        content.add(code);
     }
 
     /**
      * Adds the modifier for the member.
      *
      * @param member the member to add the type for
-     * @param code   the content tree to which the modifier will be added
+     * @param code   the content to which the modifier will be added
      */
     private void addModifier(Element member, Content code) {
         if (utils.isProtected(member)) {
@@ -257,26 +257,26 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     /**
      * Adds the deprecated information for the given member.
      *
-     * @param member      the member being documented.
-     * @param contentTree the content tree to which the deprecated information will be added.
+     * @param member  the member being documented.
+     * @param content the content to which the deprecated information will be added.
      */
-    protected void addDeprecatedInfo(Element member, Content contentTree) {
+    protected void addDeprecatedInfo(Element member, Content content) {
         Content output = (new DeprecatedTaglet()).getAllBlockTagOutput(member,
             writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
-            contentTree.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
+            content.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
         }
     }
 
     /**
      * Adds the comment for the given member.
      *
-     * @param member   the member being documented.
-     * @param htmlTree the content tree to which the comment will be added.
+     * @param member  the member being documented.
+     * @param content the content to which the comment will be added.
      */
-    protected void addComment(Element member, Content htmlTree) {
+    protected void addComment(Element member, Content content) {
         if (!utils.getFullBody(member).isEmpty()) {
-            writer.addInlineComment(member, htmlTree);
+            writer.addInlineComment(member, content);
         }
     }
 
@@ -284,10 +284,10 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * Add the preview information for the given member.
      *
      * @param member the member being documented.
-     * @param contentTree the content tree to which the preview information will be added.
+     * @param content the content to which the preview information will be added.
      */
-    protected void addPreviewInfo(Element member, Content contentTree) {
-        writer.addPreviewInfo(member, contentTree);
+    protected void addPreviewInfo(Element member, Content content) {
+        writer.addPreviewInfo(member, content);
     }
 
     protected String name(Element member) {
@@ -295,13 +295,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     /**
-     * Adds use information to the documentation tree.
+     * Adds use information to the documentation.
      *
-     * @param members     list of program elements for which the use information will be added
-     * @param heading     the section heading
-     * @param contentTree the content tree to which the use information will be added
+     * @param members list of program elements for which the use information will be added
+     * @param heading the section heading
+     * @param content the content to which the use information will be added
      */
-    protected void addUseInfo(List<? extends Element> members, Content heading, Content contentTree) {
+    protected void addUseInfo(List<? extends Element> members, Content heading, Content content) {
         if (members == null || members.isEmpty()) {
             return;
         }
@@ -338,7 +338,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             writer.addSummaryLinkComment(element, desc);
             useTable.addRow(summaryType, typeContent, desc);
         }
-        contentTree.add(useTable);
+        content.add(useTable);
     }
 
     protected void serialWarning(Element e, String key, String a1, String a2) {
@@ -371,24 +371,24 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     @Override
     public void addInheritedMemberSummary(TypeElement tElement,
             Element nestedClass, boolean isFirst, boolean isLast,
-            Content linksTree) {
-        writer.addInheritedMemberSummary(this, tElement, nestedClass, isFirst, linksTree);
+            Content content) {
+        writer.addInheritedMemberSummary(this, tElement, nestedClass, isFirst, content);
     }
 
     @Override
     public Content getInheritedSummaryHeader(TypeElement tElement) {
-        Content inheritedTree = writer.getMemberInheritedTree();
-        writer.addInheritedSummaryHeader(this, tElement, inheritedTree);
-        return inheritedTree;
+        Content c = writer.getMemberInherited();
+        writer.addInheritedSummaryHeader(this, tElement, c);
+        return c;
     }
 
     @Override
-    public Content getInheritedSummaryLinksTree() {
+    public Content getInheritedSummaryLinks() {
         return new HtmlTree(TagName.CODE);
     }
 
     @Override
-    public Content getSummaryTableTree(TypeElement tElement) {
+    public Content getSummaryTable(TypeElement tElement) {
         if (tElement != typeElement) {
             throw new IllegalStateException();
         }
@@ -400,8 +400,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     @Override
-    public Content getMemberTree(Content memberTree) {
-        return writer.getMemberTree(memberTree);
+    public Content getMember(Content memberContent) {
+        return writer.getMember(memberContent);
     }
 
     @Override
@@ -410,8 +410,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     }
 
     @Override
-    public Content getMemberListItem(Content memberTree) {
-        return writer.getMemberListItem(memberTree);
+    public Content getMemberListItem(Content memberContent) {
+        return writer.getMemberListItem(memberContent);
     }
 
 }

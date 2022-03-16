@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ public class Signatures {
         /**
          * Set the type parameters for an executable member.
          *
-         * @param typeParameters the content tree containing the type parameters to add.
+         * @param typeParameters the content containing the type parameters to add.
          * @return this instance
          */
         MemberSignature setTypeParameters(Content typeParameters) {
@@ -390,7 +390,7 @@ public class Signatures {
         /**
          * Set the return type for an executable member.
          *
-         * @param returnType the content tree containing the return type to add.
+         * @param returnType the content containing the return type to add.
          * @return this instance
          */
         MemberSignature setReturnType(Content returnType) {
@@ -412,33 +412,33 @@ public class Signatures {
         /**
          * Set the parameter information of an executable member.
          *
-         * @param paramTree the content tree containing the parameter information.
+         * @param content the content containing the parameter information.
          * @return this instance
          */
-        MemberSignature setParameters(Content paramTree) {
-            this.parameters = paramTree;
+        MemberSignature setParameters(Content content) {
+            this.parameters = content;
             return this;
         }
 
         /**
          * Set the exception information of an executable member.
          *
-         * @param exceptionTree the content tree containing the exception information
+         * @param content the content containing the exception information
          * @return this instance
          */
-        MemberSignature setExceptions(Content exceptionTree) {
-            this.exceptions = exceptionTree;
+        MemberSignature setExceptions(Content content) {
+            this.exceptions = content;
             return this;
         }
 
         /**
          * Set the annotation information of a member.
          *
-         * @param annotationTree the content tree containing the exception information
+         * @param content the content containing the exception information
          * @return this instance
          */
-        MemberSignature setAnnotations(Content annotationTree) {
-            this.annotations = annotationTree;
+        MemberSignature setAnnotations(Content content) {
+            this.annotations = content;
             return this;
         }
 
@@ -494,7 +494,7 @@ public class Signatures {
          * Adds the modifier for the member. The modifiers are ordered as specified
          * by <em>The Java Language Specification</em>.
          *
-         * @param htmlTree the content tree to which the modifier information will be added
+         * @param htmlTree the content to which the modifier information will be added
          */
         private void appendModifiers(Content htmlTree) {
             Set<Modifier> set = new TreeSet<>(element.getModifiers());

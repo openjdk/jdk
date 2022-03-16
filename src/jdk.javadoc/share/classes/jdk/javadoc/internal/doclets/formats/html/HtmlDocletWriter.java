@@ -292,7 +292,7 @@ public class HtmlDocletWriter {
      * Add method information.
      *
      * @param method the method to be documented
-     * @param dl the content tree to which the method information will be added
+     * @param dl the content to which the method information will be added
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
         TypeElement enclosing = utils.getEnclosingTypeElement(method);
@@ -319,9 +319,9 @@ public class HtmlDocletWriter {
      * Adds the tags information.
      *
      * @param e the Element for which the tags will be generated
-     * @param htmlTree the documentation tree to which the tags will be added
+     * @param content the documentation to which the tags will be added
      */
-    protected void addTagsInfo(Element e, Content htmlTree) {
+    protected void addTagsInfo(Element e, Content content) {
         if (options.noComment()) {
             return;
         }
@@ -331,7 +331,7 @@ public class HtmlDocletWriter {
         }
         Content output = getBlockTagOutput(e);
         dl.add(output);
-        htmlTree.add(dl);
+        content.add(dl);
     }
 
     /**
@@ -390,7 +390,7 @@ public class HtmlDocletWriter {
     /**
      * Returns a TagletWriter that knows how to write HTML.
      *
-     * @param context  the enclosing context for the trees
+     * @param context  the enclosing context
      * @return a TagletWriter
      */
     public TagletWriter getTagletWriterInstance(TagletWriterImpl.Context context) {
@@ -545,7 +545,7 @@ public class HtmlDocletWriter {
      * Get the overview tree link for the main tree.
      *
      * @param label the label for the link
-     * @return a content tree for the link
+     * @return a content for the link
      */
     protected Content getNavLinkMainTree(String label) {
         Content mainTreeContent = links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
@@ -605,7 +605,7 @@ public class HtmlDocletWriter {
      *
      * @param packageElement the package to link to.
      * @param label the label for the link.
-     * @return a content tree for the package link.
+     * @return a content for the package link.
      */
     public Content getPackageLink(PackageElement packageElement, Content label) {
         boolean included = packageElement != null && utils.isIncluded(packageElement);
@@ -682,13 +682,13 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Add the link to the content tree.
+     * Add the link to the content.
      *
      * @param element program element for which the link will be added
      * @param label label for the link
-     * @param htmltree the content tree to which the link will be added
+     * @param target the content to which the link will be added
      */
-    public void addSrcLink(Element element, Content label, Content htmltree) {
+    public void addSrcLink(Element element, Content label, Content target) {
         if (element == null) {
             return;
         }
@@ -703,9 +703,9 @@ public class HtmlDocletWriter {
                     .resolve(docPaths.forClass(te));
             Content content = links.createLink(href
                     .fragment(SourceToHTMLConverter.getAnchorName(utils, element).name()), label, "");
-            htmltree.add(content);
+            target.add(content);
         } else {
-            htmltree.add(label);
+            target.add(label);
         }
     }
 
@@ -787,7 +787,7 @@ public class HtmlDocletWriter {
      *
      * @param context the id of the context where the link will be added
      * @param element to link to
-     * @return a content tree for the link
+     * @return a content for the link
      */
     public Content getQualifiedClassLink(HtmlLinkInfo.Kind context, Element element) {
         HtmlLinkInfo htmlLinkInfo = new HtmlLinkInfo(configuration, context, (TypeElement)element);
@@ -799,10 +799,10 @@ public class HtmlDocletWriter {
      *
      * @param context the id of the context where the link will be added
      * @param typeElement to link to
-     * @param contentTree the content tree to which the link will be added
+     * @param content the content to which the link will be added
      */
-    public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content contentTree) {
-        addPreQualifiedClassLink(context, typeElement, null, contentTree);
+    public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content content) {
+        addPreQualifiedClassLink(context, typeElement, null, content);
     }
 
     /**
@@ -832,19 +832,19 @@ public class HtmlDocletWriter {
      * @param context the id of the context where the link will be added
      * @param typeElement the class to link to
      * @param style optional style for the link
-     * @param contentTree the content tree to which the link with be added
+     * @param content the content to which the link with be added
      */
     public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context,
-                                         TypeElement typeElement, HtmlStyle style, Content contentTree) {
+                                         TypeElement typeElement, HtmlStyle style, Content content) {
         PackageElement pkg = utils.containingPackage(typeElement);
         if(pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
-            contentTree.add(getEnclosingPackageName(typeElement));
+            content.add(getEnclosingPackageName(typeElement));
         }
         HtmlLinkInfo linkinfo = new HtmlLinkInfo(configuration, context, typeElement)
                 .label(utils.getSimpleName(typeElement))
                 .style(style);
         Content link = getLink(linkinfo);
-        contentTree.add(link);
+        content.add(link);
     }
 
     /**
@@ -874,10 +874,10 @@ public class HtmlDocletWriter {
      *
      * @param context the id of the context where the link will be added
      * @param typeElement the class to link to
-     * @param contentTree the content tree to which the link with be added
+     * @param content the content to which the link with be added
      */
-    public void addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content contentTree) {
-        addPreQualifiedClassLink(context, typeElement, HtmlStyle.typeNameLink, contentTree);
+    public void addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content content) {
+        addPreQualifiedClassLink(context, typeElement, HtmlStyle.typeNameLink, content);
     }
 
     /**
@@ -886,7 +886,7 @@ public class HtmlDocletWriter {
      * @param context the id of the context where the link will be added
      * @param element the member being linked to
      * @param label the label for the link
-     * @return a content tree for the element link
+     * @return a content for the element link
      */
     public Content getDocLink(HtmlLinkInfo.Kind context, Element element, CharSequence label) {
         return getDocLink(context, utils.getEnclosingTypeElement(element), element,
@@ -1284,19 +1284,19 @@ public class HtmlDocletWriter {
      *
      * @param element the Element for which the inline comment will be added
      * @param tag the inline tag to be added
-     * @param htmltree the content tree to which the comment will be added
+     * @param target the content to which the comment will be added
      */
-    public void addInlineComment(Element element, DocTree tag, Content htmltree) {
+    public void addInlineComment(Element element, DocTree tag, Content target) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(tag);
-        addCommentTags(element, description, false, false, false, htmltree);
+        addCommentTags(element, description, false, false, false, target);
     }
 
     /**
      * Get the deprecated phrase as content.
      *
      * @param e the Element for which the inline deprecated comment will be added
-     * @return a content tree for the deprecated phrase.
+     * @return a content for the deprecated phrase.
      */
     public Content getDeprecatedPhrase(Element e) {
         return (utils.isDeprecatedForRemoval(e))
@@ -1309,21 +1309,21 @@ public class HtmlDocletWriter {
      *
      * @param e the Element for which the inline deprecated comment will be added
      * @param tag the inline tag to be added
-     * @param htmltree the content tree to which the comment will be added
+     * @param target the content to which the comment will be added
      */
-    public void addInlineDeprecatedComment(Element e, DeprecatedTree tag, Content htmltree) {
+    public void addInlineDeprecatedComment(Element e, DeprecatedTree tag, Content target) {
         CommentHelper ch = utils.getCommentHelper(e);
-        addCommentTags(e, ch.getBody(tag), true, false, false, htmltree);
+        addCommentTags(e, ch.getBody(tag), true, false, false, target);
     }
 
     /**
      * Adds the summary content.
      *
      * @param element the Element for which the summary will be generated
-     * @param htmltree the documentation tree to which the summary will be added
+     * @param target the documentation to which the summary will be added
      */
-    public void addSummaryComment(Element element, Content htmltree) {
-        addSummaryComment(element, utils.getFirstSentenceTrees(element), htmltree);
+    public void addSummaryComment(Element element, Content target) {
+        addSummaryComment(element, utils.getFirstSentenceTrees(element), target);
     }
 
     /**
@@ -1331,10 +1331,10 @@ public class HtmlDocletWriter {
      *
      * @param element the Element for which the summary will be generated
      * @param firstSentenceTags the first sentence tags for the doc
-     * @param htmltree the documentation tree to which the summary will be added
+     * @param target the documentation to which the summary will be added
      */
-    public void addPreviewComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
+    public void addPreviewComment(Element element, List<? extends DocTree> firstSentenceTags, Content target) {
+        addCommentTags(element, firstSentenceTags, false, true, true, target);
     }
 
     /**
@@ -1342,26 +1342,26 @@ public class HtmlDocletWriter {
      *
      * @param element the Element for which the summary will be generated
      * @param firstSentenceTags the first sentence tags for the doc
-     * @param htmltree the documentation tree to which the summary will be added
+     * @param target the documentation to which the summary will be added
      */
-    public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
+    public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content target) {
+        addCommentTags(element, firstSentenceTags, false, true, true, target);
     }
 
-    public void addSummaryDeprecatedComment(Element element, DeprecatedTree tag, Content htmltree) {
+    public void addSummaryDeprecatedComment(Element element, DeprecatedTree tag, Content target) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(tag);
-        addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, htmltree);
+        addCommentTags(element, ch.getFirstSentenceTrees(body), true, true, true, target);
     }
 
     /**
      * Adds the full-body content of the given element.
      *
      * @param element the element for which the content will be added
-     * @param htmltree the documentation tree to which the content will be added
+     * @param target the documentation to which the content will be added
      */
-    public void addInlineComment(Element element, Content htmltree) {
-        addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);
+    public void addInlineComment(Element element, Content target) {
+        addCommentTags(element, utils.getFullBody(element), false, false, false, target);
     }
 
     /**
@@ -1372,10 +1372,10 @@ public class HtmlDocletWriter {
      * @param depr true if it is deprecated
      * @param first true if the first sentence tags should be added
      * @param inSummary true if the comment tags are added into the summary section
-     * @param htmltree the documentation tree to which the comment tags will be added
+     * @param target the documentation to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean first, boolean inSummary, Content htmltree) {
+            boolean first, boolean inSummary, Content target) {
         if (options.noComment()) {
             return;
         }
@@ -1383,13 +1383,13 @@ public class HtmlDocletWriter {
         Content result = commentTagsToContent(null, element, tags, first, inSummary);
         if (depr) {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
-            htmltree.add(div);
+            target.add(div);
         } else {
             div = HtmlTree.DIV(HtmlStyle.block, result);
-            htmltree.add(div);
+            target.add(div);
         }
         if (tags.isEmpty()) {
-            htmltree.add(Entity.NO_BREAK_SPACE);
+            target.add(Entity.NO_BREAK_SPACE);
         }
     }
 
@@ -1907,22 +1907,22 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Return a content tree containing the  annotation types for the given element.
+     * Return a content containing the annotation types for the given element.
      *
      * @param element an Element
      * @param lineBreak if true add new line between each member value
-     * @return the documentation tree containing the annotation info
+     * @return the documentation containing the annotation info
      */
     Content getAnnotationInfo(Element element, boolean lineBreak) {
         return getAnnotationInfo(element.getAnnotationMirrors(), lineBreak);
     }
 
     /**
-     * Return a content tree containing the annotation types for the given element.
+     * Return a content containing the annotation types for the given element.
      *
      * @param descList a list of annotation mirrors
      * @param lineBreak if true add new line between each member value
-     * @return the documentation tree containing the annotation info
+     * @return the documentation containing the annotation info
      */
     Content getAnnotationInfo(List<? extends AnnotationMirror> descList, boolean lineBreak) {
         List<Content> annotations = getAnnotations(descList, lineBreak);

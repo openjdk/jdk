@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,11 +106,11 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Add all types to the content tree.
+     * Add all types to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addContents(Content content) {
+    protected void addContents(Content target) {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
@@ -134,9 +134,9 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
         Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        content.add(headerDiv);
+        target.add(headerDiv);
         if (!table.isEmpty()) {
-            content.add(table);
+            target.add(table);
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
             }

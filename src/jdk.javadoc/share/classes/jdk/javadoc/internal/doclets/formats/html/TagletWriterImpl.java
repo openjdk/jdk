@@ -223,7 +223,7 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     // ugly but simple;
-    // alternatives would be to walk the Content tree, or to add new functionality to Content
+    // alternatives would be to walk the Content's tree structure, or to add new functionality to Content
     private String extractText(Content c) {
         return c.toString().replaceAll("<[^>]+>", "");
     }
@@ -301,8 +301,8 @@ public class TagletWriterImpl extends TagletWriter {
         // define id attributes for state components so that generated descriptions may refer to them
         boolean defineID = (element.getKind() == ElementKind.RECORD)
                 && !paramTag.isTypeParameter();
-        Content nameTree = Text.of(paramName);
-        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameTree) : nameTree));
+        Content nameContent = Text.of(paramName);
+        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameContent) : nameContent));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
         body.add(htmlWriter.commentTagsToContent(paramTag, element, description, context.within(paramTag)));

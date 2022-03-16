@@ -162,154 +162,154 @@ public class Navigation {
     /**
      * Adds the links for the main navigation.
      *
-     * @param tree the content tree to which the main navigation will added
+     * @param target the content to which the main navigation will added
      */
-    private void addMainNavLinks(Content tree) {
+    private void addMainNavLinks(Content target) {
         switch (documentedPage) {
             case OVERVIEW:
-                addActivePageLink(tree, contents.overviewLabel, options.createOverview());
-                addModuleLink(tree);
-                addPackageLink(tree);
-                addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse());
-                addTreeLink(tree);
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addActivePageLink(target, contents.overviewLabel, options.createOverview());
+                addModuleLink(target);
+                addPackageLink(target);
+                addPageLabel(target, contents.classLabel, true);
+                addPageLabel(target, contents.useLabel, options.classUse());
+                addTreeLink(target);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case MODULE:
-                addOverviewLink(tree);
-                addActivePageLink(tree, contents.moduleLabel, configuration.showModules);
-                addPackageLink(tree);
-                addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse());
-                addTreeLink(tree);
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addOverviewLink(target);
+                addActivePageLink(target, contents.moduleLabel, configuration.showModules);
+                addPackageLink(target);
+                addPageLabel(target, contents.classLabel, true);
+                addPageLabel(target, contents.useLabel, options.classUse());
+                addTreeLink(target);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case PACKAGE:
-                addOverviewLink(tree);
-                addModuleOfElementLink(tree);
-                addActivePageLink(tree, contents.packageLabel, true);
-                addPageLabel(tree, contents.classLabel, true);
+                addOverviewLink(target);
+                addModuleOfElementLink(target);
+                addActivePageLink(target, contents.packageLabel, true);
+                addPageLabel(target, contents.classLabel, true);
                 if (options.classUse()) {
-                    addContentToTree(tree, links.createLink(DocPaths.PACKAGE_USE,
+                    addContentToTree(target, links.createLink(DocPaths.PACKAGE_USE,
                             contents.useLabel, ""));
                 }
                 if (options.createTree()) {
-                    addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE,
+                    addContentToTree(target, links.createLink(DocPaths.PACKAGE_TREE,
                             contents.treeLabel, ""));
                 }
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case CLASS:
-                addOverviewLink(tree);
-                addModuleOfElementLink(tree);
-                addPackageSummaryLink(tree);
-                addActivePageLink(tree, contents.classLabel, true);
+                addOverviewLink(target);
+                addModuleOfElementLink(target);
+                addPackageSummaryLink(target);
+                addActivePageLink(target, contents.classLabel, true);
                 if (options.classUse()) {
-                    addContentToTree(tree, links.createLink(DocPaths.CLASS_USE.resolve(path.basename()),
+                    addContentToTree(target, links.createLink(DocPaths.CLASS_USE.resolve(path.basename()),
                             contents.useLabel));
                 }
                 if (options.createTree()) {
-                    addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE,
+                    addContentToTree(target, links.createLink(DocPaths.PACKAGE_TREE,
                             contents.treeLabel, ""));
                 }
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case USE:
-                addOverviewLink(tree);
-                addModuleOfElementLink(tree);
+                addOverviewLink(target);
+                addModuleOfElementLink(target);
                 if (element instanceof PackageElement) {
-                    addPackageSummaryLink(tree);
-                    addPageLabel(tree, contents.classLabel, true);
+                    addPackageSummaryLink(target);
+                    addPageLabel(target, contents.classLabel, true);
                 } else {
-                    addPackageOfElementLink(tree);
-                    addContentToTree(tree, navLinkClass);
+                    addPackageOfElementLink(target);
+                    addContentToTree(target, navLinkClass);
                 }
-                addActivePageLink(tree, contents.useLabel, options.classUse());
+                addActivePageLink(target, contents.useLabel, options.classUse());
                 if (element instanceof PackageElement) {
-                    addContentToTree(tree, links.createLink(DocPaths.PACKAGE_TREE, contents.treeLabel));
+                    addContentToTree(target, links.createLink(DocPaths.PACKAGE_TREE, contents.treeLabel));
                 } else {
-                    addContentToTree(tree, configuration.utils.isEnclosingPackageIncluded((TypeElement) element)
+                    addContentToTree(target, configuration.utils.isEnclosingPackageIncluded((TypeElement) element)
                             ? links.createLink(DocPath.parent.resolve(DocPaths.PACKAGE_TREE), contents.treeLabel)
                             : links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE), contents.treeLabel));
                 }
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case TREE:
-                addOverviewLink(tree);
+                addOverviewLink(target);
                 if (element == null) {
-                    addPageLabel(tree, contents.moduleLabel, configuration.showModules);
-                    addPageLabel(tree, contents.packageLabel, true);
+                    addPageLabel(target, contents.moduleLabel, configuration.showModules);
+                    addPageLabel(target, contents.packageLabel, true);
                 } else {
-                    addModuleOfElementLink(tree);
-                    addPackageSummaryLink(tree);
+                    addModuleOfElementLink(target);
+                    addPackageSummaryLink(target);
                 }
-                addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse());
-                addActivePageLink(tree, contents.treeLabel, options.createTree());
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addPageLabel(target, contents.classLabel, true);
+                addPageLabel(target, contents.useLabel, options.classUse());
+                addActivePageLink(target, contents.treeLabel, options.createTree());
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case DEPRECATED:
             case INDEX:
             case HELP:
             case PREVIEW:
             case NEW:
-                addOverviewLink(tree);
-                addModuleLink(tree);
-                addPackageLink(tree);
-                addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse());
-                addTreeLink(tree);
+                addOverviewLink(target);
+                addModuleLink(target);
+                addPackageLink(target);
+                addPageLabel(target, contents.classLabel, true);
+                addPageLabel(target, contents.useLabel, options.classUse());
+                addTreeLink(target);
                 if (documentedPage == PageMode.PREVIEW) {
-                    addActivePageLink(tree, contents.previewLabel,
+                    addActivePageLink(target, contents.previewLabel,
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW));
                 } else {
-                    addPreviewLink(tree);
+                    addPreviewLink(target);
                 }
                 if (documentedPage == PageMode.NEW) {
-                    addActivePageLink(tree, contents.newLabel,
+                    addActivePageLink(target, contents.newLabel,
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW));
                 } else {
-                    addNewLink(tree);
+                    addNewLink(target);
                 }
                 if (documentedPage == PageMode.DEPRECATED) {
-                    addActivePageLink(tree, contents.deprecatedLabel,
+                    addActivePageLink(target, contents.deprecatedLabel,
                             configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED));
                 } else {
-                    addDeprecatedLink(tree);
+                    addDeprecatedLink(target);
                 }
                 if (documentedPage == PageMode.INDEX) {
-                    addActivePageLink(tree, contents.indexLabel, options.createIndex());
+                    addActivePageLink(target, contents.indexLabel, options.createIndex());
                 } else {
-                    addIndexLink(tree);
+                    addIndexLink(target);
                 }
                 if (documentedPage == PageMode.HELP) {
-                    addActivePageLink(tree, contents.helpLabel, !options.noHelp());
+                    addActivePageLink(target, contents.helpLabel, !options.noHelp());
                 } else {
-                    addHelpLink(tree);
+                    addHelpLink(target);
                 }
                 break;
             case ALL_CLASSES:
@@ -317,30 +317,30 @@ public class Navigation {
             case CONSTANT_VALUES:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
-                addOverviewLink(tree);
-                addModuleLink(tree);
-                addPackageLink(tree);
-                addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse());
-                addTreeLink(tree);
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addOverviewLink(target);
+                addModuleLink(target);
+                addPackageLink(target);
+                addPageLabel(target, contents.classLabel, true);
+                addPageLabel(target, contents.useLabel, options.classUse());
+                addTreeLink(target);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             case DOC_FILE:
-                addOverviewLink(tree);
-                addModuleOfElementLink(tree);
-                addContentToTree(tree, navLinkPackage);
-                addPageLabel(tree, contents.classLabel, true);
-                addPageLabel(tree, contents.useLabel, options.classUse());
-                addTreeLink(tree);
-                addPreviewLink(tree);
-                addNewLink(tree);
-                addDeprecatedLink(tree);
-                addIndexLink(tree);
-                addHelpLink(tree);
+                addOverviewLink(target);
+                addModuleOfElementLink(target);
+                addContentToTree(target, navLinkPackage);
+                addPageLabel(target, contents.classLabel, true);
+                addPageLabel(target, contents.useLabel, options.classUse());
+                addTreeLink(target);
+                addPreviewLink(target);
+                addNewLink(target);
+                addDeprecatedLink(target);
+                addIndexLink(target);
+                addHelpLink(target);
                 break;
             default:
                 break;
@@ -350,10 +350,10 @@ public class Navigation {
     /**
      * Adds the summary links to the sub-navigation.
      *
-     * @param tree the content tree to which the sub-navigation will added
+     * @param target the content to which the sub-navigation will be added
      * @param nested whether to create a flat or nested list
      */
-    private void addSummaryLinks(Content tree, boolean nested) {
+    private void addSummaryLinks(Content target, boolean nested) {
         switch (documentedPage) {
             case MODULE, PACKAGE, CLASS, HELP -> {
                 List<? extends Content> listContents = subNavLinks.getSubNavLinks()
@@ -367,11 +367,11 @@ public class Navigation {
                         default -> Text.EMPTY;
                     };
                     if (nested) {
-                        tree.add(HtmlTree.LI(HtmlTree.P(label))
+                        target.add(HtmlTree.LI(HtmlTree.P(label))
                                 .add(new HtmlTree(TagName.UL).add(listContents)));
                     } else {
-                        tree.add(HtmlTree.LI(label).add(Entity.NO_BREAK_SPACE));
-                        addListToNav(listContents, tree);
+                        target.add(HtmlTree.LI(label).add(Entity.NO_BREAK_SPACE));
+                        addListToNav(listContents, target);
                     }
                 }
             }
@@ -381,10 +381,10 @@ public class Navigation {
     /**
      * Adds the detail links to sub-navigation.
      *
-     * @param tree the content tree to which the links will be added
+     * @param target the content to which the links will be added
      * @param nested whether to create a flat or nested list
      */
-    private void addDetailLinks(Content tree, boolean nested) {
+    private void addDetailLinks(Content target, boolean nested) {
         if (documentedPage == PageMode.CLASS) {
             List<Content> listContents = new ArrayList<>();
             VisibleMemberTable vmt = configuration.getVisibleMemberTable((TypeElement) element);
@@ -396,12 +396,12 @@ public class Navigation {
                 if (nested) {
                     Content li = HtmlTree.LI(HtmlTree.P(contents.detailLabel));
                     li.add(new HtmlTree(TagName.UL).add(listContents));
-                    tree.add(li);
+                    target.add(li);
                 } else {
                     Content li = HtmlTree.LI(contents.detailLabel);
                     li.add(Entity.NO_BREAK_SPACE);
-                    tree.add(li);
-                    addListToNav(listContents, tree);
+                    target.add(li);
+                    addListToNav(listContents, target);
                 }
             }
         }
@@ -427,12 +427,12 @@ public class Navigation {
         });
     }
 
-    private void addContentToList(List<Content> listContents, Content tree) {
-        listContents.add(HtmlTree.LI(tree));
+    private void addContentToList(List<Content> listContents, Content source) {
+        listContents.add(HtmlTree.LI(source));
     }
 
-    private void addContentToTree(Content tree, Content content) {
-        tree.add(HtmlTree.LI(content));
+    private void addContentToTree(Content target, Content source) { // rename add list item
+        target.add(HtmlTree.LI(source));
     }
 
     private void addListToNav(List<? extends Content> listContents, Content tree) {

@@ -225,13 +225,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     /**
-     * Get the summary tree.
+     * Get the summary.
      *
-     * @param summaryContentTree the content tree to be added to the summary tree.
+     * @param source the content to be added to the summary.
      */
     @Override
-    public Content getSummaryTree(Content summaryContentTree) {
-        return HtmlTree.SECTION(HtmlStyle.summary, summaryContentTree);
+    public Content getSummary(Content source) {
+        return HtmlTree.SECTION(HtmlStyle.summary, source);
     }
 
     /**
@@ -434,12 +434,12 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param startMarker the marker comment
      * @param heading the heading for the section
-     * @param htmltree the content tree to which the information is added
+     * @param target the content to which the information is added
      */
     public void addSummaryHeader(Content startMarker, Content heading,
-            Content htmltree) {
-        htmltree.add(startMarker);
-        htmltree.add(HtmlTree.HEADING(Headings.ModuleDeclaration.SUMMARY_HEADING, heading));
+            Content target) {
+        target.add(startMarker);
+        target.add(HtmlTree.HEADING(Headings.ModuleDeclaration.SUMMARY_HEADING, heading));
     }
 
     /**
@@ -792,7 +792,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     /**
      * Add the module deprecation information to the documentation tree.
      *
-     * @param div the content tree to which the deprecation information will be added
+     * @param div the content to which the deprecation information will be added
      */
     public void addDeprecationInfo(Content div) {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(mdle);
@@ -812,8 +812,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     @Override
-    public void addModuleDescription(Content moduleContentTree) {
-        addPreviewInfo(mdle, moduleContentTree);
+    public void addModuleDescription(Content moduleContent) {
+        addPreviewInfo(mdle, moduleContent);
         if (!utils.getFullBody(mdle).isEmpty()) {
             HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
                     .setId(HtmlIds.MODULE_DESCRIPTION);
@@ -821,19 +821,19 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
             addInlineComment(mdle, tree);
             addTagsInfo(mdle, tree);
-            moduleContentTree.add(tree);
+            moduleContent.add(tree);
         }
     }
 
     @Override
-    public void addModuleSignature(Content moduleContentTree) {
-        moduleContentTree.add(new HtmlTree(TagName.HR));
-        moduleContentTree.add(Signatures.getModuleSignature(mdle, this));
+    public void addModuleSignature(Content moduleContent) {
+        moduleContent.add(new HtmlTree(TagName.HR));
+        moduleContent.add(Signatures.getModuleSignature(mdle, this));
     }
 
     @Override
-    public void addModuleContent(Content moduleContentTree) {
-        bodyContents.addMainContent(moduleContentTree);
+    public void addModuleContent(Content source) {
+        bodyContents.addMainContent(source);
     }
 
     @Override
@@ -842,16 +842,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     }
 
     @Override
-    public void printDocument(Content contentTree) throws DocFileIOException {
-        contentTree.add(bodyContents);
+    public void printDocument(Content content) throws DocFileIOException {
+        content.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywordsForModule(mdle),
-                getDescription("declaration", mdle), getLocalStylesheets(mdle), contentTree);
+                getDescription("declaration", mdle), getLocalStylesheets(mdle), content);
     }
 
     /**
      * Add the module package deprecation information to the documentation tree.
      *
-     * @param li the content tree to which the deprecation information will be added
+     * @param li the content to which the deprecation information will be added
      * @param pkg the PackageDoc that is added
      */
     public void addPackageDeprecationInfo(Content li, PackageElement pkg) {

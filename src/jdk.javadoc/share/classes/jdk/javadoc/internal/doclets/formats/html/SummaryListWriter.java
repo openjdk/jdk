@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,19 +146,19 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      *
      * @param id the id for the link
      * @param headingKey
-     * @param contentTree the content tree to which the index link will be added
+     * @param content the content to which the index link will be added
      */
-    protected void addIndexLink(HtmlId id, String headingKey, Content contentTree) {
+    protected void addIndexLink(HtmlId id, String headingKey, Content content) {
         Content li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey)));
-        contentTree.add(li);
+        content.add(li);
     }
 
     /**
      * Get the contents list.
      *
      * @param apiSummary the summary list builder
-     * @return a content tree for the contents list
+     * @return a content for the contents list
      */
     public Content getContentsList(L apiSummary) {
         Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -181,7 +181,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     /**
      * Get the header for the API Summary Listing.
      *
-     * @return a content tree for the header
+     * @return a content for the header
      */
     public HtmlTree getHeader() {
         String title = resources.getText(titleKey);
@@ -197,11 +197,11 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * @param id the id attribute of the table
      * @param headingKey the caption for the summary table
      * @param headerKey table header key for the summary table
-     * @param contentTree the content tree to which the summary table will be added
+     * @param content the content to which the summary table will be added
      */
     protected void addSummaryAPI(SortedSet<Element> apiList, HtmlId id,
                                  String headingKey, String headerKey,
-                                 Content contentTree) {
+                                 Content content) {
         if (apiList.size() > 0) {
             TableHeader tableHeader = new TableHeader(
                     contents.getContent(headerKey), contents.descriptionLabel);
@@ -231,7 +231,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
                 table.addRow(e, link, desc);
             }
             // note: singleton list
-            contentTree.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
+            content.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
         }
     }
 

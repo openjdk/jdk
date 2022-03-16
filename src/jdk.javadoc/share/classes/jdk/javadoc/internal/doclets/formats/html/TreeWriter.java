@@ -122,9 +122,9 @@ public class TreeWriter extends AbstractTreeWriter {
     /**
      * Add the links to all the package tree files.
      *
-     * @param contentTree the content tree to which the links will be added
+     * @param content the content to which the links will be added
      */
-    protected void addPackageTreeLinks(Content contentTree) {
+    protected void addPackageTreeLinks(Content content) {
         //Do nothing if only unnamed package is used
         if (isUnnamedPackage()) {
             return;
@@ -132,7 +132,7 @@ public class TreeWriter extends AbstractTreeWriter {
         if (!classesOnly) {
             Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
-            contentTree.add(span);
+            content.add(span);
             HtmlTree ul = HtmlTree.UL(HtmlStyle.horizontal);
             int i = 0;
             for (PackageElement pkg : packages) {
@@ -153,14 +153,14 @@ public class TreeWriter extends AbstractTreeWriter {
                 ul.add(li);
                 i++;
             }
-            contentTree.add(ul);
+            content.add(ul);
         }
     }
 
     /**
      * Get the tree header.
      *
-     * @return a content tree for the tree header
+     * @return a content for the tree header
      */
     protected HtmlTree getTreeHeader() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");

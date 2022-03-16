@@ -68,7 +68,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * Get the given header.
      *
      * @param header the header to write
-     * @return the body content tree
+     * @return the body content
      */
     @Override
     public Content getHeader(String header) {
@@ -106,7 +106,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * Get the given package header.
      *
      * @param packageElement the package element to write
-     * @return a content tree for the package header
+     * @return a content for the package header
      */
     @Override
     public Content getPackageHeader(PackageElement packageElement) {
@@ -120,7 +120,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     /**
      * Get the serialized class header.
      *
-     * @return a content tree for the serialized class header
+     * @return a content for the serialized class header
      */
     @Override
     public Content getClassSerializedHeader() {
@@ -143,7 +143,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * Get the serializable class heading.
      *
      * @param typeElement the class being processed
-     * @return a content tree for the class header
+     * @return a content for the class header
      */
     @Override
     public Content getClassHeader(TypeElement typeElement) {
@@ -183,7 +183,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     /**
      * Get the serial UID info header.
      *
-     * @return a content tree for the serial uid info header
+     * @return a content for the serial uid info header
      */
     @Override
     public Content getSerialUIDInfoHeader() {
@@ -195,24 +195,24 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      *
      * @param header the header that will show up before the UID.
      * @param serialUID the serial UID to print.
-     * @param serialUidTree the serial UID content tree to which the serial UID
-     *                      content will be added
+     * @param target the serial UID content to which the serial UID
+     *                content will be added
      */
     @Override
     public void addSerialUIDInfo(String header,
                                  String serialUID,
-                                 Content serialUidTree)
+                                 Content target)
     {
         Content headerContent = Text.of(header);
-        serialUidTree.add(HtmlTree.DT(headerContent));
+        target.add(HtmlTree.DT(headerContent));
         Content serialContent = Text.of(serialUID);
-        serialUidTree.add(HtmlTree.DD(serialContent));
+        target.add(HtmlTree.DD(serialContent));
     }
 
     /**
      * Get the class serialize content header.
      *
-     * @return a content tree for the class serialize content header
+     * @return a content for the class serialize content header
      */
     @Override
     public Content getClassContentHeader() {
@@ -221,20 +221,20 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     /**
-     * Add the serialized content tree section.
+     * Add the serialized content section.
      *
-     * @param serializedTreeContent the serialized content tree to be added
+     * @param source the serialized content to be added
      */
     @Override
-    public void addSerializedContent(Content serializedTreeContent) {
-        bodyContents.addMainContent(serializedTreeContent);
+    public void addSerializedContent(Content source) {
+        bodyContents.addMainContent(source);
     }
 
     @Override
-    public void addPackageSerializedTree(Content serializedSummariesTree,
-                                         Content packageSerializedTree)
+    public void addPackageSerializedTree(Content serializedSummaries,
+                                         Content packageSerialized)
     {
-        serializedSummariesTree.add(HtmlTree.LI(packageSerializedTree));
+        serializedSummaries.add(HtmlTree.LI(packageSerialized));
     }
 
     /**
@@ -246,9 +246,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     @Override
-    public void printDocument(Content serializedTree) throws DocFileIOException {
-        serializedTree.add(bodyContents);
-        printHtmlDocument(null, "serialized forms", serializedTree);
+    public void printDocument(Content source) throws DocFileIOException {
+        source.add(bodyContents);
+        printHtmlDocument(null, "serialized forms", source);
 
         if (configuration.mainIndex != null) {
             configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,

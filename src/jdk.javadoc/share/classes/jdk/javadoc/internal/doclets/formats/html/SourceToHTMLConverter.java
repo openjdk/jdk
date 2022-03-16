@@ -288,7 +288,7 @@ public class SourceToHTMLConverter {
     /**
      * Add the line numbers for the source code.
      *
-     * @param pre the content tree to which the line number will be added
+     * @param pre the content to which the line number will be added
      * @param lineno The line number
      */
     private static void addLineNo(Content pre, int lineno) {
@@ -307,7 +307,7 @@ public class SourceToHTMLConverter {
     /**
      * Add a line from source to the HTML file that is generated.
      *
-     * @param pre the content tree to which the line will be added.
+     * @param pre the content to which the line will be added.
      * @param line the string to format.
      * @param currentLineNo the current number.
      */
@@ -324,7 +324,7 @@ public class SourceToHTMLConverter {
     /**
      * Add trailing blank lines at the end of the page.
      *
-     * @param pre the content tree to which the blank lines will be added.
+     * @param pre the content to which the blank lines will be added.
      */
     private static void addBlankLines(Content pre) {
         for (int i = 0; i < NUM_BLANK_LINES; i++) {

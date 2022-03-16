@@ -134,23 +134,23 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     /**
      * Add the package use information.
      *
-     * @param contentTree the content tree to which the package use information will be added
+     * @param content the content to which the package use information will be added
      */
-    protected void addPackageUse(Content contentTree) {
-        Content content = new ContentBuilder();
+    protected void addPackageUse(Content content) {
+        Content c = new ContentBuilder();
         if (configuration.packages.size() > 1) {
-            addPackageList(content);
+            addPackageList(c);
         }
-        addClassList(content);
-        contentTree.add(content);
+        addClassList(c);
+        content.add(c);
     }
 
     /**
      * Add the list of packages that use the given package.
      *
-     * @param contentTree the content tree to which the package list will be added
+     * @param content the content to which the package list will be added
      */
-    protected void addPackageList(Content contentTree) {
+    protected void addPackageList(Content content) {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, getLocalizedPackageName(packageElement)));
@@ -170,15 +170,15 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             }
             table.addRow(packageLink, summary);
         }
-        contentTree.add(table);
+        content.add(table);
     }
 
     /**
      * Add the list of classes that use the given package.
      *
-     * @param contentTree the content tree to which the class list will be added
+     * @param content the content to which the class list will be added
      */
-    protected void addClassList(Content contentTree) {
+    protected void addClassList(Content content) {
         TableHeader classTableHeader = new TableHeader(
                 contents.classLabel, contents.descriptionLabel);
         HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList);
@@ -209,13 +209,13 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             ul.add(HtmlTree.LI(section));
         }
         Content li = HtmlTree.SECTION(HtmlStyle.packageUses, ul);
-        contentTree.add(li);
+        content.add(li);
     }
 
     /**
      * Get the header for the package use listing.
      *
-     * @return a content tree representing the package use header
+     * @return a content representing the package use header
      */
     private HtmlTree getPackageUseHeader() {
         String packageText = resources.getText("doclet.Package");

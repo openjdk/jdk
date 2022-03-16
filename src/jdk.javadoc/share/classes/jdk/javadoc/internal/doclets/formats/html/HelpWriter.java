@@ -117,8 +117,8 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds the help file contents from the resource file to the content tree. While adding the
-     * help file contents it also keeps track of user options.
+     * Adds the help file contents from the resource file to the content.
+     * While adding the help file contents it also keeps track of user options.
      *
      * The general organization is:
      * <ul>
@@ -127,10 +127,10 @@ public class HelpWriter extends HtmlDocletWriter {
      * <li>Page-specific help
      * </ul>
      */
-    protected void addHelpFileContents(Content contentTree) {
+    protected void addHelpFileContents(Content content) {
         HtmlTree mainTOC = HtmlTree.UL(HtmlStyle.helpTOC);
 
-        contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
+        content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                                         getContent("doclet.help.main_heading")))
                 .add(mainTOC)
                 .add(new HtmlTree(TagName.HR))
