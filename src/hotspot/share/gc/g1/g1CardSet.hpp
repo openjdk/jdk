@@ -300,7 +300,7 @@ public:
   virtual ~G1CardSet();
 
   // Adds the given card to this set, returning an appropriate result.
-  // If added, updates the total count.
+  // If incremental_count is true and the card has been added, updates the total count.
   G1AddCardResult add_card(uint card_region, uint card_in_region, bool increment_total = true);
 
   bool contains_card(uint card_region, uint card_in_region);
