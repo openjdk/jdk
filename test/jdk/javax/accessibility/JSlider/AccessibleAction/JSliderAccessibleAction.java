@@ -65,17 +65,17 @@ public class JSliderAccessibleAction {
     private static JButton incrementBtn;
     private static JButton invalidDecrementBtn;
     private static JButton invalidIncrementBtn;
-    private static AtomicInteger currentJSliderValue;
-    private static AtomicInteger jSliderInitialValue;
-    private static AtomicBoolean actionDescriptionValue;
-    private static CountDownLatch invalidDecrementCountDownLatch;
-    private static CountDownLatch invalidIncrementCountDownLatch;
-    private static CountDownLatch validDecrementCountDownLatch;
-    private static CountDownLatch validIncrementCountDownLatch;
     private static final int INVALID_DECREMENT = 2;
     private static final int INVALID_INCREMENT = -1;
     private static final int VALID_DECREMENT = 1;
     private static final int VALID_INCREMENT = 0;
+    private static volatile AtomicInteger currentJSliderValue;
+    private static volatile AtomicInteger jSliderInitialValue;
+    private static volatile AccessibleAction accessibleAction;
+    private static volatile CountDownLatch invalidDecrementCountDownLatch;
+    private static volatile CountDownLatch invalidIncrementCountDownLatch;
+    private static volatile CountDownLatch validDecrementCountDownLatch;
+    private static volatile CountDownLatch validIncrementCountDownLatch;
 
     private void createTestUI() {
         jFrame = new JFrame("Test JSlider Accessible Action");
@@ -84,7 +84,7 @@ public class JSliderAccessibleAction {
         ac.setAccessibleName("JSlider Accessible Test");
 
         AccessibleContext accessibleContext = jSlider.getAccessibleContext();
-        AccessibleAction accessibleAction = accessibleContext.getAccessibleAction();
+        accessibleAction = accessibleContext.getAccessibleAction();
 
         if (accessibleAction == null) {
             throw new RuntimeException("JSlider getAccessibleAction() should " +
@@ -100,35 +100,38 @@ public class JSliderAccessibleAction {
         JLabel jSliderValueLbl = new JLabel("JSlider value : " + jSlider.getValue() + "%",
                 JLabel.CENTER);
         Container container = jFrame.getContentPane();
+
         container.add(jSliderValueLbl, BorderLayout.NORTH);
         container.add(jSlider, BorderLayout.CENTER);
+
+        jSlider.addChangeListener((changeEvent) -> {
+            currentJSliderValue.getAndSet(jSlider.getValue());
+            jSliderValueLbl.setText("JSlider value : " + currentJSliderValue.get() + "%");
+            System.out.println("changed : " + changeEvent);
+        });
 
         invalidDecrementBtn = new JButton("Invalid Decrement");
         invalidDecrementBtn.addActionListener((actionEvent) -> {
             invalidDecrementCountDownLatch.countDown();
-            updateJSliderValue(accessibleAction, jSliderValueLbl, INVALID_DECREMENT);
-            actionDescriptionValue.getAndSet(accessibleAction.getAccessibleActionDescription(INVALID_DECREMENT) == null);
+            accessibleAction.doAccessibleAction(INVALID_DECREMENT);
         });
 
         invalidIncrementBtn = new JButton("Invalid Increment");
         invalidIncrementBtn.addActionListener((actionEvent) -> {
             invalidIncrementCountDownLatch.countDown();
-            updateJSliderValue(accessibleAction, jSliderValueLbl, INVALID_INCREMENT);
-            actionDescriptionValue.getAndSet(accessibleAction.getAccessibleActionDescription(INVALID_INCREMENT) == null);
+            accessibleAction.doAccessibleAction(INVALID_INCREMENT);
         });
 
         decrementBtn = new JButton("Decrement");
         decrementBtn.addActionListener((actionEvent) -> {
             validDecrementCountDownLatch.countDown();
-            updateJSliderValue(accessibleAction, jSliderValueLbl, VALID_DECREMENT);
-            actionDescriptionValue.getAndSet(accessibleAction.getAccessibleActionDescription(VALID_DECREMENT).equals(AccessibleAction.DECREMENT));
+            accessibleAction.doAccessibleAction(VALID_DECREMENT);
         });
 
         incrementBtn = new JButton("Increment");
         incrementBtn.addActionListener((actionEvent) -> {
+            accessibleAction.doAccessibleAction(VALID_INCREMENT);
             validIncrementCountDownLatch.countDown();
-            updateJSliderValue(accessibleAction, jSliderValueLbl, VALID_INCREMENT);
-            actionDescriptionValue.getAndSet(accessibleAction.getAccessibleActionDescription(VALID_INCREMENT).equals(AccessibleAction.INCREMENT));
         });
 
         JPanel buttonPanel = new JPanel(new GridLayout(4, 1));
@@ -142,13 +145,6 @@ public class JSliderAccessibleAction {
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);
-    }
-
-    private void updateJSliderValue(AccessibleAction accessibleAction,
-                                    JLabel lbl, int value) {
-        accessibleAction.doAccessibleAction(value);
-        currentJSliderValue.getAndSet(jSlider.getValue());
-        lbl.setText("JSlider value : " + currentJSliderValue.get() + "%");
     }
 
     private static boolean setLookAndFeel(String lafName) {
@@ -170,11 +166,11 @@ public class JSliderAccessibleAction {
         robot.setAutoDelay(300);
         robot.waitForIdle();
 
-        List<String> instLookAndFeels =
+        List<String> installedLookAndFeels =
                 Arrays.stream(UIManager.getInstalledLookAndFeels())
                         .map(UIManager.LookAndFeelInfo::getClassName).collect(toList());
 
-        for (String laf : instLookAndFeels) {
+        for (String lookAndFeel : installedLookAndFeels) {
             try {
                 invalidDecrementCountDownLatch = new CountDownLatch(1);
                 invalidIncrementCountDownLatch = new CountDownLatch(1);
@@ -182,13 +178,12 @@ public class JSliderAccessibleAction {
                 validIncrementCountDownLatch = new CountDownLatch(1);
                 currentJSliderValue = new AtomicInteger();
                 jSliderInitialValue = new AtomicInteger();
-                actionDescriptionValue = new AtomicBoolean(false);
-                System.out.println("Testing JSliderAccessibleAction in " + laf +
+                System.out.println("Testing JSliderAccessibleAction in " + lookAndFeel +
                         " look and feel");
 
                 AtomicBoolean lafSetSuccess = new AtomicBoolean(false);
                 SwingUtilities.invokeAndWait(() -> {
-                    lafSetSuccess.set(setLookAndFeel(laf));
+                    lafSetSuccess.set(setLookAndFeel(lookAndFeel));
                     if (lafSetSuccess.get()) {
                         createTestUI();
                     }
@@ -196,25 +191,23 @@ public class JSliderAccessibleAction {
                 if (!lafSetSuccess.get()) continue;
                 robot.waitForIdle();
 
-                SwingUtilities.invokeAndWait(() -> jSliderInitialValue.getAndSet(jSlider.getValue()));
-
+                SwingUtilities.invokeAndWait(() -> {
+                    jSliderInitialValue.getAndSet(jSlider.getValue());
+                    currentJSliderValue.getAndSet(jSlider.getValue());
+                });
+                robot.waitForIdle();
                 mouseAction(robot, invalidDecrementBtn);
                 if (!invalidDecrementCountDownLatch.await(30,
                         TimeUnit.SECONDS)) {
                     throw new RuntimeException("Failed to perform action on Invalid " +
                             "Decrement button");
                 }
+
                 if (jSliderInitialValue.get() != currentJSliderValue.get()) {
                     throw new RuntimeException("Expected that JSlider value is not " +
                             "changed when invalid decrement value 2 is passed to " +
                             "doAccessibleAction(2)  jSliderInitialValue = "
                             + jSliderInitialValue + "  currentJSliderValue = " + currentJSliderValue);
-                }
-
-                if (!actionDescriptionValue.get()) {
-                    throw new RuntimeException("Expected that JSlider's " +
-                            "AccessibleAction getAccessibleActionDescription(2) " +
-                            "return null");
                 }
 
                 mouseAction(robot, invalidIncrementBtn);
@@ -230,12 +223,6 @@ public class JSliderAccessibleAction {
                             + jSliderInitialValue + "  currentJSliderValue = " + currentJSliderValue);
                 }
 
-                if (!actionDescriptionValue.get()) {
-                    throw new RuntimeException("Expected that JSlider's " +
-                            "AccessibleAction getAccessibleActionDescription(-1) " +
-                            "return null");
-                }
-
                 // JSlider value is decremented
                 mouseAction(robot, decrementBtn);
                 if (!validDecrementCountDownLatch.await(30, TimeUnit.SECONDS)) {
@@ -247,12 +234,6 @@ public class JSliderAccessibleAction {
                             "decremented when value 1 is passed to " +
                             "doAccessibleAction(1)  jSliderInitialValue = "
                             + jSliderInitialValue + "  currentJSliderValue = " + currentJSliderValue);
-                }
-
-                if (!actionDescriptionValue.get()) {
-                    throw new RuntimeException("Expected that JSlider's " +
-                            "AccessibleAction getAccessibleActionDescription(1) " +
-                            "return AccessibleAction.DECREMENT");
                 }
 
                 // JSlider value is incremented
@@ -267,12 +248,6 @@ public class JSliderAccessibleAction {
                             "doAccessibleAction(0)  jSliderInitialValue = "
                             + jSliderInitialValue + "  currentJSliderValue = " + currentJSliderValue);
                 }
-
-                if (!actionDescriptionValue.get()) {
-                    throw new RuntimeException("Expected that JSlider's " +
-                            "AccessibleAction getAccessibleActionDescription(0) " +
-                            "return AccessibleAction.INCREMENT");
-                }
             } finally {
                 SwingUtilities.invokeAndWait(() -> {
                     if (jFrame != null) {
@@ -281,7 +256,6 @@ public class JSliderAccessibleAction {
                 });
             }
         }
-
     }
 
     public static void mouseAction(Robot robot, JButton button) throws InterruptedException,
