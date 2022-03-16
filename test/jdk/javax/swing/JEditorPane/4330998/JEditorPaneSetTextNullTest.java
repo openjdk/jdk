@@ -22,7 +22,6 @@
   */
 
  import javax.swing.JEditorPane;
- import javax.swing.JPanel;
  import javax.swing.SwingUtilities;
 
  /*
@@ -32,24 +31,15 @@
   * @run main JEditorPaneSetTextNullTest
   */
  public class JEditorPaneSetTextNullTest {
-     private static JEditorPane editorPane;
-
+     
      public static void main(String[] s) throws Exception {
-         SwingUtilities.invokeAndWait(() -> createUI());
-
          try {
-             SwingUtilities.invokeAndWait(() -> editorPane.setText(null));
+             SwingUtilities.invokeAndWait(() -> new JEditorPane().setText(null));
              System.out.println("Test passed");
          } catch (Exception e) {
              throw new RuntimeException("Test failed, caught Exception " + e
                      + " when calling JEditorPane.setText(null)");
          }
-     }
-
-     private static void createUI() {
-         JPanel panel = new JPanel();
-         editorPane = new JEditorPane();
-         panel.add(editorPane);
      }
 
  }
