@@ -29,6 +29,7 @@
  * @run main AccessibleJTableCellBoundingRectangleTest
  */
 
+import java.awt.Rectangle;
 import java.awt.Robot;
 
 import javax.swing.JFrame;
@@ -54,9 +55,16 @@ public class AccessibleJTableCellBoundingRectangleTest {
 
             for (int i = 0; i <= colNames.length - 1; i++) {
                 try {
-                    System.out.println("Column " + i + " Bounds: "
-                        + jTable.getTableHeader().getAccessibleContext().getAccessibleChild(i)
-                        .getAccessibleContext().getAccessibleComponent().getBounds());
+                    Rectangle bounds =
+                        jTable.getTableHeader().getAccessibleContext().getAccessibleChild(i)
+                        .getAccessibleContext().getAccessibleComponent().getBounds();
+
+                    if (bounds != null) {
+                        System.out.println("Column " + i + " Bounds: " + bounds);
+                    } else {
+                        throw new RuntimeException(
+                            "Bounding Rectangles getting bounding rectangle for table header cells is null");
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException("Bounding Rectangles getting bounding rectangle for "
                         + "table header cells threw an exception:\n" + e);
