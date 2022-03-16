@@ -263,8 +263,7 @@ class DefaultSSLSocketFactory extends SSLSocketFactory
     }
 
     private Socket throwException() throws SocketException {
-        throw (SocketException)
-            new SocketException(reason.toString()).initCause(reason);
+        throw new SocketException(reason.toString(), reason);
     }
 
     @Override

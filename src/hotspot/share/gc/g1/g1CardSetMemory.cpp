@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,9 @@
 #include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
 
-template <class Slot>
-G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
-                                             const G1CardSetAllocOptions* alloc_options,
-                                             G1CardSetFreeList* free_segment_list) :
+G1CardSetAllocator::G1CardSetAllocator(const char* name,
+                                       const G1CardSetAllocOptions* alloc_options,
+                                       G1CardSetFreeList* free_segment_list) :
   _segmented_array(alloc_options, free_segment_list),
   _free_slots_list(name, &_segmented_array)
 {
@@ -41,26 +40,38 @@ G1CardSetAllocator<Slot>::G1CardSetAllocator(const char* name,
   assert(slot_size >= sizeof(G1CardSetContainer), "Slot instance size %u for allocator %s too small", slot_size, name);
 }
 
-template <class Slot>
-G1CardSetAllocator<Slot>::~G1CardSetAllocator() {
+G1CardSetAllocator::~G1CardSetAllocator() {
   drop_all();
 }
 
-template <class Slot>
-void G1CardSetAllocator<Slot>::free(Slot* slot) {
+void G1CardSetAllocator::free(void* slot) {
   assert(slot != nullptr, "precondition");
-  slot->~Slot();
   _free_slots_list.release(slot);
 }
 
-template <class Slot>
-void G1CardSetAllocator<Slot>::drop_all() {
+void G1CardSetAllocator::drop_all() {
   _free_slots_list.reset();
   _segmented_array.drop_all();
 }
 
-template <class Slot>
-void G1CardSetAllocator<Slot>::print(outputStream* os) {
+size_t G1CardSetAllocator::mem_size() const {
+  return sizeof(*this) +
+         _segmented_array.num_segments() * sizeof(G1CardSetSegment) +
+         _segmented_array.num_available_slots() * _segmented_array.slot_size();
+}
+
+size_t G1CardSetAllocator::wasted_mem_size() const {
+  uint num_wasted_slots = _segmented_array.num_available_slots() -
+                          _segmented_array.num_allocated_slots() -
+                          (uint)_free_slots_list.pending_count();
+  return num_wasted_slots * _segmented_array.slot_size();
+}
+
+uint G1CardSetAllocator::num_segments() const {
+  return _segmented_array.num_segments();
+}
+
+void G1CardSetAllocator::print(outputStream* os) {
   uint num_allocated_slots = _segmented_array.num_allocated_slots();
   uint num_available_slots = _segmented_array.num_available_slots();
   uint highest = _segmented_array.first_array_segment() != nullptr
@@ -82,13 +93,13 @@ void G1CardSetAllocator<Slot>::print(outputStream* os) {
 G1CardSetMemoryManager::G1CardSetMemoryManager(G1CardSetConfiguration* config,
                                                G1CardSetFreePool* free_list_pool) : _config(config) {
 
-  _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator<G1CardSetContainer>,
+  _allocators = NEW_C_HEAP_ARRAY(G1CardSetAllocator,
                                  _config->num_mem_object_types(),
                                  mtGC);
   for (uint i = 0; i < num_mem_object_types(); i++) {
-    new (&_allocators[i]) G1CardSetAllocator<G1CardSetContainer>(_config->mem_object_type_name_str(i),
-                                                                 _config->mem_object_alloc_options(i),
-                                                                 free_list_pool->free_list(i));
+    new (&_allocators[i]) G1CardSetAllocator(_config->mem_object_type_name_str(i),
+                                             _config->mem_object_alloc_options(i),
+                                             free_list_pool->free_list(i));
   }
 }
 
@@ -106,7 +117,7 @@ G1CardSetMemoryManager::~G1CardSetMemoryManager() {
 
 void G1CardSetMemoryManager::free(uint type, void* value) {
   assert(type < num_mem_object_types(), "must be");
-  _allocators[type].free((G1CardSetContainer*)value);
+  _allocators[type].free(value);
 }
 
 void G1CardSetMemoryManager::flush() {
@@ -127,9 +138,8 @@ size_t G1CardSetMemoryManager::mem_size() const {
   for (uint i = 0; i < num_mem_object_types(); i++) {
     result += _allocators[i].mem_size();
   }
-  return sizeof(*this) -
-    (sizeof(G1CardSetAllocator<G1CardSetContainer>) * num_mem_object_types()) +
-    result;
+  return sizeof(*this) + result -
+    (sizeof(G1CardSetAllocator) * num_mem_object_types());
 }
 
 size_t G1CardSetMemoryManager::wasted_mem_size() const {
