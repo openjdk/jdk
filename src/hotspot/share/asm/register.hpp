@@ -148,7 +148,7 @@ public:
     return AbstractRegSet(bits);
   }
 
-  size_t size() const { return population_count(_bitset); }
+  uint size() const { return population_count(_bitset); }
 
   uint32_t bits() const { return _bitset; }
 
