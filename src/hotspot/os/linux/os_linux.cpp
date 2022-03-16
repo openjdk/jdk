@@ -3972,23 +3972,14 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   return addr;
 }
 
-static void warn_on_commit_special_failure(char* req_addr, size_t bytes,
+static void log_on_commit_special_failure(char* req_addr, size_t bytes,
                                            size_t page_size, int error) {
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
-  bool warn_on_failure = UseLargePages &&
-      (!FLAG_IS_DEFAULT(UseLargePages) ||
-       !FLAG_IS_DEFAULT(UseHugeTLBFS) ||
-       !FLAG_IS_DEFAULT(LargePageSizeInBytes));
-
-  if (warn_on_failure) {
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory. req_addr: "
-                                   PTR_FORMAT " bytes: " SIZE_FORMAT " page size: "
-                                   SIZE_FORMAT " (errno = %d).",
-                                   req_addr, bytes, page_size, error);
-    warning("%s", msg);
-  }
+  log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
+                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
+                     p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
+                     byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
 
 bool os::Linux::commit_memory_special(size_t bytes,
@@ -4010,7 +4001,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
-    warn_on_commit_special_failure(req_addr, bytes, page_size, errno);
+    log_on_commit_special_failure(req_addr, bytes, page_size, errno);
     return false;
   }
 
