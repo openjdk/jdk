@@ -1818,6 +1818,18 @@ encode %{
   // fields in an order, so that the adlc can build the emit functions
   // automagically
 
+  // Set instruction mark in MacroAssembler. This is used only in
+  // instructions that emit bytes directly to the CodeBuffer wraped
+  // in the MacroAssembler. Should go away once all "instruct" are
+  // patched to emit bytes only using methods in MacroAssembler.
+  enc_class SetInstMark %{
+    __ set_inst_mark();
+  %}
+
+  enc_class ClearInstMark %{
+    __ set_inst_mark();
+  %}
+
   // Emit primary opcode
   enc_class OpcP
   %{
@@ -2117,6 +2129,7 @@ encode %{
                    (int) ($meth$$method - ((intptr_t) masm.pc()) - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
+    masm.clear_inst_mark();
   %}
 
   enc_class Java_Static_Call(method meth)
@@ -2131,6 +2144,7 @@ encode %{
       emit_d32_reloc(masm, (int) ($meth$$method - ((intptr_t) masm.pc()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
+      masm.clear_inst_mark();
     } else {
       int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
@@ -2140,6 +2154,7 @@ encode %{
       // Emit stubs for static call.
       address mark = masm.inst_mark();
       address stub = CompiledStaticCall::emit_to_interp_stub(masm, mark);
+      masm.clear_inst_mark();
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2169,6 +2184,7 @@ encode %{
       emit_rm(masm, 0x02, $secondary, RAX_enc); // R/M byte
       emit_d32(masm, disp); // Displacement
     }
+    masm.set_inst_mark();
   %}
 
   enc_class reg_opc_imm(rRegI dst, immI8 shift)
@@ -2689,6 +2705,7 @@ encode %{
                    (int) (OptoRuntime::rethrow_stub() - masm.pc() - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
+    masm.clear_inst_mark();
   %}
 
 %}
@@ -5860,7 +5877,7 @@ instruct loadSSI(rRegI dst, stackSlotI src)
   ins_cost(125);
   format %{ "movl    $dst, $src\t# int stk" %}
   opcode(0x8B);
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode(SetInstMark, REX_reg_mem(dst, src), OpcP, reg_mem(dst, src), ClearInstMark);
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -5871,7 +5888,7 @@ instruct loadSSL(rRegL dst, stackSlotL src)
   ins_cost(125);
   format %{ "movq    $dst, $src\t# long stk" %}
   opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode(SetInstMark, REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src), ClearInstMark);
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -5882,7 +5899,7 @@ instruct loadSSP(rRegP dst, stackSlotP src)
   ins_cost(125);
   format %{ "movq    $dst, $src\t# ptr stk" %}
   opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode(SetInstMark, REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src), ClearInstMark);
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -6339,7 +6356,7 @@ instruct storeSSI(stackSlotI dst, rRegI src)
   ins_cost(100);
   format %{ "movl    $dst, $src\t# int stk" %}
   opcode(0x89);
-  ins_encode(REX_reg_mem(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode(SetInstMark, REX_reg_mem(src, dst), OpcP, reg_mem(src, dst), ClearInstMark);
   ins_pipe( ialu_mem_reg );
 %}
 
@@ -6350,7 +6367,7 @@ instruct storeSSL(stackSlotL dst, rRegL src)
   ins_cost(100);
   format %{ "movq    $dst, $src\t# long stk" %}
   opcode(0x89);
-  ins_encode(REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode(SetInstMark, REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst), ClearInstMark);
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -6361,7 +6378,7 @@ instruct storeSSP(stackSlotP dst, rRegP src)
   ins_cost(100);
   format %{ "movq    $dst, $src\t# ptr stk" %}
   opcode(0x89);
-  ins_encode(REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode(SetInstMark, REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst), ClearInstMark);
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -7692,10 +7709,12 @@ instruct storeIConditional(memory mem, rax_RegI oldval, rRegI newval, rFlagsReg 
 
   format %{ "cmpxchgl $mem, $newval\t# If rax == $mem then store $newval into $mem" %}
   opcode(0x0F, 0xB1);
-  ins_encode(lock_prefix,
+  ins_encode(SetInstMark,
+             lock_prefix,
              REX_reg_mem(newval, mem),
              OpcP, OpcS,
-             reg_mem(newval, mem));
+             reg_mem(newval, mem),
+             ClearInstMark);
   ins_pipe(pipe_cmpxchg);
 %}
 
@@ -8283,7 +8302,7 @@ instruct subP_rReg(rRegP dst, rRegI src, immI_0 zero, rFlagsReg cr)
 
   format %{ "subq    $dst, $src\t# ptr - int" %}
   opcode(0x2B);
-  ins_encode(REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src));
+  ins_encode(SetInstMark, REX_reg_reg_wide(dst, src), OpcP, reg_reg(dst, src), ClearInstMark);
   ins_pipe(ialu_reg_reg);
 %}
 
