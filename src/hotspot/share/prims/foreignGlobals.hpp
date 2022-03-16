@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,9 +123,13 @@ public:
     VMReg shuffle_temp);
 
   int out_arg_stack_slots() const { return _out_arg_stack_slots; }
-  void generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
-    pd_generate(masm, tmp, in_stk_bias, out_stk_bias);
-  }
+  void print_on(outputStream* os) const;
+
+  #ifdef _LP64
+    void generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+      pd_generate(masm, tmp, in_stk_bias, out_stk_bias);
+    }
+  #endif // _LP64
 
   void print_on(outputStream* os) const;
 private:
