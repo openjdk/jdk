@@ -163,7 +163,7 @@ public class JTreeSelectedElementTest {
         SwingUtilities.invokeAndWait(() -> {
             final Point locationOnScreen = tree.getLocationOnScreen();
             Rectangle rt = tree.getPathBounds(tree.getPathForRow(rowCount));
-            locationOnScreen.translate((int) (rt.getX() + rt.getWidth() / 2), (int) (rt.getY() + rt.getHeight() / 2));
+            locationOnScreen.translate(rt.x + rt.width / 2, rt.y + rt.height / 2);
             treeNodeLoc.set(locationOnScreen);
         });
         return treeNodeLoc.get();
