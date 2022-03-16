@@ -807,7 +807,7 @@ public class URLClassPath {
         static JarFile checkJar(JarFile jar) throws IOException {
             if (System.getSecurityManager() != null && !DISABLE_JAR_CHECKING
                 && !zipAccess.startsWithLocHeader(jar)) {
-                IOException x = new IOException("Invalid Jar file");
+                IOException x = new IOException("Invalid Jar file: " + jar.getName());
                 try {
                     jar.close();
                 } catch (IOException ex) {
