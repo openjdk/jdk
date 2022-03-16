@@ -635,7 +635,7 @@ void PhaseChaitin::Register_Allocate() {
         // Conservative (and pessimistic) copy coalescing
         PhaseConservativeCoalesce coalesce(*this);
         // Check for few live ranges determines how aggressive coalesce is.
-        coalesce.coalesce_driver(blocks, 0);
+        coalesce.coalesce_driver(blocks, region);
       }
       _lrg_map.compress_uf_map_for_nodes();
 #ifdef ASSERT
@@ -1605,6 +1605,11 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg, int chunk ) {
   assert(!lrg._is_vector, "should be not vector here" );
   assert( lrg.num_regs() >= 2, "dead live ranges do not color" );
 
+  if (!(lrg.compute_mask_size() == lrg.num_regs() || lrg.num_regs() == 2)) {
+    tty->print_cr("XXX %d %d", lrg.compute_mask_size(), lrg.num_regs());
+    lrg._def->dump(1);
+  }
+
   // Fat-proj case or misaligned double argument.
   assert(lrg.compute_mask_size() == lrg.num_regs() ||
          lrg.num_regs() == 2,"fat projs exactly color" );
@@ -1667,7 +1672,7 @@ uint PhaseChaitin::Select(uint region) {
         // its chunk, a new chunk of color may be tried, in which case
         // examination of neighbors is started again, at retry_next_chunk.)
         LRG &nlrg = lrgs(neighbor);
-        assert(nlrg._region == region, "");
+        assert(nlrg._region >= region, "");
         OptoReg::Name nreg = nlrg.reg();
         // Only subtract masks in the same chunk
         if (nreg >= chunk && nreg < chunk + RegMask::CHUNK_SIZE) {
