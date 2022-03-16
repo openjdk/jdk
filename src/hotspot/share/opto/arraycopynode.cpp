@@ -294,17 +294,18 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     uint header = arrayOopDesc::base_offset_in_bytes(dest_elem);
 
     src_offset = Compile::conv_I2X_index(phase, src_offset, ary_src->size());
-    dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
-    if (src_offset->is_top() || dest_offset->is_top()) {
+    if (src_offset->is_top()) {
       // Offset is out of bounds (the ArrayCopyNode will be removed)
-      // Below: make sure that we record the nodes, so that they can be deleted later (if they are dead)
+      return false;
+    }
+    dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
+    if (dest_offset->is_top()) {
+      // Offset is out of bounds (the ArrayCopyNode will be removed)
       PhaseIterGVN* igvn = phase->is_IterGVN();
       if (igvn != NULL) {
         if (!src_offset->is_top()) {
+          // record src_offset, so it can be deleted later (if it is dead)
           igvn->_worklist.push(src_offset);
-        }
-        if (!dest_offset->is_top()) {
-          igvn->_worklist.push(dest_offset);
         }
       }
       return false;
@@ -642,13 +643,8 @@ Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (!finish_transform(phase, can_reshape, ctl, mem)) {
     if (can_reshape) {
-      // make sure the just created clones are taken care of if they now are dead
-      if (!forward_mem->is_top() && forward_mem->outcnt() == 0) {
-        phase->is_IterGVN()->_worklist.push(forward_mem);
-      }
-      if (!backward_mem->is_top() && backward_mem->outcnt() == 0) {
-        phase->is_IterGVN()->_worklist.push(backward_mem);
-      }
+      // put in worklist, so that if it happens to be dead it is removed
+      phase->is_IterGVN()->_worklist.push(mem);
     }
     return NULL;
   }
