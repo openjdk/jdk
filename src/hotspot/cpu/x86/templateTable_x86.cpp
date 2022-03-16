@@ -2197,7 +2197,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ bind(has_counters);
 
     Label no_mdo;
-    int increment = InvocationCounter::count_increment;
     if (ProfileInterpreter) {
       // Are we profiling?
       __ movptr(rbx, Address(rcx, in_bytes(Method::method_data_offset())));
@@ -2207,7 +2206,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
           in_bytes(InvocationCounter::counter_offset()));
       const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
-      __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
+      __ increment_mask_and_jump(mdo_backedge_counter, mask, rax,
           UseOnStackReplacement ? &backedge_counter_overflow : NULL);
       __ jmp(dispatch);
     }
@@ -2215,8 +2214,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Increment backedge counter in MethodCounters*
     __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
     const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
-    __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
-        rax, false, Assembler::zero, UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+    __ increment_mask_and_jump(Address(rcx, be_offset), mask, rax,
+        UseOnStackReplacement ? &backedge_counter_overflow : NULL);
     __ bind(dispatch);
   }
 
