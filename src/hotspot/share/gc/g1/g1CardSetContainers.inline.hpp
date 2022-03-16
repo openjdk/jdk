@@ -272,7 +272,7 @@ inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* confi
   ContainerPtr container = Atomic::load_acquire(array_entry);
 
   switch (G1CardSet::container_type(container)) {
-    case G1CardSet::ContainerArrayOfCards : {
+    case G1CardSet::ContainerArrayOfCards: {
       return G1CardSet::container_ptr<G1CardSetArray>(container)->contains(card_idx);
     }
     case G1CardSet::ContainerBitMap: {
