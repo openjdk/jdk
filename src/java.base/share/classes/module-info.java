@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ module java.base {
     exports java.lang;
     exports java.lang.annotation;
     exports java.lang.constant;
+    exports java.lang.foreign;
     exports java.lang.invoke;
     exports java.lang.module;
     exports java.lang.ref;
@@ -137,8 +138,7 @@ module java.base {
     exports com.sun.crypto.provider to
         jdk.crypto.cryptoki;
     exports sun.invoke.util to
-        jdk.compiler,
-        jdk.incubator.foreign;
+        jdk.compiler;
     exports com.sun.security.ntlm to
         java.security.sasl;
     exports jdk.internal.javac to
@@ -154,10 +154,7 @@ module java.base {
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,
-        jdk.net,
-        jdk.incubator.foreign;
-    exports jdk.internal.access.foreign to
-        jdk.incubator.foreign;
+        jdk.net;
     exports jdk.internal.event to
         jdk.jfr;
     exports jdk.internal.jimage to
@@ -167,8 +164,7 @@ module java.base {
     exports jdk.internal.loader to
         java.instrument,
         java.logging,
-        java.naming,
-        jdk.incubator.foreign;
+        java.naming;
     exports jdk.internal.jmod to
         jdk.compiler,
         jdk.jlink;
@@ -206,16 +202,14 @@ module java.base {
         jdk.jshell,
         jdk.nio.mapmode,
         jdk.unsupported,
-        jdk.internal.vm.ci,
-        jdk.incubator.foreign;
+        jdk.internal.vm.ci;
     exports jdk.internal.module to
         java.instrument,
         java.management.rmi,
         jdk.jartool,
         jdk.jfr,
         jdk.jlink,
-        jdk.jpackage,
-        jdk.incubator.foreign;
+        jdk.jpackage;
     exports jdk.internal.perf to
         java.management,
         jdk.management.agent,
@@ -224,16 +218,14 @@ module java.base {
         jdk.management,
         jdk.jfr;
     exports jdk.internal.ref to
-        java.desktop,
-        jdk.incubator.foreign;
+        java.desktop;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
         java.sql.rowset,
         jdk.dynalink,
         jdk.internal.vm.ci,
-        jdk.unsupported,
-        jdk.incubator.foreign;
+        jdk.unsupported;
     exports jdk.internal.vm to
         jdk.internal.jvmstat,
         jdk.management.agent;
@@ -241,13 +233,10 @@ module java.base {
         java.instrument,
         jdk.internal.vm.ci,
         jdk.incubator.vector,
-        jdk.incubator.foreign,
         jdk.jfr,
         jdk.unsupported;
     exports jdk.internal.vm.vector to
         jdk.incubator.vector;
-    exports jdk.internal.util to
-            jdk.incubator.foreign;
     exports jdk.internal.util.jar to
         jdk.jartool;
     exports jdk.internal.util.xml to
@@ -278,8 +267,7 @@ module java.base {
         java.management,
         jdk.crypto.cryptoki,
         jdk.net,
-        jdk.sctp,
-        jdk.incubator.foreign;
+        jdk.sctp;
     exports sun.nio.cs to
         jdk.charsets;
     exports sun.nio.fs to
@@ -298,8 +286,7 @@ module java.base {
     exports sun.security.action to
         java.desktop,
         java.security.jgss,
-        jdk.crypto.ec,
-        jdk.incubator.foreign;
+        jdk.crypto.ec;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -362,8 +349,6 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
-    exports jdk.internal.invoke to
-        jdk.incubator.foreign;
 
     // the service types defined by the APIs in this module
 

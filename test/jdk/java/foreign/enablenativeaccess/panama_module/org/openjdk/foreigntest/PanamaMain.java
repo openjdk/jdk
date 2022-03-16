@@ -23,7 +23,7 @@
 
 package org.openjdk.foreigntest;
 
-import jdk.incubator.foreign.*;
+import java.lang.foreign.*;
 
 public class PanamaMain {
    public static void main(String[] args) {

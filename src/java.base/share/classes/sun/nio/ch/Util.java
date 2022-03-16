@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
@@ -37,7 +38,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-import jdk.internal.access.foreign.MemorySegmentProxy;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
@@ -418,7 +418,7 @@ public class Util {
                                              long.class,
                                              FileDescriptor.class,
                                              Runnable.class,
-                                             boolean.class, MemorySegmentProxy.class});
+                                             boolean.class, MemorySegment.class});
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
                     } catch (ClassNotFoundException   |
@@ -467,7 +467,7 @@ public class Util {
                                              long.class,
                                              FileDescriptor.class,
                                              Runnable.class,
-                                             boolean.class, MemorySegmentProxy.class });
+                                             boolean.class, MemorySegment.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
                     } catch (ClassNotFoundException |
