@@ -27,6 +27,7 @@ import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Panel;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
@@ -38,12 +39,14 @@ import java.io.IOException;
 /**
  * @test
  * @key headful
- * @bug 8073320
- * @summary  Windows HiDPI support
+ * @bug 8073320 8280861
+ * @summary  Linux and Windows HiDPI support
  * @author Alexander Scherbatiy
  * @requires (os.family == "linux" | os.family == "windows")
  * @run main/othervm -Dsun.java2d.win.uiScaleX=3 -Dsun.java2d.win.uiScaleY=2
  *                    HiDPIRobotScreenCaptureTest
+ * @run main/othervm -Dsun.java2d.uiScale=1 HiDPIRobotScreenCaptureTest
+ * @run main/othervm -Dsun.java2d.uiScale=2 HiDPIRobotScreenCaptureTest
  */
 
 public class HiDPIRobotScreenCaptureTest {
@@ -63,15 +66,14 @@ public class HiDPIRobotScreenCaptureTest {
         }
 
         Frame frame = new Frame();
-
-        // Position the frame such that color picker will work with
-        // prime number coordinates (mind the offset) to avoid them being
-        // multiple of the desktop scale; this tests Linux color picker better.
+        // Position the frame on prime number coordinates (mind OFFSET)
+        // to avoid them being multiple of the desktop scale; this tests Linux
+        // color picker better.
         // Also, the position should be far enough from the top left
         // corner of the screen to reduce the chance of being repositioned
         // by the system because that area's occupied by the global
         // menu bar and such.
-        frame.setBounds(83, 97, 100, 100);
+        frame.setBounds(78, 92, 100, 100);
         frame.setUndecorated(true);
 
         Panel panel = new Panel(new BorderLayout());
@@ -113,26 +115,38 @@ public class HiDPIRobotScreenCaptureTest {
             throw new RuntimeException("Wrong image size!");
         }
 
-        checkRectColor(image, w / 4, h / 4, COLORS[0]);
-        checkRectColor(image, 3 * w / 4, h / 4, COLORS[1]);
-        checkRectColor(image, w / 4, 3 * h / 4, COLORS[2]);
-        checkRectColor(image, 3 * w / 4, 3 * h / 4, COLORS[3]);
+        checkRectColor(image, new Rectangle(0, 0, w / 2, h / 2), COLORS[0]);
+        checkRectColor(image, new Rectangle(w / 2, 0, w / 2, h / 2), COLORS[1]);
+        checkRectColor(image, new Rectangle(0, h / 2, w / 2, h / 2), COLORS[2]);
+        checkRectColor(image, new Rectangle(w / 2, h / 2, w / 2, h / 2), COLORS[3]);
     }
 
-    static void checkRectColor(BufferedImage image, int x, int y, Color expectedColor) {
-        System.out.println("Checking (" + x + ", " + y + ") to have color " + expectedColor);
-        final int actualColor = image.getRGB(x, y);
-        if (actualColor != expectedColor.getRGB()) {
-            System.out.println("... Mismatch: found " + new Color(actualColor) + " instead. Check image.png.");
-            try {
-                ImageIO.write(image, "png", new File("image.png"));
-            } catch(IOException e) {
-                System.out.println("failed to save image.png.");
-                e.printStackTrace();
+    private static final int OFFSET = 5;
+    static void checkRectColor(BufferedImage image, Rectangle rect, Color expectedColor) {
+        System.out.println("Checking rectangle " + rect + " to have color " + expectedColor);
+        final Point[] pointsToCheck = new Point[] {
+                new Point(rect.x + OFFSET, rect.y + OFFSET),                           // top left corner
+                new Point(rect.x + rect.width - OFFSET, rect.y + OFFSET),              // top right corner
+                new Point(rect.x + rect.width / 2, rect.y + rect.height / 2),          // center
+                new Point(rect.x + OFFSET, rect.y + rect.height - OFFSET),             // bottom left corner
+                new Point(rect.x + rect.width - OFFSET, rect.y + rect.height - OFFSET) // bottom right corner
+        };
+
+        for (final var point : pointsToCheck) {
+            System.out.print("Checking color at " + point + " to be equal to " + expectedColor);
+            final int actualColor = image.getRGB(point.x, point.y);
+            if (actualColor != expectedColor.getRGB()) {
+                System.out.println("... Mismatch: found " + new Color(actualColor) + " instead. Check image.png.");
+                try {
+                    ImageIO.write(image, "png", new File("image.png"));
+                } catch(IOException e) {
+                    System.out.println("failed to save image.png.");
+                    e.printStackTrace();
+                }
+                throw new RuntimeException("Wrong image color!");
+            } else {
+                System.out.println("... OK");
             }
-            throw new RuntimeException("Wrong image color!");
-        } else {
-            System.out.println("... OK");
         }
     }
 }
