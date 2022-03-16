@@ -85,13 +85,9 @@ Java_java_net_InetAddress_isIPv4Available(JNIEnv *env, jclass clazz) {
 /*
  * Class:     java_net_InetAddress
  * Method:    isIPv6Supported
- * Signature: ()I
+ * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL
 Java_java_net_InetAddress_isIPv6Supported(JNIEnv *env, jclass clazz) {
-    if (ipv6_available()) {
-        return JNI_TRUE;
-    } else {
-        return JNI_FALSE;
-    }
+    return ipv6_available();
 }
