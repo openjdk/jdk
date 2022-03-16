@@ -944,6 +944,13 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
         case MachProjNode::fat_proj:
           // Fat projections have size equal to number of registers killed
           lrg.set_num_regs(rm.Size());
+//            if (lrg.num_regs() != lrg.compute_mask_size()) {
+//              n->dump();
+//              tty->print_cr("XXX %d %d", lrg.num_regs(), lrg.compute_mask_size());
+//              rm.dump();
+//              lrg.mask().dump();
+//            }
+          assert(region > 0 || lrg.num_regs() == lrg.compute_mask_size(), "");
           lrg.set_reg_pressure(lrg.num_regs());
           lrg._fat_proj = 1;
           lrg._is_bound = 1;
@@ -1261,10 +1268,16 @@ void PhaseChaitin::cache_lrg_info(uint region) {
       continue;
     }
 
-    if (region == 1) {
-      tty->print("XXX %d: %d %d %d - %d %d - %p %ld %ld", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill, lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
-                 offset_of(LRG, _region), sizeof(LRG));
-      lrg.dump();
+    if (C->method() != NULL && !C->is_osr_compilation()) {
+      ResourceMark rm;
+      stringStream ss;
+      C->method()->print_short_name(&ss);
+      if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+        tty->print("XXX %d: %d %d %d - %d %d - %p %ld %ld", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill,
+                   lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
+                   offset_of(LRG, _region), sizeof(LRG));
+        lrg.dump();
+      }
     }
 
     // Check for being of low degree: means we can be trivially colored.
@@ -1606,7 +1619,7 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg, int chunk ) {
   assert( lrg.num_regs() >= 2, "dead live ranges do not color" );
 
   if (!(lrg.compute_mask_size() == lrg.num_regs() || lrg.num_regs() == 2)) {
-    tty->print_cr("XXX %d %d", lrg.compute_mask_size(), lrg.num_regs());
+    tty->print_cr("XXX %d %d %d %d", lrg.compute_mask_size(), lrg.num_regs(), sizeof(LRG), offset_of(LRG, _mask));
     lrg._def->dump(1);
   }
 
@@ -1681,6 +1694,16 @@ uint PhaseChaitin::Select(uint region) {
           RegMask rm = lrg->mask();
 #endif
           lrg->SUBTRACT(nlrg.mask());
+
+          if (C->method() != NULL && !C->is_osr_compilation()) {
+            ResourceMark rm;
+            stringStream ss;
+            C->method()->print_short_name(&ss);
+            if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+              tty->print_cr("ZZZ %d %d - %d %d", lidx, neighbor, lrg->_region, nlrg._region);
+            }
+          }
+
 #ifndef PRODUCT
           if (trace_spilling() && lrg->mask().Size() != size) {
             ttyLocker ttyl;

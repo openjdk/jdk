@@ -102,8 +102,8 @@ public:
     return _is_float || _is_vector;
   }
 
-private:
   RegMask _mask;                // Allowed registers for this LRG
+private:
   uint _mask_size;              // cache of _mask.Size();
 public:
   int compute_mask_size() const { return _mask.is_AllStack() ? AllStack_size : _mask.Size(); }
@@ -139,11 +139,11 @@ public:
   void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
   void clear_to_sets()  { _mask.clear_to_sets(_num_regs); debug_only(_msize_valid=0;) }
 
-private:
   // Number of registers this live range uses when it colors
   uint16_t _num_regs;           // 2 for Longs and Doubles, 1 for all else
                                 // except _num_regs is kill count for fat_proj
 
+private:
   // For scalable register, num_regs may not be the actual physical register size.
   // We need to get the actual physical length of scalable register when scalable
   // register is spilled. The size of one slot is 32-bit.
