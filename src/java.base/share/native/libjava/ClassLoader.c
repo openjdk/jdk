@@ -99,7 +99,14 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
         return 0;
     }
 
+    // On malloc(0), implementators of malloc(3) have the choice to return either
+    // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
+    // we chose the latter. (see 8283225)
+    #ifdef _AIX
+    body = (jbyte *)malloc(length == 0 ? 1 : length);
+    #else
     body = (jbyte *)malloc(length);
+    #endif
 
     if (body == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
@@ -239,7 +246,15 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
         return 0;
     }
 
+    // On malloc(0), implementators of malloc(3) have the choice to return either
+    // NULL or a unique non-NULL pointer. To unify libc behavior across our platforms
+    // we chose the latter. (see 8283225)
+    #ifdef _AIX
+    body = (jbyte *)malloc(length == 0 ? 1 : length);
+    #else
     body = (jbyte *)malloc(length);
+    #endif
+
     if (body == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
