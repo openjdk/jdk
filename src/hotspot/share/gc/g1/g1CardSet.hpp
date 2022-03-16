@@ -209,13 +209,13 @@ public:
   //                              container is supported.
   using ContainerPtr = void*;
   // Coarsening happens in the order below:
-  // CardSetInlinePtr -> CardSetArrayOfCards -> CardSetHowl -> Full
-  // Corsening of containers inside the CardSetHowl happens in the order:
-  // CardSetInlinePtr -> CardSetArrayOfCards -> CardSetBitMap -> Full
-  static const uintptr_t CardSetInlinePtr      = 0x0;
-  static const uintptr_t CardSetArrayOfCards   = 0x1;
-  static const uintptr_t CardSetBitMap         = 0x2;
-  static const uintptr_t CardSetHowl           = 0x3;
+  // ContainerInlinePtr -> ContainerArrayOfCards -> ContainerHowl -> Full
+  // Corsening of containers inside the ContainerHowl happens in the order:
+  // ContainerInlinePtr -> ContainerArrayOfCards -> ContainerBitMap -> Full
+  static const uintptr_t ContainerInlinePtr      = 0x0;
+  static const uintptr_t ContainerArrayOfCards   = 0x1;
+  static const uintptr_t ContainerBitMap         = 0x2;
+  static const uintptr_t ContainerHowl           = 0x3;
 
   // The special sentinel values
   static constexpr ContainerPtr FreeCardSet = nullptr;
@@ -264,7 +264,7 @@ private:
   ContainerPtr create_coarsened_array_of_cards(uint card_in_region, bool within_howl);
 
   // Transfer entries from source_card_set to a recently installed coarser storage type
-  // We only need to transfer anything finer than CardSetBitMap. "Full" contains
+  // We only need to transfer anything finer than ContainerBitMap. "Full" contains
   // all elements anyway.
   void transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPtr source_container, uint card_region);
   void transfer_cards_in_howl(ContainerPtr parent_container, ContainerPtr source_container, uint card_region);

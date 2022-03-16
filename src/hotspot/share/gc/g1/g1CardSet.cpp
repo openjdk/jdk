@@ -338,9 +338,9 @@ G1CardSet::~G1CardSet() {
 }
 
 uint G1CardSet::container_type_to_mem_object_type(uintptr_t type) const {
-  assert(type == G1CardSet::CardSetArrayOfCards ||
-         type == G1CardSet::CardSetBitMap ||
-         type == G1CardSet::CardSetHowl, "should not allocate container type %zu", type);
+  assert(type == G1CardSet::ContainerArrayOfCards ||
+         type == G1CardSet::ContainerBitMap ||
+         type == G1CardSet::ContainerHowl, "should not allocate container type %zu", type);
 
   return (uint)type;
 }
@@ -356,9 +356,9 @@ void G1CardSet::free_mem_object(ContainerPtr container) {
   uintptr_t type = container_type(container);
   void* value = strip_container_type(container);
 
-  assert(type == G1CardSet::CardSetArrayOfCards ||
-         type == G1CardSet::CardSetBitMap ||
-         type == G1CardSet::CardSetHowl, "should not free card set type %zu", type);
+  assert(type == G1CardSet::ContainerArrayOfCards ||
+         type == G1CardSet::ContainerBitMap ||
+         type == G1CardSet::ContainerHowl, "should not free card set type %zu", type);
   assert(static_cast<G1CardSetContainer*>(value)->refcount() == 1, "must be");
 
   _mm->free(container_type_to_mem_object_type(type), value);
@@ -373,7 +373,7 @@ G1CardSet::ContainerPtr G1CardSet::acquire_container(ContainerPtr volatile* cont
     // Get ContainerPtr and increment refcount atomically wrt to memory reuse.
     ContainerPtr container = Atomic::load_acquire(container_addr);
     uint cs_type = container_type(container);
-    if (container == FullCardSet || cs_type == CardSetInlinePtr) {
+    if (container == FullCardSet || cs_type == ContainerInlinePtr) {
       return container;
     }
 
@@ -388,7 +388,7 @@ G1CardSet::ContainerPtr G1CardSet::acquire_container(ContainerPtr volatile* cont
 
 bool G1CardSet::release_container(ContainerPtr container) {
   uint cs_type = container_type(container);
-  if (container == FullCardSet || cs_type == CardSetInlinePtr) {
+  if (container == FullCardSet || cs_type == ContainerInlinePtr) {
     return false;
   }
 
@@ -508,13 +508,13 @@ G1CardSet::ContainerPtr G1CardSet::create_coarsened_array_of_cards(uint card_in_
   if (within_howl) {
     uint const size_in_bits = _config->max_cards_in_howl_bitmap();
     uint container_offset = _config->howl_bitmap_offset(card_in_region);
-    data = allocate_mem_object(CardSetBitMap);
+    data = allocate_mem_object(ContainerBitMap);
     new (data) G1CardSetBitMap(container_offset, size_in_bits);
-    new_container = make_container_ptr(data, CardSetBitMap);
+    new_container = make_container_ptr(data, ContainerBitMap);
   } else {
-    data = allocate_mem_object(CardSetHowl);
+    data = allocate_mem_object(ContainerHowl);
     new (data) G1CardSetHowl(card_in_region, _config);
-    new_container = make_container_ptr(data, CardSetHowl);
+    new_container = make_container_ptr(data, ContainerHowl);
   }
   return new_container;
 }
@@ -526,22 +526,22 @@ bool G1CardSet::coarsen_container(ContainerPtr volatile* container_addr,
   ContainerPtr new_container = nullptr;
 
   switch (container_type(cur_container)) {
-    case CardSetArrayOfCards : {
+    case ContainerArrayOfCards: {
       new_container = create_coarsened_array_of_cards(card_in_region, within_howl);
       break;
     }
-    case CardSetBitMap: {
+    case ContainerBitMap: {
       new_container = FullCardSet;
       break;
     }
-    case CardSetInlinePtr: {
+    case ContainerInlinePtr: {
       uint const size = _config->max_cards_in_array();
-      uint8_t* data = allocate_mem_object(CardSetArrayOfCards);
+      uint8_t* data = allocate_mem_object(ContainerArrayOfCards);
       new (data) G1CardSetArray(card_in_region, size);
-      new_container = make_container_ptr(data, CardSetArrayOfCards);
+      new_container = make_container_ptr(data, ContainerArrayOfCards);
       break;
     }
-    case CardSetHowl: {
+    case ContainerHowl: {
       new_container = FullCardSet; // anything will do at this point.
       break;
     }
@@ -558,8 +558,8 @@ bool G1CardSet::coarsen_container(ContainerPtr volatile* container_addr,
     // check its result).
     bool should_free = release_container(cur_container);
     assert(!should_free, "must have had more than one reference");
-    // Free containers if cur_container is CardSetHowl
-    if (container_type(cur_container) == CardSetHowl) {
+    // Free containers if cur_container is ContainerHowl
+    if (container_type(cur_container) == ContainerHowl) {
       G1ReleaseCardsets rel(this);
       container_ptr<G1CardSetHowl>(cur_container)->iterate(rel, _config->num_buckets_in_howl());
     }
@@ -588,12 +588,12 @@ public:
 void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPtr source_container, uint card_region) {
   assert(source_container != FullCardSet, "Should not need to transfer from FullCardSet");
   // Need to transfer old entries unless there is a Full card set container in place now, i.e.
-  // the old type has been CardSetBitMap. "Full" contains all elements anyway.
-  if (container_type(source_container) != CardSetHowl) {
+  // the old type has been ContainerBitMap. "Full" contains all elements anyway.
+  if (container_type(source_container) != ContainerHowl) {
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_container, iter);
   } else {
-    assert(container_type(source_container) == CardSetHowl, "must be");
+    assert(container_type(source_container) == ContainerHowl, "must be");
     // Need to correct for that the Full remembered set occupies more cards than the
     // AoCS before.
     Atomic::add(&_num_occupied, _config->max_cards_in_region() - table_entry->_num_occupied, memory_order_relaxed);
@@ -603,12 +603,12 @@ void G1CardSet::transfer_cards(G1CardSetHashTableValue* table_entry, ContainerPt
 void G1CardSet::transfer_cards_in_howl(ContainerPtr parent_container,
                                        ContainerPtr source_container,
                                        uint card_region) {
-  assert(container_type(parent_container) == CardSetHowl, "must be");
+  assert(container_type(parent_container) == ContainerHowl, "must be");
   assert(source_container != FullCardSet, "Should not need to transfer from full");
   // Need to transfer old entries unless there is a Full card set in place now, i.e.
-  // the old type has been CardSetBitMap.
-  if (container_type(source_container) != CardSetBitMap) {
-    // We only need to transfer from anything below CardSetBitMap.
+  // the old type has been ContainerBitMap.
+  if (container_type(source_container) != ContainerBitMap) {
+    // We only need to transfer from anything below ContainerBitMap.
     G1TransferCard iter(this, card_region);
     iterate_cards_during_transfer(source_container, iter);
   } else {
@@ -643,20 +643,20 @@ G1AddCardResult G1CardSet::add_to_container(ContainerPtr volatile* container_add
   G1AddCardResult add_result;
 
   switch (container_type(container)) {
-    case CardSetInlinePtr: {
+    case ContainerInlinePtr: {
       add_result = add_to_inline_ptr(container_addr, container, card_in_region);
       break;
     }
-    case CardSetArrayOfCards : {
+    case ContainerArrayOfCards: {
       add_result = add_to_array(container, card_in_region);
       break;
     }
-    case CardSetBitMap: {
+    case ContainerBitMap: {
       add_result = add_to_bitmap(container, card_in_region);
       break;
     }
-    case CardSetHowl: {
-      assert(CardSetHowl == container_type(FullCardSet), "must be");
+    case ContainerHowl: {
+      assert(ContainerHowl == container_type(FullCardSet), "must be");
       if (container == FullCardSet) {
         return Found;
       }
@@ -739,13 +739,13 @@ bool G1CardSet::contains_card(uint card_region, uint card_in_region) {
   }
 
   switch (container_type(container)) {
-    case CardSetInlinePtr: {
+    case ContainerInlinePtr: {
       G1CardSetInlinePtr ptr(container);
       return ptr.contains(card_in_region, _config->inline_ptr_bits_per_card());
     }
-    case CardSetArrayOfCards : return container_ptr<G1CardSetArray>(container)->contains(card_in_region);
-    case CardSetBitMap: return container_ptr<G1CardSetBitMap>(container)->contains(card_in_region, _config->max_cards_in_howl_bitmap());
-    case CardSetHowl: {
+    case ContainerArrayOfCards: return container_ptr<G1CardSetArray>(container)->contains(card_in_region);
+    case ContainerBitMap: return container_ptr<G1CardSetBitMap>(container)->contains(card_in_region, _config->max_cards_in_howl_bitmap());
+    case ContainerHowl: {
       G1CardSetHowl* howling_array = container_ptr<G1CardSetHowl>(container);
 
       return howling_array->contains(card_in_region, _config);
@@ -768,20 +768,20 @@ void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_regi
     return;
   }
   switch (container_type(container)) {
-    case CardSetInlinePtr: {
+    case ContainerInlinePtr: {
       st->print("InlinePtr not containing %u", card_in_region);
       break;
     }
-    case CardSetArrayOfCards : {
+    case ContainerArrayOfCards: {
       st->print("AoC not containing %u", card_in_region);
       break;
     }
-    case CardSetBitMap: {
+    case ContainerBitMap: {
       st->print("BitMap not containing %u", card_in_region);
       break;
     }
-    case CardSetHowl: {
-      st->print("CardSetHowl not containing %u", card_in_region);
+    case ContainerHowl: {
+      st->print("ContainerHowl not containing %u", card_in_region);
       break;
     }
     default: st->print("Unknown card set container type %u", container_type(container)); ShouldNotReachHere(); break;
@@ -791,17 +791,17 @@ void G1CardSet::print_info(outputStream* st, uint card_region, uint card_in_regi
 template <class CardVisitor>
 void G1CardSet::iterate_cards_during_transfer(ContainerPtr const container, CardVisitor& cl) {
   uint type = container_type(container);
-  assert(type == CardSetInlinePtr || type == CardSetArrayOfCards,
+  assert(type == ContainerInlinePtr || type == ContainerArrayOfCards,
          "invalid card set type %d to transfer from",
          container_type(container));
 
   switch (type) {
-    case CardSetInlinePtr: {
+    case ContainerInlinePtr: {
       G1CardSetInlinePtr ptr(container);
       ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       return;
     }
-    case CardSetArrayOfCards : {
+    case ContainerArrayOfCards: {
       container_ptr<G1CardSetArray>(container)->iterate(cl);
       return;
     }

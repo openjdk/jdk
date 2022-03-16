@@ -43,26 +43,26 @@ inline G1CardSet::ContainerPtr G1CardSet::make_container_ptr(void* value, uintpt
 template <class CardOrRangeVisitor>
 inline void G1CardSet::iterate_cards_or_ranges_in_container(ContainerPtr const container, CardOrRangeVisitor& cl) {
   switch (container_type(container)) {
-    case CardSetInlinePtr: {
+    case ContainerInlinePtr: {
       if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedInline)) {
         G1CardSetInlinePtr ptr(container);
         ptr.iterate(cl, _config->inline_ptr_bits_per_card());
       }
       return;
     }
-    case CardSetArrayOfCards : {
+    case ContainerArrayOfCards: {
       if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedArrayOfCards)) {
         container_ptr<G1CardSetArray>(container)->iterate(cl);
       }
       return;
     }
-    case CardSetBitMap: {
+    case ContainerBitMap: {
       // There is no first-level bitmap spanning the whole area.
       ShouldNotReachHere();
       return;
     }
-    case CardSetHowl: {
-      assert(container_type(FullCardSet) == CardSetHowl, "Must be");
+    case ContainerHowl: {
+      assert(container_type(FullCardSet) == ContainerHowl, "Must be");
       if (container == FullCardSet) {
         if (cl.start_iterate(G1GCPhaseTimes::MergeRSMergedFull)) {
           cl(0, _config->max_cards_in_region());
