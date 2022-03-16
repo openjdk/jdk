@@ -1324,7 +1324,7 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
         // node has an input from iv plus an offset.
         if (!s1_in->as_Phi()->is_tripcount(T_INT)) return false;
       } else {
-        if (s1_in->Opcode() != s1_in->Opcode()) return false;
+        if (s1_in->Opcode() != s2_in->Opcode()) return false;
       }
     }
   }
