@@ -76,6 +76,7 @@ Java_java_net_InetAddress_init(JNIEnv *env, jclass cls) {
 /*
  * Class:     java_net_InetAddress
  * Method:    isIPv4Available
+ * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL
 Java_java_net_InetAddress_isIPv4Available(JNIEnv *env, jclass clazz) {
