@@ -78,13 +78,17 @@ class SharedSession extends MemorySessionImpl {
     }
 
     void justClose() {
-        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSED);
-        if (prevState == CLOSED) {
+        int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSING);
+        if (prevState < 0) {
             throw new IllegalStateException("Already closed");
         } else if (prevState != OPEN) {
             throw new IllegalStateException("Session is acquired by " + prevState + " clients");
         }
-        SCOPED_MEMORY_ACCESS.closeScope(this);
+        boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
+        STATE.setVolatile(this, success ? CLOSED : OPEN);
+        if (!success) {
+            throw new IllegalStateException("Session is acquired by 1 client");
+        }
     }
 
     @Override

@@ -60,7 +60,7 @@ import jdk.internal.vm.vector.VectorSupport;
  * region concurrently. More specifically, when a thread wants to release a memory region, it should call the
  * {@link MemorySessionImpl#close()} method. This method initiates thread-local handshakes with all the other VM threads,
  * which are then stopped one by one. If any thread is found accessing a resource associated to the very memory session
- * being closed, the handshake is retried on the problematic threads, until it succeeds.
+ * being closed, the handshake fails, and the session cannot be closed.
  * <p>
  * This synchronization strategy relies on the idea that accessing memory is atomic with respect to checking the
  * validity of the session associated with that memory region - that is, a thread that wants to perform memory access will be
@@ -84,11 +84,11 @@ public class ScopedMemoryAccess {
         registerNatives();
     }
 
-    public void closeScope(MemorySessionImpl session) {
-        closeScope0(session);
+    public boolean closeScope(MemorySessionImpl session) {
+        return closeScope0(session);
     }
 
-    native void closeScope0(MemorySessionImpl session);
+    native boolean closeScope0(MemorySessionImpl session);
 
     private ScopedMemoryAccess() {}
 

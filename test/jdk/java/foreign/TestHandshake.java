@@ -103,14 +103,12 @@ public class TestHandshake {
                 try {
                     doAccess();
                 } catch (IllegalStateException ex) {
-                    if (!failed.get()) {
-                        // ignore - this means segment was alive, but was closed while we were accessing it
-                        // next isAlive test should fail
-                        failed.set(true);
-                    } else {
-                        // rethrow!
-                        throw ex;
-                    }
+                    long delay = System.currentTimeMillis() - start.get();
+                    System.out.println("Accessor #" + id + " suspending - elapsed (ms): " + delay);
+                    backoff();
+                    delay = System.currentTimeMillis() - start.get();
+                    System.out.println("Accessor #" + id + " resuming - elapsed (ms): " + delay);
+                    continue outer;
                 }
             }
             long delay = System.currentTimeMillis() - start.get();
@@ -249,7 +247,14 @@ public class TestHandshake {
         @Override
         public void run() {
             start("Handshaker");
-            session.close(); // this should NOT throw
+            while (true) {
+                try {
+                    session.close();
+                    break;
+                } catch (IllegalStateException ex) {
+                    Thread.onSpinWait();
+                }
+            }
             long delay = System.currentTimeMillis() - start.get();
             System.out.println("Segment closed - elapsed (ms): " + delay);
         }

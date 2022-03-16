@@ -58,7 +58,8 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
     final Thread owner;
 
     static final int OPEN = 0;
-    static final int CLOSED = -1;
+    static final int CLOSING = -1;
+    static final int CLOSED = -2;
 
     int state = OPEN;
 
@@ -200,7 +201,7 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
         if (owner != null && owner != Thread.currentThread()) {
             throw new IllegalStateException("Attempted access outside owning thread");
         }
-        if (state == CLOSED) {
+        if (state < OPEN) {
             throw ScopedMemoryAccess.ScopedAccessError.INSTANCE;
         }
     }
