@@ -150,7 +150,7 @@ public class TitledBorderTest {
     try {
       ImageIO.write(image, "png", new File(filename));
     } catch (IOException e) {
-      // Don’t propagate the exception
+      // Don't propagate the exception
       e.printStackTrace();
     }
   }
