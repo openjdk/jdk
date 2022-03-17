@@ -87,7 +87,6 @@ public class URLClassPath {
     private static final String USER_AGENT_JAVA_VERSION = "UA-Java-Version";
     private static final String JAVA_VERSION;
     private static final boolean DEBUG;
-    private static final boolean DISABLE_JAR_CHECKING;
     private static final boolean DISABLE_ACC_CHECKING;
     private static final boolean DISABLE_CP_URL_CHECK;
     private static final boolean DEBUG_CP_URL_CHECK;
@@ -97,10 +96,8 @@ public class URLClassPath {
         Properties props = GetPropertyAction.privilegedGetProperties();
         JAVA_VERSION = props.getProperty("java.version");
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
-        String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
-        DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.isEmpty() : false;
 
-        p = props.getProperty("jdk.net.URLClassPath.disableRestrictedPermissions");
+        String p = props.getProperty("jdk.net.URLClassPath.disableRestrictedPermissions");
         DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.isEmpty() : false;
 
         // This property will be removed in a later release
@@ -657,7 +654,7 @@ public class URLClassPath {
                      * in a hurry.
                      */
                     JarURLConnection juc = (JarURLConnection)uc;
-                    jarfile = JarLoader.checkJar(juc.getJarFile());
+                    jarfile = juc.getJarFile();
                 }
 
                 InputStream in = uc.getInputStream();
@@ -802,23 +799,6 @@ public class URLClassPath {
             }
         }
 
-        /* Throws if the given jar file is does not start with the correct LOC */
-        @SuppressWarnings("removal")
-        static JarFile checkJar(JarFile jar) throws IOException {
-            if (System.getSecurityManager() != null && !DISABLE_JAR_CHECKING
-                && !zipAccess.startsWithLocHeader(jar)) {
-                IOException x = new IOException("Invalid Jar file");
-                try {
-                    jar.close();
-                } catch (IOException ex) {
-                    x.addSuppressed(ex);
-                }
-                throw x;
-            }
-
-            return jar;
-        }
-
         private JarFile getJarFile(URL url) throws IOException {
             // Optimize case where url refers to a local jar file
             if (isOptimizable(url)) {
@@ -826,13 +806,13 @@ public class URLClassPath {
                 if (!p.exists()) {
                     throw new FileNotFoundException(p.getPath());
                 }
-                return checkJar(new JarFile(new File(p.getPath()), true, ZipFile.OPEN_READ,
-                        JarFile.runtimeVersion()));
+                return new JarFile(new File(p.getPath()), true, ZipFile.OPEN_READ,
+                        JarFile.runtimeVersion());
             }
             URLConnection uc = (new URL(getBaseURL(), "#runtime")).openConnection();
             uc.setRequestProperty(USER_AGENT_JAVA_VERSION, JAVA_VERSION);
             JarFile jarFile = ((JarURLConnection)uc).getJarFile();
-            return checkJar(jarFile);
+            return jarFile;
         }
 
         /*
