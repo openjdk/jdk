@@ -91,7 +91,7 @@ public class TestCountPositives {
                     int calculated = Helper.StringCodingCountPositives(tBa, off, len);
                     int expected = countPositives(tBa, off, len);
                     if (calculated != expected) {
-                        if (calculated < expected && expected != len) {
+                        if (expected != len && calculated >= 0 && calculated < expected) {
                             // allow intrinsics to return early with a lower value,
                             // but only if we're not expecting the full length (no
                             // negative bytes)
