@@ -3605,11 +3605,13 @@ XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
 #endif
 }
 
-static int StackAlignment = 16; // Required stack alignment in bytes
-static int XMMRegSaveSize = 8;  // C1 only ever uses the first float/double of the XMM register.
+static int XMMRegSaveSize = sizeof(double);  // C1 only ever uses the first float/double of the XMM register.
+static int FPUSaveAreaSize = align_up(108, StackAlignmentInBytes); // 108 bytes needed for FPU state by fsave/frstor
+
 #ifndef _LP64
-static int FPUSaveAreaSize = align_up(108, StackAlignment); // 108 bytes needed for FPU state by fsave/frstor
+static bool use_x87_registers() { return UseSSE < 2; }
 #endif
+static bool use_xmm_registers() { return UseSSE >= 2; }
 
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool save_fpu) {
   block_comment("push_call_clobbered_registers start");
@@ -3618,7 +3620,7 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool s
   push_set(registers_to_push);
 
 #ifndef _LP64
-  if (save_fpu && UseSSE < 2) {
+  if (save_fpu && use_x87_registers()) {
     subptr(rsp, FPUSaveAreaSize);
     fnsave(Address(rsp, 0));
     fwait();
@@ -3629,7 +3631,7 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool s
     frstor(Address(rsp, 0));
   }
 #endif
-  if (save_fpu && UseSSE >= 2) {
+  if (save_fpu && use_xmm_registers()) {
     XMMRegSet xmm_registers_to_push = call_clobbered_xmm_registers();
     uint num_xmm_registers = xmm_registers_to_push.size();
 
@@ -3641,7 +3643,7 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool s
       movdbl(Address(rsp, spill_offset), *it);
       spill_offset += spill_size;
     }
-    assert(is_aligned(spill_offset, StackAlignment), "Should be aligned implicitly, is %d", spill_offset);
+    assert(is_aligned(spill_offset, StackAlignmentInBytes), "Should be aligned implicitly, is %d", spill_offset);
   }
 
   block_comment("push_call_clobbered_registers end");
@@ -3650,7 +3652,7 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool s
 void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool restore_fpu) {
   block_comment("pop_call_clobbered_registers start");
 
-  if (restore_fpu && UseSSE >= 2) {
+  if (restore_fpu && use_xmm_registers()) {
     XMMRegSet xmm_registers_to_restore = call_clobbered_xmm_registers();
     uint num_xmm_registers = xmm_registers_to_restore.size();
 
@@ -3664,7 +3666,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool re
     addptr(rsp, num_xmm_registers * restore_size);
   }
 #ifndef _LP64
-  if (restore_fpu && UseSSE < 2) {
+  if (restore_fpu && use_x87_registers()) {
     frstor(Address(rsp, 0));
     addptr(rsp, FPUSaveAreaSize);
   }
@@ -3680,7 +3682,7 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool re
 
 void MacroAssembler::push_set(RegSet set) {
   size_t register_push_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
-  size_t aligned_size = align_up(register_push_size, StackAlignment);
+  size_t aligned_size = align_up(register_push_size, StackAlignmentInBytes);
   subptr(rsp, aligned_size);
 
   size_t spill_offset = 0;
@@ -3698,7 +3700,7 @@ void MacroAssembler::pop_set(RegSet set) {
   }
 
   size_t register_pop_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
-  size_t aligned_size = align_up(register_pop_size, StackAlignment);
+  size_t aligned_size = align_up(register_pop_size, StackAlignmentInBytes);
   addptr(rsp, aligned_size);
 }
 
