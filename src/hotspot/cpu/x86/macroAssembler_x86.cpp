@@ -3611,7 +3611,7 @@ static int FPUSaveAreaSize = align_up(108, StackAlignmentInBytes); // 108 bytes 
 #ifndef _LP64
 static bool use_x87_registers() { return UseSSE < 2; }
 #endif
-static bool use_xmm_registers() { return UseSSE >= 2; }
+static bool use_xmm_registers() { return UseSSE >= 1; }
 
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool save_fpu) {
   block_comment("push_call_clobbered_registers start");
@@ -3640,7 +3640,11 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool s
 
     int spill_offset = 0;
     for (RegSetIterator<XMMRegister> it = xmm_registers_to_push.begin(); *it != xnoreg; ++it) {
-      movdbl(Address(rsp, spill_offset), *it);
+      if (UseSSE == 1) {
+        movflt(Address(rsp, spill_offset), *it);
+      } else {
+        movdbl(Address(rsp, spill_offset), *it);
+      }
       spill_offset += spill_size;
     }
     assert(is_aligned(spill_offset, StackAlignmentInBytes), "Should be aligned implicitly, is %d", spill_offset);
@@ -3660,7 +3664,11 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool re
 
     int restore_offset = restore_size - XMMRegSaveSize;
     for (ReverseRegSetIterator<XMMRegister> it = xmm_registers_to_restore.rbegin(); *it != xnoreg; ++it) {
-      movdbl(*it, Address(rsp, restore_offset));
+      if (UseSSE == 1) {
+        movflt(*it, Address(rsp, restore_offset));
+      } else {
+        movdbl(*it, Address(rsp, restore_offset));
+      }
       restore_offset -= XMMRegSaveSize;
     }
     addptr(rsp, restore_size);
