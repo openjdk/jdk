@@ -3374,18 +3374,19 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 }
 
 // Search for Non-ASCII character (Negative byte value) in a byte array,
-// return true if it has any and false otherwise.
+// return the index of the first such character, otherwise the length
+// of the array segment searched.
 //   ..\jdk\src\java.base\share\classes\java\lang\StringCoding.java
 //   @IntrinsicCandidate
-//   private static boolean hasNegatives(byte[] ba, int off, int len) {
+//   public static int countPositives(byte[] ba, int off, int len) {
 //     for (int i = off; i < off + len; i++) {
 //       if (ba[i] < 0) {
-//         return true;
+//         return i - off;
 //       }
 //     }
-//     return false;
+//     return len;
 //   }
-void C2_MacroAssembler::has_negatives(Register ary1, Register len,
+void C2_MacroAssembler::count_positives(Register ary1, Register len,
   Register result, Register tmp1,
   XMMRegister vec1, XMMRegister vec2, KRegister mask1, KRegister mask2) {
   // rsi: byte array
@@ -3394,17 +3395,18 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
   ShortBranchVerifier sbv(this);
   assert_different_registers(ary1, len, result, tmp1);
   assert_different_registers(vec1, vec2);
-  Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
+  Label ADJUST, TAIL_ADJUST, DONE, TAIL_START, CHAR_ADJUST, COMPARE_CHAR, COMPARE_VECTORS, COMPARE_BYTE;
 
+  movl(result, len); // copy
   // len == 0
   testl(len, len);
-  jcc(Assembler::zero, FALSE_LABEL);
+  jcc(Assembler::zero, DONE);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
-    Label test_64_loop, test_tail;
+    Label test_64_loop, test_tail, BREAK_LOOP;
     Register tmp3_aliased = len;
 
     movl(tmp1, len);
@@ -3421,16 +3423,15 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
     // Check whether our 64 elements of size byte contain negatives
     evpcmpgtb(mask1, vec2, Address(ary1, len, Address::times_1), Assembler::AVX_512bit);
     kortestql(mask1, mask1);
-    jcc(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::notZero, BREAK_LOOP);
 
     addptr(len, 64);
     jccb(Assembler::notZero, test_64_loop);
 
-
     bind(test_tail);
     // bail out when there is nothing to be done
     testl(tmp1, -1);
-    jcc(Assembler::zero, FALSE_LABEL);
+    jcc(Assembler::zero, DONE);
 
     // ~(~0 << len) applied up to two times (for 32-bit scenario)
 #ifdef _LP64
@@ -3467,21 +3468,30 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
 #endif
     evpcmpgtb(mask1, mask2, vec2, Address(ary1, 0), Assembler::AVX_512bit);
     ktestq(mask1, mask2);
-    jcc(Assembler::notZero, TRUE_LABEL);
+    jcc(Assembler::zero, DONE);
 
-    jmp(FALSE_LABEL);
+    bind(BREAK_LOOP);
+    // At least one byte in the last 64 bytes is negative.
+    // Set up to look at the last 64 bytes as if they were a tail
+    lea(ary1, Address(ary1, len, Address::times_1));
+    addptr(result, len);
+    // Ignore the very last byte: if all others are positive,
+    // it must be negative, so we can skip right to the 2+1 byte
+    // end comparison at this point
+    orl(result, 63);
+    movl(len, 63);
+    // Fallthru to tail compare
   } else {
-    movl(result, len); // copy
 
     if (UseAVX >= 2 && UseSSE >= 2) {
       // With AVX2, use 32-byte vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+      Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
       // Compare 32-byte vectors
-      andl(result, 0x0000001f);  //   tail count (in bytes)
-      andl(len, 0xffffffe0);   // vector count (in bytes)
-      jccb(Assembler::zero, COMPARE_TAIL);
+      testl(len, 0xffffffe0);   // vector count (in bytes)
+      jccb(Assembler::zero, TAIL_START);
 
+      andl(len, 0xffffffe0);
       lea(ary1, Address(ary1, len, Address::times_1));
       negptr(len);
 
@@ -3492,30 +3502,42 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       vmovdqu(vec1, Address(ary1, len, Address::times_1));
       vptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
+      jccb(Assembler::notZero, BREAK_LOOP);
       addptr(len, 32);
-      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      testl(result, result);
-      jccb(Assembler::zero, FALSE_LABEL);
+      testl(result, 0x0000001f);   // any bytes remaining?
+      jcc(Assembler::zero, DONE);
 
-      vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
-      vptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(FALSE_LABEL);
-
-      bind(COMPARE_TAIL); // len is zero
+      // Quick test using the already prepared vector mask
       movl(len, result);
+      andl(len, 0x0000001f);
+      vmovdqu(vec1, Address(ary1, len, Address::times_1, -32));
+      vptest(vec1, vec2);
+      jcc(Assembler::zero, DONE);
+      // There are zeros, jump to the tail to determine exactly where
+      jmpb(TAIL_START);
+
+      bind(BREAK_LOOP);
+      // At least one byte in the last 32-byte vector is negative.
+      // Set up to look at the last 32 bytes as if they were a tail
+      lea(ary1, Address(ary1, len, Address::times_1));
+      addptr(result, len);
+      // Ignore the very last byte: if all others are positive,
+      // it must be negative, so we can skip right to the 2+1 byte
+      // end comparison at this point
+      orl(result, 31);
+      movl(len, 31);
       // Fallthru to tail compare
     } else if (UseSSE42Intrinsics) {
       // With SSE4.2, use double quad vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+      Label COMPARE_WIDE_VECTORS, BREAK_LOOP;
 
       // Compare 16-byte vectors
-      andl(result, 0x0000000f);  //   tail count (in bytes)
-      andl(len, 0xfffffff0);   // vector count (in bytes)
-      jcc(Assembler::zero, COMPARE_TAIL);
+      testl(len, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, TAIL_START);
 
+      andl(len, 0xfffffff0);
       lea(ary1, Address(ary1, len, Address::times_1));
       negptr(len);
 
@@ -3526,23 +3548,36 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
       bind(COMPARE_WIDE_VECTORS);
       movdqu(vec1, Address(ary1, len, Address::times_1));
       ptest(vec1, vec2);
-      jcc(Assembler::notZero, TRUE_LABEL);
+      jccb(Assembler::notZero, BREAK_LOOP);
       addptr(len, 16);
-      jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
-      testl(result, result);
-      jcc(Assembler::zero, FALSE_LABEL);
+      testl(result, 0x0000000f); // len is zero, any bytes remaining?
+      jcc(Assembler::zero, DONE);
 
-      movdqu(vec1, Address(ary1, result, Address::times_1, -16));
-      ptest(vec1, vec2);
-      jccb(Assembler::notZero, TRUE_LABEL);
-      jmpb(FALSE_LABEL);
-
-      bind(COMPARE_TAIL); // len is zero
+      // Quick test using the already prepared vector mask
       movl(len, result);
+      andl(len, 0x0000000f);   // tail count (in bytes)
+      movdqu(vec1, Address(ary1, len, Address::times_1, -16));
+      ptest(vec1, vec2);
+      jcc(Assembler::zero, DONE);
+      jmpb(TAIL_START);
+
+      bind(BREAK_LOOP);
+      // At least one byte in the last 16-byte vector is negative.
+      // Set up and look at the last 16 bytes as if they were a tail
+      lea(ary1, Address(ary1, len, Address::times_1));
+      addptr(result, len);
+      // Ignore the very last byte: if all others are positive,
+      // it must be negative, so we can skip right to the 2+1 byte
+      // end comparison at this point
+      orl(result, 15);
+      movl(len, 15);
       // Fallthru to tail compare
     }
   }
+
+  bind(TAIL_START);
   // Compare 4-byte vectors
   andl(len, 0xfffffffc); // vector count (in bytes)
   jccb(Assembler::zero, COMPARE_CHAR);
@@ -3553,34 +3588,45 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
   bind(COMPARE_VECTORS);
   movl(tmp1, Address(ary1, len, Address::times_1));
   andl(tmp1, 0x80808080);
-  jccb(Assembler::notZero, TRUE_LABEL);
+  jccb(Assembler::notZero, TAIL_ADJUST);
   addptr(len, 4);
-  jcc(Assembler::notZero, COMPARE_VECTORS);
+  jccb(Assembler::notZero, COMPARE_VECTORS);
 
-  // Compare trailing char (final 2 bytes), if any
+  // Compare trailing char (final 2-3 bytes), if any
   bind(COMPARE_CHAR);
+
   testl(result, 0x2);   // tail  char
   jccb(Assembler::zero, COMPARE_BYTE);
   load_unsigned_short(tmp1, Address(ary1, 0));
   andl(tmp1, 0x00008080);
-  jccb(Assembler::notZero, TRUE_LABEL);
-  subptr(result, 2);
+  jccb(Assembler::notZero, CHAR_ADJUST);
   lea(ary1, Address(ary1, 2));
 
   bind(COMPARE_BYTE);
   testl(result, 0x1);   // tail  byte
-  jccb(Assembler::zero, FALSE_LABEL);
+  jccb(Assembler::zero, DONE);
   load_unsigned_byte(tmp1, Address(ary1, 0));
-  andl(tmp1, 0x00000080);
-  jccb(Assembler::notEqual, TRUE_LABEL);
-  jmpb(FALSE_LABEL);
-
-  bind(TRUE_LABEL);
-  movl(result, 1);   // return true
+  testl(tmp1, 0x00000080);
+  jccb(Assembler::zero, DONE);
+  subptr(result, 1);
   jmpb(DONE);
 
-  bind(FALSE_LABEL);
-  xorl(result, result); // return false
+  bind(TAIL_ADJUST);
+  // there are negative bits in the last 4 byte block.
+  // Adjust result and check the next three bytes
+  addptr(result, len);
+  orl(result, 3);
+  lea(ary1, Address(ary1, len, Address::times_1));
+  jmpb(COMPARE_CHAR);
+
+  bind(CHAR_ADJUST);
+  // We are looking at a char + optional byte tail, and found that one
+  // of the bytes in the char is negative. Adjust the result, check the
+  // first byte and readjust if needed.
+  andl(result, 0xfffffffc);
+  testl(tmp1, 0x00000080); // little-endian, so lowest byte comes first
+  jccb(Assembler::notZero, DONE);
+  addptr(result, 1);
 
   // That's it
   bind(DONE);
@@ -3590,6 +3636,7 @@ void C2_MacroAssembler::has_negatives(Register ary1, Register len,
     vpxor(vec2, vec2);
   }
 }
+
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
 void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                       Register limit, Register result, Register chr,
