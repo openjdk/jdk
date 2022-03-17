@@ -184,7 +184,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=linux-x64
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -540,7 +540,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=linux-${{ matrix.gnu-arch }}-hotspot
           ${{ matrix.flags }}
           ${{ env.cross_flags }}
@@ -639,7 +639,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=linux-x86
           --with-target-bits=32
           ${{ matrix.flags }}
@@ -916,7 +916,7 @@ jobs:
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
           $env:BOOT_JDK = cygpath "$HOME/bootjdk/$env:BOOT_JDK_VERSION" ;
           & bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=windows-aarch64
           --with-msvc-toolset-version=14.29
           --openjdk-target=aarch64-unknown-cygwin
@@ -1029,7 +1029,7 @@ jobs:
           $env:JT_HOME = cygpath "$HOME/jtreg" ;
           $env:GTEST = cygpath "$env:GITHUB_WORKSPACE/gtest" ;
           & bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=windows-x64
           --with-msvc-toolset-version=14.28
           ${{ matrix.flags }}
@@ -1337,7 +1337,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=macos-x64
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
@@ -1439,7 +1439,7 @@ jobs:
       - name: Configure
         run: >
           bash configure
-          --with-jvm-features=-shenandoahgc,-zgc
+          --with-jvm-features=-shenandoahgc
           --with-conf-name=macos-aarch64
           --openjdk-target=aarch64-apple-darwin
           ${{ matrix.flags }}
