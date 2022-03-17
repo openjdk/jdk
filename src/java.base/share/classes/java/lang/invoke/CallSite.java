@@ -85,7 +85,7 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
  * @since 1.7
  */
 public
-abstract sealed class CallSite permits ConstantCallSite, VolatileCallSite, MutableCallSite {
+abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, VolatileCallSite {
 
     // The actual payload of this call site.
     // Can be modified using {@link MethodHandleNatives#setCallSiteTargetNormal} or {@link MethodHandleNatives#setCallSiteTargetVolatile}.
