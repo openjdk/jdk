@@ -251,7 +251,7 @@ source %{
 #define   RELOC_IMM32    Assembler::imm_operand
 #define   RELOC_DISP32   Assembler::disp32_operand
 
-#define __ _masm.
+#define __ masm.
 
 // How to find the high register of a Long pair, given the low register
 #define   HIGH_FROM_LOW(x) ((x)+2)
@@ -350,107 +350,107 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const {
 }
 
 // EMIT_RM()
-void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
+void emit_rm(C2_MacroAssembler &masm, int f1, int f2, int f3) {
   unsigned char c = (unsigned char)((f1 << 6) | (f2 << 3) | f3);
-  cbuf.insts()->emit_int8(c);
+  masm.code()->insts()->emit_int8(c);
 }
 
 // EMIT_CC()
-void emit_cc(CodeBuffer &cbuf, int f1, int f2) {
+void emit_cc(C2_MacroAssembler &masm, int f1, int f2) {
   unsigned char c = (unsigned char)( f1 | f2 );
-  cbuf.insts()->emit_int8(c);
+  masm.code()->insts()->emit_int8(c);
 }
 
 // EMIT_OPCODE()
-void emit_opcode(CodeBuffer &cbuf, int code) {
-  cbuf.insts()->emit_int8((unsigned char) code);
+void emit_opcode(C2_MacroAssembler &masm, int code) {
+  masm.code()->insts()->emit_int8((unsigned char) code);
 }
 
 // EMIT_OPCODE() w/ relocation information
-void emit_opcode(CodeBuffer &cbuf, int code, relocInfo::relocType reloc, int offset = 0) {
-  cbuf.relocate(cbuf.insts_mark() + offset, reloc);
-  emit_opcode(cbuf, code);
+void emit_opcode(C2_MacroAssembler &masm, int code, relocInfo::relocType reloc, int offset = 0) {
+  masm.relocate(masm.inst_mark() + offset, reloc);
+  emit_opcode(masm, code);
 }
 
 // EMIT_D8()
-void emit_d8(CodeBuffer &cbuf, int d8) {
-  cbuf.insts()->emit_int8((unsigned char) d8);
+void emit_d8(C2_MacroAssembler &masm, int d8) {
+  masm.code()->insts()->emit_int8((unsigned char) d8);
 }
 
 // EMIT_D16()
-void emit_d16(CodeBuffer &cbuf, int d16) {
-  cbuf.insts()->emit_int16(d16);
+void emit_d16(C2_MacroAssembler &masm, int d16) {
+  masm.code()->insts()->emit_int16(d16);
 }
 
 // EMIT_D32()
-void emit_d32(CodeBuffer &cbuf, int d32) {
-  cbuf.insts()->emit_int32(d32);
+void emit_d32(C2_MacroAssembler &masm, int d32) {
+  masm.code()->insts()->emit_int32(d32);
 }
 
 // emit 32 bit value and construct relocation entry from relocInfo::relocType
-void emit_d32_reloc(CodeBuffer &cbuf, int d32, relocInfo::relocType reloc,
+void emit_d32_reloc(C2_MacroAssembler &masm, int d32, relocInfo::relocType reloc,
         int format) {
-  cbuf.relocate(cbuf.insts_mark(), reloc, format);
-  cbuf.insts()->emit_int32(d32);
+  masm.relocate(masm.inst_mark(), reloc, format);
+  masm.code()->insts()->emit_int32(d32);
 }
 
 // emit 32 bit value and construct relocation entry from RelocationHolder
-void emit_d32_reloc(CodeBuffer &cbuf, int d32, RelocationHolder const& rspec,
+void emit_d32_reloc(C2_MacroAssembler &masm, int d32, RelocationHolder const& rspec,
         int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type && d32 != 0 && d32 != (int)Universe::non_oop_word()) {
     assert(oopDesc::is_oop(cast_to_oop(d32)), "cannot embed broken oops in code");
   }
 #endif
-  cbuf.relocate(cbuf.insts_mark(), rspec, format);
-  cbuf.insts()->emit_int32(d32);
+  masm.relocate(masm.inst_mark(), rspec, format);
+  masm.code()->insts()->emit_int32(d32);
 }
 
 // Access stack slot for load or store
-void store_to_stackslot(CodeBuffer &cbuf, int opcode, int rm_field, int disp) {
-  emit_opcode( cbuf, opcode );               // (e.g., FILD   [ESP+src])
+void store_to_stackslot(C2_MacroAssembler &masm, int opcode, int rm_field, int disp) {
+  emit_opcode( masm, opcode );               // (e.g., FILD   [ESP+src])
   if( -128 <= disp && disp <= 127 ) {
-    emit_rm( cbuf, 0x01, rm_field, ESP_enc );  // R/M byte
-    emit_rm( cbuf, 0x00, ESP_enc, ESP_enc);    // SIB byte
-    emit_d8 (cbuf, disp);     // Displacement  // R/M byte
+    emit_rm( masm, 0x01, rm_field, ESP_enc );  // R/M byte
+    emit_rm( masm, 0x00, ESP_enc, ESP_enc);    // SIB byte
+    emit_d8 (masm, disp);     // Displacement  // R/M byte
   } else {
-    emit_rm( cbuf, 0x02, rm_field, ESP_enc );  // R/M byte
-    emit_rm( cbuf, 0x00, ESP_enc, ESP_enc);    // SIB byte
-    emit_d32(cbuf, disp);     // Displacement  // R/M byte
+    emit_rm( masm, 0x02, rm_field, ESP_enc );  // R/M byte
+    emit_rm( masm, 0x00, ESP_enc, ESP_enc);    // SIB byte
+    emit_d32(masm, disp);     // Displacement  // R/M byte
   }
 }
 
    // rRegI ereg, memory mem) %{    // emit_reg_mem
-void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int scale, int displace, relocInfo::relocType disp_reloc ) {
+void encode_RegMem( C2_MacroAssembler &masm, int reg_encoding, int base, int index, int scale, int displace, relocInfo::relocType disp_reloc ) {
   // There is no index & no scale, use form without SIB byte
   if ((index == 0x4) &&
       (scale == 0) && (base != ESP_enc)) {
     // If no displacement, mode is 0x0; unless base is [EBP]
     if ( (displace == 0) && (base != EBP_enc) ) {
-      emit_rm(cbuf, 0x0, reg_encoding, base);
+      emit_rm(masm, 0x0, reg_encoding, base);
     }
     else {                    // If 8-bit displacement, mode 0x1
       if ((displace >= -128) && (displace <= 127)
           && (disp_reloc == relocInfo::none) ) {
-        emit_rm(cbuf, 0x1, reg_encoding, base);
-        emit_d8(cbuf, displace);
+        emit_rm(masm, 0x1, reg_encoding, base);
+        emit_d8(masm, displace);
       }
       else {                  // If 32-bit displacement
         if (base == -1) { // Special flag for absolute address
-          emit_rm(cbuf, 0x0, reg_encoding, 0x5);
+          emit_rm(masm, 0x0, reg_encoding, 0x5);
           // (manual lies; no SIB needed here)
           if ( disp_reloc != relocInfo::none ) {
-            emit_d32_reloc(cbuf, displace, disp_reloc, 1);
+            emit_d32_reloc(masm, displace, disp_reloc, 1);
           } else {
-            emit_d32      (cbuf, displace);
+            emit_d32      (masm, displace);
           }
         }
         else {                // Normal base + offset
-          emit_rm(cbuf, 0x2, reg_encoding, base);
+          emit_rm(masm, 0x2, reg_encoding, base);
           if ( disp_reloc != relocInfo::none ) {
-            emit_d32_reloc(cbuf, displace, disp_reloc, 1);
+            emit_d32_reloc(masm, displace, disp_reloc, 1);
           } else {
-            emit_d32      (cbuf, displace);
+            emit_d32      (masm, displace);
           }
         }
       }
@@ -459,28 +459,28 @@ void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int
   else {                      // Else, encode with the SIB byte
     // If no displacement, mode is 0x0; unless base is [EBP]
     if (displace == 0 && (base != EBP_enc)) {  // If no displacement
-      emit_rm(cbuf, 0x0, reg_encoding, 0x4);
-      emit_rm(cbuf, scale, index, base);
+      emit_rm(masm, 0x0, reg_encoding, 0x4);
+      emit_rm(masm, scale, index, base);
     }
     else {                    // If 8-bit displacement, mode 0x1
       if ((displace >= -128) && (displace <= 127)
           && (disp_reloc == relocInfo::none) ) {
-        emit_rm(cbuf, 0x1, reg_encoding, 0x4);
-        emit_rm(cbuf, scale, index, base);
-        emit_d8(cbuf, displace);
+        emit_rm(masm, 0x1, reg_encoding, 0x4);
+        emit_rm(masm, scale, index, base);
+        emit_d8(masm, displace);
       }
       else {                  // If 32-bit displacement
         if (base == 0x04 ) {
-          emit_rm(cbuf, 0x2, reg_encoding, 0x4);
-          emit_rm(cbuf, scale, index, 0x04);
+          emit_rm(masm, 0x2, reg_encoding, 0x4);
+          emit_rm(masm, scale, index, 0x04);
         } else {
-          emit_rm(cbuf, 0x2, reg_encoding, 0x4);
-          emit_rm(cbuf, scale, index, base);
+          emit_rm(masm, 0x2, reg_encoding, 0x4);
+          emit_rm(masm, scale, index, base);
         }
         if ( disp_reloc != relocInfo::none ) {
-          emit_d32_reloc(cbuf, displace, disp_reloc, 1);
+          emit_d32_reloc(masm, displace, disp_reloc, 1);
         } else {
-          emit_d32      (cbuf, displace);
+          emit_d32      (masm, displace);
         }
       }
     }
@@ -488,16 +488,16 @@ void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int
 }
 
 
-void encode_Copy( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
+void encode_Copy( C2_MacroAssembler &masm, int dst_encoding, int src_encoding ) {
   if( dst_encoding == src_encoding ) {
     // reg-reg copy, use an empty encoding
   } else {
-    emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, dst_encoding, src_encoding );
+    emit_opcode( masm, 0x8B );
+    emit_rm(masm, 0x3, dst_encoding, src_encoding );
   }
 }
 
-void emit_cmpfp_fixup(MacroAssembler& _masm) {
+void emit_cmpfp_fixup(MacroAssembler& masm) {
   Label exit;
   __ jccb(Assembler::noParity, exit);
   __ pushf();
@@ -517,7 +517,7 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+void emit_cmpfp3(MacroAssembler& masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -540,7 +540,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler& masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -620,16 +620,15 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 #endif
 
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
 
   __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->in_24_bit_fp_mode(), C->stub_function() != NULL);
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(masm.offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -677,18 +676,17 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachEpilogNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile *C = ra_->C;
-  MacroAssembler _masm(&cbuf);
 
   if (C->max_vector_size() > 16) {
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    _masm.vzeroupper();
+    masm.vzeroupper();
   }
   // If method set FPU control word, restore to standard control word
   if (C->in_24_bit_fp_mode()) {
-    _masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
+    masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
   }
 
   int framesize = C->output()->frame_size_in_bytes();
@@ -699,16 +697,16 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // Note that VerifyStackAtCalls' Majik cookie does not change the frame size popped here
 
   if (framesize >= 128) {
-    emit_opcode(cbuf, 0x81); // add  SP, #framesize
-    emit_rm(cbuf, 0x3, 0x00, ESP_enc);
-    emit_d32(cbuf, framesize);
+    emit_opcode(masm, 0x81); // add  SP, #framesize
+    emit_rm(masm, 0x3, 0x00, ESP_enc);
+    emit_d32(masm, framesize);
   } else if (framesize) {
-    emit_opcode(cbuf, 0x83); // add  SP, #framesize
-    emit_rm(cbuf, 0x3, 0x00, ESP_enc);
-    emit_d8(cbuf, framesize);
+    emit_opcode(masm, 0x83); // add  SP, #framesize
+    emit_rm(masm, 0x3, 0x00, ESP_enc);
+    emit_d8(masm, framesize);
   }
 
-  emit_opcode(cbuf, 0x58 | EBP_enc);
+  emit_opcode(masm, 0x58 | EBP_enc);
 
   if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
     __ reserved_stack_check();
@@ -716,7 +714,6 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (do_polling() && C->is_method_compilation()) {
     Register thread = as_Register(EBX_enc);
-    MacroAssembler masm(&cbuf);
     __ get_thread(thread);
     Label dummy_label;
     Label* code_stub = &dummy_label;
@@ -760,11 +757,11 @@ static enum RC rc_class( OptoReg::Name reg ) {
   return rc_xmm;
 }
 
-static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset, int reg,
+static int impl_helper( C2_MacroAssembler *masm, bool do_size, bool is_load, int offset, int reg,
                         int opcode, const char *op_str, int size, outputStream* st ) {
-  if( cbuf ) {
-    emit_opcode  (*cbuf, opcode );
-    encode_RegMem(*cbuf, Matcher::_regEncode[reg], ESP_enc, 0x4, 0, offset, relocInfo::none);
+  if( masm ) {
+    emit_opcode  (*masm, opcode );
+    encode_RegMem(*masm, Matcher::_regEncode[reg], ESP_enc, 0x4, 0, offset, relocInfo::none);
 #ifndef PRODUCT
   } else if( !do_size ) {
     if( size != 0 ) st->print("\n\t");
@@ -781,7 +778,7 @@ static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset
 }
 
 // Helper for XMM registers.  Extra opcode bits, limited syntax.
-static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
+static int impl_x_helper( C2_MacroAssembler *masm, bool do_size, bool is_load,
                          int offset, int reg_lo, int reg_hi, int size, outputStream* st ) {
   int in_size_in_bits = Assembler::EVEX_32bit;
   int evex_encoding = 0;
@@ -789,22 +786,21 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
     in_size_in_bits = Assembler::EVEX_64bit;
     evex_encoding = Assembler::VEX_W;
   }
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     // EVEX spills remain EVEX: Compressed displacemement is better than AVX on spill mem operations,
     //                          it maps more cases to single byte displacement
-    _masm.set_managed();
+    masm->set_managed();
     if (reg_lo+1 == reg_hi) { // double move?
       if (is_load) {
-        __ movdbl(as_XMMRegister(Matcher::_regEncode[reg_lo]), Address(rsp, offset));
+        masm->movdbl(as_XMMRegister(Matcher::_regEncode[reg_lo]), Address(rsp, offset));
       } else {
-        __ movdbl(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[reg_lo]));
+        masm->movdbl(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[reg_lo]));
       }
     } else {
       if (is_load) {
-        __ movflt(as_XMMRegister(Matcher::_regEncode[reg_lo]), Address(rsp, offset));
+        masm->movflt(as_XMMRegister(Matcher::_regEncode[reg_lo]), Address(rsp, offset));
       } else {
-        __ movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[reg_lo]));
+        masm->movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[reg_lo]));
       }
     }
 #ifndef PRODUCT
@@ -840,17 +836,16 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
 }
 
 
-static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+static int impl_movx_helper( C2_MacroAssembler *masm, bool do_size, int src_lo, int dst_lo,
                             int src_hi, int dst_hi, int size, outputStream* st ) {
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     // EVEX spills remain EVEX: logic complex between full EVEX, partial and AVX, manage EVEX spill code one way.
-    _masm.set_managed();
+    masm->set_managed();
     if (src_lo+1 == src_hi && dst_lo+1 == dst_hi) { // double move?
-      __ movdbl(as_XMMRegister(Matcher::_regEncode[dst_lo]),
+      masm->movdbl(as_XMMRegister(Matcher::_regEncode[dst_lo]),
                 as_XMMRegister(Matcher::_regEncode[src_lo]));
     } else {
-      __ movflt(as_XMMRegister(Matcher::_regEncode[dst_lo]),
+      masm->movflt(as_XMMRegister(Matcher::_regEncode[dst_lo]),
                 as_XMMRegister(Matcher::_regEncode[src_lo]));
     }
 #ifndef PRODUCT
@@ -879,14 +874,13 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
   return size + sz;
 }
 
-static int impl_movgpr2x_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+static int impl_movgpr2x_helper( C2_MacroAssembler *masm, bool do_size, int src_lo, int dst_lo,
                             int src_hi, int dst_hi, int size, outputStream* st ) {
   // 32-bit
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     // EVEX spills remain EVEX: logic complex between full EVEX, partial and AVX, manage EVEX spill code one way.
-    _masm.set_managed();
-    __ movdl(as_XMMRegister(Matcher::_regEncode[dst_lo]),
+    masm->set_managed();
+    masm->movdl(as_XMMRegister(Matcher::_regEncode[dst_lo]),
              as_Register(Matcher::_regEncode[src_lo]));
 #ifndef PRODUCT
   } else if (!do_size) {
@@ -897,14 +891,13 @@ static int impl_movgpr2x_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
 }
 
 
-static int impl_movx2gpr_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst_lo,
+static int impl_movx2gpr_helper( C2_MacroAssembler *masm, bool do_size, int src_lo, int dst_lo,
                                  int src_hi, int dst_hi, int size, outputStream* st ) {
   // 32-bit
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     // EVEX spills remain EVEX: logic complex between full EVEX, partial and AVX, manage EVEX spill code one way.
-    _masm.set_managed();
-    __ movdl(as_Register(Matcher::_regEncode[dst_lo]),
+    masm->set_managed();
+    masm->movdl(as_Register(Matcher::_regEncode[dst_lo]),
              as_XMMRegister(Matcher::_regEncode[src_lo]));
 #ifndef PRODUCT
   } else if (!do_size) {
@@ -914,10 +907,10 @@ static int impl_movx2gpr_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
   return (UseAVX> 2) ? 6 : 4;
 }
 
-static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int size, outputStream* st ) {
-  if( cbuf ) {
-    emit_opcode(*cbuf, 0x8B );
-    emit_rm    (*cbuf, 0x3, Matcher::_regEncode[dst], Matcher::_regEncode[src] );
+static int impl_mov_helper( C2_MacroAssembler *masm, bool do_size, int src, int dst, int size, outputStream* st ) {
+  if( masm ) {
+    emit_opcode(*masm, 0x8B );
+    emit_rm    (*masm, 0x3, Matcher::_regEncode[dst], Matcher::_regEncode[src] );
 #ifndef PRODUCT
   } else if( !do_size ) {
     if( size != 0 ) st->print("\n\t");
@@ -927,12 +920,12 @@ static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, in
   return size+2;
 }
 
-static int impl_fp_store_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int src_hi, int dst_lo, int dst_hi,
+static int impl_fp_store_helper( C2_MacroAssembler *masm, bool do_size, int src_lo, int src_hi, int dst_lo, int dst_hi,
                                  int offset, int size, outputStream* st ) {
   if( src_lo != FPR1L_num ) {      // Move value to top of FP stack, if not already there
-    if( cbuf ) {
-      emit_opcode( *cbuf, 0xD9 );  // FLD (i.e., push it)
-      emit_d8( *cbuf, 0xC0-1+Matcher::_regEncode[src_lo] );
+    if( masm ) {
+      emit_opcode( *masm, 0xD9 );  // FLD (i.e., push it)
+      emit_d8( *masm, 0xC0-1+Matcher::_regEncode[src_lo] );
 #ifndef PRODUCT
     } else if( !do_size ) {
       if( size != 0 ) st->print("\n\t");
@@ -954,48 +947,47 @@ static int impl_fp_store_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
     assert( !OptoReg::is_valid(src_hi) && !OptoReg::is_valid(dst_hi), "no non-adjacent float-stores" );
   }
 
-  return impl_helper(cbuf,do_size,false,offset,st_op,op,op_str,size, st);
+  return impl_helper(masm,do_size,false,offset,st_op,op,op_str,size, st);
 }
 
 // Next two methods are shared by 32- and 64-bit VM. They are defined in x86.ad.
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st);
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(MacroAssembler *masm, bool is_load,
                             int stack_offset, int reg, uint ireg, outputStream* st);
 
-static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
+static void vec_stack_to_stack_helper(MacroAssembler *masm, int src_offset,
                                      int dst_offset, uint ireg, outputStream* st) {
-  if (cbuf) {
-    MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS:
-      __ pushl(Address(rsp, src_offset));
-      __ popl (Address(rsp, dst_offset));
+      masm->pushl(Address(rsp, src_offset));
+      masm->popl (Address(rsp, dst_offset));
       break;
     case Op_VecD:
-      __ pushl(Address(rsp, src_offset));
-      __ popl (Address(rsp, dst_offset));
-      __ pushl(Address(rsp, src_offset+4));
-      __ popl (Address(rsp, dst_offset+4));
+      masm->pushl(Address(rsp, src_offset));
+      masm->popl (Address(rsp, dst_offset));
+      masm->pushl(Address(rsp, src_offset+4));
+      masm->popl (Address(rsp, dst_offset+4));
       break;
     case Op_VecX:
-      __ movdqu(Address(rsp, -16), xmm0);
-      __ movdqu(xmm0, Address(rsp, src_offset));
-      __ movdqu(Address(rsp, dst_offset), xmm0);
-      __ movdqu(xmm0, Address(rsp, -16));
+      masm->movdqu(Address(rsp, -16), xmm0);
+      masm->movdqu(xmm0, Address(rsp, src_offset));
+      masm->movdqu(Address(rsp, dst_offset), xmm0);
+      masm->movdqu(xmm0, Address(rsp, -16));
       break;
     case Op_VecY:
-      __ vmovdqu(Address(rsp, -32), xmm0);
-      __ vmovdqu(xmm0, Address(rsp, src_offset));
-      __ vmovdqu(Address(rsp, dst_offset), xmm0);
-      __ vmovdqu(xmm0, Address(rsp, -32));
+      masm->vmovdqu(Address(rsp, -32), xmm0);
+      masm->vmovdqu(xmm0, Address(rsp, src_offset));
+      masm->vmovdqu(Address(rsp, dst_offset), xmm0);
+      masm->vmovdqu(xmm0, Address(rsp, -32));
       break;
     case Op_VecZ:
-      __ evmovdquq(Address(rsp, -64), xmm0, 2);
-      __ evmovdquq(xmm0, Address(rsp, src_offset), 2);
-      __ evmovdquq(Address(rsp, dst_offset), xmm0, 2);
-      __ evmovdquq(xmm0, Address(rsp, -64), 2);
+      masm->evmovdquq(Address(rsp, -64), xmm0, 2);
+      masm->evmovdquq(xmm0, Address(rsp, src_offset), 2);
+      masm->evmovdquq(Address(rsp, dst_offset), xmm0, 2);
+      masm->evmovdquq(xmm0, Address(rsp, -64), 2);
       break;
     default:
       ShouldNotReachHere();
@@ -1043,7 +1035,7 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
   }
 }
 
-uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const {
+uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const {
   // Get registers to move
   OptoReg::Name src_second = ra_->get_reg_second(in(1));
   OptoReg::Name src_first = ra_->get_reg_first(in(1));
@@ -1072,15 +1064,15 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
       // mem -> mem
       int src_offset = ra_->reg2offset(src_first);
       int dst_offset = ra_->reg2offset(dst_first);
-      vec_stack_to_stack_helper(cbuf, src_offset, dst_offset, ireg, st);
+      vec_stack_to_stack_helper(masm, src_offset, dst_offset, ireg, st);
     } else if (src_first_rc == rc_xmm && dst_first_rc == rc_xmm ) {
-      vec_mov_helper(cbuf, src_first, dst_first, src_second, dst_second, ireg, st);
+      vec_mov_helper(masm, src_first, dst_first, src_second, dst_second, ireg, st);
     } else if (src_first_rc == rc_xmm && dst_first_rc == rc_stack ) {
       int stack_offset = ra_->reg2offset(dst_first);
-      vec_spill_helper(cbuf, false, stack_offset, src_first, ireg, st);
+      vec_spill_helper(masm, false, stack_offset, src_first, ireg, st);
     } else if (src_first_rc == rc_stack && dst_first_rc == rc_xmm ) {
       int stack_offset = ra_->reg2offset(src_first);
-      vec_spill_helper(cbuf, true,  stack_offset, dst_first, ireg, st);
+      vec_spill_helper(masm, true,  stack_offset, dst_first, ireg, st);
     } else {
       ShouldNotReachHere();
     }
@@ -1092,16 +1084,16 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if( src_first_rc == rc_stack && dst_first_rc == rc_stack ) {
     if( src_second == dst_first ) { // overlapping stack copy ranges
       assert( src_second_rc == rc_stack && dst_second_rc == rc_stack, "we only expect a stk-stk copy here" );
-      size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size, st);
-      size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size, st);
+      size = impl_helper(masm,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size, st);
+      size = impl_helper(masm,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size, st);
       src_second_rc = dst_second_rc = rc_bad;  // flag as already moved the second bits
     }
     // move low bits
-    size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),ESI_num,0xFF,"PUSH  ",size, st);
-    size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),EAX_num,0x8F,"POP   ",size, st);
+    size = impl_helper(masm,do_size,true ,ra_->reg2offset(src_first),ESI_num,0xFF,"PUSH  ",size, st);
+    size = impl_helper(masm,do_size,false,ra_->reg2offset(dst_first),EAX_num,0x8F,"POP   ",size, st);
     if( src_second_rc == rc_stack && dst_second_rc == rc_stack ) { // mov second bits
-      size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size, st);
-      size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size, st);
+      size = impl_helper(masm,do_size,true ,ra_->reg2offset(src_second),ESI_num,0xFF,"PUSH  ",size, st);
+      size = impl_helper(masm,do_size,false,ra_->reg2offset(dst_second),EAX_num,0x8F,"POP   ",size, st);
     }
     return size;
   }
@@ -1109,41 +1101,41 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   // --------------------------------------
   // Check for integer reg-reg copy
   if( src_first_rc == rc_int && dst_first_rc == rc_int )
-    size = impl_mov_helper(cbuf,do_size,src_first,dst_first,size, st);
+    size = impl_mov_helper(masm,do_size,src_first,dst_first,size, st);
 
   // Check for integer store
   if( src_first_rc == rc_int && dst_first_rc == rc_stack )
-    size = impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_first),src_first,0x89,"MOV ",size, st);
+    size = impl_helper(masm,do_size,false,ra_->reg2offset(dst_first),src_first,0x89,"MOV ",size, st);
 
   // Check for integer load
   if( src_first_rc == rc_stack && dst_first_rc == rc_int )
-    size = impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size, st);
+    size = impl_helper(masm,do_size,true ,ra_->reg2offset(src_first),dst_first,0x8B,"MOV ",size, st);
 
   // Check for integer reg-xmm reg copy
   if( src_first_rc == rc_int && dst_first_rc == rc_xmm ) {
     assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad),
             "no 64 bit integer-float reg moves" );
-    return impl_movgpr2x_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+    return impl_movgpr2x_helper(masm,do_size,src_first,dst_first,src_second, dst_second, size, st);
   }
   // --------------------------------------
   // Check for float reg-reg copy
   if( src_first_rc == rc_float && dst_first_rc == rc_float ) {
     assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad) ||
             (src_first+1 == src_second && dst_first+1 == dst_second), "no non-adjacent float-moves" );
-    if( cbuf ) {
+    if( masm ) {
 
       // Note the mucking with the register encode to compensate for the 0/1
       // indexing issue mentioned in a comment in the reg_def sections
       // for FPR registers many lines above here.
 
       if( src_first != FPR1L_num ) {
-        emit_opcode  (*cbuf, 0xD9 );           // FLD    ST(i)
-        emit_d8      (*cbuf, 0xC0+Matcher::_regEncode[src_first]-1 );
-        emit_opcode  (*cbuf, 0xDD );           // FSTP   ST(i)
-        emit_d8      (*cbuf, 0xD8+Matcher::_regEncode[dst_first] );
+        emit_opcode  (*masm, 0xD9 );           // FLD    ST(i)
+        emit_d8      (*masm, 0xC0+Matcher::_regEncode[src_first]-1 );
+        emit_opcode  (*masm, 0xDD );           // FSTP   ST(i)
+        emit_d8      (*masm, 0xD8+Matcher::_regEncode[dst_first] );
      } else {
-        emit_opcode  (*cbuf, 0xDD );           // FST    ST(i)
-        emit_d8      (*cbuf, 0xD0+Matcher::_regEncode[dst_first]-1 );
+        emit_opcode  (*masm, 0xDD );           // FST    ST(i)
+        emit_d8      (*masm, 0xD0+Matcher::_regEncode[dst_first]-1 );
      }
 #ifndef PRODUCT
     } else if( !do_size ) {
@@ -1157,7 +1149,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
   // Check for float store
   if( src_first_rc == rc_float && dst_first_rc == rc_stack ) {
-    return impl_fp_store_helper(cbuf,do_size,src_first,src_second,dst_first,dst_second,ra_->reg2offset(dst_first),size, st);
+    return impl_fp_store_helper(masm,do_size,src_first,src_second,dst_first,dst_second,ra_->reg2offset(dst_first),size, st);
   }
 
   // Check for float load
@@ -1173,11 +1165,11 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
       op = 0xD9;
       assert( src_second_rc == rc_bad && dst_second_rc == rc_bad, "no non-adjacent float-loads" );
     }
-    if( cbuf ) {
-      emit_opcode  (*cbuf, op );
-      encode_RegMem(*cbuf, 0x0, ESP_enc, 0x4, 0, offset, relocInfo::none);
-      emit_opcode  (*cbuf, 0xDD );           // FSTP   ST(i)
-      emit_d8      (*cbuf, 0xD8+Matcher::_regEncode[dst_first] );
+    if( masm ) {
+      emit_opcode  (*masm, op );
+      encode_RegMem(*masm, 0x0, ESP_enc, 0x4, 0, offset, relocInfo::none);
+      emit_opcode  (*masm, 0xDD );           // FSTP   ST(i)
+      emit_d8      (*masm, 0xD8+Matcher::_regEncode[dst_first] );
 #ifndef PRODUCT
     } else if( !do_size ) {
       if( size != 0 ) st->print("\n\t");
@@ -1193,35 +1185,35 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad) ||
             (src_first+1 == src_second && dst_first+1 == dst_second),
             "no non-adjacent float-moves" );
-    return impl_movx_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+    return impl_movx_helper(masm,do_size,src_first,dst_first,src_second, dst_second, size, st);
   }
 
   // Check for xmm reg-integer reg copy
   if( src_first_rc == rc_xmm && dst_first_rc == rc_int ) {
     assert( (src_second_rc == rc_bad && dst_second_rc == rc_bad),
             "no 64 bit float-integer reg moves" );
-    return impl_movx2gpr_helper(cbuf,do_size,src_first,dst_first,src_second, dst_second, size, st);
+    return impl_movx2gpr_helper(masm,do_size,src_first,dst_first,src_second, dst_second, size, st);
   }
 
   // Check for xmm store
   if( src_first_rc == rc_xmm && dst_first_rc == rc_stack ) {
-    return impl_x_helper(cbuf,do_size,false,ra_->reg2offset(dst_first), src_first, src_second, size, st);
+    return impl_x_helper(masm,do_size,false,ra_->reg2offset(dst_first), src_first, src_second, size, st);
   }
 
   // Check for float xmm load
   if( src_first_rc == rc_stack && dst_first_rc == rc_xmm ) {
-    return impl_x_helper(cbuf,do_size,true ,ra_->reg2offset(src_first),dst_first, dst_second, size, st);
+    return impl_x_helper(masm,do_size,true ,ra_->reg2offset(src_first),dst_first, dst_second, size, st);
   }
 
   // Copy from float reg to xmm reg
   if( src_first_rc == rc_float && dst_first_rc == rc_xmm ) {
     // copy to the top of stack from floating point reg
     // and use LEA to preserve flags
-    if( cbuf ) {
-      emit_opcode(*cbuf,0x8D);  // LEA  ESP,[ESP-8]
-      emit_rm(*cbuf, 0x1, ESP_enc, 0x04);
-      emit_rm(*cbuf, 0x0, 0x04, ESP_enc);
-      emit_d8(*cbuf,0xF8);
+    if( masm ) {
+      emit_opcode(*masm,0x8D);  // LEA  ESP,[ESP-8]
+      emit_rm(*masm, 0x1, ESP_enc, 0x04);
+      emit_rm(*masm, 0x0, 0x04, ESP_enc);
+      emit_d8(*masm,0xF8);
 #ifndef PRODUCT
     } else if( !do_size ) {
       if( size != 0 ) st->print("\n\t");
@@ -1230,16 +1222,16 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     }
     size += 4;
 
-    size = impl_fp_store_helper(cbuf,do_size,src_first,src_second,dst_first,dst_second,0,size, st);
+    size = impl_fp_store_helper(masm,do_size,src_first,src_second,dst_first,dst_second,0,size, st);
 
     // Copy from the temp memory to the xmm reg.
-    size = impl_x_helper(cbuf,do_size,true ,0,dst_first, dst_second, size, st);
+    size = impl_x_helper(masm,do_size,true ,0,dst_first, dst_second, size, st);
 
-    if( cbuf ) {
-      emit_opcode(*cbuf,0x8D);  // LEA  ESP,[ESP+8]
-      emit_rm(*cbuf, 0x1, ESP_enc, 0x04);
-      emit_rm(*cbuf, 0x0, 0x04, ESP_enc);
-      emit_d8(*cbuf,0x08);
+    if( masm ) {
+      emit_opcode(*masm,0x8D);  // LEA  ESP,[ESP+8]
+      emit_rm(*masm, 0x1, ESP_enc, 0x04);
+      emit_rm(*masm, 0x0, 0x04, ESP_enc);
+      emit_d8(*masm,0x08);
 #ifndef PRODUCT
     } else if( !do_size ) {
       if( size != 0 ) st->print("\n\t");
@@ -1254,18 +1246,16 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if (src_first_rc == rc_stack && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
     int offset = ra_->reg2offset(src_first);
-    __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+    masm->kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
     return 0;
   }
 
   if (src_first_rc == rc_kreg && dst_first_rc == rc_stack) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
     int offset = ra_->reg2offset(dst_first);
-    __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+    masm->kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
     return 0;
   }
 
@@ -1282,8 +1272,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if (src_first_rc == rc_kreg && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
-    __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+    masm->kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
     return 0;
   }
 
@@ -1297,15 +1286,15 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 
   // Check for second word int-int move
   if( src_second_rc == rc_int && dst_second_rc == rc_int )
-    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size, st);
+    return impl_mov_helper(masm,do_size,src_second,dst_second,size, st);
 
   // Check for second word integer store
   if( src_second_rc == rc_int && dst_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
+    return impl_helper(masm,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
 
   // Check for second word integer load
   if( dst_second_rc == rc_int && src_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
+    return impl_helper(masm,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
 
   Unimplemented();
   return 0; // Mute compiler
@@ -1317,8 +1306,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation( &cbuf, ra_, false, NULL );
+void MachSpillCopyNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  implementation( &masm, ra_, false, NULL );
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1335,20 +1324,20 @@ void BoxLockNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void BoxLockNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
   if( offset >= 128 ) {
-    emit_opcode(cbuf, 0x8D);      // LEA  reg,[SP+offset]
-    emit_rm(cbuf, 0x2, reg, 0x04);
-    emit_rm(cbuf, 0x0, 0x04, ESP_enc);
-    emit_d32(cbuf, offset);
+    emit_opcode(masm, 0x8D);      // LEA  reg,[SP+offset]
+    emit_rm(masm, 0x2, reg, 0x04);
+    emit_rm(masm, 0x0, 0x04, ESP_enc);
+    emit_d32(masm, offset);
   }
   else {
-    emit_opcode(cbuf, 0x8D);      // LEA  reg,[SP+offset]
-    emit_rm(cbuf, 0x1, reg, 0x04);
-    emit_rm(cbuf, 0x0, 0x04, ESP_enc);
-    emit_d8(cbuf, offset);
+    emit_opcode(masm, 0x8D);      // LEA  reg,[SP+offset]
+    emit_rm(masm, 0x1, reg, 0x04);
+    emit_rm(masm, 0x0, 0x04, ESP_enc);
+    emit_d8(masm, offset);
   }
 }
 
@@ -1374,10 +1363,9 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  MacroAssembler masm(&cbuf);
+void MachUEPNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
 #ifdef ASSERT
-  uint insts_size = cbuf.insts_size();
+  uint insts_size = masm.offset();
 #endif
   masm.cmpptr(rax, Address(rcx, oopDesc::klass_offset_in_bytes()));
   masm.jump_cc(Assembler::notEqual,
@@ -1389,7 +1377,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
      nops_cnt += 1;
   masm.nop(nops_cnt);
 
-  assert(cbuf.insts_size() - insts_size == size(ra_), "checking code size of inline cache node");
+  assert(masm.offset() - insts_size == size(ra_), "checking code size of inline cache node");
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -1533,37 +1521,49 @@ encode %{
   // adding a syntax that specifies the sizes of fields in an order,
   // so that the adlc can build the emit functions automagically
 
+  // Set instruction mark in MacroAssembler. This is used only in
+  // instructions that emit bytes directly to the CodeBuffer wraped
+  // in the MacroAssembler. Should go away once all "instruct" are
+  // patched to emit bytes only using methods in MacroAssembler.
+  enc_class SetInstMark %{
+    __ set_inst_mark();
+  %}
+
+  enc_class ClearInstMark %{
+    __ set_inst_mark();
+  %}
+
   // Emit primary opcode
   enc_class OpcP %{
-    emit_opcode(cbuf, $primary);
+    emit_opcode(masm, $primary);
   %}
 
   // Emit secondary opcode
   enc_class OpcS %{
-    emit_opcode(cbuf, $secondary);
+    emit_opcode(masm, $secondary);
   %}
 
   // Emit opcode directly
   enc_class Opcode(immI d8) %{
-    emit_opcode(cbuf, $d8$$constant);
+    emit_opcode(masm, $d8$$constant);
   %}
 
   enc_class SizePrefix %{
-    emit_opcode(cbuf,0x66);
+    emit_opcode(masm,0x66);
   %}
 
   enc_class RegReg (rRegI dst, rRegI src) %{    // RegReg(Many)
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class OpcRegReg (immI opcode, rRegI dst, rRegI src) %{    // OpcRegReg(Many)
-    emit_opcode(cbuf,$opcode$$constant);
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_opcode(masm,$opcode$$constant);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class mov_r32_imm0( rRegI dst ) %{
-    emit_opcode( cbuf, 0xB8 + $dst$$reg ); // 0xB8+ rd   -- MOV r32  ,imm32
-    emit_d32   ( cbuf, 0x0  );             //                         imm32==0x0
+    emit_opcode( masm, 0xB8 + $dst$$reg ); // 0xB8+ rd   -- MOV r32  ,imm32
+    emit_d32   ( masm, 0x0  );             //                         imm32==0x0
   %}
 
   enc_class cdq_enc %{
@@ -1590,26 +1590,26 @@ encode %{
     //  F7 F9                idiv        rax,ecx
     //                  done:
     //
-    emit_opcode(cbuf,0x81); emit_d8(cbuf,0xF8);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x80);                     // cmp rax,80000000h
-    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x85);
-    emit_opcode(cbuf,0x0B); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // jne normal_case
-    emit_opcode(cbuf,0x33); emit_d8(cbuf,0xD2);                     // xor rdx,edx
-    emit_opcode(cbuf,0x83); emit_d8(cbuf,0xF9); emit_d8(cbuf,0xFF); // cmp rcx,0FFh
-    emit_opcode(cbuf,0x0F); emit_d8(cbuf,0x84);
-    emit_opcode(cbuf,0x03); emit_d8(cbuf,0x00);
-    emit_opcode(cbuf,0x00); emit_d8(cbuf,0x00);                     // je done
+    emit_opcode(masm,0x81); emit_d8(masm,0xF8);
+    emit_opcode(masm,0x00); emit_d8(masm,0x00);
+    emit_opcode(masm,0x00); emit_d8(masm,0x80);                     // cmp rax,80000000h
+    emit_opcode(masm,0x0F); emit_d8(masm,0x85);
+    emit_opcode(masm,0x0B); emit_d8(masm,0x00);
+    emit_opcode(masm,0x00); emit_d8(masm,0x00);                     // jne normal_case
+    emit_opcode(masm,0x33); emit_d8(masm,0xD2);                     // xor rdx,edx
+    emit_opcode(masm,0x83); emit_d8(masm,0xF9); emit_d8(masm,0xFF); // cmp rcx,0FFh
+    emit_opcode(masm,0x0F); emit_d8(masm,0x84);
+    emit_opcode(masm,0x03); emit_d8(masm,0x00);
+    emit_opcode(masm,0x00); emit_d8(masm,0x00);                     // je done
     // normal_case:
-    emit_opcode(cbuf,0x99);                                         // cdq
+    emit_opcode(masm,0x99);                                         // cdq
     // idiv (note: must be emitted by the user of this rule)
     // normal:
   %}
 
   // Dense encoding for older common ops
   enc_class Opc_plus(immI opcode, rRegI reg) %{
-    emit_opcode(cbuf, $opcode$$constant + $reg$$reg);
+    emit_opcode(masm, $opcode$$constant + $reg$$reg);
   %}
 
 
@@ -1617,10 +1617,10 @@ encode %{
   enc_class OpcSE (immI imm) %{ // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     if (($imm$$constant >= -128) && ($imm$$constant <= 127)) {
-      emit_opcode(cbuf, $primary | 0x02);
+      emit_opcode(masm, $primary | 0x02);
     }
     else {                          // If 32-bit immediate
-      emit_opcode(cbuf, $primary);
+      emit_opcode(masm, $primary);
     }
   %}
 
@@ -1628,12 +1628,12 @@ encode %{
     // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     if (($imm$$constant >= -128) && ($imm$$constant <= 127)) {
-      emit_opcode(cbuf, $primary | 0x02);    }
+      emit_opcode(masm, $primary | 0x02);    }
     else {                          // If 32-bit immediate
-      emit_opcode(cbuf, $primary);
+      emit_opcode(masm, $primary);
     }
     // Emit r/m byte with secondary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
+    emit_rm(masm, 0x3, $secondary, $dst$$reg);
   %}
 
   enc_class Con8or32 (immI imm) %{    // Con8or32(storeImmI), 8 or 32 bits
@@ -1651,62 +1651,62 @@ encode %{
     // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     int con = (int)$imm$$constant; // Throw away top bits
-    emit_opcode(cbuf, ((con >= -128) && (con <= 127)) ? ($primary | 0x02) : $primary);
+    emit_opcode(masm, ((con >= -128) && (con <= 127)) ? ($primary | 0x02) : $primary);
     // Emit r/m byte with secondary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
-    if ((con >= -128) && (con <= 127)) emit_d8 (cbuf,con);
-    else                               emit_d32(cbuf,con);
+    emit_rm(masm, 0x3, $secondary, $dst$$reg);
+    if ((con >= -128) && (con <= 127)) emit_d8 (masm,con);
+    else                               emit_d32(masm,con);
   %}
 
   enc_class Long_OpcSErm_Hi(eRegL dst, immL imm) %{
     // Emit primary opcode and set sign-extend bit
     // Check for 8-bit immediate, and set sign extend bit in opcode
     int con = (int)($imm$$constant >> 32); // Throw away bottom bits
-    emit_opcode(cbuf, ((con >= -128) && (con <= 127)) ? ($primary | 0x02) : $primary);
+    emit_opcode(masm, ((con >= -128) && (con <= 127)) ? ($primary | 0x02) : $primary);
     // Emit r/m byte with tertiary opcode, after primary opcode.
-    emit_rm(cbuf, 0x3, $tertiary, HIGH_FROM_LOW($dst$$reg));
-    if ((con >= -128) && (con <= 127)) emit_d8 (cbuf,con);
-    else                               emit_d32(cbuf,con);
+    emit_rm(masm, 0x3, $tertiary, HIGH_FROM_LOW($dst$$reg));
+    if ((con >= -128) && (con <= 127)) emit_d8 (masm,con);
+    else                               emit_d32(masm,con);
   %}
 
   enc_class OpcSReg (rRegI dst) %{    // BSWAP
-    emit_cc(cbuf, $secondary, $dst$$reg );
+    emit_cc(masm, $secondary, $dst$$reg );
   %}
 
   enc_class bswap_long_bytes(eRegL dst) %{ // BSWAP
     int destlo = $dst$$reg;
     int desthi = HIGH_FROM_LOW(destlo);
     // bswap lo
-    emit_opcode(cbuf, 0x0F);
-    emit_cc(cbuf, 0xC8, destlo);
+    emit_opcode(masm, 0x0F);
+    emit_cc(masm, 0xC8, destlo);
     // bswap hi
-    emit_opcode(cbuf, 0x0F);
-    emit_cc(cbuf, 0xC8, desthi);
+    emit_opcode(masm, 0x0F);
+    emit_cc(masm, 0xC8, desthi);
     // xchg lo and hi
-    emit_opcode(cbuf, 0x87);
-    emit_rm(cbuf, 0x3, destlo, desthi);
+    emit_opcode(masm, 0x87);
+    emit_rm(masm, 0x3, destlo, desthi);
   %}
 
   enc_class RegOpc (rRegI div) %{    // IDIV, IMOD, JMP indirect, ...
-    emit_rm(cbuf, 0x3, $secondary, $div$$reg );
+    emit_rm(masm, 0x3, $secondary, $div$$reg );
   %}
 
   enc_class enc_cmov(cmpOp cop ) %{ // CMOV
     $$$emit8$primary;
-    emit_cc(cbuf, $secondary, $cop$$cmpcode);
+    emit_cc(masm, $secondary, $cop$$cmpcode);
   %}
 
   enc_class enc_cmov_dpr(cmpOp cop, regDPR src ) %{ // CMOV
     int op = 0xDA00 + $cop$$cmpcode + ($src$$reg-1);
-    emit_d8(cbuf, op >> 8 );
-    emit_d8(cbuf, op & 255);
+    emit_d8(masm, op >> 8 );
+    emit_d8(masm, op & 255);
   %}
 
   // emulate a CMOV with a conditional branch around a MOV
   enc_class enc_cmov_branch( cmpOp cop, immI brOffs ) %{ // CMOV
     // Invert sense of branch from sense of CMOV
-    emit_cc( cbuf, 0x70, ($cop$$cmpcode^1) );
-    emit_d8( cbuf, $brOffs$$constant );
+    emit_cc( masm, 0x70, ($cop$$cmpcode^1) );
+    emit_d8( masm, $brOffs$$constant );
   %}
 
   enc_class enc_PartialSubtypeCheck( ) %{
@@ -1716,7 +1716,6 @@ encode %{
     Register Resi = as_Register(ESI_enc); // sub class
     Label miss;
 
-    MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
                                      NULL, &miss,
                                      /*set_cond_codes:*/ true);
@@ -1727,7 +1726,6 @@ encode %{
   %}
 
   enc_class FFree_Float_Stack_All %{    // Free_Float_Stack_All
-    MacroAssembler masm(&cbuf);
     int start = masm.offset();
     if (UseSSE >= 2) {
       if (VerifyFPU) {
@@ -1747,21 +1745,20 @@ encode %{
 
   enc_class Verify_FPU_For_Leaf %{
     if( VerifyFPU ) {
-      MacroAssembler masm(&cbuf);
       masm.verify_FPU( -3, "Returning from Runtime Leaf call");
     }
   %}
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime, Java_To_Runtime_Leaf
     // This is the instruction starting address for relocation info.
-    cbuf.set_insts_mark();
+    masm.set_inst_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
-    emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
+    emit_d32_reloc(masm, ($meth$$method - (int)(masm.pc()) - 4),
                 runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.clear_inst_mark();
 
     if (UseSSE >= 2) {
-      MacroAssembler _masm(&cbuf);
       BasicType rt = tf()->return_type();
 
       if ((rt == T_FLOAT || rt == T_DOUBLE) && !return_value_is_used()) {
@@ -1786,23 +1783,20 @@ encode %{
 
   enc_class pre_call_resets %{
     // If method sets FPU control word restore it here
-    debug_only(int off0 = cbuf.insts_size());
+    debug_only(int off0 = masm.offset());
     if (ra_->C->in_24_bit_fp_mode()) {
-      MacroAssembler _masm(&cbuf);
       __ fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_std()));
     }
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    MacroAssembler _masm(&cbuf);
     __ vzeroupper();
-    debug_only(int off1 = cbuf.insts_size());
+    debug_only(int off1 = masm.offset());
     assert(off1 - off0 == pre_call_resets_size(), "correct size prediction");
   %}
 
   enc_class post_call_FPU %{
     // If method sets FPU control word do it here also
     if (Compile::current()->in_24_bit_fp_mode()) {
-      MacroAssembler masm(&cbuf);
       masm.fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
     }
   %}
@@ -1810,21 +1804,23 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    cbuf.set_insts_mark();
+    masm.set_inst_mark();
     $$$emit8$primary;
 
     if (!_method) {
-      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
+      emit_d32_reloc(masm, ($meth$$method - (int)(masm.pc()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_IMM32);
+      masm.clear_inst_mark();
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
+      emit_d32_reloc(masm, ($meth$$method - (int)(masm.pc()) - 4),
                      rspec, RELOC_DISP32);
       // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(masm);
+      masm.clear_inst_mark();
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -1833,8 +1829,7 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
-    MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ ic_call((address)$meth$$method, resolved_method_index(masm));
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
@@ -1842,11 +1837,11 @@ encode %{
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
     // CALL *[EAX+in_bytes(Method::from_compiled_code_entry_point_offset())]
-    cbuf.set_insts_mark();
+    masm.set_inst_mark();
     $$$emit8$primary;
-    emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
-    emit_d8(cbuf, disp);             // Displacement
-
+    emit_rm(masm, 0x01, $secondary, EAX_enc );  // R/M byte
+    emit_d8(masm, disp);             // Displacement
+    masm.clear_inst_mark();
   %}
 
 //   Following encoding is no longer used, but may be restored if calling
@@ -1861,37 +1856,37 @@ encode %{
 //
 //     // // Interpreter expects method_ptr in EBX, currently a callee-saved register,
 //     // // so we load it immediately before the call
-//     // emit_opcode(cbuf, 0x8B);                     // MOV    imo_reg,ic_reg  # method_ptr
-//     // emit_rm(cbuf, 0x03, imo_encode, ic_encode ); // R/M byte
+//     // emit_opcode(masm, 0x8B);                     // MOV    imo_reg,ic_reg  # method_ptr
+//     // emit_rm(masm, 0x03, imo_encode, ic_encode ); // R/M byte
 //
 //     // xor rbp,ebp
-//     emit_opcode(cbuf, 0x33);
-//     emit_rm(cbuf, 0x3, EBP_enc, EBP_enc);
+//     emit_opcode(masm, 0x33);
+//     emit_rm(masm, 0x3, EBP_enc, EBP_enc);
 //
 //     // CALL to interpreter.
-//     cbuf.set_insts_mark();
+//     masm.set_inst_mark();
 //     $$$emit8$primary;
-//     emit_d32_reloc(cbuf, ($labl$$label - (int)(cbuf.insts_end()) - 4),
+//     emit_d32_reloc(masm, ($labl$$label - (int)(masm.pc()) - 4),
 //                 runtime_call_Relocation::spec(), RELOC_IMM32 );
 //   %}
 
   enc_class RegOpcImm (rRegI dst, immI8 shift) %{    // SHL, SAR, SHR
     $$$emit8$primary;
-    emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
+    emit_rm(masm, 0x3, $secondary, $dst$$reg);
     $$$emit8$shift$$constant;
   %}
 
   enc_class LdImmI (rRegI dst, immI src) %{    // Load Immediate
     // Load immediate does not have a zero or sign extended version
     // for 8-bit immediates
-    emit_opcode(cbuf, 0xB8 + $dst$$reg);
+    emit_opcode(masm, 0xB8 + $dst$$reg);
     $$$emit32$src$$constant;
   %}
 
   enc_class LdImmP (rRegI dst, immI src) %{    // Load Immediate
     // Load immediate does not have a zero or sign extended version
     // for 8-bit immediates
-    emit_opcode(cbuf, $primary + $dst$$reg);
+    emit_opcode(masm, $primary + $dst$$reg);
     $$$emit32$src$$constant;
   %}
 
@@ -1902,11 +1897,11 @@ encode %{
     int src_con = $src$$constant & 0x0FFFFFFFFL;
     if (src_con == 0) {
       // xor dst, dst
-      emit_opcode(cbuf, 0x33);
-      emit_rm(cbuf, 0x3, dst_enc, dst_enc);
+      emit_opcode(masm, 0x33);
+      emit_rm(masm, 0x3, dst_enc, dst_enc);
     } else {
-      emit_opcode(cbuf, $primary + dst_enc);
-      emit_d32(cbuf, src_con);
+      emit_opcode(masm, $primary + dst_enc);
+      emit_d32(masm, src_con);
     }
   %}
 
@@ -1917,48 +1912,48 @@ encode %{
     int src_con = ((julong)($src$$constant)) >> 32;
     if (src_con == 0) {
       // xor dst, dst
-      emit_opcode(cbuf, 0x33);
-      emit_rm(cbuf, 0x3, dst_enc, dst_enc);
+      emit_opcode(masm, 0x33);
+      emit_rm(masm, 0x3, dst_enc, dst_enc);
     } else {
-      emit_opcode(cbuf, $primary + dst_enc);
-      emit_d32(cbuf, src_con);
+      emit_opcode(masm, $primary + dst_enc);
+      emit_d32(masm, src_con);
     }
   %}
 
 
   // Encode a reg-reg copy.  If it is useless, then empty encoding.
   enc_class enc_Copy( rRegI dst, rRegI src ) %{
-    encode_Copy( cbuf, $dst$$reg, $src$$reg );
+    encode_Copy( masm, $dst$$reg, $src$$reg );
   %}
 
   enc_class enc_CopyL_Lo( rRegI dst, eRegL src ) %{
-    encode_Copy( cbuf, $dst$$reg, $src$$reg );
+    encode_Copy( masm, $dst$$reg, $src$$reg );
   %}
 
   enc_class RegReg (rRegI dst, rRegI src) %{    // RegReg(Many)
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class RegReg_Lo(eRegL dst, eRegL src) %{    // RegReg(Many)
     $$$emit8$primary;
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class RegReg_Hi(eRegL dst, eRegL src) %{    // RegReg(Many)
     $$$emit8$secondary;
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
   %}
 
   enc_class RegReg_Lo2(eRegL dst, eRegL src) %{    // RegReg(Many)
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class RegReg_Hi2(eRegL dst, eRegL src) %{    // RegReg(Many)
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg));
   %}
 
   enc_class RegReg_HiLo( eRegL src, rRegI dst ) %{
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($src$$reg));
+    emit_rm(masm, 0x3, $dst$$reg, HIGH_FROM_LOW($src$$reg));
   %}
 
   enc_class Con32 (immI src) %{    // Con32(storeImmI)
@@ -1970,14 +1965,14 @@ encode %{
     // Output Float immediate bits
     jfloat jf = $src$$constant;
     int    jf_as_bits = jint_cast( jf );
-    emit_d32(cbuf, jf_as_bits);
+    emit_d32(masm, jf_as_bits);
   %}
 
   enc_class Con32F_as_bits(immF src) %{      // storeX_imm
     // Output Float immediate bits
     jfloat jf = $src$$constant;
     int    jf_as_bits = jint_cast( jf );
-    emit_d32(cbuf, jf_as_bits);
+    emit_d32(masm, jf_as_bits);
   %}
 
   enc_class Con16 (immI src) %{    // Con16(storeImmI)
@@ -1986,17 +1981,17 @@ encode %{
   %}
 
   enc_class Con_d32(immI src) %{
-    emit_d32(cbuf,$src$$constant);
+    emit_d32(masm,$src$$constant);
   %}
 
   enc_class conmemref (eRegP t1) %{    // Con32(storeImmI)
     // Output immediate memory reference
-    emit_rm(cbuf, 0x00, $t1$$reg, 0x05 );
-    emit_d32(cbuf, 0x00);
+    emit_rm(masm, 0x00, $t1$$reg, 0x05 );
+    emit_d32(masm, 0x00);
   %}
 
   enc_class lock_prefix( ) %{
-    emit_opcode(cbuf,0xF0);         // [Lock]
+    emit_opcode(masm,0xF0);         // [Lock]
   %}
 
   // Cmp-xchg long value.
@@ -2007,69 +2002,65 @@ encode %{
   enc_class enc_cmpxchg8(eSIRegP mem_ptr) %{
 
     // XCHG  rbx,ecx
-    emit_opcode(cbuf,0x87);
-    emit_opcode(cbuf,0xD9);
+    emit_opcode(masm,0x87);
+    emit_opcode(masm,0xD9);
     // [Lock]
-    emit_opcode(cbuf,0xF0);
+    emit_opcode(masm,0xF0);
     // CMPXCHG8 [Eptr]
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xC7);
-    emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xC7);
+    emit_rm( masm, 0x0, 1, $mem_ptr$$reg );
     // XCHG  rbx,ecx
-    emit_opcode(cbuf,0x87);
-    emit_opcode(cbuf,0xD9);
+    emit_opcode(masm,0x87);
+    emit_opcode(masm,0xD9);
   %}
 
   enc_class enc_cmpxchg(eSIRegP mem_ptr) %{
     // [Lock]
-    emit_opcode(cbuf,0xF0);
+    emit_opcode(masm,0xF0);
 
     // CMPXCHG [Eptr]
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xB1);
-    emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xB1);
+    emit_rm( masm, 0x0, 1, $mem_ptr$$reg );
   %}
 
   enc_class enc_cmpxchgb(eSIRegP mem_ptr) %{
     // [Lock]
-    emit_opcode(cbuf,0xF0);
+    emit_opcode(masm,0xF0);
 
     // CMPXCHGB [Eptr]
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xB0);
-    emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xB0);
+    emit_rm( masm, 0x0, 1, $mem_ptr$$reg );
   %}
 
   enc_class enc_cmpxchgw(eSIRegP mem_ptr) %{
     // [Lock]
-    emit_opcode(cbuf,0xF0);
+    emit_opcode(masm,0xF0);
 
     // 16-bit mode
-    emit_opcode(cbuf, 0x66);
+    emit_opcode(masm, 0x66);
 
     // CMPXCHGW [Eptr]
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xB1);
-    emit_rm( cbuf, 0x0, 1, $mem_ptr$$reg );
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xB1);
+    emit_rm( masm, 0x0, 1, $mem_ptr$$reg );
   %}
 
   enc_class enc_flags_ne_to_boolean( iRegI res ) %{
     int res_encoding = $res$$reg;
 
     // MOV  res,0
-    emit_opcode( cbuf, 0xB8 + res_encoding);
-    emit_d32( cbuf, 0 );
+    emit_opcode( masm, 0xB8 + res_encoding);
+    emit_d32( masm, 0 );
     // JNE,s  fail
-    emit_opcode(cbuf,0x75);
-    emit_d8(cbuf, 5 );
+    emit_opcode(masm,0x75);
+    emit_d8(masm, 5 );
     // MOV  res,1
-    emit_opcode( cbuf, 0xB8 + res_encoding);
-    emit_d32( cbuf, 1 );
+    emit_opcode( masm, 0xB8 + res_encoding);
+    emit_d32( masm, 1 );
     // fail:
-  %}
-
-  enc_class set_instruction_start( ) %{
-    cbuf.set_insts_mark();            // Mark start of opcode for reloc info in mem operand
   %}
 
   enc_class RegMem (rRegI ereg, memory mem) %{    // emit_reg_mem
@@ -2079,7 +2070,7 @@ encode %{
     int scale = $mem$$scale;
     int displace = $mem$$disp;
     relocInfo::relocType disp_reloc = $mem->disp_reloc();
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
+    encode_RegMem(masm, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class RegMem_Hi(eRegL ereg, memory mem) %{    // emit_reg_mem
@@ -2089,33 +2080,33 @@ encode %{
     int scale = $mem$$scale;
     int displace = $mem$$disp + 4;      // Offset is 4 further in memory
     assert( $mem->disp_reloc() == relocInfo::none, "Cannot add 4 to oop" );
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, relocInfo::none);
+    encode_RegMem(masm, reg_encoding, base, index, scale, displace, relocInfo::none);
   %}
 
   enc_class move_long_small_shift( eRegL dst, immI_1_31 cnt ) %{
     int r1, r2;
     if( $tertiary == 0xA4 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW($dst$$reg); }
     else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW($dst$$reg); }
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,$tertiary);
-    emit_rm(cbuf, 0x3, r1, r2);
-    emit_d8(cbuf,$cnt$$constant);
-    emit_d8(cbuf,$primary);
-    emit_rm(cbuf, 0x3, $secondary, r1);
-    emit_d8(cbuf,$cnt$$constant);
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,$tertiary);
+    emit_rm(masm, 0x3, r1, r2);
+    emit_d8(masm,$cnt$$constant);
+    emit_d8(masm,$primary);
+    emit_rm(masm, 0x3, $secondary, r1);
+    emit_d8(masm,$cnt$$constant);
   %}
 
   enc_class move_long_big_shift_sign( eRegL dst, immI_32_63 cnt ) %{
-    emit_opcode( cbuf, 0x8B ); // Move
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
+    emit_opcode( masm, 0x8B ); // Move
+    emit_rm(masm, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
     if( $cnt$$constant > 32 ) { // Shift, if not by zero
-      emit_d8(cbuf,$primary);
-      emit_rm(cbuf, 0x3, $secondary, $dst$$reg);
-      emit_d8(cbuf,$cnt$$constant-32);
+      emit_d8(masm,$primary);
+      emit_rm(masm, 0x3, $secondary, $dst$$reg);
+      emit_d8(masm,$cnt$$constant-32);
     }
-    emit_d8(cbuf,$primary);
-    emit_rm(cbuf, 0x3, $secondary, HIGH_FROM_LOW($dst$$reg));
-    emit_d8(cbuf,31);
+    emit_d8(masm,$primary);
+    emit_rm(masm, 0x3, $secondary, HIGH_FROM_LOW($dst$$reg));
+    emit_d8(masm,31);
   %}
 
   enc_class move_long_big_shift_clr( eRegL dst, immI_32_63 cnt ) %{
@@ -2123,28 +2114,28 @@ encode %{
     if( $secondary == 0x5 ) { r1 = $dst$$reg;  r2 = HIGH_FROM_LOW($dst$$reg); }
     else                    { r2 = $dst$$reg;  r1 = HIGH_FROM_LOW($dst$$reg); }
 
-    emit_opcode( cbuf, 0x8B ); // Move r1,r2
-    emit_rm(cbuf, 0x3, r1, r2);
+    emit_opcode( masm, 0x8B ); // Move r1,r2
+    emit_rm(masm, 0x3, r1, r2);
     if( $cnt$$constant > 32 ) { // Shift, if not by zero
-      emit_opcode(cbuf,$primary);
-      emit_rm(cbuf, 0x3, $secondary, r1);
-      emit_d8(cbuf,$cnt$$constant-32);
+      emit_opcode(masm,$primary);
+      emit_rm(masm, 0x3, $secondary, r1);
+      emit_d8(masm,$cnt$$constant-32);
     }
-    emit_opcode(cbuf,0x33);  // XOR r2,r2
-    emit_rm(cbuf, 0x3, r2, r2);
+    emit_opcode(masm,0x33);  // XOR r2,r2
+    emit_rm(masm, 0x3, r2, r2);
   %}
 
   // Clone of RegMem but accepts an extra parameter to access each
   // half of a double in memory; it never needs relocation info.
   enc_class Mov_MemD_half_to_Reg (immI opcode, memory mem, immI disp_for_half, rRegI rm_reg) %{
-    emit_opcode(cbuf,$opcode$$constant);
+    emit_opcode(masm,$opcode$$constant);
     int reg_encoding = $rm_reg$$reg;
     int base     = $mem$$base;
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp + $disp_for_half$$constant;
     relocInfo::relocType disp_reloc = relocInfo::none;
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
+    encode_RegMem(masm, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   // !!!!! Special Custom Code used by MemMove, and stack access instructions !!!!!
@@ -2159,7 +2150,7 @@ encode %{
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
     assert( $mem->disp_reloc() == relocInfo::none, "No oops here because no reloc info allowed" );
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, relocInfo::none);
+    encode_RegMem(masm, rm_byte_opcode, base, index, scale, displace, relocInfo::none);
   %}
 
   enc_class RMopc_Mem (immI rm_opcode, memory mem) %{
@@ -2169,7 +2160,7 @@ encode %{
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
     relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
+    encode_RegMem(masm, rm_byte_opcode, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class RegLea (rRegI dst, rRegI src0, immI src1 ) %{    // emit_reg_lea
@@ -2179,31 +2170,31 @@ encode %{
     int scale        = 0x00;            // 0x00 indicates no scale
     int displace     = $src1$$constant; // 0x00 indicates no displacement
     relocInfo::relocType disp_reloc = relocInfo::none;
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
+    encode_RegMem(masm, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class min_enc (rRegI dst, rRegI src) %{    // MIN
     // Compare dst,src
-    emit_opcode(cbuf,0x3B);
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_opcode(masm,0x3B);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
     // jmp dst < src around move
-    emit_opcode(cbuf,0x7C);
-    emit_d8(cbuf,2);
+    emit_opcode(masm,0x7C);
+    emit_d8(masm,2);
     // move dst,src
-    emit_opcode(cbuf,0x8B);
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_opcode(masm,0x8B);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class max_enc (rRegI dst, rRegI src) %{    // MAX
     // Compare dst,src
-    emit_opcode(cbuf,0x3B);
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_opcode(masm,0x3B);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
     // jmp dst > src around move
-    emit_opcode(cbuf,0x7F);
-    emit_d8(cbuf,2);
+    emit_opcode(masm,0x7F);
+    emit_d8(masm,2);
     // move dst,src
-    emit_opcode(cbuf,0x8B);
-    emit_rm(cbuf, 0x3, $dst$$reg, $src$$reg);
+    emit_opcode(masm,0x8B);
+    emit_rm(masm, 0x3, $dst$$reg, $src$$reg);
   %}
 
   enc_class enc_FPR_store(memory mem, regDPR src) %{
@@ -2217,115 +2208,116 @@ encode %{
     relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
     if( $src$$reg != FPR1L_enc ) {
       reg_encoding = 0x3;  // Store & pop
-      emit_opcode( cbuf, 0xD9 ); // FLD (i.e., push it)
-      emit_d8( cbuf, 0xC0-1+$src$$reg );
+      emit_opcode( masm, 0xD9 ); // FLD (i.e., push it)
+      emit_d8( masm, 0xC0-1+$src$$reg );
     }
-    cbuf.set_insts_mark();       // Mark start of opcode for reloc info in mem operand
-    emit_opcode(cbuf,$primary);
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
+    masm.set_inst_mark();       // Mark start of opcode for reloc info in mem operand
+    emit_opcode(masm,$primary);
+    encode_RegMem(masm, reg_encoding, base, index, scale, displace, disp_reloc);
+    masm.clear_inst_mark();
   %}
 
   enc_class neg_reg(rRegI dst) %{
     // NEG $dst
-    emit_opcode(cbuf,0xF7);
-    emit_rm(cbuf, 0x3, 0x03, $dst$$reg );
+    emit_opcode(masm,0xF7);
+    emit_rm(masm, 0x3, 0x03, $dst$$reg );
   %}
 
   enc_class setLT_reg(eCXRegI dst) %{
     // SETLT $dst
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0x9C);
-    emit_rm( cbuf, 0x3, 0x4, $dst$$reg );
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0x9C);
+    emit_rm( masm, 0x3, 0x4, $dst$$reg );
   %}
 
   enc_class enc_cmpLTP(ncxRegI p, ncxRegI q, ncxRegI y, eCXRegI tmp) %{    // cadd_cmpLT
     int tmpReg = $tmp$$reg;
 
     // SUB $p,$q
-    emit_opcode(cbuf,0x2B);
-    emit_rm(cbuf, 0x3, $p$$reg, $q$$reg);
+    emit_opcode(masm,0x2B);
+    emit_rm(masm, 0x3, $p$$reg, $q$$reg);
     // SBB $tmp,$tmp
-    emit_opcode(cbuf,0x1B);
-    emit_rm(cbuf, 0x3, tmpReg, tmpReg);
+    emit_opcode(masm,0x1B);
+    emit_rm(masm, 0x3, tmpReg, tmpReg);
     // AND $tmp,$y
-    emit_opcode(cbuf,0x23);
-    emit_rm(cbuf, 0x3, tmpReg, $y$$reg);
+    emit_opcode(masm,0x23);
+    emit_rm(masm, 0x3, tmpReg, $y$$reg);
     // ADD $p,$tmp
-    emit_opcode(cbuf,0x03);
-    emit_rm(cbuf, 0x3, $p$$reg, tmpReg);
+    emit_opcode(masm,0x03);
+    emit_rm(masm, 0x3, $p$$reg, tmpReg);
   %}
 
   enc_class shift_left_long( eRegL dst, eCXRegI shift ) %{
     // TEST shift,32
-    emit_opcode(cbuf,0xF7);
-    emit_rm(cbuf, 0x3, 0, ECX_enc);
-    emit_d32(cbuf,0x20);
+    emit_opcode(masm,0xF7);
+    emit_rm(masm, 0x3, 0, ECX_enc);
+    emit_d32(masm,0x20);
     // JEQ,s small
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, 0x04);
+    emit_opcode(masm, 0x74);
+    emit_d8(masm, 0x04);
     // MOV    $dst.hi,$dst.lo
-    emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
+    emit_opcode( masm, 0x8B );
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
     // CLR    $dst.lo
-    emit_opcode(cbuf, 0x33);
-    emit_rm(cbuf, 0x3, $dst$$reg, $dst$$reg);
+    emit_opcode(masm, 0x33);
+    emit_rm(masm, 0x3, $dst$$reg, $dst$$reg);
 // small:
     // SHLD   $dst.hi,$dst.lo,$shift
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xA5);
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xA5);
+    emit_rm(masm, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg));
     // SHL    $dst.lo,$shift"
-    emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x4, $dst$$reg );
+    emit_opcode(masm,0xD3);
+    emit_rm(masm, 0x3, 0x4, $dst$$reg );
   %}
 
   enc_class shift_right_long( eRegL dst, eCXRegI shift ) %{
     // TEST shift,32
-    emit_opcode(cbuf,0xF7);
-    emit_rm(cbuf, 0x3, 0, ECX_enc);
-    emit_d32(cbuf,0x20);
+    emit_opcode(masm,0xF7);
+    emit_rm(masm, 0x3, 0, ECX_enc);
+    emit_d32(masm,0x20);
     // JEQ,s small
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, 0x04);
+    emit_opcode(masm, 0x74);
+    emit_d8(masm, 0x04);
     // MOV    $dst.lo,$dst.hi
-    emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_opcode( masm, 0x8B );
+    emit_rm(masm, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
     // CLR    $dst.hi
-    emit_opcode(cbuf, 0x33);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($dst$$reg));
+    emit_opcode(masm, 0x33);
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($dst$$reg));
 // small:
     // SHRD   $dst.lo,$dst.hi,$shift
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xAD);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xAD);
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
     // SHR    $dst.hi,$shift"
-    emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x5, HIGH_FROM_LOW($dst$$reg) );
+    emit_opcode(masm,0xD3);
+    emit_rm(masm, 0x3, 0x5, HIGH_FROM_LOW($dst$$reg) );
   %}
 
   enc_class shift_right_arith_long( eRegL dst, eCXRegI shift ) %{
     // TEST shift,32
-    emit_opcode(cbuf,0xF7);
-    emit_rm(cbuf, 0x3, 0, ECX_enc);
-    emit_d32(cbuf,0x20);
+    emit_opcode(masm,0xF7);
+    emit_rm(masm, 0x3, 0, ECX_enc);
+    emit_d32(masm,0x20);
     // JEQ,s small
-    emit_opcode(cbuf, 0x74);
-    emit_d8(cbuf, 0x05);
+    emit_opcode(masm, 0x74);
+    emit_d8(masm, 0x05);
     // MOV    $dst.lo,$dst.hi
-    emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_opcode( masm, 0x8B );
+    emit_rm(masm, 0x3, $dst$$reg, HIGH_FROM_LOW($dst$$reg) );
     // SAR    $dst.hi,31
-    emit_opcode(cbuf, 0xC1);
-    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW($dst$$reg) );
-    emit_d8(cbuf, 0x1F );
+    emit_opcode(masm, 0xC1);
+    emit_rm(masm, 0x3, 7, HIGH_FROM_LOW($dst$$reg) );
+    emit_d8(masm, 0x1F );
 // small:
     // SHRD   $dst.lo,$dst.hi,$shift
-    emit_opcode(cbuf,0x0F);
-    emit_opcode(cbuf,0xAD);
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
+    emit_opcode(masm,0x0F);
+    emit_opcode(masm,0xAD);
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg);
     // SAR    $dst.hi,$shift"
-    emit_opcode(cbuf,0xD3);
-    emit_rm(cbuf, 0x3, 0x7, HIGH_FROM_LOW($dst$$reg) );
+    emit_opcode(masm,0xD3);
+    emit_rm(masm, 0x3, 0x7, HIGH_FROM_LOW($dst$$reg) );
   %}
 
 
@@ -2333,136 +2325,135 @@ encode %{
   // May leave result in FPU-TOS or FPU reg depending on opcodes
   enc_class OpcReg_FPR(regFPR src) %{    // FMUL, FDIV
     $$$emit8$primary;
-    emit_rm(cbuf, 0x3, $secondary, $src$$reg );
+    emit_rm(masm, 0x3, $secondary, $src$$reg );
   %}
 
   // Pop argument in FPR0 with FSTP ST(0)
   enc_class PopFPU() %{
-    emit_opcode( cbuf, 0xDD );
-    emit_d8( cbuf, 0xD8 );
+    emit_opcode( masm, 0xDD );
+    emit_d8( masm, 0xD8 );
   %}
 
   // !!!!! equivalent to Pop_Reg_F
   enc_class Pop_Reg_DPR( regDPR dst ) %{
-    emit_opcode( cbuf, 0xDD );           // FSTP   ST(i)
-    emit_d8( cbuf, 0xD8+$dst$$reg );
+    emit_opcode( masm, 0xDD );           // FSTP   ST(i)
+    emit_d8( masm, 0xD8+$dst$$reg );
   %}
 
   enc_class Push_Reg_DPR( regDPR dst ) %{
-    emit_opcode( cbuf, 0xD9 );
-    emit_d8( cbuf, 0xC0-1+$dst$$reg );   // FLD ST(i-1)
+    emit_opcode( masm, 0xD9 );
+    emit_d8( masm, 0xC0-1+$dst$$reg );   // FLD ST(i-1)
   %}
 
   enc_class strictfp_bias1( regDPR dst ) %{
-    emit_opcode( cbuf, 0xDB );           // FLD m80real
-    emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias1() );
-    emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
-    emit_opcode( cbuf, 0xC8+$dst$$reg );
+    emit_opcode( masm, 0xDB );           // FLD m80real
+    emit_opcode( masm, 0x2D );
+    emit_d32( masm, (int)StubRoutines::x86::addr_fpu_subnormal_bias1() );
+    emit_opcode( masm, 0xDE );           // FMULP ST(dst), ST0
+    emit_opcode( masm, 0xC8+$dst$$reg );
   %}
 
   enc_class strictfp_bias2( regDPR dst ) %{
-    emit_opcode( cbuf, 0xDB );           // FLD m80real
-    emit_opcode( cbuf, 0x2D );
-    emit_d32( cbuf, (int)StubRoutines::x86::addr_fpu_subnormal_bias2() );
-    emit_opcode( cbuf, 0xDE );           // FMULP ST(dst), ST0
-    emit_opcode( cbuf, 0xC8+$dst$$reg );
+    emit_opcode( masm, 0xDB );           // FLD m80real
+    emit_opcode( masm, 0x2D );
+    emit_d32( masm, (int)StubRoutines::x86::addr_fpu_subnormal_bias2() );
+    emit_opcode( masm, 0xDE );           // FMULP ST(dst), ST0
+    emit_opcode( masm, 0xC8+$dst$$reg );
   %}
 
   // Special case for moving an integer register to a stack slot.
   enc_class OpcPRegSS( stackSlotI dst, rRegI src ) %{ // RegSS
-    store_to_stackslot( cbuf, $primary, $src$$reg, $dst$$disp );
+    store_to_stackslot( masm, $primary, $src$$reg, $dst$$disp );
   %}
 
   // Special case for moving a register to a stack slot.
   enc_class RegSS( stackSlotI dst, rRegI src ) %{ // RegSS
     // Opcode already emitted
-    emit_rm( cbuf, 0x02, $src$$reg, ESP_enc );   // R/M byte
-    emit_rm( cbuf, 0x00, ESP_enc, ESP_enc);          // SIB byte
-    emit_d32(cbuf, $dst$$disp);   // Displacement
+    emit_rm( masm, 0x02, $src$$reg, ESP_enc );   // R/M byte
+    emit_rm( masm, 0x00, ESP_enc, ESP_enc);          // SIB byte
+    emit_d32(masm, $dst$$disp);   // Displacement
   %}
 
   // Push the integer in stackSlot 'src' onto FP-stack
   enc_class Push_Mem_I( memory src ) %{    // FILD   [ESP+src]
-    store_to_stackslot( cbuf, $primary, $secondary, $src$$disp );
+    store_to_stackslot( masm, $primary, $secondary, $src$$disp );
   %}
 
   // Push FPU's TOS float to a stack-slot, and pop FPU-stack
   enc_class Pop_Mem_FPR( stackSlotF dst ) %{ // FSTP_S [ESP+dst]
-    store_to_stackslot( cbuf, 0xD9, 0x03, $dst$$disp );
+    store_to_stackslot( masm, 0xD9, 0x03, $dst$$disp );
   %}
 
   // Same as Pop_Mem_F except for opcode
   // Push FPU's TOS double to a stack-slot, and pop FPU-stack
   enc_class Pop_Mem_DPR( stackSlotD dst ) %{ // FSTP_D [ESP+dst]
-    store_to_stackslot( cbuf, 0xDD, 0x03, $dst$$disp );
+    store_to_stackslot( masm, 0xDD, 0x03, $dst$$disp );
   %}
 
   enc_class Pop_Reg_FPR( regFPR dst ) %{
-    emit_opcode( cbuf, 0xDD );           // FSTP   ST(i)
-    emit_d8( cbuf, 0xD8+$dst$$reg );
+    emit_opcode( masm, 0xDD );           // FSTP   ST(i)
+    emit_d8( masm, 0xD8+$dst$$reg );
   %}
 
   enc_class Push_Reg_FPR( regFPR dst ) %{
-    emit_opcode( cbuf, 0xD9 );           // FLD    ST(i-1)
-    emit_d8( cbuf, 0xC0-1+$dst$$reg );
+    emit_opcode( masm, 0xD9 );           // FLD    ST(i-1)
+    emit_d8( masm, 0xC0-1+$dst$$reg );
   %}
 
   // Push FPU's float to a stack-slot, and pop FPU-stack
   enc_class Pop_Mem_Reg_FPR( stackSlotF dst, regFPR src ) %{
     int pop = 0x02;
     if ($src$$reg != FPR1L_enc) {
-      emit_opcode( cbuf, 0xD9 );         // FLD    ST(i-1)
-      emit_d8( cbuf, 0xC0-1+$src$$reg );
+      emit_opcode( masm, 0xD9 );         // FLD    ST(i-1)
+      emit_d8( masm, 0xC0-1+$src$$reg );
       pop = 0x03;
     }
-    store_to_stackslot( cbuf, 0xD9, pop, $dst$$disp ); // FST<P>_S  [ESP+dst]
+    store_to_stackslot( masm, 0xD9, pop, $dst$$disp ); // FST<P>_S  [ESP+dst]
   %}
 
   // Push FPU's double to a stack-slot, and pop FPU-stack
   enc_class Pop_Mem_Reg_DPR( stackSlotD dst, regDPR src ) %{
     int pop = 0x02;
     if ($src$$reg != FPR1L_enc) {
-      emit_opcode( cbuf, 0xD9 );         // FLD    ST(i-1)
-      emit_d8( cbuf, 0xC0-1+$src$$reg );
+      emit_opcode( masm, 0xD9 );         // FLD    ST(i-1)
+      emit_d8( masm, 0xC0-1+$src$$reg );
       pop = 0x03;
     }
-    store_to_stackslot( cbuf, 0xDD, pop, $dst$$disp ); // FST<P>_D  [ESP+dst]
+    store_to_stackslot( masm, 0xDD, pop, $dst$$disp ); // FST<P>_D  [ESP+dst]
   %}
 
   // Push FPU's double to a FPU-stack-slot, and pop FPU-stack
   enc_class Pop_Reg_Reg_DPR( regDPR dst, regFPR src ) %{
     int pop = 0xD0 - 1; // -1 since we skip FLD
     if ($src$$reg != FPR1L_enc) {
-      emit_opcode( cbuf, 0xD9 );         // FLD    ST(src-1)
-      emit_d8( cbuf, 0xC0-1+$src$$reg );
+      emit_opcode( masm, 0xD9 );         // FLD    ST(src-1)
+      emit_d8( masm, 0xC0-1+$src$$reg );
       pop = 0xD8;
     }
-    emit_opcode( cbuf, 0xDD );
-    emit_d8( cbuf, pop+$dst$$reg );      // FST<P> ST(i)
+    emit_opcode( masm, 0xDD );
+    emit_d8( masm, pop+$dst$$reg );      // FST<P> ST(i)
   %}
 
 
   enc_class Push_Reg_Mod_DPR( regDPR dst, regDPR src) %{
     // load dst in FPR0
-    emit_opcode( cbuf, 0xD9 );
-    emit_d8( cbuf, 0xC0-1+$dst$$reg );
+    emit_opcode( masm, 0xD9 );
+    emit_d8( masm, 0xC0-1+$dst$$reg );
     if ($src$$reg != FPR1L_enc) {
       // fincstp
-      emit_opcode (cbuf, 0xD9);
-      emit_opcode (cbuf, 0xF7);
+      emit_opcode (masm, 0xD9);
+      emit_opcode (masm, 0xF7);
       // swap src with FPR1:
       // FXCH FPR1 with src
-      emit_opcode(cbuf, 0xD9);
-      emit_d8(cbuf, 0xC8-1+$src$$reg );
+      emit_opcode(masm, 0xD9);
+      emit_d8(masm, 0xC8-1+$src$$reg );
       // fdecstp
-      emit_opcode (cbuf, 0xD9);
-      emit_opcode (cbuf, 0xF6);
+      emit_opcode (masm, 0xD9);
+      emit_opcode (masm, 0xF6);
     }
   %}
 
   enc_class Push_ModD_encoding(regD src0, regD src1) %{
-    MacroAssembler _masm(&cbuf);
     __ subptr(rsp, 8);
     __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
     __ fld_d(Address(rsp, 0));
@@ -2471,7 +2462,6 @@ encode %{
   %}
 
   enc_class Push_ModF_encoding(regF src0, regF src1) %{
-    MacroAssembler _masm(&cbuf);
     __ subptr(rsp, 4);
     __ movflt(Address(rsp, 0), $src1$$XMMRegister);
     __ fld_s(Address(rsp, 0));
@@ -2480,38 +2470,32 @@ encode %{
   %}
 
   enc_class Push_ResultD(regD dst) %{
-    MacroAssembler _masm(&cbuf);
     __ fstp_d(Address(rsp, 0));
     __ movdbl($dst$$XMMRegister, Address(rsp, 0));
     __ addptr(rsp, 8);
   %}
 
   enc_class Push_ResultF(regF dst, immI d8) %{
-    MacroAssembler _masm(&cbuf);
     __ fstp_s(Address(rsp, 0));
     __ movflt($dst$$XMMRegister, Address(rsp, 0));
     __ addptr(rsp, $d8$$constant);
   %}
 
   enc_class Push_SrcD(regD src) %{
-    MacroAssembler _masm(&cbuf);
     __ subptr(rsp, 8);
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
   %}
 
   enc_class push_stack_temp_qword() %{
-    MacroAssembler _masm(&cbuf);
     __ subptr(rsp, 8);
   %}
 
   enc_class pop_stack_temp_qword() %{
-    MacroAssembler _masm(&cbuf);
     __ addptr(rsp, 8);
   %}
 
   enc_class push_xmm_to_fpr1(regD src) %{
-    MacroAssembler _masm(&cbuf);
     __ movdbl(Address(rsp, 0), $src$$XMMRegister);
     __ fld_d(Address(rsp, 0));
   %}
@@ -2519,90 +2503,90 @@ encode %{
   enc_class Push_Result_Mod_DPR( regDPR src) %{
     if ($src$$reg != FPR1L_enc) {
       // fincstp
-      emit_opcode (cbuf, 0xD9);
-      emit_opcode (cbuf, 0xF7);
+      emit_opcode (masm, 0xD9);
+      emit_opcode (masm, 0xF7);
       // FXCH FPR1 with src
-      emit_opcode(cbuf, 0xD9);
-      emit_d8(cbuf, 0xC8-1+$src$$reg );
+      emit_opcode(masm, 0xD9);
+      emit_d8(masm, 0xC8-1+$src$$reg );
       // fdecstp
-      emit_opcode (cbuf, 0xD9);
-      emit_opcode (cbuf, 0xF6);
+      emit_opcode (masm, 0xD9);
+      emit_opcode (masm, 0xF6);
     }
     // // following asm replaced with Pop_Reg_F or Pop_Mem_F
     // // FSTP   FPR$dst$$reg
-    // emit_opcode( cbuf, 0xDD );
-    // emit_d8( cbuf, 0xD8+$dst$$reg );
+    // emit_opcode( masm, 0xDD );
+    // emit_d8( masm, 0xD8+$dst$$reg );
   %}
 
   enc_class fnstsw_sahf_skip_parity() %{
     // fnstsw ax
-    emit_opcode( cbuf, 0xDF );
-    emit_opcode( cbuf, 0xE0 );
+    emit_opcode( masm, 0xDF );
+    emit_opcode( masm, 0xE0 );
     // sahf
-    emit_opcode( cbuf, 0x9E );
+    emit_opcode( masm, 0x9E );
     // jnp  ::skip
-    emit_opcode( cbuf, 0x7B );
-    emit_opcode( cbuf, 0x05 );
+    emit_opcode( masm, 0x7B );
+    emit_opcode( masm, 0x05 );
   %}
 
   enc_class emitModDPR() %{
     // fprem must be iterative
     // :: loop
     // fprem
-    emit_opcode( cbuf, 0xD9 );
-    emit_opcode( cbuf, 0xF8 );
+    emit_opcode( masm, 0xD9 );
+    emit_opcode( masm, 0xF8 );
     // wait
-    emit_opcode( cbuf, 0x9b );
+    emit_opcode( masm, 0x9b );
     // fnstsw ax
-    emit_opcode( cbuf, 0xDF );
-    emit_opcode( cbuf, 0xE0 );
+    emit_opcode( masm, 0xDF );
+    emit_opcode( masm, 0xE0 );
     // sahf
-    emit_opcode( cbuf, 0x9E );
+    emit_opcode( masm, 0x9E );
     // jp  ::loop
-    emit_opcode( cbuf, 0x0F );
-    emit_opcode( cbuf, 0x8A );
-    emit_opcode( cbuf, 0xF4 );
-    emit_opcode( cbuf, 0xFF );
-    emit_opcode( cbuf, 0xFF );
-    emit_opcode( cbuf, 0xFF );
+    emit_opcode( masm, 0x0F );
+    emit_opcode( masm, 0x8A );
+    emit_opcode( masm, 0xF4 );
+    emit_opcode( masm, 0xFF );
+    emit_opcode( masm, 0xFF );
+    emit_opcode( masm, 0xFF );
   %}
 
   enc_class fpu_flags() %{
     // fnstsw_ax
-    emit_opcode( cbuf, 0xDF);
-    emit_opcode( cbuf, 0xE0);
+    emit_opcode( masm, 0xDF);
+    emit_opcode( masm, 0xE0);
     // test ax,0x0400
-    emit_opcode( cbuf, 0x66 );   // operand-size prefix for 16-bit immediate
-    emit_opcode( cbuf, 0xA9 );
-    emit_d16   ( cbuf, 0x0400 );
+    emit_opcode( masm, 0x66 );   // operand-size prefix for 16-bit immediate
+    emit_opcode( masm, 0xA9 );
+    emit_d16   ( masm, 0x0400 );
     // // // This sequence works, but stalls for 12-16 cycles on PPro
     // // test rax,0x0400
-    // emit_opcode( cbuf, 0xA9 );
-    // emit_d32   ( cbuf, 0x00000400 );
+    // emit_opcode( masm, 0xA9 );
+    // emit_d32   ( masm, 0x00000400 );
     //
     // jz exit (no unordered comparison)
-    emit_opcode( cbuf, 0x74 );
-    emit_d8    ( cbuf, 0x02 );
+    emit_opcode( masm, 0x74 );
+    emit_d8    ( masm, 0x02 );
     // mov ah,1 - treat as LT case (set carry flag)
-    emit_opcode( cbuf, 0xB4 );
-    emit_d8    ( cbuf, 0x01 );
+    emit_opcode( masm, 0xB4 );
+    emit_d8    ( masm, 0x01 );
     // sahf
-    emit_opcode( cbuf, 0x9E);
+    emit_opcode( masm, 0x9E);
   %}
 
   enc_class cmpF_P6_fixup() %{
     // Fixup the integer flags in case comparison involved a NaN
     //
     // JNP exit (no unordered comparison, P-flag is set by NaN)
-    emit_opcode( cbuf, 0x7B );
-    emit_d8    ( cbuf, 0x03 );
+    emit_opcode( masm, 0x7B );
+    emit_d8    ( masm, 0x03 );
     // MOV AH,1 - treat as LT case (set carry flag)
-    emit_opcode( cbuf, 0xB4 );
-    emit_d8    ( cbuf, 0x01 );
+    emit_opcode( masm, 0xB4 );
+    emit_d8    ( masm, 0x01 );
     // SAHF
-    emit_opcode( cbuf, 0x9E);
+    emit_opcode( masm, 0x9E);
     // NOP     // target for branch to avoid branch to branch
-    emit_opcode( cbuf, 0x90);
+    emit_opcode( masm, 0x90);
   %}
 
 //     fnstsw_ax();
@@ -2622,31 +2606,31 @@ encode %{
 
   enc_class CmpF_Result(rRegI dst) %{
     // fnstsw_ax();
-    emit_opcode( cbuf, 0xDF);
-    emit_opcode( cbuf, 0xE0);
+    emit_opcode( masm, 0xDF);
+    emit_opcode( masm, 0xE0);
     // sahf
-    emit_opcode( cbuf, 0x9E);
+    emit_opcode( masm, 0x9E);
     // movl(dst, nan_result);
-    emit_opcode( cbuf, 0xB8 + $dst$$reg);
-    emit_d32( cbuf, -1 );
+    emit_opcode( masm, 0xB8 + $dst$$reg);
+    emit_d32( masm, -1 );
     // jcc(Assembler::parity, exit);
-    emit_opcode( cbuf, 0x7A );
-    emit_d8    ( cbuf, 0x13 );
+    emit_opcode( masm, 0x7A );
+    emit_d8    ( masm, 0x13 );
     // movl(dst, less_result);
-    emit_opcode( cbuf, 0xB8 + $dst$$reg);
-    emit_d32( cbuf, -1 );
+    emit_opcode( masm, 0xB8 + $dst$$reg);
+    emit_d32( masm, -1 );
     // jcc(Assembler::below, exit);
-    emit_opcode( cbuf, 0x72 );
-    emit_d8    ( cbuf, 0x0C );
+    emit_opcode( masm, 0x72 );
+    emit_d8    ( masm, 0x0C );
     // movl(dst, equal_result);
-    emit_opcode( cbuf, 0xB8 + $dst$$reg);
-    emit_d32( cbuf, 0 );
+    emit_opcode( masm, 0xB8 + $dst$$reg);
+    emit_d32( masm, 0 );
     // jcc(Assembler::equal, exit);
-    emit_opcode( cbuf, 0x74 );
-    emit_d8    ( cbuf, 0x05 );
+    emit_opcode( masm, 0x74 );
+    emit_d8    ( masm, 0x05 );
     // movl(dst, greater_result);
-    emit_opcode( cbuf, 0xB8 + $dst$$reg);
-    emit_d32( cbuf, 1 );
+    emit_opcode( masm, 0xB8 + $dst$$reg);
+    emit_d32( masm, 1 );
   %}
 
 
@@ -2654,14 +2638,14 @@ encode %{
   // BROKEN!  Do Not use as-is
   enc_class cmpl_test( eRegL src1, eRegL src2 ) %{
     // CMP    $src1.hi,$src2.hi
-    emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
+    emit_opcode( masm, 0x3B );
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
     // JNE,s  done
-    emit_opcode(cbuf,0x75);
-    emit_d8(cbuf, 2 );
+    emit_opcode(masm,0x75);
+    emit_d8(masm, 2 );
     // CMP    $src1.lo,$src2.lo
-    emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, $src1$$reg, $src2$$reg );
+    emit_opcode( masm, 0x3B );
+    emit_rm(masm, 0x3, $src1$$reg, $src2$$reg );
 // done:
   %}
 
@@ -2669,218 +2653,221 @@ encode %{
     // mov $dst.lo,$src
     int dst_encoding = $dst$$reg;
     int src_encoding = $src$$reg;
-    encode_Copy( cbuf, dst_encoding  , src_encoding );
+    encode_Copy( masm, dst_encoding  , src_encoding );
     // mov $dst.hi,$src
-    encode_Copy( cbuf, HIGH_FROM_LOW(dst_encoding), src_encoding );
+    encode_Copy( masm, HIGH_FROM_LOW(dst_encoding), src_encoding );
     // sar $dst.hi,31
-    emit_opcode( cbuf, 0xC1 );
-    emit_rm(cbuf, 0x3, 7, HIGH_FROM_LOW(dst_encoding) );
-    emit_d8(cbuf, 0x1F );
+    emit_opcode( masm, 0xC1 );
+    emit_rm(masm, 0x3, 7, HIGH_FROM_LOW(dst_encoding) );
+    emit_d8(masm, 0x1F );
   %}
 
   enc_class convert_long_double( eRegL src ) %{
     // push $src.hi
-    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW($src$$reg));
+    emit_opcode(masm, 0x50+HIGH_FROM_LOW($src$$reg));
     // push $src.lo
-    emit_opcode(cbuf, 0x50+$src$$reg  );
+    emit_opcode(masm, 0x50+$src$$reg  );
     // fild 64-bits at [SP]
-    emit_opcode(cbuf,0xdf);
-    emit_d8(cbuf, 0x6C);
-    emit_d8(cbuf, 0x24);
-    emit_d8(cbuf, 0x00);
+    emit_opcode(masm,0xdf);
+    emit_d8(masm, 0x6C);
+    emit_d8(masm, 0x24);
+    emit_d8(masm, 0x00);
     // pop stack
-    emit_opcode(cbuf, 0x83); // add  SP, #8
-    emit_rm(cbuf, 0x3, 0x00, ESP_enc);
-    emit_d8(cbuf, 0x8);
+    emit_opcode(masm, 0x83); // add  SP, #8
+    emit_rm(masm, 0x3, 0x00, ESP_enc);
+    emit_d8(masm, 0x8);
   %}
 
   enc_class multiply_con_and_shift_high( eDXRegI dst, nadxRegI src1, eADXRegL_low_only src2, immI_32_63 cnt, eFlagsReg cr ) %{
     // IMUL   EDX:EAX,$src1
-    emit_opcode( cbuf, 0xF7 );
-    emit_rm( cbuf, 0x3, 0x5, $src1$$reg );
+    emit_opcode( masm, 0xF7 );
+    emit_rm( masm, 0x3, 0x5, $src1$$reg );
     // SAR    EDX,$cnt-32
     int shift_count = ((int)$cnt$$constant) - 32;
     if (shift_count > 0) {
-      emit_opcode(cbuf, 0xC1);
-      emit_rm(cbuf, 0x3, 7, $dst$$reg );
-      emit_d8(cbuf, shift_count);
+      emit_opcode(masm, 0xC1);
+      emit_rm(masm, 0x3, 7, $dst$$reg );
+      emit_d8(masm, shift_count);
     }
   %}
 
   // this version doesn't have add sp, 8
   enc_class convert_long_double2( eRegL src ) %{
     // push $src.hi
-    emit_opcode(cbuf, 0x50+HIGH_FROM_LOW($src$$reg));
+    emit_opcode(masm, 0x50+HIGH_FROM_LOW($src$$reg));
     // push $src.lo
-    emit_opcode(cbuf, 0x50+$src$$reg  );
+    emit_opcode(masm, 0x50+$src$$reg  );
     // fild 64-bits at [SP]
-    emit_opcode(cbuf,0xdf);
-    emit_d8(cbuf, 0x6C);
-    emit_d8(cbuf, 0x24);
-    emit_d8(cbuf, 0x00);
+    emit_opcode(masm,0xdf);
+    emit_d8(masm, 0x6C);
+    emit_d8(masm, 0x24);
+    emit_d8(masm, 0x00);
   %}
 
   enc_class long_int_multiply( eADXRegL dst, nadxRegI src) %{
     // Basic idea: long = (long)int * (long)int
     // IMUL EDX:EAX, src
-    emit_opcode( cbuf, 0xF7 );
-    emit_rm( cbuf, 0x3, 0x5, $src$$reg);
+    emit_opcode( masm, 0xF7 );
+    emit_rm( masm, 0x3, 0x5, $src$$reg);
   %}
 
   enc_class long_uint_multiply( eADXRegL dst, nadxRegI src) %{
     // Basic Idea:  long = (int & 0xffffffffL) * (int & 0xffffffffL)
     // MUL EDX:EAX, src
-    emit_opcode( cbuf, 0xF7 );
-    emit_rm( cbuf, 0x3, 0x4, $src$$reg);
+    emit_opcode( masm, 0xF7 );
+    emit_rm( masm, 0x3, 0x4, $src$$reg);
   %}
 
   enc_class long_multiply( eADXRegL dst, eRegL src, rRegI tmp ) %{
     // Basic idea: lo(result) = lo(x_lo * y_lo)
     //             hi(result) = hi(x_lo * y_lo) + lo(x_hi * y_lo) + lo(x_lo * y_hi)
     // MOV    $tmp,$src.lo
-    encode_Copy( cbuf, $tmp$$reg, $src$$reg );
+    encode_Copy( masm, $tmp$$reg, $src$$reg );
     // IMUL   $tmp,EDX
-    emit_opcode( cbuf, 0x0F );
-    emit_opcode( cbuf, 0xAF );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_opcode( masm, 0x0F );
+    emit_opcode( masm, 0xAF );
+    emit_rm( masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
     // MOV    EDX,$src.hi
-    encode_Copy( cbuf, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg) );
+    encode_Copy( masm, HIGH_FROM_LOW($dst$$reg), HIGH_FROM_LOW($src$$reg) );
     // IMUL   EDX,EAX
-    emit_opcode( cbuf, 0x0F );
-    emit_opcode( cbuf, 0xAF );
-    emit_rm( cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
+    emit_opcode( masm, 0x0F );
+    emit_opcode( masm, 0xAF );
+    emit_rm( masm, 0x3, HIGH_FROM_LOW($dst$$reg), $dst$$reg );
     // ADD    $tmp,EDX
-    emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_opcode( masm, 0x03 );
+    emit_rm( masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
     // MUL   EDX:EAX,$src.lo
-    emit_opcode( cbuf, 0xF7 );
-    emit_rm( cbuf, 0x3, 0x4, $src$$reg );
+    emit_opcode( masm, 0xF7 );
+    emit_rm( masm, 0x3, 0x4, $src$$reg );
     // ADD    EDX,ESI
-    emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, HIGH_FROM_LOW($dst$$reg), $tmp$$reg );
+    emit_opcode( masm, 0x03 );
+    emit_rm( masm, 0x3, HIGH_FROM_LOW($dst$$reg), $tmp$$reg );
   %}
 
   enc_class long_multiply_con( eADXRegL dst, immL_127 src, rRegI tmp ) %{
     // Basic idea: lo(result) = lo(src * y_lo)
     //             hi(result) = hi(src * y_lo) + lo(src * y_hi)
     // IMUL   $tmp,EDX,$src
-    emit_opcode( cbuf, 0x6B );
-    emit_rm( cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
-    emit_d8( cbuf, (int)$src$$constant );
+    emit_opcode( masm, 0x6B );
+    emit_rm( masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($dst$$reg) );
+    emit_d8( masm, (int)$src$$constant );
     // MOV    EDX,$src
-    emit_opcode(cbuf, 0xB8 + EDX_enc);
-    emit_d32( cbuf, (int)$src$$constant );
+    emit_opcode(masm, 0xB8 + EDX_enc);
+    emit_d32( masm, (int)$src$$constant );
     // MUL   EDX:EAX,EDX
-    emit_opcode( cbuf, 0xF7 );
-    emit_rm( cbuf, 0x3, 0x4, EDX_enc );
+    emit_opcode( masm, 0xF7 );
+    emit_rm( masm, 0x3, 0x4, EDX_enc );
     // ADD    EDX,ESI
-    emit_opcode( cbuf, 0x03 );
-    emit_rm( cbuf, 0x3, EDX_enc, $tmp$$reg );
+    emit_opcode( masm, 0x03 );
+    emit_rm( masm, 0x3, EDX_enc, $tmp$$reg );
   %}
 
   enc_class long_div( eRegL src1, eRegL src2 ) %{
     // PUSH src1.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src1$$reg) );
+    emit_opcode(masm, HIGH_FROM_LOW(0x50+$src1$$reg) );
     // PUSH src1.lo
-    emit_opcode(cbuf,               0x50+$src1$$reg  );
+    emit_opcode(masm,               0x50+$src1$$reg  );
     // PUSH src2.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src2$$reg) );
+    emit_opcode(masm, HIGH_FROM_LOW(0x50+$src2$$reg) );
     // PUSH src2.lo
-    emit_opcode(cbuf,               0x50+$src2$$reg  );
+    emit_opcode(masm,               0x50+$src2$$reg  );
     // CALL directly to the runtime
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.clear_inst_mark();
     // Restore stack
-    emit_opcode(cbuf, 0x83); // add  SP, #framesize
-    emit_rm(cbuf, 0x3, 0x00, ESP_enc);
-    emit_d8(cbuf, 4*4);
+    emit_opcode(masm, 0x83); // add  SP, #framesize
+    emit_rm(masm, 0x3, 0x00, ESP_enc);
+    emit_d8(masm, 4*4);
   %}
 
   enc_class long_mod( eRegL src1, eRegL src2 ) %{
     // PUSH src1.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src1$$reg) );
+    emit_opcode(masm, HIGH_FROM_LOW(0x50+$src1$$reg) );
     // PUSH src1.lo
-    emit_opcode(cbuf,               0x50+$src1$$reg  );
+    emit_opcode(masm,               0x50+$src1$$reg  );
     // PUSH src2.hi
-    emit_opcode(cbuf, HIGH_FROM_LOW(0x50+$src2$$reg) );
+    emit_opcode(masm, HIGH_FROM_LOW(0x50+$src2$$reg) );
     // PUSH src2.lo
-    emit_opcode(cbuf,               0x50+$src2$$reg  );
+    emit_opcode(masm,               0x50+$src2$$reg  );
     // CALL directly to the runtime
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.clear_inst_mark();
     // Restore stack
-    emit_opcode(cbuf, 0x83); // add  SP, #framesize
-    emit_rm(cbuf, 0x3, 0x00, ESP_enc);
-    emit_d8(cbuf, 4*4);
+    emit_opcode(masm, 0x83); // add  SP, #framesize
+    emit_rm(masm, 0x3, 0x00, ESP_enc);
+    emit_d8(masm, 4*4);
   %}
 
   enc_class long_cmp_flags0( eRegL src, rRegI tmp ) %{
     // MOV   $tmp,$src.lo
-    emit_opcode(cbuf, 0x8B);
-    emit_rm(cbuf, 0x3, $tmp$$reg, $src$$reg);
+    emit_opcode(masm, 0x8B);
+    emit_rm(masm, 0x3, $tmp$$reg, $src$$reg);
     // OR    $tmp,$src.hi
-    emit_opcode(cbuf, 0x0B);
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg));
+    emit_opcode(masm, 0x0B);
+    emit_rm(masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg));
   %}
 
   enc_class long_cmp_flags1( eRegL src1, eRegL src2 ) %{
     // CMP    $src1.lo,$src2.lo
-    emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, $src1$$reg, $src2$$reg );
+    emit_opcode( masm, 0x3B );
+    emit_rm(masm, 0x3, $src1$$reg, $src2$$reg );
     // JNE,s  skip
-    emit_cc(cbuf, 0x70, 0x5);
-    emit_d8(cbuf,2);
+    emit_cc(masm, 0x70, 0x5);
+    emit_d8(masm,2);
     // CMP    $src1.hi,$src2.hi
-    emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
+    emit_opcode( masm, 0x3B );
+    emit_rm(masm, 0x3, HIGH_FROM_LOW($src1$$reg), HIGH_FROM_LOW($src2$$reg) );
   %}
 
   enc_class long_cmp_flags2( eRegL src1, eRegL src2, rRegI tmp ) %{
     // CMP    $src1.lo,$src2.lo\t! Long compare; set flags for low bits
-    emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, $src1$$reg, $src2$$reg );
+    emit_opcode( masm, 0x3B );
+    emit_rm(masm, 0x3, $src1$$reg, $src2$$reg );
     // MOV    $tmp,$src1.hi
-    emit_opcode( cbuf, 0x8B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src1$$reg) );
+    emit_opcode( masm, 0x8B );
+    emit_rm(masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($src1$$reg) );
     // SBB   $tmp,$src2.hi\t! Compute flags for long compare
-    emit_opcode( cbuf, 0x1B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src2$$reg) );
+    emit_opcode( masm, 0x1B );
+    emit_rm(masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($src2$$reg) );
   %}
 
   enc_class long_cmp_flags3( eRegL src, rRegI tmp ) %{
     // XOR    $tmp,$tmp
-    emit_opcode(cbuf,0x33);  // XOR
-    emit_rm(cbuf,0x3, $tmp$$reg, $tmp$$reg);
+    emit_opcode(masm,0x33);  // XOR
+    emit_rm(masm,0x3, $tmp$$reg, $tmp$$reg);
     // CMP    $tmp,$src.lo
-    emit_opcode( cbuf, 0x3B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, $src$$reg );
+    emit_opcode( masm, 0x3B );
+    emit_rm(masm, 0x3, $tmp$$reg, $src$$reg );
     // SBB    $tmp,$src.hi
-    emit_opcode( cbuf, 0x1B );
-    emit_rm(cbuf, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg) );
+    emit_opcode( masm, 0x1B );
+    emit_rm(masm, 0x3, $tmp$$reg, HIGH_FROM_LOW($src$$reg) );
   %}
 
  // Sniff, sniff... smells like Gnu Superoptimizer
   enc_class neg_long( eRegL dst ) %{
-    emit_opcode(cbuf,0xF7);    // NEG hi
-    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
-    emit_opcode(cbuf,0xF7);    // NEG lo
-    emit_rm    (cbuf,0x3, 0x3,               $dst$$reg );
-    emit_opcode(cbuf,0x83);    // SBB hi,0
-    emit_rm    (cbuf,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
-    emit_d8    (cbuf,0 );
+    emit_opcode(masm,0xF7);    // NEG hi
+    emit_rm    (masm,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
+    emit_opcode(masm,0xF7);    // NEG lo
+    emit_rm    (masm,0x3, 0x3,               $dst$$reg );
+    emit_opcode(masm,0x83);    // SBB hi,0
+    emit_rm    (masm,0x3, 0x3, HIGH_FROM_LOW($dst$$reg));
+    emit_d8    (masm,0 );
   %}
 
   enc_class enc_pop_rdx() %{
-    emit_opcode(cbuf,0x5A);
+    emit_opcode(masm,0x5A);
   %}
 
   enc_class enc_rethrow() %{
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xE9);        // jmp    entry
-    emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.insts_end())-4,
+    masm.set_inst_mark();
+    emit_opcode(masm, 0xE9);        // jmp    entry
+    emit_d32_reloc(masm, (int)OptoRuntime::rethrow_stub() - ((int)masm.pc())-4,
                    runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.clear_inst_mark();
   %}
 
 
@@ -2897,148 +2884,150 @@ encode %{
     // invalid-op exceptions hanging.  We would have to clear them before
     // enabling them and that is more expensive than just testing for the
     // invalid value Intel stores down in the corner cases.
-    emit_opcode(cbuf,0xD9);            // FLDCW  trunc
-    emit_opcode(cbuf,0x2D);
-    emit_d32(cbuf,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
+    emit_opcode(masm,0xD9);            // FLDCW  trunc
+    emit_opcode(masm,0x2D);
+    emit_d32(masm,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
     // Allocate a word
-    emit_opcode(cbuf,0x83);            // SUB ESP,4
-    emit_opcode(cbuf,0xEC);
-    emit_d8(cbuf,0x04);
+    emit_opcode(masm,0x83);            // SUB ESP,4
+    emit_opcode(masm,0xEC);
+    emit_d8(masm,0x04);
     // Encoding assumes a double has been pushed into FPR0.
     // Store down the double as an int, popping the FPU stack
-    emit_opcode(cbuf,0xDB);            // FISTP [ESP]
-    emit_opcode(cbuf,0x1C);
-    emit_d8(cbuf,0x24);
+    emit_opcode(masm,0xDB);            // FISTP [ESP]
+    emit_opcode(masm,0x1C);
+    emit_d8(masm,0x24);
     // Restore the rounding mode; mask the exception
-    emit_opcode(cbuf,0xD9);            // FLDCW   std/24-bit mode
-    emit_opcode(cbuf,0x2D);
-    emit_d32( cbuf, Compile::current()->in_24_bit_fp_mode()
+    emit_opcode(masm,0xD9);            // FLDCW   std/24-bit mode
+    emit_opcode(masm,0x2D);
+    emit_d32( masm, Compile::current()->in_24_bit_fp_mode()
         ? (int)StubRoutines::x86::addr_fpu_cntrl_wrd_24()
         : (int)StubRoutines::x86::addr_fpu_cntrl_wrd_std());
 
     // Load the converted int; adjust CPU stack
-    emit_opcode(cbuf,0x58);       // POP EAX
-    emit_opcode(cbuf,0x3D);       // CMP EAX,imm
-    emit_d32   (cbuf,0x80000000); //         0x80000000
-    emit_opcode(cbuf,0x75);       // JNE around_slow_call
-    emit_d8    (cbuf,0x07);       // Size of slow_call
+    emit_opcode(masm,0x58);       // POP EAX
+    emit_opcode(masm,0x3D);       // CMP EAX,imm
+    emit_d32   (masm,0x80000000); //         0x80000000
+    emit_opcode(masm,0x75);       // JNE around_slow_call
+    emit_d8    (masm,0x07);       // Size of slow_call
     // Push src onto stack slow-path
-    emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
-    emit_d8    (cbuf,0xC0-1+$src$$reg );
+    emit_opcode(masm,0xD9 );      // FLD     ST(i)
+    emit_d8    (masm,0xC0-1+$src$$reg );
     // CALL directly to the runtime
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (StubRoutines::x86::d2i_wrapper() - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.clear_inst_mark();
     // Carry on here...
   %}
 
   enc_class DPR2L_encoding( regDPR src ) %{
-    emit_opcode(cbuf,0xD9);            // FLDCW  trunc
-    emit_opcode(cbuf,0x2D);
-    emit_d32(cbuf,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
+    emit_opcode(masm,0xD9);            // FLDCW  trunc
+    emit_opcode(masm,0x2D);
+    emit_d32(masm,(int)StubRoutines::x86::addr_fpu_cntrl_wrd_trunc());
     // Allocate a word
-    emit_opcode(cbuf,0x83);            // SUB ESP,8
-    emit_opcode(cbuf,0xEC);
-    emit_d8(cbuf,0x08);
+    emit_opcode(masm,0x83);            // SUB ESP,8
+    emit_opcode(masm,0xEC);
+    emit_d8(masm,0x08);
     // Encoding assumes a double has been pushed into FPR0.
     // Store down the double as a long, popping the FPU stack
-    emit_opcode(cbuf,0xDF);            // FISTP [ESP]
-    emit_opcode(cbuf,0x3C);
-    emit_d8(cbuf,0x24);
+    emit_opcode(masm,0xDF);            // FISTP [ESP]
+    emit_opcode(masm,0x3C);
+    emit_d8(masm,0x24);
     // Restore the rounding mode; mask the exception
-    emit_opcode(cbuf,0xD9);            // FLDCW   std/24-bit mode
-    emit_opcode(cbuf,0x2D);
-    emit_d32( cbuf, Compile::current()->in_24_bit_fp_mode()
+    emit_opcode(masm,0xD9);            // FLDCW   std/24-bit mode
+    emit_opcode(masm,0x2D);
+    emit_d32( masm, Compile::current()->in_24_bit_fp_mode()
         ? (int)StubRoutines::x86::addr_fpu_cntrl_wrd_24()
         : (int)StubRoutines::x86::addr_fpu_cntrl_wrd_std());
 
     // Load the converted int; adjust CPU stack
-    emit_opcode(cbuf,0x58);       // POP EAX
-    emit_opcode(cbuf,0x5A);       // POP EDX
-    emit_opcode(cbuf,0x81);       // CMP EDX,imm
-    emit_d8    (cbuf,0xFA);       // rdx
-    emit_d32   (cbuf,0x80000000); //         0x80000000
-    emit_opcode(cbuf,0x75);       // JNE around_slow_call
-    emit_d8    (cbuf,0x07+4);     // Size of slow_call
-    emit_opcode(cbuf,0x85);       // TEST EAX,EAX
-    emit_opcode(cbuf,0xC0);       // 2/rax,/rax,
-    emit_opcode(cbuf,0x75);       // JNE around_slow_call
-    emit_d8    (cbuf,0x07);       // Size of slow_call
+    emit_opcode(masm,0x58);       // POP EAX
+    emit_opcode(masm,0x5A);       // POP EDX
+    emit_opcode(masm,0x81);       // CMP EDX,imm
+    emit_d8    (masm,0xFA);       // rdx
+    emit_d32   (masm,0x80000000); //         0x80000000
+    emit_opcode(masm,0x75);       // JNE around_slow_call
+    emit_d8    (masm,0x07+4);     // Size of slow_call
+    emit_opcode(masm,0x85);       // TEST EAX,EAX
+    emit_opcode(masm,0xC0);       // 2/rax,/rax,
+    emit_opcode(masm,0x75);       // JNE around_slow_call
+    emit_d8    (masm,0x07);       // Size of slow_call
     // Push src onto stack slow-path
-    emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
-    emit_d8    (cbuf,0xC0-1+$src$$reg );
+    emit_opcode(masm,0xD9 );      // FLD     ST(i)
+    emit_d8    (masm,0xC0-1+$src$$reg );
     // CALL directly to the runtime
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (StubRoutines::x86::d2l_wrapper() - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    masm.clear_inst_mark();
     // Carry on here...
   %}
 
   enc_class FMul_ST_reg( eRegFPR src1 ) %{
     // Operand was loaded from memory into fp ST (stack top)
     // FMUL   ST,$src  /* D8 C8+i */
-    emit_opcode(cbuf, 0xD8);
-    emit_opcode(cbuf, 0xC8 + $src1$$reg);
+    emit_opcode(masm, 0xD8);
+    emit_opcode(masm, 0xC8 + $src1$$reg);
   %}
 
   enc_class FAdd_ST_reg( eRegFPR src2 ) %{
     // FADDP  ST,src2  /* D8 C0+i */
-    emit_opcode(cbuf, 0xD8);
-    emit_opcode(cbuf, 0xC0 + $src2$$reg);
+    emit_opcode(masm, 0xD8);
+    emit_opcode(masm, 0xC0 + $src2$$reg);
     //could use FADDP  src2,fpST  /* DE C0+i */
   %}
 
   enc_class FAddP_reg_ST( eRegFPR src2 ) %{
     // FADDP  src2,ST  /* DE C0+i */
-    emit_opcode(cbuf, 0xDE);
-    emit_opcode(cbuf, 0xC0 + $src2$$reg);
+    emit_opcode(masm, 0xDE);
+    emit_opcode(masm, 0xC0 + $src2$$reg);
   %}
 
   enc_class subFPR_divFPR_encode( eRegFPR src1, eRegFPR src2) %{
     // Operand has been loaded into fp ST (stack top)
       // FSUB   ST,$src1
-      emit_opcode(cbuf, 0xD8);
-      emit_opcode(cbuf, 0xE0 + $src1$$reg);
+      emit_opcode(masm, 0xD8);
+      emit_opcode(masm, 0xE0 + $src1$$reg);
 
       // FDIV
-      emit_opcode(cbuf, 0xD8);
-      emit_opcode(cbuf, 0xF0 + $src2$$reg);
+      emit_opcode(masm, 0xD8);
+      emit_opcode(masm, 0xF0 + $src2$$reg);
   %}
 
   enc_class MulFAddF (eRegFPR src1, eRegFPR src2) %{
     // Operand was loaded from memory into fp ST (stack top)
     // FADD   ST,$src  /* D8 C0+i */
-    emit_opcode(cbuf, 0xD8);
-    emit_opcode(cbuf, 0xC0 + $src1$$reg);
+    emit_opcode(masm, 0xD8);
+    emit_opcode(masm, 0xC0 + $src1$$reg);
 
     // FMUL  ST,src2  /* D8 C*+i */
-    emit_opcode(cbuf, 0xD8);
-    emit_opcode(cbuf, 0xC8 + $src2$$reg);
+    emit_opcode(masm, 0xD8);
+    emit_opcode(masm, 0xC8 + $src2$$reg);
   %}
 
 
   enc_class MulFAddFreverse (eRegFPR src1, eRegFPR src2) %{
     // Operand was loaded from memory into fp ST (stack top)
     // FADD   ST,$src  /* D8 C0+i */
-    emit_opcode(cbuf, 0xD8);
-    emit_opcode(cbuf, 0xC0 + $src1$$reg);
+    emit_opcode(masm, 0xD8);
+    emit_opcode(masm, 0xC0 + $src1$$reg);
 
     // FMULP  src2,ST  /* DE C8+i */
-    emit_opcode(cbuf, 0xDE);
-    emit_opcode(cbuf, 0xC8 + $src2$$reg);
+    emit_opcode(masm, 0xDE);
+    emit_opcode(masm, 0xC8 + $src2$$reg);
   %}
 
   // Atomically load the volatile long
   enc_class enc_loadL_volatile( memory mem, stackSlotL dst ) %{
-    emit_opcode(cbuf,0xDF);
+    emit_opcode(masm,0xDF);
     int rm_byte_opcode = 0x05;
     int base     = $mem$$base;
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
     relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
-    store_to_stackslot( cbuf, 0x0DF, 0x07, $dst$$disp );
+    encode_RegMem(masm, rm_byte_opcode, base, index, scale, displace, disp_reloc);
+    store_to_stackslot( masm, 0x0DF, 0x07, $dst$$disp );
   %}
 
   // Volatile Store Long.  Must be atomic, so move it into
@@ -3046,16 +3035,17 @@ encode %{
   // target address before the store (for null-ptr checks)
   // so the memory operand is used twice in the encoding.
   enc_class enc_storeL_volatile( memory mem, stackSlotL src ) %{
-    store_to_stackslot( cbuf, 0x0DF, 0x05, $src$$disp );
-    cbuf.set_insts_mark();            // Mark start of FIST in case $mem has an oop
-    emit_opcode(cbuf,0xDF);
+    store_to_stackslot( masm, 0x0DF, 0x05, $src$$disp );
+    masm.set_inst_mark();            // Mark start of FIST in case $mem has an oop
+    emit_opcode(masm,0xDF);
     int rm_byte_opcode = 0x07;
     int base     = $mem$$base;
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
     relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
+    encode_RegMem(masm, rm_byte_opcode, base, index, scale, displace, disp_reloc);
+    masm.clear_inst_mark();
   %}
 
 %}
@@ -9571,7 +9561,7 @@ instruct cmpD_cc(eFlagsRegU cr, regD src1, regD src2) %{
     "exit:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9600,7 +9590,7 @@ instruct cmpD_ccmem(eFlagsRegU cr, regD src1, memory src2) %{
     "exit:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9631,7 +9621,7 @@ instruct cmpD_reg(xRegI dst, regD src1, regD src2, eFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9651,7 +9641,7 @@ instruct cmpD_regmem(xRegI dst, regD src1, memory src2, eFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomisd($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9772,8 +9762,9 @@ instruct addDPR_mem_reg(memory dst, regDPR src) %{
   opcode(0xDD, 0x0);
   ins_encode( Opcode(0xDD), RMopc_Mem(0x00,dst),
               Opcode(0xD8), RegOpc(src),
-              set_instruction_start,
-              Opcode(0xDD), RMopc_Mem(0x03,dst) );
+              SetInstMark,
+              Opcode(0xDD), RMopc_Mem(0x03,dst),
+              ClearInstMark);
   ins_pipe( fpu_reg_mem );
 %}
 
@@ -10154,7 +10145,7 @@ instruct cmpF_cc(eFlagsRegU cr, regF src1, regF src2) %{
     "exit:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10183,7 +10174,7 @@ instruct cmpF_ccmem(eFlagsRegU cr, regF src1, memory src2) %{
     "exit:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp_fixup(_masm);
+    emit_cmpfp_fixup(masm);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10214,7 +10205,7 @@ instruct cmpF_reg(xRegI dst, regF src1, regF src2, eFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10234,7 +10225,7 @@ instruct cmpF_regmem(xRegI dst, regF src1, memory src2, eFlagsReg cr) %{
     "done:" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$Address);
-    emit_cmpfp3(_masm, $dst$$Register);
+    emit_cmpfp3(masm, $dst$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10362,9 +10353,10 @@ instruct addFPR24_mem_cisc(stackSlotF dst, memory src1, memory src2) %{
   format %{ "FADD   $dst,$src1,$src2 cisc" %}
   opcode(0xD8, 0x0, 0xD9); /* D8 C0+i */  /* LoadF  D9 /0 */
   ins_encode( Opcode(tertiary), RMopc_Mem(0x00,src2),
-              set_instruction_start,
+              SetInstMark,
               OpcP, RMopc_Mem(secondary,src1),
-              Pop_Mem_FPR(dst) );
+              Pop_Mem_FPR(dst),
+              ClearInstMark);
   ins_pipe( fpu_mem_mem_mem );
 %}
 
@@ -10376,9 +10368,10 @@ instruct addFPR24_mem_mem(stackSlotF dst, memory src1, memory src2) %{
   format %{ "FADD   $dst,$src1,$src2" %}
   opcode(0xD8, 0x0, 0xD9); /* D8 /0 */  /* LoadF  D9 /0 */
   ins_encode( Opcode(tertiary), RMopc_Mem(0x00,src2),
-              set_instruction_start,
+              SetInstMark,
               OpcP, RMopc_Mem(secondary,src1),
-              Pop_Mem_FPR(dst) );
+              Pop_Mem_FPR(dst),
+              ClearInstMark);
   ins_pipe( fpu_mem_mem_mem );
 %}
 
@@ -10482,9 +10475,10 @@ instruct mulFPR24_mem_mem(stackSlotF dst, memory src1, memory src2) %{
   format %{ "FMUL   $dst,$src1,$src2" %}
   opcode(0xD8, 0x1, 0xD9); /* D8 /1 */  /* LoadF D9 /0 */
   ins_encode( Opcode(tertiary), RMopc_Mem(0x00,src2),
-              set_instruction_start,
+              SetInstMark,
               OpcP, RMopc_Mem(secondary,src1),
-              Pop_Mem_FPR(dst) );
+              Pop_Mem_FPR(dst),
+              ClearInstMark );
   ins_pipe( fpu_mem_mem_mem );
 %}
 
