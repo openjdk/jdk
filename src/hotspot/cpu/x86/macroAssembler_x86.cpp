@@ -3656,14 +3656,14 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool re
     XMMRegSet xmm_registers_to_restore = call_clobbered_xmm_registers();
     uint num_xmm_registers = xmm_registers_to_restore.size();
 
-    uint const restore_size = XMMRegSaveSize;
+    uint restore_size = num_xmm_registers * XMMRegSaveSize;
 
-    int restore_offset = 0;
-    for (RegSetIterator<XMMRegister> it = xmm_registers_to_restore.begin(); *it != xnoreg; ++it) {
+    int restore_offset = restore_size - XMMRegSaveSize;
+    for (ReverseRegSetIterator<XMMRegister> it = xmm_registers_to_restore.rbegin(); *it != xnoreg; ++it) {
       movdbl(*it, Address(rsp, restore_offset));
-      restore_offset += restore_size;
+      restore_offset -= XMMRegSaveSize;
     }
-    addptr(rsp, num_xmm_registers * restore_size);
+    addptr(rsp, restore_size);
   }
 #ifndef _LP64
   if (restore_fpu && use_x87_registers()) {
@@ -3693,14 +3693,17 @@ void MacroAssembler::push_set(RegSet set) {
 }
 
 void MacroAssembler::pop_set(RegSet set) {
-  size_t restore_offset = 0;
-  for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
+
+  uint gp_reg_size = RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+  uint restore_size = set.size() * gp_reg_size;
+
+  uint restore_offset = restore_size - gp_reg_size;
+  for (ReverseRegSetIterator<Register> it = set.rbegin(); *it != noreg; ++it) {
     movptr(*it, Address(rsp, restore_offset));
-    restore_offset += RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
+    restore_offset -= gp_reg_size;
   }
 
-  size_t register_pop_size = set.size() * RegisterImpl::max_slots_per_register * VMRegImpl::stack_slot_size;
-  size_t aligned_size = align_up(register_pop_size, StackAlignmentInBytes);
+  uint aligned_size = align_up(restore_size, StackAlignmentInBytes);
   addptr(rsp, aligned_size);
 }
 
