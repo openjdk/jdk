@@ -109,7 +109,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      *  event to its listeners.
      *
      * @param   aColumn         the <code>TableColumn</code> to be added
-     * @exception IllegalArgumentException      if <code>aColumn</code> is
+     * @throws IllegalArgumentException      if <code>aColumn</code> is
      *                          <code>null</code>
      * @see     #removeColumn
      */
@@ -170,7 +170,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      *
      * @param   columnIndex                     the index of column to be moved
      * @param   newIndex                        new index to move the column
-     * @exception IllegalArgumentException      if <code>column</code> or
+     * @throws IllegalArgumentException      if <code>column</code> or
      *                                          <code>newIndex</code>
      *                                          are not in the valid range
      */
@@ -258,7 +258,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      * @return          the index of the first column in the
      *                  <code>tableColumns</code> array whose identifier
      *                  is equal to <code>identifier</code>
-     * @exception       IllegalArgumentException  if <code>identifier</code>
+     * @throws       IllegalArgumentException  if <code>identifier</code>
      *                          is <code>null</code>, or if no
      *                          <code>TableColumn</code> has this
      *                          <code>identifier</code>
@@ -368,7 +368,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      *  an exception is thrown.
      *
      * @param   newModel        the new selection model
-     * @exception IllegalArgumentException      if <code>newModel</code>
+     * @throws IllegalArgumentException      if <code>newModel</code>
      *                                          is <code>null</code>
      * @see     #getSelectionModel
      */
@@ -636,7 +636,7 @@ public class DefaultTableColumnModel implements TableColumnModel,
      *          <code><em>Foo</em>Listener</code>s on this model,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @throws ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
