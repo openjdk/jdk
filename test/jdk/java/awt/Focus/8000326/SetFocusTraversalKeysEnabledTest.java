@@ -48,7 +48,6 @@ public class SetFocusTraversalKeysEnabledTest {
 
     private static volatile JFrame jFrame;
     private static volatile Component currentFocusOwner;
-    private static Robot robot;
 
     private static void doTest()
         throws InvocationTargetException, InterruptedException, AWTException {
@@ -59,9 +58,8 @@ public class SetFocusTraversalKeysEnabledTest {
             Component lastFocusOwner = null;
             do {
                 robot.waitForIdle();
-                SwingUtilities.invokeAndWait(() -> {
-                    currentFocusOwner = jFrame.getFocusOwner();
-                });
+                SwingUtilities.invokeAndWait(() -> currentFocusOwner = jFrame.getFocusOwner());
+
                 System.out.println("Focus owner is : " + currentFocusOwner.getClass().getName());
                 if (currentFocusOwner == lastFocusOwner) {
                     throw new RuntimeException(
@@ -72,15 +70,13 @@ public class SetFocusTraversalKeysEnabledTest {
                 robot.keyRelease(KeyEvent.VK_TAB);
             } while (currentFocusOwner != jFrame);
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                jFrame.dispose();
-            });
+            SwingUtilities.invokeAndWait(() -> jFrame.dispose());
         }
     }
 
     private static void createGUI() {
         jFrame = new JFrame("Focus Traversal Test");
-        jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        jFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JMenuBar jMenuBar = new JMenuBar();
         jMenuBar.setFocusTraversalKeysEnabled(true);
@@ -98,6 +94,7 @@ public class SetFocusTraversalKeysEnabledTest {
         jFrame.setFocusTraversalPolicy(new ContainerOrderFocusTraversalPolicy());
         jFrame.pack();
         northButton.requestFocusInWindow();
+        jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
     }
 
