@@ -33,7 +33,7 @@ TARGETS += $(GENSRC_LOCALEDATA)
 
 ################################################################################
 
-CLDR_DATA_DIR := (TOPDIR)/make/data/cldr/common
+CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
 
