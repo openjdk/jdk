@@ -25,10 +25,12 @@
 package javax.swing.border;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.geom.AffineTransform;
 import java.beans.ConstructorProperties;
 
 /**
@@ -145,23 +147,33 @@ public class EtchedBorder extends AbstractBorder
      * @param height the height of the painted border
      */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        int w = width;
-        int h = height;
-
-        g.translate(x, y);
-
-        // 8279614: The dark line was being overdrawn by the light line. The fix was to
-        // make sure that the dark line is always drawn second.
-        if (etchType == LOWERED) {
-            paintBorderShadow(g, getHighlightColor(c), w, h);
-            paintBorderRect(g, getShadowColor(c), w, h);
-        } else {
-            paintBorderRect(g, getHighlightColor(c), w, h);
-            paintBorderShadow(g, getShadowColor(c), w, h);
+        // We remove any initial transforms to prevent rounding errors
+        // when drawing in non-integer scales
+        AffineTransform at = new AffineTransform();
+        if (g instanceof Graphics2D) {
+            at = ((Graphics2D) g).getTransform();
+            ((Graphics2D) g).setTransform(new AffineTransform());
         }
 
+        int w = (int) (at.getScaleX()*width);
+        int h = (int) (at.getScaleY()*height);
 
-        g.translate(-x, -y);
+        g.translate((int) (at.getScaleX()*x+at.getTranslateX()),
+                (int) (at.getScaleY()*y+at.getTranslateY()));
+
+        // Drawing the border last prevents the shadow from overdrawing the border
+        paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
+                                                    : getShadowColor(c), w, h);
+        paintBorderRect(g, (etchType == LOWERED) ? getShadowColor(c)
+                                                    : getHighlightColor(c), w, h);
+
+
+        g.translate(-((int) (at.getScaleX()*x+at.getTranslateX())),
+                -((int) (at.getScaleY()*y+at.getTranslateY())));
+        // Set the transform we removed earlier
+        if (g instanceof Graphics2D) {
+            ((Graphics2D) g).setTransform(at);
+        }
     }
 
     /**
