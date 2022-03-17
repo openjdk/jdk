@@ -48,7 +48,7 @@ public class AliasNotInStoreTest2 extends Test {
 
         createAlias(CA_KEY_ALIAS, "-ext", "bc");
         createAlias(FIRST_KEY_ALIAS);
-        
+
         issueCert(FIRST_KEY_ALIAS);
 
         JarUtils.createJar(UNSIGNED_JARFILE, FIRST_FILE);
