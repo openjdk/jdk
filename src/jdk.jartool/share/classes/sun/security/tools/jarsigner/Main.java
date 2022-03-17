@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.interfaces.ECKey;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -1248,13 +1249,13 @@ public class Main {
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
+                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
             }
 
             if ((disabledAlg & 8) == 8) {
                 errors.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled."),
-                        privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
+                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
             }
         } else {
             if ((legacyAlg & 1) != 0) {
@@ -1278,7 +1279,7 @@ public class Main {
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        weakPublicKey.getAlgorithm(), KeyUtil.getKeySize(weakPublicKey)));
+                        KeyUtil.fullDisplayAlgName(weakPublicKey), KeyUtil.getKeySize(weakPublicKey)));
             }
         }
 
@@ -1455,7 +1456,12 @@ public class Main {
             JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
-            return String.format(rb.getString("key.bit.disabled"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.disabled"), kLen);
+            }
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
@@ -1467,7 +1473,12 @@ public class Main {
         } catch (CertPathValidatorException e) {
             weakPublicKey = key;
             legacyAlg |= 8;
-            return String.format(rb.getString("key.bit.weak"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
         }
     }
 
@@ -1520,7 +1531,12 @@ public class Main {
         try {
             CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.disabled"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.disabled"), kLen);
+            }
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), cpcp, true);
@@ -1530,7 +1546,12 @@ public class Main {
                 return rb.getString("unknown.size");
             }
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.weak"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
         }
     }
 
