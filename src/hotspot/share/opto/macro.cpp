@@ -159,6 +159,9 @@ CallNode* PhaseMacroExpand::make_slow_call(CallNode *oldcall, const TypeFunc* sl
 void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
   BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->eliminate_gc_barrier(this, p2x);
+  #ifndef PRODUCT
+    PhaseMacroExpand::_GC_barriers_removed_counter++;
+  #endif
 }
 
 // Search for a memory operation for the specified memory slice.
@@ -2309,6 +2312,10 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
     return;
+  
+  #ifndef PRODUCT
+    int memBar_Before = countMemBar();
+  #endif
 
   // Before elimination may re-mark (change to Nested or NonEscObj)
   // all associated (same box and obj) lock and unlock nodes.
@@ -2347,7 +2354,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   // Next, attempt to eliminate allocations
   _has_locks = false;
   progress = true;
-  // count number of is_mem_bar
   while (progress) {
     progress = false;
     for (int i = C->macro_count(); i > 0; i = MIN2(i - 1, C->macro_count())) { // more than 1 element can be eliminated at once
@@ -2392,6 +2398,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
+  #ifndef PRODUCT
+    int memBar_After = countMemBar();
+    PhaseMacroExpand::_memory_barriers_removed_counter += memBar_Before - memBar_After;
+  #endif
+
   //found number of mem_bar and subtract
 }
 
@@ -2593,5 +2604,17 @@ void PhaseMacroExpand::print_statistics() {
   tty->print_cr("Number of monitor objects removed: %d", _monitor_objects_removed_counter);
   tty->print_cr("Number of GC barriers removed: %d", _GC_barriers_removed_counter);
   tty->print_cr("Number of memory barriers removed: %d", _memory_barriers_removed_counter);
+}
+
+int PhaseMacroExpand::countMemBar() {
+  int cnt = C->macro_count();
+  int total = 0;
+  for (int i=0; i < cnt; i++) {
+    Node *n = C->macro_node(i);
+    if (n->is_MemBar()) {
+      total++;
+    }
+  }
+  return total;
 }
 #endif
