@@ -190,7 +190,7 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
 
   MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
   PhaseIterGVN* igvn = phase->is_IterGVN();
-  if (igvn != NULL) {
+  if (can_reshape) {
     igvn->_worklist.push(mem);
   }
 
@@ -302,7 +302,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     if (dest_offset->is_top()) {
       // Offset is out of bounds (the ArrayCopyNode will be removed)
       PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (igvn != NULL) {
+      if (can_reshape) {
         if (!src_offset->is_top()) {
           // record src_offset, so it can be deleted later (if it is dead)
           igvn->_worklist.push(src_offset);
