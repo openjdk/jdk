@@ -542,6 +542,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/Enum/ConstantDirectoryOptimalCapacity.java            8282120 generic-all
 
 ############################################################################
 
@@ -826,7 +827,6 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 generic-x64
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 

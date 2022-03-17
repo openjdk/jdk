@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,6 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
         {"Thread has been resumed", "\u5DF2\u6062\u590D\u7EBF\u7A0B"},
         {"Thread not suspended", "\u672A\u6302\u8D77\u7EBF\u7A0B"},
         {"thread group number description name", "{0,number,integer}\u3002{1} {2}"},
-        {"Threadgroup name not specified.", "\u672A\u6307\u5B9A\u7EBF\u7A0B\u7EC4\u540D\u3002"},
         {"<thread_id> option not valid until the VM is started with the run command",
          "\u5728\u4F7F\u7528 run \u547D\u4EE4\u542F\u52A8 VM \u524D\uFF0C<thread_id> \u9009\u9879\u65E0\u6548"},
         {"Threads must be suspended", "\u5FC5\u987B\u6302\u8D77\u7EBF\u7A0B"},
