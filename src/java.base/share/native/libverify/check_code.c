@@ -468,7 +468,7 @@ static void CCout_of_memory (context_type *);
 /* Because we can longjmp any time, we need to be very careful about
  * remembering what needs to be freed. */
 
-static void check_and_push_malloc_blk(context_type *context, void *ptr);
+static void check_and_push_malloc_block(context_type *context, void *ptr);
 static void check_and_push_string_utf(context_type *context, const void *ptr);
 static void pop_and_free(context_type *context);
 
@@ -940,10 +940,10 @@ read_all_code(context_type* context, jclass cb, int num_methods,
     int i;
 
     lengths = malloc(sizeof(int) * num_methods);
-    check_and_push_malloc_blk(context, lengths);
+    check_and_push_malloc_block(context, lengths);
 
     code = malloc(sizeof(unsigned char*) * num_methods);
-    check_and_push_malloc_blk(context, code);
+    check_and_push_malloc_block(context, code);
 
     *(lengths_addr) = lengths;
     *(code_addr) = code;
@@ -952,7 +952,7 @@ read_all_code(context_type* context, jclass cb, int num_methods,
         lengths[i] = JVM_GetMethodIxByteCodeLength(context->env, cb, i);
         if (lengths[i] > 0) {
             code[i] = malloc(sizeof(unsigned char) * (lengths[i] + 1));
-            check_and_push_malloc_blk(context, code[i]);
+            check_and_push_malloc_block(context, code[i]);
             JVM_GetMethodIxByteCode(context->env, cb, i, code[i]);
         } else {
             code[i] = NULL;
@@ -3824,7 +3824,7 @@ signature_to_fieldtype(context_type *context,
                 length = (int)(finish - p);
                 if (length + 1 > (int)sizeof(buffer_space)) {
                     buffer = malloc(length + 1);
-                    check_and_push_malloc_blk(context, buffer);
+                    check_and_push_malloc_block(context, buffer);
                 }
                 memcpy(buffer, p, length);
                 buffer[length] = '\0';
@@ -4165,7 +4165,7 @@ static void check_and_push_common(context_type *context, void *ptr, int kind)
     context->allocated_memory = p;
 }
 
-static void check_and_push_malloc_blk(context_type *context, void *ptr) {
+static void check_and_push_malloc_block(context_type *context, void *ptr) {
   check_and_push_common(context, ptr, VM_MALLOC_BLK);
 }
 
