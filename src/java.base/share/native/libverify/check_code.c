@@ -4166,11 +4166,11 @@ static void check_and_push_common(context_type *context, void *ptr, int kind)
 }
 
 static void check_and_push_malloc_blk(context_type *context, void *ptr) {
-  check_and_push(context, ptr, VM_MALLOC_BLK);
+  check_and_push_common(context, ptr, VM_MALLOC_BLK);
 }
 
 static void check_and_push_string_utf(context_type *context, const void *ptr) {
-  check_and_push(context, (void*)ptr, VM_STRING_UTF);
+  check_and_push_common(context, (void*)ptr, VM_STRING_UTF);
 }
 
 static void pop_and_free(context_type *context)
