@@ -474,14 +474,15 @@ bool MachNode::rematerialize() const {
   }
 
   // Stretching lots of inputs - don't do it.
-  if (req() > 2) {
+  // A MachContant has the last input being the constant base
+  if (req() > (is_MachConstant() ? 3 : 2)) {
     return false;
   }
 
-  if (req() == 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
+  if (req() >= 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
     // In(1) will be rematerialized, too.
     // Stretching lots of inputs - don't do it.
-    if (in(1)->req() > 2) {
+    if (in(1)->req() > (in(1)->is_MachConstant() ? 3 : 2)) {
       return false;
     }
   }
