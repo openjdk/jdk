@@ -365,6 +365,24 @@ bool VectorNode::is_shift_opcode(int opc) {
   }
 }
 
+bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
+  if (n->Opcode() != Op_URShiftI) {
+    return false;
+  }
+  Node* in2 = n->in(2);
+  if (!in2->is_Con()) {
+    return false;
+  }
+  jint cnt = in2->get_int();
+  // Only when shift amount is not greater than number of sign extended
+  // bits (16 for short and 24 for byte), unsigned shift right on signed
+  // subword types can be vectorized as vector signed shift.
+  if ((bt == T_BYTE && cnt <= 24) || (bt == T_SHORT && cnt <= 16)) {
+    return true;
+  }
+  return false;
+}
+
 bool VectorNode::is_shift(Node* n) {
   return is_shift_opcode(n->Opcode());
 }
