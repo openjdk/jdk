@@ -51,8 +51,8 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
         case T_SHORT:   is_eq = ele1.s == ele2.s; break;
         case T_INT:     is_eq = ele1.i == ele2.i; break;
         case T_LONG:    is_eq = ele1.j == ele2.j; break;
-        case T_FLOAT:   is_eq = ele1.f == ele2.f; break;
-        case T_DOUBLE:  is_eq = ele1.d == ele2.d; break;
+        case T_FLOAT:   is_eq = jint_cast(ele1.f)  == jint_cast(ele2.f);  break;
+        case T_DOUBLE:  is_eq = jlong_cast(ele1.d) == jlong_cast(ele2.d); break;
         default: ShouldNotReachHere(); is_eq = false;
       }
       if (!is_eq) {
