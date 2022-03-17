@@ -189,9 +189,8 @@ Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int c
   }
 
   MergeMemNode* mem = phase->transform(MergeMemNode::make(in_mem))->as_MergeMem();
-  PhaseIterGVN* igvn = phase->is_IterGVN();
   if (can_reshape) {
-    igvn->_worklist.push(mem);
+    phase->is_IterGVN()->_worklist.push(mem);
   }
 
   if (!inst_src->klass_is_exact()) {
@@ -301,12 +300,9 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     dest_offset = Compile::conv_I2X_index(phase, dest_offset, ary_dest->size());
     if (dest_offset->is_top()) {
       // Offset is out of bounds (the ArrayCopyNode will be removed)
-      PhaseIterGVN* igvn = phase->is_IterGVN();
-      if (can_reshape) {
-        if (!src_offset->is_top()) {
-          // record src_offset, so it can be deleted later (if it is dead)
-          igvn->_worklist.push(src_offset);
-        }
+      if (can_reshape && !src_offset->is_top()) {
+        // record src_offset, so it can be deleted later (if it is dead)
+        phase->is_IterGVN()->_worklist.push(src_offset);
       }
       return false;
     }
