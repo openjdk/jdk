@@ -3612,7 +3612,8 @@ static bool use_x87_registers() { return UseSSE < 2; }
 #endif
 static bool use_xmm_registers() { return UseSSE >= 1; }
 
-static int xmm_save_size() { return sizeof(double); } // C1 only ever uses the first float/double of the XMM register.
+// C1 only ever uses the first double/float of the XMM register.
+static int xmm_save_size() { return UseSSE >= 2 ? sizeof(double) : sizeof(float); }
 
 static void save_xmm_register(MacroAssembler* masm, int offset, XMMRegister reg) {
   if (UseSSE == 1) {
