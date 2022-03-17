@@ -634,6 +634,8 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = NULL;
   if (NMTPreInit::handle_malloc(&rc, size)) {
+    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // early allocations.
     return rc;
   }
 
@@ -658,9 +660,13 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  if (DumpSharedSpaces) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset(inner_ptr, 0, size);
+  } else {
+    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  }
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-
   return inner_ptr;
 }
 

@@ -32,12 +32,22 @@
  *     system properties in samevm/agentvm mode.
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.URL;
 import java.security.KeyStore;
-import javax.net.*;
-import javax.net.ssl.*;
-import java.security.cert.*;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
 
 /*
  * ClientHelloRead.java -- includes a simple server that can serve

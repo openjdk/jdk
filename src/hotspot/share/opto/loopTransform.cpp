@@ -956,6 +956,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       (stride_con < 0 && ((max_jint + stride_con) < limit_type->_lo)))
     return false;  // overflow
 
+  // Rudimentary cost model to estimate loop unrolling
+  // factor.
   // Adjust body_size to determine if we unroll or not
   uint body_size = _body.size();
   // Key test to unroll loop in CRC32 java code
@@ -968,6 +970,11 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_ModL: body_size += 30; break;
       case Op_DivL: body_size += 30; break;
       case Op_MulL: body_size += 10; break;
+      case Op_PopCountVI:
+      case Op_PopCountVL: {
+        const TypeVect* vt = n->bottom_type()->is_vect();
+        body_size += Matcher::vector_op_pre_select_sz_estimate(n->Opcode(), vt->element_basic_type(), vt->length());
+      } break;
       case Op_StrComp:
       case Op_StrEquals:
       case Op_StrIndexOf:

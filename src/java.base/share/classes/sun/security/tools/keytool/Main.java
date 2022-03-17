@@ -42,8 +42,6 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.URICertStoreParameters;
 
 
-import java.security.interfaces.ECKey;
-import java.security.interfaces.EdECKey;
 import java.security.spec.ECParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
@@ -2018,7 +2016,7 @@ public final class Main {
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    fullDisplayAlgName(privKey),
+                    KeyUtil.fullDisplayAlgName(privKey),
                     newCert.getSigAlgName(),
                     signerAlias,
                     validity,
@@ -2029,7 +2027,7 @@ public final class Main {
                     ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
             Object[] source = {
                     groupName == null ? keysize : KeyUtil.getKeySize(privKey),
-                    fullDisplayAlgName(privKey),
+                    KeyUtil.fullDisplayAlgName(privKey),
                     newCert.getSigAlgName(),
                     validity,
                     x500Name};
@@ -3560,24 +3558,10 @@ public final class Main {
         }
     }
 
-    private String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof ECKey) {
-            ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve) {
-                NamedCurve nc = (NamedCurve)paramSpec;
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            }
-        } else if (key instanceof EdECKey) {
-            result = ((EdECKey) key).getParams().getName();
-        }
-        return result;
-    }
-
     private String withWeakConstraint(Key key,
             CertPathConstraintsParameters cpcp) {
         int kLen = KeyUtil.getKeySize(key);
-        String displayAlg = fullDisplayAlgName(key);
+        String displayAlg = KeyUtil.fullDisplayAlgName(key);
         try {
             DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
@@ -4946,13 +4930,13 @@ public final class Main {
                     weakWarnings.add(String.format(
                             rb.getString("whose.key.weak"), label,
                             String.format(rb.getString("key.bit"),
-                            KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                            KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
                 }
             } catch (CertPathValidatorException e) {
                 weakWarnings.add(String.format(
                         rb.getString("whose.key.disabled"), label,
                         String.format(rb.getString("key.bit"),
-                        KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                        KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             }
         }
     }
@@ -4973,12 +4957,12 @@ public final class Main {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.disabled"), label,
                     String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             } else if (!LEGACY_CHECK.permits(SIG_PRIMITIVE_SET, key)) {
                 weakWarnings.add(String.format(
                     rb.getString("whose.key.weak"), label,
                     String.format(rb.getString("key.bit"),
-                    KeyUtil.getKeySize(key), fullDisplayAlgName(key))));
+                    KeyUtil.getKeySize(key), KeyUtil.fullDisplayAlgName(key))));
             }
         }
     }
