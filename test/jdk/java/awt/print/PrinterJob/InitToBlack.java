@@ -90,7 +90,7 @@ public class InitToBlack implements Printable {
         String INSTRUCTION = """
                 Aim: This test checks whether the default foreground color on a printer
                 graphics object is black so that rendering will appear without having
-                to execute setColor first.
+                to execute setColor.
                 Step:
                 1) Click on the "Print" button. Check whether page is printed on the printer.
                 2) Check whether "Test Passes" is printed on the page and it should be in
