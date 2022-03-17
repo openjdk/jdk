@@ -36,7 +36,12 @@ public class ASCIIDecode {
     public static void main(String[] args) throws Exception {
         final Charset ascii = Charset.forName("US-ASCII");
         final CharsetDecoder decoder = ascii.newDecoder();
+
         byte[] ba = new byte[] { 0x60, 0x60, 0x60, (byte)0xFF };
+
+        // Repeat enough times to test that interpreter and JIT:ed versions
+        // behave the same (without the patch for 8283325 this fails within
+        // 50 000 iterations on the system used for verification)
         for (int i = 0; i < 100_000; i++) {
             ByteBuffer bb = ByteBuffer.wrap(ba);
             char[] ca = new char[4];
@@ -45,7 +50,6 @@ public class ASCIIDecode {
             if (ca[0] != 0x60 || ca[1] != 0x60 || ca[2] != 0x60) {
                 throw new RuntimeException("Unexpected output on iteration " + i);
             }
-            Arrays.fill(ca, (char)0);
         }
     }
 }
