@@ -63,7 +63,7 @@ public final class SimpleCMYKColorSpace extends ColorSpace {
     }
 
     public int hashCode() {
-        return theInstance.hashCode();
+        return getClass().hashCode()+7;
     }
 
     public float[] toRGB(float[] colorvalue) {
