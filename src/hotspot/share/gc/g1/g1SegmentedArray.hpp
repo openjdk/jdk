@@ -181,7 +181,7 @@ public:
 // The class also manages a few counters for statistics using atomic operations.
 // Their values are only consistent within each other with extra global
 // synchronization.
-template <class Slot, MEMFLAGS flag>
+template <MEMFLAGS flag>
 class G1SegmentedArray : public FreeListConfig  {
   // G1SegmentedArrayAllocOptions provides parameters for allocation segment
   // sizing and expansion.

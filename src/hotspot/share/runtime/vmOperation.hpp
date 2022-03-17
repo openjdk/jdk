@@ -97,6 +97,7 @@
   template(CleanClassLoaderDataMetaspaces)        \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
+  template(PrintClasses)                          \
   template(ICBufferFull)                          \
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \

@@ -1429,9 +1429,7 @@ public class ObjectInputStream
             event.commit();
         }
         if (serialFilter != null && (status == null || status == ObjectInputFilter.Status.REJECTED)) {
-            InvalidClassException ice = new InvalidClassException("filter status: " + status);
-            ice.initCause(ex);
-            throw ice;
+            throw new InvalidClassException("filter status: " + status, ex);
         }
     }
 
@@ -1996,14 +1994,10 @@ public class ObjectInputStream
         } catch (ClassNotFoundException ex) {
             resolveEx = ex;
         } catch (IllegalAccessError aie) {
-            IOException ice = new InvalidClassException(aie.getMessage());
-            ice.initCause(aie);
-            throw ice;
+            throw new InvalidClassException(aie.getMessage(), aie);
         } catch (OutOfMemoryError memerr) {
-            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
-                    Arrays.toString(ifaces));
-            ex.initCause(memerr);
-            throw ex;
+            throw new InvalidObjectException("Proxy interface limit exceeded: " +
+                                             Arrays.toString(ifaces), memerr);
         }
 
         // Call filterCheck on the class before reading anything else
@@ -2016,10 +2010,8 @@ public class ObjectInputStream
             depth++;
             desc.initProxy(cl, resolveEx, readClassDesc(false));
         } catch (OutOfMemoryError memerr) {
-            IOException ex = new InvalidObjectException("Proxy interface limit exceeded: " +
-                    Arrays.toString(ifaces));
-            ex.initCause(memerr);
-            throw ex;
+            throw new InvalidObjectException("Proxy interface limit exceeded: " +
+                                             Arrays.toString(ifaces), memerr);
         } finally {
             depth--;
         }
@@ -2050,8 +2042,8 @@ public class ObjectInputStream
         try {
             readDesc = readClassDescriptor();
         } catch (ClassNotFoundException ex) {
-            throw (IOException) new InvalidClassException(
-                "failed to read class descriptor").initCause(ex);
+            throw new InvalidClassException("failed to read class descriptor",
+                                            ex);
         }
 
         Class<?> cl = null;
@@ -2221,9 +2213,8 @@ public class ObjectInputStream
                 Enum<?> en = Enum.valueOf((Class)cl, name);
                 result = en;
             } catch (IllegalArgumentException ex) {
-                throw (IOException) new InvalidObjectException(
-                    "enum constant " + name + " does not exist in " +
-                    cl).initCause(ex);
+                throw new InvalidObjectException("enum constant " +
+                                                 name + " does not exist in " + cl, ex);
             }
             if (!unshared) {
                 handles.setObject(enumHandle, result);
@@ -2262,9 +2253,8 @@ public class ObjectInputStream
         try {
             obj = desc.isInstantiable() ? desc.newInstance() : null;
         } catch (Exception ex) {
-            throw (IOException) new InvalidClassException(
-                desc.forClass().getName(),
-                "unable to create instance").initCause(ex);
+            throw new InvalidClassException(desc.forClass().getName(),
+                                            "unable to create instance", ex);
         }
 
         passHandle = handles.assign(unshared ? unsharedMarker : obj);
@@ -2388,16 +2378,12 @@ public class ObjectInputStream
         try {
             return (Object) ctrMH.invokeExact(fieldValues.primValues, fieldValues.objValues);
         } catch (Exception e) {
-            InvalidObjectException ioe = new InvalidObjectException(e.getMessage());
-            ioe.initCause(e);
-            throw ioe;
+            throw new InvalidObjectException(e.getMessage(), e);
         } catch (Error e) {
             throw e;
         } catch (Throwable t) {
-            ObjectStreamException ose = new InvalidObjectException(
-                    "ReflectiveOperationException during deserialization");
-            ose.initCause(t);
-            throw ose;
+            throw new InvalidObjectException("ReflectiveOperationException " +
+                                             "during deserialization", t);
         }
     }
 
