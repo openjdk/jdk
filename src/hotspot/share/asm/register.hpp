@@ -88,6 +88,7 @@ const type name = ((type)value)
 #endif
 
 template <class RegImpl> class RegSetIterator;
+template <class RegImpl> class ReverseRegSetIterator;
 
 // A set of registers
 template <class RegImpl>
@@ -155,12 +156,15 @@ public:
 private:
 
   RegImpl first();
+  RegImpl last();
 
 public:
 
   friend class RegSetIterator<RegImpl>;
+  friend class ReverseRegSetIterator<RegImpl>;
 
   RegSetIterator<RegImpl> begin();
+  ReverseRegSetIterator<RegImpl> rbegin();
 };
 
 template <class RegImpl>
@@ -193,6 +197,38 @@ public:
 template <class RegImpl>
 inline RegSetIterator<RegImpl> AbstractRegSet<RegImpl>::begin() {
   return RegSetIterator<RegImpl>(*this);
+}
+
+template <class RegImpl>
+class ReverseRegSetIterator {
+  AbstractRegSet<RegImpl> _regs;
+
+public:
+  ReverseRegSetIterator(AbstractRegSet<RegImpl> x): _regs(x) {}
+  ReverseRegSetIterator(const ReverseRegSetIterator& mit) : _regs(mit._regs) {}
+
+  ReverseRegSetIterator& operator++() {
+    RegImpl r = _regs.last();
+    if (r->is_valid())
+      _regs -= r;
+    return *this;
+  }
+
+  bool operator==(const ReverseRegSetIterator& rhs) const {
+    return _regs.bits() == rhs._regs.bits();
+  }
+  bool operator!=(const ReverseRegSetIterator& rhs) const {
+    return ! (rhs == *this);
+  }
+
+  RegImpl operator*() {
+    return _regs.last();
+  }
+};
+
+template <class RegImpl>
+inline ReverseRegSetIterator<RegImpl> AbstractRegSet<RegImpl>::rbegin() {
+  return ReverseRegSetIterator<RegImpl>(*this);
 }
 
 #include CPU_HEADER(register)
