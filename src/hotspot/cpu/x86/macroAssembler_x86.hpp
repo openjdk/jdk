@@ -530,9 +530,12 @@ private:
   static RegSet call_clobbered_gp_registers();
   static XMMRegSet call_clobbered_xmm_registers();
 
+  void push_set(XMMRegSet set, int offset);
+  void pop_set(XMMRegSet set, int offset);
+
 public:
-  void push_set(RegSet set);
-  void pop_set(RegSet set);
+  void push_set(RegSet set, int offset = -1);
+  void pop_set(RegSet set, int offset = -1);
 
   // Push and pop everything that might be clobbered by a native
   // runtime call.
