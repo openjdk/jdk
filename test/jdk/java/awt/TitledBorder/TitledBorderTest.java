@@ -24,12 +24,12 @@
  */
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.BorderLayout;
 import java.awt.Graphics2D;
@@ -53,33 +53,65 @@ public class TitledBorderTest {
   public static JPanel childPanel;
 
   public static void main(String[] args) throws Exception {
-    LookAndFeelInfo laf = UIManager.getInstalledLookAndFeels()[3];
-    System.out.println(laf);
-    SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+    try {
+      UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+    } catch (Exception e) {
+      throw new RuntimeException("Could not get Windows laf.");
+    }
     SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
     Robot robot = new Robot();
 
-    BufferedImage buff = new BufferedImage(frame.getWidth()*2, frame.getHeight()*2,
-            BufferedImage.TYPE_INT_ARGB);
+    BufferedImage buff = new BufferedImage(frame.getWidth()*2,
+            frame.getHeight()*2, BufferedImage.TYPE_INT_ARGB);
     Graphics2D graph = buff.createGraphics();
     graph.scale(1.5, 1.5);
     frame.paint(graph);
     graph.dispose();
 
     robot.waitForIdle();
-    boolean testFail = true;
-    for (int i = 15; i < 25 && testFail == true; i++) {
+    int testFail = 0;
+    for (int i = 15; i < 25 && testFail == 0; i++) {
       for (int j = 80; j < 100; j++) {
-        if (buff.getRGB(i, j) == -6250336) {
+        if (buff.getRGB(i, j) == -0x5F5F60) {
           System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
-          testFail = false;
+          testFail = 1;
           break;
         }
       }
     }
 
-    if (testFail) {
+    for (int i = 15; i < 25 && testFail == 1; i++) {
+      for (int j = 150; j < 170; j++) {
+        if (buff.getRGB(i, j) == -0x5F5F60) {
+          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
+          testFail = 2;
+          break;
+        }
+      }
+    }
+
+    for (int i = 20; i < 30 && testFail == 2; i++) {
+      for (int j = 230; j < 250; j++) {
+        if (buff.getRGB(i, j) == -0x5F5F60) {
+          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
+          testFail = 3;
+          break;
+        }
+      }
+    }
+
+    for (int i = 20; i < 30 && testFail == 3; i++) {
+      for (int j = 320; j < 340; j++) {
+        if (buff.getRGB(i, j) == -0x5F5F60) {
+          System.out.println(i + " " + j + " Color " + buff.getRGB(i, j));
+          testFail = 4;
+          break;
+        }
+      }
+    }
+
+    if (testFail < 4) {
       saveImage(buff, "test.png");
       throw new RuntimeException("Border was clipped or overdrawn.");
     }
@@ -92,16 +124,22 @@ public class TitledBorderTest {
     frame.setSize(new java.awt.Dimension(300, 200));
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    parentPanel = new JPanel(new BorderLayout());
-    parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+    JPanel content = new JPanel();
+    content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 
-    childPanel = new JPanel(new BorderLayout());
-    childPanel.setBorder(BorderFactory.createTitledBorder("Title"));
-    childPanel.add(new JCheckBox(), BorderLayout.CENTER);
+    for (int i = 0; i < 4; i++) {
+      parentPanel = new JPanel(new BorderLayout());
+      parentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5 + i, 5, 5));
 
-    parentPanel.add(childPanel, BorderLayout.CENTER);
+      childPanel = new JPanel(new BorderLayout());
+      childPanel.setBorder(BorderFactory.createTitledBorder("Title " + i));
+      childPanel.add(new JCheckBox(), BorderLayout.CENTER);
 
-    frame.getContentPane().add(parentPanel, BorderLayout.CENTER);
+      parentPanel.add(childPanel, BorderLayout.CENTER);
+      content.add(parentPanel);
+    }
+
+    frame.getContentPane().add(content, BorderLayout.CENTER);
 
     frame.pack();
     frame.setLocationRelativeTo(null);
