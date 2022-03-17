@@ -3605,13 +3605,30 @@ XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
 #endif
 }
 
-static int XMMRegSaveSize = sizeof(double);  // C1 only ever uses the first float/double of the XMM register.
 static int FPUSaveAreaSize = align_up(108, StackAlignmentInBytes); // 108 bytes needed for FPU state by fsave/frstor
 
 #ifndef _LP64
 static bool use_x87_registers() { return UseSSE < 2; }
 #endif
 static bool use_xmm_registers() { return UseSSE >= 1; }
+
+static int xmm_save_size() { return sizeof(double); } // C1 only ever uses the first float/double of the XMM register.
+
+static void save_xmm_register(MacroAssembler* masm, int offset, XMMRegister reg) {
+  if (UseSSE == 1) {
+    masm->movflt(Address(rsp, offset), reg);
+  } else {
+    masm->movdbl(Address(rsp, offset), reg);
+  }
+}
+
+static void restore_xmm_register(MacroAssembler* masm, int offset, XMMRegister reg) {
+  if (UseSSE == 1) {
+    masm->movflt(reg, Address(rsp, offset));
+  } else {
+    masm->movdbl(reg, Address(rsp, offset));
+  }
+}
 
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool save_fpu) {
   block_comment("push_call_clobbered_registers start");
@@ -3635,17 +3652,12 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude, bool s
     XMMRegSet xmm_registers_to_push = call_clobbered_xmm_registers();
     uint num_xmm_registers = xmm_registers_to_push.size();
 
-    uint spill_size = XMMRegSaveSize;
-    subptr(rsp, num_xmm_registers * spill_size);
+    subptr(rsp, num_xmm_registers * xmm_save_size());
 
     int spill_offset = 0;
     for (RegSetIterator<XMMRegister> it = xmm_registers_to_push.begin(); *it != xnoreg; ++it) {
-      if (UseSSE == 1) {
-        movflt(Address(rsp, spill_offset), *it);
-      } else {
-        movdbl(Address(rsp, spill_offset), *it);
-      }
-      spill_offset += spill_size;
+      save_xmm_register(this, spill_offset, *it);
+      spill_offset += xmm_save_size();
     }
     assert(is_aligned(spill_offset, StackAlignmentInBytes), "Should be aligned implicitly, is %d", spill_offset);
   }
@@ -3660,16 +3672,11 @@ void MacroAssembler::pop_call_clobbered_registers_except(RegSet exclude, bool re
     XMMRegSet xmm_registers_to_restore = call_clobbered_xmm_registers();
     uint num_xmm_registers = xmm_registers_to_restore.size();
 
-    uint restore_size = num_xmm_registers * XMMRegSaveSize;
-
-    int restore_offset = restore_size - XMMRegSaveSize;
+    int restore_size = num_xmm_registers * xmm_save_size();
+    int restore_offset = restore_size - xmm_save_size();
     for (ReverseRegSetIterator<XMMRegister> it = xmm_registers_to_restore.rbegin(); *it != xnoreg; ++it) {
-      if (UseSSE == 1) {
-        movflt(*it, Address(rsp, restore_offset));
-      } else {
-        movdbl(*it, Address(rsp, restore_offset));
-      }
-      restore_offset -= XMMRegSaveSize;
+      restore_xmm_register(this, restore_offset, *it);
+      restore_offset -= xmm_save_size();
     }
     addptr(rsp, restore_size);
   }
