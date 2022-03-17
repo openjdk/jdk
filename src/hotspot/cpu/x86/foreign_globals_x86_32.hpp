@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,9 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "code/vmreg.hpp"
-#include "prims/foreign_globals.hpp"#include "utilities/debug.hpp"
+#ifndef CPU_X86_VM_FOREIGN_GLOBALS_X86_32_HPP
+#define CPU_X86_VM_FOREIGN_GLOBALS_X86_32_HPP
 
-class MacroAssembler;
+struct ABIDescriptor {};
 
-const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
-  ShouldNotCallThis();
-  return {};
-}
-
-VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
-  Unimplemented();
-  return VMRegImpl::Bad();
-}
-
-int RegSpiller::pd_reg_size(VMReg reg) {
-  Unimplemented();
-  return -1;
-}
-
-void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
-  Unimplemented();
-}
-
-void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
-  Unimplemented();
-}
-
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
-  Unimplemented();
-}
+#endif // CPU_X86_VM_FOREIGN_GLOBALS_X86_32_HPP
