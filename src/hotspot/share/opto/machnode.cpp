@@ -491,7 +491,7 @@ bool MachNode::rematerialize() const {
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (rm.is_bound(ideal_reg())) {
+    if (rm.is_NotEmpty() && rm.is_bound(ideal_reg())) {
       return false;
     }
   }

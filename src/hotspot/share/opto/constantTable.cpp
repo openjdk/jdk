@@ -36,7 +36,30 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
   if (type()          != other.type()         )  return false;
   if (can_be_reused() != other.can_be_reused())  return false;
   if (is_array() || other.is_array()) {
-    return is_array() && other.is_array() && _v._array == other._v._array;
+    if (is_array() != other.is_array() ||
+        get_array()->length() != other.get_array()->length()) {
+      return false;
+    }
+    for (int i = 0; i < get_array()->length(); i++) {
+      jvalue ele1 = get_array()->at(i);
+      jvalue ele2 = other.get_array()->at(i);
+      bool is_eq;
+      switch (type()) {
+        case T_BOOLEAN: is_eq = ele1.z == ele2.z; break;
+        case T_BYTE:    is_eq = ele1.b == ele2.b; break;
+        case T_CHAR:    is_eq = ele1.c == ele2.c; break;
+        case T_SHORT:   is_eq = ele1.s == ele2.s; break;
+        case T_INT:     is_eq = ele1.i == ele2.i; break;
+        case T_LONG:    is_eq = ele1.j == ele2.j; break;
+        case T_FLOAT:   is_eq = ele1.f == ele2.f; break;
+        case T_DOUBLE:  is_eq = ele1.d == ele2.d; break;
+        default: ShouldNotReachHere(); is_eq = false;
+      }
+      if (!is_eq) {
+        return false;
+      }
+    }
+    return true;
   }
   // For floating point values we compare the bit pattern.
   switch (type()) {

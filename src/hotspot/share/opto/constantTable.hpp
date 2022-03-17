@@ -72,13 +72,13 @@ public:
     {
       _v._metadata = metadata;
     }
-    Constant(BasicType type, GrowableArray<jvalue>* array, int alignment) :
+    Constant(BasicType type, GrowableArray<jvalue>* array, int alignment, bool can_be_reused = true) :
       _type(type),
       _is_array(true),
       _alignment(alignment),
       _offset(-1),
       _freq(0.0f),
-      _can_be_reused(false)
+      _can_be_reused(can_be_reused)
     {
       assert(is_java_primitive(type), "not applicable for %s", type2name(type));
       assert(is_power_of_2(alignment), "invalid alignment %d", alignment);
