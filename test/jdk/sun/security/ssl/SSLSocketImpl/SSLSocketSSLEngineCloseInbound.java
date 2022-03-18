@@ -35,6 +35,7 @@
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1.2
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1.1
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1
+ * @run main/othervm SSLSocketSSLEngineCloseInbound TLS
  */
 
 /**
@@ -253,22 +254,17 @@ public class SSLSocketSSLEngineCloseInbound {
                     // Inbound data
                     log("================");
 
-                    // Read from the Client side.
+                    // Try reading Client side, even if it's already closed.
                     try {
                         len = is.read(inbound);
-                        if (len == -1) {
-                            logSocketStatus(clientSocket);
-                            if (clientSocket.isClosed()
-                                    || clientSocket.isOutputShutdown()) {
-                                log("Client socket was closed or shutdown output");
-                                break;
-                            } else {
-                                throw new Exception("Unexpected EOF");
-                            }
+                        if (len > 0) {
+                            cTOs.put(inbound, 0, len);
                         }
-                        cTOs.put(inbound, 0, len);
-                    } catch (SocketTimeoutException ste) {
-                        // swallow. Nothing yet, probably waiting on us.
+                    } catch (IOException e) {
+                        /*
+                         * swallow IO/SocketTimeoutExceptions.  We'll do
+                         * the testing/exit after the unwraps.
+                         */
                     }
 
                     cTOs.flip();
@@ -281,8 +277,8 @@ public class SSLSocketSSLEngineCloseInbound {
                     // Outbound data
                     log("----");
 
-                    // After we've sent our bytes, close the input side
-                    // and see what happens.
+                    // After we've received  our app bytes, close input side
+                    // and see what happens.  Exit the test at the end.
                     if (serverIn.position() != 0) {
                         try {
                             serverEngine.closeInbound();
@@ -299,8 +295,6 @@ public class SSLSocketSSLEngineCloseInbound {
                             throw new Exception("Server session is not valid");
                         }
 
-                        // Make sure this test will exit.
-                        serverEngine.closeOutbound();
                         return;
                     }
 
@@ -458,15 +452,6 @@ public class SSLSocketSSLEngineCloseInbound {
 
     private static boolean isEngineClosed(SSLEngine engine) {
         return (engine.isOutboundDone() && engine.isInboundDone());
-    }
-
-    private static void logSocketStatus(Socket socket) {
-        log("##### " + socket + " #####");
-        log("isBound: " + socket.isBound());
-        log("isConnected: " + socket.isConnected());
-        log("isClosed: " + socket.isClosed());
-        log("isInputShutdown: " + socket.isInputShutdown());
-        log("isOutputShutdown: " + socket.isOutputShutdown());
     }
 
     /*
