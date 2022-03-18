@@ -129,7 +129,7 @@ public class LZWCompressor {
      * Indicate to compressor that no more data to go so write out
      * any remaining buffered data.
      *
-     * @exception IOException if underlying output stream error
+     * @throws IOException if underlying output stream error
      */
     public void flush() throws IOException {
         if (prefix != -1) {
