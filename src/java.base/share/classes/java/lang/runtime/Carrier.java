@@ -53,13 +53,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * types describe the types of the carrier component values.
  *
  * @implNote The strategy for storing components is deliberately left ambiguous
- * so that future improvements will not be hampered by backward compatability
+ * so that future improvements will not be hampered by backward compatibility
  * issues.
  *
  * @since 19
  */
-
-/*non-public*/
 public final class Carrier {
     /**
      * Class file version.
@@ -1119,7 +1117,7 @@ public final class Carrier {
      * @param methodType  {@link MethodType} providing types for the carrier's
      *                    components
      *
-     * @return immutable list of component accessors {@link MethodHandle MethodHandles,}
+     * @return immutable list of component accessors {@link MethodHandle MethodHandles}
      *
      * @throws NullPointerException is any argument is null
      * @throws IllegalArgumentException if number of component slots exceeds maximum
