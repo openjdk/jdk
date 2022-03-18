@@ -2759,7 +2759,7 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Looks up a class by name from the lookup context defined by this {@code Lookup} object,
          * <a href="MethodHandles.Lookup.html#equiv">as if resolved</a> by an {@code ldc} instruction.
-         * Such a resolution, as specified in JVMS 5.4.3.1 section, attempts to locate and load the class,
+         * Such a resolution, as specified in JVMS {@jvms 5.4.3.1}, attempts to locate and load the class,
          * and then determines whether the class is accessible to this lookup object.
          * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
