@@ -5775,7 +5775,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
       pinned = false;
     }
     if (n->is_CMove() || n->is_ConstraintCast()) {
