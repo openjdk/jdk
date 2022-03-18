@@ -1231,7 +1231,15 @@ public class Check {
                 implicit |= sym.owner.flags_field & STRICTFP;
             break;
         case TYP:
-            if (sym.owner.kind.matches(KindSelector.VAL_MTH) ||
+            if (!allowRecords && sym.isDirectlyOrIndirectlyLocal()) {
+                mask = LocalClassFlags;
+                if (((flags & ENUM) != 0 || (flags & RECORD) != 0)) {
+                    if (sym.owner.kind == TYP) {
+                        log.error(pos, Errors.StaticDeclarationNotAllowedInInnerClasses);
+                    }
+                }
+            }
+            else if(sym.owner.kind.matches(KindSelector.VAL_MTH) ||
                     (sym.isDirectlyOrIndirectlyLocal() && (flags & ANNOTATION) != 0)) {
                 boolean implicitlyStatic = !sym.isAnonymous() &&
                         ((flags & RECORD) != 0 || (flags & ENUM) != 0 || (flags & INTERFACE) != 0);

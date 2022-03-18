@@ -1,0 +1,12 @@
+- compiler.warn.source.no.system.modules.path: 15
+T8259072.java:12:21: compiler.err.mod.not.allowed.here: private
+T8259072.java:18:42: compiler.err.mod.not.allowed.here: private
+T8259072.java:23:43: compiler.err.mod.not.allowed.here: private
+T8259072.java:28:20: compiler.err.mod.not.allowed.here: public
+T8259072.java:34:41: compiler.err.mod.not.allowed.here: public
+T8259072.java:39:42: compiler.err.mod.not.allowed.here: public
+T8259072.java:44:23: compiler.err.mod.not.allowed.here: protected
+T8259072.java:50:44: compiler.err.mod.not.allowed.here: protected
+T8259072.java:55:45: compiler.err.mod.not.allowed.here: protected
+9 errors
+1 warning
