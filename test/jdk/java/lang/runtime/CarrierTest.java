@@ -61,7 +61,8 @@ public class CarrierTest {
                 'C', 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFL,
                 1.0f / 3.0f, 1.0 / 3.0,
                 true, "abcde");
-        MethodHandle[] components = Carrier.components(methodType);
+        MethodHandle[] components = Carrier.components(methodType).toArray(new MethodHandle[0]);
+
         assertTrue((byte)components[0].invokeExact(object) == (byte)0xFF,
                 "primitive byte test failure");
         assertTrue((short)components[1].invokeExact(object) == (short)0xFFFF,
@@ -79,6 +80,10 @@ public class CarrierTest {
         assertTrue((boolean)components[7].invokeExact(object),
                 "primitive boolean test failure");
         assertTrue("abcde".equals((String)components[8].invokeExact(object)),
+                "primitive String test failure");
+
+        MethodHandle component = Carrier.component(methodType, 8);
+        assertTrue("abcde".equals((String)component.invokeExact(object)),
                 "primitive String test failure");
     }
 
@@ -109,7 +114,7 @@ public class CarrierTest {
                 (Object)null, (Object)null, (Object)null, (Object)null,
                 (Object)null, (Object)null, (Object)null, (Object)null
                 );
-        MethodHandle[] components = Carrier.components(methodType);
+        MethodHandle[] components = Carrier.components(methodType).toArray(new MethodHandle[0]);
         assertTrue((byte)components[0].invokeExact(object) == (byte)0xFF,
                 "primitive in array byte test failure");
         assertTrue((short)components[1].invokeExact(object) == (short)0xFFFF,
