@@ -77,7 +77,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
         -fPIC"
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    # -bexpall should be used instead of -bnoexpall if -qvisibility option is not defined
     BASIC_LDFLAGS="-b64 -brtl -bnorwexec -bnolibpath -bnoexpall -bernotok -btextpsize:64K \
         -bdatapsize:64K -bstackpsize:64K"
     # libjvm.so has gotten too large for normal TOC size; compile with qpic=large and link with bigtoc
