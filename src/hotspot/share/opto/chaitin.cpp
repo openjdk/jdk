@@ -92,6 +92,7 @@ void LRG::dump() const {
   if( _msize_valid ) {
     if( _degree_valid && lo_degree() ) tty->print("Trivial ");
   }
+  tty->print("Region = %d", _region);
 
   tty->cr();
 }
@@ -513,6 +514,7 @@ void PhaseChaitin::Register_Allocate() {
       gather_lrg_masks(blocks, true, region);
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
+      compute_min_regions(blocks);
     }
 
     // Build physical interference graph
@@ -551,6 +553,7 @@ void PhaseChaitin::Register_Allocate() {
         gather_lrg_masks(blocks, true, region);   // Collect intersect mask
         live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
         _live = &live;
+        compute_min_regions(blocks);
       }
       build_ifg_physical(&live_arena, blocks, region);
       _ifg->SquareUp();
@@ -624,6 +627,7 @@ void PhaseChaitin::Register_Allocate() {
         gather_lrg_masks(blocks, true, region);
         live.compute(_lrg_map.max_lrg_id());
         _live = &live;
+        compute_min_regions(blocks);
       }
       must_spill = build_ifg_physical(&live_arena, blocks, region);
       _ifg->SquareUp();
@@ -650,6 +654,16 @@ void PhaseChaitin::Register_Allocate() {
       // Select colors by re-inserting LRGs back into the IFG in reverse order.
       // Return whether or not something spills.
       spills = Select(region);
+    }
+    if (region == 1) {
+      for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
+//        if (lrgs(i)._region == 1) {
+//          tty->print("WWW %d", i); lrgs(i).mask().dump(); tty->cr();
+//        }
+        if (lrgs(i).alive()) {
+          tty->print("WWW %d - ", i); lrgs(i).dump();
+        }
+      }
     }
   }
 
@@ -756,6 +770,40 @@ void PhaseChaitin::Register_Allocate() {
   _live = NULL;
   _ifg = NULL;
   C->set_indexSet_arena(NULL);  // ResourceArea is at end of scope
+}
+
+void PhaseChaitin::compute_min_regions(const Block_List &blocks) {
+  for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
+    lrgs(i)._min_region = max_juint;
+  }
+  for (uint i = 0; i < blocks.size(); i++) {
+    Block* block = blocks[i];
+    IndexSet liveout(_live->live(block));
+    IndexSetIterator elements(&liveout);
+    uint lid = elements.next();
+    while (lid != 0) {
+      LRG &lrg = lrgs(lid);
+      lrg._min_region = MIN2(lrg._min_region, block->_region);
+      lid = elements.next();
+    }
+    for (uint location = block->end_idx(); location > 0; location--) {
+      Node* n = block->get_node(location);
+      uint lid = _lrg_map.live_range_id(n);
+
+      if (lid) {
+        LRG &lrg = lrgs(lid);
+        lrg._min_region = MIN2(lrg._min_region, block->_region);
+      }
+      for (uint k = ((n->Opcode() == Op_SCMemProj) ? 0 : 1); k < n->req(); k++) {
+        Node* def = n->in(k);
+        uint lid = _lrg_map.live_range_id(def);
+        if (lid) {
+          LRG &lrg = lrgs(lid);
+          lrg._min_region = MIN2(lrg._min_region, block->_region);
+        }
+      }
+    }
+  }
 }
 
 void PhaseChaitin::de_ssa() {
@@ -867,7 +915,7 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
           copy_src._has_copy = 1;
         }
 
-        if (trace_spilling() && lrg._def != NULL) {
+        if (/*trace_spilling() &&*/ lrg._def != NULL) {
           // collect defs for MultiDef printing
           if (lrg._defs == NULL) {
             lrg._defs = new (_ifg->_arena) GrowableArray<Node*>(_ifg->_arena, 2, 0, NULL);
@@ -1264,7 +1312,7 @@ void PhaseChaitin::cache_lrg_info(uint region) {
   for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
     LRG &lrg = lrgs(i);
 
-    if (lrg._region != region) {
+    if (lrg._region < region) {
       continue;
     }
 
@@ -1335,7 +1383,7 @@ void PhaseChaitin::Simplify(uint region) {
         IndexSetIterator elements(_ifg->neighbors(lo));
         uint datum;
         while ((datum = elements.next()) != 0) {
-          if (lrgs(datum)._risk_bias != region) {
+          if (lrgs(datum)._risk_bias < region) {
             continue;
           }
           lrgs(datum)._risk_bias = lo;
@@ -1357,7 +1405,7 @@ void PhaseChaitin::Simplify(uint region) {
       uint neighbor;
       while ((neighbor = elements.next()) != 0) {
         LRG *n = &lrgs(neighbor);
-        if (n->_region != region) {
+        if (n->_region < region) {
           continue;
         }
 #ifdef ASSERT

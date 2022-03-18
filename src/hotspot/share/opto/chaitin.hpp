@@ -69,11 +69,14 @@ public:
   uint _prev;                   // Index of prev LRG in linked list
 private:
   uint _reg;                    // Chosen register; undefined if mask is plural
+  uint _prev_reg;
 public:
   // Return chosen register for this LRG.  Error if the LRG is not bound to
   // a single register.
   OptoReg::Name reg() const { return OptoReg::Name(_reg); }
   void set_reg( OptoReg::Name r ) { _reg = r; }
+  OptoReg::Name prev_reg() const { return OptoReg::Name(_prev_reg); }
+  void set_prev_reg( OptoReg::Name r ) { _prev_reg = r; }
 
 private:
   uint _eff_degree;             // Effective degree: Sum of neighbors _num_regs
@@ -216,6 +219,7 @@ public:
          _at_risk:1;            // Simplify says this guy is at risk to spill
 
   uint _region;
+  uint _min_region;
 
   // Alive if non-zero, dead if zero
   bool alive() const { return _def != NULL; }
@@ -812,6 +816,8 @@ private:
   friend class PhaseCoalesce;
   friend class PhaseAggressiveCoalesce;
   friend class PhaseConservativeCoalesce;
+
+  void compute_min_regions(const Block_List &blocks);
 };
 
 #endif // SHARE_OPTO_CHAITIN_HPP
