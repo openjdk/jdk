@@ -4010,26 +4010,6 @@ instruct ReplB_mem(vec dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplB_imm(vec dst, immI con) %{
-  match(Set dst (ReplicateB con));
-  format %{ "replicateB $dst,$con" %}
-  ins_encode %{
-    InternalAddress addr = $constantaddress(T_BYTE, vreplicate_imm(T_BYTE, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 16));
-    int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_avx2()) {
-      __ vpbroadcastd($dst$$XMMRegister, addr, vlen_enc);
-    } else if (VM_Version::supports_avx()) {
-      __ vbroadcastss($dst$$XMMRegister, addr, vlen_enc);
-    } else if (VM_Version::supports_sse3()) {
-      __ movddup($dst$$XMMRegister, addr);
-    } else {
-      __ load_vector(T_BYTE, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
-    }
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // ====================ReplicateS=======================================
 
 instruct ReplS_reg(vec dst, rRegI src) %{
@@ -4063,26 +4043,6 @@ instruct ReplS_mem(vec dst, memory mem) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vpbroadcastw($dst$$XMMRegister, $mem$$Address, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplS_imm(vec dst, immI con) %{
-  match(Set dst (ReplicateS con));
-  format %{ "replicateS $dst,$con" %}
-  ins_encode %{
-    InternalAddress addr = $constantaddress(T_SHORT, vreplicate_imm(T_SHORT, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 2 : 4) : 8));
-    int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_avx2()) {
-      __ vpbroadcastd($dst$$XMMRegister, addr, vlen_enc);
-    } else if (VM_Version::supports_avx()) {
-      __ vbroadcastss($dst$$XMMRegister, addr, vlen_enc);
-    } else if (VM_Version::supports_sse3()) {
-      __ movddup($dst$$XMMRegister, addr);
-    } else {
-      __ load_vector(T_SHORT, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
-    }
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4126,11 +4086,16 @@ instruct ReplI_mem(vec dst, memory mem) %{
 %}
 
 instruct ReplI_imm(vec dst, immI con) %{
+  match(Set dst (ReplicateB con));
+  match(Set dst (ReplicateS con));
   match(Set dst (ReplicateI con));
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_INT, vreplicate_imm(T_INT, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 4));
+    InternalAddress addr = $constantaddress(Matcher::vector_element_basic_type(this),
+        vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
+            (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 16) /
+                type2aelembytes(Matcher::vector_element_basic_type(this))));
+    BasicType bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = vector_length_encoding(this);
     if (VM_Version::supports_avx2()) {
       __ vpbroadcastd($dst$$XMMRegister, addr, vlen_enc);
@@ -4139,7 +4104,7 @@ instruct ReplI_imm(vec dst, immI con) %{
     } else if (VM_Version::supports_sse3()) {
       __ movddup($dst$$XMMRegister, addr);
     } else {
-      __ load_vector(T_INT, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+      __ load_vector(bt, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
     }
   %}
   ins_pipe( pipe_slow );
