@@ -251,7 +251,7 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
     #else
     body = (jbyte *)malloc(length);
     #endif
-  
+
     if (body == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return NULL;
