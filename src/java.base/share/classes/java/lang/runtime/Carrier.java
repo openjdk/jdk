@@ -247,50 +247,6 @@ public final class Carrier {
     }
 
     /**
-     * Given components array and index, recast and reorder that component to
-     * match shape.
-     *
-     * @param carrierShape  carrier reshape
-     * @param components    carrier components
-     * @param i             index of component to reshape
-     *
-     * @return component reshaped
-     */
-    private static MethodHandle reshapeComponent(CarrierShape carrierShape,
-                                                 MethodHandle[] components, int i) {
-        Class<?>[] ptypes = carrierShape.ptypes();
-        CarrierCounts componentCounts = CarrierCounts.tally(ptypes, i);
-        Class<?> ptype = ptypes[i];
-        int index;
-        MethodHandle filter = null;
-
-        if (!ptype.isPrimitive()) {
-            index = carrierShape.objectOffset() + componentCounts.objectCount();
-        } else if (ptype == double.class) {
-            index = carrierShape.longOffset() + componentCounts.longCount();
-            filter = LONG_TO_DOUBLE;
-        } else if (ptype == float.class) {
-            index = carrierShape.intOffset() + componentCounts.intCount();
-            filter = INT_TO_FLOAT;
-        } else if (ptype == long.class) {
-            index = carrierShape.longOffset() + componentCounts.longCount();
-        } else {
-            index = carrierShape.intOffset() + componentCounts.intCount();
-        }
-
-        MethodHandle component = components[index];
-
-        if (filter != null) {
-            component = MethodHandles.filterReturnValue(component, filter);
-        }
-
-        component = MethodHandles.explicitCastArguments(component,
-                methodType(ptype, Object.class));
-
-        return component;
-    }
-
-    /**
      * Factory for carriers that are backed by int[] and Object[]. This strategy is
      * used when the number of components exceeds {@link Carrier#MAX_OBJECT_COMPONENTS}.
      */
@@ -540,20 +496,6 @@ public final class Carrier {
             MethodHandle[] components = createComponents(carrierShape);
 
             return reshapeComponents(carrierShape, components);
-        }
-
-        /**
-         * Return a carrier accessor for component {@code i}.
-         *
-         * @param carrierShape  carrier object shape
-         * @param i             index of parameter to get
-         *
-         * @return carrier component {@code i} accessor {@link MethodHandle}
-         */
-        private static MethodHandle component(CarrierShape carrierShape, int i) {
-            MethodHandle[] components = createComponents(carrierShape);
-
-            return reshapeComponent(carrierShape, components, i);
         }
     }
 
@@ -869,25 +811,6 @@ public final class Carrier {
 
             return reshapeComponents(carrierShape, components);
         }
-
-        /**
-         * Returns a carrier component accessor {@link MethodHandle} for the
-         * component {@code i}.
-         *
-         * @param carrierShape  shape of the carrier object
-         * @param i             index to the component
-         *
-         * @return carrier component accessor {@link MethodHandle}
-         *
-         * @throws IllegalArgumentException if number of component slots exceeds
-         *         maximum
-         */
-        private static MethodHandle component(CarrierShape carrierShape, int i) {
-            CarrierClass carrierClass = findCarrierClass(carrierShape);
-            MethodHandle[] components = carrierClass.components;
-
-            return reshapeComponent(carrierShape, components, i);
-        }
     }
 
     /**
@@ -1021,13 +944,6 @@ public final class Carrier {
         }
 
         /**
-         * {@return supplied methodType}
-         */
-        private MethodType methodType() {
-            return methodType;
-        }
-
-        /**
          * {@return number of long fields needed}
          */
         private int longCount() {
@@ -1130,6 +1046,8 @@ public final class Carrier {
      * @throws NullPointerException is any argument is null
      * @throws IllegalArgumentException if number of component slots exceeds maximum
      *
+     * @implSpec The array returned is guaranteed to be a fresh copy. This allows the
+     * client can replace elements tailored to their needs without impacting other clients.
      */
     public static MethodHandle[] components(MethodType methodType) {
         Objects.requireNonNull(methodType);
@@ -1145,32 +1063,4 @@ public final class Carrier {
         }
     }
 
-    /**
-     * Return a component accessor {@link MethodHandle} for component {@code i}.
-     *
-     * @param methodType  {@link MethodType} providing types for the carrier's
-     *                    components
-     * @param i           component index
-     *
-     * @return a component accessor {@link MethodHandle} for component {@code i}
-     *
-     * @throws NullPointerException is any argument is null
-     * @throws IllegalArgumentException if number of component slots exceeds maximum
-     *                                  or if {@code i} is out of bounds
-     */
-    public static MethodHandle component(MethodType methodType, int i) {
-        Objects.requireNonNull(methodType);
-        CarrierShape carrierShape = new CarrierShape(methodType);
-        int slotCount = carrierShape.slotCount();
-
-        if (i < 0 || i >= carrierShape.count()) {
-            throw new IllegalArgumentException("i is out of bounds for parameter types");
-        } else if (MAX_COMPONENTS < slotCount) {
-            throw new IllegalArgumentException("Exceeds maximum number of component slots");
-        } else  if (slotCount <= MAX_OBJECT_COMPONENTS) {
-            return CarrierObjectFactory.component(carrierShape, i);
-        } else {
-            return CarrierArrayFactory.component(carrierShape, i);
-        }
-    }
 }
