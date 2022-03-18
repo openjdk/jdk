@@ -379,12 +379,12 @@
            number of free regions and the expected survival rates in each   \
            section of the heap.")                                           \
                                                                             \
-  product(uint, G1RemoveSelfForwardPtrsWorkerCost, 2,                       \
+  product(uint, G1RemoveSelfForwardPtrsWorkerCost, 2, DIAGNOSTIC,           \
           "The factor for per region work cost to remove self forwardee "   \
           "for evecuation failure regions.")                                \
           range(1, 16)                                                      \
                                                                             \
-  product(uint, G1RemoveSelfForwardPtrsThreadLoadFactor, 16,                \
+  product(uint, G1RemoveSelfForwardPtrsThreadLoadFactor, 16, DIAGNOSTIC,    \
           "The factor for per worker thread load to remove self forwardee " \
           "for evecuation failure regions.")                                \
           range(1, 1024)                                                    \

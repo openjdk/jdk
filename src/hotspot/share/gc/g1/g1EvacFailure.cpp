@@ -152,11 +152,18 @@ public:
 };
 
 class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
+
+  // Caches the currently accumulated number of live/marked words found in this heap region.
+  // Avoids direct (frequent) atomic operations on the HeapRegion's marked words.
   class RegionMarkedWordsCache {
     G1CollectedHeap* _g1h;
     const uint _uninitialized_idx;
     uint _region_idx;
     size_t _marked_words;
+
+    void note_self_forwarding_removal_end_par() {
+      _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
+    }
 
   public:
     RegionMarkedWordsCache():
@@ -164,10 +171,6 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
       _uninitialized_idx(_g1h->max_regions()),
       _region_idx(_uninitialized_idx),
       _marked_words(0) { }
-
-    void note_self_forwarding_removal_end_par() {
-      _g1h->region_at(_region_idx)->note_self_forwarding_removal_end_par(_marked_words * BytesPerWord);
-    }
 
     void add(uint region_idx, size_t marked_words) {
       if (_region_idx == _uninitialized_idx) {

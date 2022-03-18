@@ -67,10 +67,8 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
-
 public:
-  SampleCollectionSetCandidatesTask() :
-    G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates) { }
+  SampleCollectionSetCandidatesTask() : G1AbstractSubTask(G1GCPhaseTimes::SampleCollectionSetCandidates) { }
 
   static bool should_execute() {
     return G1CollectedHeap::heap()->should_sample_collection_set_candidates();
@@ -86,8 +84,8 @@ public:
     public:
       G1SegmentedArrayMemoryStats _total;
 
-      bool do_heap_region(HeapRegion* hr) override {
-        _total.add(hr->rem_set()->card_set_memory_stats());
+      bool do_heap_region(HeapRegion* r) override {
+        _total.add(r->rem_set()->card_set_memory_stats());
         return false;
       }
     } cl;

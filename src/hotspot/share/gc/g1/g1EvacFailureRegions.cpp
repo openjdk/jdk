@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
+ * Copyright (c) 2021, 2022 Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,9 +95,9 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
     uint _worker_id;
 
     void prepare_region(uint region_idx, uint worker_id) {
-      G1CollectedHeap* _heap = G1CollectedHeap::heap();
-      G1GCPhaseTimes* p = _heap->phase_times();
-      HeapRegion* hr = _heap->region_at(region_idx);
+      G1CollectedHeap* g1h = G1CollectedHeap::heap();
+      G1GCPhaseTimes* p = g1h->phase_times();
+      HeapRegion* hr = g1h->region_at(region_idx);
       assert(!hr->is_pinned(), "Unexpected pinned region at index %u", hr->hrm_index());
       assert(hr->in_collection_set(), "bad CS");
       assert(_evac_failure_regions->contains(hr->hrm_index()), "precondition");
@@ -106,8 +106,8 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
 
       hr->clear_index_in_opt_cset();
 
-      bool during_concurrent_start = _heap->collector_state()->in_concurrent_start_gc();
-      bool during_concurrent_mark = _heap->collector_state()->mark_or_rebuild_in_progress();
+      bool during_concurrent_start = g1h->collector_state()->in_concurrent_start_gc();
+      bool during_concurrent_mark = g1h->collector_state()->mark_or_rebuild_in_progress();
 
       hr->note_self_forwarding_removal_start(during_concurrent_start,
                                              during_concurrent_mark);
@@ -122,6 +122,7 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
 
       p->record_or_add_time_secs(G1GCPhaseTimes::PrepareRetainedRegions, worker_id, (Ticks::now() - start).seconds());
     }
+
   public:
     PrepareEvacFailureRegionClosure(G1EvacFailureRegions* evac_failure_regions, uint worker_id) :
       _evac_failure_regions(evac_failure_regions),
@@ -136,10 +137,10 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
 
 public:
   PrepareEvacFailureRegionTask(G1EvacFailureRegions* evac_failure_regions, uint num_workers) :
-  WorkerTask("Prepare Evacuation Failure Region Task"),
-  _evac_failure_regions(evac_failure_regions),
-  _num_workers(num_workers),
-  _claimer(_num_workers) {
+    WorkerTask("Prepare Evacuation Failure Region Task"),
+    _evac_failure_regions(evac_failure_regions),
+    _num_workers(num_workers),
+    _claimer(_num_workers) {
   }
 
   void work(uint worker_id) override {
@@ -149,7 +150,8 @@ public:
 };
 
 void G1EvacFailureRegions::prepare_regions() {
-  uint num_workers = MAX2(1u, MIN2(_evac_failure_regions_cur_length, G1CollectedHeap::heap()->workers()->active_workers()));
+  WorkerThreads* workers = G1CollectedHeap::heap()->workers();
+  uint num_workers = clamp(_evac_failure_regions_cur_length, 1u, workers->active_workers());
   PrepareEvacFailureRegionTask task(this, num_workers);
-  G1CollectedHeap::heap()->workers()->run_task(&task, num_workers);
+  workers->run_task(&task, num_workers);
 }

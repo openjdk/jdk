@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
+ * Copyright (c) 2022, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,6 @@ class G1ScanChunksInHeapRegions {
   const uint* _evac_failure_regions;
   uint _chunks_per_region;
   uint _chunk_size;
-  uint _total_chunks;
 
   bool claim_chunk(uint id);
   void process_chunk(G1HeapRegionChunkClosure* chunk_closure, uint chunk_id, uint worker_id);

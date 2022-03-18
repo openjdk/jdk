@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co. Ltd. All rights reserved.
+ * Copyright (c) 2022, Huawei Technologies Co. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,11 @@ bool G1ScanChunksInHeapRegions::claim_chunk(uint chunk_id) {
 }
 
 void G1ScanChunksInHeapRegions::process_chunk(G1HeapRegionChunkClosure* chunk_closure, uint chunk_id, uint worker_id) {
-  G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+  G1CollectedHeap* glh = G1CollectedHeap::heap();
+  G1GCPhaseTimes* p = glh->phase_times();
   Ticks chunk_prepare_start = Ticks::now();
   uint region_idx = _evac_failure_regions[chunk_id / _chunks_per_region];
-  HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
+  HeapRegion* r = glh->region_at(region_idx);
   G1HeapRegionChunk chunk(r, chunk_id % _chunks_per_region, _chunk_size, _bitmap);
   p->record_or_add_time_secs(G1GCPhaseTimes::PrepareChunks, worker_id, (Ticks::now() - chunk_prepare_start).seconds());
 
@@ -78,19 +79,17 @@ void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uin
 
   _chunks_per_region = next_power_of_2(num_workers * G1RemoveSelfForwardPtrsThreadLoadFactor / evac_failure_regions_length);
   _chunk_size = static_cast<uint>(G1HeapRegionSize / _chunks_per_region);
-  _total_chunks = _chunks_per_region * evac_failure_regions_length;
-
   log_debug(gc, ergo)("Running %s using %u workers for removing self forwards with %u chunks per region",
                       task_name, num_workers, _chunk_size);
 
-  _chunks.resize(_total_chunks);
+  _chunks.resize(_chunks_per_region * evac_failure_regions_length);
 }
 
 void G1ScanChunksInHeapRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, uint worker_id) {
   const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-  const uint start_chunk_id = worker_id * _total_chunks / total_workers;
-  for (uint i = 0; i < _total_chunks; i++) {
-    const uint chunk_id = (start_chunk_id + i) % _total_chunks;
+  const uint start_chunk_id = worker_id * _chunks.size() / total_workers;
+  for (uint i = 0; i < _chunks.size(); i++) {
+    const uint chunk_id = (start_chunk_id + i) % _chunks.size();
     if (claim_chunk(chunk_id)) {
       process_chunk(chunk_closure, chunk_id, worker_id);
     }
