@@ -469,7 +469,7 @@ static void CCout_of_memory (context_type *);
  * remembering what needs to be freed. */
 
 static void check_and_push_malloc_block(context_type *context, void *ptr);
-static void check_and_push_string_utf(context_type *context, const void *ptr);
+static void check_and_push_string_utf(context_type *context, const char *ptr);
 static void pop_and_free(context_type *context);
 
 static int signature_to_args_size(const char *method_signature);
@@ -4169,8 +4169,8 @@ static void check_and_push_malloc_block(context_type *context, void *ptr) {
   check_and_push_common(context, ptr, VM_MALLOC_BLK);
 }
 
-static void check_and_push_string_utf(context_type *context, const void *ptr) {
-  check_and_push_common(context, (void*)ptr, VM_STRING_UTF);
+static void check_and_push_string_utf(context_type *context, const char *ptr) {
+  check_and_push_common(context, (void *)ptr, VM_STRING_UTF);
 }
 
 static void pop_and_free(context_type *context)
