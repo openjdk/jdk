@@ -2252,12 +2252,12 @@ void MacroAssembler::fld_x(AddressLiteral src) {
   Assembler::fld_x(as_Address(src));
 }
 
-void MacroAssembler::ldmxcsr(AddressLiteral src) {
+void MacroAssembler::ldmxcsr(AddressLiteral src, Register scratchReg) {
   if (reachable(src)) {
     Assembler::ldmxcsr(as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::ldmxcsr(Address(rscratch1, 0));
+    lea(scratchReg, src);
+    Assembler::ldmxcsr(Address(scratchReg, 0));
   }
 }
 

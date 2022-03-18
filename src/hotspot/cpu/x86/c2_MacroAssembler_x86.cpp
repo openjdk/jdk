@@ -4185,14 +4185,13 @@ void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister sr
   // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
   // and re-instantiate original MXCSR.RC mode after that.
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-  ldmxcsr(new_mxcsr);
-  // Move raw bits corresponding to double value 0.5 into scratch register.
-  mov64(scratch, 4602678819172646912L);
+  ldmxcsr(new_mxcsr, scratch);
+  mov64(scratch, julong_cast(0.5L));
   evpbroadcastq(xtmp1, scratch, vec_enc);
   vaddpd(xtmp1, src , xtmp1, vec_enc);
   evcvtpd2qq(dst, xtmp1, vec_enc);
   vector_cast_double_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
-  ldmxcsr(mxcsr_std);
+  ldmxcsr(mxcsr_std, scratch);
 }
 
 void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
@@ -4201,15 +4200,14 @@ void C2_MacroAssembler::vector_round_float_evex(XMMRegister dst, XMMRegister src
   // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
   // and re-instantiate original MXCSR.RC mode after that.
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-  ldmxcsr(new_mxcsr);
-  // Move raw bits corresponding to float value 0.5f into scratch register.
-  movl(scratch, 1056964608);
+  ldmxcsr(new_mxcsr, scratch);
+  movl(scratch, jint_cast(0.5));
   movq(xtmp1, scratch);
   vbroadcastss(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
   vcvtps2dq(dst, xtmp1, vec_enc);
   vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
-  ldmxcsr(mxcsr_std);
+  ldmxcsr(mxcsr_std, scratch);
 }
 
 void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
@@ -4218,15 +4216,14 @@ void C2_MacroAssembler::vector_round_float_avx(XMMRegister dst, XMMRegister src,
   // Perform floor(val+0.5) operation under the influence of MXCSR.RC mode roundTowards -inf.
   // and re-instantiate original MXCSR.RC mode after that.
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-  ldmxcsr(new_mxcsr);
-  // Move raw bits corresponding to float value 0.5f into scratch register.
-  movl(scratch, 1056964608);
+  ldmxcsr(new_mxcsr, scratch);
+  movl(scratch, jint_cast(0.5));
   movq(xtmp1, scratch);
   vbroadcastss(xtmp1, xtmp1, vec_enc);
   vaddps(xtmp1, src , xtmp1, vec_enc);
   vcvtps2dq(dst, xtmp1, vec_enc);
   vector_cast_float_special_cases_avx(dst, src, xtmp1, xtmp2, xtmp3, xtmp4, scratch, float_sign_flip, vec_enc);
-  ldmxcsr(mxcsr_std);
+  ldmxcsr(mxcsr_std, scratch);
 }
 #endif
 

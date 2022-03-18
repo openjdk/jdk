@@ -876,7 +876,7 @@ class MacroAssembler: public Assembler {
   void fld_x(AddressLiteral src);
 
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
-  void ldmxcsr(AddressLiteral src);
+  void ldmxcsr(AddressLiteral src, Register scratchReg = rscratch1);
 
 #ifdef _LP64
  private:
