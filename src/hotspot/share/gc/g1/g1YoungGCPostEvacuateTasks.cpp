@@ -138,9 +138,12 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evacuation_failed) {
+    add_parallel_task(evac_failure_regions->create_prepare_regions_task());
+
     RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions, _name);
     add_parallel_task(remove_self_forward_task);
-    uint num_workers = MAX2(1u, MIN2(num_workers_estimate(), G1CollectedHeap::heap()->workers()->active_workers()));
+
+    uint num_workers = clamp(num_workers_estimate(), 1u, G1CollectedHeap::heap()->workers()->active_workers());
     remove_self_forward_task->initialize_chunks(num_workers);
   }
 }

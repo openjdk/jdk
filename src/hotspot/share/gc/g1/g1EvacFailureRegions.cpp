@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1HeapRegionChunk.hpp"
@@ -85,7 +86,7 @@ void G1EvacFailureRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosur
   _chunks_in_regions->par_iterate_chunks_in_regions(chunk_closure, worker_id);
 }
 
-class PrepareEvacFailureRegionTask : public WorkerTask {
+class PrepareEvacFailureRegionTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
   uint _num_workers;
   HeapRegionClaimer _claimer;
@@ -102,15 +103,7 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
       assert(hr->in_collection_set(), "bad CS");
       assert(_evac_failure_regions->contains(hr->hrm_index()), "precondition");
 
-      Ticks start = Ticks::now();
-
       hr->clear_index_in_opt_cset();
-
-      bool during_concurrent_start = g1h->collector_state()->in_concurrent_start_gc();
-      bool during_concurrent_mark = g1h->collector_state()->mark_or_rebuild_in_progress();
-
-      hr->note_self_forwarding_removal_start(during_concurrent_start,
-                                             during_concurrent_mark);
 
       p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                         worker_id,
@@ -119,8 +112,6 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
 
       hr->rem_set()->clean_code_roots(hr);
       hr->rem_set()->clear_locked(true);
-
-      p->record_or_add_time_secs(G1GCPhaseTimes::PrepareRetainedRegions, worker_id, (Ticks::now() - start).seconds());
     }
 
   public:
@@ -137,21 +128,24 @@ class PrepareEvacFailureRegionTask : public WorkerTask {
 
 public:
   PrepareEvacFailureRegionTask(G1EvacFailureRegions* evac_failure_regions, uint num_workers) :
-    WorkerTask("Prepare Evacuation Failure Region Task"),
+    G1AbstractSubTask(G1GCPhaseTimes::PrepareRetainedRegions),
     _evac_failure_regions(evac_failure_regions),
     _num_workers(num_workers),
     _claimer(_num_workers) {
   }
 
-  void work(uint worker_id) override {
+  double worker_cost() const override {
+    return 1.0;
+  }
+
+  void do_work(uint worker_id) override {
     PrepareEvacFailureRegionClosure closure(_evac_failure_regions, worker_id);
     _evac_failure_regions->par_iterate(&closure, &_claimer, worker_id);
   }
 };
 
-void G1EvacFailureRegions::prepare_regions() {
+G1AbstractSubTask* G1EvacFailureRegions::create_prepare_regions_task() {
   WorkerThreads* workers = G1CollectedHeap::heap()->workers();
   uint num_workers = clamp(_evac_failure_regions_cur_length, 1u, workers->active_workers());
-  PrepareEvacFailureRegionTask task(this, num_workers);
-  workers->run_task(&task, num_workers);
+  return new PrepareEvacFailureRegionTask(this, num_workers);
 }

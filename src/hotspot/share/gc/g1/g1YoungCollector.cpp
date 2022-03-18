@@ -983,8 +983,6 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   allocator()->release_gc_alloc_regions(evacuation_info);
 
-  _evac_failure_regions.prepare_regions();
-
   post_evacuate_cleanup_1(per_thread_states);
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);

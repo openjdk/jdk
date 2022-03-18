@@ -28,6 +28,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.hpp"
 
+class G1AbstractSubTask;
 class G1HeapRegionChunkClosure;
 class G1ScanChunksInHeapRegions;
 class HeapRegionClosure;
@@ -64,8 +65,8 @@ public:
   void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
                                      uint worker_id) const;
 
-  // Do necessary preparation for evacuation failure regions
-  void prepare_regions();
+  // Return a G1AbstractSubTask which does necessary preparation for evacuation failure regions
+  G1AbstractSubTask* create_prepare_regions_task();
 
   uint num_regions_failed_evacuation() const {
     return Atomic::load(&_evac_failure_regions_cur_length);

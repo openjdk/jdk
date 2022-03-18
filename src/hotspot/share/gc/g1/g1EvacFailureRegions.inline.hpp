@@ -35,6 +35,12 @@ bool G1EvacFailureRegions::record(uint region_idx) {
   if (success) {
     size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
     _evac_failure_regions[offset] = region_idx;
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapRegion* hr = g1h->region_at(region_idx);
+    G1CollectorState* state = g1h->collector_state();
+    hr->note_self_forwarding_removal_start(state->in_concurrent_start_gc(),
+                                           state->mark_or_rebuild_in_progress());
   }
   return success;
 }
