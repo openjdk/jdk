@@ -99,11 +99,12 @@ Java_java_lang_ClassLoader_defineClass1(JNIEnv *env,
         return NULL;
     }
 
-    // On AIX malloc(0) returns NULL which looks like an out-of-memory condition; so adjust it to malloc(1)
+    // On AIX malloc(0) returns NULL which looks like an out-of-memory
+    // condition; so adjust it to malloc(1)
     #ifdef _AIX
-    body = (jbyte *)malloc(length == 0 ? 1 : length);
+        body = (jbyte *)malloc(length == 0 ? 1 : length);
     #else
-    body = (jbyte *)malloc(length);
+        body = (jbyte *)malloc(length);
     #endif
 
     if (body == NULL) {
@@ -245,11 +246,12 @@ Java_java_lang_ClassLoader_defineClass0(JNIEnv *env,
         return NULL;
     }
 
-    // On AIX malloc(0) returns NULL which looks like an out-of-memory condition; so adjust it to malloc(1)
+    // On AIX malloc(0) returns NULL which looks like an out-of-memory
+    // condition; so adjust it to malloc(1)
     #ifdef _AIX
-    body = (jbyte *)malloc(length == 0 ? 1 : length);
+        body = (jbyte *)malloc(length == 0 ? 1 : length);
     #else
-    body = (jbyte *)malloc(length);
+        body = (jbyte *)malloc(length);
     #endif
 
     if (body == NULL) {
