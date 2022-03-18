@@ -332,12 +332,6 @@ public class TransPatterns extends TreeTranslator {
 
             JCCase lastCase = cases.last();
 
-            if (hasTotalPattern && !hasNullCase) {
-                if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(l -> l.hasTag(Tag.DEFAULTCASELABEL))) {
-                    lastCase.labels = lastCase.labels.prepend(makeLit(syms.botType, null));
-                    hasNullCase = true;
-                }
-            }
             selector = translate(selector);
             boolean needsNullCheck = !hasNullCase && !seltype.isPrimitive();
             statements.append(make.at(tree.pos).VarDef(temp, needsNullCheck ? attr.makeNullCheck(selector)

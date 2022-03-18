@@ -82,7 +82,7 @@ public class Switches {
         switchNestingTest(this::switchNestingExpressionStatement);
         switchNestingTest(this::switchNestingExpressionExpression);
         switchNestingTest(this::switchNestingIfSwitch);
-        assertEquals(2, switchOverNull1());
+        npeTest(x -> switchOverNull1());
         assertEquals(2, switchOverNull2());
         assertEquals(2, switchOverNull3());
         assertEquals(5, switchOverPrimitiveInt(0));
@@ -439,8 +439,17 @@ public class Switches {
     }
 
     void exhaustiveStatementSane(Object o) {
-        switch (o) {
-            case Object obj:; //no break intentionally - should not fall through to any possible default
+        try {
+            switch (o) {
+                case Object obj:; //no break intentionally - should not fall through to any possible default
+            }
+            if (o == null) {
+                throw new AssertionError();
+            }
+        } catch (NullPointerException ex) {
+            if (o != null) {
+                throw new AssertionError();
+            }
         }
         switch (o) {
             case null, Object obj:; //no break intentionally - should not fall through to any possible default

@@ -174,6 +174,8 @@ public class Attr extends JCTree.Visitor {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
                              Feature.PATTERN_SWITCH.allowedInSource(source);
+        allowTotalPatternsInstance = (preview.isEnabled() || !preview.isPreview(Feature.TOTAL_PATTERN_IN_INSTACEOF)) &&
+                                     Feature.TOTAL_PATTERN_IN_INSTACEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -217,6 +219,10 @@ public class Attr extends JCTree.Visitor {
     /** Are patterns in switch allowed
      */
     private final boolean allowPatternSwitch;
+
+    /** Are total patterns in instanceof allowed
+     */
+    private final boolean allowTotalPatternsInstance;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -4110,7 +4116,11 @@ public class Attr extends JCTree.Visitor {
             clazztype = tree.pattern.type;
             if (types.isSubtype(exprtype, clazztype) &&
                 !exprtype.isErroneous() && !clazztype.isErroneous()) {
-                log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
+                if (!allowTotalPatternsInstance) {
+                    log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
+                } else if (preview.isPreview(Feature.TOTAL_PATTERN_IN_INSTACEOF)) {
+                    preview.warnPreview(tree.pattern.pos(), Feature.TOTAL_PATTERN_IN_INSTACEOF);
+                }
             }
             typeTree = TreeInfo.primaryPatternTree((JCPattern) tree.pattern).var.vartype;
         } else {
