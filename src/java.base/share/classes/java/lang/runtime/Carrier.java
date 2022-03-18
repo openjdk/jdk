@@ -1119,7 +1119,7 @@ public final class Carrier {
      * @param methodType  {@link MethodType} providing types for the carrier's
      *                    components
      *
-     * @return  array of component accessors {@link MethodHandle MethodHandles,}
+     * @return immutable list of component accessors {@link MethodHandle MethodHandles,}
      *
      * @throws NullPointerException is any argument is null
      * @throws IllegalArgumentException if number of component slots exceeds maximum
