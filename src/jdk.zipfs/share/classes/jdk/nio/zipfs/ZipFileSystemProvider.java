@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,34 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public boolean exists(Path path, LinkOption... options) {
+
+        if (options.length == 0) {
+            return exists(path);
+        }
+
+        try {
+            if (followLinks(options)) {
+                checkAccess(path);
+            } else {
+                // attempt to read attributes without following links
+                readAttributes(path, BasicFileAttributes.class,
+                        LinkOption.NOFOLLOW_LINKS);
+            }
+            // file exists
+            return true;
+        } catch (IOException x) {
+            // does not exist or unable to determine if file exists
+            return false;
+        }
+
+    }
+
+    private boolean exists(Path path) {
+        return toZipPath(path).exists();
+    }
+
+    @Override
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
@@ -204,8 +232,44 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public boolean isDirectory(Path path, LinkOption... options) {
+
+        if (options.length == 0) {
+            return isDirectory(path);
+        }
+
+        try {
+            return readAttributes(path, BasicFileAttributes.class, options).isDirectory();
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    private boolean isDirectory(Path path) {
+        return toZipPath(path).isDirectory();
+    }
+
+    @Override
     public boolean isHidden(Path path) {
         return toZipPath(path).isHidden();
+    }
+
+    @Override
+    public boolean isRegularFile(Path path, LinkOption... options) {
+
+        if (options.length == 0) {
+            return isRegularFile(path);
+        }
+
+        try {
+            return readAttributes(path, BasicFileAttributes.class, options).isRegularFile();
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    private boolean isRegularFile(Path path) {
+        return toZipPath(path).isRegularFile();
     }
 
     @Override

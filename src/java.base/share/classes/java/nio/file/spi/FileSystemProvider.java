@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import sun.nio.ch.FileChannelImpl;
+import sun.nio.fs.AbstractFileSystemProvider;
 
 /**
  * Service-provider class for file systems. The methods defined by the {@link
@@ -1170,4 +1171,131 @@ public abstract class FileSystemProvider {
     public abstract void setAttribute(Path path, String attribute,
                                       Object value, LinkOption... options)
         throws IOException;
+
+    /**
+     * Tests whether a file exists. This method works in exactly the
+     * manner specified by the {@link Files#exists(Path, LinkOption...)} method.
+     *
+     * @param   path
+     *          the path to the file to test
+     * @param   options
+     *          options indicating how symbolic links are handled
+     * .
+     * @return  {@code true} if the file exists; {@code false} if the file does
+     *          not exist or its existence cannot be determined.
+     *
+     * @throws  SecurityException
+     *          In the case of the default provider, the {@link
+     *          SecurityManager#checkRead(String)} is invoked to check
+     *          read access to the file.
+     *
+     * @see FileSystemProvider#checkAccess
+     */
+    public boolean exists(Path path, LinkOption... options) {
+
+        if (options.length == 0) {
+            if (this instanceof AbstractFileSystemProvider theProvider)
+                return theProvider.exists(path);
+        }
+
+        try {
+            if (followLinks(options)) {
+                this.checkAccess(path);
+            } else {
+                // attempt to read attributes without following links
+                readAttributes(path, BasicFileAttributes.class,
+                        LinkOption.NOFOLLOW_LINKS);
+            }
+            // file exists
+            return true;
+        } catch (IOException x) {
+            // does not exist or unable to determine if file exists
+            return false;
+        }
+
+    }
+
+    /**
+     * Tests whether a file is a directory. This method works in exactly the
+     * manner specified by the {@link Files#isDirectory(Path, LinkOption...)} method.
+     *
+     * @param   path
+     *          the path to the file to test
+     * @param   options
+     *          options indicating how symbolic links are handled
+     *
+     * @return  {@code true} if the file is a directory; {@code false} if
+     *          the file does not exist, is not a directory, or it cannot
+     *          be determined if the file is a directory or not.
+     *
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
+     *          method denies read access to the file.
+     */
+    public boolean isDirectory(Path path, LinkOption... options) {
+
+        if (options.length == 0) {
+            if (this instanceof AbstractFileSystemProvider theProvider)
+                return theProvider.isDirectory(path);
+        }
+
+        try {
+            return readAttributes(path, BasicFileAttributes.class, options).isDirectory();
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    /**
+     * Tests whether a file is a regular file with opaque content. This method
+     * works in exactly the manner specified by the
+     * {@link Files#isRegularFile(Path, LinkOption...)} method.
+     *
+     * @param   path
+     *          the path to the file
+     * @param   options
+     *          options indicating how symbolic links are handled
+     *
+     * @return  {@code true} if the file is a regular file; {@code false} if
+     *          the file does not exist, is not a regular file, or it
+     *          cannot be determined if the file is a regular file or not.
+     *
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
+     *          method denies read access to the file.
+     */
+    public boolean isRegularFile(Path path, LinkOption... options) {
+
+        if (options.length == 0) {
+            if (this instanceof AbstractFileSystemProvider theProvider)
+                return theProvider.isRegularFile(path);
+        }
+
+        try {
+            return readAttributes(path, BasicFileAttributes.class, options).isRegularFile();
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    /**
+     * Determine if NOFOLLOW_LINKS is present.
+     *  @param  options options indicating how symbolic links are handled.
+     *  @return {@code false} if NOFOLLOW_LINKS is present; true otherwise
+     */
+    protected static boolean followLinks(LinkOption... options) {
+        boolean followLinks = true;
+        for (LinkOption opt: options) {
+            if (opt == LinkOption.NOFOLLOW_LINKS) {
+                followLinks = false;
+                continue;
+            }
+            if (opt == null)
+                throw new NullPointerException();
+            throw new AssertionError("Should not get here");
+        }
+        return followLinks;
+    }
 }
