@@ -332,21 +332,6 @@ void MacroAssembler::movptr(Address dst, intptr_t src) {
   movl(dst, src);
 }
 
-
-void MacroAssembler::pop_callee_saved_registers() {
-  pop(rcx);
-  pop(rdx);
-  pop(rdi);
-  pop(rsi);
-}
-
-void MacroAssembler::push_callee_saved_registers() {
-  push(rsi);
-  push(rdi);
-  push(rdx);
-  push(rcx);
-}
-
 void MacroAssembler::pushoop(jobject obj) {
   push_literal32((int32_t)obj, oop_Relocation::spec_for_immediate());
 }

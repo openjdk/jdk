@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -807,15 +807,15 @@ public abstract class MethodHandle implements Constable {
      *     (The types do not need to be related in any particular way.
      *     This is because a dynamic value of null can convert to any reference type.)
      * <li>If <em>T0</em> and <em>T1</em> are primitives, then a Java method invocation
-     *     conversion (JLS 5.3) is applied, if one exists.
+     *     conversion (JLS {@jls 5.3}) is applied, if one exists.
      *     (Specifically, <em>T0</em> must convert to <em>T1</em> by a widening primitive conversion.)
      * <li>If <em>T0</em> is a primitive and <em>T1</em> a reference,
-     *     a Java casting conversion (JLS 5.5) is applied if one exists.
+     *     a Java casting conversion (JLS {@jls 5.5}) is applied if one exists.
      *     (Specifically, the value is boxed from <em>T0</em> to its wrapper class,
      *     which is then widened as needed to <em>T1</em>.)
      * <li>If <em>T0</em> is a reference and <em>T1</em> a primitive, an unboxing
      *     conversion will be applied at runtime, possibly followed
-     *     by a Java method invocation conversion (JLS 5.3)
+     *     by a Java method invocation conversion (JLS {@jls 5.3})
      *     on the primitive value.  (These are the primitive widening conversions.)
      *     <em>T0</em> must be a wrapper class or a supertype of one.
      *     (In the case where <em>T0</em> is Object, these are the conversions
