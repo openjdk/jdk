@@ -72,13 +72,15 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
-            return createThread(name, target, 0L, ClassLoader.getSystemClassLoader(), priority);
+            return createThread(name, target, 0L,
+                    ClassLoader.getSystemClassLoader(), priority);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return createThread(name, target, 0L, ClassLoader.getSystemClassLoader(), priority);
+                        return createThread(name, target, 0L,
+                                ClassLoader.getSystemClassLoader(), priority);
                     }
                 });
     }
@@ -110,7 +112,8 @@ public final class InnocuousThread extends Thread {
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return createThread(name, target, 0L, null, priority);
+                        return createThread(name, target, 0L,
+                                null, priority);
                     }
                 });
     }
@@ -119,7 +122,8 @@ public final class InnocuousThread extends Thread {
      * Returns a new InnocuousThread with null context class loader.
      * Thread priority is set to the given priority.
      */
-    public static Thread newSystemThread(String name, Runnable target, long stackSize, int priority) {
+    public static Thread newSystemThread(String name, Runnable target,
+                                         long stackSize, int priority) {
         if (System.getSecurityManager() == null) {
             return createThread(name, target, stackSize, null, priority);
         }
@@ -127,12 +131,14 @@ public final class InnocuousThread extends Thread {
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return createThread(name, target, 0L, null, priority);
+                        return createThread(name, target, 0L,
+                                null, priority);
                     }
                 });
     }
 
-    private static Thread createThread(String name, Runnable target, long stackSize, ClassLoader loader, int priority) {
+    private static Thread createThread(String name, Runnable target, long stackSize,
+                                       ClassLoader loader, int priority) {
         Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
                 target, name, stackSize, loader);
         if (priority >= 0) {
