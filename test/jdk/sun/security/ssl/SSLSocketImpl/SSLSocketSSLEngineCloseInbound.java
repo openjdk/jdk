@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 8273553
+ * @bug 8273553 8253368
  * @summary sun.security.ssl.SSLEngineImpl.closeInbound also has similar error
  *          of JDK-8253368
  * @run main/othervm SSLSocketSSLEngineCloseInbound TLSv1.3
