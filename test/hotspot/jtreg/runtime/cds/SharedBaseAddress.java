@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test variety of values for SharedBaseAddress, making sure
  *          VM handles normal values as well as edge values w/o a crash.
  * @requires vm.cds
+ * @requires vm.bits == 64
  * @library /test/lib
  * @run driver SharedBaseAddress 0
  */
@@ -37,6 +38,7 @@
  * @summary Test variety of values for SharedBaseAddress, making sure
  *          VM handles normal values as well as edge values w/o a crash.
  * @requires vm.cds
+ * @requires vm.bits == 64
  * @library /test/lib
  * @run driver SharedBaseAddress 1
  */
