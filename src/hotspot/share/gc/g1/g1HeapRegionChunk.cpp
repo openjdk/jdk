@@ -87,7 +87,7 @@ void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uin
 
 void G1ScanChunksInHeapRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, uint worker_id) {
   const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-  const uint start_chunk_id = worker_id * _chunks.size() / total_workers;
+  const uint start_chunk_id = worker_id * static_cast<uint>(_chunks.size()) / total_workers;
   for (uint i = 0; i < _chunks.size(); i++) {
     const uint chunk_id = (start_chunk_id + i) % _chunks.size();
     if (claim_chunk(chunk_id)) {
