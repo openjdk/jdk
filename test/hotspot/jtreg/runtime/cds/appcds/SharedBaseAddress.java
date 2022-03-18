@@ -28,39 +28,48 @@
  *          making sure VM handles normal values as well as edge values
  *          w/o a crash.
  * @requires vm.cds
- * @requires vm.bits == 64
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @run main/timeout=240 SharedBaseAddress
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class SharedBaseAddress {
 
-    // shared base address test table
-    private static final String[] testTable = {
-        "1g", "8g", "64g","512g", "4t",
-        "32t", "128t", "0",
-        "1", "64k", "64M", "320g",
+    // shared base address test table for {32, 64}bit VM
+    private static final String[] testTableShared = {
+        "1g", "0", "1", "64k", "64M"
+    };
+
+    // shared base address test table for 64bit VM only
+    private static final String[] testTable64 = {
+        "8g", "64g","512g", "4t",
+        "32t", "128t", "320g",
         "0x800001000"  // Default base address + 1 page - probably valid but unaligned to metaspace alignment, see JDK 8247522
     };
 
     public static void main(String[] args) throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
+        String[] testTable = testTableShared;
+        int iter = 0;
+        do {
+            for (String testEntry : testTable) {
+                System.out.println("sharedBaseAddress = " + testEntry);
 
-        for (String testEntry : testTable) {
-            System.out.println("sharedBaseAddress = " + testEntry);
+                // Note: some platforms may restrict valid values for SharedBaseAddress; the VM should print
+                // a warning and use the default value instead. Similar, ASLR may prevent the given address
+                // from being used; this too should handled gracefully by using the default base address.
+                OutputAnalyzer dumpOutput = TestCommon.dump(
+                    appJar, new String[] {"Hello"}, "-XX:SharedBaseAddress=" + testEntry);
+                TestCommon.checkDump(dumpOutput, "Loading classes to share");
 
-            // Note: some platforms may restrict valid values for SharedBaseAddress; the VM should print
-            // a warning and use the default value instead. Similar, ASLR may prevent the given address
-            // from being used; this too should handled gracefully by using the default base address.
-            OutputAnalyzer dumpOutput = TestCommon.dump(
-                appJar, new String[] {"Hello"}, "-XX:SharedBaseAddress=" + testEntry);
-            TestCommon.checkDump(dumpOutput, "Loading classes to share");
-
-            OutputAnalyzer execOutput = TestCommon.exec(appJar, "Hello");
-            TestCommon.checkExec(execOutput, "Hello World");
-        }
+                OutputAnalyzer execOutput = TestCommon.exec(appJar, "Hello");
+                TestCommon.checkExec(execOutput, "Hello World");
+            }
+            iter++;
+            testTable = testTable64;
+        } while (iter < 2 && Platform.is64bit());
     }
 }
