@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,15 @@ public interface CaseTree extends Tree {
      * @return the statements labeled by the case or null
      */
     List<? extends StatementTree> getStatements();
+
+    /**
+     * The guard for the case.
+     *
+     * @return the guard
+     * @since 19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    ExpressionTree getGuard();
 
     /**
      * For case with kind {@linkplain CaseKind#RULE},

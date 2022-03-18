@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class Exhaustiveness extends TestRunner {
                public class Test {
                    private int test(S obj) {
                        return switch (obj) {
-                           case A a && a.toString().isEmpty() -> 0;
+                           case A a when a.toString().isEmpty() -> 0;
                            case B b -> 1;
                        };
                    }
@@ -241,7 +241,7 @@ public class Exhaustiveness extends TestRunner {
                    private static final boolean TEST = true;
                    private int test(S obj) {
                        return switch (obj) {
-                           case A a && !(!(TEST)) -> 0;
+                           case A a when !(!(TEST)) -> 0;
                            case B b -> 1;
                        };
                    }
@@ -270,7 +270,7 @@ public class Exhaustiveness extends TestRunner {
                public class Test {
                    private int test(S obj) {
                        return switch (obj) {
-                           case A a && false -> 0;
+                           case A a when false -> 0;
                            case B b -> 1;
                        };
                    }
@@ -531,7 +531,7 @@ public class Exhaustiveness extends TestRunner {
                    private int test(S obj, boolean b) {
                        return switch (obj) {
                            case A a -> 0;
-                           case C c && b -> 0;
+                           case C c when b -> 0;
                            case C c -> 0;
                            case D d -> 0;
                        };
@@ -571,7 +571,7 @@ public class Exhaustiveness extends TestRunner {
                        return switch (obj) {
                            case A a -> 0;
                            case C c -> 0;
-                           case D d && b -> 0;
+                           case D d when b -> 0;
                        };
                    }
                }
@@ -620,7 +620,7 @@ public class Exhaustiveness extends TestRunner {
                    private <T extends Base & S & Marker> int test(T obj, boolean b) {
                        return switch (obj) {
                            case A a -> 0;
-                           case C c && b -> 0;
+                           case C c when b -> 0;
                            case C c -> 0;
                            case D d -> 0;
                        };
@@ -668,7 +668,7 @@ public class Exhaustiveness extends TestRunner {
                        return switch (obj) {
                            case A a -> 0;
                            case C c -> 0;
-                           case D d && b -> 0;
+                           case D d when b -> 0;
                        };
                    }
                }

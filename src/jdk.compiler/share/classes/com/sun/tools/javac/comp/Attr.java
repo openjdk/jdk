@@ -1770,33 +1770,53 @@ public class Attr extends JCTree.Visitor {
                     } else {
                         //binding pattern
                         attribExpr(pat, switchEnv);
-                        var primary = TreeInfo.primaryPatternType((JCPattern) pat);
+                        var primary = TreeInfo.primaryPatternType(pat);
                         Type primaryType = primary.type();
                         if (!primaryType.hasTag(TYPEVAR)) {
                             primaryType = chk.checkClassOrArrayType(pat.pos(), primaryType);
                         }
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
-                        boolean isTotal = primary.unconditional() &&
-                                          !patternType.isErroneous() &&
-                                          types.isSubtype(types.erasure(seltype), patternType);
-                        if (isTotal) {
-                            if (hasTotalPattern) {
-                                log.error(pat.pos(), Errors.DuplicateTotalPattern);
-                            } else if (hasDefault) {
-                                log.error(pat.pos(), Errors.TotalPatternAndDefault);
-                            }
-                            hasTotalPattern = true;
-                        }
                         checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
-                        if (!patternType.isErroneous()) {
-                            coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
-                            if (primary.unconditional()) {
-                                coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
-                            }
-                        }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
+                }
+                if (c.guard != null) {
+                    MatchBindings afterPattern = currentBindings;
+                    Env<AttrContext> bodyEnv = bindingEnv(env, currentBindings.bindingsWhenTrue);
+                    try {
+                        attribExpr(c.guard, bodyEnv, syms.booleanType);
+                    } finally {
+                        bodyEnv.info.scope.leave();
+                    }
+                    currentBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
+                }
+
+                Optional<JCCaseLabel> patternCandidate =
+                        c.labels.stream().filter(label -> label.isPattern()).findAny();
+
+                if (patternCandidate.isPresent()) {
+                    boolean unconditional = TreeInfo.unconditionalCase(c);
+                    JCPattern pat = (JCPattern) patternCandidate.get();
+                    var primary = TreeInfo.primaryPatternType(pat);
+                    Type patternType = types.erasure(primary.type());
+                    boolean isTotal = unconditional &&
+                                      !patternType.isErroneous() &&
+                                      types.isSubtype(types.erasure(seltype), patternType);
+                    if (isTotal) {
+                        if (hasTotalPattern) {
+                            log.error(pat.pos(), Errors.DuplicateTotalPattern);
+                        } else if (hasDefault) {
+                            log.error(pat.pos(), Errors.TotalPatternAndDefault);
+                        }
+                        hasTotalPattern = true;
+                    }
+                    if (!patternType.isErroneous()) {
+                        coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
+                        if (unconditional) {
+                            coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
+                        }
+                    }
                 }
                 Env<AttrContext> caseEnv =
                         bindingEnv(switchEnv, c, currentBindings.bindingsWhenTrue);
@@ -4156,20 +4176,6 @@ public class Attr extends JCTree.Visitor {
     public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
         attribExpr(tree.pattern, env);
         result = tree.type = tree.pattern.type;
-    }
-
-    @Override
-    public void visitGuardPattern(JCGuardPattern tree) {
-        attribExpr(tree.patt, env);
-        MatchBindings afterPattern = matchBindings;
-        Env<AttrContext> bodyEnv = bindingEnv(env, matchBindings.bindingsWhenTrue);
-        try {
-            attribExpr(tree.expr, bodyEnv, syms.booleanType);
-        } finally {
-            bodyEnv.info.scope.leave();
-        }
-        result = tree.type = tree.patt.type;
-        matchBindings = matchBindingsComputer.guardedPattern(tree, afterPattern, matchBindings);
     }
 
     public void visitIndexed(JCArrayAccess tree) {

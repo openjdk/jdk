@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -669,10 +669,14 @@ public class Flow {
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
+                boolean unconditional = TreeInfo.unconditionalCase(c);
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    handleConstantCaseLabel(constants, pat);
+                    if (unconditional) {
+                        handleConstantCaseLabel(constants, pat);
+                    }
                 }
+                scanStat(c.guard);
                 scanStats(c.stats);
                 if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
@@ -710,10 +714,14 @@ public class Flow {
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
+                boolean unconditional = TreeInfo.unconditionalCase(c);
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    handleConstantCaseLabel(constants, pat);
+                    if (unconditional) {
+                        handleConstantCaseLabel(constants, pat);
+                    }
                 }
+                scanStat(c.guard);
                 scanStats(c.stats);
                 if (alive == Liveness.ALIVE) {
                     if (c.caseKind == JCCase.RULE) {
@@ -742,11 +750,9 @@ public class Flow {
                     if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
                         constants.add(((JCIdent) expr).sym);
                 } else if (pat.isPattern()) {
-                    PatternPrimaryType patternType = TreeInfo.primaryPatternType((JCPattern) pat);
+                    PatternPrimaryType patternType = TreeInfo.primaryPatternType(pat);
 
-                    if (patternType.unconditional()) {
-                        constants.add(patternType.type().tsym);
-                    }
+                    constants.add(patternType.type().tsym);
                 }
             }
         }
@@ -1273,6 +1279,7 @@ public class Flow {
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 scan(c.labels);
+                scan(c.guard);
                 scan(c.stats);
             }
             if (tree.hasTag(SWITCH_EXPRESSION)) {
@@ -2014,6 +2021,14 @@ public class Flow {
                     scanExpr(l.head);
         }
 
+        void scanPattern(JCTree tree) {
+            scan(tree);
+            if (inits.isReset()) {
+                inits.assign(initsWhenTrue);
+                uninits.assign(uninitsWhenTrue);
+            }
+        }
+
         /** Analyze a condition. Make sure to set (un)initsWhenTrue(WhenFalse)
          *  rather than (un)inits on exit.
          */
@@ -2454,11 +2469,7 @@ public class Flow {
                 uninits.assign(uninits.andSet(uninitsSwitch));
                 JCCase c = l.head;
                 for (JCCaseLabel pat : c.labels) {
-                    scan(pat);
-                    if (inits.isReset()) {
-                        inits.assign(initsWhenTrue);
-                        uninits.assign(uninitsWhenTrue);
-                    }
+                    scanPattern(pat);
                 }
                 if (l.head.stats.isEmpty() &&
                     l.tail.nonEmpty() &&
@@ -2473,6 +2484,7 @@ public class Flow {
                     l = l.tail;
                     c = l.head;
                 }
+                scanPattern(c.guard);
                 scan(c.stats);
                 if (c.completesNormally && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
@@ -2940,7 +2952,7 @@ public class Flow {
                             }
                             break;
                         }
-                    case GUARDPATTERN:
+                    case CASE:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -2964,7 +2976,7 @@ public class Flow {
                                 reportInnerClsNeedsFinalError(tree, sym);
                                 break;
                             }
-                        case GUARDPATTERN:
+                        case CASE:
                         case LAMBDA:
                             reportEffectivelyFinalError(tree, sym);
                     }
@@ -2975,7 +2987,7 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case GUARDPATTERN -> Fragments.Guard;
+                case CASE -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
@@ -3015,15 +3027,16 @@ public class Flow {
         }
 
         @Override
-        public void visitGuardPattern(JCGuardPattern tree) {
-            scan(tree.patt);
+        public void visitCase(JCCase tree) {
+            scan(tree.labels);
             JCTree prevTree = currentTree;
             try {
                 currentTree = tree;
-                scan(tree.expr);
+                scan(tree.guard);
             } finally {
                 currentTree = prevTree;
             }
+            scan(tree.body);
         }
 
         @Override

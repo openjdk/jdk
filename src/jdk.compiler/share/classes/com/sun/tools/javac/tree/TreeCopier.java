@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitCase(CaseTree node, P p) {
         JCCase t = (JCCase) node;
         List<JCCaseLabel> labels = copy(t.labels, p);
+        JCExpression guard = copy(t.guard, p);
         List<JCStatement> stats = copy(t.stats, p);
         JCTree body;
         if (node.getCaseKind() == CaseTree.CaseKind.RULE) {
@@ -161,7 +162,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         } else {
             body = null;
         }
-        return M.at(t.pos).Case(t.caseKind, labels, stats, body);
+        return M.at(t.pos).Case(t.caseKind, labels, guard, stats, body);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
@@ -495,14 +496,6 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCBindingPattern t = (JCBindingPattern) node;
         JCVariableDecl var = copy(t.var, p);
         return M.at(t.pos).BindingPattern(var);
-    }
-
-    @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitGuardedPattern(GuardedPatternTree node, P p) {
-        JCGuardPattern t = (JCGuardPattern) node;
-        JCPattern patt = copy(t.patt, p);
-        JCExpression expr = copy(t.expr, p);
-        return M.at(t.pos).GuardPattern(patt, expr);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

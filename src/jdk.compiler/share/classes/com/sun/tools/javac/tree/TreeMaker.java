@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 20222, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,9 +291,9 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
+    public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels, JCExpression guard,
                        List<JCStatement> stats, JCTree body) {
-        JCCase tree = new JCCase(caseKind, labels, stats, body);
+        JCCase tree = new JCCase(caseKind, labels, guard, stats, body);
         tree.pos = pos;
         return tree;
     }
@@ -496,12 +496,6 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
         JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
-        tree.pos = pos;
-        return tree;
-    }
-
-    public JCGuardPattern GuardPattern(JCPattern guardedPattern, JCExpression expr) {
-        JCGuardPattern tree = new JCGuardPattern(guardedPattern, expr);
         tree.pos = pos;
         return tree;
     }

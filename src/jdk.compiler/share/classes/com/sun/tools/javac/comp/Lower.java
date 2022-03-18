@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3629,7 +3629,7 @@ public class Lower extends TreeTranslator {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
             JCThrow thr = make.Throw(makeNewClass(syms.incompatibleClassChangeErrorType,
                                                   List.nil()));
-            JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
+            JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), null, List.of(thr), null);
             cases = cases.prepend(c);
         }
 
@@ -3656,6 +3656,7 @@ public class Lower extends TreeTranslator {
                     while (patterns.tail.nonEmpty()) {
                         convertedCases.append(make_at(c.pos()).Case(JCCase.STATEMENT,
                                                            List.of(patterns.head),
+                                                           null,
                                                            List.nil(),
                                                            null));
                         patterns = patterns.tail;
@@ -3750,7 +3751,7 @@ public class Lower extends TreeTranslator {
                     VarSymbol label = (VarSymbol)TreeInfo.symbol((JCExpression) c.labels.head);
                     pat = map.forConstant(label);
                 }
-                newCases.append(make.Case(JCCase.STATEMENT, List.of(pat), c.stats, null));
+                newCases.append(make.Case(JCCase.STATEMENT, List.of(pat), null, c.stats, null));
             } else {
                 newCases.append(c);
             }
@@ -3920,7 +3921,7 @@ public class Lower extends TreeTranslator {
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
 
-                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), lb.toList(), null));
+                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), null, lb.toList(), null));
             }
 
             switch1.cases = caseBuffer.toList();
@@ -3951,7 +3952,7 @@ public class Lower extends TreeTranslator {
                 }
 
                 lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel()) : List.of(caseExpr),
-                                    oneCase.stats, null));
+                                    null, oneCase.stats, null));
             }
 
             if (tree.hasTag(SWITCH)) {

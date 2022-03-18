@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,6 +397,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitCase(CaseTree node, P p) {
         R r = scan(node.getExpressions(), p);
+        r = scanAndReduce(node.getGuard(), p, r);
         if (node.getCaseKind() == CaseTree.CaseKind.RULE)
             r = scanAndReduce(node.getBody(), p, r);
         else
@@ -834,23 +835,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
         return scan(node.getPattern(), p);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation scans the children in left to right order.
-     *
-     * @param node  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
-     * @since 17
-     */
-    @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    public R visitGuardedPattern(GuardedPatternTree node, P p) {
-        R r = scan(node.getPattern(), p);
-        return scanAndReduce(node.getExpression(), p, r);
     }
 
     /**

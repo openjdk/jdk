@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
-import com.sun.tools.javac.tree.JCTree.JCGuardPattern;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCParenthesizedPattern;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
@@ -256,13 +255,6 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
-    public void visitGuardPattern(JCGuardPattern tree) {
-        JCExpression pattern = (JCExpression) this.<JCTree>translate(tree.patt);
-        JCExpression guard = translate(tree.expr);
-        result = makeBinary(Tag.AND, pattern, guard);
-    }
-
-    @Override
     public void visitSwitch(JCSwitch tree) {
         handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern, tree.patternSwitch);
     }
@@ -415,6 +407,9 @@ public class TransPatterns extends TreeTranslator {
                     try {
                         currentValue = temp;
                         JCExpression test = (JCExpression) this.<JCTree>translate(p);
+                        if (c.guard != null) {
+                            test = makeBinary(Tag.AND, test, translate(c.guard));
+                        }
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
@@ -486,13 +481,13 @@ public class TransPatterns extends TreeTranslator {
         }
     }
 
-    private Type principalType(JCPattern p) {
+    private Type principalType(JCTree p) {
         return types.boxedTypeOrType(types.erasure(TreeInfo.primaryPatternType(p).type()));
     }
 
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
         if (l.isPattern()) {
-            Type principalType = principalType((JCPattern) l);
+            Type principalType = principalType(l);
             if (types.isSubtype(selector, principalType)) {
                 return (LoadableConstant) selector;
             } else {
