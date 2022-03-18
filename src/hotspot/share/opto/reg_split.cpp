@@ -538,6 +538,14 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       if (PrintOpto && WizardMode && lrgs(bidx)._was_spilled1) {
         tty->print_cr("Warning, 2nd spill of L%d",bidx);
       }
+      if (C->method() != NULL && !C->is_osr_compilation()) {
+        ResourceMark rm;
+        stringStream ss;
+        C->method()->print_short_name(&ss);
+        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+          tty->print("region = %d - %d ", region, bidx); lrgs(bidx).dump();
+        }
+      }
     }
   }
 
@@ -953,8 +961,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                 bool dup = UPblock[slidx];
                 bool uup = umask.is_UP();
 
-                assert(dup == uup, "");
-                assert(dmask.overlap(umask), "");
+//                assert(dup == uup, "");
+                assert((dup && dmask.overlap(umask)) || (dup == uup), "");
                 n->set_req(inpidx, def);
               }
               continue;
@@ -980,7 +988,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             // of store/load
             if( def->rematerialize() ) {
               int old_size = b->number_of_nodes();
-              assert(lrgs(lidxs.at(slidx))._region == region, "");
+              assert(lrgs(lidxs.at(slidx))._region >= region, "");
               assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
               assert(b->_region == region, "");
               def = split_Rematerialize( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
@@ -1328,7 +1336,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             const RegMask &def_rm = *Matcher::idealreg2regmask[def_ideal_reg];
             const RegMask &use_rm = n->in_RegMask(copyidx);
             if( def_rm.overlap(use_rm) && n->is_SpillCopy() ) {  // Bug 4707800, 'n' may be a storeSSL
-              assert(uselrg._region == region, "");
+              assert(uselrg._region >= region, "");
               assert(uselrg._min_region <= region, "");
               assert(b->_region == region, "");
 

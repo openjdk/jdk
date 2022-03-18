@@ -655,16 +655,16 @@ void PhaseChaitin::Register_Allocate() {
       // Return whether or not something spills.
       spills = Select(region);
     }
-    if (region == 1) {
-      for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
-//        if (lrgs(i)._region == 1) {
-//          tty->print("WWW %d", i); lrgs(i).mask().dump(); tty->cr();
+//    if (region == 1) {
+//      for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
+////        if (lrgs(i)._region == 1) {
+////          tty->print("WWW %d", i); lrgs(i).mask().dump(); tty->cr();
+////        }
+//        if (lrgs(i).alive()) {
+//          tty->print("WWW %d - ", i); lrgs(i).dump();
 //        }
-        if (lrgs(i).alive()) {
-          tty->print("WWW %d - ", i); lrgs(i).dump();
-        }
-      }
-    }
+//      }
+//    }
   }
 
   // Count number of Simplify-Select trips per coloring success.
@@ -880,9 +880,9 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
       uint vreg = _lrg_map.live_range_id(n);
       LRG& lrg = lrgs(vreg);
       if (vreg) {              // No vreg means un-allocable (e.g. memory)
-        if (block->_region == 1) {
-          tty->print("XXX (def) %d", vreg); n->dump();
-        }
+//        if (block->_region == 1) {
+//          tty->print("XXX (def) %d", vreg); n->dump();
+//        }
 
         lrg._region = MAX2(lrg._region, block->_region);
 
@@ -932,9 +932,10 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 
         // Limit result register mask to acceptable registers
         const RegMask &rm = n->out_RegMask();
-        if (block->_region >= region) {
+        if (block->_region >= region || n->ideal_reg() == Op_RegFlags || n->ideal_reg() == MachProjNode::fat_proj) {
           lrg.AND( rm );
         } else {
+          lrg.AND(C->matcher()->idealreg2spillmask[n->ideal_reg()]);
         }
 
         uint ireg = n->ideal_reg();
@@ -1150,9 +1151,9 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
           continue;
         }
 
-        if (_cfg.get_block_for_node(n->in(k))->_region == 1) {
-          tty->print("XXX (use) %d", vreg); n->in(k)->dump();
-        }
+//        if (block->_region == 1) {
+//          tty->print("XXX (use) %d", vreg); n->in(k)->dump();
+//        }
 
         // If this instruction is CISC Spillable, add the flags
         // bit to its appropriate input
@@ -1174,7 +1175,7 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 
         LRG &lrg = lrgs(vreg);
 
-        lrg._region = MAX2(lrg._region, _cfg.get_block_for_node(n->in(k))->_region);
+        lrg._region = MAX2(lrg._region, block->_region);
 
         // // Testing for floating point code shape
         // Node *test = n->in(k);
@@ -1197,9 +1198,11 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
           // Later, AFTER aggressive, this live range will have to spill
           // but the spiller handles slow-path calls very nicely.
         } else {
-          if (_cfg.get_block_for_node(n->in(k))->_region < region) {
+          if (block->_region < region) {
           } else {
-            lrg.AND( rm );
+            lrg.AND(rm);
+//            const RegMask &rm = n->in(k)->out_RegMask();
+//            lrg.AND(rm);
           }
         }
 
@@ -1259,7 +1262,7 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
     }
     lrg.compute_set_mask_size();
     if (lrg.not_free()) {      // Handle case where we lose from the start
-      assert(lrg._region == region, "");
+      assert(lrg._region >= region, "");
       lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
       lrg._direct_conflict = 1;
     }
@@ -1316,17 +1319,17 @@ void PhaseChaitin::cache_lrg_info(uint region) {
       continue;
     }
 
-    if (C->method() != NULL && !C->is_osr_compilation()) {
-      ResourceMark rm;
-      stringStream ss;
-      C->method()->print_short_name(&ss);
-      if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-        tty->print("XXX %d: %d %d %d - %d %d - %p %ld %ld", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill,
-                   lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
-                   offset_of(LRG, _region), sizeof(LRG));
-        lrg.dump();
-      }
-    }
+//    if (C->method() != NULL && !C->is_osr_compilation()) {
+//      ResourceMark rm;
+//      stringStream ss;
+//      C->method()->print_short_name(&ss);
+//      if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+//        tty->print("XXX %d: %d %d %d - %d %d - %p %ld %ld", i, lrg.lo_degree(), lrg.alive(), lrg._must_spill,
+//                   lrg.degree(), lrg.degrees_of_freedom(), &(_ifg->_lrgs[i]._region),
+//                   offset_of(LRG, _region), sizeof(LRG));
+//        lrg.dump();
+//      }
+//    }
 
     // Check for being of low degree: means we can be trivially colored.
     // Low degree, dead or must-spill guys just get to simplify right away
@@ -1376,7 +1379,7 @@ void PhaseChaitin::Simplify(uint region) {
 
       // Put the simplified guy on the simplified list.
       lrgs(lo)._next = _simplified;
-      assert(lrgs(lo)._region == region, "");
+      assert(lrgs(lo)._region >= region, "");
       _simplified = lo;
       // If this guy is "at risk" then mark his current neighbors
       if (lrgs(lo)._at_risk && !_ifg->neighbors(lo)->is_empty()) {
@@ -1423,12 +1426,12 @@ void PhaseChaitin::Simplify(uint region) {
           uint next = n->_next;
           if (prev) {
             lrgs(prev)._next = next;
-            assert(lrgs(prev)._region == region, "");
+            assert(lrgs(prev)._region >= region, "");
           } else {
             _hi_degree = next;
           }
           lrgs(next)._prev = prev;
-          assert(lrgs(next)._region == region, "");
+          assert(next == 0 || lrgs(next)._region >= region, "");
           n->_next = _lo_degree;
           _lo_degree = neighbor;
         }
@@ -1444,7 +1447,7 @@ void PhaseChaitin::Simplify(uint region) {
     double area = lrgs(lo_score)._area;
     double cost = lrgs(lo_score)._cost;
     bool bound = lrgs(lo_score)._is_bound;
-    assert(lrgs(lo_score)._region == region, "");
+    assert(lrgs(lo_score)._region >= region, "");
 
     // Find cheapest guy
     debug_only( int lo_no_simplify=0; );
@@ -1455,7 +1458,7 @@ void PhaseChaitin::Simplify(uint region) {
       // a float live range it's degree will drop by 2 and you can skip the
       // just-lo-degree stage.  It's very rare (shows up after 5000+ methods
       // in -Xcomp of Java2Demo).  So just choose this guy to simplify next.
-      assert(lrgs(i)._region == region, "");
+      assert(lrgs(i)._region >= region, "");
       if( lrgs(i).lo_degree() ) {
         lo_score = i;
         break;
@@ -1487,7 +1490,7 @@ void PhaseChaitin::Simplify(uint region) {
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
-    assert(lo_lrg->_region == region, "");
+    assert(lo_lrg->_region >= region, "");
 
     if (region == 1) {
       tty->print_cr("YYY %d - %d %d %d - %d", lo_score, lo_lrg->degree(), lo_lrg->degrees_of_freedom(), lo_lrg->lo_degree(), lo_no_simplify);
@@ -1503,17 +1506,17 @@ void PhaseChaitin::Simplify(uint region) {
     uint next = lo_lrg->_next;
     if( prev ) {
       lrgs(prev)._next = next;
-      assert(lrgs(prev)._region == region, "");
+      assert(lrgs(prev)._region >= region, "");
     } else {
       _hi_degree = next;
     }
-    assert(lrgs(next)._region == region, "");
+    assert(next == 0 || lrgs(next)._region >= region, "");
     lrgs(next)._prev = prev;
     // Jam him on the lo-degree list, despite his high degree.
     // Maybe he'll get a color, and maybe he'll spill.
     // Only Select() will know.
     lrgs(lo_score)._at_risk = true;
-    assert(lrgs(lo_score)._region == region, "");
+    assert(lrgs(lo_score)._region >= region, "");
     _lo_degree = lo_score;
     lo_lrg->_next = 0;
 
@@ -1692,7 +1695,7 @@ uint PhaseChaitin::Select(uint region) {
     // Pull next LRG from the simplified list - in reverse order of removal
     uint lidx = _simplified;
     LRG *lrg = &lrgs(lidx);
-    assert(lrg->_region == region, "");
+    assert(lrg->_region >= region, "");
     _simplified = lrg->_next;
 
 #ifndef PRODUCT
@@ -1743,14 +1746,14 @@ uint PhaseChaitin::Select(uint region) {
 #endif
           lrg->SUBTRACT(nlrg.mask());
 
-          if (C->method() != NULL && !C->is_osr_compilation()) {
-            ResourceMark rm;
-            stringStream ss;
-            C->method()->print_short_name(&ss);
-            if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-              tty->print_cr("ZZZ %d %d - %d %d", lidx, neighbor, lrg->_region, nlrg._region);
-            }
-          }
+//          if (C->method() != NULL && !C->is_osr_compilation()) {
+//            ResourceMark rm;
+//            stringStream ss;
+//            C->method()->print_short_name(&ss);
+//            if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+//              tty->print_cr("ZZZ %d %d - %d %d", lidx, neighbor, lrg->_region, nlrg._region);
+//            }
+//          }
 
 #ifndef PRODUCT
           if (trace_spilling() && lrg->mask().Size() != size) {
@@ -1851,7 +1854,7 @@ uint PhaseChaitin::Select(uint region) {
               lrg->_def->outcnt() > 0, "fat_proj cannot spill");
       assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
 
-      assert(lrg->_region == region, "");
+      assert(lrg->_region >= region, "");
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));
       // Do not empty the regmask; leave mask_size lying around
