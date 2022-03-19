@@ -189,8 +189,6 @@ public class InflaterInputStream extends FilterInputStream {
         }
     }
 
-    private byte[] b = new byte[512];
-
     /**
      * Skips specified number of bytes of uncompressed data.
      * @param n the number of bytes to skip
@@ -205,6 +203,7 @@ public class InflaterInputStream extends FilterInputStream {
         ensureOpen();
         int max = (int)Math.min(n, Integer.MAX_VALUE);
         int total = 0;
+        byte[] b = new byte[512];
         while (total < max) {
             int len = max - total;
             if (len > b.length) {
