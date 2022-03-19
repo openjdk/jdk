@@ -50,26 +50,28 @@ public class SharedBaseAddress {
         "0x800001000"  // Default base address + 1 page - probably valid but unaligned to metaspace alignment, see JDK 8247522
     };
 
-    public static void main(String[] args) throws Exception {
+    public static void test(String[] testTable) throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
-        String[] testTable = testTableShared;
-        int iter = 0;
-        do {
-            for (String testEntry : testTable) {
-                System.out.println("sharedBaseAddress = " + testEntry);
 
-                // Note: some platforms may restrict valid values for SharedBaseAddress; the VM should print
-                // a warning and use the default value instead. Similar, ASLR may prevent the given address
-                // from being used; this too should handled gracefully by using the default base address.
-                OutputAnalyzer dumpOutput = TestCommon.dump(
-                    appJar, new String[] {"Hello"}, "-XX:SharedBaseAddress=" + testEntry);
-                TestCommon.checkDump(dumpOutput, "Loading classes to share");
+        for (String testEntry : testTable) {
+            System.out.println("sharedBaseAddress = " + testEntry);
 
-                OutputAnalyzer execOutput = TestCommon.exec(appJar, "Hello");
-                TestCommon.checkExec(execOutput, "Hello World");
-            }
-            iter++;
-            testTable = testTable64;
-        } while (iter < 2 && Platform.is64bit());
+            // Note: some platforms may restrict valid values for SharedBaseAddress; the VM should print
+            // a warning and use the default value instead. Similar, ASLR may prevent the given address
+            // from being used; this too should handled gracefully by using the default base address.
+            OutputAnalyzer dumpOutput = TestCommon.dump(
+                appJar, new String[] {"Hello"}, "-XX:SharedBaseAddress=" + testEntry);
+            TestCommon.checkDump(dumpOutput, "Loading classes to share");
+
+            OutputAnalyzer execOutput = TestCommon.exec(appJar, "Hello");
+            TestCommon.checkExec(execOutput, "Hello World");
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        test(testTableShared);
+        if (Platform.is64bit()) {
+            test(testTable64);
+        }
     }
 }
