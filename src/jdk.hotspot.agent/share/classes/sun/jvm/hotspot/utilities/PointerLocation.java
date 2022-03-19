@@ -107,7 +107,7 @@ public class PointerLocation {
   }
 
   public boolean isInHeap() {
-    return (heap != null || (gen != null));
+    return (heap != null);
   }
 
   public boolean isInNewGen() {
@@ -122,7 +122,6 @@ public class PointerLocation {
     return (!isInNewGen() && !isInOldGen());
   }
 
-  /** Only valid if isInHeap() */
   public Generation getGeneration() {
       return gen;
   }
