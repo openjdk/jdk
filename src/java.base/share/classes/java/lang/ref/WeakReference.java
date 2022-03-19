@@ -45,7 +45,7 @@ package java.lang.ref;
  * @since    1.2
  */
 
-public class WeakReference<T> extends Reference<T> {
+public non-sealed class WeakReference<T> extends Reference<T> {
 
     /**
      * Creates a new weak reference that refers to the given object.  The new

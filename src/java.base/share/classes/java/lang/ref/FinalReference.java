@@ -28,7 +28,7 @@ package java.lang.ref;
 /**
  * Final references, used to implement finalization
  */
-class FinalReference<T> extends Reference<T> {
+sealed class FinalReference<T> extends Reference<T> permits Finalizer {
 
     public FinalReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);

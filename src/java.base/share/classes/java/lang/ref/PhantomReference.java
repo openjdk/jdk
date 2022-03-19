@@ -50,7 +50,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @since    1.2
  */
 
-public class PhantomReference<T> extends Reference<T> {
+public non-sealed class PhantomReference<T> extends Reference<T> {
 
     /**
      * Returns this reference object's referent.  Because the referent of a
