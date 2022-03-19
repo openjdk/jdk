@@ -102,8 +102,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler &masm);
+  static int emit_deopt_handler(C2_MacroAssembler &masm);
 
   static uint size_exception_handler() {
     return ( 3 * 4 );
@@ -135,7 +135,7 @@ bool assert_not_var_shift(const Node *n) {
   return true;
 }
 
-#define __ _masm.
+#define __ masm.
 
 static FloatRegister reg_to_FloatRegister_object(int register_encoding);
 static Register reg_to_register_object(int register_encoding);
@@ -156,8 +156,7 @@ int MachNode::compute_padding(int current_offset) const {
 // REQUIRED FUNCTIONALITY
 
 // emit an interrupt that is caught by the debugger (for debugging compiler)
-void emit_break(CodeBuffer &cbuf) {
-  C2_MacroAssembler _masm(&cbuf);
+void emit_break(C2_MacroAssembler &masm) {
   __ breakpoint();
 }
 
@@ -167,8 +166,8 @@ void MachBreakpointNode::format( PhaseRegAlloc *, outputStream *st ) const {
 }
 #endif
 
-void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  emit_break(cbuf);
+void MachBreakpointNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  emit_break(masm);
 }
 
 uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
@@ -176,16 +175,14 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 }
 
 
-void emit_nop(CodeBuffer &cbuf) {
-  C2_MacroAssembler _masm(&cbuf);
+void emit_nop(C2_MacroAssembler &masm) {
   __ nop();
 }
 
 
-void emit_call_reloc(CodeBuffer &cbuf, const MachCallNode *n, MachOper *m, RelocationHolder const& rspec) {
+void emit_call_reloc(C2_MacroAssembler &masm, const MachCallNode *n, MachOper *m, RelocationHolder const& rspec) {
   int ret_addr_offset0 = n->as_MachCall()->ret_addr_offset();
-  int call_site_offset = cbuf.insts()->mark_off();
-  C2_MacroAssembler _masm(&cbuf);
+  int call_site_offset = masm.insts()->mark_off();
   __ set_inst_mark(); // needed in emit_to_interp_stub() to locate the call
   address target = (address)m->method();
   assert(n->as_MachCall()->entry_point() == target, "sanity");
@@ -207,8 +204,8 @@ void emit_call_reloc(CodeBuffer &cbuf, const MachCallNode *n, MachOper *m, Reloc
 
 //=============================================================================
 // REQUIRED FUNCTIONALITY for encoding
-void emit_lo(CodeBuffer &cbuf, int val) {  }
-void emit_hi(CodeBuffer &cbuf, int val) {  }
+void emit_lo(C2_MacroAssembler &masm, int val) {  }
+void emit_hi(C2_MacroAssembler &masm, int val) {  }
 
 
 //=============================================================================
@@ -229,10 +226,9 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler& masm, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
   ConstantTable& constant_table = C->output()->constant_table();
-  C2_MacroAssembler _masm(&cbuf);
 
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
@@ -287,9 +283,8 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  C2_MacroAssembler _masm(&cbuf);
 
   for (int i = 0; i < OptoPrologueNops; i++) {
     __ nop();
@@ -317,7 +312,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   // offset from scratch buffer is not valid
-  if (strcmp(cbuf.name(), "Compile::Fill_buffer") == 0) {
+  if (strcmp(masm.name(), "Compile::Fill_buffer") == 0) {
     C->output()->set_frame_complete( __ offset() );
   }
 
@@ -358,8 +353,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
+void MachEpilogNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
 
   size_t framesize = C->output()->frame_size_in_bytes();
@@ -409,7 +403,7 @@ static inline bool is_iRegLd_memhd(OptoReg::Name src_first, OptoReg::Name src_se
   return (rlo&1)==0 && (rlo+1 == rhi) && is_memoryHD(offset);
 }
 
-uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
+uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
                                         PhaseRegAlloc *ra_,
                                         bool do_size,
                                         outputStream* st ) const {
@@ -442,14 +436,12 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Bailout only for real instruction emit.
   // This requires a single comment change in shared code. ( see output.cpp "Normal" instruction case )
 
-  C2_MacroAssembler _masm(cbuf);
-
   // --------------------------------------
   // Check for mem-mem move.  Load into unused float registers and fall into
   // the float-store case.
   if (src_first_rc == rc_stack && dst_first_rc == rc_stack) {
     int offset = ra_->reg2offset(src_first);
-    if (cbuf && !is_memoryfp(offset)) {
+    if (masm && !is_memoryfp(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
@@ -459,7 +451,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
         src_second    = OptoReg::Name(R_mem_copy_hi_num);
         src_first_rc  = rc_float;
         src_second_rc = rc_float;
-        if (cbuf) {
+        if (masm) {
           __ ldr_double(Rmemcopy, Address(SP, offset));
         } else if (!do_size) {
           st->print(LDR_DOUBLE "   R_%s,[R_SP + #%d]\t! spill",OptoReg::regname(src_first),offset);
@@ -467,7 +459,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
       } else {
         src_first     = OptoReg::Name(R_mem_copy_lo_num);
         src_first_rc  = rc_float;
-        if (cbuf) {
+        if (masm) {
           __ ldr_float(Rmemcopy, Address(SP, offset));
         } else if (!do_size) {
           st->print(LDR_FLOAT "   R_%s,[R_SP + #%d]\t! spill",OptoReg::regname(src_first),offset);
@@ -486,7 +478,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   if (src_first_rc == rc_int && dst_first_rc == rc_int) {
     // Else normal reg-reg copy
     assert( src_second != dst_first, "smashed second before evacuating it" );
-    if (cbuf) {
+    if (masm) {
       __ mov(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
     } else if (!do_size) {
@@ -501,13 +493,13 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Check for integer store
   if (src_first_rc == rc_int && dst_first_rc == rc_stack) {
     int offset = ra_->reg2offset(dst_first);
-    if (cbuf && !is_memoryI(offset)) {
+    if (masm && !is_memoryI(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
       if (src_second_rc != rc_bad && is_iRegLd_memhd(src_first, src_second, offset)) {
         assert((src_first&1)==0 && src_first+1 == src_second, "pair of registers must be aligned/contiguous");
-        if (cbuf) {
+        if (masm) {
           __ str_64(reg_to_register_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -517,7 +509,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
         }
         return size + 4;
       } else {
-        if (cbuf) {
+        if (masm) {
           __ str_32(reg_to_register_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -533,13 +525,13 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Check for integer load
   if (dst_first_rc == rc_int && src_first_rc == rc_stack) {
     int offset = ra_->reg2offset(src_first);
-    if (cbuf && !is_memoryI(offset)) {
+    if (masm && !is_memoryI(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
       if (src_second_rc != rc_bad && is_iRegLd_memhd(dst_first, dst_second, offset)) {
         assert((src_first&1)==0 && src_first+1 == src_second, "pair of registers must be aligned/contiguous");
-        if (cbuf) {
+        if (masm) {
           __ ldr_64(reg_to_register_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -549,7 +541,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
         }
         return size + 4;
       } else {
-        if (cbuf) {
+        if (masm) {
           __ ldr_32(reg_to_register_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -566,7 +558,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   if (src_first_rc == rc_float && dst_first_rc == rc_float) {
     if (src_second_rc != rc_bad) {
       assert((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers must be aligned/contiguous");
-      if (cbuf) {
+      if (masm) {
       __ mov_double(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -577,7 +569,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
       }
       return 4;
     }
-    if (cbuf) {
+    if (masm) {
       __ mov_float(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
     } else if (!do_size) {
@@ -592,14 +584,14 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Check for float store
   if (src_first_rc == rc_float && dst_first_rc == rc_stack) {
     int offset = ra_->reg2offset(dst_first);
-    if (cbuf && !is_memoryfp(offset)) {
+    if (masm && !is_memoryfp(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
       // Further check for aligned-adjacent pair, so we can use a double store
       if (src_second_rc != rc_bad) {
         assert((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers and stack slots must be aligned/contiguous");
-        if (cbuf) {
+        if (masm) {
           __ str_double(reg_to_FloatRegister_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -609,7 +601,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
         }
         return size + 4;
       } else {
-        if (cbuf) {
+        if (masm) {
           __ str_float(reg_to_FloatRegister_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -625,14 +617,14 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Check for float load
   if (dst_first_rc == rc_float && src_first_rc == rc_stack) {
     int offset = ra_->reg2offset(src_first);
-    if (cbuf && !is_memoryfp(offset)) {
+    if (masm && !is_memoryfp(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
       // Further check for aligned-adjacent pair, so we can use a double store
       if (src_second_rc != rc_bad) {
         assert((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers and stack slots must be aligned/contiguous");
-        if (cbuf) {
+        if (masm) {
           __ ldr_double(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -642,7 +634,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
         }
         return size + 4;
       } else {
-        if (cbuf) {
+        if (masm) {
           __ ldr_float(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
@@ -662,7 +654,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
       assert((dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers must be aligned/contiguous");
       assert((src_first&1)==0 && src_first+1 == src_second, "pairs of registers must be aligned/contiguous");
       assert(src_second_rc == rc_int && dst_second_rc == rc_float, "unsupported");
-      if (cbuf) {
+      if (masm) {
         __ fmdrr(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]), reg_to_register_object(Matcher::_regEncode[src_second]));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -672,7 +664,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
       }
       return size + 4;
     } else {
-      if (cbuf) {
+      if (masm) {
         __ fmsr(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -691,7 +683,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
       assert((src_first&1)==0 && src_first+1 == src_second, "pairs of registers must be aligned/contiguous");
       assert((dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers must be aligned/contiguous");
       assert(src_second_rc == rc_float && dst_second_rc == rc_int, "unsupported");
-      if (cbuf) {
+      if (masm) {
         __ fmrrd(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[dst_second]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -701,7 +693,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
       }
       return size + 4;
     } else {
-      if (cbuf) {
+      if (masm) {
         __ fmrs(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -725,7 +717,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // register (else it's a hi-bits-to-hi-bits copy which should have
   // happened already as part of a 64-bit move)
   if (src_second_rc == rc_int && dst_second_rc == rc_int) {
-    if (cbuf) {
+    if (masm) {
       __ mov(reg_to_register_object(Matcher::_regEncode[dst_second]), reg_to_register_object(Matcher::_regEncode[src_second]));
 #ifndef PRODUCT
     } else if (!do_size) {
@@ -742,11 +734,11 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   if (src_second_rc == rc_int && dst_second_rc == rc_stack) {
     int offset = ra_->reg2offset(dst_second);
 
-    if (cbuf && !is_memoryP(offset)) {
+    if (masm && !is_memoryP(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
-      if (cbuf) {
+      if (masm) {
         __ str(reg_to_register_object(Matcher::_regEncode[src_second]), Address(SP, offset));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -761,11 +753,11 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // Check for high word integer load
   if (dst_second_rc == rc_int && src_second_rc == rc_stack) {
     int offset = ra_->reg2offset(src_second);
-    if (cbuf && !is_memoryP(offset)) {
+    if (masm && !is_memoryP(offset)) {
       ra_->C->record_method_not_compilable("unable to handle large constant offsets");
       return 0;
     } else {
-      if (cbuf) {
+      if (masm) {
         __ ldr(reg_to_register_object(Matcher::_regEncode[dst_second]), Address(SP, offset));
 #ifndef PRODUCT
       } else if (!do_size) {
@@ -787,8 +779,8 @@ void MachSpillCopyNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation( &cbuf, ra_, false, NULL );
+void MachSpillCopyNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  implementation( &masm, ra_, false, NULL );
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -802,8 +794,7 @@ void MachNopNode::format( PhaseRegAlloc *, outputStream *st ) const {
 }
 #endif
 
-void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ) const {
-  C2_MacroAssembler _masm(&cbuf);
+void MachNopNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc * ) const {
   for(int i = 0; i < _count; i += 1) {
     __ nop();
   }
@@ -823,8 +814,7 @@ void BoxLockNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
+void BoxLockNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_encode(this);
   Register dst = reg_to_register_object(reg);
@@ -859,8 +849,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  C2_MacroAssembler _masm(&cbuf);
+void MachUEPNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   Register iCache  = reg_to_register_object(Matcher::inline_cache_reg_encode());
   assert(iCache == Ricklass, "should be");
   Register receiver = R0;
@@ -878,9 +867,7 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 //=============================================================================
 
 // Emit exception handler code.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
-  C2_MacroAssembler _masm(&cbuf);
-
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler& masm) {
   address base = __ start_a_stub(size_exception_handler());
   if (base == NULL) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -899,11 +886,9 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   return offset;
 }
 
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler& masm) {
   // Can't use any of the current frame's registers as we may have deopted
   // at a poll and everything can be live.
-  C2_MacroAssembler _masm(&cbuf);
-
   address base = __ start_a_stub(size_deopt_handler());
   if (base == NULL) {
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1192,7 +1177,7 @@ encode %{
 
   enc_class Java_To_Runtime (method meth) %{
     // CALL directly to the runtime
-    emit_call_reloc(cbuf, as_MachCall(), $meth, runtime_call_Relocation::spec());
+    emit_call_reloc(masm, as_MachCall(), $meth, runtime_call_Relocation::spec());
   %}
 
   enc_class Java_Static_Call (method meth) %{
@@ -1200,15 +1185,15 @@ encode %{
     // who we intended to call.
 
     if ( !_method) {
-      emit_call_reloc(cbuf, as_MachCall(), $meth, runtime_call_Relocation::spec());
+      emit_call_reloc(masm, as_MachCall(), $meth, runtime_call_Relocation::spec());
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      emit_call_reloc(cbuf, as_MachCall(), $meth, rspec);
+      emit_call_reloc(masm, as_MachCall(), $meth, rspec);
 
       // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(masm);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -1218,39 +1203,35 @@ encode %{
 
   enc_class save_last_PC %{
     // preserve mark
-    address mark = cbuf.insts()->mark();
-    debug_only(int off0 = cbuf.insts_size());
-    C2_MacroAssembler _masm(&cbuf);
+    address mark = masm.insts()->mark();
+    debug_only(int off0 = masm.inst_size());
     int ret_addr_offset = as_MachCall()->ret_addr_offset();
     __ adr(LR, mark + ret_addr_offset);
     __ str(LR, Address(Rthread, JavaThread::last_Java_pc_offset()));
-    debug_only(int off1 = cbuf.insts_size());
+    debug_only(int off1 = masm.inst_size());
     assert(off1 - off0 == 2 * Assembler::InstructionSize, "correct size prediction");
     // restore mark
-    cbuf.insts()->set_mark(mark);
+    masm.insts()->set_mark(mark);
   %}
 
   enc_class preserve_SP %{
     // preserve mark
-    address mark = cbuf.insts()->mark();
-    debug_only(int off0 = cbuf.insts_size());
-    C2_MacroAssembler _masm(&cbuf);
+    address mark = masm.insts()->mark();
+    debug_only(int off0 = masm.inst_size());
     // FP is preserved across all calls, even compiled calls.
     // Use it to preserve SP in places where the callee might change the SP.
     __ mov(Rmh_SP_save, SP);
-    debug_only(int off1 = cbuf.insts_size());
+    debug_only(int off1 = masm.inst_size());
     assert(off1 - off0 == 4, "correct size prediction");
     // restore mark
-    cbuf.insts()->set_mark(mark);
+    masm.insts()->set_mark(mark);
   %}
 
   enc_class restore_SP %{
-    C2_MacroAssembler _masm(&cbuf);
     __ mov(SP, Rmh_SP_save);
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{
-    C2_MacroAssembler _masm(&cbuf);
     Register R8_ic_reg = reg_to_register_object(Matcher::inline_cache_reg_encode());
     assert(R8_ic_reg == Ricklass, "should be");
     __ set_inst_mark();
@@ -1259,9 +1240,9 @@ encode %{
     address  virtual_call_oop_addr = __ inst_mark();
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    int method_index = resolved_method_index(cbuf);
+    int method_index = resolved_method_index(masm);
     __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
-    emit_call_reloc(cbuf, as_MachCall(), $meth, RelocationHolder::none);
+    emit_call_reloc(masm, as_MachCall(), $meth, RelocationHolder::none);
   %}
 
   enc_class LdReplImmI(immI src, regD dst, iRegI tmp, int cnt, int wth) %{
@@ -1278,7 +1259,6 @@ encode %{
         val |= (val << bit_width);
       }
     }
-    C2_MacroAssembler _masm(&cbuf);
 
     if (val == -1) {
       __ mvn($tmp$$Register, 0);
@@ -1295,7 +1275,6 @@ encode %{
     // Replicate float con 2 times and pack into vector (8 bytes) in regD.
     float fval = $src$$constant;
     int val = *((int*)&fval);
-    C2_MacroAssembler _masm(&cbuf);
 
     if (val == -1) {
       __ mvn($tmp$$Register, 0);
@@ -1310,7 +1289,6 @@ encode %{
 
   enc_class enc_String_Compare(R0RegP str1, R1RegP str2, R2RegI cnt1, R3RegI cnt2, iRegI result, iRegI tmp1, iRegI tmp2) %{
     Label Ldone, Lloop;
-    C2_MacroAssembler _masm(&cbuf);
 
     Register   str1_reg = $str1$$Register;
     Register   str2_reg = $str2$$Register;
@@ -1402,7 +1380,6 @@ encode %{
 
   enc_class enc_String_Equals(R0RegP str1, R1RegP str2, R2RegI cnt, iRegI result, iRegI tmp1, iRegI tmp2) %{
     Label Lchar, Lchar_loop, Ldone, Lequal;
-    C2_MacroAssembler _masm(&cbuf);
 
     Register   str1_reg = $str1$$Register;
     Register   str2_reg = $str2$$Register;
@@ -1464,7 +1441,6 @@ encode %{
 
   enc_class enc_Array_Equals(R0RegP ary1, R1RegP ary2, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI result) %{
     Label Ldone, Lloop, Lequal;
-    C2_MacroAssembler _masm(&cbuf);
 
     Register   ary1_reg = $ary1$$Register;
     Register   ary2_reg = $ary2$$Register;
