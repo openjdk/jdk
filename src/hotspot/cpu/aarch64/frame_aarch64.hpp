@@ -172,4 +172,6 @@
 
   void set_sp_is_trusted() { _sp_is_trusted = true; }
 
+  static bool need_to_deduce_sender_sp(frame& sender);
+  static intptr_t* deduce_sender_sp(frame& frame);
 #endif // CPU_AARCH64_FRAME_AARCH64_HPP

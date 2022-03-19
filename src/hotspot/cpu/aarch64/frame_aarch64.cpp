@@ -41,6 +41,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/vmError.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -852,4 +853,127 @@ void JavaFrameAnchor::capture_last_Java_pc() {
   vmassert(_last_Java_sp != NULL, "no last frame set");
   vmassert(_last_Java_pc == NULL, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
+}
+
+// Only when the current frame is a C frame(implicit in call sites)
+// and the sender frame has a code blob but is not an interpreted frame
+// or entry frame(for these two frames, we do not need accurate sp to
+// be able to walk the stack correctly), we need to deduce the sender's sp.
+//
+// To reduce the impact, we are only doing this when a VM error is reported.
+// And when PreserveFramePointer is enabled, we also don't need to rely on
+// the accurate sp.(See JDK-8277948 for more details)
+bool frame::need_to_deduce_sender_sp(frame &sender) {
+  return VMError::is_error_reported() && !PreserveFramePointer
+         && sender.cb() != NULL && !sender.is_interpreted_frame()
+         && !sender.is_entry_frame();
+}
+
+#define STP_PRE_INDEX_X29_X30_SP_MASK  0xA9807BFD // stp x29, x30, [sp, #-N]!
+#define STP_PRE_INDEX_R_R_SP_MASK      0xA98003E0 // stp x?, x?, [sp, #-N]!
+#define STP_SIGNED_OFFSET_X29_X30_MASK 0xA9007BFD // stp x29, x30, [sp, #N]
+#define SUB_SP_MASK                    0xD10003FF // sub sp, sp, #N
+
+#define IS_INSTRUCTION(ins, mask)         ((ins) & (mask)) == (mask)
+#define IS_STP_PRE_INDEX_X29_X30_SP(ins)  IS_INSTRUCTION(ins, STP_PRE_INDEX_X29_X30_SP_MASK)
+#define IS_STP_SIGNED_OFFSET_X29_X30(ins) IS_INSTRUCTION(ins, STP_SIGNED_OFFSET_X29_X30_MASK)
+#define IS_SUB_SP(ins)                    IS_INSTRUCTION(ins, SUB_SP_MASK)
+#define IS_STP_PRE_INDEX_R_R_SP(ins)      IS_INSTRUCTION(ins, STP_PRE_INDEX_R_R_SP_MASK)
+
+#define ADD_SP_16                               0x910043FF // add sp, sp, #16
+#define LDP_POST_INDEX_LTP_X8_X12_SP_16         0xA8C133E8 // ldp rscratch1(x8), rmethod(x12), sp, #16
+#define IS_ADD_SP_16(ins)                       ins == ADD_SP_16
+#define IS_LDP_POST_INDEX_LTP_X8_X12_SP_16(ins) ins == LDP_POST_INDEX_LTP_X8_X12_SP_16
+
+#define GET_STP_IMMEDIATE(ins) (signed char)(((int)(ins) << 10) >> 25)
+#define GET_SUB_IMMEDIATE(ins) (((ins) << 10) >> (20 + 3))
+
+intptr_t *frame::deduce_sender_sp(frame &fr) {
+#ifdef ASSERT
+  frame sender(fr.link(), fr.link(), fr.sender_pc());
+  assert(need_to_deduce_sender_sp(sender), "sanity check");
+#endif
+
+  address pc = fr.pc();
+  int offset;
+  char dummy[1];
+  if (pc != (address)-1 && os::dll_address_to_function_name(pc, dummy, 1, &offset, false)
+      && offset > 0) {
+    unsigned *cur = (unsigned *)(pc - offset);
+    if (cur < (unsigned *)pc) {
+      intptr_t *result;
+      bool matched = false;
+      unsigned ins;
+      do {
+        ins = *cur;
+        if (IS_STP_PRE_INDEX_X29_X30_SP(ins)) {
+          // Pattern 1:
+          //   ...
+          //   stp x29, x30, [sp, #-N]!
+          //   ...
+          //   mov x29, sp
+          //   ...
+          // => sender sp = fp + N
+          signed char imm = GET_STP_IMMEDIATE(ins);
+          result = fr.addr_at(-imm);
+          matched = true;
+          break;
+        } else if (IS_SUB_SP(ins)) {
+          // Pattern 2:
+          //   ...
+          //   sub sp, sp, #N1
+          //   ...
+          //   stp x29, x30, [sp, #N2]
+          //   add x29, sp, #N2
+          //   ...
+          // => sender sp = fp + (N1 - N2)
+          int n1 = GET_SUB_IMMEDIATE(ins);
+          while (++cur < (unsigned *) pc) {
+            ins = *cur;
+            if (IS_STP_SIGNED_OFFSET_X29_X30(ins)) {
+              signed char n2 = GET_STP_IMMEDIATE(ins);
+              result = fr.addr_at(n1 - (int) n2);
+              matched = true;
+              break;
+            }
+          }
+          break;
+        } else if (IS_STP_PRE_INDEX_R_R_SP(ins)) {
+          // Pattern 3:
+          //   ...
+          //   stp Xt1, Xt2, [sp, #-N1]! ; Xt1 is not x29, Xt2 is not x30
+          //   ...
+          //   stp x29, x30, [sp, #N2]
+          //   add x29, sp, #N2
+          //   ...
+          // => sender sp = fp + (N1 - N2)
+          signed char n1 = GET_STP_IMMEDIATE(ins);
+          while (++cur < (unsigned *) pc) {
+            ins = *cur;
+            if (IS_STP_SIGNED_OFFSET_X29_X30(ins)) {
+              signed char n2 = GET_STP_IMMEDIATE(ins);
+              result = fr.addr_at(-n1 - n2);
+              matched = true;
+              break;
+            }
+          }
+          break;
+        }
+      } while (++cur < (unsigned *)pc);
+
+      if (matched) {
+        ins = *(unsigned *)fr.sender_pc();
+        // There are two cases to be dealt with specially:
+        // a. In aarch64.ad, aarch64_enc_java_to_runtime left a breadcrumb: add sp, sp, #16
+        // b. MacroAssembler::call_VM_leaf_base saved rmethod: ldp rscratch1, rmethod, sp, #16
+        if (IS_ADD_SP_16(ins) || IS_LDP_POST_INDEX_LTP_X8_X12_SP_16(ins)) {
+          // skip 2 slots to get the original sp
+          result += 2;
+        }
+        return result;
+      }
+    }
+  }
+  // fall through
+  return fr.link();
 }

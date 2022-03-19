@@ -146,7 +146,11 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
 // By default, gcc always saves frame pointer rfp on this stack. This
 // may get turned off by -fomit-frame-pointer.
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->link(), fr->link(), fr->sender_pc());
+  frame sender(fr->link(), fr->link(), fr->sender_pc());
+  if (frame::need_to_deduce_sender_sp(sender)) {
+    return frame(frame::deduce_sender_sp(*fr), fr->link(), fr->sender_pc());
+  }
+  return sender;
 }
 
 NOINLINE frame os::current_frame() {
