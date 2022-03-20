@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1043,6 +1043,10 @@ gss_accept_sec_context(OM_uint32 *minor_status,
 {
     PP(">>>> Calling UNIMPLEMENTED gss_accept_sec_context...");
     PP("gss_accept_sec_context is not supported in this initiator-only library");
+    if (output_token) {
+        output_token->length = 0;
+        output_token->value = NULL;
+    }
     return GSS_S_FAILURE;
 }
 
