@@ -246,20 +246,18 @@ class WindowsSelectorImpl extends SelectorImpl {
         // redundant. If yes, it returns true, notifying the thread
         // that it should exit.
         private synchronized boolean waitForStart(SelectThread thread) {
-            while (true) {
-                while (runsCounter == thread.lastRun) {
-                    try {
-                        startLock.wait();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+            while (runsCounter == thread.lastRun) {
+                try {
+                    startLock.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-                if (thread.isZombie()) { // redundant thread
-                    return true; // will cause run() to exit.
-                } else {
-                    thread.lastRun = runsCounter; // update lastRun
-                    return false; //   will cause run() to poll.
-                }
+            }
+            if (thread.isZombie()) { // redundant thread
+                return true; // will cause run() to exit.
+            } else {
+                thread.lastRun = runsCounter; // update lastRun
+                return false; //   will cause run() to poll.
             }
         }
     }

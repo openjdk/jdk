@@ -219,7 +219,7 @@ public class PAData {
             }
         }
         if (d != null) {
-            while (d.data.available() > 0) {
+            if (d.data.available() > 0) {
                 DerValue value = d.data.getDerValue();
                 ETypeInfo tmp = new ETypeInfo(value);
                 return tmp.getEType();

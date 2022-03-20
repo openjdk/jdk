@@ -721,7 +721,7 @@ class JarVerifier {
                         return true;
                     }
                 }
-                while (enum2.hasMoreElements()) {
+                if (enum2.hasMoreElements()) {
                     name = enum2.nextElement();
                     return true;
                 }
@@ -767,7 +767,7 @@ class JarVerifier {
                 if (signers == null) {
                     signers = Collections.enumeration(map.keySet());
                 }
-                while (signers.hasMoreElements()) {
+                if (signers.hasMoreElements()) {
                     String name = signers.nextElement();
                     entry = jar.newEntry(name);
                     return true;

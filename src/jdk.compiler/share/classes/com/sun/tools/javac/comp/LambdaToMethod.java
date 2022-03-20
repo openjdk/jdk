@@ -2299,7 +2299,7 @@ public class LambdaToMethod extends TreeTranslator {
              */
             boolean interfaceParameterIsIntersectionOrUnionType() {
                 List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
-                for (; tl.nonEmpty(); tl = tl.tail) {
+                if (tl.nonEmpty()) {
                     Type pt = tl.head;
                     return isIntersectionOrUnionType(pt);
                 }
