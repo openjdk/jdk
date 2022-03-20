@@ -497,13 +497,13 @@ public class EncryptionKey
     }
 
     public String toString() {
-        return new String("EncryptionKey: keyType=" + keyType
-                          + " kvno=" + kvno
-                          + " keyValue (hex dump)="
-                          + (keyValue == null || keyValue.length == 0 ?
-                        " Empty Key" : '\n'
-                        + Krb5.hexDumper.encodeBuffer(keyValue)
-                        + '\n'));
+        return "EncryptionKey: keyType=" + keyType
+                + " kvno=" + kvno
+                + " keyValue (hex dump)="
+                + (keyValue == null || keyValue.length == 0 ?
+                " Empty Key" : '\n'
+                + Krb5.hexDumper.encodeBuffer(keyValue)
+                + '\n');
     }
 
     /**
