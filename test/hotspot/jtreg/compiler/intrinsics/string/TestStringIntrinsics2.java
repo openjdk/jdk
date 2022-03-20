@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,7 @@
  */
 
 /*
- * @test
+ * @test id=DefaultHeap
  * @bug 8145336
  * @summary PPC64: fix string intrinsics after CompactStrings change
  * @modules java.base/jdk.internal.misc
@@ -41,6 +41,28 @@
  *        -XX:MaxInlineSize=70
  *        -XX:MinInlineFrequencyRatio=0
  *        compiler.intrinsics.string.TestStringIntrinsics2
+ */
+
+/*
+ * @test id=LargeHeap
+ * @bug 8254790
+ * @requires os.maxMemory > 5G
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ *
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ *
+ * @run main/othervm
+ *        -mx5G
+ *        -Xbootclasspath/a:.
+ *        -Xmixed
+ *        -XX:+UnlockDiagnosticVMOptions
+ *        -XX:+WhiteBoxAPI
+ *        -XX:+IgnoreUnrecognizedVMOptions
+ *        -XX:MaxInlineSize=70
+ *        -XX:MinInlineFrequencyRatio=0
+ *        compiler.intrinsics.string.TestStringIntrinsics2 LargeHeap
  */
 
 package compiler.intrinsics.string;
@@ -82,6 +104,7 @@ public class TestStringIntrinsics2 {
 
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static int[] FILL_HEAP;
 
     public enum Role {
         TEST_ENTRY,
@@ -115,6 +138,9 @@ public class TestStringIntrinsics2 {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 0 && "LargeHeap".equals(args[0])) {
+            FILL_HEAP = new int[Integer.MAX_VALUE / 2];
+        }
 
         // Warmup helper methods
         Arrays.stream(TestStringIntrinsics2.class.getDeclaredMethods())
@@ -706,4 +732,18 @@ public class TestStringIntrinsics2 {
         }
     }
 
+    static String longLatin1 = "0123456789A".repeat(100);
+    static String longUTF = "0123456789\ubeef".repeat(100);
+
+    @Test(role = Role.TEST_HELPER, compileAt = 4, warmup = 1, warmupArgs = { "0123456789", "1" })
+    public static boolean indexOf_use_result_immediately(String a, String b) {
+        char ch = b.charAt(0);
+        return ch == a.charAt(a.indexOf(ch));
+    }
+
+    @Test(role = Role.TEST_ENTRY)
+    public static void test_indexOf_use_result_immediately() {
+        assertTrue(indexOf_use_result_immediately(longLatin1, "A"));
+        assertTrue(indexOf_use_result_immediately(longUTF, "\ubeef"));
+    }
 }
