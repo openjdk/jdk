@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1167,17 +1167,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         if (taskThrown instanceof RuntimeException) {
             throw new RuntimeException(msg, taskThrown);
         } else if (taskThrown instanceof SSLHandshakeException) {
-            return (SSLHandshakeException)
-                new SSLHandshakeException(msg).initCause(taskThrown);
+            return new SSLHandshakeException(msg, taskThrown);
         } else if (taskThrown instanceof SSLKeyException) {
-            return (SSLKeyException)
-                new SSLKeyException(msg).initCause(taskThrown);
+            return new SSLKeyException(msg, taskThrown);
         } else if (taskThrown instanceof SSLPeerUnverifiedException) {
-            return (SSLPeerUnverifiedException)
-                new SSLPeerUnverifiedException(msg).initCause(taskThrown);
+            return new SSLPeerUnverifiedException(msg, taskThrown);
         } else if (taskThrown instanceof SSLProtocolException) {
-            return (SSLProtocolException)
-                new SSLProtocolException(msg).initCause(taskThrown);
+            return new SSLProtocolException(msg, taskThrown);
         } else if (taskThrown instanceof SSLException) {
             return (SSLException)taskThrown;
         } else {
