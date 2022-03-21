@@ -40,6 +40,58 @@ public class TestIRAddIdealXPlus_ConMinusY_ {
     }
 
     @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.CON_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testIntXPlus_ZeroMinusY_StillWorks(int x, int y) {
+        return x + (0 - y); // transformed to x - y
+    }
+
+    @Run(test = "testIntXPlus_ZeroMinusY_StillWorks")
+    public void checkTestIntXPlus_ZeroMinusY_StillWorks(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1, testIntXPlus_ZeroMinusY_StillWorks(10, 9));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.CON_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLongXPlus_ZeroMinusY_StillWorks(long x, long y) {
+        return x + (0 - y); // transformed to x - y
+    }
+
+    @Run(test = "testLongXPlus_ZeroMinusY_StillWorks")
+    public void checkTestLongXPlus_ZeroMinusY_StillWorks(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(100_000_000_000L, testLongXPlus_ZeroMinusY_StillWorks(123_456_789_000L, 23_456_789_000L));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.CON_I})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int testIntXPlus_ZeroMinusY_SymStillWorks(int x, int y) {
+        return (0 - y) + x; // transformed to x - y
+    }
+
+    @Run(test = "testIntXPlus_ZeroMinusY_SymStillWorks")
+    public void checkTestIntXPlus_ZeroMinusY_SymStillWorks(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(1, testIntXPlus_ZeroMinusY_SymStillWorks(10, 9));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_L, IRNode.CON_L})
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public long testLongXPlus_ZeroMinusY_SymStillWorks(long x, long y) {
+        return (0 - y) + x; // transformed to x - y
+    }
+
+    @Run(test = "testLongXPlus_ZeroMinusY_SymStillWorks")
+    public void checkTestLongXPlus_ZeroMinusY_SymStillWorks(RunInfo info) {
+        assertC2Compiled(info);
+        Asserts.assertEquals(100_000_000_000L, testLongXPlus_ZeroMinusY_SymStillWorks(123_456_789_000L, 23_456_789_000L));
+    }
+
+    @Test
     @IR(counts = {IRNode.SUB_I, "1",
                   IRNode.ADD_I, "1",
                   IRNode.CON_I, "1"})
