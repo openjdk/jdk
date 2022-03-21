@@ -63,10 +63,7 @@ import static java.net.Proxy.NO_PROXY;
  *                    server that perform Digest authentication;
  *            PROXY305: The server attempts to redirect
  *                    the client to a proxy using 305 code;
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest SERVER
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest PROXY
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest SERVER307
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 HTTPTest PROXY305
+ * @run main/othervm/timeout=1000 -Dtest.digest.algorithm=SHA-512 HTTPTest SERVER
  *
  * @author danielfuchs
  */
@@ -194,6 +191,8 @@ public class HTTPTest {
             // silently skip unsupported test combination
             return;
         }
+        String digestalg = System.getProperty("test.digest.algorithm");
+
         System.out.println("\n**** Testing " + protocol + " "
                            + mode + " mode ****\n");
         int authCount = AUTHENTICATOR.count.get();
@@ -205,7 +204,9 @@ public class HTTPTest {
                     HTTPTestServer.create(protocol,
                                           mode,
                                           AUTHENTICATOR,
-                                          getHttpSchemeType());
+                                          getHttpSchemeType(),
+                                          null,
+                                          digestalg);
             try {
                 expectedIncrement += run(server, protocol, mode);
             } finally {
