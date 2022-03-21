@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,38 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_CARDGENERATION_INLINE_HPP
-#define SHARE_GC_SHARED_CARDGENERATION_INLINE_HPP
+/*
+ * @test
+ * @bug 8282723
+ * @summary Add constructors taking a cause to JSSE exceptions
+ */
+import javax.net.ssl.SSLProtocolException;
+import java.util.Objects;
 
-#include "gc/shared/cardGeneration.hpp"
+public class CheckSSLProtocolException {
+    private static String exceptionMessage = "message";
+    private static Throwable exceptionCause = new RuntimeException();
 
-#include "gc/shared/space.hpp"
+    public static void main(String[] args) throws Exception {
+        testException(
+                new SSLProtocolException(exceptionMessage, exceptionCause));
+    }
 
-inline size_t CardGeneration::capacity() const {
-  return space()->capacity();
+    private static void testException(Exception ex) {
+        if (!Objects.equals(ex.getMessage(), exceptionMessage)) {
+            throw new RuntimeException("Unexpected exception message");
+        }
+
+        if (ex.getCause() != exceptionCause) {
+            throw new RuntimeException("Unexpected exception cause");
+        }
+    }
 }
-
-inline size_t CardGeneration::used() const {
-  return space()->used();
-}
-
-inline size_t CardGeneration::free() const {
-  return space()->free();
-}
-
-inline MemRegion CardGeneration::used_region() const {
-  return space()->used_region();
-}
-
-inline bool CardGeneration::is_in(const void* p) const {
-  return space()->is_in(p);
-}
-
-inline CompactibleSpace* CardGeneration::first_compaction_space() const {
-  return space();
-}
-
-#endif // SHARE_GC_SHARED_CARDGENERATION_INLINE_HPP

@@ -1564,7 +1564,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * Creates a new object of the same class as this object.
      *
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.2
      */

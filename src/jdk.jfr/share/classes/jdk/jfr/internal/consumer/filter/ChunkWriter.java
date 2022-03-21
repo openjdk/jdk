@@ -51,7 +51,7 @@ import jdk.jfr.internal.consumer.Reference;
  */
 public final class ChunkWriter implements Closeable {
     private LongMap<Constants> pools = new LongMap<>();
-    private final Deque<CheckPointEvent> checkPoints = new ArrayDeque<>();
+    private final Deque<CheckpointEvent> checkpoints = new ArrayDeque<>();
     private final Path destination;
     private final RecordingInput input;
     private final RecordingOutput output;
@@ -59,7 +59,7 @@ public final class ChunkWriter implements Closeable {
 
     private long chunkStartPosition;
     private boolean chunkComplete;
-    private long lastCheckPoint;
+    private long lastCheckpoint;
 
     public ChunkWriter(Path source, Path destination, Predicate<RecordedEvent> filter) throws IOException {
         this.destination = destination;
@@ -78,9 +78,9 @@ public final class ChunkWriter implements Closeable {
         return pool;
     }
 
-    public CheckPointEvent newCheckPointEvent(long startPosition) {
-        CheckPointEvent event = new CheckPointEvent(this, startPosition);
-        checkPoints.add(event);
+    public CheckpointEvent newCheckpointEvent(long startPosition) {
+        CheckpointEvent event = new CheckpointEvent(this, startPosition);
+        checkpoints.add(event);
         return event;
     }
 
@@ -120,16 +120,16 @@ public final class ChunkWriter implements Closeable {
 
     // Write check point events before a position
     private void writeCheckpointEvents(long before) throws IOException {
-        CheckPointEvent cp = checkPoints.peek();
+        CheckpointEvent cp = checkpoints.peek();
         while (cp != null && cp.getStartPosition() < before) {
-            checkPoints.poll();
+            checkpoints.poll();
             long delta = 0;
-            if (lastCheckPoint != 0) {
-                delta = lastCheckPoint - output.position();
+            if (lastCheckpoint != 0) {
+                delta = lastCheckpoint - output.position();
             }
-            lastCheckPoint = output.position();
+            lastCheckpoint = output.position();
             write(cp, delta);
-            cp = checkPoints.peek();
+            cp = checkpoints.peek();
         }
     }
 
@@ -174,10 +174,10 @@ public final class ChunkWriter implements Closeable {
         writeCheckpointEvents(Long.MAX_VALUE);
         long metadata = output.position();
         writeMetadataEvent(header);
-        updateHeader(output.position(), lastCheckPoint, metadata);
+        updateHeader(output.position(), lastCheckpoint, metadata);
         pools = new LongMap<>();
         chunkComplete = true;
-        lastCheckPoint = 0;
+        lastCheckpoint = 0;
     }
 
     private void writeMetadataEvent(ChunkHeader header) throws IOException {
@@ -190,7 +190,7 @@ public final class ChunkWriter implements Closeable {
         }
     }
 
-    private void write(CheckPointEvent event, long delta) throws IOException {
+    private void write(CheckpointEvent event, long delta) throws IOException {
         input.position(event.getStartPosition());
         long startPosition = output.position();
 
@@ -205,7 +205,7 @@ public final class ChunkWriter implements Closeable {
 
         // Write even if touched pools are zero, checkpoint works as sync point
         output.writeLong(event.touchedPools()); // Pool count
-        for (CheckPointPool pool : event.getPools()) {
+        for (CheckpointPool pool : event.getPools()) {
             if (pool.isTouched()) {
                 output.writeLong(pool.getTypeId());
                 output.writeLong(pool.getTouchedCount());
