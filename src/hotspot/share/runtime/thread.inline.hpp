@@ -139,7 +139,7 @@ inline void JavaThread::set_pending_unsafe_access_error() {
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {
-#if defined(PPC64) || defined (AARCH64)
+#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);

@@ -452,7 +452,7 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
 }
 
 static bool useHeavyMonitors() {
-#if defined(X86) || defined(AARCH64) || defined(PPC64)
+#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64)
   return UseHeavyMonitors;
 #else
   return false;

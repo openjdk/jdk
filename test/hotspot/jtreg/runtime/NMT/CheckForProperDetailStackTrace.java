@@ -133,7 +133,7 @@ public class CheckForProperDetailStackTrace {
             // It's ok for ARM not to have symbols, because it does not support NMT detail
             // when targeting thumb2. It's also ok for Windows not to have symbols, because
             // they are only available if the symbols file is included with the build.
-            if (Platform.isWindows() || Platform.isARM()) {
+            if (Platform.isWindows() || Platform.isARM() || Platform.isRISCV64()) {
                 return; // we are done
             }
             output.reportDiagnosticSummary();
