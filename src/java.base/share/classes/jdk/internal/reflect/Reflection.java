@@ -26,16 +26,10 @@
 package jdk.internal.reflect;
 
 import java.lang.reflect.*;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
