@@ -46,7 +46,7 @@
 /*
  * @test id=LargeHeap
  * @bug 8254790
- * @requires os.maxMemory > 5G
+ * @requires vm.bits == "64" & os.maxMemory > 5G
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
