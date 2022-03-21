@@ -28,7 +28,7 @@ FONTCONFIG_SRC_FILE := $(FONTCONFIG_DATA_DIR)/fontconfig.properties
 
 FONTCONFIG_DEST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 FONTCONFIG_OUT_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.properties.src
-FONTCONFIG_OUT_BIN_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.properties.bfc
+FONTCONFIG_OUT_BIN_FILE := $(FONTCONFIG_DEST_DIR)/fontconfig.bfc
 
 ifneq ($(findstring $(LOG_LEVEL), debug trace), )
   FONTCONFIG_VERBOSE_FLAG := -verbose
