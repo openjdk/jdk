@@ -198,7 +198,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     /*
      * The method could not be implemented due to CALayer restrictions.
-     * The exception enforce clients not to use it.
+     * The exception enforces clients not to use it.
      */
     @Override
     public boolean isUnderMouse() {
