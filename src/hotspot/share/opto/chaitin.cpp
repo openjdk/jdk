@@ -438,7 +438,7 @@ void PhaseChaitin::Register_Allocate() {
     stringStream ss;
     C->method()->print_short_name(&ss);
     if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-      _cfg._root_loop->dump_tree();
+//      _cfg._root_loop->dump_tree();
       CFGLoop* loop = _cfg._root_loop;
       CFGLoop* most_frequent = NULL;
       do {
@@ -449,13 +449,13 @@ void PhaseChaitin::Register_Allocate() {
           }
           loop = next;
         }
-        tty->print_cr("XXX %d %d", loop->id(), loop->depth());
+//        tty->print_cr("XXX %d %d", loop->id(), loop->depth());
         if (loop->_child == NULL && loop->depth() == 3) {
           GrowableArray<CFGElement*> blocks = loop->_members;
-          for (int i = 0; i < blocks.length(); ++i) {
-            Block* block = blocks.at(i)->as_Block();
-            block->dump();
-          }
+//          for (int i = 0; i < blocks.length(); ++i) {
+//            Block* block = blocks.at(i)->as_Block();
+//            block->dump();
+//          }
           if (most_frequent == NULL) {
             most_frequent = loop;
           } else if (loop->trip_count() > most_frequent->trip_count()) {
@@ -472,11 +472,11 @@ void PhaseChaitin::Register_Allocate() {
           if (loop == NULL) {
             break;
           }
-          tty->print_cr("XXX %d", loop->id());
+//          tty->print_cr("XXX %d", loop->id());
         }
       } while (loop != NULL);
       if (most_frequent != NULL) {
-        tty->print_cr("XXX most frequent: %d", most_frequent->id());
+//        tty->print_cr("XXX most frequent: %d", most_frequent->id());
         GrowableArray<CFGElement*> blocks = most_frequent->_members;
         Block_List region;
         for (int i = 0; i < blocks.length(); ++i) {

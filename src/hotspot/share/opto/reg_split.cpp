@@ -538,14 +538,14 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       if (PrintOpto && WizardMode && lrgs(bidx)._was_spilled1) {
         tty->print_cr("Warning, 2nd spill of L%d",bidx);
       }
-      if (C->method() != NULL && !C->is_osr_compilation()) {
-        ResourceMark rm;
-        stringStream ss;
-        C->method()->print_short_name(&ss);
-        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-          tty->print("region = %d - %d ", region, bidx); lrgs(bidx).dump();
-        }
-      }
+//      if (C->method() != NULL && !C->is_osr_compilation()) {
+//        ResourceMark rm;
+//        stringStream ss;
+//        C->method()->print_short_name(&ss);
+//        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+//          tty->print("region = %d - %d ", region, bidx); lrgs(bidx).dump();
+//        }
+//      }
     }
   }
 
@@ -615,7 +615,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       // rematerialized live ranges.  This happens a lot to constants
       // with long live ranges.
       if( lrgs(lidx).is_singledef() &&
-          lrgs(lidx)._def->rematerialize() ) {
+          lrgs(lidx)._def->rematerialize()/* && b->_region <= region*/) {
         // reset the Reaches & UP entries
         Reachblock[slidx] = lrgs(lidx)._def;
         UPblock[slidx] = true;
@@ -720,7 +720,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         UPblock[slidx] = true;  // Assume new DEF is UP
         // If entering a high-pressure area with no immediate use,
         // assume Phi is DOWN
-        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) )
+        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) && b->_region <= region)
           UPblock[slidx] = false;
         // If we are not split up/down and all inputs are down, then we
         // are down
@@ -838,7 +838,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             // set location to insert spills at
             // SPLIT DOWN HERE - NO CISC SPILL
             if( is_high_pressure( b, &lrgs(lidx), insidx ) &&
-                !n1->rematerialize() ) {
+                !n1->rematerialize() && b->_region <= region) {
               // If there is already a valid stack definition available, use it
               if( debug_defs[slidx] != NULL ) {
                 Reachblock[slidx] = debug_defs[slidx];
@@ -953,7 +953,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             Node *def = Reachblock[slidx];
             assert( def != NULL, "Using Undefined Value in Split()\n");
 
-            if (b->_region > region) {
+            if (b->_region > region && !def->rematerialize()) {
               if (def != n->in(inpidx)) {
                 const RegMask &umask = n->in_RegMask(inpidx);
                 const RegMask &dmask = def->out_RegMask();
@@ -988,9 +988,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             // of store/load
             if( def->rematerialize() ) {
               int old_size = b->number_of_nodes();
-              assert(lrgs(lidxs.at(slidx))._region >= region, "");
-              assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
-              assert(b->_region == region, "");
+//              assert(lrgs(lidxs.at(slidx))._region >= region, "");
+//              assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
+//              assert(b->_region == region, "");
               def = split_Rematerialize( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
               if( !def ) return 0; // Bail out
               insidx += b->number_of_nodes()-old_size;
@@ -1384,9 +1384,19 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
         if (!defup || true) {
           for (uint i = 0; i < b->_num_succs; ++i) {
-            if (b->_succs[i]->_region > b->_region && b->_succs[i]->_region > region && lrgs(defidx)._region > region) {
-              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
-//              ShouldNotReachHere();
+            if (b->_succs[i]->_region > b->_region && b->_succs[i]->_region > region && lrgs(defidx)._region > region && (!defup/* || Reachblock[slidx]->rematerialize()*/)) {
+//              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
+
+              Node *spill = get_spillcopy_wide(MachSpillCopyNode::MemToReg, Reachblock[slidx], NULL, 0);
+              if( !spill ) return -1;        // Bailed out
+              // Insert SpillCopy before the USE, which uses the reaching DEF as
+              // its input, and defs a new live range, which is used by this node.
+              insert_proj( b, b->end_idx()-1, spill, maxlrg);
+              Reachblock[slidx] = spill;
+              UPblock[slidx] = true;
+              maxlrg++;
+
+              //              ShouldNotReachHere();
             }
           }
         }
@@ -1425,7 +1435,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
     int phi_up = !!UP_entry[slidx]->test(b->_pre_order);
 
     // Force down if double-spilling live range
-    if( lrgs(lidx)._was_spilled1 )
+    if( lrgs(lidx)._was_spilled1 && b->_region == region)
       phi_up = false;
 
     // When splitting a Phi we an split it normal or "inverted".
@@ -1456,8 +1466,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                _lrg_map.find(pred->get_node(insert - 1)) >= lrgs_before_phi_split) {
           insert--;
         }
-        assert(lrgs(slidx)._region == region, "");
-        assert(!lrgs(slidx).alive() || lrgs(slidx)._min_region <= region, "");
+        assert(lrgs(lidxs.at(slidx))._region >= region, "");
+        assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
         assert(pred->_region == region, "");
         def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
         if (!def) {
@@ -1469,8 +1479,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       // Grab the UP/DOWN sense for the input
       u1 = UP[pidx][slidx];
       if( u1 != (phi_up != 0)) {
-        assert(lrgs(slidx)._region >= region, "");
-        assert(!lrgs(slidx).alive() || lrgs(slidx)._min_region <= region, "");
+        assert(lrgs(lidxs.at(slidx))._region >= region, "");
+        assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
         assert(b->_region == region, "");
         int delta = split_USE(MachSpillCopyNode::PhiLocationDifferToInputLocation, def, b, phi, i, maxlrg, !u1, false, splits,slidx);
         // If it wasn't split bail

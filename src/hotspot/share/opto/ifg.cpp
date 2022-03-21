@@ -753,10 +753,10 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG &lrg, 
       must_spill++;
       interfering_lrg._must_spill = 1;
       assert(interfering_lrg._region >= region, "");
-      if (interfering_lrg._region > region) {
-        tty->print("---> %d ", l); interfering_lrg.dump(); tty->cr();
-        interfering_lrg.set_prev_reg(interfering_lrg.reg());
-      }
+//      if (interfering_lrg._region > region) {
+//        tty->print("---> %d ", l); interfering_lrg.dump(); tty->cr();
+//        interfering_lrg.set_prev_reg(interfering_lrg.reg());
+//      }
       interfering_lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
     }
     l = elements.next();

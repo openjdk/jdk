@@ -754,6 +754,11 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 
   // ---- THE COMBINED LRG IS COLORABLE ----
 
+  if (!(lrgs(lr1).num_regs() == lrgs(lr2).num_regs())) {
+    tty->print_cr("XXX %d %d %d %d", lr1, lr2, lrgs(lr1).num_regs(), lrgs(lr2).num_regs());
+    lrgs(lr1).dump();
+    lrgs(lr2).dump();
+  }
   // YEAH - Now coalesce this copy away
   assert( lrgs(lr1).num_regs() == lrgs(lr2).num_regs(),   "" );
 
