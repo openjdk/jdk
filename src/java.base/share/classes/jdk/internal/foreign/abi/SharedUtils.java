@@ -710,7 +710,7 @@ public class SharedUtils {
         } else if (type == double.class) {
             ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
         } else if (type == boolean.class) {
-            ptr.set(JAVA_BOOLEAN, 0, (boolean) o);
+            ptr.set(JAVA_LONG_UNALIGNED, 0, (long) o);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }

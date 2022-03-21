@@ -68,27 +68,6 @@ public:
   }
 };
 
-/*
- * To store problematic threads during an handshake, we need an atomic data structure.
- * This is because the handshake closure can run concurrently either on the thread that
- * is the target of the handshake operation, or on the thread that is performing the
- * handshake (e.g. if the target thread is blocked, or in native state).
- */
-class LockFreeStackThreadsElement : public CHeapObj<mtInternal> {
-  typedef LockFreeStackThreadsElement Element;
-
-  Element* volatile _next;
-  static Element* volatile* next_ptr(Element& e) { return &e._next; }
-
-public:
-  JavaThread* _thread;
-  LockFreeStackThreadsElement(JavaThread* thread) : _next(nullptr), _thread(thread) {}
-  typedef LockFreeStack<Element, &next_ptr> ThreadStack;
-};
-
-typedef LockFreeStackThreadsElement::ThreadStack ThreadStack;
-typedef LockFreeStackThreadsElement ThreadStackElement;
-
 class CloseScopedMemoryClosure : public HandshakeClosure {
   jobject _deopt;
 
