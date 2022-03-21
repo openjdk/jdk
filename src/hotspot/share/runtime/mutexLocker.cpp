@@ -54,7 +54,9 @@ Monitor* JNICritical_lock             = NULL;
 Mutex*   JvmtiThreadState_lock        = NULL;
 Monitor* EscapeBarrier_lock           = NULL;
 Monitor* Heap_lock                    = NULL;
-Mutex*   ExpandHeap_lock              = NULL;
+#ifdef INCLUDE_PARALLELGC
+Mutex*   PSOldGenExpand_lock      = NULL;
+#endif
 Mutex*   AdapterHandlerLibrary_lock   = NULL;
 Mutex*   SignatureHandlerLibrary_lock = NULL;
 Mutex*   VtableStubs_lock             = NULL;
@@ -358,7 +360,11 @@ void mutex_init() {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
   }
   defl(CompileTaskAlloc_lock       , PaddedMutex ,  MethodCompileQueue_lock);
-  defl(ExpandHeap_lock             , PaddedMutex ,  Heap_lock, true);
+#ifdef INCLUDE_PARALLELGC
+  if (UseParallelGC) {
+    defl(PSOldGenExpand_lock   , PaddedMutex , Heap_lock, true);
+  }
+#endif
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -385,6 +385,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
 
     // load issuing PC (the return address for this stub) into r3
     __ ldr(exception_pc, Address(rfp, 1*BytesPerWord));
+    __ authenticate_return_address(exception_pc, rscratch1);
 
     // make sure that the vm_results are cleared (may be unnecessary)
     __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
@@ -433,6 +434,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ str(exception_pc, Address(rthread, JavaThread::exception_pc_offset()));
 
   // patch throwing pc into return address (has bci & oop map)
+  __ protect_return_address(exception_pc, rscratch1);
   __ str(exception_pc, Address(rfp, 1*BytesPerWord));
 
   // compute the exception handler.
@@ -448,6 +450,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ invalidate_registers(false, true, true, true, true, true);
 
   // patch the return address, this stub will directly return to the exception handler
+  __ protect_return_address(r0, rscratch1);
   __ str(r0, Address(rfp, 1*BytesPerWord));
 
   switch (id) {
@@ -496,10 +499,12 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // Save our return address because
   // exception_handler_for_return_address will destroy it.  We also
   // save exception_oop
+  __ mov(r3, lr);
+  __ protect_return_address();
   __ stp(lr, exception_oop, Address(__ pre(sp, -2 * wordSize)));
 
   // search the exception handler address of the caller (using the return address)
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, lr);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, r3);
   // r0: exception handler address of the caller
 
   // Only R0 is valid at this time; all other registers have been
@@ -512,6 +517,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // get throwing pc (= return address).
   // lr has been destroyed by the call
   __ ldp(lr, exception_oop, Address(__ post(sp, 2 * wordSize)));
+  __ authenticate_return_address();
   __ mov(r3, lr);
 
   __ verify_not_null_oop(exception_oop);

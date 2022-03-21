@@ -151,7 +151,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
   }
 }
 
-inline void G1FullGCMarker::drain_oop_stack() {
+inline void G1FullGCMarker::publish_and_drain_oop_tasks() {
   oop obj;
   while (_oop_stack.pop_overflow(obj)) {
     if (!_oop_stack.try_push_to_taskqueue(obj)) {
@@ -165,7 +165,7 @@ inline void G1FullGCMarker::drain_oop_stack() {
   }
 }
 
-inline bool G1FullGCMarker::transfer_objArray_overflow_stack(ObjArrayTask& task) {
+inline bool G1FullGCMarker::publish_or_pop_objarray_tasks(ObjArrayTask& task) {
   // It is desirable to move as much as possible work from the overflow queue to
   // the shared queue as quickly as possible.
   while (_objarray_stack.pop_overflow(task)) {
@@ -176,15 +176,15 @@ inline bool G1FullGCMarker::transfer_objArray_overflow_stack(ObjArrayTask& task)
   return false;
 }
 
-void G1FullGCMarker::drain_stack() {
+void G1FullGCMarker::follow_marking_stacks() {
   do {
     // First, drain regular oop stack.
-    drain_oop_stack();
+    publish_and_drain_oop_tasks();
 
     // Then process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    if (transfer_objArray_overflow_stack(task) ||
-      _objarray_stack.pop_local(task)) {
+    if (publish_or_pop_objarray_tasks(task) ||
+        _objarray_stack.pop_local(task)) {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());

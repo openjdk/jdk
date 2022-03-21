@@ -28,7 +28,7 @@ import javax.sound.sampled.LineUnavailableException;
 
 /**
  * @test
- * @bug 8266421
+ * @bug 8266421 8269091
  * @summary Tests that Clip.setFramePosition/setMicrosecondPosition do not hang.
  */
 public final class SetPositionHang implements Runnable {

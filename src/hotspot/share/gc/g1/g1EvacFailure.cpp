@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -94,7 +93,8 @@ public:
     size_t obj_size = obj->size();
 
     _marked_words += obj_size;
-    PreservedMarks::init_forwarded_mark(obj);
+    // Reset the markWord
+    obj->init_mark();
 
     HeapWord* obj_end = obj_addr + obj_size;
     _last_forwarded_object_end = obj_end;

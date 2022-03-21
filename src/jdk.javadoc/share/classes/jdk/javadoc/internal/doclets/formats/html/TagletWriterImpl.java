@@ -76,6 +76,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
 
 /**
  * The taglet writer that writes HTML.
@@ -435,12 +436,18 @@ public class TagletWriterImpl extends TagletWriter {
                     int idx = line.indexOf(strippedLine);
                     assert idx >= 0; // because the stripped line is a substring of the line being stripped
                     Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
-                    // If the leading whitespace is not excluded from the link,
-                    // browsers might exhibit unwanted behavior. For example, a
-                    // browser might display hand-click cursor while user hovers
-                    // over that whitespace portion of the line; or use
-                    // underline decoration.
-                    c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    //disable preview tagging inside the snippets:
+                    PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
+                    try {
+                        // If the leading whitespace is not excluded from the link,
+                        // browsers might exhibit unwanted behavior. For example, a
+                        // browser might display hand-click cursor while user hovers
+                        // over that whitespace portion of the line; or use
+                        // underline decoration.
+                        c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    } finally {
+                        utils.setPreviewFlagProvider(prevPreviewProvider);
+                    }
                     // We don't care about trailing whitespace.
                 } else {
                     c = HtmlTree.SPAN(Text.of(text));

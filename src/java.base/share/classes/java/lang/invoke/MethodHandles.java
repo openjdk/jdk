@@ -109,14 +109,25 @@ public class MethodHandles {
      * <p>
      * This method is caller sensitive, which means that it may return different
      * values to different callers.
+     * In cases where {@code MethodHandles.lookup} is called from a context where
+     * there is no caller frame on the stack (e.g. when called directly
+     * from a JNI attached thread), {@code IllegalCallerException} is thrown.
+     * To obtain a {@link Lookup lookup object} in such a context, use an auxiliary class that will
+     * implicitly be identified as the caller, or use {@link MethodHandles#publicLookup()}
+     * to obtain a low-privileged lookup instead.
      * @return a lookup object for the caller of this method, with
      * {@linkplain Lookup#ORIGINAL original} and
      * {@linkplain Lookup#hasFullPrivilegeAccess() full privilege access}.
+     * @throws IllegalCallerException if there is no caller frame on the stack.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
     public static Lookup lookup() {
-        return new Lookup(Reflection.getCallerClass());
+        final Class<?> c = Reflection.getCallerClass();
+        if (c == null) {
+            throw new IllegalCallerException("no caller frame");
+        }
+        return new Lookup(c);
     }
 
     /**
@@ -1873,7 +1884,7 @@ public class MethodHandles {
              * as a normal class or interface has with its own defining loader.
              * This means that the hidden class may be unloaded if and only if
              * its defining loader is not reachable and thus may be reclaimed
-             * by a garbage collector (JLS 12.7).
+             * by a garbage collector (JLS {@jls 12.7}).
              *
              * <p> By default, a hidden class or interface may be unloaded
              * even if the class loader that is marked as its defining loader is
@@ -2013,7 +2024,7 @@ public class MethodHandles {
          * that {@linkplain Class#getClassLoader() defined it}.
          * This means that a class created by a class loader may be unloaded if and
          * only if its defining loader is not reachable and thus may be reclaimed
-         * by a garbage collector (JLS 12.7).
+         * by a garbage collector (JLS {@jls 12.7}).
          *
          * By default, however, a hidden class or interface may be unloaded even if
          * the class loader that is marked as its defining loader is
@@ -2748,7 +2759,7 @@ assertEquals("[x, y, z]", pb.command().toString());
         /**
          * Looks up a class by name from the lookup context defined by this {@code Lookup} object,
          * <a href="MethodHandles.Lookup.html#equiv">as if resolved</a> by an {@code ldc} instruction.
-         * Such a resolution, as specified in JVMS 5.4.3.1 section, attempts to locate and load the class,
+         * Such a resolution, as specified in JVMS {@jvms 5.4.3.1}, attempts to locate and load the class,
          * and then determines whether the class is accessible to this lookup object.
          * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
@@ -4746,15 +4757,15 @@ return invoker;
      *     the boolean is converted to a byte value, 1 for true, 0 for false.
      *     (This treatment follows the usage of the bytecode verifier.)
      * <li>If <em>T1</em> is boolean and <em>T0</em> is another primitive,
-     *     <em>T0</em> is converted to byte via Java casting conversion (JLS 5.5),
+     *     <em>T0</em> is converted to byte via Java casting conversion (JLS {@jls 5.5}),
      *     and the low order bit of the result is tested, as if by {@code (x & 1) != 0}.
      * <li>If <em>T0</em> and <em>T1</em> are primitives other than boolean,
-     *     then a Java casting conversion (JLS 5.5) is applied.
+     *     then a Java casting conversion (JLS {@jls 5.5}) is applied.
      *     (Specifically, <em>T0</em> will convert to <em>T1</em> by
      *     widening and/or narrowing.)
      * <li>If <em>T0</em> is a reference and <em>T1</em> a primitive, an unboxing
      *     conversion will be applied at runtime, possibly followed
-     *     by a Java casting conversion (JLS 5.5) on the primitive value,
+     *     by a Java casting conversion (JLS {@jls 5.5}) on the primitive value,
      *     possibly followed by a conversion from byte to boolean by testing
      *     the low-order bit.
      * <li>If <em>T0</em> is a reference and <em>T1</em> a primitive,

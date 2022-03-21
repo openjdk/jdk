@@ -21,6 +21,8 @@
  * questions.
  */
 
+package gc.g1;
+
 /*
  * @test TestG1SkipCompaction
  * @summary Test for JDK-8262068 Improve G1 Full GC by skipping compaction
@@ -29,7 +31,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -Xms256m -Xmx256m TestG1SkipCompaction
+ * @run main/othervm -Xms256m -Xmx256m gc.g1.TestG1SkipCompaction
  */
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

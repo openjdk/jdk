@@ -144,6 +144,8 @@ public:
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister dst, XMMRegister src, XMMRegister xtmp, Register tmp, bool novlbwdq, int vlen_enc);
 
+  void load_vector(XMMRegister dst, Address src, int vlen_in_bytes);
+  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = rscratch1);
   void load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
@@ -269,11 +271,10 @@ public:
                       XMMRegister vec1, int ae, KRegister mask = knoreg);
 
   // Search for Non-ASCII character (Negative byte value) in a byte array,
-  // return true if it has any and false otherwise.
-  void has_negatives(Register ary1, Register len,
-                     Register result, Register tmp1,
-                     XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
-
+  // return index of the first such character, otherwise len.
+  void count_positives(Register ary1, Register len,
+                       Register result, Register tmp1,
+                       XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
   // Compare char[] or byte[] arrays.
   void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                      Register limit, Register result, Register chr,
@@ -306,10 +307,21 @@ public:
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                            Register scratch, int vec_enc);
 
+  void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                            BasicType from_elem_bt, BasicType to_elem_bt);
+
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                   bool merge, BasicType bt, int vlen_enc);
 
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
                   bool merge, BasicType bt, int vlen_enc);
+
+  void vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                           XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                           int vec_enc);
+
+  void vector_popcount_long(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
+                            int vec_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP
