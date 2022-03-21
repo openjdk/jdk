@@ -1032,6 +1032,12 @@ public final class String
     /* package-private */
     static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
         int count = StringCoding.countPositives(sa, sp, len);
+        while (count < len) {
+            if (sa[sp + count] < 0) {
+                break;
+            }
+            count++;
+        }
         StringLatin1.inflate(sa, sp, da, dp, count);
         return count;
     }
