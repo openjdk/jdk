@@ -50,7 +50,7 @@ endif
 X11WRAPPERS_OUTPUT := $(SUPPORT_OUTPUTDIR)/x11wrappers
 GENERATOR_SOURCE_FILE := $(X11WRAPPERS_OUTPUT)/src/data_generator.c
 
-GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/src/java.desktop/share/data/x11wrappergen
+GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/src/java.desktop/unix/data/x11wrappergen
 WRAPPER_OUTPUT_FILE := $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(BITS).txt
 
 BITS := $(OPENJDK_TARGET_CPU_BITS)
