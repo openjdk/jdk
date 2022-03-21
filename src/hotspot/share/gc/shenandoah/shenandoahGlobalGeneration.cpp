@@ -67,7 +67,6 @@ void ShenandoahGlobalGeneration::set_concurrent_mark_in_progress(bool in_progres
   }
 
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  heap->set_concurrent_old_mark_in_progress(in_progress);
 }
 
 bool ShenandoahGlobalGeneration::contains(ShenandoahHeapRegion* region) const {
