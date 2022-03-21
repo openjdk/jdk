@@ -548,6 +548,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      *         conversion
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int toUnsignedInt(byte x) {
         return ((int) x) & 0xff;
     }
@@ -568,6 +569,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      *         conversion
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long toUnsignedLong(byte x) {
         return ((long) x) & 0xffL;
     }

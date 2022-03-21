@@ -1553,6 +1553,11 @@
   declare_c2_type(ConvI2DNode, Node)                                      \
   declare_c2_type(ConvI2FNode, Node)                                      \
   declare_c2_type(ConvI2LNode, TypeNode)                                  \
+  declare_c2_type(ConvI2ULNode, TypeNode)                                 \
+  declare_c2_type(ConvS2ULNode, TypeNode)                                 \
+  declare_c2_type(ConvB2ULNode, TypeNode)                                 \
+  declare_c2_type(ConvS2UINode, TypeNode)                                 \
+  declare_c2_type(ConvB2UINode, TypeNode)                                 \
   declare_c2_type(ConvL2DNode, Node)                                      \
   declare_c2_type(ConvL2FNode, Node)                                      \
   declare_c2_type(ConvL2INode, Node)                                      \

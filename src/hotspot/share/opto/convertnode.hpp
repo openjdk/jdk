@@ -154,6 +154,77 @@ class ConvI2LNode : public TypeNode {
   virtual uint  ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------ConvI2ULNode------------------------------------
+// Convert integer to unsigned long
+class ConvI2ULNode : public TypeNode
+{
+public:
+  ConvI2ULNode(Node *in1, const TypeLong *t = TypeLong::UINT)
+      : TypeNode(t, 2)
+  {
+    init_req(1, in1);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------ConvS2ULNode------------------------------------
+// Convert short to unsigned long
+class ConvS2ULNode : public TypeNode
+{
+public:
+  ConvS2ULNode(Node *in1, const TypeLong *t = TypeLong::USHORT)
+      : TypeNode(t, 2)
+  {
+    init_req(1, in1);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------ConvS2UINode------------------------------------
+// Convert short to unsigned int
+class ConvS2UINode : public TypeNode
+{
+public:
+  ConvS2UINode(Node *in1, const TypeInt *t = TypeInt::USHORT)
+      : TypeNode(t, 2)
+  {
+    init_req(1, in1);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------ConvB2ULNode------------------------------------
+// Convert byte to unsigned long
+class ConvB2ULNode : public TypeNode
+{
+public:
+  ConvB2ULNode(Node *in1, const TypeLong *t = TypeLong::UBYTE)
+      : TypeNode(t, 2)
+  {
+    init_req(1, in1);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------ConvB2UINode------------------------------------
+// Convert byte to unsigned int
+class ConvB2UINode : public TypeNode
+{
+public:
+  ConvB2UINode(Node *in1, const TypeInt *t = TypeInt::UBYTE)
+      : TypeNode(t, 2)
+  {
+    init_req(1, in1);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+
 //------------------------------ConvL2DNode------------------------------------
 // Convert Long to Double
 class ConvL2DNode : public Node {

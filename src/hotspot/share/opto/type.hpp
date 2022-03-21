@@ -624,6 +624,7 @@ public:
   static const TypeInt *UBYTE;
   static const TypeInt *CHAR;
   static const TypeInt *SHORT;
+  static const TypeInt *USHORT;
   static const TypeInt *POS;
   static const TypeInt *POS1;
   static const TypeInt *INT;
@@ -687,6 +688,8 @@ public:
   static const TypeLong *INT;    // 32-bit subrange [min_jint..max_jint]
   static const TypeLong *UINT;   // 32-bit unsigned [0..max_juint]
   static const TypeLong *TYPE_DOMAIN; // alias for TypeLong::LONG
+  static const TypeLong *USHORT; // 16-bit unsigned [0..max_jushort]
+  static const TypeLong *UBYTE;  // 8-bit unsigned [0..max_jushort]
 
   // static convenience methods.
   static const TypeLong *as_self(const Type *t) { return t->is_long(); }

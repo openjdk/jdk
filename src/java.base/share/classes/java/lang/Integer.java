@@ -1520,6 +1520,7 @@ public final class Integer extends Number
      *         conversion
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long toUnsignedLong(int x) {
         return ((long) x) & 0xffffffffL;
     }

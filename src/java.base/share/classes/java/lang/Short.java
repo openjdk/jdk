@@ -583,6 +583,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      *         conversion
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int toUnsignedInt(short x) {
         return ((int) x) & 0xffff;
     }
@@ -603,6 +604,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      *         conversion
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long toUnsignedLong(short x) {
         return ((long) x) & 0xffffL;
     }

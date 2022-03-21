@@ -10864,6 +10864,130 @@ instruct convI2L_reg_reg_zex(rRegL dst, rRegI src, immL_32bits mask)
   ins_pipe(ialu_reg_reg);
 %}
 
+// Convert int to unsigned long
+instruct convI2UL_reg_reg(rRegL dst, rRegI src)
+%{
+  match(Set dst (ConvI2UL src));
+  //ins_cost(125);
+  format %{ "movl  $dst, $src\t# i2ul" %}
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Load int as unsigned long
+instruct convI2UL_reg_mem(rRegL dst, memory src)
+%{
+  match(Set dst (ConvI2UL (LoadI src)));
+
+  format %{ "movl    $dst, $src\t# load i2ul \n\t" %}
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Convert short to unsigned long
+instruct convS2UL_reg_reg(rRegL dst, rRegI src)
+%{
+  match(Set dst (ConvS2UL src));
+
+  //ins_cost(125);
+  format %{ "movzwq  $dst, $src\t# s2ul" %}
+  ins_encode %{
+    __ movzwq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Convert short to unsigned int
+instruct convS2UI_reg_reg(rRegI dst, rRegI src)
+%{
+  match(Set dst (ConvS2UI src));
+
+  //ins_cost(125);
+  format %{ "movzwl  $dst, $src\t# s2ui" %}
+  ins_encode %{
+    __ movzwl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Load short as unsigned long
+instruct convS2UL_reg_mem_zex(rRegL dst, memory src)
+%{
+  match(Set dst (ConvS2UL (LoadS src)));
+
+  format %{ "movzwq    $dst, $src\t# load s2ul \n\t" %}
+  ins_encode %{
+    __ movzwq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load short as unsigned int
+instruct convS2UI_reg_mem_zex(rRegI dst, memory src)
+%{
+  match(Set dst (ConvS2UI (LoadS src)));
+
+  format %{ "movzwl    $dst, $src\t# load s2ui \n\t" %}
+  ins_encode %{
+    __ movzwl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Convert byte to unsigned long
+instruct convB2UL_reg_reg(rRegL dst, rRegI src)
+%{
+  match(Set dst (ConvB2UL src));
+
+  //ins_cost(125);
+  format %{ "movzbq  $dst, $src\t# b2ul" %}
+  ins_encode %{
+    __ movzbq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Convert byte to unsigned int
+instruct convB2UI_reg_reg(rRegI dst, rRegI src)
+%{
+  match(Set dst (ConvB2UI src));
+
+  //ins_cost(125);
+  format %{ "movzbl  $dst, $src\t# b2ui" %}
+  ins_encode %{
+    __ movzbl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Load byte as unsigned long
+instruct convB2UL_reg_mem_zex(rRegL dst, memory src)
+%{
+  match(Set dst (ConvB2UL (LoadB src)));
+
+  format %{ "movzbq    $dst, $src\t# load b2ul \n\t" %}
+  ins_encode %{
+    __ movzbq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load byte as unsigned int
+instruct convB2UI_reg_mem_zex(rRegI dst, memory src)
+%{
+  match(Set dst (ConvB2UI (LoadB src)));
+
+  format %{ "movzbl    $dst, $src\t# load b2ui \n\t" %}
+  ins_encode %{
+    __ movzbl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Zero-extend convert int to long
 instruct convI2L_reg_mem_zex(rRegL dst, memory src, immL_32bits mask)
 %{

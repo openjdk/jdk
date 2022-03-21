@@ -267,7 +267,21 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_reverseBytes_l:
     if (!Matcher::match_rule_supported(Op_ReverseBytesL)) return false;
     break;
-
+  case vmIntrinsics::_toUnsignedLong_i:
+    if (!Matcher::match_rule_supported(Op_ConvI2UL)) return false;
+    break;
+  case vmIntrinsics::_toUnsignedLong_s:
+    if (!Matcher::match_rule_supported(Op_ConvS2UL)) return false;
+    break;
+  case vmIntrinsics::_toUnsignedLong_b:
+    if (!Matcher::match_rule_supported(Op_ConvB2UL)) return false;
+    break;
+  case vmIntrinsics::_toUnsignedInt_s:
+    if (!Matcher::match_rule_supported(Op_ConvS2UI)) return false;
+    break;
+  case vmIntrinsics::_toUnsignedInt_b:
+    if (!Matcher::match_rule_supported(Op_ConvB2UI)) return false;
+    break;
   /* CompareAndSet, Object: */
   case vmIntrinsics::_compareAndSetReference:
 #ifdef _LP64

@@ -512,6 +512,11 @@
   template(float_float_signature,                     "(F)F")                                     \
   template(int_float_signature,                       "(I)F")                                     \
   template(long_int_signature,                        "(J)I")                                     \
+  template(int_long_signature,                        "(I)J")                                     \
+  template(short_long_signature,                      "(S)J")                                     \
+  template(short_int_signature,                       "(S)I")                                     \
+  template(byte_long_signature,                       "(B)J")                                     \
+  template(byte_int_signature,                        "(B)I")                                     \
   template(long_long_signature,                       "(J)J")                                     \
   template(long_double_signature,                     "(J)D")                                     \
   template(long_void_signature,                       "(J)V")                                     \

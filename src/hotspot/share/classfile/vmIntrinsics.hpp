@@ -222,6 +222,16 @@ class methodHandle;
   do_intrinsic(_bitCount_i,               java_lang_Integer,      bitCount_name,            int_int_signature,   F_S)   \
   do_intrinsic(_bitCount_l,               java_lang_Long,         bitCount_name,            long_int_signature,  F_S)   \
                                                                                                                         \
+  do_intrinsic(_toUnsignedLong_i,         java_lang_Integer,      toUnsignedLong_name,      int_long_signature,  F_S)   \
+   do_name(     toUnsignedLong_name,                               "toUnsignedLong")                                    \
+  do_intrinsic(_toUnsignedLong_s,         java_lang_Short,        toUnsignedLong_name,      short_long_signature, F_S)  \
+  do_intrinsic(_toUnsignedLong_b,         java_lang_Byte,         toUnsignedLong_name,      byte_long_signature,  F_S)  \
+   /*  (symbol toUnsignedLong_name defined above) */                                                                    \
+  do_intrinsic(_toUnsignedInt_s,          java_lang_Short,        toUnsignedInt_name,       short_int_signature,  F_S)  \
+   do_name(     toUnsignedInt_name,                               "toUnsignedInt")                                      \
+  do_intrinsic(_toUnsignedInt_b,          java_lang_Byte,         toUnsignedInt_name,       byte_int_signature,  F_S)   \
+   /*  (symbol toUnsignedInt_name defined above) */                                                                     \
+                                                                                                                        \
   do_intrinsic(_reverseBytes_i,           java_lang_Integer,      reverseBytes_name,        int_int_signature,   F_S)   \
    do_name(     reverseBytes_name,                               "reverseBytes")                                        \
   do_intrinsic(_reverseBytes_l,           java_lang_Long,         reverseBytes_name,        long_long_signature, F_S)   \

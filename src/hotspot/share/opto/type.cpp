@@ -475,6 +475,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin); // Unsigned Bytes
   TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin); // Java chars
   TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin); // Java shorts
+  TypeInt::USHORT  = TypeInt::make(0,65535,      WidenMin); // Unsigned shorts
   TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin); // Non-neg values
   TypeInt::POS1    = TypeInt::make(1,max_jint,   WidenMin); // Positive values
   TypeInt::INT     = TypeInt::make(min_jint,max_jint, WidenMax); // 32-bit integers
@@ -498,6 +499,8 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::LONG    = TypeLong::make(min_jlong,max_jlong,WidenMax); // 64-bit integers
   TypeLong::INT     = TypeLong::make((jlong)min_jint,(jlong)max_jint,WidenMin);
   TypeLong::UINT    = TypeLong::make(0,(jlong)max_juint,WidenMin);
+  TypeLong::USHORT  = TypeLong::make(0,(jlong)max_jushort,WidenMin);
+  TypeLong::UBYTE   = TypeLong::make(0,(jlong)max_jubyte,WidenMin);
   TypeLong::TYPE_DOMAIN  = TypeLong::LONG;
 
   const Type **fboth =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
@@ -1455,6 +1458,7 @@ const TypeInt *TypeInt::BYTE;   // Bytes, -128 to 127
 const TypeInt *TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
 const TypeInt *TypeInt::CHAR;   // Java chars, 0-65535
 const TypeInt *TypeInt::SHORT;  // Java shorts, -32768-32767
+const TypeInt *TypeInt::USHORT; // Unsigned shorts, 0-65535
 const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
 const TypeInt *TypeInt::POS1;   // Positive 32-bit integers
 const TypeInt *TypeInt::INT;    // 32-bit integers
@@ -1721,6 +1725,8 @@ const TypeLong *TypeLong::POS;  // >=0
 const TypeLong *TypeLong::LONG; // 64-bit integers
 const TypeLong *TypeLong::INT;  // 32-bit subrange
 const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
+const TypeLong *TypeLong::USHORT; // 16-bit unsigned subrange
+const TypeLong *TypeLong::UBYTE; // 8-bit unsigned subrange
 const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 //------------------------------TypeLong---------------------------------------

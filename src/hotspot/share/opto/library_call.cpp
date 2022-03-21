@@ -520,6 +520,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_numberOfTrailingZeros_l:
   case vmIntrinsics::_bitCount_i:
   case vmIntrinsics::_bitCount_l:
+  case vmIntrinsics::_toUnsignedLong_i:
+  case vmIntrinsics::_toUnsignedLong_s:
+  case vmIntrinsics::_toUnsignedLong_b:
+  case vmIntrinsics::_toUnsignedInt_s:
+  case vmIntrinsics::_toUnsignedInt_b:
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
   case vmIntrinsics::_reverseBytes_s:
@@ -2160,6 +2165,8 @@ Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType t
 // inline short     Short.reverseBytes(short)
 // inline int     Integer.reverseBytes(int)
 // inline long       Long.reverseBytes(long)
+
+// inline long Integer.toUnsignedLong(int)
 bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   Node* arg = argument(0);
   Node* n = NULL;
@@ -2174,6 +2181,11 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
+  case vmIntrinsics::_toUnsignedLong_i:         n = new ConvI2ULNode(           arg);  break;
+  case vmIntrinsics::_toUnsignedLong_s:         n = new ConvS2ULNode(           arg);  break;
+  case vmIntrinsics::_toUnsignedLong_b:         n = new ConvB2ULNode(           arg);  break;
+  case vmIntrinsics::_toUnsignedInt_s:          n = new ConvS2UINode(           arg);  break;
+  case vmIntrinsics::_toUnsignedInt_b:          n = new ConvB2UINode(           arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
