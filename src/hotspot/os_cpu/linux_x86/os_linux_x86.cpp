@@ -474,10 +474,13 @@ juint os::cpu_microcode_revision() {
       }
       fclose(fp);
     }
+    if (result != 0) {
+      return result;
+    }
   }
 
   // Attempt 2 (slower): Read the microcode version off the procfs.
-  if (result == 0) {
+  {
     FILE *fp = os::fopen("/proc/cpuinfo", "r");
     if (fp) {
       while (!feof(fp)) {
@@ -491,8 +494,12 @@ juint os::cpu_microcode_revision() {
       }
       fclose(fp);
     }
+    if (result != 0) {
+      return result;
+    }
   }
 
+  // No dice. Return the default.
   return result;
 }
 
