@@ -1180,7 +1180,8 @@ bool is_pointer_bad(intptr_t* ptr) {
 
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
-// Returns false if this is the cas
+// Returns true if this is not the case, i.e. the frame is possibly
+// the first C frame on the stack.
 bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
