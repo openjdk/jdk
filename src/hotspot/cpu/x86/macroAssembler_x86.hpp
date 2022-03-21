@@ -26,6 +26,7 @@
 #define CPU_X86_MACROASSEMBLER_X86_HPP
 
 #include "asm/assembler.hpp"
+#include "asm/register.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
@@ -520,6 +521,35 @@ class MacroAssembler: public Assembler {
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
+
+private:
+  // General purpose and XMM registers potentially clobbered by native code; there
+  // is no need for FPU or AVX opmask related methods because C1/interpreter
+  // - we save/restore FPU state as a whole always
+  // - do not care about AVX-512 opmask
+  static RegSet call_clobbered_gp_registers();
+  static XMMRegSet call_clobbered_xmm_registers();
+
+  void push_set(XMMRegSet set, int offset);
+  void pop_set(XMMRegSet set, int offset);
+
+public:
+  void push_set(RegSet set, int offset = -1);
+  void pop_set(RegSet set, int offset = -1);
+
+  // Push and pop everything that might be clobbered by a native
+  // runtime call.
+  // Only save the lower 64 bits of each vector register.
+  // Additonal registers can be excluded in a passed RegSet.
+  void push_call_clobbered_registers_except(RegSet exclude, bool save_fpu = true);
+  void pop_call_clobbered_registers_except(RegSet exclude, bool restore_fpu = true);
+
+  void push_call_clobbered_registers(bool save_fpu = true) {
+    push_call_clobbered_registers_except(RegSet(), save_fpu);
+  }
+  void pop_call_clobbered_registers(bool restore_fpu = true) {
+    pop_call_clobbered_registers_except(RegSet(), restore_fpu);
+  }
 
   // allocation
   void eden_allocate(
