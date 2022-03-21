@@ -690,7 +690,17 @@
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
           range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
-          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
+                                                                            \
+  product(bool, UseConcLivenessEstimate, false, EXPERIMENTAL,               \
+          "Run a thread to concurrently estimate the size and number"       \
+          " of live objects in the heap. This does not use a barrier "      \
+          " so it is an estimate only.")                                    \
+                                                                            \
+  product(intx, ConcLivenessEstimateSeconds, 10, EXPERIMENTAL,             \
+          "The number of seconds between the end of producing a liveness"   \
+          " estimate and beginning the next.")
+
   // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)
