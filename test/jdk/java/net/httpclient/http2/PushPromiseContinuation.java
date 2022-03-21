@@ -70,9 +70,9 @@ import static org.testng.Assert.assertEquals;
 
 public class PushPromiseContinuation {
 
-    static HttpHeaders testHeaders;
-    static HttpHeadersBuilder testHeadersBuilder;
-    static int continuationCount;
+    static volatile HttpHeaders testHeaders;
+    static volatile HttpHeadersBuilder testHeadersBuilder;
+    static volatile int continuationCount;
     Http2TestServer server;
     URI uri;
 
@@ -146,9 +146,24 @@ public class PushPromiseContinuation {
         verify();
     }
 
+    @Test
+    public void testThreeContinuations() {
+        continuationCount = 3;
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Carry out request
+        HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
+        CompletableFuture<HttpResponse<String>> cf =
+                client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
+        cf.join();
+
+        // Verify results
+        verify();
+    }
+
     private void verify() {
         if (resultMap.size() > 1) {
-            throw new TestException("Results map size is greater than 1");
+            throw new TestException("Client: Results map size is greater than 1");
         } else {
             // This will only iterate once
             for (HttpRequest r : resultMap.keySet()) {
@@ -229,10 +244,10 @@ public class PushPromiseContinuation {
             try {
                 // Schedule push promise and continuation for sending
                 conn.outputQ.put(pp);
-                System.err.println("Server: Scheduled a Continuation to Send");
+                System.err.println("Server: Scheduled a Push Promise to Send");
                 for (ContinuationFrame cf : cfs) {
                     conn.outputQ.put(cf);
-                    System.err.println("Server: Scheduled a Continuation to Send");
+                    System.err.println("Server: Scheduled Continuation to Send");
                 }
             } catch (IOException ex) {
                 System.err.println("Server: pushPromise exception: " + ex);
@@ -282,7 +297,7 @@ public class PushPromiseContinuation {
             map.put("x-promise", List.of(mainPromiseBody));
             HttpHeaders headers = HttpHeaders.of(map, ACCEPT_ALL);
             exchange.serverPush(uri, headers, is);
-            System.err.println("Server: Push sent");
+            System.err.println("Server: Push Promise Complete");
         }
     }
 }
