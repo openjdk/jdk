@@ -1392,10 +1392,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       CLEAR_PENDING_EXCEPTION;
     }
 
-    if (this->has_async_exception_condition()) {
-      log_info(exceptions)("Pending async exception detected after Thread::exit");
-    }
-
     // notify JVMTI
     if (JvmtiExport::should_post_thread_life()) {
       JvmtiExport::post_thread_end(this);
