@@ -1388,7 +1388,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
                               vmSymbols::exit_method_name(),
                               vmSymbols::void_method_signature(),
                               THREAD);
-      guarantee(java_lang_Thread::threadGroup(threadObj()) == NULL, "Must be");
       CLEAR_PENDING_EXCEPTION;
     }
 
