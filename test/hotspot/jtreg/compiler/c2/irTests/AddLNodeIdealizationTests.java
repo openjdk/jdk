@@ -43,7 +43,7 @@ public class AddLNodeIdealizationTests {
                  "test8", "test9", "test10",
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
-                 "test17", "test18"})
+                 "test17", "test18", "test19"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -70,17 +70,18 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ((a - b) + (c - d), test5(a, b, c, d));
         Asserts.assertEQ((a - b) + (b + c), test6(a, b, c));
         Asserts.assertEQ((a - b) + (c + b), test7(a, b, c));
-        Asserts.assertEQ((a - b) + (c - a), test8(a, b, c));
-        Asserts.assertEQ(a + (0 - b)      , test9(a, b));
-        Asserts.assertEQ((0 - b) + a      , test10(a, b));
-        Asserts.assertEQ((a - b) + b      , test11(a, b));
-        Asserts.assertEQ(b + (a - b)      , test12(a, b));
-        Asserts.assertEQ(a + 0            , test13(a));
-        Asserts.assertEQ(0 + a            , test14(a));
-        Asserts.assertEQ(a*b + a*c        , test15(a, b, c));
-        Asserts.assertEQ(a*b + b*c        , test16(a, b, c));
-        Asserts.assertEQ(a*c + b*c        , test17(a, b, c));
-        Asserts.assertEQ(a*b + c*a        , test18(a, b, c));
+        Asserts.assertEQ((a - b) + (b - c), test8(a, b, c));
+        Asserts.assertEQ((a - b) + (c - a), test9(a, b, c));
+        Asserts.assertEQ(a + (0 - b)      , test10(a, b));
+        Asserts.assertEQ((0 - b) + a      , test11(a, b));
+        Asserts.assertEQ((a - b) + b      , test12(a, b));
+        Asserts.assertEQ(b + (a - b)      , test13(a, b));
+        Asserts.assertEQ(a + 0            , test14(a));
+        Asserts.assertEQ(0 + a            , test15(a));
+        Asserts.assertEQ(a*b + a*c        , test16(a, b, c));
+        Asserts.assertEQ(a*b + b*c        , test17(a, b, c));
+        Asserts.assertEQ(a*c + b*c        , test18(a, b, c));
+        Asserts.assertEQ(a*b + c*a        , test19(a, b, c));
     }
 
     @Test
@@ -154,8 +155,16 @@ public class AddLNodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks (a - b) + (c - a) => (c - b)
+    // Checks (a - b) + (b - c) => (a - c)
     public long test8(long a, long b, long c) {
+        return (a - b) + (b - c);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks (a - b) + (c - a) => (c - b)
+    public long test9(long a, long b, long c) {
         return (a - b) + (c - a);
     }
 
@@ -163,7 +172,7 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks x + (0 - y) => (x - y)
-    public long test9(long x, long y) {
+    public long test10(long x, long y) {
         return x + (0 - y);
     }
 
@@ -171,35 +180,35 @@ public class AddLNodeIdealizationTests {
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
     // Checks (0 - y) + x => (x - y)
-    public long test10(long x, long y) {
+    public long test11(long x, long y) {
         return (0 - y) + x;
     }
 
     @Test
     @IR(failOn = {IRNode.ADD, IRNode.SUB})
     // Checks (x - y) + y => x
-    public long test11(long x, long y) {
+    public long test12(long x, long y) {
         return (x - y) + y;
     }
 
     @Test
     @IR(failOn = {IRNode.ADD, IRNode.SUB})
     // Checks y + (x - y) => x
-    public long test12(long x, long y) {
+    public long test13(long x, long y) {
         return y + (x - y);
     }
 
     @Test
     @IR(failOn = {IRNode.ADD})
     // Checks x + 0 => x
-    public long test13(long x) {
+    public long test14(long x) {
         return x + 0;
     }
 
     @Test
     @IR(failOn = {IRNode.ADD})
     // Checks 0 + x => x
-    public long test14(long x) {
+    public long test15(long x) {
         return 0 + x;
     }
 
@@ -208,7 +217,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks "a*b + a*c => a*(b+c)
-    public long test15(long a, long b, long c) {
+    public long test16(long a, long b, long c) {
         return a*b + a*c;
     }
 
@@ -217,7 +226,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks a*b + b*c => b*(a+c)
-    public long test16(long a, long b, long c) {
+    public long test17(long a, long b, long c) {
         return a*b + b*c;
     }
 
@@ -226,7 +235,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks a*c + b*c => (a+b)*c
-    public long test17(long a, long b, long c) {
+    public long test18(long a, long b, long c) {
         return a*c + b*c;
     }
 
@@ -235,7 +244,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.ADD, "1"
                  })
     // Checks a*b + c*a => a*(b+c)
-    public long test18(long a, long b, long c) {
+    public long test19(long a, long b, long c) {
         return a*b + c*a;
     }
 }
