@@ -65,11 +65,6 @@ public final class Carrier {
     private static final int CLASSFILE_VERSION = VM.classFileVersion();
 
     /**
-     * Lookup used to define and reference the carrier object classes.
-     */
-    private static final Lookup LOOKUP;
-
-    /**
      * Maximum number of components in a carrier (based on the maximum
      * number of args to a constructor.)
      */
@@ -95,16 +90,15 @@ public final class Carrier {
      * Initialize {@link MethodHandle} constants.
      */
     static {
-        LOOKUP = MethodHandles.lookup();
-
         try {
-            FLOAT_TO_INT = LOOKUP.findStatic(Float.class, "floatToRawIntBits",
+            Lookup lookup = MethodHandles.lookup();
+            FLOAT_TO_INT = lookup.findStatic(Float.class, "floatToRawIntBits",
                     methodType(int.class, float.class));
-            INT_TO_FLOAT = LOOKUP.findStatic(Float.class, "intBitsToFloat",
+            INT_TO_FLOAT = lookup.findStatic(Float.class, "intBitsToFloat",
                     methodType(float.class, int.class));
-            DOUBLE_TO_LONG = LOOKUP.findStatic(Double.class, "doubleToRawLongBits",
+            DOUBLE_TO_LONG = lookup.findStatic(Double.class, "doubleToRawLongBits",
                     methodType(long.class, double.class));
-            LONG_TO_DOUBLE = LOOKUP.findStatic(Double.class, "longBitsToDouble",
+            LONG_TO_DOUBLE = lookup.findStatic(Double.class, "longBitsToDouble",
                     methodType(double.class, long.class));
         } catch (ReflectiveOperationException ex) {
             throw new AssertionError("carrier static init fail", ex);
@@ -295,33 +289,27 @@ public final class Carrier {
      */
     private static class CarrierArrayFactory {
         /**
-         * Lookup used to define and reference the carrier array methods.
-         */
-        private static final MethodHandles.Lookup LOOKUP;
-
-        /**
          * Unsafe access.
          */
         private static final Unsafe UNSAFE;
 
         static {
-            LOOKUP = MethodHandles.lookup();
-            UNSAFE = Unsafe.getUnsafe();
-
             try {
-                CONSTRUCTOR = LOOKUP.findConstructor(CarrierArray.class,
+                UNSAFE = Unsafe.getUnsafe();
+                Lookup lookup = MethodHandles.lookup();
+                CONSTRUCTOR = lookup.findConstructor(CarrierArray.class,
                         methodType(void.class, int.class, int.class));
-                GET_LONG = LOOKUP.findVirtual(CarrierArray.class, "getLong",
+                GET_LONG = lookup.findVirtual(CarrierArray.class, "getLong",
                         methodType(long.class, int.class));
-                PUT_LONG = LOOKUP.findVirtual(CarrierArray.class, "putLong",
+                PUT_LONG = lookup.findVirtual(CarrierArray.class, "putLong",
                         methodType(CarrierArray.class, int.class, long.class));
-                GET_INTEGER = LOOKUP.findVirtual(CarrierArray.class, "getInteger",
+                GET_INTEGER = lookup.findVirtual(CarrierArray.class, "getInteger",
                         methodType(int.class, int.class));
-                PUT_INTEGER = LOOKUP.findVirtual(CarrierArray.class, "putInteger",
+                PUT_INTEGER = lookup.findVirtual(CarrierArray.class, "putInteger",
                         methodType(CarrierArray.class, int.class, int.class));
-                GET_OBJECT = LOOKUP.findVirtual(CarrierArray.class, "getObject",
+                GET_OBJECT = lookup.findVirtual(CarrierArray.class, "getObject",
                         methodType(Object.class, int.class));
-                PUT_OBJECT = LOOKUP.findVirtual(CarrierArray.class, "putObject",
+                PUT_OBJECT = lookup.findVirtual(CarrierArray.class, "putObject",
                         methodType(CarrierArray.class, int.class, Object.class));
             } catch (ReflectiveOperationException ex) {
                 throw new AssertionError("carrier static init fail", ex);
@@ -582,7 +570,8 @@ public final class Carrier {
          */
         private static Lookup defineHiddenClass(byte[] bytes) {
             try {
-                return LOOKUP.defineHiddenClass(bytes, false, ClassOption.STRONG);
+                Lookup lookup = MethodHandles.lookup();
+                return lookup.defineHiddenClass(bytes, false, ClassOption.STRONG);
             } catch (IllegalAccessException ex) {
                 throw new AssertionError("carrier factory static init fail", ex);
             }
