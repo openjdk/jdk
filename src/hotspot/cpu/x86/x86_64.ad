@@ -1926,7 +1926,7 @@ encode %{
     Label done;
 
     // cmp    $0x80000000,%eax
-    __ cmp(as_Register(RAX_enc), 0x80000000);
+    __ cmpl(as_Register(RAX_enc), 0x80000000);
 
     // jne    e <normal>
     __ jccb(Assembler::notEqual, normal);

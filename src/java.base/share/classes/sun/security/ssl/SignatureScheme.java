@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ enum SignatureScheme {
             "anonymous",    "rsa",      "dsa",      "ecdsa",
         };
 
-    static enum SigAlgParamSpec {   // support RSASSA-PSS only now
+    enum SigAlgParamSpec {   // support RSASSA-PSS only now
         RSA_PSS_SHA256 ("SHA-256", 32),
         RSA_PSS_SHA384 ("SHA-384", 48),
         RSA_PSS_SHA512 ("SHA-512", 64);
@@ -224,13 +224,13 @@ enum SignatureScheme {
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
 
-    private SignatureScheme(int id, String name,
+    SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
             ProtocolVersion[] supportedProtocols) {
         this(id, name, algorithm, keyAlgorithm, -1, supportedProtocols);
     }
 
-    private SignatureScheme(int id, String name,
+    SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
             int minimalKeySize,
             ProtocolVersion[] supportedProtocols) {
@@ -238,7 +238,7 @@ enum SignatureScheme {
                 null, minimalKeySize, supportedProtocols);
     }
 
-    private SignatureScheme(int id, String name,
+    SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
             SigAlgParamSpec signAlgParamSpec, int minimalKeySize,
             ProtocolVersion[] supportedProtocols) {
@@ -247,7 +247,7 @@ enum SignatureScheme {
                 supportedProtocols, supportedProtocols);
     }
 
-    private SignatureScheme(int id, String name,
+    SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
             NamedGroup namedGroup,
             ProtocolVersion[] supportedProtocols) {
@@ -256,7 +256,7 @@ enum SignatureScheme {
                 supportedProtocols, supportedProtocols);
     }
 
-    private SignatureScheme(int id, String name,
+    SignatureScheme(int id, String name,
             String algorithm, String keyAlgorithm,
             SigAlgParamSpec signAlgParams,
             NamedGroup namedGroup, int minimalKeySize,
@@ -376,15 +376,10 @@ enum SignatureScheme {
             List<ProtocolVersion> activeProtocols) {
         List<SignatureScheme> supported = new LinkedList<>();
 
-        // If config.signatureSchemes is non-empty then it means that
-        // it was defined by a System property.  Per
-        // SSLConfiguration.getCustomizedSignatureScheme() the list will
-        // only contain schemes that are in the enum.
-        // Otherwise, use the enum constants (converted to a List).
         List<SignatureScheme> schemesToCheck =
-                config.signatureSchemes.isEmpty() ?
+                config.signatureSchemes == null ?
                     Arrays.asList(SignatureScheme.values()) :
-                    config.signatureSchemes;
+                    namesOfAvailable(config.signatureSchemes);
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
@@ -437,8 +432,8 @@ enum SignatureScheme {
                 }
             } else if (ss.isAvailable &&
                     ss.supportedProtocols.contains(protocolVersion) &&
-                    (config.signatureSchemes.isEmpty() ||
-                        config.signatureSchemes.contains(ss)) &&
+                    (config.signatureSchemes == null ||
+                        Utilities.contains(config.signatureSchemes, ss.name)) &&
                     ss.isPermitted(constraints)) {
                 supported.add(ss);
             } else {
@@ -561,6 +556,33 @@ enum SignatureScheme {
         }
 
         return new String[0];
+    }
+
+    private static List<SignatureScheme> namesOfAvailable(
+                String[] signatureSchemes) {
+
+        if (signatureSchemes == null || signatureSchemes.length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<SignatureScheme> sss = new ArrayList<>(signatureSchemes.length);
+        for (String ss : signatureSchemes) {
+            SignatureScheme scheme = SignatureScheme.nameOf(ss);
+            if (scheme == null || !scheme.isAvailable) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                    SSLLogger.finest(
+                            "Ignore the signature algorithm (" + ss
+                          + "), unsupported or unavailable");
+                }
+
+                continue;
+            }
+
+            sss.add(scheme);
+        }
+
+        return sss;
     }
 
     // This method is used to get the signature instance of this signature

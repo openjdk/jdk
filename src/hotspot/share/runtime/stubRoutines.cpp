@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,7 +215,10 @@ void StubRoutines::initialize1() {
   if (_code1 == NULL) {
     ResourceMark rm;
     TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
-    _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
+    // Add extra space for large CodeEntryAlignment
+    int max_aligned_stubs = 10;
+    int size = code_size1 + CodeEntryAlignment * max_aligned_stubs;
+    _code1 = BufferBlob::create("StubRoutines (1)", size);
     if (_code1 == NULL) {
       vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
     }
@@ -269,7 +272,10 @@ void StubRoutines::initialize2() {
   if (_code2 == NULL) {
     ResourceMark rm;
     TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
-    _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
+    // Add extra space for large CodeEntryAlignment
+    int max_aligned_stubs = 100;
+    int size = code_size2 + CodeEntryAlignment * max_aligned_stubs;
+    _code2 = BufferBlob::create("StubRoutines (2)", size);
     if (_code2 == NULL) {
       vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
     }
