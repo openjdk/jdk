@@ -1613,11 +1613,10 @@ void JavaThread::check_and_handle_async_exceptions() {
     }
   }
 
-  if ((_suspend_flags & _async_delivery_disabled) != 0) {
-    log_info(exceptions)("Async exception delivery is disabled");
-  }
-
   if (!clear_async_exception_condition()) {
+    if ((_suspend_flags & _async_delivery_disabled) != 0) {
+      log_info(exceptions)("Async exception delivery is disabled");
+    }
     return;
   }
 
