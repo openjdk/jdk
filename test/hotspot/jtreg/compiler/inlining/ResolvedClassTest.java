@@ -125,9 +125,9 @@ public class ResolvedClassTest {
 
         analyzer.shouldHaveExitValue(0);
 
-        analyzer.shouldNotContain("java.lang.invoke.Invokers$Holder::linkToTargetMethod (9 bytes)   not inlineable");
+        analyzer.shouldNotMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   not inlineable");
 
-        analyzer.shouldContain("java.lang.invoke.Invokers$Holder::linkToTargetMethod (9 bytes)   force inline by annotation");
+        analyzer.shouldMatch("java\\.lang\\.invoke\\..+::linkToTargetMethod \\(9 bytes\\)   force inline by annotation");
         analyzer.shouldContain("java/lang/invoke/MethodHandle::invokeBasic (not loaded)   not inlineable");
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,30 @@
  * questions.
  */
 
-/**
- * This interface is implemented by classes that wish to handle incoming HTTP
- * requests and generate responses. This could be a general purpose HTTP server
- * or a test case that expects specific requests from a client.
- * <p>
- * The incoming request fields can be examined via the {@link HttpTransaction}
- * object, and a response can also be generated and sent via the request object.
+/*
+ * @test
+ * @bug 8282723
+ * @summary Add constructors taking a cause to JSSE exceptions
  */
-public interface HttpCallback {
-    /**
-     * handle the given request and generate an appropriate response.
-     * @param msg the transaction containing the request from the
-     *        client and used to send the response
-     */
-    void request (HttpTransaction msg);
+import javax.net.ssl.SSLPeerUnverifiedException;
+import java.util.Objects;
+
+public class CheckSSLPeerUnverifiedException {
+    private static String exceptionMessage = "message";
+    private static Throwable exceptionCause = new RuntimeException();
+
+    public static void main(String[] args) throws Exception {
+        testException(
+            new SSLPeerUnverifiedException(exceptionMessage, exceptionCause));
+    }
+
+    private static void testException(Exception ex) {
+        if (!Objects.equals(ex.getMessage(), exceptionMessage)) {
+            throw new RuntimeException("Unexpected exception message");
+        }
+
+        if (ex.getCause() != exceptionCause) {
+            throw new RuntimeException("Unexpected exception cause");
+        }
+    }
 }

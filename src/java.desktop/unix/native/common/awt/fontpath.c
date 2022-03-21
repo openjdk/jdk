@@ -496,6 +496,7 @@ typedef FcResult (*FcPatternGetStringFuncType)(const FcPattern *p,
                                                FcChar8 ** s);
 typedef FcChar8* (*FcStrDirnameFuncType)(const FcChar8 *file);
 typedef void (*FcPatternDestroyFuncType)(FcPattern *p);
+typedef void (*FcObjectSetDestroyFuncType)(FcObjectSet *os);
 typedef void (*FcFontSetDestroyFuncType)(FcFontSet *s);
 typedef FcPattern* (*FcNameParseFuncType)(const FcChar8 *name);
 typedef FcBool (*FcPatternAddStringFuncType)(FcPattern *p,
@@ -542,6 +543,7 @@ static char **getFontConfigLocations() {
     FcPatternGetStringFuncType FcPatternGetString;
     FcStrDirnameFuncType FcStrDirname;
     FcPatternDestroyFuncType FcPatternDestroy;
+    FcObjectSetDestroyFuncType FcObjectSetDestroy;
     FcFontSetDestroyFuncType FcFontSetDestroy;
 
     FcConfig *fontconfig;
@@ -571,6 +573,8 @@ static char **getFontConfigLocations() {
         (FcStrDirnameFuncType)dlsym(libfontconfig, "FcStrDirname");
     FcPatternDestroy   =
         (FcPatternDestroyFuncType)dlsym(libfontconfig, "FcPatternDestroy");
+    FcObjectSetDestroy =
+        (FcObjectSetDestroyFuncType)dlsym(libfontconfig, "FcObjectSetDestroy");
     FcFontSetDestroy   =
         (FcFontSetDestroyFuncType)dlsym(libfontconfig, "FcFontSetDestroy");
 
@@ -580,6 +584,7 @@ static char **getFontConfigLocations() {
         FcFontList         == NULL ||
         FcStrDirname       == NULL ||
         FcPatternDestroy   == NULL ||
+        FcObjectSetDestroy == NULL ||
         FcFontSetDestroy   == NULL) { /* problem with the library: return. */
         closeFontConfig(libfontconfig, JNI_FALSE);
         return NULL;
@@ -636,6 +641,7 @@ static char **getFontConfigLocations() {
 
 cleanup:
     /* Free memory and close the ".so" */
+    (*FcObjectSetDestroy)(objset);
     (*FcPatternDestroy)(pattern);
     closeFontConfig(libfontconfig, JNI_TRUE);
     return fontdirs;
