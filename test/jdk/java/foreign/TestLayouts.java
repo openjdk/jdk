@@ -96,7 +96,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), ValueLayout.ADDRESS.byteAlignment());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test(dataProvider="basicLayouts")
@@ -127,7 +127,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), ValueLayout.ADDRESS.byteAlignment());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test(dataProvider = "layoutKinds")
