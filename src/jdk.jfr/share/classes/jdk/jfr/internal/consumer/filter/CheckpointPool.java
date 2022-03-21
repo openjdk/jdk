@@ -29,11 +29,11 @@ import java.util.List;
 /**
  * Represents a constant pool in a checkpoint, both entries and type id
  */
-final class CheckPointPool {
+final class CheckpointPool {
     private final List<PoolEntry> entries = new ArrayList<>();
     private final long typeId;
 
-    public CheckPointPool(long typeId) {
+    public CheckpointPool(long typeId) {
         this.typeId = typeId;
     }
 
