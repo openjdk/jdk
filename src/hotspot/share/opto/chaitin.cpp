@@ -1730,8 +1730,8 @@ void PhaseChaitin::fixup_spills() {
             mach->dump();
             cisc->dump();
             src->dump();
-            printf("spilling %d %d\n",cisc->oper_input_base(),mach->oper_input_base());
-	  }
+            tty->print("spilling %d %d\n",cisc->oper_input_base(),mach->oper_input_base());
+          }
 #endif
           assert( mach->oper_input_base() <= 1, "mach node should not have had memory edge");
           assert( cisc->oper_input_base() == 2, "Only adding one edge");
