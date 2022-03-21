@@ -163,6 +163,8 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
   const char* sub_word_name(int offset) const;
+
+  static uint actual_num_xmm_registers();
 };
 
 

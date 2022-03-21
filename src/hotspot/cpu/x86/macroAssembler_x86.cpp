@@ -26,7 +26,6 @@
 #include "jvm.h"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "c1/c1_FrameMap.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -3593,15 +3592,19 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
   return regs;
 }
 
+static uint get_num_xmm_registers() {
+  return XMMRegisterImpl::actual_num_xmm_registers();
+}
+
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
 #if defined(WINDOWS) && defined(_LP64)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
-  if (FrameMap::get_num_caller_save_xmms() > 16) {
-     result += XMMRegSet::range(xmm16, as_XMMRegister(FrameMap::get_num_caller_save_xmms() - 1));
+  if (get_num_xmm_registers() > 16) {
+     result += XMMRegSet::range(xmm16, as_XMMRegister(get_num_xmm_registers() - 1));
   }
   return result;
 #else
-  return XMMRegSet::range(xmm0, as_XMMRegister(FrameMap::get_num_caller_save_xmms() - 1));
+  return XMMRegSet::range(xmm0, as_XMMRegister(get_num_xmm_registers() - 1));
 #endif
 }
 

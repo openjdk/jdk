@@ -94,6 +94,14 @@ const char* XMMRegisterImpl::sub_word_name(int i) const {
   return is_valid() ? names[encoding() * 8 + i] : "xnoreg";
 }
 
+uint XMMRegisterImpl::actual_num_xmm_registers() {
+  uint num_xmm_regs = XMMRegisterImpl::number_of_registers;
+  if (UseAVX < 3) {
+    num_xmm_regs /= 2;
+  }
+  return num_xmm_regs;
+}
+
 const char* KRegisterImpl::name() const {
   const char* names[number_of_registers] = {
     "k0", "k1", "k2", "k3", "k4", "k5", "k6", "k7"
