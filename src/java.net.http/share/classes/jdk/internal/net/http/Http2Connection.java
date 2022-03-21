@@ -806,11 +806,12 @@ class Http2Connection  {
                     } catch (UncheckedIOException e) {
                         debug.log("Error handling Push Promise with Continuation: " + e.getMessage(), e);
                         protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                        return;
                     }
                 } else {
-                    // TODO: Maybe say what kind of frame was received instead
                     pushContinuationState = null;
                     protocolError(ErrorFrame.PROTOCOL_ERROR, "Expected a Continuation frame but received " + frame);
+                    return;
                 }
             } else {
                 if (frame instanceof PushPromiseFrame pp) {
@@ -876,11 +877,12 @@ class Http2Connection  {
 
     private <T> void handlePushContinuation(Stream<T> parent, ContinuationFrame cf)
             throws IOException {
-        decodeHeaders(cf, pushContinuationState.pushContDecoder);
+        var pcs = pushContinuationState;
+        decodeHeaders(cf, pcs.pushContDecoder);
         // if all continuations are sent, set pushWithContinuation to null
         if (cf.endHeaders()) {
-            completePushPromise(pushContinuationState.pushContFrame.getPromisedStream(), parent,
-                    pushContinuationState.pushContDecoder.headers());
+            completePushPromise(pcs.pushContFrame.getPromisedStream(), parent,
+                    pcs.pushContDecoder.headers());
             pushContinuationState = null;
         }
     }
