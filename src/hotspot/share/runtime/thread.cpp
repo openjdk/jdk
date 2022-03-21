@@ -1373,22 +1373,22 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
       }
     }
 
-    // Call Thread.exit(). We try 3 times in case we got another Thread.stop during
-    // the execution of the method. If that is not enough, then we don't really care. Thread.stop
-    // is deprecated anyhow.
     if (!is_Compiler_thread()) {
-      int count = 3;
-      while (java_lang_Thread::threadGroup(threadObj()) != NULL && (count-- > 0)) {
-        EXCEPTION_MARK;
-        JavaValue result(T_VOID);
-        Klass* thread_klass = vmClasses::Thread_klass();
-        JavaCalls::call_virtual(&result,
-                                threadObj, thread_klass,
-                                vmSymbols::exit_method_name(),
-                                vmSymbols::void_method_signature(),
-                                THREAD);
-        CLEAR_PENDING_EXCEPTION;
-      }
+      // We have finished executing user-defined Java code and now have to do the
+      // implementation specific clean-up by calling Thread.exit(). By updating
+      // our termination state we prevent any further asynchronous exceptions from being
+      // delivered, and ensure the clean-up is not corrupted.
+      set_terminated(_thread_cleaning_up);
+
+      EXCEPTION_MARK;
+      JavaValue result(T_VOID);
+      Klass* thread_klass = vmClasses::Thread_klass();
+      JavaCalls::call_virtual(&result,
+                              threadObj, thread_klass,
+                              vmSymbols::exit_method_name(),
+                              vmSymbols::void_method_signature(),
+                              THREAD);
+      CLEAR_PENDING_EXCEPTION;
     }
     // notify JVMTI
     if (JvmtiExport::should_post_thread_life()) {
@@ -1676,8 +1676,10 @@ public:
     JavaThread* target = JavaThread::cast(thr);
     // Note that this now allows multiple ThreadDeath exceptions to be
     // thrown at a thread.
-    // The target thread has run and has not exited yet.
-    target->send_thread_stop(_throwable());
+    if (!target->is_cleaning_up()) {
+      // The target thread has run and has not exited yet.
+      target->send_thread_stop(_throwable());
+    }
   }
 };
 

@@ -872,16 +872,17 @@ class JavaThread: public Thread {
  public:
   enum TerminatedTypes {
     _not_terminated = 0xDEAD - 2,
-    _thread_exiting,                             // JavaThread::exit() has been called for this thread
-    _thread_terminated,                          // JavaThread is removed from thread list
-    _vm_exited                                   // JavaThread is still executing native code, but VM is terminated
-                                                 // only VM_Exit can set _vm_exited
+    _thread_cleaning_up,          // JavaThread::exit has been called and reach the call to j.l.Thread::exit
+    _thread_exiting,              // JavaThread::exit() has been called  and all Java code execution is complete
+    _thread_terminated,           // JavaThread is removed from thread list
+    _vm_exited                    // JavaThread is still executing native code, but VM is terminated
+                                  // - only VM_Exit can set _vm_exited
   };
 
  private:
   // In general a JavaThread's _terminated field transitions as follows:
   //
-  //   _not_terminated => _thread_exiting => _thread_terminated
+  //   _not_terminated => _thread_cleaning_up => _thread_exiting => _thread_terminated
   //
   // _vm_exited is a special value to cover the case of a JavaThread
   // executing native code after the VM itself is terminated.
@@ -1111,13 +1112,16 @@ class JavaThread: public Thread {
   bool on_thread_list() const { return _on_thread_list; }
   void set_on_thread_list() { _on_thread_list = true; }
 
-  // thread has called JavaThread::exit() or is terminated
+  // thread is calling j.l.Thread::exit() as part of JavaThread::exit()
+  bool is_cleaning_up() { return _terminated == _thread_cleaning_up; }
+  // thread has completed Java code execution in JavaThread::exit() or is terminated
   bool is_exiting() const;
   // thread is terminated (no longer on the threads list); we compare
-  // against the two non-terminated values so that a freed JavaThread
+  // against the three non-terminated values so that a freed JavaThread
   // will also be considered terminated.
   bool check_is_terminated(TerminatedTypes l_terminated) const {
-    return l_terminated != _not_terminated && l_terminated != _thread_exiting;
+    return l_terminated != _not_terminated && l_terminated != _thread_exiting &&
+           l_terminated != _thread_cleaning_up;
   }
   bool is_terminated() const;
   void set_terminated(TerminatedTypes t);
