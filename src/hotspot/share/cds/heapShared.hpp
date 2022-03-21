@@ -253,6 +253,13 @@ private:
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
+  typedef ResourceHashtable<oop, oop,
+      15889, // prime number
+      ResourceObj::C_HEAP,
+      mtClassShared,
+      HeapShared::oop_hash> OriginalObjectTable;
+  static OriginalObjectTable* _original_object_table;
+
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
                                137, // prime number
@@ -378,13 +385,25 @@ private:
   static void create_archived_object_cache() {
     _archived_object_cache =
       new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();
+    _original_object_table =
+      new (ResourceObj::C_HEAP, mtClass)OriginalObjectTable();
   }
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
     _archived_object_cache = NULL;
+    delete _original_object_table;
+    _original_object_table = NULL;
   }
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
+  }
+  static oop get_original_object(oop archived_object) {
+    oop* r = _original_object_table->get(archived_object);
+    if (r == NULL) {
+      return NULL;
+    } else {
+      return *r;
+    }
   }
 
   static oop find_archived_heap_object(oop obj);
