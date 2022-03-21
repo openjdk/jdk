@@ -1274,13 +1274,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         uint ireg = n->ideal_reg();
         bool is_vect = RegMask::is_vector(ireg);
         // Only split at Def if this is a HRP block or bound (and spilled once)
-        if (b->_region <= region && !n->rematerialize() &&
+        if (b->_region <= region && (!n->rematerialize() || deflrg._region > region) &&
             (((dmask.is_bound(ireg) || (!is_vect && dmask.is_misaligned_pair())) &&
               (deflrg._direct_conflict || deflrg._must_spill)) ||
              // Check for LRG being up in a register and we are inside a high
              // pressure area.  Spill it down immediately.
              (defup && is_high_pressure(b,&deflrg,insidx) && !n->is_SpillCopy())) ) {
-          assert( !n->rematerialize(), "" );
+//          assert( !n->rematerialize(), "" );
           // Do a split at the def site.
           assert(lrgs(lidxs.at(slidx))._region >= region, "");
           assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
@@ -1379,6 +1379,17 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         Reachblock[slidx] = NULL;
       } else {
         assert(Reachblock[slidx] != NULL,"No reaching definition for liveout value");
+        const RegMask &dmask = Reachblock[slidx]->out_RegMask();
+        bool defup = dmask.is_UP();
+
+        if (!defup || true) {
+          for (uint i = 0; i < b->_num_succs; ++i) {
+            if (b->_succs[i]->_region > b->_region && b->_succs[i]->_region > region && lrgs(defidx)._region > region) {
+              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
+//              ShouldNotReachHere();
+            }
+          }
+        }
       }
     }
 #ifndef PRODUCT

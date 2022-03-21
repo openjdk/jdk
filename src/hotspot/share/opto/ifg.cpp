@@ -887,6 +887,7 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
       if (lid) {
         LRG& lrg = lrgs(lid);
         if (lrg._region < region) {
+          liveout.remove(lid);
           if (!n->is_Phi()) {
             add_input_to_liveout(block, n, &liveout, cost, int_pressure, float_pressure);
           }
