@@ -37,9 +37,6 @@ public abstract class AgentProvider {
     protected AgentProvider() {
     }
 
-    private AgentProvider(Void unused) {
-    }
-
     /**
      * Gets the name of the agent provider.
      *

@@ -207,9 +207,6 @@ public abstract class PlatformMBeanProvider {
     protected PlatformMBeanProvider () {
     }
 
-    private PlatformMBeanProvider(Void unused) {
-    }
-
     /**
      * Returns a list of PlatformComponent instances describing the Platform
      * MBeans provided by this provider.
