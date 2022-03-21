@@ -462,14 +462,13 @@ juint os::cpu_microcode_revision() {
   // Note: this code runs on startup, and therefore should not be slow.
 
   juint result = 0;
-  char data[128] = {0}; // looking for short "microcode" line, should be enough
-  size_t len = sizeof(data);
 
   // Attempt 1 (faster): Read the microcode version off the sysfs.
   {
     FILE *fp = os::fopen("/sys/devices/system/cpu/cpu0/microcode/version", "r");
     if (fp) {
-      if (fgets(data, len, fp)) {
+      char data[128] = {0}; // looking for short line
+      if (fgets(data, sizeof(data), fp)) {
         sscanf(data, "%x", &result);
       }
       fclose(fp);
@@ -483,6 +482,8 @@ juint os::cpu_microcode_revision() {
   {
     FILE *fp = os::fopen("/proc/cpuinfo", "r");
     if (fp) {
+      char data[2048] = {0}; // lines should fit in 2K buf
+      size_t len = sizeof(data);
       while (!feof(fp)) {
         if (fgets(data, len, fp)) {
           if (strstr(data, "microcode") != NULL) {
