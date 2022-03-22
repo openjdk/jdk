@@ -1376,8 +1376,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     if (!is_Compiler_thread()) {
       // We have finished executing user-defined Java code and now have to do the
       // implementation specific clean-up by calling Thread.exit(). We prevent any
-      // further asynchronous exceptions from being delivered to ensure the clean-up
-      // is not corrupted.
+      // asynchronous exceptions from being delivered while in Thread.exit()
+      // to ensure the clean-up is not corrupted.
       NoAsyncExceptionDeliveryMark _no_async(this);
 
       EXCEPTION_MARK;
