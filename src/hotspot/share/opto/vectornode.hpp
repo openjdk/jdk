@@ -97,13 +97,13 @@ class VectorNode : public TypeNode {
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
-  static bool is_vector_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
+  static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_invariant_vector(Node* n);
   static bool is_all_ones_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
-  static Node* degenerate_vector_negate(Node* n, int vlen, BasicType bt, PhaseGVN* phase, bool is_predicated);
+  static Node* degenerate_vector_integral_negate(Node* n, int vlen, BasicType bt, PhaseGVN* phase, bool is_predicated);
 
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
@@ -111,7 +111,7 @@ class VectorNode : public TypeNode {
   static bool is_vector_shift(int opc);
   static bool is_vector_shift_count(int opc);
   static bool is_vector_rotate(int opc);
-  static bool is_integer_negate(int opc);
+  static bool is_vector_integral_negate(int opc);
 
   static bool is_vector_shift(Node* n) {
     return is_vector_shift(n->Opcode());
@@ -477,36 +477,44 @@ class AbsVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-//------------------------------NegVINode--------------------------------------
-// Vector Neg byte/short/int
-class NegVINode : public VectorNode {
+//------------------------------NegVNode---------------------------------------
+// Vector Neg parent class (not for code generation).
+class NegVNode : public VectorNode {
  public:
-  NegVINode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
-  virtual int Opcode() const;
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  NegVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  virtual int Opcode() const = 0;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-// Vector Neg long
-class NegVLNode : public VectorNode {
+//------------------------------NegVINode--------------------------------------
+// Vector Neg byte/short/int
+class NegVINode : public NegVNode {
  public:
-  NegVLNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  NegVINode(Node* in, const TypeVect* vt) : NegVNode(in, vt) {}
   virtual int Opcode() const;
-  Node* Ideal(PhaseGVN* phasse, bool can_reshape);
+};
+
+//------------------------------NegVLNode--------------------------------------
+// Vector Neg long
+class NegVLNode : public NegVNode {
+ public:
+  NegVLNode(Node* in, const TypeVect* vt) : NegVNode(in, vt) {}
+  virtual int Opcode() const;
 };
 
 //------------------------------NegVFNode--------------------------------------
 // Vector Neg float
-class NegVFNode : public VectorNode {
+class NegVFNode : public NegVNode {
  public:
-  NegVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  NegVFNode(Node* in, const TypeVect* vt) : NegVNode(in, vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------NegVDNode--------------------------------------
 // Vector Neg double
-class NegVDNode : public VectorNode {
+class NegVDNode : public NegVNode {
  public:
-  NegVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  NegVDNode(Node* in, const TypeVect* vt) : NegVNode(in, vt) {}
   virtual int Opcode() const;
 };
 

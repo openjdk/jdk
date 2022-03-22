@@ -282,8 +282,8 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_rotate(vopc)) {
       return is_vector_rotate_supported(vopc, vlen, bt);
     }
-    if (VectorNode::is_integer_negate(vopc)) {
-      return is_vector_negate_supported(vopc, vlen, bt, false);
+    if (VectorNode::is_vector_integral_negate(vopc)) {
+      return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
     return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }
@@ -362,7 +362,7 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
 // Check whether the architecture supports the vector negate instructions. If not, then check
 // whether the alternative vector nodes used to implement vector negation are supported.
 // Return false if neither of them is supported.
-bool VectorNode::is_vector_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate) {
+bool VectorNode::is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate) {
   if (!use_predicate) {
     // Check whether the NegVI/L is supported by the architecture.
     if (Matcher::match_rule_supported_vector(opc, vlen, bt)) {
@@ -710,7 +710,7 @@ bool VectorNode::is_vector_rotate(int opc) {
   }
 }
 
-bool VectorNode::is_integer_negate(int opc) {
+bool VectorNode::is_vector_integral_negate(int opc) {
   return opc == Op_NegVI || opc == Op_NegVL;
 }
 
@@ -1589,7 +1589,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 // Generate other vector nodes to implement the masked/non-masked vector negation.
-Node* VectorNode::degenerate_vector_negate(Node* n, int vlen, BasicType bt, PhaseGVN* phase, bool is_predicated) {
+Node* VectorNode::degenerate_vector_integral_negate(Node* n, int vlen, BasicType bt, PhaseGVN* phase, bool is_predicated) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   // Transformation for predicated NegVI/L
   if (is_predicated) {
@@ -1632,28 +1632,18 @@ Node* VectorNode::degenerate_vector_negate(Node* n, int vlen, BasicType bt, Phas
   return VectorNode::make(VectorNode::opcode(sub_opc, bt), const_zero, n->in(1), vt);
 }
 
-Node* NegVINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   BasicType bt = vect_type()->element_basic_type();
   uint vlen = length();
-  if (is_predicated_vector()) {
-    if (!Matcher::match_rule_supported_vector_masked(Op_NegVI, vlen, bt)) {
-      return degenerate_vector_negate(this, vlen, bt, phase, true);
+  int opc = Opcode();
+  if (is_vector_integral_negate(opc)) {
+    if (is_predicated_vector()) {
+      if (!Matcher::match_rule_supported_vector_masked(opc, vlen, bt)) {
+        return degenerate_vector_integral_negate(this, vlen, bt, phase, true);
+      }
+    } else if (!Matcher::match_rule_supported_vector(opc, vlen, bt)) {
+      return degenerate_vector_integral_negate(this, vlen, bt, phase, false);
     }
-  } else if (!Matcher::match_rule_supported_vector(Op_NegVI, vlen, bt)) {
-    return degenerate_vector_negate(this, vlen, bt, phase, false);
-  }
-  return NULL;
-}
-
-Node* NegVLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  BasicType bt = vect_type()->element_basic_type();
-  uint vlen = length();
-  if (is_predicated_vector()) {
-    if (!Matcher::match_rule_supported_vector_masked(Op_NegVL, vlen, bt)) {
-      return degenerate_vector_negate(this, vlen, bt, phase, true);
-    }
-  } else if (!Matcher::match_rule_supported_vector(Op_NegVL, vlen, bt)) {
-    return degenerate_vector_negate(this, vlen, bt, phase, false);
   }
   return NULL;
 }
