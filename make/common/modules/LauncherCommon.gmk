@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ include ToolsJdk.gmk
 # On Mac, we have always exported all symbols, probably due to oversight
 # and/or misunderstanding. To emulate this, don't hide any symbols
 # by default.
-# On AIX/xlc we need at least xlc 13.1 for the symbol hiding (see JDK-8214063)
 # Also provide an override for non-conformant libraries.
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   LAUNCHER_CFLAGS += -fvisibility=hidden
   LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
 else ifeq ($(TOOLCHAIN_TYPE), clang)
   LAUNCHER_CFLAGS += -fvisibility=hidden
+else ifeq ($(TOOLCHAIN_TYPE), xlc)
+  LAUNCHER_CFLAGS += -qvisibility=hidden
 endif
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher

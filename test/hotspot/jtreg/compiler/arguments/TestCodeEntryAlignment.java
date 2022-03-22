@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@
  * @library /test/lib /
  * @bug 8281467
  * @requires vm.flagless
+ * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  *
  * @summary Test large CodeEntryAlignments are accepted
@@ -69,6 +71,13 @@ public class TestCodeEntryAlignment {
         for (int align = 16; align < 256; align *= 2) {
             shouldPass(
                 "-XX:+UnlockExperimentalVMOptions",
+                "-XX:CodeEntryAlignment=" + align
+            );
+        }
+        for (int align = 256; align <= 1024; align *= 2) {
+            shouldPass(
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:CodeCacheSegmentSize=" + align,
                 "-XX:CodeEntryAlignment=" + align
             );
         }
