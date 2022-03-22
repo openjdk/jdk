@@ -842,7 +842,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * Creates a new object of the same class as this object.
          *
          * @return     a clone of this instance.
-         * @exception  OutOfMemoryError    if there is not enough memory.
+         * @throws  OutOfMemoryError    if there is not enough memory.
          * @see        java.lang.Cloneable
          * @since      1.6
          */
@@ -1638,7 +1638,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * Creates a new object of the same class as this object.
          *
          * @return     a clone of this instance.
-         * @exception  OutOfMemoryError    if there is not enough memory.
+         * @throws  OutOfMemoryError    if there is not enough memory.
          * @see        java.lang.Cloneable
          * @since      1.6
          */
@@ -2018,7 +2018,7 @@ public abstract class Path2D implements Shape, Cloneable {
      *
      * @param rule an integer representing the specified
      *             winding rule
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      *          {@code rule} is not either
      *          {@link #WIND_EVEN_ODD} or
      *          {@link #WIND_NON_ZERO}
@@ -2530,7 +2530,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * Creates a new object of the same class as this object.
      *
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.6
      */

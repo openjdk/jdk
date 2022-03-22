@@ -547,6 +547,7 @@ public:
   bool is_in_error_state() const           { return _init_state == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
   ClassState  init_state()                 { return (ClassState)_init_state; }
+  const char* init_state_name() const;
   bool is_rewritten() const                { return (_misc_flags & _misc_rewritten) != 0; }
 
   // is this a sealed class
@@ -1277,6 +1278,15 @@ inline u2 InstanceKlass::next_method_idnum() {
   }
 }
 
+class PrintClassClosure : public KlassClosure {
+private:
+  outputStream* _st;
+  bool _verbose;
+public:
+  PrintClassClosure(outputStream* st, bool verbose);
+
+  void do_klass(Klass* k);
+};
 
 /* JNIid class for jfieldIDs only */
 class JNIid: public CHeapObj<mtClass> {

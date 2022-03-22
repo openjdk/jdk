@@ -211,16 +211,16 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Setup default copyright year. Mostly overridden when building close to a new year.
   AC_ARG_WITH(copyright-year, [AS_HELP_STRING([--with-copyright-year],
-      [Set copyright year value for build @<:@current year@:>@])])
+      [Set copyright year value for build @<:@current year/source-date@:>@])])
   if test "x$with_copyright_year" = xyes; then
     AC_MSG_ERROR([Copyright year must have a value])
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
-  elif test "x$SOURCE_DATE_EPOCH" != x; then
+  elif test "x$SOURCE_DATE" != xupdated; then
     if test "x$IS_GNU_DATE" = xyes; then
-      COPYRIGHT_YEAR=`date --date=@$SOURCE_DATE_EPOCH +%Y`
+      COPYRIGHT_YEAR=`$DATE --date=@$SOURCE_DATE +%Y`
     else
-      COPYRIGHT_YEAR=`date -j -f %s $SOURCE_DATE_EPOCH +%Y`
+      COPYRIGHT_YEAR=`$DATE -j -f %s $SOURCE_DATE +%Y`
     fi
   else
     COPYRIGHT_YEAR=`$DATE +'%Y'`
@@ -662,15 +662,28 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 [
   AC_ARG_WITH([source-date], [AS_HELP_STRING([--with-source-date],
-      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated@:>@])],
+      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated/value of SOURCE_DATE_EPOCH@:>@])],
       [with_source_date_present=true], [with_source_date_present=false])
+
+  if test "x$SOURCE_DATE_EPOCH" != x && test "x$with_source_date" != x; then
+    AC_MSG_WARN([--with-source-date will override SOURCE_DATE_EPOCH])
+  fi
 
   AC_MSG_CHECKING([what source date to use])
 
   if test "x$with_source_date" = xyes; then
     AC_MSG_ERROR([--with-source-date must have a value])
-  elif test "x$with_source_date" = xupdated || test "x$with_source_date" = x; then
-    # Tell the makefiles to update at each build
+  elif test "x$with_source_date" = x; then
+    if test "x$SOURCE_DATE_EPOCH" != x; then
+      SOURCE_DATE=$SOURCE_DATE_EPOCH
+      with_source_date_present=true
+      AC_MSG_RESULT([$SOURCE_DATE, from SOURCE_DATE_EPOCH])
+    else
+      # Tell the makefiles to update at each build
+      SOURCE_DATE=updated
+      AC_MSG_RESULT([determined at build time (default)])
+    fi
+  elif test "x$with_source_date" = xupdated; then
     SOURCE_DATE=updated
     AC_MSG_RESULT([determined at build time, from 'updated'])
   elif test "x$with_source_date" = xcurrent; then
@@ -702,6 +715,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
+  ISO_8601_FORMAT_STRING="%Y-%m-%dT%H:%M:%SZ"
+  if test "x$SOURCE_DATE" != xupdated; then
+    # If we have a fixed value for SOURCE_DATE, we need to set SOURCE_DATE_EPOCH
+    # for the rest of configure.
+    SOURCE_DATE_EPOCH="$SOURCE_DATE"
+    if test "x$IS_GNU_DATE" = xyes; then
+      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    else
+      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    fi
+  fi
+
   REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
 
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
@@ -726,4 +751,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
+  AC_SUBST(ISO_8601_FORMAT_STRING)
+  AC_SUBST(SOURCE_DATE_ISO_8601)
 ])
