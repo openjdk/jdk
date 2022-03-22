@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleContext;
 import javax.swing.JButton;
@@ -69,22 +68,22 @@ public class JSliderAccessibleAction {
     private static final int INVALID_INCREMENT = -1;
     private static final int VALID_DECREMENT = 1;
     private static final int VALID_INCREMENT = 0;
-    private static volatile AtomicInteger currentJSliderValue;
-    private static volatile AtomicInteger jSliderInitialValue;
-    private static volatile AccessibleAction accessibleAction;
+    private static volatile int currentJSliderValue;
+    private static volatile int jSliderInitialValue;
     private static volatile CountDownLatch invalidDecrementCountDownLatch;
     private static volatile CountDownLatch invalidIncrementCountDownLatch;
     private static volatile CountDownLatch validDecrementCountDownLatch;
     private static volatile CountDownLatch validIncrementCountDownLatch;
 
-    private void createTestUI() {
+    private static void createTestUI() {
         jFrame = new JFrame("Test JSlider Accessible Action");
         jSlider = new JSlider();
         AccessibleContext ac = jSlider.getAccessibleContext();
         ac.setAccessibleName("JSlider Accessible Test");
 
         AccessibleContext accessibleContext = jSlider.getAccessibleContext();
-        accessibleAction = accessibleContext.getAccessibleAction();
+        AccessibleAction accessibleAction =
+                accessibleContext.getAccessibleAction();
 
         if (accessibleAction == null) {
             throw new RuntimeException("JSlider getAccessibleAction() should " +
@@ -105,8 +104,8 @@ public class JSliderAccessibleAction {
         container.add(jSlider, BorderLayout.CENTER);
 
         jSlider.addChangeListener((changeEvent) -> {
-            currentJSliderValue.getAndSet(jSlider.getValue());
-            jSliderValueLbl.setText("JSlider value : " + currentJSliderValue.get() + "%");
+            currentJSliderValue = jSlider.getValue();
+            jSliderValueLbl.setText("JSlider value : " + currentJSliderValue + "%");
             System.out.println("changed : " + changeEvent);
         });
 
@@ -160,7 +159,7 @@ public class JSliderAccessibleAction {
         return true;
     }
 
-    public void test() throws AWTException,
+    public static void testJSliderAccessibleAction() throws AWTException,
             InterruptedException, InvocationTargetException {
         Robot robot = new Robot();
         robot.setAutoDelay(300);
@@ -176,8 +175,8 @@ public class JSliderAccessibleAction {
                 invalidIncrementCountDownLatch = new CountDownLatch(1);
                 validDecrementCountDownLatch = new CountDownLatch(1);
                 validIncrementCountDownLatch = new CountDownLatch(1);
-                currentJSliderValue = new AtomicInteger();
-                jSliderInitialValue = new AtomicInteger();
+                currentJSliderValue = 0;
+                jSliderInitialValue = 0;
                 System.out.println("Testing JSliderAccessibleAction in " + lookAndFeel +
                         " look and feel");
 
@@ -192,8 +191,8 @@ public class JSliderAccessibleAction {
                 robot.waitForIdle();
 
                 SwingUtilities.invokeAndWait(() -> {
-                    jSliderInitialValue.getAndSet(jSlider.getValue());
-                    currentJSliderValue.getAndSet(jSlider.getValue());
+                    jSliderInitialValue = jSlider.getValue();
+                    currentJSliderValue = jSlider.getValue();
                 });
                 robot.waitForIdle();
                 mouseAction(robot, invalidDecrementBtn);
@@ -203,7 +202,7 @@ public class JSliderAccessibleAction {
                             "Decrement button");
                 }
 
-                if (jSliderInitialValue.get() != currentJSliderValue.get()) {
+                if (jSliderInitialValue != currentJSliderValue ) {
                     throw new RuntimeException("Expected that JSlider value is not " +
                             "changed when invalid decrement value 2 is passed to " +
                             "doAccessibleAction(2)  jSliderInitialValue = "
@@ -216,7 +215,7 @@ public class JSliderAccessibleAction {
                     throw new RuntimeException("Failed to perform action on Invalid " +
                             "Increment button");
                 }
-                if (jSliderInitialValue.get() != currentJSliderValue.get()) {
+                if (jSliderInitialValue != currentJSliderValue) {
                     throw new RuntimeException("Expected that JSlider value is not " +
                             "changed when invalid decrement value -1 is passed to " +
                             "doAccessibleAction(-1)  jSliderInitialValue = "
@@ -229,7 +228,7 @@ public class JSliderAccessibleAction {
                     throw new RuntimeException("Failed to perform action on valid " +
                             "decrement button");
                 }
-                if (jSliderInitialValue.get() == currentJSliderValue.get()) {
+                if (jSliderInitialValue == currentJSliderValue ) {
                     throw new RuntimeException("Expected that JSlider value is  " +
                             "decremented when value 1 is passed to " +
                             "doAccessibleAction(1)  jSliderInitialValue = "
@@ -242,7 +241,7 @@ public class JSliderAccessibleAction {
                     throw new RuntimeException("Failed to perform action on valid " +
                             "Increment button");
                 }
-                if (jSliderInitialValue.get() != currentJSliderValue.get()) {
+                if (jSliderInitialValue != currentJSliderValue ) {
                     throw new RuntimeException("Expected that JSlider value is  " +
                             "incremented when value 0 is passed to " +
                             "doAccessibleAction(0)  jSliderInitialValue = "
@@ -261,8 +260,8 @@ public class JSliderAccessibleAction {
     public static void mouseAction(Robot robot, JButton button) throws InterruptedException,
             InvocationTargetException {
         robot.waitForIdle();
-        final Point[] point = new Point[1];
-        final Rectangle[] rect = new Rectangle[1];
+        Point[] point = new Point[1];
+        Rectangle[] rect = new Rectangle[1];
 
         SwingUtilities.invokeAndWait(() -> {
             point[0] = button.getLocationOnScreen();
@@ -277,10 +276,7 @@ public class JSliderAccessibleAction {
         robot.waitForIdle();
     }
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException, AWTException {
-        JSliderAccessibleAction jSliderAccessibleAction =
-                new JSliderAccessibleAction();
-        jSliderAccessibleAction.test();
+    public static void main(String[] args) throws InterruptedException, InvocationTargetException, AWTException {
+        testJSliderAccessibleAction();
     }
 }
