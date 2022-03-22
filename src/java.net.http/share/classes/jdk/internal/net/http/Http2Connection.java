@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http;
 
-import jdk.internal.net.http.HttpConnection.HttpPublisher;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
