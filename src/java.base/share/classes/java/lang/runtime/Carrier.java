@@ -160,10 +160,10 @@ public final class Carrier {
             if (!ptype.isPrimitive()) {
                 from = objectIndex++;
                 ptype = Object.class;
-            } else if(ptype == double.class) {
+            } else if (ptype == double.class) {
                 from = longIndex++;
                 filter = DOUBLE_TO_LONG;
-            } else if(ptype == float.class) {
+            } else if (ptype == float.class) {
                 from = intIndex++;
                 filter = FLOAT_TO_INT;
             } else if (ptype == long.class) {
