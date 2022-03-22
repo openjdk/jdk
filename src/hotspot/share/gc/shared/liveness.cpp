@@ -1,5 +1,6 @@
 #include "gc/shared/liveness.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 
 LivenessEstimatorThread::LivenessEstimatorThread()
@@ -27,6 +28,14 @@ void LivenessEstimatorThread::stop_service() {
   MonitorLocker locker(&_lock);
   _lock.notify();
   log_info(gc)("Notified estimator thread to wakeup.");
+}
+
+void LivenessEstimatorThread::send_live_set_estimate(size_t live_set_bytes) {
+  EventLiveSetEstimate evt;
+  if (evt.should_commit()) {
+    evt.set_estimatedLiveSetSize(live_set_bytes);
+    evt.commit();
+  }
 }
 
 bool LivenessEstimatorThread::estimate_liveness() {

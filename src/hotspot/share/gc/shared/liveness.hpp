@@ -23,6 +23,7 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
 
  private:
   bool estimate_liveness();
+  void send_live_set_estimate(size_t live_set_bytes);
 
   Monitor _lock;
 };

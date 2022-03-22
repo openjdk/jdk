@@ -858,6 +858,10 @@
       <setting name="period">endChunk</setting>
     </event>
 
+    <event name="jdk.LiveSetEstimate">
+      <setting name="enabled">true</setting>
+    </event>
+
 
 
 
