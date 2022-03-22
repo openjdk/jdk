@@ -1108,7 +1108,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
         const TypeInteger* hi = phase->type(limit)->isa_integer(l->bt());
         const TypeInteger* stride_t = phase->type(stride)->isa_integer(l->bt());
         if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-          assert(stride_t->hi_as_long() == stride_t->lo_as_long(), "bad stride type");
+          assert(stride_t->is_con(), "bad stride type");
           BoolTest::mask bt = l->loopexit()->test_trip();
           // If the loop exit condition is "not equal", the condition
           // would not trigger if init > limit (if stride > 0) or if
