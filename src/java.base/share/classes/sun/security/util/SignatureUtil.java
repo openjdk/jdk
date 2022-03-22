@@ -325,7 +325,7 @@ public class SignatureUtil {
                     return spec;
                 }
             }
-            switch (ifcFfcStrength(KeyUtil.getKeySize(k), false)) {
+            switch (ifcFfcStrength(KeyUtil.getKeySize(k))) {
                 case "SHA256":
                     return PSSParamsHolder.PSS_256_SPEC;
                 case "SHA384":
@@ -491,10 +491,9 @@ public class SignatureUtil {
     public static String getDefaultSigAlgForKey(PrivateKey k) {
         String kAlg = k.getAlgorithm().toUpperCase(Locale.ENGLISH);
         return switch (kAlg) {
-            case "DSA", "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k),
-                    kAlg.equals("DSA")) + "with" + kAlg;
-            case "EC" -> ecStrength(KeyUtil.getKeySize(k))
-                    + "withECDSA";
+            case "DSA" -> "SHA256withDSA";
+            case "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k)) + "withRSA";
+            case "EC" -> ecStrength(KeyUtil.getKeySize(k)) + "withECDSA";
             case "EDDSA" -> k instanceof EdECPrivateKey
                     ? ((EdECPrivateKey) k).getParams().getName()
                     : kAlg;
@@ -544,24 +543,19 @@ public class SignatureUtil {
 
     /**
      * Return the default message digest algorithm based on both the
-     * security strength of the specified IFC/FFC key size and the
-     * recommendation from NIST CNSA, e.g. use SHA-384 and min 3072-bit.
+     * security strength of the specified IFC/FFC key size, i.e. RSA,
+     * RSASSA-PSS, and the recommendation from NIST CNSA, e.g. use SHA-384
+     * and min 3072-bit.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
-    private static String ifcFfcStrength (int bitLength, boolean isDSA) {
-        if (isDSA) {
-            // for backward interoperability
-            // SHA384withDSA is added under JDK-8172366 (jdk16)
-            return "SHA256";
-        } else { // RSA, RSASSA-PSS
-            if (bitLength > 7680) { // 256 bits security strength
-                return "SHA512";
-            } else {
-                // per CNSA, use SHA-384 unless keysize is too small
-                return (bitLength >= 624 ? "SHA384" : "SHA256");
-            }
+    private static String ifcFfcStrength(int bitLength) {
+        if (bitLength > 7680) { // 256 bits security strength
+            return "SHA512";
+        } else {
+            // per CNSA, use SHA-384 unless keysize is too small
+            return (bitLength >= 624 ? "SHA384" : "SHA256");
         }
     }
 }
