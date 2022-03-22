@@ -4043,6 +4043,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   }
   Node* from = new AddPNode(base, base, index);
   _igvn.register_new_node_with_optimizer(from);
+  // For normal array fills, C2 uses two AddP nodes for array element
+  // addressing. But for array fills with Unsafe call, there's only one
+  // AddP node adding an absolute offset, so we do a NULL check here.
   if (offset != NULL) {
     from = new AddPNode(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);
