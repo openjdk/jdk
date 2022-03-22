@@ -36,7 +36,7 @@ package java.security;
 public class URIParameter implements
         Policy.Parameters, javax.security.auth.login.Configuration.Parameters {
 
-    private java.net.URI uri;
+    private final java.net.URI uri;
 
     /**
      * Constructs a URIParameter with the URI pointing to

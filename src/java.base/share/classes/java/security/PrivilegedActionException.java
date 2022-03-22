@@ -85,7 +85,7 @@ public class PrivilegedActionException extends Exception {
     public String toString() {
         String s = getClass().getName();
         Throwable cause = super.getCause();
-        return (cause != null) ? (s + ": " + cause.toString()) : s;
+        return (cause != null) ? (s + ": " + cause) : s;
     }
 
 

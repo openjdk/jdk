@@ -47,5 +47,5 @@ public interface DSAKey {
      *
      * @see DSAParams
      */
-    public DSAParams getParams();
+    DSAParams getParams();
 }

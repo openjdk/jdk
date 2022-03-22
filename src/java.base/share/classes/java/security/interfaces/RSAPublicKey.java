@@ -48,12 +48,12 @@ public interface RSAPublicKey extends java.security.PublicKey, RSAKey
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = -8727434096241101194L;
+    long serialVersionUID = -8727434096241101194L;
 
     /**
      * Returns the public exponent.
      *
      * @return the public exponent
      */
-    public BigInteger getPublicExponent();
+    BigInteger getPublicExponent();
 }

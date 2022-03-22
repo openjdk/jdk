@@ -25,12 +25,11 @@
 
 package java.security;
 
+import sun.security.util.Debug;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-
-import sun.security.util.Debug;
 
 /**
  * This class extends ClassLoader with additional support for defining
@@ -219,28 +218,21 @@ public class SecureClassLoader extends ClassLoader {
         // that no nameservice lookup is done on the hostname (String comparison
         // only), and the fragment is not considered.
         CodeSourceKey key = new CodeSourceKey(cs);
-        return pdcache.computeIfAbsent(key, new Function<>() {
-            @Override
-            public ProtectionDomain apply(CodeSourceKey key /* not used */) {
-                PermissionCollection perms
-                        = SecureClassLoader.this.getPermissions(cs);
-                ProtectionDomain pd = new ProtectionDomain(
-                        cs, perms, SecureClassLoader.this, null);
-                if (DebugHolder.debug != null) {
-                    DebugHolder.debug.println(" getPermissions " + pd);
-                    DebugHolder.debug.println("");
-                }
-                return pd;
+        /* not used */
+        return pdcache.computeIfAbsent(key, key1 -> {
+            PermissionCollection perms
+                    = SecureClassLoader.this.getPermissions(cs);
+            ProtectionDomain pd = new ProtectionDomain(
+                    cs, perms, SecureClassLoader.this, null);
+            if (DebugHolder.debug != null) {
+                DebugHolder.debug.println(" getPermissions " + pd);
+                DebugHolder.debug.println("");
             }
+            return pd;
         });
     }
 
-    private static class CodeSourceKey {
-        private final CodeSource cs;
-
-        CodeSourceKey(CodeSource cs) {
-            this.cs = cs;
-        }
+    private record CodeSourceKey(CodeSource cs) {
 
         @Override
         public int hashCode() {

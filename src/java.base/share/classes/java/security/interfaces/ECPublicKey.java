@@ -51,7 +51,7 @@ public interface ECPublicKey extends PublicKey, ECKey {
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = -3314988629879632826L;
+   long serialVersionUID = -3314988629879632826L;
 
     /**
      * Returns the public point W.

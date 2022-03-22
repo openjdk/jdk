@@ -58,13 +58,13 @@ public class GuardedObject implements java.io.Serializable {
      * The object we are guarding.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private Object object;
+    private final Object object;
 
     /**
      * The guard object.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private Guard guard;
+    private final Guard guard;
 
     /**
      * Constructs a GuardedObject using the specified object and guard.

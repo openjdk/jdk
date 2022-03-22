@@ -57,49 +57,49 @@ public interface RSAMultiPrimePrivateCrtKey extends RSAPrivateKey {
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = 618058533534628008L;
+    long serialVersionUID = 618058533534628008L;
 
     /**
      * Returns the public exponent.
      *
      * @return the public exponent.
      */
-    public BigInteger getPublicExponent();
+    BigInteger getPublicExponent();
 
     /**
      * Returns the primeP.
      *
      * @return the primeP.
      */
-    public BigInteger getPrimeP();
+    BigInteger getPrimeP();
 
     /**
      * Returns the primeQ.
      *
      * @return the primeQ.
      */
-    public BigInteger getPrimeQ();
+    BigInteger getPrimeQ();
 
     /**
      * Returns the primeExponentP.
      *
      * @return the primeExponentP.
      */
-    public BigInteger getPrimeExponentP();
+    BigInteger getPrimeExponentP();
 
     /**
      * Returns the primeExponentQ.
      *
      * @return the primeExponentQ.
      */
-    public BigInteger getPrimeExponentQ();
+    BigInteger getPrimeExponentQ();
 
     /**
      * Returns the crtCoefficient.
      *
      * @return the crtCoefficient.
      */
-    public BigInteger getCrtCoefficient();
+    BigInteger getCrtCoefficient();
 
     /**
      * Returns the otherPrimeInfo or null if there are only
@@ -107,5 +107,5 @@ public interface RSAMultiPrimePrivateCrtKey extends RSAPrivateKey {
      *
      * @return the otherPrimeInfo.
      */
-    public RSAOtherPrimeInfo[] getOtherPrimeInfo();
+    RSAOtherPrimeInfo[] getOtherPrimeInfo();
 }

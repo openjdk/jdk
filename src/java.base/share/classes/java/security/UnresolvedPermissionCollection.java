@@ -82,10 +82,7 @@ implements java.io.Serializable
         // Add permission to map. NOTE: cannot use lambda for
         // remappingFunction parameter until JDK-8076596 is fixed.
         perms.compute(unresolvedPermission.getName(),
-            new java.util.function.BiFunction<>() {
-                @Override
-                public List<UnresolvedPermission> apply(String key,
-                                        List<UnresolvedPermission> oldValue) {
+                (key, oldValue) -> {
                     if (oldValue == null) {
                         List<UnresolvedPermission> v =
                             new CopyOnWriteArrayList<>();
@@ -96,7 +93,6 @@ implements java.io.Serializable
                         return oldValue;
                     }
                 }
-            }
         );
     }
 

@@ -148,7 +148,7 @@ public class CertPathValidator {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the requested {@code CertPathValidator}
@@ -328,14 +328,11 @@ public class CertPathValidator {
      * by the {@code certpathvalidator.type} security property, or the string
      * {@literal "PKIX"} if no such property exists.
      */
-    public static final String getDefaultType() {
+    public static String getDefaultType() {
         @SuppressWarnings("removal")
         String cpvtype =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public String run() {
-                    return Security.getProperty(CPV_TYPE);
-                }
-            });
+            AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                    Security.getProperty(CPV_TYPE));
         return (cpvtype == null) ? "PKIX" : cpvtype;
     }
 

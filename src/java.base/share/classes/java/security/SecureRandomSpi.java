@@ -50,7 +50,7 @@ package java.security;
  * <p>
  * Otherwise, if the {@code SecureRandomSpi(SecureRandomParameters)}
  * constructor is not overridden in an implementation, the
- * {@link #SecureRandomSpi()} constructor must be overridden and it will be
+ * {@link #SecureRandomSpi()} constructor must be overridden, and it will be
  * called if an object is instantiated with one of {@code SecureRandom}'s
  * {@code getInstance} methods <em>without</em> a
  * {@code SecureRandomParameters} argument. Calling one of

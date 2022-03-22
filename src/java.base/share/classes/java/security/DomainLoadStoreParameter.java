@@ -49,7 +49,7 @@ import static java.security.KeyStore.*;
  * and {@code property} is a key/value pairing. The key and value are
  * separated by an 'equals' symbol and the value is enclosed in double
  * quotes. A property value may be either a printable string or a binary
- * string of colon-separated pairs of hexadecimal digits. Multi-valued
+ * string of colon-separated pairs of hexadecimal digits. Multivalued
  * properties are represented as a comma-separated list of values,
  * enclosed in square brackets.
  * See {@link Arrays#toString(java.lang.Object[])}.
@@ -135,7 +135,7 @@ public final class DomainLoadStoreParameter implements LoadStoreParameter {
         }
         this.configuration = configuration;
         this.protectionParams =
-            Collections.unmodifiableMap(new HashMap<>(protectionParams));
+                Map.copyOf(protectionParams);
     }
 
     /**

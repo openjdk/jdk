@@ -72,11 +72,9 @@ public final class Security {
         // (the FileInputStream call and the File.exists call,
         // the securityPropFile call, etc)
         @SuppressWarnings("removal")
-        var dummy = AccessController.doPrivileged(new PrivilegedAction<>() {
-            public Void run() {
-                initialize();
-                return null;
-            }
+        var dummy = AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+            initialize();
+            return null;
         });
     }
 
@@ -87,7 +85,7 @@ public final class Security {
 
         // first load the system properties file
         // to determine the value of security.overridePropertiesFile
-        File propFile = securityPropFile("java.security");
+        File propFile = securityPropFile();
         if (propFile.exists()) {
             InputStream is = null;
             try {
@@ -213,19 +211,19 @@ public final class Security {
     private Security() {
     }
 
-    private static File securityPropFile(String filename) {
+    private static File securityPropFile() {
         // maybe check for a system property which will specify where to
         // look. Someday.
         String sep = File.separator;
         return new File(StaticProperty.javaHome() + sep + "conf" + sep +
-                        "security" + sep + filename);
+                        "security" + sep + "java.security");
     }
 
     /**
      * Looks up providers, and returns the property (and its associated
      * provider) mapping the key, if any.
      * The order in which the providers are looked up is the
-     * provider-preference order, as specificed in the security
+     * provider-preference order, as specified in the security
      * properties file.
      */
     private static ProviderProperty getProviderProperty(String key) {
@@ -234,7 +232,7 @@ public final class Security {
         List<Provider> providers = Providers.getProviderList().providers();
         for (int i = 0; i < providers.size(); i++) {
 
-            String matchKey = null;
+            String matchKey;
             Provider prov = providers.get(i);
             String prop = prov.getProperty(key);
 
@@ -242,7 +240,7 @@ public final class Security {
                 // Is there a match if we do a case-insensitive property name
                 // comparison? Let's try ...
                 for (Enumeration<Object> e = prov.keys();
-                                e.hasMoreElements() && prop == null; ) {
+                     e.hasMoreElements(); ) {
                     matchKey = (String)e.nextElement();
                     if (key.equalsIgnoreCase(matchKey)) {
                         prop = prov.getProperty(matchKey);
@@ -259,7 +257,7 @@ public final class Security {
             }
         }
 
-        return entry;
+        return null;
     }
 
     /**
@@ -271,7 +269,7 @@ public final class Security {
             // Is there a match if we do a case-insensitive property name
             // comparison? Let's try ...
             for (Enumeration<Object> e = provider.keys();
-                                e.hasMoreElements() && prop == null; ) {
+                 e.hasMoreElements(); ) {
                 String matchKey = (String)e.nextElement();
                 if (key.equalsIgnoreCase(matchKey)) {
                     prop = provider.getProperty(matchKey);
@@ -534,8 +532,8 @@ public final class Security {
      * @since 1.3
      */
     public static Provider[] getProviders(String filter) {
-        String key = null;
-        String value = null;
+        String key;
+        String value;
         int index = filter.indexOf(':');
 
         if (index == -1) {
@@ -613,8 +611,8 @@ public final class Security {
 
         // Returns all installed providers
         // if the selection criteria is null.
-        if ((keySet == null) || (allProviders == null)) {
-            return allProviders;
+        if (allProviders == null) {
+            return null;
         }
 
         boolean firstSearch = true;
@@ -631,17 +629,11 @@ public final class Security {
                 firstSearch = false;
             }
 
-            if ((newCandidates != null) && !newCandidates.isEmpty()) {
+            if (!newCandidates.isEmpty()) {
                 // For each provider in the candidates set, if it
                 // isn't in the newCandidate set, we should remove
                 // it from the candidate set.
-                for (Iterator<Provider> cansIte = candidates.iterator();
-                     cansIte.hasNext(); ) {
-                    Provider prov = cansIte.next();
-                    if (!newCandidates.contains(prov)) {
-                        cansIte.remove();
-                    }
-                }
+                candidates.removeIf(prov -> !newCandidates.contains(prov));
             } else {
                 candidates = null;
                 break;
@@ -735,7 +727,7 @@ public final class Security {
      * {@code checkPermission}  method is called with a
      * {@code java.security.SecurityPermission("getProperty."+key)}
      * permission to see if it's ok to retrieve the specified
-     * security property value..
+     * security property value.
      *
      * @param key the key of the property being retrieved.
      *
@@ -858,7 +850,7 @@ public final class Security {
 
         // The first component is the service name.
         // The second is the algorithm name.
-        // If the third isn't null, that is the attrinute name.
+        // If the third isn't null, that is the attribute name.
         String serviceName = filterComponents[0];
         String algName = filterComponents[1];
         String attrName = filterComponents[2];
@@ -953,10 +945,7 @@ public final class Security {
         if (attribute.equalsIgnoreCase("KeySize"))
             return true;
 
-        if (attribute.equalsIgnoreCase("ImplementedIn"))
-            return true;
-
-        return false;
+        return attribute.equalsIgnoreCase("ImplementedIn");
     }
 
     /*
@@ -971,11 +960,7 @@ public final class Security {
         if (attribute.equalsIgnoreCase("KeySize")) {
             int requestedSize = Integer.parseInt(value);
             int maxSize = Integer.parseInt(prop);
-            if (requestedSize <= maxSize) {
-                return true;
-            } else {
-                return false;
-            }
+            return requestedSize <= maxSize;
         }
 
         // For Type, prop is the type of the implementation
@@ -997,7 +982,7 @@ public final class Security {
         }
 
         String serviceName = filterKey.substring(0, algIndex);
-        String algName = null;
+        String algName;
         String attrName = null;
 
         if (filterValue.isEmpty()) {
@@ -1005,7 +990,7 @@ public final class Security {
             // should be in the format of <crypto_service>.<algorithm_or_type>.
             algName = filterKey.substring(algIndex + 1).trim();
             if (algName.isEmpty()) {
-                // There must be a algorithm or type name.
+                // There must be an algorithm or type name.
                 throw new InvalidParameterException("Invalid filter");
             }
         } else {

@@ -39,7 +39,7 @@
  * provider-based.  The class itself defines a programming interface
  * to which applications may write.  The implementations themselves may
  * then be written by independent third-party vendors and plugged
- * in seamlessly as needed.  Therefore application developers may
+ * in seamlessly as needed.  Therefore, application developers may
  * take advantage of any number of provider-based implementations
  * without having to add or rewrite code.
  *

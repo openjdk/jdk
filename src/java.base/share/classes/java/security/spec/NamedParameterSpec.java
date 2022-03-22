@@ -68,7 +68,7 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
     public static final NamedParameterSpec ED448
         = new NamedParameterSpec("Ed448");
 
-    private String name;
+    private final String name;
 
     /**
      * Creates a parameter specification using a standard (or predefined)

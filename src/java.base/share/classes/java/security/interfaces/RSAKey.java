@@ -48,7 +48,7 @@ public interface RSAKey {
      *
      * @return the modulus
      */
-    public BigInteger getModulus();
+    BigInteger getModulus();
 
     /**
      * Returns the parameters associated with this key.

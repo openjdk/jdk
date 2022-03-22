@@ -26,7 +26,6 @@
 package java.security.spec;
 
 import java.math.BigInteger;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the set of parameters used to generate an RSA
@@ -41,9 +40,9 @@ import java.security.spec.AlgorithmParameterSpec;
 
 public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
 
-    private int keysize;
-    private BigInteger publicExponent;
-    private AlgorithmParameterSpec keyParams;
+    private final int keysize;
+    private final BigInteger publicExponent;
+    private final AlgorithmParameterSpec keyParams;
 
     /**
      * The public-exponent value F0 = 3.

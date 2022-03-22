@@ -119,14 +119,14 @@ public abstract class Provider extends Properties {
      *
      * @serial
      */
-    private String name;
+    private final String name;
 
     /**
      * A description of the provider and its services.
      *
      * @serial
      */
-    private String info;
+    private final String info;
 
     /**
      * The provider version number.
@@ -192,7 +192,7 @@ public abstract class Provider extends Properties {
         this.info = info;
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos = new LinkedHashSet<String>(6);
+        this.prngAlgos = new LinkedHashSet<>(6);
         putId();
         initialized = true;
     }
@@ -232,7 +232,7 @@ public abstract class Provider extends Properties {
         this.info = info;
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos = new LinkedHashSet<String>(6);
+        this.prngAlgos = new LinkedHashSet<>(6);
         putId();
         initialized = true;
     }
@@ -386,7 +386,7 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Copies all of the mappings from the specified Map to this provider.
+     * Copies all the mappings from the specified Map to this provider.
      * These mappings will replace any properties that this provider had
      * for any of the keys currently in the specified Map.
      *
@@ -884,14 +884,14 @@ public abstract class Provider extends Properties {
         }
         this.serviceMap = new ConcurrentHashMap<>();
         this.legacyMap = new ConcurrentHashMap<>();
-        this.prngAlgos = new LinkedHashSet<String>(6);
+        this.prngAlgos = new LinkedHashSet<>(6);
         implClear();
         initialized = true;
         putAll(copy);
     }
 
     // returns false if no update necessary, i.e. key isn't String or
-    // is String but it's provider-related (name/version/info/className)
+    // is String, but it's provider-related (name/version/info/className)
     private static boolean checkLegacy(Object key) {
         if (key instanceof String && ((String)key).startsWith("Provider.")) {
             // ignore provider related updates
@@ -902,7 +902,7 @@ public abstract class Provider extends Properties {
     }
 
     /**
-     * Copies all of the mappings from the specified Map to this provider.
+     * Copies all the mappings from the specified Map to this provider.
      * Internal method to be called AFTER the security check has been
      * performed.
      */
@@ -1095,7 +1095,8 @@ public abstract class Provider extends Properties {
                 && this.algorithm.equals(other.algorithm);
         }
         boolean matches(String type, String algorithm) {
-            return (this.type == type) && (this.originalAlgorithm == algorithm);
+            return (Objects.equals(this.type, type)) &&
+                (Objects.equals(this.originalAlgorithm, algorithm));
         }
         public String toString() {
             return type + "." + algorithm;
@@ -1120,8 +1121,8 @@ public abstract class Provider extends Properties {
     private static final String ALIAS_PREFIX_LOWER = "alg.alias.";
     private static final int ALIAS_LENGTH = ALIAS_PREFIX.length();
 
-    private static enum OPType {
-        ADD, REMOVE;
+    private enum OPType {
+        ADD, REMOVE
     }
 
     private void parseLegacy(String name, String value, OPType opType) {
@@ -1255,7 +1256,7 @@ public abstract class Provider extends Properties {
      *
      * @param type the type of {@link Service service} requested
      * (for example, {@code MessageDigest})
-     * @param algorithm the case insensitive algorithm name (or alternate
+     * @param algorithm the case-insensitive algorithm name (or alternate
      * alias) of the service requested (for example, {@code SHA-1})
      *
      * @return the service describing this Provider's matching service
@@ -1269,7 +1270,7 @@ public abstract class Provider extends Properties {
         checkInitialized();
         // avoid allocating a new ServiceKey object if possible
         ServiceKey key = previousKey;
-        if (key.matches(type, algorithm) == false) {
+        if (!key.matches(type, algorithm)) {
             key = new ServiceKey(type, algorithm, false);
             previousKey = key;
         }
@@ -1326,7 +1327,7 @@ public abstract class Provider extends Properties {
 
     /**
      * Add a service. If a service of the same type with the same algorithm
-     * name exists and it was added using {@link #putService putService()},
+     * name exists, and it was added using {@link #putService putService()},
      * it is replaced by the new service.
      * This method also places information about this service
      * in the provider's Hashtable values in the format described in the
@@ -1507,7 +1508,7 @@ public abstract class Provider extends Properties {
         checkAndUpdateSecureRandom(type, algorithm, false);
     }
 
-    // Wrapped String that behaves in a case insensitive way for equals/hashCode
+    // Wrapped String that behaves in a case-insensitive way for equals/hashCode
     private static class UString {
         final String string;
         final String lowerString;
@@ -1605,7 +1606,7 @@ public abstract class Provider extends Properties {
                             "java.lang.Object");
     }
 
-    // get the "standard" (mixed-case) engine name for arbitary case engine name
+    // get the "standard" (mixed-case) engine name for arbitrary case engine name
     // if there is no known engine by that name, return s
     private static String getEngineName(String s) {
         // try original case first, usually correct
@@ -1666,7 +1667,7 @@ public abstract class Provider extends Properties {
         // flag indicating whether this service has its attributes for
         // supportedKeyFormats or supportedKeyClasses set
         // if null, the values have not been initialized
-        // if TRUE, at least one of supportedFormats/Classes is non null
+        // if TRUE, at least one of supportedFormats/Classes is non-null
         private volatile Boolean hasKeyAttributes;
 
         // supported encoding formats
@@ -1688,8 +1689,8 @@ public abstract class Provider extends Properties {
             this.type = type;
             this.algorithm = algorithm;
             engineDescription = knownEngines.get(type);
-            aliases = Collections.<String>emptyList();
-            attributes = Collections.<UString,String>emptyMap();
+            aliases = Collections.emptyList();
+            attributes = Collections.emptyMap();
         }
 
         private boolean isValid() {
@@ -1755,12 +1756,12 @@ public abstract class Provider extends Properties {
             this.algorithm = algorithm;
             this.className = className;
             if (aliases == null) {
-                this.aliases = Collections.<String>emptyList();
+                this.aliases = Collections.emptyList();
             } else {
                 this.aliases = new ArrayList<>(aliases);
             }
             if (attributes == null) {
-                this.attributes = Collections.<UString,String>emptyMap();
+                this.attributes = Collections.emptyMap();
             } else {
                 this.attributes = new HashMap<>();
                 for (Map.Entry<String,String> entry : attributes.entrySet()) {
@@ -1807,7 +1808,7 @@ public abstract class Provider extends Properties {
         }
 
         // internal only
-        private final List<String> getAliases() {
+        private List<String> getAliases() {
             return aliases;
         }
 
@@ -1856,7 +1857,7 @@ public abstract class Provider extends Properties {
          */
         public Object newInstance(Object constructorParameter)
                 throws NoSuchAlgorithmException {
-            if (registered == false) {
+            if (!registered) {
                 if (provider.getService(type, algorithm) != this) {
                     throw new NoSuchAlgorithmException
                         ("Service not registered with Provider "
@@ -1883,7 +1884,7 @@ public abstract class Provider extends Properties {
                                 + " engines");
                         } else {
                             Class<?> argClass = constructorParameter.getClass();
-                            if (ctrParamClz.isAssignableFrom(argClass) == false) {
+                            if (!ctrParamClz.isAssignableFrom(argClass)) {
                                 throw new InvalidParameterException
                                     ("constructorParameter must be instanceof "
                                     + cap.constructorParameterClassName.replace('$', '.')
@@ -2055,10 +2056,7 @@ public abstract class Provider extends Properties {
             if (supportsKeyFormat(key)) {
                 return true;
             }
-            if (supportsKeyClass(key)) {
-                return true;
-            }
-            return false;
+            return supportsKeyClass(key);
         }
 
         /**
@@ -2089,14 +2087,13 @@ public abstract class Provider extends Properties {
                             }
                             supportedClasses = classList.toArray(CLASS0);
                         }
-                        boolean bool = (supportedFormats != null)
+                        b = (supportedFormats != null)
                             || (supportedClasses != null);
-                        b = Boolean.valueOf(bool);
                         hasKeyAttributes = b;
                     }
                 }
             }
-            return b.booleanValue();
+            return b;
         }
 
         // get the key class object of the specified name
@@ -2153,9 +2150,9 @@ public abstract class Provider extends Properties {
          */
         public String toString() {
             String aString = aliases.isEmpty()
-                ? "" : "\r\n  aliases: " + aliases.toString();
+                ? "" : "\r\n  aliases: " + aliases;
             String attrs = attributes.isEmpty()
-                ? "" : "\r\n  attributes: " + attributes.toString();
+                ? "" : "\r\n  attributes: " + attributes;
             return provider.getName() + ": " + type + "." + algorithm
                 + " -> " + className + aString + attrs + "\r\n";
         }

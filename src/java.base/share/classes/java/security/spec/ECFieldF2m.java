@@ -39,8 +39,8 @@ import java.util.Arrays;
  */
 public class ECFieldF2m implements ECField {
 
-    private int m;
-    private int[] ks;
+    private final int m;
+    private final int[] ks;
     private BigInteger rp;
 
     /**

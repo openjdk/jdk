@@ -109,7 +109,7 @@ public abstract class MessageDigestSpi {
      * @since 1.5
      */
     protected void engineUpdate(ByteBuffer input) {
-        if (input.hasRemaining() == false) {
+        if (!input.hasRemaining()) {
             return;
         }
         if (input.hasArray()) {

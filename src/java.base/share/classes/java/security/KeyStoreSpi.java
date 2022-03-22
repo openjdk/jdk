@@ -380,7 +380,7 @@ public abstract class KeyStoreSpi {
      * <p>
      * If {@code KeyStore.LoadStoreParameter} is {@code null} then
      * the password parameter will also be {@code null}.
-     * Otherwise the {@code KeyStore.ProtectionParameter} of
+     * Otherwise, the {@code KeyStore.ProtectionParameter} of
      * {@code KeyStore.LoadStoreParameter} must be either a
      * {@code KeyStore.PasswordProtection} or a
      * {@code KeyStore.CallbackHandlerProtection} that supports
@@ -415,7 +415,7 @@ public abstract class KeyStoreSpi {
                 CertificateException {
 
         if (param == null) {
-            engineLoad((InputStream)null, (char[])null);
+            engineLoad(null, (char[])null);
             return;
         }
 
@@ -444,7 +444,6 @@ public abstract class KeyStoreSpi {
                 + " be PasswordProtection or CallbackHandlerProtection");
         }
         engineLoad(stream, password);
-        return;
     }
 
     /**
@@ -610,8 +609,7 @@ public abstract class KeyStoreSpi {
                 engineSetKeyEntry
                     (alias,
                     ((KeyStore.SecretKeyEntry)entry).getSecretKey(),
-                    pProtect.getPassword(),
-                    (Certificate[])null);
+                    pProtect.getPassword(), null);
                 return;
             }
         }

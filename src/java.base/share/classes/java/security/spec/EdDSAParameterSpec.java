@@ -53,7 +53,7 @@ public class EdDSAParameterSpec implements AlgorithmParameterSpec {
      * Construct an {@code EdDSAParameterSpec} by specifying whether the prehash mode
      * is used. No context is provided so this constructor specifies a mode
      * in which the context is null. Note that this mode may be different
-     * than the mode in which an empty array is used as the context.
+     * from the mode in which an empty array is used as the context.
      *
      * @param prehash whether the prehash mode is specified.
      */

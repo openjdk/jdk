@@ -78,7 +78,7 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     *                        specified if there are only two prime factors
     *                        (p and q)
     * @throws NullPointerException     if any of the specified parameters
-    *         with the exception of {@code otherPrimeInfo} is null
+    *         except {@code otherPrimeInfo} is null
     * @throws IllegalArgumentException if an empty, i.e. 0-length,
     *         {@code otherPrimeInfo} is specified
     */
@@ -118,7 +118,7 @@ public class RSAMultiPrimePrivateCrtKeySpec extends RSAPrivateKeySpec {
     *                         (p and q)
     * @param keyParams        the parameters associated with key
     * @throws NullPointerException     if any of the specified parameters
-    *         with the exception of {@code otherPrimeInfo} and {@code keyParams}
+    *         except {@code otherPrimeInfo} and {@code keyParams}
     *         is null
     * @throws IllegalArgumentException if an empty, i.e. 0-length,
     *         {@code otherPrimeInfo} is specified

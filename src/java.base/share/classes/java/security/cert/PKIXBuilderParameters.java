@@ -189,11 +189,9 @@ public class PKIXBuilderParameters extends PKIXParameters {
      * @return a formatted string describing the parameters
      */
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[\n");
-        sb.append(super.toString());
-        sb.append("  Maximum Path Length: " + maxPathLength + "\n");
-        sb.append("]\n");
-        return sb.toString();
+        return "[\n" +
+                super.toString() +
+                "  Maximum Path Length: " + maxPathLength + "\n" +
+                "]\n";
     }
 }

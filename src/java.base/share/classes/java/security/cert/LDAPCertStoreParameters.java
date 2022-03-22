@@ -31,9 +31,9 @@ package java.security.cert;
  * This class is used to provide necessary configuration parameters (server
  * name and port number) to implementations of the LDAP {@code CertStore}
  * algorithm. However, if you are retrieving certificates or CRLs from
- * an ldap URI as specified by RFC 5280, use the
+ * a ldap URI as specified by RFC 5280, use the
  * {@link java.security.cert.URICertStoreParameters URICertStoreParameters}
- * instead as the URI may contain additional information such as the
+ * instead, as the URI may contain additional information such as the
  * distinguished name that will help the LDAP CertStore find the specific
  * certificates and CRLs.
  * <p>
@@ -56,12 +56,12 @@ public class LDAPCertStoreParameters implements CertStoreParameters {
     /**
      * the port number of the LDAP server
      */
-    private int port;
+    private final int port;
 
     /**
      * the DNS name of the LDAP server
      */
-    private String serverName;
+    private final String serverName;
 
     /**
      * Creates an instance of {@code LDAPCertStoreParameters} with the
@@ -143,12 +143,10 @@ public class LDAPCertStoreParameters implements CertStoreParameters {
      * @return a formatted string describing the parameters
      */
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("LDAPCertStoreParameters: [\n");
 
-        sb.append("  serverName: " + serverName + "\n");
-        sb.append("  port: " + port + "\n");
-        sb.append("]");
-        return sb.toString();
+        return "LDAPCertStoreParameters: [\n" +
+                "  serverName: " + serverName + "\n" +
+                "  port: " + port + "\n" +
+                "]";
     }
 }

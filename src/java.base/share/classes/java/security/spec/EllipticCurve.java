@@ -26,7 +26,6 @@
 package java.security.spec;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * This immutable class holds the necessary values needed to represent

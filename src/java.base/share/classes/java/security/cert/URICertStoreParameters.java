@@ -55,7 +55,7 @@ public final class URICertStoreParameters implements CertStoreParameters {
     private final URI uri;
 
     /*
-     * Hash code for this parameters.
+     * Hash code for these parameters.
      */
     private int myhash = -1;
 
@@ -103,7 +103,7 @@ public final class URICertStoreParameters implements CertStoreParameters {
      * Returns a hash code value for this parameters object.
      * The hash code is generated using the URI supplied at construction.
      *
-     * @return a hash code value for this parameters.
+     * @return a hash code value for these parameters.
      */
     @Override
     public int hashCode() {
@@ -118,7 +118,7 @@ public final class URICertStoreParameters implements CertStoreParameters {
      * Two URICertStoreParameters are considered equal if the URIs used
      * to construct them are equal.
      *
-     * @param p the object to test for equality with this parameters.
+     * @param p the object to test for equality with these parameters.
      *
      * @return true if the specified object is equal to this parameters object.
      */
@@ -139,6 +139,6 @@ public final class URICertStoreParameters implements CertStoreParameters {
      */
     @Override
     public String toString() {
-        return "URICertStoreParameters: " + uri.toString();
+        return "URICertStoreParameters: " + uri;
     }
 }

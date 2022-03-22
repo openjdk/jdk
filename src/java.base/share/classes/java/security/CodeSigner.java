@@ -46,14 +46,14 @@ public final class CodeSigner implements Serializable {
      *
      * @serial
      */
-    private CertPath signerCertPath;
+    private final CertPath signerCertPath;
 
     /**
      * The signature timestamp.
      *
      * @serial
      */
-    private Timestamp timestamp;
+    private final Timestamp timestamp;
 
     /*
      * Hash code for this code signer.
@@ -126,7 +126,7 @@ public final class CodeSigner implements Serializable {
      * @return true if the objects are considered equal, false otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj == null || (!(obj instanceof CodeSigner that))) {
+        if ((!(obj instanceof CodeSigner that))) {
             return false;
         }
 
@@ -139,8 +139,7 @@ public final class CodeSigner implements Serializable {
                 return false;
             }
         } else {
-            if (thatTimestamp == null ||
-                (! timestamp.equals(thatTimestamp))) {
+            if ((!timestamp.equals(thatTimestamp))) {
                 return false;
             }
         }

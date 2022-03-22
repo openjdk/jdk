@@ -41,7 +41,7 @@ import sun.security.jca.GetInstance.Instance;
  * (transparent representations of the underlying key material), and vice
  * versa.
  *
- * <P> Key factories are bi-directional. That is, they allow you to build an
+ * <P> Key factories are bidirectional. That is, they allow you to build an
  * opaque key object from a given key specification (key material), or to
  * retrieve the underlying key material of a key object in a suitable format.
  *
@@ -158,7 +158,7 @@ public class KeyFactory {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the requested key algorithm.
@@ -295,7 +295,7 @@ public class KeyFactory {
 
     /**
      * Update the active KeyFactorySpi of this class and return the next
-     * implementation for failover. If no more implemenations are
+     * implementation for failover. If no more implementations are
      * available, this method returns null. However, the active spi of
      * this class is never set to null.
      */
@@ -359,11 +359,7 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        if (failure instanceof InvalidKeySpecException) {
-            throw (InvalidKeySpecException)failure;
-        }
-        throw new InvalidKeySpecException
-                ("Could not generate public key", failure);
+        throw (InvalidKeySpecException)failure;
     }
 
     /**
@@ -397,11 +393,7 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        if (failure instanceof InvalidKeySpecException) {
-            throw (InvalidKeySpecException)failure;
-        }
-        throw new InvalidKeySpecException
-                ("Could not generate private key", failure);
+        throw (InvalidKeySpecException)failure;
     }
 
     /**
@@ -446,11 +438,7 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        if (failure instanceof InvalidKeySpecException) {
-            throw (InvalidKeySpecException)failure;
-        }
-        throw new InvalidKeySpecException
-                ("Could not get key spec", failure);
+        throw (InvalidKeySpecException)failure;
     }
 
     /**
@@ -483,11 +471,7 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        if (failure instanceof InvalidKeyException) {
-            throw (InvalidKeyException)failure;
-        }
-        throw new InvalidKeyException
-                ("Could not translate key", failure);
+        throw (InvalidKeyException)failure;
     }
 
 }

@@ -25,11 +25,9 @@
 
 package java.security;
 
-import java.security.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
 import sun.security.util.SecurityConstants;
+
+import java.util.Enumeration;
 
 /**
  * The AllPermission is a permission that implies all other permissions.

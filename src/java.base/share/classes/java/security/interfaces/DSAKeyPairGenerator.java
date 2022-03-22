@@ -88,7 +88,7 @@ public interface DSAKeyPairGenerator {
      * @throws    InvalidParameterException if the {@code params}
      * value is invalid, null, or unsupported.
      */
-   public void initialize(DSAParams params, SecureRandom random)
+    void initialize(DSAParams params, SecureRandom random)
    throws InvalidParameterException;
 
     /**
@@ -109,13 +109,13 @@ public interface DSAKeyPairGenerator {
      * @param random the random bit source to use to generate key bits;
      * can be null.
      *
-     * @param genParams whether or not to generate new parameters for
+     * @param genParams whether to generate new parameters for
      * the modulus length requested.
      *
      * @throws    InvalidParameterException if {@code modlen} is
      * invalid, or unsupported, or if {@code genParams} is false and there
      * are no precomputed parameters for the requested modulus length.
      */
-    public void initialize(int modlen, boolean genParams, SecureRandom random)
+    void initialize(int modlen, boolean genParams, SecureRandom random)
     throws InvalidParameterException;
 }

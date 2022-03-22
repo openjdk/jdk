@@ -27,7 +27,6 @@ package java.security.cert;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Serializable;
 
 /**
  * This interface represents an X.509 extension.

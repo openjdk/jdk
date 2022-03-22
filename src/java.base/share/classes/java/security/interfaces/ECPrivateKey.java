@@ -49,7 +49,7 @@ public interface ECPrivateKey extends PrivateKey, ECKey {
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = -7896394956925609184L;
+   long serialVersionUID = -7896394956925609184L;
 
     /**
      * Returns the private value S.

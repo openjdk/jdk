@@ -432,7 +432,7 @@ implements Serializable
 final class PermissionsEnumerator implements Enumeration<Permission> {
 
     // all the perms
-    private Iterator<PermissionCollection> perms;
+    private final Iterator<PermissionCollection> perms;
     // the current set
     private Enumeration<Permission> permset;
 

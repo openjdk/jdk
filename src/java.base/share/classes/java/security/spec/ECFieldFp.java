@@ -25,7 +25,6 @@
 package java.security.spec;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * This immutable class defines an elliptic curve (EC) prime
@@ -39,7 +38,7 @@ import java.util.Arrays;
  */
 public class ECFieldFp implements ECField {
 
-    private BigInteger p;
+    private final BigInteger p;
 
     /**
      * Creates an elliptic curve prime finite field
@@ -63,7 +62,7 @@ public class ECFieldFp implements ECField {
      */
     public int getFieldSize() {
         return p.bitLength();
-    };
+    }
 
     /**
      * Returns the prime {@code p} of this prime finite field.

@@ -173,7 +173,7 @@ public abstract class PKIXCertPathChecker
      */
     @Override
     public void check(Certificate cert) throws CertPathValidatorException {
-        check(cert, java.util.Collections.<String>emptySet());
+        check(cert, java.util.Collections.emptySet());
     }
 
     /**

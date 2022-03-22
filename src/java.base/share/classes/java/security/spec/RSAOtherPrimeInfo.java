@@ -53,9 +53,9 @@ import java.math.BigInteger;
 
 public class RSAOtherPrimeInfo {
 
-    private BigInteger prime;
-    private BigInteger primeExponent;
-    private BigInteger crtCoefficient;
+    private final BigInteger prime;
+    private final BigInteger primeExponent;
+    private final BigInteger crtCoefficient;
 
 
    /**

@@ -51,12 +51,12 @@ public interface RSAPrivateKey extends java.security.PrivateKey, RSAKey
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = 5187144804936595022L;
+    long serialVersionUID = 5187144804936595022L;
 
     /**
      * Returns the private exponent.
      *
      * @return the private exponent
      */
-    public BigInteger getPrivateExponent();
+    BigInteger getPrivateExponent();
 }

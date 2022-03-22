@@ -54,12 +54,12 @@ public interface DSAPrivateKey extends DSAKey, java.security.PrivateKey {
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = 7776497482533790279L;
+   long serialVersionUID = 7776497482533790279L;
 
     /**
      * Returns the value of the private key, {@code x}.
      *
      * @return the value of the private key, {@code x}.
      */
-    public BigInteger getX();
+    BigInteger getX();
 }

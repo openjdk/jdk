@@ -54,12 +54,12 @@ public interface DSAPublicKey extends DSAKey, java.security.PublicKey {
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = 1234526332779022332L;
+   long serialVersionUID = 1234526332779022332L;
 
     /**
      * Returns the value of the public key, {@code y}.
      *
      * @return the value of the public key, {@code y}.
      */
-    public BigInteger getY();
+    BigInteger getY();
 }

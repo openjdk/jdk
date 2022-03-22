@@ -24,9 +24,6 @@
  */
 package java.security.spec;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-
 /**
  * This interface represents an elliptic curve (EC) finite field.
  * All specialized EC fields must implements this interface.

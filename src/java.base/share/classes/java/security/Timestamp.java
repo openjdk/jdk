@@ -25,10 +25,11 @@
 
 package java.security;
 
-import java.io.*;
-import java.security.cert.Certificate;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.security.cert.CertPath;
-import java.security.cert.X509Extension;
+import java.security.cert.Certificate;
 import java.util.Date;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public final class Timestamp implements Serializable {
      *
      * @serial
      */
-    private CertPath signerCertPath;
+    private final CertPath signerCertPath;
 
     /*
      * Hash code for this timestamp.

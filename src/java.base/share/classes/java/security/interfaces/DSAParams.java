@@ -47,19 +47,19 @@ public interface DSAParams {
      *
      * @return the prime, {@code p}.
      */
-    public BigInteger getP();
+    BigInteger getP();
 
     /**
      * Returns the subprime, {@code q}.
      *
      * @return the subprime, {@code q}.
      */
-    public BigInteger getQ();
+    BigInteger getQ();
 
     /**
      * Returns the base, {@code g}.
      *
      * @return the base, {@code g}.
      */
-    public BigInteger getG();
+    BigInteger getG();
 }

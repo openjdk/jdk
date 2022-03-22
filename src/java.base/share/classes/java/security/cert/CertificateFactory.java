@@ -125,13 +125,13 @@ import sun.security.jca.GetInstance.Instance;
 public class CertificateFactory {
 
     // The certificate type
-    private String type;
+    private final String type;
 
     // The provider
-    private Provider provider;
+    private final Provider provider;
 
     // The provider implementation
-    private CertificateFactorySpi certFacSpi;
+    private final CertificateFactorySpi certFacSpi;
 
     /**
      * Creates a CertificateFactory object of the given type, and encapsulates
@@ -167,7 +167,7 @@ public class CertificateFactory {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param type the name of the requested certificate type.
@@ -186,7 +186,7 @@ public class CertificateFactory {
      *
      * @see java.security.Provider
      */
-    public static final CertificateFactory getInstance(String type)
+    public static CertificateFactory getInstance(String type)
             throws CertificateException {
         Objects.requireNonNull(type, "null type name");
         try {
@@ -235,9 +235,8 @@ public class CertificateFactory {
      *
      * @see java.security.Provider
      */
-    public static final CertificateFactory getInstance(String type,
-            String provider) throws CertificateException,
-            NoSuchProviderException {
+    public static CertificateFactory getInstance(String type, String provider)
+            throws CertificateException, NoSuchProviderException {
         Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",
@@ -280,8 +279,8 @@ public class CertificateFactory {
      *
      * @since 1.4
      */
-    public static final CertificateFactory getInstance(String type,
-            Provider provider) throws CertificateException {
+    public static CertificateFactory getInstance(String type, Provider provider)
+            throws CertificateException {
         Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",

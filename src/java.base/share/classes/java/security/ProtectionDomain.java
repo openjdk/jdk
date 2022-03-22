@@ -134,13 +134,13 @@ public class ProtectionDomain {
     }
 
     /* CodeSource */
-    private CodeSource codesource ;
+    private final CodeSource codesource ;
 
     /* ClassLoader the protection domain was consed from */
-    private ClassLoader classloader;
+    private final ClassLoader classloader;
 
     /* Principals running-as within this protection domain */
-    private Principal[] principals;
+    private final Principal[] principals;
 
     /* the rights this protection domain is granted */
     private PermissionCollection permissions;
@@ -371,7 +371,7 @@ public class ProtectionDomain {
             Policy policy = Policy.getPolicyNoCheck();
             if (policy instanceof PolicyFile) {
                 // The PolicyFile implementation supports compatibility
-                // inside and it also covers the static permissions.
+                // inside, and it also covers the static permissions.
                 return policy.implies(this, perm);
             } else {
                 if (policy.implies(this, perm)) {
@@ -447,7 +447,7 @@ public class ProtectionDomain {
      *
      * . SecurityManager is not null,
      *          debug is not null,
-     *          SecurityManager impelmentation is in bootclasspath,
+     *          SecurityManager implementation is in bootclasspath,
      *          Policy implementation is in bootclasspath
      *          (the bootclasspath restrictions avoid recursion)
      *
@@ -463,17 +463,15 @@ public class ProtectionDomain {
             return true;
         } else {
             if (DebugHolder.debug != null) {
-                if (sm.getClass().getClassLoader() == null &&
-                    Policy.getPolicyNoCheck().getClass().getClassLoader()
-                                                                == null) {
-                    return true;
-                }
+                return sm.getClass().getClassLoader() == null &&
+                        Policy.getPolicyNoCheck().getClass().getClassLoader()
+                                == null;
             } else {
                 try {
                     sm.checkPermission(SecurityConstants.GET_POLICY_PERMISSION);
                     return true;
                 } catch (SecurityException se) {
-                    // fall thru and return false
+                    // fall through and return false
                 }
             }
         }
@@ -488,12 +486,10 @@ public class ProtectionDomain {
         @SuppressWarnings("removal")
         PermissionCollection perms =
             java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<>() {
-                    public PermissionCollection run() {
-                        Policy p = Policy.getPolicyNoCheck();
-                        return p.getPermissions(ProtectionDomain.this);
-                    }
-                });
+            ((PrivilegedAction<PermissionCollection>) () -> {
+                Policy p = Policy.getPolicyNoCheck();
+                return p.getPermissions(ProtectionDomain.this);
+            });
 
         Permissions mergedPerms = new Permissions();
         int swag = 32;

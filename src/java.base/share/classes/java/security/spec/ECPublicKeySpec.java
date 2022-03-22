@@ -38,8 +38,8 @@ package java.security.spec;
  */
 public class ECPublicKeySpec implements KeySpec {
 
-    private ECPoint w;
-    private ECParameterSpec params;
+    private final ECPoint w;
+    private final ECParameterSpec params;
 
     /**
      * Creates a new ECPublicKeySpec with the specified

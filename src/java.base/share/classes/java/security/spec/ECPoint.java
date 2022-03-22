@@ -25,6 +25,7 @@
 package java.security.spec;
 
 import java.math.BigInteger;
+import java.util.Objects;
 
 /**
  * This immutable class represents a point on an elliptic curve (EC)
@@ -98,8 +99,8 @@ public class ECPoint {
         if (this == POINT_INFINITY) return false;
 
         return obj instanceof ECPoint other
-                && ((x.equals(other.x))
-                && (y.equals(other.y)));
+                && ((Objects.equals(x, other.x))
+                && (Objects.equals(y, other.y)));
     }
 
     /**
@@ -108,6 +109,6 @@ public class ECPoint {
      */
     public int hashCode() {
         if (this == POINT_INFINITY) return 0;
-        return x.hashCode() << 5 + y.hashCode();
+        return Objects.requireNonNull(x).hashCode() << 5 + Objects.requireNonNull(y).hashCode();
     }
 }

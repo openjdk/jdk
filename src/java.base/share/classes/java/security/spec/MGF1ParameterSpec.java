@@ -134,7 +134,7 @@ public class MGF1ParameterSpec implements AlgorithmParameterSpec {
     public static final MGF1ParameterSpec SHA3_512 =
         new MGF1ParameterSpec("SHA3-512");
 
-    private String mdName;
+    private final String mdName;
 
     /**
      * Constructs a parameter set for mask generation function MGF1

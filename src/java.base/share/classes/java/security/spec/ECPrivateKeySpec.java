@@ -39,8 +39,8 @@ import java.math.BigInteger;
  */
 public class ECPrivateKeySpec implements KeySpec {
 
-    private BigInteger s;
-    private ECParameterSpec params;
+    private final BigInteger s;
+    private final ECParameterSpec params;
 
     /**
      * Creates a new ECPrivateKeySpec with the specified

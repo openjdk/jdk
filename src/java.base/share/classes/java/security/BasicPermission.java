@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <P>
  * The name for a BasicPermission is the name of the given permission
  * (for example, "exit",
- * "setFactory", "print.queueJob", etc). The naming
+ * "setFactory", "print.queueJob", etc.). The naming
  * convention follows the  hierarchical property naming convention.
  * An asterisk may appear by itself, or if immediately preceded by a "."
  * may appear at the end of the name, to signify a wildcard match.

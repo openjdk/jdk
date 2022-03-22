@@ -323,13 +323,13 @@ public class TrustAnchor {
         StringBuilder sb = new StringBuilder();
         sb.append("[\n");
         if (pubKey != null) {
-            sb.append("  Trusted CA Public Key: " + pubKey + "\n");
-            sb.append("  Trusted CA Issuer Name: " + caName + "\n");
+            sb.append("  Trusted CA Public Key: ").append(pubKey).append("\n");
+            sb.append("  Trusted CA Issuer Name: ").append(caName).append("\n");
         } else {
-            sb.append("  Trusted CA cert: " + trustedCert + "\n");
+            sb.append("  Trusted CA cert: ").append(trustedCert).append("\n");
         }
         if (nc != null)
-            sb.append("  Name Constraints: " + nc + "\n");
+            sb.append("  Name Constraints: ").append(nc).append("\n");
         return sb.toString();
     }
 

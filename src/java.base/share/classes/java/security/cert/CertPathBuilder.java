@@ -147,7 +147,7 @@ public class CertPathBuilder {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the requested {@code CertPathBuilder}
@@ -316,14 +316,11 @@ public class CertPathBuilder {
      * by the {@code certpathbuilder.type} security property, or the string
      * {@literal "PKIX"} if no such property exists.
      */
-    public static final String getDefaultType() {
+    public static String getDefaultType() {
         @SuppressWarnings("removal")
         String cpbtype =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public String run() {
-                    return Security.getProperty(CPB_TYPE);
-                }
-            });
+            AccessController.doPrivileged((PrivilegedAction<String>) () ->
+                    Security.getProperty(CPB_TYPE));
         return (cpbtype == null) ? "PKIX" : cpbtype;
     }
 

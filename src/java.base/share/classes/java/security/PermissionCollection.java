@@ -52,7 +52,7 @@ import java.util.stream.StreamSupport;
  * If null is returned, then the caller of {@code newPermissionCollection}
  * is free to store permissions of the
  * given type in any PermissionCollection they choose
- * (one that uses a Hashtable, one that uses a Vector, etc).
+ * (one that uses a Hashtable, one that uses a Vector, etc.).
  *
  * <p>The PermissionCollection returned by the
  * {@code Permission.newPermissionCollection}

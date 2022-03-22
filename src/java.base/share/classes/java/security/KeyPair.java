@@ -25,8 +25,6 @@
 
 package java.security;
 
-import java.util.*;
-
 /**
  * This class is a simple holder for a key pair (a public key and a
  * private key). It does not enforce any security, and, when initialized,
@@ -45,10 +43,10 @@ public final class KeyPair implements java.io.Serializable {
     private static final long serialVersionUID = -7565189502268009837L;
 
     /** The private key. */
-    private PrivateKey privateKey;
+    private final PrivateKey privateKey;
 
     /** The public key. */
-    private PublicKey publicKey;
+    private final PublicKey publicKey;
 
     /**
      * Constructs a key pair from the given public key and private key.
