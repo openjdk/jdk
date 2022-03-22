@@ -53,6 +53,7 @@ class GCHeapSummary;
 class GCTimer;
 class GCTracer;
 class GCMemoryManager;
+class LivenessEstimatorThread;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
@@ -100,6 +101,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
  private:
   GCHeapLog* _gc_heap_log;
+
+  LivenessEstimatorThread* _liveness_estimator_thread;
 
   // Historic gc information
   size_t _capacity_at_last_gc;
@@ -530,6 +533,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   void reset_promotion_should_fail(volatile size_t* count);
   void reset_promotion_should_fail();
 #endif  // #ifndef PRODUCT
+
+  void stop_liveness_estimator();
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.

@@ -452,6 +452,7 @@ void before_exit(JavaThread* thread, bool halt) {
 
   // Stop concurrent GC threads
   Universe::heap()->stop();
+  Universe::heap()->stop_liveness_estimator();
 
   // Print GC/heap related information.
   Log(gc, heap, exit) log;

@@ -37,6 +37,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/liveness.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
@@ -234,6 +235,7 @@ bool CollectedHeap::is_oop(oop object) const {
 
 
 CollectedHeap::CollectedHeap() :
+  _liveness_estimator_thread(nullptr),
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
   _is_gc_active(false),
@@ -598,6 +600,17 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 void CollectedHeap::post_initialize() {
   StringDedup::initialize();
   initialize_serviceability();
+
+  if (UseConcLivenessEstimate) {
+    _liveness_estimator_thread = new LivenessEstimatorThread();
+  }
+}
+
+void CollectedHeap::stop_liveness_estimator() {
+  if (UseConcLivenessEstimate) {
+    assert(_liveness_estimator_thread != nullptr, "sanity");
+    _liveness_estimator_thread->stop();
+  }
 }
 
 #ifndef PRODUCT
@@ -658,3 +671,4 @@ void CollectedHeap::update_capacity_and_used_at_gc() {
   _capacity_at_last_gc = capacity();
   _used_at_last_gc     = used();
 }
+
