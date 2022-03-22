@@ -133,7 +133,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     @Override
     public Content getAnnotationDetailsHeader() {
         Content memberDetails = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.annotationTypeDetailsLabel);
         memberDetails.add(heading);
         return memberDetails;
@@ -142,7 +142,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     @Override
     public Content getAnnotationHeaderContent(Element member) {
         Content content = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(member)));
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
@@ -185,7 +185,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 switch (kind) {
                     case REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
                     case OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
@@ -235,7 +235,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                                   Content content) {
         Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
                 name(member), HtmlStyle.memberNameLink);
-        Content code = HtmlTree.CODE(memberLink);
+        var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
 
@@ -273,7 +273,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {
-                Content dl = HtmlTree.DL(HtmlStyle.notes);
+                var dl = HtmlTree.DL(HtmlStyle.notes);
                 dl.add(HtmlTree.DT(contents.default_));
                 dl.add(HtmlTree.DD(Text.of(value.toString())));
                 annotationContent.add(dl);

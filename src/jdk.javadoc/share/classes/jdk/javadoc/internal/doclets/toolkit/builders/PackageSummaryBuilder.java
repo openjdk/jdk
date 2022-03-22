@@ -136,7 +136,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
      * Builds the list of summaries for the different kinds of types in this package.
      *
      * @param packageContent the package content to which the summaries will
-     *                        be added
+     *                       be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildSummary(Content packageContent) throws DocletException {
@@ -170,8 +170,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the description of the summary.
      *
-     * @param packageContent the tree to which the package description will
-     *                        be added
+     * @param packageContent the content to which the package description will
+     *                       be added
      */
     protected void buildPackageDescription(Content packageContent) {
         if (options.noComment()) {
@@ -183,7 +183,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     /**
      * Build the tags of the summary.
      *
-     * @param packageContent the content to which the package ???tags?? will be added
+     * @param packageContent the content to which the package tags will be added
      */
     protected void buildPackageTags(Content packageContent) {
         if (options.noComment()) {

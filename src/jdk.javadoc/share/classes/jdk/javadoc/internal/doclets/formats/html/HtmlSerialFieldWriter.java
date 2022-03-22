@@ -95,10 +95,10 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public Content getSerializableFields(String heading, Content source) {
-        HtmlTree section = HtmlTree.SECTION(HtmlStyle.detail);
+        var section = HtmlTree.SECTION(HtmlStyle.detail);
         if (source.isValid()) {
             Content headingContent = Text.of(heading);
-            Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
+            var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);
             section.add(source);
         }
@@ -108,9 +108,9 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public void addMemberHeader(TypeMirror fieldType, String fieldName, Content content) {
         Content nameContent = Text.of(fieldName);
-        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
+        var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         content.add(heading);
-        Content pre = new HtmlTree(TagName.PRE);
+        var pre = new HtmlTree(TagName.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(
                 configuration, HtmlLinkInfo.Kind.SERIAL_MEMBER, fieldType));
         pre.add(fieldContent);
@@ -159,7 +159,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         List<? extends DocTree> description = ch.getDescription(serialFieldTag);
         if (!description.isEmpty()) {
             Content serialFieldContent = new RawHtml(ch.getText(description));
-            Content div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
+            var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
             content.add(div);
         }
     }
@@ -174,7 +174,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public void addMemberTags(VariableElement field, Content content) {
         Content tagContent = writer.getBlockTagOutput(field);
         if (!tagContent.isEmpty()) {
-            HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
+            var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(tagContent);
             content.add(dl);
         }

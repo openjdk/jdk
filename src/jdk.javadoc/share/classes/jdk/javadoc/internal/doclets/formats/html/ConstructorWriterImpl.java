@@ -107,7 +107,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     public Content getConstructorDetailsHeader(Content content) {
         content.add(MarkerComments.START_OF_CONSTRUCTOR_DETAILS);
         Content constructorDetails = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.constructorDetailsLabel);
         constructorDetails.add(heading);
         return constructorDetails;
@@ -116,7 +116,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getConstructorHeaderContent(ExecutableElement constructor) {
         Content content = new ContentBuilder();
-        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(constructor)));
         HtmlId erasureAnchor = htmlIds.forErasure(constructor);
         if (erasureAnchor != null) {
@@ -172,7 +172,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.constructorSummaryLabel);
         content.add(label);
     }
@@ -212,7 +212,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addSummaryType(Element member, Content content) {
         if (foundNonPubConstructor) {
-            Content code = new HtmlTree(TagName.CODE);
+            var code = new HtmlTree(TagName.CODE);
             if (utils.isProtected(member)) {
                 code.add("protected ");
             } else if (utils.isPrivate(member)) {

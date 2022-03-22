@@ -149,7 +149,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * @param content the content to which the index link will be added
      */
     protected void addIndexLink(HtmlId id, String headingKey, Content content) {
-        Content li = HtmlTree.LI(links.createLink(id,
+        var li = HtmlTree.LI(links.createLink(id,
                 contents.getContent(headingKey)));
         content.add(li);
     }
@@ -161,13 +161,13 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * @return a content for the contents list
      */
     public Content getContentsList(L apiSummary) {
-        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         Content headingContent = contents.contentsHeading;
         div.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                 headingContent));
-        Content ul = new HtmlTree(TagName.UL);
+        var ul = new HtmlTree(TagName.UL);
         addExtraIndexLink(apiSummary, ul);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (apiSummary.hasDocumentation(kind)) {
@@ -185,9 +185,9 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      */
     public HtmlTree getHeader() {
         String title = resources.getText(titleKey);
-        HtmlTree bodyTree = getBody(getWindowTitle(title));
+        HtmlTree body = getBody(getWindowTitle(title));
         bodyContents.setHeader(getHeader(pageMode));
-        return bodyTree;
+        return body;
     }
 
     /**

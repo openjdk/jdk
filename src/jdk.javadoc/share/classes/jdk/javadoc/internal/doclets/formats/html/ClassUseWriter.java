@@ -296,20 +296,20 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param content the content to which the class elements will be added
      */
     protected void addClassList(Content content) {
-        HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList);
+        var ul = HtmlTree.UL(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
-            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail)
+            var section = HtmlTree.SECTION(HtmlStyle.detail)
                     .setId(htmlIds.forPackage(pkg));
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
                     getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS_USE_HEADER,
                             typeElement)),
                     getPackageLink(pkg, getLocalizedPackageName(pkg)));
-            Content heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
-            htmlTree.add(heading);
-            addClassUse(pkg, htmlTree);
-            ul.add(HtmlTree.LI(htmlTree));
+            var heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
+            section.add(heading);
+            addClassUse(pkg, section);
+            ul.add(HtmlTree.LI(section));
         }
-        Content li = HtmlTree.SECTION(HtmlStyle.classUses, ul);
+        var li = HtmlTree.SECTION(HtmlStyle.classUses, ul);
         content.add(li);
     }
 
@@ -418,16 +418,16 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         String clname = utils.getFullyQualifiedName(typeElement);
         String title = resources.getText("doclet.Window_ClassUse_Header",
                 cltype, clname);
-        HtmlTree bodyTree = getBody(getWindowTitle(title));
+        HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", cltype));
         headingContent.add(new HtmlTree(TagName.BR));
         headingContent.add(clname);
-        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headingContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         bodyContents.setHeader(getHeader(PageMode.USE, typeElement)).addMainContent(div);
-        return bodyTree;
+        return body;
     }
 
     @Override

@@ -181,16 +181,16 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     protected abstract Content getSummaryLink(Element member);
 
     /**
-     * Adds the modifier and type for the member in the member summary.
+     * Adds the modifiers and type for the member in the member summary.
      *
-     * @param member  the member to add the type for
-     * @param type    the type to add
-     * @param content the content to which the modified and type will be added
+     * @param member the member to add the modifiers and type for
+     * @param type   the type to add
+     * @param target the content to which the modifiers and type will be added
      */
     protected void addModifierAndType(Element member, TypeMirror type,
-            Content content) {
-        HtmlTree code = new HtmlTree(TagName.CODE);
-        addModifier(member, code);
+            Content target) {
+        var code = new HtmlTree(TagName.CODE);
+        addModifiers(member, code);
         if (type == null) {
             code.add(switch (member.getKind()) {
                 case ENUM -> "enum";
@@ -219,38 +219,38 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                     writer.getLink(new HtmlLinkInfo(configuration,
                             HtmlLinkInfo.Kind.SUMMARY_RETURN_TYPE, type)));
         }
-        content.add(code);
+        target.add(code);
     }
 
     /**
-     * Adds the modifier for the member.
+     * Adds the modifiers for the member.
      *
-     * @param member the member to add the type for
-     * @param code   the content to which the modifier will be added
+     * @param member the member to add the modifiers for
+     * @param target the content to which the modifiers will be added
      */
-    private void addModifier(Element member, Content code) {
+    private void addModifiers(Element member, Content target) {
         if (utils.isProtected(member)) {
-            code.add("protected ");
+            target.add("protected ");
         } else if (utils.isPrivate(member)) {
-            code.add("private ");
+            target.add("private ");
         } else if (!utils.isPublic(member)) { // Package private
-            code.add(resources.getText("doclet.Package_private"));
-            code.add(" ");
+            target.add(resources.getText("doclet.Package_private"));
+            target.add(" ");
         }
         boolean isAnnotatedTypeElement = utils.isAnnotationType(member.getEnclosingElement());
         if (!isAnnotatedTypeElement && utils.isMethod(member)) {
             if (!utils.isInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
-                code.add("abstract ");
+                target.add("abstract ");
             }
             if (utils.isDefault(member)) {
-                code.add("default ");
+                target.add("default ");
             }
         }
         if (utils.isStatic(member)) {
-            code.add("static ");
+            target.add("static ");
         }
         if (!utils.isEnum(member) && utils.isFinal(member)) {
-            code.add("final ");
+            target.add("final ");
         }
     }
 
@@ -325,7 +325,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                     && !utils.isClass(element)
                     && !utils.isInterface(element)
                     && !utils.isAnnotationType(element)) {
-                HtmlTree name = new HtmlTree(TagName.SPAN);
+                var name = new HtmlTree(TagName.SPAN);
                 name.setStyle(HtmlStyle.typeNameLabel);
                 name.add(name(te) + ".");
                 typeContent.add(name);

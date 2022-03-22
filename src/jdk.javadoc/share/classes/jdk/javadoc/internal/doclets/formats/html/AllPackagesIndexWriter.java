@@ -76,16 +76,16 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
         Content mainContent = new ContentBuilder();
         addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
-        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
-        Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        HtmlTree bodyTree = getBody(getWindowTitle(label));
-        bodyTree.add(new BodyContents()
+        var headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        HtmlTree body = getBody(getWindowTitle(label));
+        body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.ALL_PACKAGES))
                 .addMainContent(headerDiv)
                 .addMainContent(mainContent)
                 .setFooter(getFooter()));
-        printHtmlDocument(null, "package index", bodyTree);
+        printHtmlDocument(null, "package index", body);
     }
 
     /**

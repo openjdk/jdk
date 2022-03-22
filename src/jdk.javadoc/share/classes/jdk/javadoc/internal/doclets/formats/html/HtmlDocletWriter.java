@@ -325,7 +325,7 @@ public class HtmlDocletWriter {
         if (options.noComment()) {
             return;
         }
-        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
+        var dl = HtmlTree.DL(HtmlStyle.notes);
         if (utils.isExecutableElement(e) && !utils.isConstructor(e)) {
             addMethodInfo((ExecutableElement)e, dl);
         }
@@ -2249,19 +2249,19 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Returns an HtmlTree for the BODY tag.
+     * Returns an HtmlTree for the BODY element.
      *
      * @param title title for the window
      * @return an HtmlTree for the BODY tag
      */
     public HtmlTree getBody(String title) {
-        HtmlTree body = new HtmlTree(TagName.BODY).setStyle(getBodyStyle());
+        var body = new HtmlTree(TagName.BODY).setStyle(getBodyStyle());
 
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
         // and package-frame
         body.add(mainBodyScript.asContent());
-        Content noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
+        var noScript = HtmlTree.NOSCRIPT(HtmlTree.DIV(contents.noScriptMessage));
         body.add(noScript);
         return body;
     }
@@ -2328,7 +2328,7 @@ public class HtmlDocletWriter {
 
     public void addPreviewSummary(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
-            Content div = HtmlTree.DIV(HtmlStyle.block);
+            var div = HtmlTree.DIV(HtmlStyle.block);
             div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
             target.add(div);
         }
@@ -2337,7 +2337,7 @@ public class HtmlDocletWriter {
     public void addPreviewInfo(Element forWhat, Content target) {
         if (utils.isPreviewAPI(forWhat)) {
             //in Java platform:
-            HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
+            var previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
             previewDiv.setId(htmlIds.forPreviewSection(forWhat));
             String name = (switch (forWhat.getKind()) {
                 case PACKAGE, MODULE ->
@@ -2346,7 +2346,7 @@ public class HtmlDocletWriter {
                         ((TypeElement) forWhat.getEnclosingElement()).getSimpleName();
                 default -> forWhat.getSimpleName();
             }).toString();
-            Content nameCode = HtmlTree.CODE(Text.of(name));
+            var nameCode = HtmlTree.CODE(Text.of(name));
             boolean isReflectivePreview = utils.isReflectivePreviewAPI(forWhat);
             String leadingNoteKey =
                     !isReflectivePreview ? "doclet.PreviewPlatformLeadingNote"
@@ -2367,13 +2367,13 @@ public class HtmlDocletWriter {
             List<Content> previewNotes = getPreviewNotes((TypeElement) forWhat);
             if (!previewNotes.isEmpty()) {
                 Name name = forWhat.getSimpleName();
-                Content nameCode = HtmlTree.CODE(Text.of(name));
-                HtmlTree previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
+                var nameCode = HtmlTree.CODE(Text.of(name));
+                var previewDiv = HtmlTree.DIV(HtmlStyle.previewBlock);
                 previewDiv.setId(htmlIds.forPreviewSection(forWhat));
                 Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
-                HtmlTree ul = HtmlTree.UL(HtmlStyle.previewComment);
+                var ul = HtmlTree.UL(HtmlStyle.previewComment);
                 for (Content note : previewNotes) {
                     ul.add(HtmlTree.LI(note));
                 }

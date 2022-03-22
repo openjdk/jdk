@@ -179,18 +179,18 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     @Override
     public Content getModuleHeader(String heading) {
-        HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
-        HtmlTree div = HtmlTree.DIV(HtmlStyle.header);
+        HtmlTree body = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
+        var div = HtmlTree.DIV(HtmlStyle.header);
         Content moduleHead = new ContentBuilder();
         moduleHead.add(mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
                 ? contents.openModuleLabel : contents.moduleLabel);
         moduleHead.add(" ").add(heading);
-        Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, moduleHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.MODULE, mdle))
                 .addMainContent(div);
-        return bodyTree;
+        return body;
     }
 
     @Override
@@ -476,7 +476,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
-            HtmlTree section = HtmlTree.SECTION(HtmlStyle.modulesSummary)
+            var section = HtmlTree.SECTION(HtmlStyle.modulesSummary)
                     .setId(HtmlIds.MODULES);
             addSummaryHeader(MarkerComments.START_OF_MODULES_SUMMARY, contents.navModules, section);
             if (display(requires)) {
@@ -518,7 +518,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
-            HtmlTree section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
+            var section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
                     .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
             if (display(packages)) {
@@ -691,7 +691,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
 
         if (haveProvides || haveUses) {
-            HtmlTree section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
+            var section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
                     .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
             TableHeader usesProvidesTableHeader =
@@ -774,7 +774,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
                 desc.add(new HtmlTree(TagName.BR));
                 desc.add("(");
-                HtmlTree implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
+                var implSpan = HtmlTree.SPAN(HtmlStyle.implementationLabel, contents.implementation);
                 desc.add(implSpan);
                 desc.add(Entity.NO_BREAK_SPACE);
                 String sep = "";
@@ -798,8 +798,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(mdle);
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
-            HtmlTree deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
+            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
@@ -815,7 +815,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addModuleDescription(Content moduleContent) {
         addPreviewInfo(mdle, moduleContent);
         if (!utils.getFullBody(mdle).isEmpty()) {
-            HtmlTree tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
+            var tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
                     .setId(HtmlIds.MODULE_DESCRIPTION);
             addDeprecationInfo(tree);
             tree.add(MarkerComments.START_OF_MODULE_DESCRIPTION);
@@ -857,8 +857,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addPackageDeprecationInfo(Content li, PackageElement pkg) {
         if (utils.isDeprecated(pkg)) {
             List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(pkg);
-            HtmlTree deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));
+            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 CommentHelper ch = utils.getCommentHelper(pkg);

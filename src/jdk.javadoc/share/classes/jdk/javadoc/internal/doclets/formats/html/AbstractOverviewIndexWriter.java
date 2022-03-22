@@ -132,10 +132,10 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     protected void addConfigurationTitle(Content target) {
         String doctitle = configuration.getOptions().docTitle();
         if (!doctitle.isEmpty()) {
-            Content title = new RawHtml(doctitle);
-            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+            var title = new RawHtml(doctitle);
+            var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                     HtmlStyle.title, title);
-            Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+            var div = HtmlTree.DIV(HtmlStyle.header, heading);
             target.add(div);
         }
     }

@@ -72,14 +72,14 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getHeader(String header) {
-        HtmlTree bodyTree = getBody(getWindowTitle(header));
+        HtmlTree body = getBody(getWindowTitle(header));
         Content h1Content = Text.of(header);
-        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, h1Content);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         bodyContents.setHeader(getHeader(PageMode.SERIALIZED_FORM))
                 .addMainContent(div);
-        return bodyTree;
+        return body;
     }
 
     /**
@@ -110,7 +110,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      */
     @Override
     public Content getPackageHeader(PackageElement packageElement) {
-        Content heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
                 contents.packageLabel);
         heading.add(Entity.NO_BREAK_SPACE);
         heading.add(getPackageLink(packageElement, Text.of(utils.getPackageName(packageElement))));
@@ -151,7 +151,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : Text.of(utils.getFullyQualifiedName(typeElement));
-        Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
+        var section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
                 .setId(htmlIds.forClass(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SERIALIZED_FORM,

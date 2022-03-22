@@ -202,8 +202,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content codeTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        Content result = HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
-        return result;
+        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
     }
 
     @Override
@@ -353,7 +352,7 @@ public class TagletWriterImpl extends TagletWriter {
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream()
                 .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
-        HtmlTree seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
+        var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
         links.stream().filter(Content::isValid).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
         });
@@ -384,11 +383,11 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
                                        String id, String lang) {
-        HtmlTree pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         }
-        HtmlTree code = new HtmlTree(TagName.CODE)
+        var code = new HtmlTree(TagName.CODE)
                 .add(HtmlTree.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
@@ -458,7 +457,7 @@ public class TagletWriterImpl extends TagletWriter {
         });
         String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
         String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
-        HtmlTree snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
+        var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
                 new HtmlTree(TagName.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
@@ -525,15 +524,13 @@ public class TagletWriterImpl extends TagletWriter {
             body.add(" - ");
             body.add(desc);
         }
-        HtmlTree result = HtmlTree.DD(body);
-        return result;
+        return HtmlTree.DD(body);
     }
 
     @Override
     public Content throwsTagOutput(TypeMirror throwsType) {
-        HtmlTree result = HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
+        return HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
                 new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType))));
-        return result;
     }
 
     @Override

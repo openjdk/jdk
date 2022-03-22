@@ -103,9 +103,9 @@ public class TreeWriter extends AbstractTreeWriter {
     public void generateTreeFile() throws DocFileIOException {
         HtmlTree body = getTreeHeader();
         Content headContent = contents.hierarchyForAllPackages;
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         addPackageTreeLinks(div);
         Content mainContent = new ContentBuilder();
         mainContent.add(div);
@@ -130,10 +130,10 @@ public class TreeWriter extends AbstractTreeWriter {
             return;
         }
         if (!classesOnly) {
-            Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
+            var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                     contents.packageHierarchies);
             content.add(span);
-            HtmlTree ul = HtmlTree.UL(HtmlStyle.horizontal);
+            var ul = HtmlTree.UL(HtmlStyle.horizontal);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option
@@ -145,7 +145,7 @@ public class TreeWriter extends AbstractTreeWriter {
                     continue;
                 }
                 DocPath link = pathString(pkg, DocPaths.PACKAGE_TREE);
-                Content li = HtmlTree.LI(links.createLink(link,
+                var li = HtmlTree.LI(links.createLink(link,
                         getLocalizedPackageName(pkg)));
                 if (i < packages.size() - 1) {
                     li.add(", ");

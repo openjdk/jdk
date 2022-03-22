@@ -82,9 +82,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     protected void addLevelInfo(TypeElement parent, Collection<TypeElement> collection,
             boolean isEnum, Content content) {
         if (!collection.isEmpty()) {
-            Content ul = new HtmlTree(TagName.UL);
+            var ul = new HtmlTree(TagName.UL);
             for (TypeElement local : collection) {
-                HtmlTree li = new HtmlTree(TagName.LI);
+                var li = new HtmlTree(TagName.LI);
                 li.setStyle(HtmlStyle.circle);
                 addPartialInfo(local, li);
                 addExtendsImplements(parent, local, li);
@@ -114,12 +114,12 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
         if (!sset.isEmpty()) {
             TypeElement firstTypeElement = sset.first();
             Content headingContent = contents.getContent(heading);
-            Content sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
+            var sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                     headingContent);
-            HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
+            var section = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
             addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
-                    sset, isEnums, htmlTree);
-            content.add(htmlTree);
+                    sset, isEnums, section);
+            content.add(section);
         }
     }
 

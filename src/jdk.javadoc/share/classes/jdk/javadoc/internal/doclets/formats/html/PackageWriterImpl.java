@@ -77,9 +77,9 @@ public class PackageWriterImpl extends HtmlDocletWriter
     private SortedSet<TypeElement> allClasses;
 
     /**
-     * The HTML tree for section tag.
+     * The HTML element for the section tag being written.
      */
-    protected HtmlTree sectionTree = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
+    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
 
     private final BodyContents bodyContents = new BodyContents();
 
@@ -110,12 +110,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
     @Override
     public Content getPackageHeader() {
         String packageName = getLocalizedPackageName(packageElement).toString();
-        HtmlTree bodyTree = getBody(getWindowTitle(packageName));
-        HtmlTree div = HtmlTree.DIV(HtmlStyle.header);
+        HtmlTree body = getBody(getWindowTitle(packageName));
+        var div = HtmlTree.DIV(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
-            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
-            Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
+            var classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
+            var moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
             moduleNameDiv.add(Entity.NO_BREAK_SPACE);
             moduleNameDiv.add(getModuleLink(mdle,
                     Text.of(mdle.getQualifiedName().toString())));
@@ -126,12 +126,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
             packageHead.add(contents.packageLabel).add(" ");
         }
         packageHead.add(packageName);
-        Content tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, packageHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);
-        return bodyTree;
+        return body;
     }
 
     @Override
@@ -211,8 +211,8 @@ public class PackageWriterImpl extends HtmlDocletWriter
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
-            HtmlTree deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
-            Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
+            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
@@ -299,7 +299,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
             for (PackageElement pkg : packages) {
                 Content packageLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
-                Content moduleLink = HtmlTree.EMPTY;
+                var moduleLink = HtmlTree.EMPTY;
                 if (showModules) {
                     ModuleElement module = (ModuleElement) pkg.getEnclosingElement();
                     if (module != null && !module.isUnnamed()) {
@@ -331,18 +331,16 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public void addPackageDescription(Content packageContent) {
         addPreviewInfo(packageElement, packageContent);
         if (!utils.getBody(packageElement).isEmpty()) {
-            HtmlTree tree = sectionTree;
-            tree.setId(HtmlIds.PACKAGE_DESCRIPTION);
-            addDeprecationInfo(tree);
-            addInlineComment(packageElement, tree);
+            section.setId(HtmlIds.PACKAGE_DESCRIPTION);
+            addDeprecationInfo(section);
+            addInlineComment(packageElement, section);
         }
     }
 
     @Override
     public void addPackageTags(Content packageContent) {
-        Content c = sectionTree;
-        addTagsInfo(packageElement, c);
-        packageContent.add(sectionTree);
+        addTagsInfo(packageElement, section);
+        packageContent.add(section);
     }
 
     @Override

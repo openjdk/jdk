@@ -113,7 +113,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
-            Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
+            var deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(member));
             div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (!deprs.isEmpty()) {
                 addSummaryDeprecatedComment(member, deprs.get(0), div);
@@ -123,7 +123,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         } else {
             Element te = member.getEnclosingElement();
             if (te != null &&  utils.isTypeElement(te) && utils.isDeprecated(te)) {
-                Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
+                var deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(te));
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
                 tdSummaryContent.add(div);
             }
@@ -280,7 +280,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param source the content representing the summary
      */
     public void addSummary(HtmlStyle style, HtmlId htmlId, Content target, Content source) {
-        HtmlTree htmlTree = HtmlTree.SECTION(style, source)
+        var htmlTree = HtmlTree.SECTION(style, source)
                 .setId(htmlId);
         target.add(getSummariesListItem(htmlTree));
     }

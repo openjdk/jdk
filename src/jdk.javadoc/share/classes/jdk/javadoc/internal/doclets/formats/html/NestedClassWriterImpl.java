@@ -75,7 +75,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.nestedClassSummary);
         content.add(label);
     }
@@ -112,7 +112,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }
-        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING, label);
+        var labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING, label);
         labelHeading.setId(htmlIds.forInheritedClasses(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
         labelHeading.add(classLink);
@@ -124,7 +124,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                                   Content content) {
         Content memberLink = writer.getLink(new HtmlLinkInfo(configuration, context, (TypeElement)member)
                 .style(HtmlStyle.typeNameLink));
-        Content code = HtmlTree.CODE(memberLink);
+        var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
 

@@ -93,7 +93,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Script script = new Script("window.location.replace(")
                 .appendStringLiteral(targetPath, '\'')
                 .append(")");
-        HtmlTree metaRefresh = new HtmlTree(TagName.META)
+        var metaRefresh = new HtmlTree(TagName.META)
                 .put(HtmlAttr.HTTP_EQUIV, "Refresh")
                 .put(HtmlAttr.CONTENT, "0;" + targetPath);
         head.addContent(script.asContent(), HtmlTree.NOSCRIPT(metaRefresh));
@@ -104,8 +104,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
-        Content body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
-        HtmlTree main = HtmlTree.MAIN(bodyContent);
+        var body = new HtmlTree(TagName.BODY).setStyle(HtmlStyle.indexRedirectPage);
+        var main = HtmlTree.MAIN(bodyContent);
         body.add(main);
 
         HtmlDocument htmlDocument = new HtmlDocument(

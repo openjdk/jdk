@@ -93,7 +93,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     public Content getMethodDetailsHeader(Content content) {
         content.add(MarkerComments.START_OF_METHOD_DETAILS);
         Content methodDetailsContent = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.methodDetailLabel);
         methodDetailsContent.add(heading);
         return methodDetailsContent;
@@ -102,7 +102,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     public Content getMethodHeaderContent(ExecutableElement method) {
         Content content = new ContentBuilder();
-        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(method)));
         HtmlId erasureAnchor;
         if ((erasureAnchor = htmlIds.forErasure(method)) != null) {
@@ -156,8 +156,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                                     utils.isIncluded(holder)
                                             ? utils.getSimpleName(holder)
                                             : utils.getFullyQualifiedName(holder));
-                    Content codeLink = HtmlTree.CODE(link);
-                    Content descriptionFromTypeLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
+                    var codeLink = HtmlTree.CODE(link);
+                    var descriptionFromTypeLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
                             utils.isClass(holder)
                                     ? contents.descriptionFromClassLabel
                                     : contents.descriptionFromInterfaceLabel);
@@ -184,7 +184,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.methodSummary);
         content.add(label);
     }
@@ -226,7 +226,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                     ? resources.getText("doclet.Methods_Inherited_From_Class")
                     : resources.getText("doclet.Methods_Inherited_From_Interface"));
         }
-        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
+        var labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
         labelHeading.setId(htmlIds.forInheritedMethods(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
@@ -286,13 +286,13 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         dl.add(HtmlTree.DT(label));
         Content overriddenTypeLink =
                 writer.getLink(new HtmlLinkInfo(writer.configuration, context, overriddenType));
-        Content codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
+        var codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
         Content methlink = writer.getLink(
                 new HtmlLinkInfo(writer.configuration, HtmlLinkInfo.Kind.MEMBER, holder)
                         .where(writer.htmlIds.forMember(method).name())
                         .label(method.getSimpleName()));
-        Content codeMethLink = HtmlTree.CODE(methlink);
-        Content dd = HtmlTree.DD(codeMethLink);
+        var codeMethLink = HtmlTree.CODE(methlink);
+        var dd = HtmlTree.DD(codeMethLink);
         dd.add(Entity.NO_BREAK_SPACE);
         dd.add(contents.inClass);
         dd.add(Entity.NO_BREAK_SPACE);
@@ -326,13 +326,13 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             intfac = utils.getDeclaredType(utils.getEnclosingTypeElement(method), intfac);
             Content intfaclink = writer.getLink(new HtmlLinkInfo(
                     writer.configuration, HtmlLinkInfo.Kind.METHOD_SPECIFIED_BY, intfac));
-            Content codeIntfacLink = HtmlTree.CODE(intfaclink);
+            var codeIntfacLink = HtmlTree.CODE(intfaclink);
             dl.add(HtmlTree.DT(contents.specifiedByLabel));
             Content methlink = writer.getDocLink(
                     HtmlLinkInfo.Kind.MEMBER, implementedMeth,
                     implementedMeth.getSimpleName());
-            Content codeMethLink = HtmlTree.CODE(methlink);
-            Content dd = HtmlTree.DD(codeMethLink);
+            var codeMethLink = HtmlTree.CODE(methlink);
+            var dd = HtmlTree.DD(codeMethLink);
             dd.add(Entity.NO_BREAK_SPACE);
             dd.add(contents.inInterface);
             dd.add(Entity.NO_BREAK_SPACE);

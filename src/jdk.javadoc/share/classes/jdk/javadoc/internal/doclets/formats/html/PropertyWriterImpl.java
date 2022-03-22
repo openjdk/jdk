@@ -71,7 +71,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     public Content getPropertyDetailsHeader(Content memberDetails) {
         memberDetails.add(MarkerComments.START_OF_PROPERTY_DETAILS);
         Content propertyDetailsContent = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.propertyDetailsLabel);
         propertyDetailsContent.add(heading);
         return propertyDetailsContent;
@@ -80,7 +80,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public Content getPropertyHeaderContent(ExecutableElement property) {
         Content content = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(utils.getPropertyLabel(name(property))));
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
@@ -117,8 +117,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                                     holder, property,
                                     utils.isIncluded(holder)
                                             ? holder.getSimpleName() : holder.getQualifiedName());
-                    Content codeLink = HtmlTree.CODE(link);
-                    Content descriptionFromLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
+                    var codeLink = HtmlTree.CODE(link);
+                    var descriptionFromLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
                             utils.isClass(holder)
                                     ? contents.descriptionFromClassLabel
                                     : contents.descriptionFromInterfaceLabel);
@@ -147,7 +147,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.propertySummaryLabel);
         content.add(label);
     }
@@ -180,7 +180,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                     ? resources.getText("doclet.Properties_Inherited_From_Class")
                     : resources.getText("doclet.Properties_Inherited_From_Interface"));
         }
-        HtmlTree labelHeading =
+        var labelHeading =
                 HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING, label)
                         .setId(htmlIds.forInheritedProperties(typeElement))
                         .add(Entity.NO_BREAK_SPACE)
@@ -197,7 +197,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 HtmlStyle.memberNameLink,
                 true);
 
-        Content code = HtmlTree.CODE(memberLink);
+        var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
 

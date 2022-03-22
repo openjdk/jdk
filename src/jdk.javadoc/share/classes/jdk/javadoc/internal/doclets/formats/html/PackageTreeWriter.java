@@ -100,9 +100,9 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 ? contents.getContent("doclet.Hierarchy_For_Unnamed_Package")
                 : contents.getContent("doclet.Hierarchy_For_Package",
                 getLocalizedPackageName(packageElement));
-        Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         if (configuration.packages.size() > 1) {
             addLinkToMainTree(div);
         }
@@ -125,9 +125,9 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected HtmlTree getPackageTreeHeader() {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = packageName + " " + resources.getText("doclet.Window_Class_Hierarchy");
-        HtmlTree bodyTree = getBody(getWindowTitle(title));
+        HtmlTree body = getBody(getWindowTitle(title));
         bodyContents.setHeader(getHeader(PageMode.TREE, packageElement));
-        return bodyTree;
+        return body;
     }
 
     @Override
@@ -144,10 +144,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @param div the content to which the link will be added
      */
     protected void addLinkToMainTree(Content div) {
-        Content span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
+        var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                 contents.packageHierarchies);
         div.add(span);
-        HtmlTree ul = HtmlTree.UL(HtmlStyle.horizontal);
+        var ul = HtmlTree.UL(HtmlStyle.horizontal);
         ul.add(getNavLinkMainTree(resources.getText("doclet.All_Packages")));
         div.add(ul);
     }

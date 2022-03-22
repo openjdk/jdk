@@ -928,7 +928,7 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree UL(HtmlStyle style, Content first, Content... more) {
-        HtmlTree htmlTree = new HtmlTree(TagName.UL)
+        var htmlTree = new HtmlTree(TagName.UL)
                 .setStyle(style);
         htmlTree.add(first);
         for (Content c : more) {
@@ -939,7 +939,7 @@ public class HtmlTree extends Content {
 
     /**
      * Creates an HTML {@code UL} element with the given style and content generated
-     * from a collection of items..
+     * from a collection of items.
      *
      * @param style the style
      * @param items the items to be added to the list

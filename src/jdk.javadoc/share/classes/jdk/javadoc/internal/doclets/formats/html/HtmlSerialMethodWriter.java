@@ -85,8 +85,8 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     @Override
     public Content getSerializableMethods(String heading, Content source) {
         Content headingContent = Text.of(heading);
-        Content serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
-        Content section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
+        var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
+        var section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
         section.add(source);
         return HtmlTree.LI(section);
     }
@@ -111,7 +111,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     @Override
     public void addMemberHeader(ExecutableElement member, Content methodsContent) {
         Content memberContent = Text.of(name(member));
-        Content heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, memberContent);
+        var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, memberContent);
         methodsContent.add(heading);
         methodsContent.add(getSignature(member));
     }
@@ -148,7 +148,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     public void addMemberTags(ExecutableElement member, Content methodsContent) {
         TagletManager tagletManager = configuration.tagletManager;
         Content tagContent = writer.getBlockTagOutput(member, tagletManager.getSerializedFormTaglets());
-        HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
+        var dl = HtmlTree.DL(HtmlStyle.notes);
         dl.add(tagContent);
         methodsContent.add(dl);
         if (name(member).equals("writeExternal")

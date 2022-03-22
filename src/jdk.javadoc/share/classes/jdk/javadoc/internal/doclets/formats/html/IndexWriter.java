@@ -151,7 +151,7 @@ public class IndexWriter extends HtmlDocletWriter {
     protected void addContents(char ch, SortedSet<IndexItem> items, Content content) {
         addHeading(ch, content);
 
-        HtmlTree dl = HtmlTree.DL(HtmlStyle.index);
+        var dl = HtmlTree.DL(HtmlStyle.index);
         for (IndexItem item : items) {
             addDescription(item, dl);
         }
@@ -166,7 +166,7 @@ public class IndexWriter extends HtmlDocletWriter {
      */
     protected void addHeading(char ch, Content content) {
         Content headContent = Text.of(String.valueOf(ch));
-        HtmlTree heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
+        var heading = HtmlTree.HEADING(Headings.CONTENT_HEADING, HtmlStyle.title, headContent)
                 .setId(HtmlIds.forIndexChar(ch));
         content.add(heading);
     }
@@ -235,7 +235,7 @@ public class IndexWriter extends HtmlDocletWriter {
                 throw new Error();
         }
         target.add(dt);
-        Content dd = new HtmlTree(TagName.DD);
+        var dd = new HtmlTree(TagName.DD);
         if (element.getKind() == ElementKind.MODULE || element.getKind() == ElementKind.PACKAGE) {
             addSummaryComment(element, dd);
         } else {
@@ -267,12 +267,12 @@ public class IndexWriter extends HtmlDocletWriter {
     protected void addTagDescription(IndexItem item, Content target) {
         String itemPath = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
         itemPath += item.getUrl();
-        HtmlTree labelLink = HtmlTree.A(itemPath, Text.of(item.getLabel()));
-        Content dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
+        var labelLink = HtmlTree.A(itemPath, Text.of(item.getLabel()));
+        var dt = HtmlTree.DT(labelLink.setStyle(HtmlStyle.searchTagLink));
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         target.add(dt);
-        Content dd = new HtmlTree(TagName.DD);
+        var dd = new HtmlTree(TagName.DD);
         if (item.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
@@ -291,8 +291,8 @@ public class IndexWriter extends HtmlDocletWriter {
      * @param content the content to which the comment will be added
      */
     protected void addComment(Element element, Content content) {
-        Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
-        HtmlTree div = HtmlTree.DIV(HtmlStyle.deprecationBlock);
+        var span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(element));
+        var div = HtmlTree.DIV(HtmlStyle.deprecationBlock);
         if (utils.isDeprecated(element)) {
             div.add(span);
             List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(element);

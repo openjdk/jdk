@@ -158,7 +158,7 @@ public class Links {
      * @return a content for the link
      */
     public Content createLink(DocLink link, Content label, String title) {
-        HtmlTree anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
+        var anchor = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
         if (title != null && title.length() != 0) {
             anchor.put(HtmlAttr.TITLE, title);
         }
@@ -193,7 +193,7 @@ public class Links {
      */
     public Content createLink(DocLink link, Content label, HtmlStyle style,
                               String title, boolean isExternal) {
-        HtmlTree l = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
+        var l = HtmlTree.A(link.relativizeAgainst(file).toString(), label);
         if (style != null) {
             l.setStyle(style);
         }

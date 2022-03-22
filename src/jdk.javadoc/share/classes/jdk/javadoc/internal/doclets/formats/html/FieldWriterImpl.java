@@ -79,7 +79,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     public Content getFieldDetailsHeader(Content content) {
         content.add(MarkerComments.START_OF_FIELD_DETAILS);
         Content fieldDetailsContent = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.fieldDetailsLabel);
         fieldDetailsContent.add(heading);
         return fieldDetailsContent;
@@ -88,7 +88,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
     @Override
     public Content getFieldHeaderContent(VariableElement field) {
         Content content = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(field)));
         content.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, content)
@@ -136,7 +136,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.fieldSummaryLabel);
         content.add(label);
     }
@@ -172,7 +172,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                     ? resources.getText("doclet.Fields_Inherited_From_Class")
                     : resources.getText("doclet.Fields_Inherited_From_Interface"));
         }
-        HtmlTree labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
+        var labelHeading = HtmlTree.HEADING(Headings.TypeDeclaration.INHERITED_SUMMARY_HEADING,
                 label);
         labelHeading.setId(htmlIds.forInheritedFields(typeElement));
         labelHeading.add(Entity.NO_BREAK_SPACE);
@@ -185,7 +185,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                                   Content content) {
         Content memberLink = writer.getDocLink(context, typeElement , member, name(member),
                 HtmlStyle.memberNameLink);
-        Content code = HtmlTree.CODE(memberLink);
+        var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
 

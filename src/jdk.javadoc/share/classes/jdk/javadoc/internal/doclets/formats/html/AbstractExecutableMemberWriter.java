@@ -113,7 +113,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                                   Content target) {
         ExecutableElement ee = (ExecutableElement)member;
         Content memberLink = writer.getDocLink(context, te, ee, name(ee), HtmlStyle.memberNameLink);
-        Content code = HtmlTree.CODE(memberLink);
+        var code = HtmlTree.CODE(memberLink);
         addParameters(ee, code);
         target.add(code);
     }

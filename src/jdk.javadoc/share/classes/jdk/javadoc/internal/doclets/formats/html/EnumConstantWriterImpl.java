@@ -76,8 +76,8 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     public Content getEnumConstantsDetailsHeader(TypeElement typeElement,
                                                  Content memberDetails) {
         memberDetails.add(MarkerComments.START_OF_ENUM_CONSTANT_DETAILS);
-        Content enumConstantsDetailsContent = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+        var enumConstantsDetailsContent = new ContentBuilder();
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.enumConstantDetailLabel);
         enumConstantsDetailsContent.add(heading);
         return enumConstantsDetailsContent;
@@ -87,7 +87,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
     public Content getEnumConstantsHeader(VariableElement enumConstant,
                                           Content enumConstantsDetails) {
         Content enumConstantsContent = new ContentBuilder();
-        HtmlTree heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(enumConstant)));
         enumConstantsContent.add(heading);
         return HtmlTree.SECTION(HtmlStyle.detail, enumConstantsContent)
@@ -134,7 +134,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addSummaryLabel(Content content) {
-        Content label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 contents.enumConstantSummary);
         content.add(label);
     }
@@ -161,7 +161,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                                   Content content) {
         Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
                 name(member), HtmlStyle.memberNameLink);
-        Content code = HtmlTree.CODE(memberLink);
+        var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }
 
