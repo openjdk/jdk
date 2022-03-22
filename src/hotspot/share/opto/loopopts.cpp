@@ -2533,7 +2533,7 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         r->set_req( 2,    use);
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
-        set_idom(r, side_by_side_idom == NULL? newuse->in(0) : side_by_side_idom, dd_r);
+        set_idom(r, (side_by_side_idom == NULL) ? newuse->in(0) : side_by_side_idom, dd_r);
       } // End of if a loop-exit test
     }
   }
