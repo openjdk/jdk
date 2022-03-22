@@ -18,10 +18,13 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   // avoid interfering with safepoint operations. Would be nice
   // to also not interfere with other concurrent mark activity
   // from GC, but this will require GC specific integrations.
-  void run_service() override;
-  void stop_service() override;
+  virtual void run_service() override;
+  virtual void stop_service() override;
+
+  virtual const char* type_name() const override;
 
  private:
+  bool is_concurrent_gc_active();
   bool estimate_liveness();
   void send_live_set_estimate(size_t live_set_bytes);
 

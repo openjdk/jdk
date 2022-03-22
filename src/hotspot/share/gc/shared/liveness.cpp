@@ -1,3 +1,4 @@
+#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/liveness.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -14,12 +15,14 @@ LivenessEstimatorThread::LivenessEstimatorThread()
 void LivenessEstimatorThread::run_service() {
   while (!should_terminate()) {
     // Start with a wait because there is nothing interesting in the heap yet.
-    MonitorLocker locker(&_lock);
-    bool timeout = _lock.wait(ConcLivenessEstimateSeconds * MILLIUNITS);
+    MonitorLocker locker(&_lock,Monitor::SafepointCheckFlag::_no_safepoint_check_flag);
+    bool timeout = locker.wait(ConcLivenessEstimateSeconds * MILLIUNITS);
     log_info(gc)("Wokeup, timeout: %s", BOOL_TO_STR(timeout));
 
-    bool completed = estimate_liveness();
-    log_info(gc)("Estimation completed: %s", BOOL_TO_STR(completed));
+    if (!is_concurrent_gc_active()) {
+      bool completed = estimate_liveness();
+      log_info(gc)("Estimation completed: %s", BOOL_TO_STR(completed));
+    }
   }
 }
 
@@ -42,22 +45,36 @@ bool LivenessEstimatorThread::estimate_liveness() {
   // Simulate waiting for our vm operation to scan the roots to complete
   os::naked_sleep(10);
 
-  // TODO: We _might_ able to use CollectedHeap::object_iterate here, but it's
-  // not clear if all implementations will let it run outside of a safepoint. At
-  // any rate, the implementations I inspected do not participate in any cancellation
-  // scheme.
-
   SuspendibleThreadSetJoiner sst;
   // Simulate a concurrent heap walk with checks to see if we need to let
   // another vm operation run. We may want to abandon or resume the estimation
   // effort if we can determine whether a concurrent gc effort is underway.
   for (int i = 0; i < 1000; ++i) {
     if (sst.should_yield()) {
+
+      // Shenandoah may not update this, other collectors seem to.
+      unsigned int collections = Universe::heap()->total_collections();
+
+      // This blocks the caller until the vm operation has executed.
       SuspendibleThreadSet::yield();
-      return false;
+
+      if (collections != Universe::heap()->total_collections()) {
+        // Heap has been collected, pointer in the mark queues may be invalid.
+        return false;
+      }
     }
     os::naked_sleep(10);
   }
 
   return true;
+}
+
+bool LivenessEstimatorThread::is_concurrent_gc_active() {
+  // TODO: Implement this. Maybe add a virtual function to CollectedHeap?
+  // We don't want to run the estimate if concurrent gc threads are working.
+  return false;
+}
+
+const char* LivenessEstimatorThread::type_name() const {
+  return "LivenessEstimator";
 }
