@@ -53,7 +53,7 @@ extends EventListener
      * @param event the event identifying the SSLSession into
      *          which the listener is being bound.
      */
-    public void valueBound(SSLSessionBindingEvent event);
+    void valueBound(SSLSessionBindingEvent event);
 
     /**
      * This is called to notify the listener that it is being unbound
@@ -62,5 +62,5 @@ extends EventListener
      * @param event the event identifying the SSLSession from
      *          which the listener is being unbound.
      */
-    public void valueUnbound(SSLSessionBindingEvent event);
+    void valueUnbound(SSLSessionBindingEvent event);
 }

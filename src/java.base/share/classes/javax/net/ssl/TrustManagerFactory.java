@@ -54,13 +54,13 @@ import sun.security.jca.GetInstance;
  */
 public class TrustManagerFactory {
     // The provider
-    private Provider provider;
+    private final Provider provider;
 
     // The provider implementation (delegate)
-    private TrustManagerFactorySpi factorySpi;
+    private final TrustManagerFactorySpi factorySpi;
 
     // The name of the trust management algorithm.
-    private String algorithm;
+    private final String algorithm;
 
     /**
      * Obtains the default TrustManagerFactory algorithm name.
@@ -75,15 +75,10 @@ public class TrustManagerFactory {
      * implementation-specific default if no such property exists.
      */
     @SuppressWarnings("removal")
-    public static final String getDefaultAlgorithm() {
+    public static String getDefaultAlgorithm() {
         String type;
-        type = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public String run() {
-                return Security.getProperty(
-                    "ssl.TrustManagerFactory.algorithm");
-            }
-        });
+        type = AccessController.doPrivileged((PrivilegedAction<String>) () ->
+            Security.getProperty( "ssl.TrustManagerFactory.algorithm"));
         if (type == null) {
             type = "SunX509";
         }
@@ -137,7 +132,7 @@ public class TrustManagerFactory {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the requested trust management
@@ -157,7 +152,7 @@ public class TrustManagerFactory {
      *
      * @see java.security.Provider
      */
-    public static final TrustManagerFactory getInstance(String algorithm)
+    public static TrustManagerFactory getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance
@@ -204,7 +199,7 @@ public class TrustManagerFactory {
      *
      * @see java.security.Provider
      */
-    public static final TrustManagerFactory getInstance(String algorithm,
+    public static TrustManagerFactory getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -245,7 +240,7 @@ public class TrustManagerFactory {
      *
      * @see java.security.Provider
      */
-    public static final TrustManagerFactory getInstance(String algorithm,
+    public static TrustManagerFactory getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         GetInstance.Instance instance = GetInstance.getInstance

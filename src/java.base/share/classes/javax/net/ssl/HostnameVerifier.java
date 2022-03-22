@@ -52,5 +52,5 @@ public interface HostnameVerifier {
      * @param session SSLSession used on the connection to host
      * @return true if the host name is acceptable
      */
-    public boolean verify(String hostname, SSLSession session);
+    boolean verify(String hostname, SSLSession session);
 }

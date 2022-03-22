@@ -68,8 +68,7 @@ public class KeyStoreBuilderParameters implements ManagerFactoryParameters {
             throw new IllegalArgumentException();
         }
 
-        this.parameters = Collections.unmodifiableList(
-            new ArrayList<Builder>(parameters));
+        this.parameters = List.copyOf(parameters);
     }
 
     /**

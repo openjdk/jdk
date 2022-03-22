@@ -55,7 +55,7 @@ public interface X509TrustManager extends TrustManager {
      * @throws CertificateException if the certificate chain is not trusted
      *         by this TrustManager.
      */
-    public void checkClientTrusted(X509Certificate[] chain, String authType)
+    void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException;
 
     /**
@@ -81,7 +81,7 @@ public interface X509TrustManager extends TrustManager {
      * @throws CertificateException if the certificate chain is not trusted
      *         by this TrustManager.
      */
-    public void checkServerTrusted(X509Certificate[] chain, String authType)
+    void checkServerTrusted(X509Certificate[] chain, String authType)
         throws CertificateException;
 
     /**
@@ -91,5 +91,5 @@ public interface X509TrustManager extends TrustManager {
      * @return a non-null (possibly empty) array of acceptable
      *          CA issuer certificates.
      */
-    public X509Certificate[] getAcceptedIssuers();
+    X509Certificate[] getAcceptedIssuers();
 }

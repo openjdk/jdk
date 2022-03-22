@@ -195,7 +195,7 @@ public abstract class ServerSocketFactory
 
 
 //
-// The default factory has NO intelligence.  In fact it's not clear
+// The default factory has NO intelligence.  In fact, it's not clear
 // what sort of intelligence servers need; the onus is on clients,
 // who have to know how to tunnel etc.
 //
