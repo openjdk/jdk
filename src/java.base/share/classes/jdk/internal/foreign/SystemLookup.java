@@ -83,7 +83,7 @@ public class SystemLookup implements SymbolLookup {
             // use a fallback lookup to look up inline functions from fallback lib
 
             Function<String, Optional<MemorySegment>> fallbackLibLookup =
-                    libLookup(libs -> libs.load(jdkLibraryPath("WinFallbackLookup")));
+                    libLookup(libs -> libs.load(jdkLibraryPath("syslookup")));
 
             int numSymbols = WindowsFallbackSymbols.values().length;
             MemorySegment funcs = MemorySegment.ofAddress(fallbackLibLookup.apply("funcs").orElseThrow().address(),

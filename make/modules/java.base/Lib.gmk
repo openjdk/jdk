@@ -207,36 +207,13 @@ endif
 ################################################################################
 # Create system lookup
 
-ifeq ($(call isTargetOs, linux), true)
-
-  $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
-      NAME := syslookup, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) -Wl$(COMMA)--no-as-needed, \
-      LIBS := $(LIBCXX) -lc -lm -ldl, \
-  ))
-
-else ifeq ($(call isTargetOs, windows), false)
-
-  $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
+$(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
       NAME := syslookup, \
       CFLAGS := $(CFLAGS_JDKLIB), \
       CXXFLAGS := $(CXXFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LIBS := $(LIBCXX), \
-  ))
-
-else # windows
-
-  $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
-      NAME := WinFallbackLookup, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LIBS := $(LIBCXX), \
-  ))
-
-endif
+      LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
+      LIBS_linux := -lc -lm -ldl, \
+))
 
 TARGETS += $(BUILD_SYSLOOKUPLIB)
