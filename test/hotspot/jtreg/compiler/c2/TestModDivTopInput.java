@@ -59,14 +59,14 @@ public class TestModDivTopInput {
             }
         }
     }
-                                        
+
     public static void main(String[] strArr) {
         TestModDivTopInput _instance = new TestModDivTopInput();
         for (int i = 0; i < 10; i++ ) {
             _instance.mainTest(strArr);
         }
     }
-    
+
     static void init(int[] arr, int v) {
         for (int i = 0; i < arr.length; i++) {
             arr[i] = v;
