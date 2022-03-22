@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,6 @@ include JavaCompilation.gmk
 # The compileprops tools compiles a properties file into a resource bundle.
 TOOL_COMPILEPROPS_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
     compileproperties.CompileProperties -quiet
-
-################################################################################
-# The compileprops tools compiles a properties file into an enum-like class.
-TOOL_PARSEPROPS_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
-    propertiesparser.PropertiesParser
-
 
 ################################################################################
 # Sets up a rule that creates a version.properties file in the gensrc output
@@ -96,34 +90,3 @@ define SetupCompileProperties
 
   $$(strip $1) += $$(PROPS_BASE)
 endef
-
-################################################################################
-# Parse property files in given location and generate a Java-like enum in the gensrc folder.
-# Param 1 - Variable to add targets to
-# Param 2 - Extra properties files to process
-define SetupParseProperties
-  # property files to process
-  PARSEPROPSOURCES := $$(addprefix $(TOPDIR)/src/$(MODULE)/share/classes/, $2)
-  PARSEPROPSOURCES := $$(call FilterExcludedTranslations, $$(PARSEPROPSOURCES), .properties)
-
-  PARSEPROPALLDIRS := $$(patsubst $(TOPDIR)/src/$(MODULE)/share/classes/%, \
-      $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/%, \
-      $$(dir $$(PARSEPROPSOURCES)))
-
-  PARSEPROPDIRS := $$(sort $$(PARSEPROPALLDIRS))
-
-  PARSEPROPCMDLINE := $$(subst _SPACE_, $$(SPACE), \
-    $$(join $$(foreach var,$$(PARSEPROPSOURCES),$$(addprefix -compile_SPACE_,$$(var))), \
-    $$(addprefix _SPACE_, $$(PARSEPROPALLDIRS))))
-
-  # Now setup the rule for the generation of the resource bundles.
-  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props: $$(PARSEPROPSOURCES)
-	$$(call MakeDir, $$(@D) $$(PARSEPROPDIRS))
-	$(FIND) $$(@D) -name "*Properties.java" $(FIND_DELETE)
-	$(ECHO) Parsing $$(words $$(PARSEPROPSOURCES)) properties into enum-like class for $(MODULE)
-	$(TOOL_PARSEPROPS_CMD) $$(PARSEPROPCMDLINE)
-	$(TOUCH) $$@
-
-  $$(strip $1) += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_parsed_props
-endef
-
