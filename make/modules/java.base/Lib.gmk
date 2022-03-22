@@ -208,13 +208,13 @@ endif
 # Create system lookup
 
 $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
-      NAME := syslookup, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
-      LIBS := $(LIBCXX), \
-      LIBS_linux := -lc -lm -ldl, \
+    NAME := syslookup, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+    LDFLAGS := $(LDFLAGS_JDKLIB), \
+    LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
+    LIBS := $(LIBCXX), \
+    LIBS_linux := -lc -lm -ldl, \
 ))
 
 TARGETS += $(BUILD_SYSLOOKUPLIB)
