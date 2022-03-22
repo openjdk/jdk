@@ -123,7 +123,7 @@ public class Basic {
             moduleName = mn; mainClass = mc; version = v; message = m; hashes = h;
             this.requires = requires != null ? requires : Collections.emptySet();
             this.exports = exports != null ? exports : Collections.emptySet();
-            this.uses = uses != null ? uses : Collections.emptySet();;
+            this.uses = uses != null ? uses : Collections.emptySet();
             this.provides = provides != null ? provides : Collections.emptySet();
             this.packages = Stream.concat(this.exports.stream(), contains.stream())
                                   .collect(Collectors.toSet());

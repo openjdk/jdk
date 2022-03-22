@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class HostnameChecker {
      * Certification Authorities are encouraged to use the dNSName instead.
      *
      * Matching is performed using the matching rules specified by
-     * [RFC5280].  If more than one identity of a given type is present in
+     * [RFC6125].  If more than one identity of a given type is present in
      * the certificate (e.g., more than one dNSName name, a match in any one
      * of the set is considered acceptable.)
      */
@@ -262,7 +262,7 @@ public class HostnameChecker {
     /**
      * Returns true if name matches against template.<p>
      *
-     * The matching is performed as per RFC 2818 rules for TLS and
+     * The matching is performed as per RFC 2818/6125 rules for TLS and
      * RFC 2830 rules for LDAP.<p>
      *
      * The <code>name</code> parameter should represent a DNS name.  The
@@ -299,9 +299,7 @@ public class HostnameChecker {
             return false;
         }
 
-        if (checkType == TYPE_TLS) {
-            return matchAllWildcards(name, template);
-        } else if (checkType == TYPE_LDAP) {
+        if (checkType == TYPE_TLS || checkType == TYPE_LDAP) {
             return matchLeftmostWildcard(name, template);
         } else {
             return false;
@@ -370,37 +368,6 @@ public class HostnameChecker {
 
         return false;
     }
-
-    /**
-     * Returns true if name matches against template.<p>
-     *
-     * According to RFC 2818, section 3.1 -
-     * Names may contain the wildcard character * which is
-     * considered to match any single domain name component
-     * or component fragment.
-     * E.g., *.a.com matches foo.a.com but not
-     * bar.foo.a.com. f*.com matches foo.com but not bar.com.
-     */
-    private static boolean matchAllWildcards(String name,
-         String template) {
-        name = name.toLowerCase(Locale.ENGLISH);
-        template = template.toLowerCase(Locale.ENGLISH);
-        StringTokenizer nameSt = new StringTokenizer(name, ".");
-        StringTokenizer templateSt = new StringTokenizer(template, ".");
-
-        if (nameSt.countTokens() != templateSt.countTokens()) {
-            return false;
-        }
-
-        while (nameSt.hasMoreTokens()) {
-            if (!matchWildCards(nameSt.nextToken(),
-                        templateSt.nextToken())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
 
     /**
      * Returns true if name matches against template.<p>

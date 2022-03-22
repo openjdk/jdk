@@ -481,6 +481,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL],
 AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 [
   DLL_NAME="$1"
+  DLL_HELP="$2"
   MSVC_DLL=
 
   if test "x$OPENJDK_TARGET_CPU" = xx86; then
@@ -565,7 +566,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   if test "x$MSVC_DLL" = x; then
     AC_MSG_CHECKING([for $DLL_NAME])
     AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Could not find $DLL_NAME. Please specify using --with-msvcr-dll.])
+    AC_MSG_ERROR([Could not find $DLL_NAME. Please specify using ${DLL_HELP}.])
   fi
 ])
 
@@ -588,7 +589,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     fi
     MSVCR_DLL="$MSVC_DLL"
   else
-    TOOLCHAIN_SETUP_MSVC_DLL([${MSVCR_NAME}])
+    TOOLCHAIN_SETUP_MSVC_DLL([${MSVCR_NAME}], [--with-msvcr-dll])
     MSVCR_DLL="$MSVC_DLL"
   fi
   AC_SUBST(MSVCR_DLL)
@@ -611,7 +612,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       fi
       MSVCP_DLL="$MSVC_DLL"
     else
-      TOOLCHAIN_SETUP_MSVC_DLL([${MSVCP_NAME}])
+      TOOLCHAIN_SETUP_MSVC_DLL([${MSVCP_NAME}], [--with-msvcp-dll])
       MSVCP_DLL="$MSVC_DLL"
     fi
     AC_SUBST(MSVCP_DLL)
@@ -636,7 +637,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
       fi
       VCRUNTIME_1_DLL="$MSVC_DLL"
     else
-      TOOLCHAIN_SETUP_MSVC_DLL([${VCRUNTIME_1_NAME}])
+      TOOLCHAIN_SETUP_MSVC_DLL([${VCRUNTIME_1_NAME}], [--with-vcruntime-1-dll])
       VCRUNTIME_1_DLL="$MSVC_DLL"
     fi
   fi

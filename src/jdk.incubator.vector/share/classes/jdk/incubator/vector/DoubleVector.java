@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1715,7 +1715,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             else {
                 throw new AssertionError(op);
             }
-            return maskType.cast(m.cast(this.vspecies()));
+            return maskType.cast(m.cast(vsp));
         }
         int opc = opCode(op);
         throw new AssertionError(op);
@@ -1725,11 +1725,48 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Double> test(VectorOperators.Test op,
-                                  VectorMask<Double> m) {
-        return test(op).and(m);
+                                  VectorMask<Double> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Double>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        DoubleSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            LongVector bits = this.viewAsIntegralLanes();
+            VectorMask<Long> m = mask.cast(LongVector.species(shape()));
+            if (op == IS_DEFAULT) {
+                m = bits.compare(EQ, (long) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = bits.compare(LT, (long) 0, m);
+            }
+            else if (op == IS_FINITE ||
+                     op == IS_NAN ||
+                     op == IS_INFINITE) {
+                // first kill the sign:
+                bits = bits.and(Long.MAX_VALUE);
+                // next find the bit pattern for infinity:
+                long infbits = (long) toBits(Double.POSITIVE_INFINITY);
+                // now compare:
+                if (op == IS_FINITE) {
+                    m = bits.compare(LT, infbits, m);
+                } else if (op == IS_NAN) {
+                    m = bits.compare(GT, infbits, m);
+                } else {
+                    m = bits.compare(EQ, infbits, m);
+                }
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m.cast(vsp));
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -3926,12 +3963,12 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      */
     static DoubleSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return (DoubleSpecies) SPECIES_64;
-            case S_128_BIT: return (DoubleSpecies) SPECIES_128;
-            case S_256_BIT: return (DoubleSpecies) SPECIES_256;
-            case S_512_BIT: return (DoubleSpecies) SPECIES_512;
-            case S_Max_BIT: return (DoubleSpecies) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return (DoubleSpecies) SPECIES_64;
+            case VectorShape.SK_128_BIT: return (DoubleSpecies) SPECIES_128;
+            case VectorShape.SK_256_BIT: return (DoubleSpecies) SPECIES_256;
+            case VectorShape.SK_512_BIT: return (DoubleSpecies) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return (DoubleSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }
