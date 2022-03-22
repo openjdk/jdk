@@ -78,7 +78,7 @@ public:
 };
 
 template <typename Closure, template <typename> class CardOrRanges>
-class G1HeapRegionRemSetMergeCardClosure : public G1CardSet::CardSetPtrClosure {
+class G1HeapRegionRemSetMergeCardClosure : public G1CardSet::ContainerPtrClosure {
   G1CardSet* _card_set;
   Closure& _cl;
   uint _log_card_regions_per_region;
@@ -98,11 +98,11 @@ public:
     _log_card_region_size(log_card_region_size) {
   }
 
-  void do_cardsetptr(uint card_region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
+  void do_containerptr(uint card_region_idx, size_t num_occupied, G1CardSet::ContainerPtr container) override {
     CardOrRanges<Closure> cl(_cl,
                              card_region_idx >> _log_card_regions_per_region,
                              (card_region_idx & _card_regions_per_region_mask) << _log_card_region_size);
-    _card_set->iterate_cards_or_ranges_in_container(card_set, cl);
+    _card_set->iterate_cards_or_ranges_in_container(container, cl);
   }
 };
 

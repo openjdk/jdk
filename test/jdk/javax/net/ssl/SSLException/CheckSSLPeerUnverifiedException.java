@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.shared;
+/*
+ * @test
+ * @bug 8282723
+ * @summary Add constructors taking a cause to JSSE exceptions
+ */
+import javax.net.ssl.SSLPeerUnverifiedException;
+import java.util.Objects;
 
-import sun.jvm.hotspot.debugger.*;
+public class CheckSSLPeerUnverifiedException {
+    private static String exceptionMessage = "message";
+    private static Throwable exceptionCause = new RuntimeException();
 
-/** Class CardGeneration is a generation that is covered by a card
-    table, and uses a card-size block-offset array to implement
-    block_start. */
+    public static void main(String[] args) throws Exception {
+        testException(
+            new SSLPeerUnverifiedException(exceptionMessage, exceptionCause));
+    }
 
-public abstract class CardGeneration extends Generation {
-  public CardGeneration(Address addr) {
-    super(addr);
-  }
+    private static void testException(Exception ex) {
+        if (!Objects.equals(ex.getMessage(), exceptionMessage)) {
+            throw new RuntimeException("Unexpected exception message");
+        }
 
-  // FIXME: not sure what I need to expose from here in order to have
-  // verification similar to that of the old RememberedSet
+        if (ex.getCause() != exceptionCause) {
+            throw new RuntimeException("Unexpected exception cause");
+        }
+    }
 }

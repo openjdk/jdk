@@ -1926,7 +1926,7 @@ encode %{
     Label done;
 
     // cmp    $0x80000000,%eax
-    __ cmp(as_Register(RAX_enc), 0x80000000);
+    __ cmpl(as_Register(RAX_enc), 0x80000000);
 
     // jne    e <normal>
     __ jccb(Assembler::notEqual, normal);
@@ -11685,34 +11685,34 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
-                       legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)
+instruct count_positives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
+                         legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)
 %{
   predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives_evex(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
-                            legRegD tmp1, legRegD tmp2, kReg ktmp1, kReg ktmp2, rbx_RegI tmp3, rFlagsReg cr,)
+instruct count_positives_evex(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
+                              legRegD tmp1, legRegD tmp2, kReg ktmp1, kReg ktmp2, rbx_RegI tmp3, rFlagsReg cr,)
 %{
   predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
