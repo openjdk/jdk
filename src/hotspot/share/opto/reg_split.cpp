@@ -538,12 +538,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       if (PrintOpto && WizardMode && lrgs(bidx)._was_spilled1) {
         tty->print_cr("Warning, 2nd spill of L%d",bidx);
       }
-//      if (C->method() != NULL && !C->is_osr_compilation()) {
+//      if (true || (C->method() != NULL && !C->is_osr_compilation())) {
 //        ResourceMark rm;
 //        stringStream ss;
 //        C->method()->print_short_name(&ss);
 //        if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
-//          tty->print("region = %d - %d ", region, bidx); lrgs(bidx).dump();
+          tty->print("SPILL: region = %d - %d ", region, bidx); lrgs(bidx).dump();
 //        }
 //      }
     }

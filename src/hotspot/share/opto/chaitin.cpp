@@ -437,7 +437,7 @@ void PhaseChaitin::Register_Allocate() {
 //    ResourceMark rm;
     stringStream ss;
     C->method()->print_short_name(&ss);
-    if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
+    if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress") || UseNewCode2) {
 //      _cfg._root_loop->dump_tree();
       CFGLoop* loop = _cfg._root_loop;
       CFGLoop* most_frequent = NULL;
@@ -450,7 +450,7 @@ void PhaseChaitin::Register_Allocate() {
           loop = next;
         }
 //        tty->print_cr("XXX %d %d", loop->id(), loop->depth());
-        if (loop->_child == NULL && loop->depth() == 3) {
+        if (loop->_child == NULL /*&& loop->depth() == 3*/) {
           GrowableArray<CFGElement*> blocks = loop->_members;
 //          for (int i = 0; i < blocks.length(); ++i) {
 //            Block* block = blocks.at(i)->as_Block();
@@ -489,6 +489,7 @@ void PhaseChaitin::Register_Allocate() {
       Block_List region;
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
+        block->dump();
         if (block->_region == 0) {
           region.push(block);
         }
@@ -501,6 +502,7 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   for (int region = regions.length()-1; region >= 0; region--) {
+    tty->print_cr("XXX region = %d", region);
     Block_List all_blocks = _cfg._blocks;
     Block_List blocks = region == 1 ? regions.at(regions.length() - 1 - region) : all_blocks;
     // After aggressive coalesce, attempt a first cut at coloring.
@@ -512,6 +514,7 @@ void PhaseChaitin::Register_Allocate() {
       IndexSet::reset_memory(C, &live_arena);
       ifg.init(_lrg_map.max_lrg_id());
       gather_lrg_masks(all_blocks, true, region);
+
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
       compute_min_regions(all_blocks);
@@ -520,6 +523,7 @@ void PhaseChaitin::Register_Allocate() {
     // Build physical interference graph
     uint must_spill = 0;
     must_spill = build_ifg_physical(&live_arena, blocks, region);
+
     // If we have a guaranteed spill, might as well spill now
     if (must_spill) {
       if (!_lrg_map.max_lrg_id()) {
@@ -578,6 +582,16 @@ void PhaseChaitin::Register_Allocate() {
 #ifdef ASSERT
       set_was_low(0);
 #endif
+    }
+
+    if (regions.length() > 1) {
+      for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
+        LRG &lrg = lrgs(i);
+        tty->print("%d: ", i); lrg.dump();
+        if (_ifg->neighbor_cnt(i) > 0) {
+          _ifg->neighbors(i)->dump();
+        }
+      }
     }
 
     // Prepare for Simplify & Select

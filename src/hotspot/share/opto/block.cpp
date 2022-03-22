@@ -351,6 +351,7 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
     st->print(" FRegPressure: %d",_freg_pressure);
     st->print(" FHRP Index: %d",_fhrp_index);
   }
+  st->print(" region: %d", _region);
   st->cr();
 }
 
