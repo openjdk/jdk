@@ -31,6 +31,10 @@
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
  *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestDowncall
+ *
+ * @run testng/othervm -Xint -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=100000
+ *   TestDowncall
  */
 
 import jdk.incubator.foreign.Addressable;

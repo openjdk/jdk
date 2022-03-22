@@ -1847,6 +1847,9 @@
   declare_c2_type(VectorCastL2XNode, VectorNode)                          \
   declare_c2_type(VectorCastF2XNode, VectorNode)                          \
   declare_c2_type(VectorCastD2XNode, VectorNode)                          \
+  declare_c2_type(VectorUCastB2XNode, VectorNode)                         \
+  declare_c2_type(VectorUCastS2XNode, VectorNode)                         \
+  declare_c2_type(VectorUCastI2XNode, VectorNode)                         \
   declare_c2_type(VectorInsertNode, VectorNode)                           \
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \

@@ -164,4 +164,10 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
+  // Returns pre-selection estimated cost of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    return 0;
+  }
+
+
 #endif // CPU_PPC_MATCHER_PPC_HPP

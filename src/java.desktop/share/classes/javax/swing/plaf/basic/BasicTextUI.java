@@ -1045,7 +1045,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @param tc the text component for which this UI is installed
      * @param pos the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle, null if the model is not painted
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView
      *
@@ -1067,7 +1067,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * @param tc the text component for which this UI is installed
      * @param pos the local location in the model to translate &gt;= 0
      * @return the coordinates as a rectangle, null if the model is not painted
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView
      *
@@ -1626,9 +1626,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *  position is a boundary of two views.
          * @param a the allocated region to render into
          * @return the bounding box of the given position is returned
-         * @exception BadLocationException  if the given position does
+         * @throws BadLocationException  if the given position does
          *   not represent a valid location in the associated document
-         * @exception IllegalArgumentException for an invalid bias argument
+         * @throws IllegalArgumentException for an invalid bias argument
          * @see View#viewToModel
          */
         public Shape modelToView(int p0, Position.Bias b0, int p1, Position.Bias b1, Shape a) throws BadLocationException {
@@ -1674,9 +1674,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          *  SwingConstants.NORTH, or SwingConstants.SOUTH.
          * @return the location within the model that best represents the next
          *  location visual position.
-         * @exception BadLocationException the given position is not a valid
+         * @throws BadLocationException the given position is not a valid
          *                                 position within the document
-         * @exception IllegalArgumentException for an invalid direction
+         * @throws IllegalArgumentException for an invalid direction
          */
         public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                              int direction,

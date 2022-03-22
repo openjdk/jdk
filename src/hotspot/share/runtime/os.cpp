@@ -634,6 +634,8 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = NULL;
   if (NMTPreInit::handle_malloc(&rc, size)) {
+    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // early allocations.
     return rc;
   }
 
@@ -649,22 +651,22 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return NULL;
   }
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-  const size_t nmt_overhead =
-      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
+  const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
-  const size_t outer_size = size + nmt_overhead;
-
-  void* const outer_ptr = (u_char*)::malloc(outer_size);
+  void* const outer_ptr = ::malloc(outer_size);
   if (outer_ptr == NULL) {
     return NULL;
   }
 
-  void* inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack, level);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  if (DumpSharedSpaces) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset(inner_ptr, 0, size);
+  } else {
+    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  }
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-
   return inner_ptr;
 }
 
@@ -696,19 +698,17 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-  const size_t nmt_overhead =
-      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
-
-  const size_t new_outer_size = size + nmt_overhead;
+  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
 
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock, level);
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
 
   void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);
+  if (new_outer_ptr == NULL) {
+    return NULL;
+  }
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack, level);
+  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
   DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
 
@@ -728,10 +728,9 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock, level);
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
+
   ::free(old_outer_ptr);
 }
 
@@ -1174,34 +1173,34 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
+bool is_pointer_bad(intptr_t* ptr) {
+  return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
+}
+
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
+// Returns true if this is not the case, i.e. the frame is possibly
+// the first C frame on the stack.
 bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
 #endif
-
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
-  uintptr_t fp_align_mask = (uintptr_t)(sizeof(address)-1);
-  // sp on amd can be 32 bit aligned.
-  uintptr_t sp_align_mask = (uintptr_t)(sizeof(int)-1);
 
-  uintptr_t usp    = (uintptr_t)fr->sp();
-  if ((usp & sp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->sp())) return true;
 
   uintptr_t ufp    = (uintptr_t)fr->fp();
-  if ((ufp & fp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->fp())) return true;
 
   uintptr_t old_sp = (uintptr_t)fr->sender_sp();
-  if ((old_sp & sp_align_mask) != 0) return true;
-  if (old_sp == 0 || old_sp == (uintptr_t)-1) return true;
+  if ((uintptr_t)fr->sender_sp() == (uintptr_t)-1 || is_pointer_bad(fr->sender_sp())) return true;
 
-  uintptr_t old_fp = (uintptr_t)fr->link();
-  if ((old_fp & fp_align_mask) != 0) return true;
-  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp) return true;
+  uintptr_t old_fp = (uintptr_t)fr->link_or_null();
+  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp ||
+    is_pointer_bad(fr->link_or_null())) return true;
 
   // stack grows downwards; if old_fp is below current fp or if the stack
   // frame is too large, either the stack is corrupted or fp is not saved
@@ -1212,7 +1211,6 @@ bool os::is_first_C_frame(frame* fr) {
 
   return false;
 }
-
 
 // Set up the boot classpath.
 
@@ -1384,7 +1382,7 @@ char** os::split_path(const char* path, size_t* elements, size_t file_name_lengt
 // pages, false otherwise.
 bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp) {
   if (!thread->is_Java_thread()) return false;
-  // Check if we have StackShadowPages above the yellow zone.  This parameter
+  // Check if we have StackShadowPages above the guard zone. This parameter
   // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow
   // handler or a println uses at least 8k stack of VM and native code
@@ -1392,9 +1390,7 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
 
-  address limit = JavaThread::cast(thread)->stack_end() +
-                  (StackOverflow::stack_guard_zone_size() + StackOverflow::stack_shadow_zone_size());
-
+  address limit = JavaThread::cast(thread)->stack_overflow_state()->shadow_zone_safe_limit();
   return sp > (limit + framesize_in_bytes);
 }
 
@@ -1745,13 +1741,31 @@ void os::print_memory_mappings(outputStream* st) {
   os::print_memory_mappings(nullptr, (size_t)-1, st);
 }
 
+// Pretouching must use a store, not just a load.  On many OSes loads from
+// fresh memory would be satisfied from a single mapped page containing all
+// zeros.  We need to store something to each page to get them backed by
+// their own memory, which is the effect we want here.  An atomic add of
+// zero is used instead of a simple store, allowing the memory to be used
+// while pretouch is in progress, rather than requiring users of the memory
+// to wait until the entire range has been touched.  This is technically
+// a UB data race, but doesn't cause any problems for us.
 void os::pretouch_memory(void* start, void* end, size_t page_size) {
-  for (volatile char *p = (char*)start; p < (char*)end; p += page_size) {
-    // Note: this must be a store, not a load. On many OSes loads from fresh
-    // memory would be satisfied from a single mapped page containing all zeros.
-    // We need to store something to each page to get them backed by their own
-    // memory, which is the effect we want here.
-    *p = 0;
+  assert(start <= end, "invalid range: " PTR_FORMAT " -> " PTR_FORMAT, p2i(start), p2i(end));
+  assert(is_power_of_2(page_size), "page size misaligned: %zu", page_size);
+  assert(page_size >= sizeof(int), "page size too small: %zu", page_size);
+  if (start < end) {
+    // We're doing concurrent-safe touch and memory state has page
+    // granularity, so we can touch anywhere in a page.  Touch at the
+    // beginning of each page to simplify iteration.
+    char* cur = static_cast<char*>(align_down(start, page_size));
+    void* last = align_down(static_cast<char*>(end) - 1, page_size);
+    assert(cur <= last, "invariant");
+    // Iterate from first page through last (inclusive), being careful to
+    // avoid overflow if the last page abuts the end of the address range.
+    for ( ; true; cur += page_size) {
+      Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+      if (cur >= last) break;
+    }
   }
 }
 

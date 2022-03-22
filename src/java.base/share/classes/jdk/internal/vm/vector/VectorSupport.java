@@ -63,17 +63,18 @@ public class VectorSupport {
     public static final int VECTOR_OP_URSHIFT = 16;
 
     public static final int VECTOR_OP_CAST        = 17;
-    public static final int VECTOR_OP_REINTERPRET = 18;
+    public static final int VECTOR_OP_UCAST       = 18;
+    public static final int VECTOR_OP_REINTERPRET = 19;
 
     // Mask manipulation operations
-    public static final int VECTOR_OP_MASK_TRUECOUNT = 19;
-    public static final int VECTOR_OP_MASK_FIRSTTRUE = 20;
-    public static final int VECTOR_OP_MASK_LASTTRUE  = 21;
-    public static final int VECTOR_OP_MASK_TOLONG    = 22;
+    public static final int VECTOR_OP_MASK_TRUECOUNT = 20;
+    public static final int VECTOR_OP_MASK_FIRSTTRUE = 21;
+    public static final int VECTOR_OP_MASK_LASTTRUE  = 22;
+    public static final int VECTOR_OP_MASK_TOLONG    = 23;
 
     // Rotate operations
-    public static final int VECTOR_OP_LROTATE = 23;
-    public static final int VECTOR_OP_RROTATE = 24;
+    public static final int VECTOR_OP_LROTATE = 24;
+    public static final int VECTOR_OP_RROTATE = 25;
 
     // Math routines
     public static final int VECTOR_OP_TAN = 101;

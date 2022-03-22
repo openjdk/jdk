@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,13 +122,13 @@ public class WinShortcutPromptTest {
         StringBuilder sb = new StringBuilder(cmd.name());
         sb.append("With");
         if (withShortcutPrompt) {
-            sb.append("ShortcutPrompt");
+            sb.append("P");
         }
         if (withStartMenuShortcut) {
-            sb.append("StartMenu");
+            sb.append("M");
         }
         if (withDesktopShortcut) {
-            sb.append("Desktop");
+            sb.append("D");
         }
         cmd.setArgumentValue("--name", sb.toString());
     }

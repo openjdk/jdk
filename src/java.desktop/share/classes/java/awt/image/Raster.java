@@ -1375,7 +1375,7 @@ public class Raster {
      * @param h the specified height of the new {@code WritableRaster}
      * @return a compatible {@code WritableRaster} with the specified
      *         size and a new sample model and data buffer.
-     * @exception RasterFormatException if the width or height is less than
+     * @throws RasterFormatException if the width or height is less than
      *                               or equal to zero.
      */
     public WritableRaster createCompatibleWritableRaster(int w, int h) {
@@ -1501,7 +1501,7 @@ public class Raster {
      *                   of the returned Raster
      * @param bandList   Array of band indices, or null to use all bands
      * @return a new {@code Raster}.
-     * @exception RasterFormatException if the specified subregion is outside
+     * @throws RasterFormatException if the specified subregion is outside
      *                               of the raster bounds.
      * @throws RasterFormatException if {@code width} or
      *         {@code height}

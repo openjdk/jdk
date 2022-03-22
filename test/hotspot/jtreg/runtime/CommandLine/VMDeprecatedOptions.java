@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ public class VMDeprecatedOptions {
      */
     public static final String[][] DEPRECATED_OPTIONS;
     static {
+        // Use an ArrayList so platform-specific flags can be
+        // optionally added.
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
@@ -60,6 +62,10 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isLinux()) {
+            deprecated.add(new String[] {"UseContainerCpuShares",           "false"});
+            deprecated.add(new String[] {"PreferContainerQuotaForCPUCount", "true"});
+        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 

@@ -35,7 +35,7 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.instrument.ClassFileTransformer;
-import java.lang.reflect.Method;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -59,7 +59,8 @@ import jdk.test.lib.util.ClassTransformer;
 class MethodParametersTarget {
     // The class contains the only method, so we don't have issue with method sorting
     // and ClassFileReconstituter should restore the same bytes as original classbytes.
-    public void method1(
+    // This method should be ctor, otherwise default ctor will be implicitly declared.
+    public MethodParametersTarget(
             int intParam1, String stringParam1 // @1 commentout
             // @1 uncomment   int intParam2, String stringParam2
             )
@@ -99,8 +100,8 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
 
     private Parameter[] getTargetMethodParameters() throws ClassNotFoundException {
         Class cls = Class.forName(targetClassName);
-        // the class contains 1 method (method1)
-        Method method = cls.getDeclaredMethods()[0];
+        // the class contains 1 method (ctor)
+        Executable method = cls.getDeclaredConstructors()[0];
         Parameter[] params = method.getParameters();
         log("Params of " + method.getName() + " method (" + params.length + "):");
         for (int i = 0; i < params.length; i++) {
@@ -174,7 +175,7 @@ public class RetransformWithMethodParametersTest extends ATransformerManagementT
         }
         log("Class bytes are different.");
         printDisassembled("expected", expected);
-        printDisassembled("expected", actual);
+        printDisassembled("actual", actual);
         fail(targetClassName + " did not match .class file");
     }
 

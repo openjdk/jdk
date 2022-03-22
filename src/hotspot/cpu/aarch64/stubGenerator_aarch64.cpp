@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "asm/register.hpp"
 #include "atomic_aarch64.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -1320,10 +1321,10 @@ class StubGenerator: public StubCodeGenerator {
   void clobber_registers() {
 #ifdef ASSERT
     RegSet clobbered
-      = MacroAssembler::call_clobbered_registers() - rscratch1;
+      = MacroAssembler::call_clobbered_gp_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<Register> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -4657,7 +4658,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_has_negatives(address &has_negatives_long) {
+  address generate_count_positives(address &count_positives_long) {
     const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -4666,13 +4667,15 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+    StubCodeMark mark(this, "StubRoutines", "count_positives");
 
     address entry = __ pc();
 
     __ enter();
+    // precondition: a copy of len is already in result
+    // __ mov(result, len);
 
-  Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16, DONE,
+  Label RET_ADJUST, RET_ADJUST_16, RET_ADJUST_LONG, RET_NO_POP, RET_LEN, ALIGNED, LOOP16, CHECK_16,
         LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
 
   __ cmp(len, (u1)15);
@@ -4686,25 +4689,26 @@ class StubGenerator: public StubCodeGenerator {
   __ sub(rscratch1, zr, len, __ LSL, 3);  // LSL 3 is to get bits from bytes.
   __ lsrv(rscratch2, rscratch2, rscratch1);
   __ tst(rscratch2, UPPER_BIT_MASK);
-  __ cset(result, Assembler::NE);
+  __ csel(result, zr, result, Assembler::NE);
   __ leave();
   __ ret(lr);
   __ bind(LEN_OVER_8);
   __ ldp(rscratch1, rscratch2, Address(ary1, -16));
   __ sub(len, len, 8); // no data dep., then sub can be executed while loading
   __ tst(rscratch2, UPPER_BIT_MASK);
-  __ br(Assembler::NE, RET_TRUE_NO_POP);
+  __ br(Assembler::NE, RET_NO_POP);
   __ sub(rscratch2, zr, len, __ LSL, 3); // LSL 3 is to get bits from bytes
   __ lsrv(rscratch1, rscratch1, rscratch2);
   __ tst(rscratch1, UPPER_BIT_MASK);
-  __ cset(result, Assembler::NE);
+  __ bind(RET_NO_POP);
+  __ csel(result, zr, result, Assembler::NE);
   __ leave();
   __ ret(lr);
 
   Register tmp1 = r3, tmp2 = r4, tmp3 = r5, tmp4 = r6, tmp5 = r7, tmp6 = r10;
   const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
 
-  has_negatives_long = __ pc(); // 2nd entry point
+  count_positives_long = __ pc(); // 2nd entry point
 
   __ enter();
 
@@ -4716,10 +4720,10 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(tmp5, 16);
     __ sub(rscratch1, tmp5, rscratch2); // amount of bytes until aligned address
     __ add(ary1, ary1, rscratch1);
-    __ sub(len, len, rscratch1);
     __ orr(tmp6, tmp6, tmp1);
     __ tst(tmp6, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
+    __ sub(len, len, rscratch1);
 
   __ bind(ALIGNED);
     __ cmp(len, large_loop_size);
@@ -4734,7 +4738,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, 16);
     __ orr(tmp6, tmp6, tmp1);
     __ tst(tmp6, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_16);
     __ cmp(len, large_loop_size);
     __ br(Assembler::LT, CHECK_16);
 
@@ -4766,7 +4770,7 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(rscratch1, rscratch1, tmp6);
     __ orr(tmp2, tmp2, rscratch1);
     __ tst(tmp2, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_LONG);
     __ cmp(len, large_loop_size);
     __ br(Assembler::GE, LARGE_LOOP);
 
@@ -4779,7 +4783,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, 16);
     __ orr(tmp2, tmp2, tmp3);
     __ tst(tmp2, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_16);
     __ cmp(len, (u1)16);
     __ br(Assembler::GE, LOOP16); // 16-byte load loop end
 
@@ -4787,37 +4791,38 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(len, (u1)8);
     __ br(Assembler::LE, POST_LOOP16_LOAD_TAIL);
     __ ldr(tmp3, Address(__ post(ary1, 8)));
-    __ sub(len, len, 8);
     __ tst(tmp3, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
+    __ sub(len, len, 8);
 
   __ bind(POST_LOOP16_LOAD_TAIL);
-    __ cbz(len, RET_FALSE); // Can't shift left by 64 when len==0
+    __ cbz(len, RET_LEN); // Can't shift left by 64 when len==0
     __ ldr(tmp1, Address(ary1));
     __ mov(tmp2, 64);
     __ sub(tmp4, tmp2, len, __ LSL, 3);
     __ lslv(tmp1, tmp1, tmp4);
     __ tst(tmp1, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
     // Fallthrough
 
-  __ bind(RET_FALSE);
+  __ bind(RET_LEN);
     __ pop(spilled_regs, sp);
     __ leave();
-    __ mov(result, zr);
     __ ret(lr);
 
-  __ bind(RET_TRUE);
+    // difference result - len is the count of guaranteed to be
+    // positive bytes
+
+  __ bind(RET_ADJUST_LONG);
+    __ add(len, len, (u1)(large_loop_size - 16));
+  __ bind(RET_ADJUST_16);
+    __ add(len, len, 16);
+  __ bind(RET_ADJUST);
     __ pop(spilled_regs, sp);
-  __ bind(RET_TRUE_NO_POP);
     __ leave();
-    __ mov(result, 1);
+    __ sub(result, result, len);
     __ ret(lr);
 
-  __ bind(DONE);
-    __ pop(spilled_regs, sp);
-    __ leave();
-    __ ret(lr);
     return entry;
   }
 
@@ -5215,97 +5220,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  enum string_compare_mode {
-    LL,
-    LU,
-    UL,
-    UU,
-  };
-
-  // The following registers are declared in aarch64.ad
-  // r0  = result
-  // r1  = str1
-  // r2  = cnt1
-  // r3  = str2
-  // r4  = cnt2
-  // r10 = tmp1
-  // r11 = tmp2
-  // z0  = ztmp1
-  // z1  = ztmp2
-  // p0  = pgtmp1
-  // p1  = pgtmp2
-  address generate_compare_long_string_sve(string_compare_mode mode) {
-    __ align(CodeEntryAlignment);
-    address entry = __ pc();
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-             tmp1 = r10, tmp2 = r11;
-
-    Label LOOP, MATCH, DONE, NOMATCH;
-    Register vec_len = tmp1;
-    Register idx = tmp2;
-    // The minimum of the string lengths has been stored in cnt2.
-    Register cnt = cnt2;
-    FloatRegister ztmp1 = z0, ztmp2 = z1;
-    PRegister pgtmp1 = p0, pgtmp2 = p1;
-
-    if (mode == LL) {
-      __ sve_cntb(vec_len);
-    } else {
-      __ sve_cnth(vec_len);
-    }
-
-    __ mov(idx, 0);
-    __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
-
-    __ bind(LOOP);
-      switch (mode) {
-        case LL:
-          __ sve_ld1b(ztmp1, __ B, pgtmp1, Address(str1, idx));
-          __ sve_ld1b(ztmp2, __ B, pgtmp1, Address(str2, idx));
-          break;
-        case LU:
-          __ sve_ld1b(ztmp1, __ H, pgtmp1, Address(str1, idx));
-          __ sve_ld1h(ztmp2, __ H, pgtmp1, Address(str2, idx, Address::lsl(1)));
-          break;
-        case UL:
-          __ sve_ld1h(ztmp1, __ H, pgtmp1, Address(str1, idx, Address::lsl(1)));
-          __ sve_ld1b(ztmp2, __ H, pgtmp1, Address(str2, idx));
-          break;
-        case UU:
-          __ sve_ld1h(ztmp1, __ H, pgtmp1, Address(str1, idx, Address::lsl(1)));
-          __ sve_ld1h(ztmp2, __ H, pgtmp1, Address(str2, idx, Address::lsl(1)));
-          break;
-        default: ShouldNotReachHere();
-      }
-      __ add(idx, idx, vec_len);
-
-      // Compare strings.
-      __ sve_cmp(Assembler::NE, pgtmp2, mode == LL ? __ B : __ H, pgtmp1, ztmp1, ztmp2);
-      __ br(__ NE, MATCH);
-      __ sve_whilelt(pgtmp1, mode == LL ? __ B : __ H, idx, cnt);
-      __ br(__ LT, LOOP);
-
-      // The result has been computed in the caller prior to entering this stub.
-      __ b(DONE);
-
-    __ bind(MATCH);
-
-      // Crop the vector to find its location.
-      __ sve_brkb(pgtmp2, pgtmp1, pgtmp2, false /* isMerge */);
-
-      // Extract the first different characters of each string.
-      __ sve_lasta(rscratch1, mode == LL ? __ B : __ H, pgtmp2, ztmp1);
-      __ sve_lasta(rscratch2, mode == LL ? __ B : __ H, pgtmp2, ztmp2);
-
-      // Compute the difference of the first different characters.
-      __ sub(result, rscratch1, rscratch2);
-
-    __ bind(DONE);
-      __ ret(lr);
-
-    return entry;
-  }
-
   // r0  = result
   // r1  = str1
   // r2  = cnt1
@@ -5428,7 +5342,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_compare_long_strings() {
-    if (UseSVE == 0) {
       StubRoutines::aarch64::_compare_long_string_LL
           = generate_compare_long_string_same_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UU
@@ -5437,16 +5350,6 @@ class StubGenerator: public StubCodeGenerator {
           = generate_compare_long_string_different_encoding(true);
       StubRoutines::aarch64::_compare_long_string_UL
           = generate_compare_long_string_different_encoding(false);
-    } else {
-      StubRoutines::aarch64::_compare_long_string_LL
-          = generate_compare_long_string_sve(LL);
-      StubRoutines::aarch64::_compare_long_string_UU
-          = generate_compare_long_string_sve(UU);
-      StubRoutines::aarch64::_compare_long_string_LU
-          = generate_compare_long_string_sve(LU);
-      StubRoutines::aarch64::_compare_long_string_UL
-          = generate_compare_long_string_sve(UL);
-    }
   }
 
   // R0 = result
@@ -6727,7 +6630,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<Register> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;
@@ -7621,8 +7524,8 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    // has negatives stub for large arrays.
-    StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
+    // countPositives stub for large arrays.
+    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
 
     // array equals stub for large arrays.
     if (!UseSimpleArrayEquals) {

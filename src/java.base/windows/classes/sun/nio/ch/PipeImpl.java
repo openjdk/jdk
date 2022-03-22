@@ -179,7 +179,7 @@ class PipeImpl
      * Creates a (TCP) Pipe implementation that supports buffering.
      */
     PipeImpl(SelectorProvider sp) throws IOException {
-        this(sp, true, false);
+        this(sp, false, true);
     }
 
     /**

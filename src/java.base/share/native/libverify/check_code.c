@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,7 +468,8 @@ static void CCout_of_memory (context_type *);
 /* Because we can longjmp any time, we need to be very careful about
  * remembering what needs to be freed. */
 
-static void check_and_push(context_type *context, const void *ptr, int kind);
+static void check_and_push_malloc_block(context_type *context, void *ptr);
+static void check_and_push_string_utf(context_type *context, const char *ptr);
 static void pop_and_free(context_type *context);
 
 static int signature_to_args_size(const char *method_signature);
@@ -604,7 +605,7 @@ class_to_ID(context_type *context, jclass cb, jboolean loadable)
     unsigned short *pID;
     const char *name = JVM_GetClassNameUTF(env, cb);
 
-    check_and_push(context, name, VM_STRING_UTF);
+    check_and_push_string_utf(context, name);
     hash = class_hash_fun(name);
     pID = &(class_hash->table[hash % HASH_TABLE_SIZE]);
     while (*pID) {
@@ -939,10 +940,10 @@ read_all_code(context_type* context, jclass cb, int num_methods,
     int i;
 
     lengths = malloc(sizeof(int) * num_methods);
-    check_and_push(context, lengths, VM_MALLOC_BLK);
+    check_and_push_malloc_block(context, lengths);
 
     code = malloc(sizeof(unsigned char*) * num_methods);
-    check_and_push(context, code, VM_MALLOC_BLK);
+    check_and_push_malloc_block(context, code);
 
     *(lengths_addr) = lengths;
     *(code_addr) = code;
@@ -951,7 +952,7 @@ read_all_code(context_type* context, jclass cb, int num_methods,
         lengths[i] = JVM_GetMethodIxByteCodeLength(context->env, cb, i);
         if (lengths[i] > 0) {
             code[i] = malloc(sizeof(unsigned char) * (lengths[i] + 1));
-            check_and_push(context, code[i], VM_MALLOC_BLK);
+            check_and_push_malloc_block(context, code[i]);
             JVM_GetMethodIxByteCode(context->env, cb, i, code[i]);
         } else {
             code[i] = NULL;
@@ -1305,7 +1306,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
         /* Make sure the constant pool item is the right type. */
         verify_constant_pool_type(context, key, kind);
         methodname = JVM_GetCPMethodNameUTF(env, cb, key);
-        check_and_push(context, methodname, VM_STRING_UTF);
+        check_and_push_string_utf(context, methodname);
         is_constructor = !strcmp(methodname, "<init>");
         is_internal = methodname[0] == '<';
         pop_and_free(context);
@@ -1354,7 +1355,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             unsigned int args2;
             const char *signature =
                 JVM_GetCPMethodSignatureUTF(env, context->class, key);
-            check_and_push(context, signature, VM_STRING_UTF);
+            check_and_push_string_utf(context, signature);
             args1 = signature_to_args_size(signature) + 1;
             args2 = code[offset + 3];
             if (args1 != args2) {
@@ -1652,7 +1653,7 @@ initialize_exception_table(context_type *context)
             classname = JVM_GetCPClassNameUTF(env,
                                               context->class,
                                               einfo.catchType);
-            check_and_push(context, classname, VM_STRING_UTF);
+            check_and_push_string_utf(context, classname);
             stack_item->item = make_class_info_from_name(context, classname);
             if (!isAssignableTo(context,
                                 stack_item->item,
@@ -1807,7 +1808,7 @@ initialize_dataflow(context_type *context)
         }
     }
     signature = JVM_GetMethodIxSignatureUTF(env, cb, mi);
-    check_and_push(context, signature, VM_STRING_UTF);
+    check_and_push_string_utf(context, signature);
     /* Fill in each of the arguments into the registers. */
     for (p = signature + 1; *p != JVM_SIGNATURE_ENDFUNC; ) {
         char fieldchar = signature_to_fieldtype(context, &p, &full_info);
@@ -2050,7 +2051,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                                            context->class,
                                            operand);
             char *ip = buffer;
-            check_and_push(context, signature, VM_STRING_UTF);
+            check_and_push_string_utf(context, signature);
 #ifdef DEBUG
             if (verify_verbose) {
                 print_formatted_fieldname(context, operand);
@@ -2076,7 +2077,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                                             operand);
             char *ip = buffer;
             const char *p;
-            check_and_push(context, signature, VM_STRING_UTF);
+            check_and_push_string_utf(context, signature);
 #ifdef DEBUG
             if (verify_verbose) {
                 print_formatted_methodname(context, operand);
@@ -2376,7 +2377,7 @@ pop_stack(context_type *context, unsigned int inumber, stack_info_type *new_stac
                                             operand);
             int item;
             const char *p;
-            check_and_push(context, signature, VM_STRING_UTF);
+            check_and_push_string_utf(context, signature);
             if (opcode == JVM_OPC_invokestatic) {
                 item = 0;
             } else if (opcode == JVM_OPC_invokeinit) {
@@ -2758,7 +2759,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
             const char *signature = JVM_GetCPFieldSignatureUTF(context->env,
                                                                context->class,
                                                                operand);
-            check_and_push(context, signature, VM_STRING_UTF);
+            check_and_push_string_utf(context, signature);
 #ifdef DEBUG
             if (verify_verbose) {
                 print_formatted_fieldname(context, operand);
@@ -2780,7 +2781,7 @@ push_stack(context_type *context, unsigned int inumber, stack_info_type *new_sta
                                                                 context->class,
                                                                 operand);
             const char *result_signature;
-            check_and_push(context, signature, VM_STRING_UTF);
+            check_and_push_string_utf(context, signature);
             result_signature = get_result_signature(signature);
             if (result_signature++ == NULL) {
                 CCerror(context, "Illegal signature %s", signature);
@@ -3621,7 +3622,7 @@ cp_index_to_class_fullinfo(context_type *context, int cp_index, int kind)
         CCerror(context, "Internal error #5");
     }
 
-    check_and_push(context, classname, VM_STRING_UTF);
+    check_and_push_string_utf(context, classname);
     if (classname[0] == JVM_SIGNATURE_ARRAY) {
         /* This make recursively call us, in case of a class array */
         signature_to_fieldtype(context, &classname, &result);
@@ -3822,8 +3823,8 @@ signature_to_fieldtype(context_type *context,
                 assert(finish >= p);
                 length = (int)(finish - p);
                 if (length + 1 > (int)sizeof(buffer_space)) {
-                    buffer = calloc(length + 1, sizeof(char));
-                    check_and_push(context, buffer, VM_MALLOC_BLK);
+                    buffer = malloc(length + 1);
+                    check_and_push_malloc_block(context, buffer);
                 }
                 memcpy(buffer, p, length);
                 buffer[length] = '\0';
@@ -4142,7 +4143,7 @@ static void free_block(void *ptr, int kind)
     }
 }
 
-static void check_and_push(context_type *context, const void *ptr, int kind)
+static void check_and_push_common(context_type *context, void *ptr, int kind)
 {
     alloc_stack_type *p;
     if (ptr == 0)
@@ -4154,14 +4155,22 @@ static void check_and_push(context_type *context, const void *ptr, int kind)
         p = malloc(sizeof(alloc_stack_type));
         if (p == 0) {
             /* Make sure we clean up. */
-            free_block((void *)ptr, kind);
+            free_block(ptr, kind);
             CCout_of_memory(context);
         }
     }
     p->kind = kind;
-    p->ptr = (void *)ptr;
+    p->ptr = ptr;
     p->next = context->allocated_memory;
     context->allocated_memory = p;
+}
+
+static void check_and_push_malloc_block(context_type *context, void *ptr) {
+  check_and_push_common(context, ptr, VM_MALLOC_BLK);
+}
+
+static void check_and_push_string_utf(context_type *context, const char *ptr) {
+  check_and_push_common(context, (void *)ptr, VM_STRING_UTF);
 }
 
 static void pop_and_free(context_type *context)
