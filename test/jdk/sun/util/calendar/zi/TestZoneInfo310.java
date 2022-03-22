@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class TestZoneInfo310 {
 
         String TESTDIR = System.getProperty("test.dir", ".");
         Path tzdir = Paths.get(System.getProperty("test.root"),
-            "..", "..", "make", "data", "tzdata");
+            "../../src/java.base/share/data/tzdata");
         String tzfiles = "africa antarctica asia australasia europe northamerica southamerica backward etcetera gmt";
         Path jdk_tzdir = Paths.get(System.getProperty("test.src"), "tzdata_jdk");
         String jdk_tzfiles = "jdk11_backward";

@@ -32,6 +32,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/align.hpp"
 #include "unittest.hpp"
+#include "runtime/frame.inline.hpp"
 
 static size_t small_page_size() {
   return os::vm_page_size();
@@ -864,4 +865,14 @@ TEST_VM(os, iso8601_time) {
 
   // Canary should still be intact
   EXPECT_EQ(buffer[os::iso8601_timestamp_size], 'X');
+}
+
+TEST_VM(os, is_first_C_frame) {
+#ifndef _WIN32
+  frame invalid_frame;
+  EXPECT_TRUE(os::is_first_C_frame(&invalid_frame)); // the frame has zeroes for all values
+
+  frame cur_frame = os::current_frame(); // this frame has to have a sender
+  EXPECT_FALSE(os::is_first_C_frame(&cur_frame));
+#endif // _WIN32
 }
