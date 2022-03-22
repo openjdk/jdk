@@ -304,16 +304,6 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  // Convert "x+(0-y)" into "(x-y)"
-  if (op2 == Op_Sub(bt) && phase->type(in2->in(1)) == TypeInteger::zero(bt)) {
-    return SubNode::make(in1, in2->in(2), bt);
-  }
-
-  // Convert "(0-y)+x" into "(x-y)"
-  if (op1 == Op_Sub(bt) && phase->type(in1->in(1)) == TypeInteger::zero(bt)) {
-    return SubNode::make(in2, in1->in(2), bt);
-  }
-
   // Associative
   if (op1 == Op_Mul(bt) && op2 == Op_Mul(bt)) {
     Node* add_in1 = NULL;
@@ -895,15 +885,6 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     jint c = phase->type(in1->in(2))->isa_int()->get_con();
     Node* neg_c_minus_one = phase->intcon(java_add(-c, -1));
     return new SubINode(neg_c_minus_one, in1->in(1));
-  }
-  // Convert ~(c-x) into x+(-c-1). Note there isn't a bitwise not
-  // bytecode, "~x" would typically represented as "x^(-1)", so ~(c-x)
-  // will eventually be (c-x)^-1.
-  if (op1 == Op_SubI && phase->type(in2) == TypeInt::MINUS_1 &&
-      in1->in(1)->Opcode() == Op_ConI) {
-    jint c = phase->type(in1->in(1))->isa_int()->get_con();
-    Node* neg_c_minus_one = phase->intcon(java_add(-c, -1));
-    return new AddINode(in1->in(2), neg_c_minus_one);
   }
   return AddNode::Ideal(phase, can_reshape);
 }
