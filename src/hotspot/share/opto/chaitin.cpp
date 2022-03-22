@@ -433,7 +433,7 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   GrowableArray<Block_List> regions;
-  if (C->method() != NULL && !C->is_osr_compilation()) {
+  if (C->method() != NULL && !C->is_osr_compilation() && UseNewCode) {
 //    ResourceMark rm;
     stringStream ss;
     C->method()->print_short_name(&ss);
@@ -501,8 +501,8 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   for (int region = regions.length()-1; region >= 0; region--) {
-//    Block_List blocks = regions.at(regions.length() - 1 - region);
-    Block_List blocks = _cfg._blocks;
+    Block_List all_blocks = _cfg._blocks;
+    Block_List blocks = region == 1 ? regions.at(regions.length() - 1 - region) : all_blocks;
     // After aggressive coalesce, attempt a first cut at coloring.
     // To color, we need the IFG and for that we need LIVE.
     {
@@ -511,10 +511,10 @@ void PhaseChaitin::Register_Allocate() {
       rm.reset_to_mark();           // Reclaim working storage
       IndexSet::reset_memory(C, &live_arena);
       ifg.init(_lrg_map.max_lrg_id());
-      gather_lrg_masks(blocks, true, region);
+      gather_lrg_masks(all_blocks, true, region);
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
-      compute_min_regions(blocks);
+      compute_min_regions(all_blocks);
     }
 
     // Build physical interference graph
@@ -531,7 +531,7 @@ void PhaseChaitin::Register_Allocate() {
         return;
       }
 
-      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, blocks, region);  // Split spilling LRG everywhere
+      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, all_blocks, region);  // Split spilling LRG everywhere
       _lrg_map.set_max_lrg_id(new_max_lrg_id);
       // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
       // or we failed to split
@@ -550,10 +550,10 @@ void PhaseChaitin::Register_Allocate() {
         rm.reset_to_mark();         // Reclaim working storage
         IndexSet::reset_memory(C, &live_arena);
         ifg.init(_lrg_map.max_lrg_id()); // Build a new interference graph
-        gather_lrg_masks(blocks, true, region);   // Collect intersect mask
+        gather_lrg_masks(all_blocks, true, region);   // Collect intersect mask
         live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
         _live = &live;
-        compute_min_regions(blocks);
+        compute_min_regions(all_blocks);
       }
       build_ifg_physical(&live_arena, blocks, region);
       _ifg->SquareUp();
@@ -565,7 +565,7 @@ void PhaseChaitin::Register_Allocate() {
         PhaseConservativeCoalesce coalesce(*this);
         // If max live ranges greater than cutoff, don't color the stack.
         // This cutoff can be larger than below since it is only done once.
-        coalesce.coalesce_driver(blocks, region);
+        coalesce.coalesce_driver(all_blocks, region);
       }
       _lrg_map.compress_uf_map_for_nodes();
 
@@ -604,7 +604,7 @@ void PhaseChaitin::Register_Allocate() {
       if (!_lrg_map.max_lrg_id()) {
         return;
       }
-      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, blocks, region);  // Split spilling LRG everywhere
+      uint new_max_lrg_id = Split(_lrg_map.max_lrg_id(), &split_arena, all_blocks, region);  // Split spilling LRG everywhere
       _lrg_map.set_max_lrg_id(new_max_lrg_id);
       // Bail out if unique gets too large (ie - unique > MaxNodeLimit - 2*NodeLimitFudgeFactor)
       C->check_node_count(2 * NodeLimitFudgeFactor, "out of nodes after split");
@@ -624,10 +624,10 @@ void PhaseChaitin::Register_Allocate() {
 
         // Create LiveRanGe array.
         // Intersect register masks for all USEs and DEFs
-        gather_lrg_masks(blocks, true, region);
+        gather_lrg_masks(all_blocks, true, region);
         live.compute(_lrg_map.max_lrg_id());
         _live = &live;
-        compute_min_regions(blocks);
+        compute_min_regions(all_blocks);
       }
       must_spill = build_ifg_physical(&live_arena, blocks, region);
       _ifg->SquareUp();
@@ -639,7 +639,7 @@ void PhaseChaitin::Register_Allocate() {
         // Conservative (and pessimistic) copy coalescing
         PhaseConservativeCoalesce coalesce(*this);
         // Check for few live ranges determines how aggressive coalesce is.
-        coalesce.coalesce_driver(blocks, region);
+        coalesce.coalesce_driver(all_blocks, region);
       }
       _lrg_map.compress_uf_map_for_nodes();
 #ifdef ASSERT
