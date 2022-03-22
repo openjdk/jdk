@@ -44,12 +44,14 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 
+
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 /*
  * @test
  * @key headful
  * @bug 4615365
- * @summary This test confirms that the JSplitPane current and last divider positions are correct when realized.
+ * @summary This test confirms that the JSplitPane's current and last
+ *          divider positions are correct when realized.
  * @run main JSplitPaneDividerLocationTest
  */
 public class JSplitPaneDividerLocationTest {
@@ -86,31 +88,42 @@ public class JSplitPaneDividerLocationTest {
 
                 pressButton(triggerButton);
 
-                // Verifies that JSplitPane current and last divider positions are correct and not as per JDK-4615365.
+                // Verifies that JSplitPane current and last divider
+                // positions are correct and not as per JDK-4615365.
                 if ((currentLoc == -1) || (lastLoc == 0)) {
-                    throw new RuntimeException("Test failed for " + laf + " :- last divider location: actual = " + lastLoc
-                            + ", expected = -1, current divider location: actual = " + currentLoc + ", expected > 0");
+                    throw new RuntimeException(
+                            "Test failed for " + laf + " :- last divider loc:" +
+                            "actual = " + lastLoc + ",expected = -1, current " +
+                            "divider loc:actual=" + currentLoc + ",expected>0");
                 }
                 lastLocExpected = currentLoc;
 
                 // Slide the split pane divider slightly to the right side.
                 final Point leftButtonLoc = getButtonLoc(leftButton);
-                robot.mouseMove(leftButtonLoc.x + leftButton.getWidth() + 5, leftButtonLoc.y + 35);
+                robot.mouseMove(leftButtonLoc.x + leftButton.getWidth() + 5,
+                                leftButtonLoc.y + 35);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-                robot.mouseMove(leftButtonLoc.x + leftButton.getWidth() + 8, leftButtonLoc.y + 35);
+                robot.mouseMove(leftButtonLoc.x + leftButton.getWidth() + 8,
+                                leftButtonLoc.y + 35);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 pressButton(triggerButton);
 
-                // Verifies that JSplitPane current and last divider positions reflects the correct positions after a right slide.
+                // Verifies that JSplitPane current and last divider positions
+                // reflects the correct positions after a right slide.
                 if ((lastLoc == lastLocExpected) && (currentLoc > lastLoc)) {
                     System.out.println("Test Passed.");
                 } else {
-                    throw new RuntimeException("Test failed for " + laf + ", because after a right slide"
-                            + ", last divider location: actual = " + lastLoc + ", expected = " + lastLocExpected
-                            + ", current divider location: actual = " + currentLoc + ", expected > " + lastLoc);
+                    throw new RuntimeException(
+                            "Test failed for " + laf + ", because after a " +
+                            "right " + "slide" + ", last divider " +
+                            "location: " + "actual = " + lastLoc +
+                            ", expected = " + lastLocExpected +
+                            ", current divider " + "location: actual = " +
+                            currentLoc + ", expected > " + lastLoc);
                 }
             } finally {
-                SwingUtilities.invokeAndWait(JSplitPaneDividerLocationTest::disposeFrame);
+                SwingUtilities.invokeAndWait(
+                        JSplitPaneDividerLocationTest::disposeFrame);
             }
         }
     }
@@ -122,7 +135,8 @@ public class JSplitPaneDividerLocationTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
-    private static Point getButtonLoc(AbstractButton button) throws InterruptedException, InvocationTargetException {
+    private static Point getButtonLoc(AbstractButton button)
+            throws InterruptedException, InvocationTargetException {
         final AtomicReference<Point> loc = new AtomicReference<>();
         SwingUtilities.invokeAndWait(() -> {
             loc.set(button.getLocationOnScreen());
@@ -138,7 +152,9 @@ public class JSplitPaneDividerLocationTest {
         leftButton = new JButton("Left Button");
         JButton rightButton = new JButton("Right Button");
 
-        final JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, leftButton, rightButton);
+        final JSplitPane splitPane =
+                new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, leftButton,
+                               rightButton);
         panel.add(splitPane, BorderLayout.CENTER);
 
         splitPane.setDividerSize(10);
@@ -148,7 +164,9 @@ public class JSplitPaneDividerLocationTest {
             public void actionPerformed(ActionEvent event) {
                 currentLoc = splitPane.getDividerLocation();
                 lastLoc = splitPane.getLastDividerLocation();
-                System.out.println("currentLoc = " + currentLoc + ", lastLoc = " + lastLoc);
+                System.out.println(
+                        "currentLoc = " + currentLoc + ", lastLoc = " +
+                        lastLoc);
             }
         });
         panel.add(triggerButton, BorderLayout.SOUTH);
