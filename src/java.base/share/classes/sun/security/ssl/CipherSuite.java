@@ -378,15 +378,6 @@ enum CipherSuite {
             0x0034, false, "TLS_DH_anon_WITH_AES_128_CBC_SHA", "",
             ProtocolVersion.PROTOCOLS_TO_12,
             K_DH_ANON, B_AES_128, M_SHA, H_SHA256),
-    TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA(
-            0xC017, false, "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA", "",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_ECDH_ANON, B_3DES, M_SHA, H_SHA256),
-    SSL_DH_anon_WITH_3DES_EDE_CBC_SHA(
-            0x001B, false, "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
-                           "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA",
-            ProtocolVersion.PROTOCOLS_TO_12,
-            K_DH_ANON, B_3DES, M_SHA, H_SHA256),
 
     // 3DES_EDE, forward secrecy.
     TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA(
@@ -422,6 +413,15 @@ enum CipherSuite {
                            "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
             ProtocolVersion.PROTOCOLS_TO_12,
             K_RSA, B_3DES, M_SHA, H_SHA256),
+    TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA(
+            0xC017, false, "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA", "",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_ECDH_ANON, B_3DES, M_SHA, H_SHA256),
+    SSL_DH_anon_WITH_3DES_EDE_CBC_SHA(
+            0x001B, false, "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
+                           "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA",
+            ProtocolVersion.PROTOCOLS_TO_12,
+            K_DH_ANON, B_3DES, M_SHA, H_SHA256),
 
     // RC4
     TLS_ECDHE_ECDSA_WITH_RC4_128_SHA(
