@@ -459,7 +459,8 @@ bool os::supports_sse() {
 }
 
 juint os::cpu_microcode_revision() {
-  // Note: this code runs on startup, and therefore should not be slow.
+  // Note: this code runs on startup, and therefore should not be slow,
+  // see JDK-8283200.
 
   juint result = 0;
 
