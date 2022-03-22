@@ -593,8 +593,7 @@ public:
   void print_on_error(outputStream* st) const;
 
   // Mark the given object on the next bitmap if it is below nTAMS.
-  inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj, bool mark_unconditionally = false);
-  inline bool mark_in_next_bitmap_unconditionally(uint worker_id, oop const obj);
+  inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj);
   inline bool mark_in_next_bitmap(uint worker_id, oop const obj);
 
   inline bool is_marked_in_next_bitmap(oop p) const;
