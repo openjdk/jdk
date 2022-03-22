@@ -62,6 +62,9 @@ public abstract class GenFullCP extends ClassfileGenerator {
 
     protected static final String VOID_NO_ARG_METHOD_SIGNATURE = "()V";
 
+    protected static final String NEW_INVOKE_SPECIAL_CLASS_NAME = "java/lang/invoke/NewInvokeSpecialCallSite";
+    protected static final String NEW_INVOKE_SPECIAL_BOOTSTRAP_METHOD_SIGNATURE = "(" + fd(JLI_METHODHANDLES_LOOKUP) + fd(JL_STRING) + fd(JLI_METHODTYPE) + ")V";
+
     protected static final String INIT_METHOD_NAME = "<init>";
     protected static final String STATIC_INIT_METHOD_NAME = "<clinit>";
 
