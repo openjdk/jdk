@@ -335,9 +335,8 @@ public abstract class AbstractDelegateHttpsURLConnection extends
                 if (target.equalsIgnoreCase(domain)) {
                     return true;
                 }
-                String afterWildCard = domain.substring(1);
                 if (domain.startsWith("*.") && target.regionMatches(
-                        true, target.length() - afterWildCard.length(), afterWildCard, 0, afterWildCard.length())) {
+                        true, target.length() - domain.length() + 1, domain, 1, domain.length() - 1)) {
                     return true;
                 }
             }
