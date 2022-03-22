@@ -847,7 +847,6 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   const Node* init = head->init_trip();
   const TypeInteger* lo = _igvn.type(init)->is_integer(bt);
   const TypeInteger* hi = _igvn.type(limit)->is_integer(bt);
-  julong orig_iters;
   if (stride_con < 0) {
     swap(lo, hi);
   }
