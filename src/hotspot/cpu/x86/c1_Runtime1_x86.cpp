@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_Defs.hpp"
+#include "c1/c1_FrameMap.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
@@ -503,7 +504,7 @@ static void restore_fpu(C1_MacroAssembler* sasm, bool restore_fpu_registers) {
 #ifdef _LP64
   if (restore_fpu_registers) {
     // restore XMM registers
-    int xmm_bypass_limit = get_num_caller_save_xmms();
+    int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
     int offset = 0;
     for (int n = 0; n < xmm_bypass_limit; n++) {
       XMMRegister xmm_name = as_XMMRegister(n);

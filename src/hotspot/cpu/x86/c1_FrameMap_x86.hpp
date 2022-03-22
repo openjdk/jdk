@@ -152,8 +152,8 @@
     return range;
   }
 
-  static int get_num_caller_save_xmms(void) {
-    return XMMRegisterImpl::actual_num_xmm_registers();
+  static int get_num_caller_save_xmms() {
+    return XMMRegisterImpl::available_xmm_registers();
   }
 
   static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }

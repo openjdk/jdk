@@ -164,7 +164,9 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   const char* name() const;
   const char* sub_word_name(int offset) const;
 
-  static uint actual_num_xmm_registers();
+  // Actually available XMM registers for use, depending on actual CPU capabilities
+  // and flags.
+  static int available_xmm_registers();
 };
 
 
