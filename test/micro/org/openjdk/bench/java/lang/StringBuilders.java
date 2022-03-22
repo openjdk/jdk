@@ -205,21 +205,6 @@ public class StringBuilders {
         return result.toString();
     }
 
-    @Param({"128", "256", "1024"})
-    public int MIXED_SIZE;
-
-    /**
-     * This microbench simulates how java.io.BufferedReader uses StringBuilder.
-     */
-    @Benchmark
-    public String toStringWithMixedChars() {
-        StringBuilder sb = new StringBuilder(MIXED_SIZE);
-        for (int i = 0; i < MIXED_SIZE - 4; ++i) {
-            sb.append('a');
-        }
-        sb.append('\u3042'); // can't be encoded in latin-1,
-        return sb.toString();
-    }
 
     @Benchmark
     public String toStringCharWithInt8() {

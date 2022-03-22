@@ -70,7 +70,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     /**
      *  The attribute indicates {@code value} is in UTF16 but may be compressible.
      *  An inflated byte array becomes compressible only when those non-latin1 chars are deleted.
-     *  Therefore, sett this attribute in all methods that delete chars.
+     *  Therefore, set this attribute in all methods that delete chars.
      */
     boolean maybeLatin1 = false;
 
