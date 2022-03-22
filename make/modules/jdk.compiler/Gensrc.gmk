@@ -23,15 +23,15 @@
 # questions.
 #
 
-include GensrcCommonLangtools.gmk
+include GensrcCommon.gmk
+include GensrcProperties.gmk
 include Execute.gmk
 
-$(eval $(call SetupVersionProperties,JAVAC_VERSION, \
+$(eval $(call SetupVersionProperties, JAVAC_VERSION, \
     com/sun/tools/javac/resources/version.properties))
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
+$(eval $(call SetupCompilePropertiesLangtools, COMPILE_PROPERTIES, \
     $(JAVAC_VERSION)))
-
 
 TARGETS += $(COMPILE_PROPERTIES)
 
@@ -60,11 +60,11 @@ PARSEPROPERTIES_ARGS := $(foreach file, $(PARSEPROPERTIES_FILES), \
     -compile $(MODULE_SRC)/share/classes/$(PARSEPROPERTIES_PACKAGE)/$(file) \
     $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$(PARSEPROPERTIES_PACKAGE)/)
 
-$(eval $(call SetupExecute, parseproperties, \
+$(eval $(call SetupExecute, PARSEPROPERTIES, \
     WARN := Generating classes for $(PARSEPROPERTIES_FILES), \
     DEPS := $(PARSEPROPERTIES_SRC) $(BUILD_TOOLS_LANGTOOLS), \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE), \
     COMMAND := $(TOOL_PARSEPROPERTIES_CMD) $(PARSEPROPERTIES_ARGS), \
 ))
 
-TARGETS += $(parseproperties)
+TARGETS += $(PARSEPROPERTIES)

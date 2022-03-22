@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 # This file defines macros that sets up rules for generating java classes
 # from resource bundle properties files.
+
+include JavaCompilation.gmk
 
 ################################################################################
 # Helper macro for SetupCopy-zh_HK.
@@ -122,3 +124,53 @@ define SetupCompilePropertiesBody
 endef
 
 ################################################################################
+# The compileprops tools compiles a properties file into a resource bundle.
+TOOL_COMPILEPROPS_CMD := $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+    compileproperties.CompileProperties -quiet
+
+################################################################################
+# Finds all properties files in the module source and creates a rule that runs
+# CompileProperties on them into the gensrc dir.
+# Param 1 - Variable to add targets to
+# Param 2 - Extra properties files to process
+define SetupCompilePropertiesLangtools
+  # Lookup the properties that need to be compiled into resource bundles.
+  PROPSOURCES := $$(strip $2) \
+      $$(call FindFiles, $(TOPDIR)/src/$(MODULE)/share/classes, *.properties)
+
+  # Filter out any excluded translations
+  PROPSOURCES := $$(call FilterExcludedTranslations, $$(PROPSOURCES), .properties)
+
+  # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
+  # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
+  # Strip away prefix and suffix, leaving for example only:
+  # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
+  PROPJAVAS := $$(patsubst $(TOPDIR)/src/%, \
+      $(SUPPORT_OUTPUTDIR)/gensrc/%, \
+      $$(patsubst %.properties, %.java, \
+      $$(subst /share/classes,, $$(PROPSOURCES))))
+
+  # Generate the package dirs for the to be generated java files. Sort to remove
+  # duplicates.
+  PROPDIRS := $$(sort $$(dir $$(PROPJAVAS)))
+
+  # Now generate a sequence of:
+  # "-compile ...javac_zh_CN.properties ...javac_zh_CN.java java.util.ListResourceBundle"
+  # suitable to be fed into the CompileProperties command.
+  PROPCMDLINE := $$(subst _SPACE_, $(SPACE), \
+      $$(join $$(addprefix -compile_SPACE_, $$(PROPSOURCES)), \
+      $$(addsuffix _SPACE_java.util.ListResourceBundle, \
+      $$(addprefix _SPACE_, $$(PROPJAVAS)))))
+
+  # Now setup the rule for the generation of the resource bundles.
+  PROPS_BASE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the_props
+  $$(PROPS_BASE): $$(PROPSOURCES)
+	$$(call MakeDir, $$(@D) $$(PROPDIRS))
+	$(FIND) $$(@D) -name "*.java" -a ! -name "*Properties.java" $(FIND_DELETE)
+	$(ECHO) Compiling $$(words $$(PROPSOURCES)) properties into resource bundles for $(MODULE)
+	$$(call ExecuteWithLog, $$(PROPS_BASE)_exec, \
+	    $(TOOL_COMPILEPROPS_CMD) $$(PROPCMDLINE))
+	$(TOUCH) $$@
+
+  $$(strip $1) += $$(PROPS_BASE)
+endef
