@@ -173,7 +173,7 @@ public sealed interface CLinker permits Windowsx64Linker, SysVx64Linker, LinuxAA
      *
      * @param symbol the address of the target function.
      * @param function the function descriptor of the target function.
-     * @return a new downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
+     * @return a downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
      * @throws IllegalArgumentException if the provided function descriptor contains either a sequence or a padding layout,
      * or if the symbol is {@link MemoryAddress#NULL}
      */
@@ -196,7 +196,7 @@ public sealed interface CLinker permits Windowsx64Linker, SysVx64Linker, LinuxAA
      * associated with the {@link MemoryAddress#NULL} address, or a {@link NullPointerException} if that parameter is {@code null}.
      *
      * @param function the function descriptor of the target function.
-     * @return a new downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
+     * @return a downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
      * from the provided function descriptor.
      * @throws IllegalArgumentException if the provided function descriptor contains either a sequence or a padding layout.
      */

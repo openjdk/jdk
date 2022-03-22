@@ -156,7 +156,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
     /**
      * Creates a memory address from the given long value.
      * @param value the long value representing a raw address.
-     * @return a new memory address instance.
+     * @return a memory address with the given raw long value.
      */
     static MemoryAddress ofLong(long value) {
         return value == 0 ?

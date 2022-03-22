@@ -39,7 +39,6 @@ import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.ProgrammableInvoker;
 import jdk.internal.foreign.abi.ProgrammableUpcallHandler;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.x64.X86_64Architecture;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -49,6 +48,7 @@ import java.util.Optional;
 
 import static jdk.internal.foreign.PlatformLayouts.*;
 import static jdk.internal.foreign.abi.Binding.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
 
 /**
  * For the SysV x64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
@@ -57,14 +57,14 @@ import static jdk.internal.foreign.abi.Binding.*;
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  */
 public class CallArranger {
-    private static final ABIDescriptor CSysV = X86_64Architecture.abiFor(
-        new VMStorage[] { X86_64Architecture.rdi, X86_64Architecture.rsi, X86_64Architecture.rdx, X86_64Architecture.rcx, X86_64Architecture.r8, X86_64Architecture.r9, X86_64Architecture.rax },
-        new VMStorage[] { X86_64Architecture.xmm0, X86_64Architecture.xmm1, X86_64Architecture.xmm2, X86_64Architecture.xmm3, X86_64Architecture.xmm4, X86_64Architecture.xmm5, X86_64Architecture.xmm6, X86_64Architecture.xmm7 },
-        new VMStorage[] { X86_64Architecture.rax, X86_64Architecture.rdx },
-        new VMStorage[] { X86_64Architecture.xmm0, X86_64Architecture.xmm1 },
+    private static final ABIDescriptor CSysV = abiFor(
+        new VMStorage[] { rdi, rsi, rdx, rcx, r8, r9, rax },
+        new VMStorage[] { xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7 },
+        new VMStorage[] { rax, rdx },
+        new VMStorage[] { xmm0, xmm1 },
         2,
-        new VMStorage[] { X86_64Architecture.r10, X86_64Architecture.r11 },
-        new VMStorage[] { X86_64Architecture.xmm8, X86_64Architecture.xmm9, X86_64Architecture.xmm10, X86_64Architecture.xmm11, X86_64Architecture.xmm12, X86_64Architecture.xmm13, X86_64Architecture.xmm14, X86_64Architecture.xmm15 },
+        new VMStorage[] { r10, r11 },
+        new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15 },
         16,
         0 //no shadow space
     );
@@ -108,7 +108,7 @@ public class CallArranger {
         if (!forUpcall) {
             //add extra binding for number of used vector registers (used for variadic calls)
             csb.addArgumentBindings(long.class, SysV.C_LONG,
-                    List.of(vmStore(X86_64Architecture.rax, long.class)));
+                    List.of(vmStore(rax, long.class)));
         }
 
         csb.setTrivial(SharedUtils.isTrivial(cDesc));
@@ -158,14 +158,14 @@ public class CallArranger {
         }
 
         private int maxRegisterArguments(int type) {
-            return type == X86_64Architecture.StorageClasses.INTEGER ?
+            return type == StorageClasses.INTEGER ?
                     SysVx64Linker.MAX_INTEGER_ARGUMENT_REGISTERS :
                     SysVx64Linker.MAX_VECTOR_ARGUMENT_REGISTERS;
         }
 
         VMStorage stackAlloc() {
             assert forArguments : "no stack returns";
-            VMStorage storage = X86_64Architecture.stackStorage((int)stackOffset);
+            VMStorage storage = stackStorage((int)stackOffset);
             stackOffset++;
             return storage;
         }
@@ -204,16 +204,16 @@ public class CallArranger {
             VMStorage[] storage = new VMStorage[(int)(nIntegerReg + nVectorReg)];
             for (int i = 0 ; i < typeClass.classes.size() ; i++) {
                 boolean sse = typeClass.classes.get(i) == ArgumentClassImpl.SSE;
-                storage[i] = nextStorage(sse ? X86_64Architecture.StorageClasses.VECTOR : X86_64Architecture.StorageClasses.INTEGER);
+                storage[i] = nextStorage(sse ? StorageClasses.VECTOR : StorageClasses.INTEGER);
             }
             return storage;
         }
 
         int registerCount(int type) {
             switch (type) {
-                case X86_64Architecture.StorageClasses.INTEGER:
+                case StorageClasses.INTEGER:
                     return nIntegerReg;
-                case X86_64Architecture.StorageClasses.VECTOR:
+                case StorageClasses.VECTOR:
                     return nVectorReg;
                 default:
                     throw new IllegalStateException();
@@ -222,10 +222,10 @@ public class CallArranger {
 
         void incrementRegisterCount(int type) {
             switch (type) {
-                case X86_64Architecture.StorageClasses.INTEGER:
+                case StorageClasses.INTEGER:
                     nIntegerReg++;
                     break;
-                case X86_64Architecture.StorageClasses.VECTOR:
+                case StorageClasses.VECTOR:
                     nVectorReg++;
                     break;
                 default:
@@ -266,7 +266,7 @@ public class CallArranger {
                         if (offset + copy < layout.byteSize()) {
                             bindings.dup();
                         }
-                        boolean useFloat = storage.type() == X86_64Architecture.StorageClasses.VECTOR;
+                        boolean useFloat = storage.type() == StorageClasses.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.bufferLoad(offset, type)
                                 .vmStore(storage, type);
@@ -276,17 +276,17 @@ public class CallArranger {
                 }
                 case POINTER: {
                     bindings.unboxAddress(carrier);
-                    VMStorage storage = storageCalculator.nextStorage(X86_64Architecture.StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case INTEGER: {
-                    VMStorage storage = storageCalculator.nextStorage(X86_64Architecture.StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
                 case FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(X86_64Architecture.StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
@@ -318,7 +318,7 @@ public class CallArranger {
                         final long copy = Math.min(layout.byteSize() - offset, 8);
                         VMStorage storage = regs[regIndex++];
                         bindings.dup();
-                        boolean useFloat = storage.type() == X86_64Architecture.StorageClasses.VECTOR;
+                        boolean useFloat = storage.type() == StorageClasses.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.vmLoad(storage, type)
                                 .bufferStore(offset, type);
@@ -327,18 +327,18 @@ public class CallArranger {
                     break;
                 }
                 case POINTER: {
-                    VMStorage storage = storageCalculator.nextStorage(X86_64Architecture.StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress();
                     break;
                 }
                 case INTEGER: {
-                    VMStorage storage = storageCalculator.nextStorage(X86_64Architecture.StorageClasses.INTEGER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }
                 case FLOAT: {
-                    VMStorage storage = storageCalculator.nextStorage(X86_64Architecture.StorageClasses.VECTOR);
+                    VMStorage storage = storageCalculator.nextStorage(StorageClasses.VECTOR);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }

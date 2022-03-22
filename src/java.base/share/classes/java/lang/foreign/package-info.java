@@ -147,7 +147,7 @@
  * provided:
  *
  * {@snippet lang=java :
- * MemoryAddress addr = ... //obtain address from native code
+ * MemoryAddress addr = ... // obtain address from native code
  * int x = addr.get(ValueLayout.JAVA_INT, 0);
  * }
  *
@@ -159,7 +159,7 @@
  *
  * {@snippet lang=java :
  * MemorySession session = ... // initialize a memory session object
- * MemoryAddress addr = ... //obtain address from native code
+ * MemoryAddress addr = ... // obtain address from native code
  * MemorySegment segment = MemorySegment.ofAddress(addr, 4, session); // segment is 4 bytes long
  * int x = segment.get(ValueLayout.JAVA_INT, 0);
  * }
@@ -227,7 +227,7 @@
  * Access to restricted methods can be controlled using the command line option {@code --enable-native-access=M1,M2, ... Mn},
  * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module, the special value {@code ALL-UNNAMED}
  * can be used). If this option is specified, access to restricted methods is only granted to the modules listed by that
- * option. If this option is not specified, access to restricted method is enabled for all modules, but
+ * option. If this option is not specified, access to restricted methods is enabled for all modules, but
  * access to restricted methods will result in runtime warnings.
  * <p>
  * For every class in this package, unless specified otherwise, any method arguments of reference

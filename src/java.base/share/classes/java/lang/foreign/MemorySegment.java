@@ -582,10 +582,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     ByteBuffer asByteBuffer();
 
     /**
-     * Copy the contents of this memory segment into a fresh byte array.
+     * Copy the contents of this memory segment into a new byte array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh byte array copy of this memory segment.
+     * @return a new byte array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link byte[]} instance,
@@ -594,10 +594,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     byte[] toArray(ValueLayout.OfByte elementLayout);
 
     /**
-     * Copy the contents of this memory segment into a fresh short array.
+     * Copy the contents of this memory segment into a new short array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh short array copy of this memory segment.
+     * @return a new short array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link short[]} instance,
@@ -606,10 +606,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     short[] toArray(ValueLayout.OfShort elementLayout);
 
     /**
-     * Copy the contents of this memory segment into a fresh char array.
+     * Copy the contents of this memory segment into a new char array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh char array copy of this memory segment.
+     * @return a new char array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link char[]} instance,
@@ -618,10 +618,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     char[] toArray(ValueLayout.OfChar elementLayout);
 
     /**
-     * Copy the contents of this memory segment into a fresh int array.
+     * Copy the contents of this memory segment into a new int array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh int array copy of this memory segment.
+     * @return a new int array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link int[]} instance,
@@ -630,10 +630,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     int[] toArray(ValueLayout.OfInt elementLayout);
 
     /**
-     * Copy the contents of this memory segment into a fresh float array.
+     * Copy the contents of this memory segment into a new float array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh float array copy of this memory segment.
+     * @return a new float array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link float[]} instance,
@@ -642,10 +642,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     float[] toArray(ValueLayout.OfFloat elementLayout);
 
     /**
-     * Copy the contents of this memory segment into a fresh long array.
+     * Copy the contents of this memory segment into a new long array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh long array copy of this memory segment.
+     * @return a new long array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link long[]} instance,
@@ -654,10 +654,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     long[] toArray(ValueLayout.OfLong elementLayout);
 
     /**
-     * Copy the contents of this memory segment into a fresh double array.
+     * Copy the contents of this memory segment into a new double array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
      * different from the native order, a byte swap operation will be performed on each array element.
-     * @return a fresh double array copy of this memory segment.
+     * @return a new double array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      * @throws IllegalStateException if this segment's contents cannot be copied into a {@link double[]} instance,

@@ -25,12 +25,8 @@
 
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.ref.Cleaner;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.javac.PreviewFeature;

@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static jdk.internal.foreign.PlatformLayouts.*;
+import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 
 /**
  * For the AArch64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
@@ -64,7 +65,7 @@ public abstract class CallArranger {
     private static final int STACK_SLOT_SIZE = 8;
     public static final int MAX_REGISTER_ARGUMENTS = 8;
 
-    private static final VMStorage INDIRECT_RESULT = AArch64Architecture.r8;
+    private static final VMStorage INDIRECT_RESULT = r8;
 
     // This is derived from the AAPCS64 spec, restricted to what's
     // possible when calling to/from C code.
@@ -77,14 +78,14 @@ public abstract class CallArranger {
     // Although the AAPCS64 says r0-7 and v0-7 are all valid return
     // registers, it's not possible to generate a C function that uses
     // r2-7 and v4-7 so they are omitted here.
-    private static final ABIDescriptor C = AArch64Architecture.abiFor(
-        new VMStorage[] { AArch64Architecture.r0, AArch64Architecture.r1, AArch64Architecture.r2, AArch64Architecture.r3, AArch64Architecture.r4, AArch64Architecture.r5, AArch64Architecture.r6, AArch64Architecture.r7, INDIRECT_RESULT},
-        new VMStorage[] { AArch64Architecture.v0, AArch64Architecture.v1, AArch64Architecture.v2, AArch64Architecture.v3, AArch64Architecture.v4, AArch64Architecture.v5, AArch64Architecture.v6, AArch64Architecture.v7 },
-        new VMStorage[] { AArch64Architecture.r0, AArch64Architecture.r1 },
-        new VMStorage[] { AArch64Architecture.v0, AArch64Architecture.v1, AArch64Architecture.v2, AArch64Architecture.v3 },
-        new VMStorage[] { AArch64Architecture.r9, AArch64Architecture.r10, AArch64Architecture.r11, AArch64Architecture.r12, AArch64Architecture.r13, AArch64Architecture.r14, AArch64Architecture.r15 },
-        new VMStorage[] { AArch64Architecture.v16, AArch64Architecture.v17, AArch64Architecture.v18, AArch64Architecture.v19, AArch64Architecture.v20, AArch64Architecture.v21, AArch64Architecture.v22, AArch64Architecture.v23, AArch64Architecture.v25,
-                          AArch64Architecture.v26, AArch64Architecture.v27, AArch64Architecture.v28, AArch64Architecture.v29, AArch64Architecture.v30, AArch64Architecture.v31 },
+    private static final ABIDescriptor C = abiFor(
+        new VMStorage[] { r0, r1, r2, r3, r4, r5, r6, r7, INDIRECT_RESULT},
+        new VMStorage[] { v0, v1, v2, v3, v4, v5, v6, v7 },
+        new VMStorage[] { r0, r1 },
+        new VMStorage[] { v0, v1, v2, v3 },
+        new VMStorage[] { r9, r10, r11, r12, r13, r14, r15 },
+        new VMStorage[] { v16, v17, v18, v19, v20, v21, v22, v23, v25,
+                          v26, v27, v28, v29, v30, v31 },
         16,  // Stack is always 16 byte aligned on AArch64
         0    // No shadow space
     );
@@ -188,7 +189,7 @@ public abstract class CallArranger {
             stackOffset = Utils.alignUp(stackOffset, alignment);
 
             VMStorage storage =
-                AArch64Architecture.stackStorage((int)(stackOffset / STACK_SLOT_SIZE));
+                stackStorage((int)(stackOffset / STACK_SLOT_SIZE));
             stackOffset += size;
             return storage;
         }
@@ -230,8 +231,8 @@ public abstract class CallArranger {
         void adjustForVarArgs() {
             // This system passes all variadic parameters on the stack. Ensure
             // no further arguments are allocated to registers.
-            nRegs[AArch64Architecture.StorageClasses.INTEGER] = MAX_REGISTER_ARGUMENTS;
-            nRegs[AArch64Architecture.StorageClasses.VECTOR] = MAX_REGISTER_ARGUMENTS;
+            nRegs[StorageClasses.INTEGER] = MAX_REGISTER_ARGUMENTS;
+            nRegs[StorageClasses.VECTOR] = MAX_REGISTER_ARGUMENTS;
         }
     }
 
@@ -308,14 +309,14 @@ public abstract class CallArranger {
                 case STRUCT_REGISTER: {
                     assert carrier == MemorySegment.class;
                     VMStorage[] regs = storageCalculator.regAlloc(
-                        AArch64Architecture.StorageClasses.INTEGER, layout);
+                        StorageClasses.INTEGER, layout);
                     if (regs != null) {
                         int regIndex = 0;
                         long offset = 0;
                         while (offset < layout.byteSize()) {
                             final long copy = Math.min(layout.byteSize() - offset, 8);
                             VMStorage storage = regs[regIndex++];
-                            boolean useFloat = storage.type() == AArch64Architecture.StorageClasses.VECTOR;
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
                             Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                             if (offset + copy < layout.byteSize()) {
                                 bindings.dup();
@@ -334,7 +335,7 @@ public abstract class CallArranger {
                     bindings.copy(layout)
                             .unboxAddress(MemorySegment.class);
                     VMStorage storage = storageCalculator.nextStorage(
-                        AArch64Architecture.StorageClasses.INTEGER, AArch64.C_POINTER);
+                        StorageClasses.INTEGER, AArch64.C_POINTER);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
@@ -342,13 +343,13 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     GroupLayout group = (GroupLayout)layout;
                     VMStorage[] regs = storageCalculator.regAlloc(
-                        AArch64Architecture.StorageClasses.VECTOR, group.memberLayouts().size());
+                        StorageClasses.VECTOR, group.memberLayouts().size());
                     if (regs != null) {
                         long offset = 0;
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
                             VMStorage storage = regs[i];
                             final long size = group.memberLayouts().get(i).byteSize();
-                            boolean useFloat = storage.type() == AArch64Architecture.StorageClasses.VECTOR;
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
                             Class<?> type = SharedUtils.primitiveCarrierForSize(size, useFloat);
                             if (i + 1 < group.memberLayouts().size()) {
                                 bindings.dup();
@@ -365,19 +366,19 @@ public abstract class CallArranger {
                 case POINTER: {
                     bindings.unboxAddress(carrier);
                     VMStorage storage =
-                        storageCalculator.nextStorage(AArch64Architecture.StorageClasses.INTEGER, layout);
+                        storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case INTEGER: {
                     VMStorage storage =
-                        storageCalculator.nextStorage(AArch64Architecture.StorageClasses.INTEGER, layout);
+                        storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
                 case FLOAT: {
                     VMStorage storage =
-                        storageCalculator.nextStorage(AArch64Architecture.StorageClasses.VECTOR, layout);
+                        storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
                     bindings.vmStore(storage, carrier);
                     break;
                 }
@@ -410,7 +411,7 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     VMStorage[] regs = storageCalculator.regAlloc(
-                        AArch64Architecture.StorageClasses.INTEGER, layout);
+                        StorageClasses.INTEGER, layout);
                     if (regs != null) {
                         int regIndex = 0;
                         long offset = 0;
@@ -418,7 +419,7 @@ public abstract class CallArranger {
                             final long copy = Math.min(layout.byteSize() - offset, 8);
                             VMStorage storage = regs[regIndex++];
                             bindings.dup();
-                            boolean useFloat = storage.type() == AArch64Architecture.StorageClasses.VECTOR;
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
                             Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                             bindings.vmLoad(storage, type)
                                     .bufferStore(offset, type);
@@ -432,7 +433,7 @@ public abstract class CallArranger {
                 case STRUCT_REFERENCE: {
                     assert carrier == MemorySegment.class;
                     VMStorage storage = storageCalculator.nextStorage(
-                        AArch64Architecture.StorageClasses.INTEGER, AArch64.C_POINTER);
+                        StorageClasses.INTEGER, AArch64.C_POINTER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress()
                             .toSegment(layout);
@@ -443,13 +444,13 @@ public abstract class CallArranger {
                     bindings.allocate(layout);
                     GroupLayout group = (GroupLayout)layout;
                     VMStorage[] regs = storageCalculator.regAlloc(
-                        AArch64Architecture.StorageClasses.VECTOR, group.memberLayouts().size());
+                        StorageClasses.VECTOR, group.memberLayouts().size());
                     if (regs != null) {
                         long offset = 0;
                         for (int i = 0; i < group.memberLayouts().size(); i++) {
                             VMStorage storage = regs[i];
                             final long size = group.memberLayouts().get(i).byteSize();
-                            boolean useFloat = storage.type() == AArch64Architecture.StorageClasses.VECTOR;
+                            boolean useFloat = storage.type() == StorageClasses.VECTOR;
                             Class<?> type = SharedUtils.primitiveCarrierForSize(size, useFloat);
                             bindings.dup()
                                     .vmLoad(storage, type)
@@ -463,20 +464,20 @@ public abstract class CallArranger {
                 }
                 case POINTER: {
                     VMStorage storage =
-                        storageCalculator.nextStorage(AArch64Architecture.StorageClasses.INTEGER, layout);
+                        storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress();
                     break;
                 }
                 case INTEGER: {
                     VMStorage storage =
-                        storageCalculator.nextStorage(AArch64Architecture.StorageClasses.INTEGER, layout);
+                        storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }
                 case FLOAT: {
                     VMStorage storage =
-                        storageCalculator.nextStorage(AArch64Architecture.StorageClasses.VECTOR, layout);
+                        storageCalculator.nextStorage(StorageClasses.VECTOR, layout);
                     bindings.vmLoad(storage, carrier);
                     break;
                 }
