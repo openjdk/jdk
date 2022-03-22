@@ -1124,7 +1124,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
                 if (lo->is_con() && hi->is_con() && hi->lo_as_long() > lo->hi_as_long() && stride_t->lo_as_long() != -1) {
                   julong uhi = static_cast<julong>(hi->lo_as_long());
                   julong ulo = static_cast<julong>(lo->hi_as_long());
-                  julong diff = (uhi - ulo - 1) / (-stride_t->lo_as_long()) * (-stride_t->lo_as_long());
+                  julong diff = ((uhi - ulo - 1) / (-stride_t->lo_as_long())) * (-stride_t->lo_as_long());
                   julong ufirst = hi->lo_as_long() - diff;
                   first = reinterpret_cast<jlong &>(ufirst);
                   assert(first >= lo->lo_as_long() + 1, "should end up with narrower range");
