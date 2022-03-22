@@ -1795,14 +1795,19 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
+    case Op_CountPositives:
       return UseRVV;
+
     case Op_EncodeISOArray:
       return UseRVV && SpecialEncodeISOArray;
+
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;
+
     case Op_RotateRight:
     case Op_RotateLeft:
     case Op_CountLeadingZerosI:

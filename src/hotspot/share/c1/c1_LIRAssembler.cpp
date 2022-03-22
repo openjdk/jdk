@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
@@ -104,7 +103,6 @@ PatchingStub::PatchID LIR_Assembler::patching_id(CodeEmitInfo* info) {
 
 LIR_Assembler::LIR_Assembler(Compilation* c):
    _masm(c->masm())
- , _bs(BarrierSet::barrier_set())
  , _compilation(c)
  , _frame_map(c->frame_map())
  , _current_block(NULL)
