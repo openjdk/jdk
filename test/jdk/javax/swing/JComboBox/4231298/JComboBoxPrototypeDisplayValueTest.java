@@ -1,20 +1,3 @@
-/*This test has been modified per scott's mail dated 07th March 03
- * Scott wrote:
- *
- *I don't think any timing is necessary to test this. The key thing to
- *test for is how often the renderer is called for.
- *
- *If I were writing a test for this I would do the following:
- *
- *Create a custom renderer that has a counter indicating how many times
- *it has been configured. Configure a JComboBox with this renderer, set
- *the prototype display value and ask for the preferred size. The custom
- *renderer should be called only once.
- *
- * Accordingly this test has been rewritten to check how many times the
- * getListCellRendererComponent method is called in the custom renderer
- * with setPrototypeDisplayValue(true). It should be called only once.
- */
 /*
  * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
