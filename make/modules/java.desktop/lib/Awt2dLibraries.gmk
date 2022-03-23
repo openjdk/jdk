@@ -470,7 +470,6 @@ else
 
 endif
 
-
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libharfbuzz \
     common/awt \
@@ -483,13 +482,13 @@ LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
 LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
 BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
 
+LIBFONTMANAGER_OPTIMIZATION := HIGHEST
 
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  # gcc is particularly bad at handling the harfbuzz source code
-  # Turning on optimizations cause a massive spike in compile time
-  LIBFONTMANAGER_OPTIMIZATION := SIZE
-else
-  LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
+  # gcc (and to an extent clang) is particularly bad at optimizing these files,
+  # causing a massive spike in compile time.
+  BUILD_LIBFONTMANAGER_hb-subset.cc_OPTIMIZATION := SIZE
+  BUILD_LIBFONTMANAGER_hb-subset-plan.cc_OPTIMIZATION := SIZE
 endif
 
 ifeq ($(call isTargetOs, windows), true)
