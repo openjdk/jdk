@@ -36,7 +36,9 @@ import java.util.Objects;
 
 public class TestLongRangeChecks {
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:-UseCountedLoopSafepoints");
+        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1");
+        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000");
     }
 
 
@@ -95,5 +97,151 @@ public class TestLongRangeChecks {
     @Run(test = "testStridePosScalePosInIntLoop2")
     private void testStridePosScalePosInIntLoop2_runner() {
         testStridePosScalePosInIntLoop2(0, 100, 200, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1"})
+    @IR(failOn = { IRNode.COUNTEDLOOP})
+    public static void testStrideNegScaleNeg(long start, long stop, long length, long offset) {
+        final long scale = -1;
+        final long stride = 1;
+        for (long i = stop; i > start; i -= stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScaleNeg")
+    private void testStrideNegScaleNeg_runner() {
+        testStrideNegScaleNeg(0, 100, 100, 100);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
+    public static void testStrideNegScaleNegInIntLoop1(int start, int stop, long length, long offset) {
+        final long scale = -2;
+        final int stride = 1;
+
+        for (int i = stop; i > start; i -= stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScaleNegInIntLoop1")
+    private void testStrideNegScaleNegInIntLoop1_runner() {
+        testStrideNegScaleNegInIntLoop1(0, 100, 200, 200);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
+    public static void testStrideNegScaleNegInIntLoop2(int start, int stop, long length, long offset) {
+        final int scale = -2;
+        final int stride = 1;
+
+        for (int i = stop; i > start; i -= stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScaleNegInIntLoop2")
+    private void testStrideNegScaleNegInIntLoop2_runner() {
+        testStrideNegScaleNegInIntLoop2(0, 100, 200, 200);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1"})
+    @IR(failOn = { IRNode.COUNTEDLOOP})
+    public static void testStrideNegScalePos(long start, long stop, long length, long offset) {
+        final long scale = 1;
+        final long stride = 1;
+        for (long i = stop-1; i >= start; i -= stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScalePos")
+    private void testStrideNegScalePos_runner() {
+        testStrideNegScalePos(0, 100, 100, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
+    public static void testStrideNegScalePosInIntLoop1(int start, int stop, long length, long offset) {
+        final long scale = 2;
+        final int stride = 1;
+        for (int i = stop-1; i >= start; i -= stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScalePosInIntLoop1")
+    private void testStrideNegScalePosInIntLoop1_runner() {
+        testStrideNegScalePosInIntLoop1(0, 100, 200, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTEDLOOP })
+    public static void testStrideNegScalePosInIntLoop2(int start, int stop, long length, long offset) {
+        final int scale = 2;
+        final int stride = 1;
+        for (int i = stop-1; i >= start; i -= stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStrideNegScalePosInIntLoop2")
+    private void testStrideNegScalePosInIntLoop2_runner() {
+        testStrideNegScalePosInIntLoop1(0, 100, 200, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1"})
+    @IR(failOn = { IRNode.COUNTEDLOOP})
+    public static void testStridePosScaleNeg(long start, long stop, long length, long offset) {
+        final long scale = -1;
+        final long stride = 1;
+        for (long i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScaleNeg")
+    private void testStridePosScaleNeg_runner() {
+        testStridePosScaleNeg(0, 100, 100, 99);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1"})
+    @IR(failOn = { IRNode.COUNTEDLOOP})
+    public static void testStridePosScaleNegInIntLoop1(int start, int stop, long length, long offset) {
+        final long scale = -2;
+        final int stride = 1;
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScaleNegInIntLoop1")
+    private void testStridePosScaleNegInIntLoop1_runner() {
+        testStridePosScaleNegInIntLoop1(0, 100, 200, 198);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LOOP, "1"})
+    @IR(failOn = { IRNode.COUNTEDLOOP})
+    public static void testStridePosScaleNegInIntLoop2(int start, int stop, long length, long offset) {
+        final int scale = -2;
+        final int stride = 1;
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScaleNegInIntLoop2")
+    private void testStridePosScaleNegInIntLoop2_runner() {
+        testStridePosScaleNegInIntLoop1(0, 100, 200, 198);
     }
 }

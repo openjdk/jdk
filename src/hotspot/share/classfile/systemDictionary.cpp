@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1559,8 +1559,8 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
 
 
 // ----------------------------------------------------------------------------
-// Update hierachy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
-// is held, to ensure that the compiler is not using the class hierachy, and that deoptimization will kick in
+// Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
+// is held, to ensure that the compiler is not using the class hierarchy, and that deoptimization will kick in
 // before a new class is used.
 
 void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
@@ -1574,7 +1574,7 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
   // The compiler reads the hierarchy outside of the Compile_lock.
   // Access ordering is used to add to hierarchy.
 
-  // Link into hierachy.
+  // Link into hierarchy.
   k->append_to_sibling_list();                    // add to superklass/sibling list
   k->process_interfaces();                        // handle all "implements" declarations
 
@@ -1724,7 +1724,7 @@ void SystemDictionary::check_constraints(unsigned int name_hash,
   }
 }
 
-// Update class loader data dictionary - done after check_constraint and add_to_hierachy
+// Update class loader data dictionary - done after check_constraint and add_to_hierarchy
 // have been called.
 void SystemDictionary::update_dictionary(unsigned int hash,
                                          InstanceKlass* k,
@@ -2014,8 +2014,9 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     spe = NULL;
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
-    if (!Arguments::is_interpreter_only()) {
+    if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
       // Generate a compiled form of the MH intrinsic.
+      // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
       AdapterHandlerLibrary::create_native_wrapper(m);
       // Check if have the compiled code.
       if (!m->has_compiled_code()) {

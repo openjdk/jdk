@@ -1981,6 +1981,34 @@ Allows user to specify VM options in a file, for example,
 \f[CB]java\ \-XX:VMOptionsFile=/var/my_vm_options\ HelloWorld\f[R].
 .RS
 .RE
+.TP
+.B \f[CB]\-XX:UseBranchProtection=\f[R]\f[I]mode\f[R]
+\f[B]Linux AArch64 only:\f[R] Specifies the branch protection mode.
+All options other than \f[CB]none\f[R] require the VM to have been built
+with branch protection enabled.
+In addition, for full protection, any native libraries provided by
+applications should be compiled with the same level of protection.
+.RS
+.PP
+Possible \f[I]mode\f[R] arguments for this option include the following:
+.TP
+.B \f[CB]none\f[R]
+Do not use branch protection.
+This is the default value.
+.RS
+.RE
+.TP
+.B \f[CB]standard\f[R]
+Enables all branch protection modes available on the current platform.
+.RS
+.RE
+.TP
+.B \f[CB]pac\-ret\f[R]
+Enables protection against ROP based attacks.
+(AArch64 8.3+ only)
+.RS
+.RE
+.RE
 .SH ADVANCED JIT COMPILER OPTIONS FOR JAVA
 .PP
 These \f[CB]java\f[R] options control the dynamic just\-in\-time (JIT)
@@ -2978,18 +3006,20 @@ different JDK version.
 .RE
 .TP
 .B \f[CB]\-XX:+DTraceAllocProbes\f[R]
-\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for object allocation.
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for object
+allocation.
 .RS
 .RE
 .TP
 .B \f[CB]\-XX:+DTraceMethodProbes\f[R]
-\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for method-entry
-and method-exit.
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for
+method\-entry and method\-exit.
 .RS
 .RE
 .TP
 .B \f[CB]\-XX:+DTraceMonitorProbes\f[R]
-\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for monitor events.
+\f[B]Linux and macOS:\f[R] Enable \f[CB]dtrace\f[R] tool probes for monitor
+events.
 .RS
 .RE
 .TP
@@ -4021,8 +4051,9 @@ Example:
 that affect performance.
 By default, this option is disabled and \f[CB]dtrace\f[R] performs only
 standard probes.
-Use the combination of these flags instead: \f[CB]\-XX:+DTraceMethodProbes\f[R],
-\f[CB]\-XX:+DTraceAllocProbes\f[R], \f[CB]\-XX:+DTraceMonitorProbes\f[R].
+Use the combination of these flags instead:
+\f[CB]\-XX:+DTraceMethodProbes\f[R], \f[CB]\-XX:+DTraceAllocProbes\f[R],
+\f[CB]\-XX:+DTraceMonitorProbes\f[R].
 .RS
 .RE
 .TP

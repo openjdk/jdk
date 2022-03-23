@@ -135,6 +135,14 @@ space is required.
 If you do not have access to sufficiently powerful hardware, it is also
 possible to use [cross-compiling](#cross-compiling).
 
+#### Branch Protection
+
+In order to use Branch Protection features in the VM, `--enable-branch-protection`
+must be used. This option requires C++ compiler support (GCC 9.1.0+ or Clang
+10+). The resulting build can be run on both machines with and without support
+for branch protection in hardware. Branch Protection is only supported for
+Linux targets.
+
 ### Building on 32-bit arm
 
 This is not recommended. Instead, see the section on [Cross-compiling](
@@ -236,8 +244,8 @@ It's possible to build both Windows and Linux binaries from WSL. To build
 Windows binaries, you must use a Windows boot JDK (located in a
 Windows-accessible directory). To build Linux binaries, you must use a Linux
 boot JDK. The default behavior is to build for Windows. To build for Linux, pass
-`--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu` to
-`configure`.
+`--build=x86_64-unknown-linux-gnu --openjdk-target=x86_64-unknown-linux-gnu`
+to `configure`.
 
 If building Windows binaries, the source code must be located in a Windows-
 accessible directory. This is because Windows executables (such as Visual Studio
@@ -321,7 +329,7 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 10.2.0
+ Linux              gcc 11.2.0
  macOS              Apple Xcode 10.1 (using clang 10.0.0)
  Windows            Microsoft Visual Studio 2019 update 16.7.2
 
@@ -335,7 +343,7 @@ features that it does support.
 The minimum accepted version of gcc is 5.0. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-The JDK is currently known to be able to compile with at least version 10.2 of
+The JDK is currently known to be able to compile with at least version 11.2 of
 gcc.
 
 In general, any version between these two should be usable.
@@ -374,9 +382,9 @@ available for this update.
 
 ### Microsoft Visual Studio
 
-For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019 
-(16.8 or higher). For all other platforms the minimum accepted version of 
-Visual Studio is 2017. Older versions will not be accepted by `configure` and will 
+For aarch64 machines running Windows the minimum accepted version is Visual Studio 2019
+(16.8 or higher). For all other platforms the minimum accepted version of
+Visual Studio is 2017. Older versions will not be accepted by `configure` and will
 not work. For all platforms the maximum accepted version of Visual Studio is 2022.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
@@ -978,10 +986,15 @@ You *must* specify the target platform when cross-compiling. Doing so will also
 automatically turn the build into a cross-compiling mode. The simplest way to
 do this is to use the `--openjdk-target` argument, e.g.
 `--openjdk-target=arm-linux-gnueabihf`. or `--openjdk-target=aarch64-oe-linux`.
-This will automatically set the `--build`, `--host` and `--target` options for
+This will automatically set the `--host` and `--target` options for
 autoconf, which can otherwise be confusing. (In autoconf terminology, the
 "target" is known as "host", and "target" is used for building a Canadian
 cross-compiler.)
+
+If `--build` has not been explicitly passed to configure, `--openjdk-target`
+will autodetect the build platform and internally set the flag automatically,
+otherwise the platform that was explicitly passed to `--build` will be used
+instead.
 
 ### Toolchain Considerations
 
@@ -1514,57 +1527,85 @@ https://reproducible-builds.org) for more information about the background and
 reasons for reproducible builds.
 
 Currently, it is not possible to build OpenJDK fully reproducibly, but getting
-there is an ongoing effort. There are some things you can do to minimize
-non-determinism and make a larger part of the build reproducible:
+there is an ongoing effort.
 
-  * Turn on build system support for reproducible builds
+An absolute prerequisite for building reproducible is to speficy a fixed build
+time, since time stamps are embedded in many file formats. This is done by
+setting the `SOURCE_DATE_EPOCH` environment variable, which is an [industry
+standard]( https://reproducible-builds.org/docs/source-date-epoch/), that many
+tools, such as gcc, recognize, and use in place of the current time when
+generating output.
 
-Add the flag `--enable-reproducible-build` to your `configure` command line.
-This will turn on support for reproducible builds where it could otherwise be
-lacking.
+To generate reproducible builds, you must set `SOURCE_DATE_EPOCH` before running
+`configure`. The value in `SOURCE_DATE_EPOCH` will be stored in the
+configuration, and used by `make`. Setting `SOURCE_DATE_EPOCH` before running
+`make` will have no effect on the build.
 
-  * Do not rely on `configure`'s default adhoc version strings
-
-Default adhoc version strings OPT segment include user name, source directory
-and timestamp. You can either override just the OPT segment using
+You must also make sure your build does not rely on `configure`'s default adhoc
+version strings. Default adhoc version strings `OPT` segment include user name
+and source directory. You can either override just the `OPT` segment using
 `--with-version-opt=<any fixed string>`, or you can specify the entire version
 string using `--with-version-string=<your version>`.
 
-  * Specify how the build sets `SOURCE_DATE_EPOCH`
+This is a typical example of how to build the JDK in a reproducible way:
 
-The JDK build system will set the `SOURCE_DATE_EPOCH` environment variable
-during building, depending on the value of the `--with-source-date` option for
-`configure`. The default value is `updated`, which means that
-`SOURCE_DATE_EPOCH` will be set to the current time each time you are running
-`make`.
+```
+export SOURCE_DATE_EPOCH=946684800
+bash configure --with-version-opt=adhoc
+make
+```
 
-The [`SOURCE_DATE_EPOCH` environment variable](
-https://reproducible-builds.org/docs/source-date-epoch/) is an industry
-standard, that many tools, such as gcc, recognize, and use in place of the
-current time when generating output.
+Note that regardless if you specify a source date for `configure` or not, the
+JDK build system will set `SOURCE_DATE_EPOCH` for all build tools when building.
+If `--with-source-date` has the value `updated` (which is the default unless
+`SOURCE_DATE_EPOCH` is found by in the environment by `configure`), the source
+date value will be determined at build time.
 
-For reproducible builds, you need to set this to a fixed value. You can use the
-special value `version` which will use the nominal release date for the current
-JDK version, or a value describing a date, either an epoch based timestamp as an
-integer, or a valid ISO-8601 date.
+There are several aspects of reproducible builds that can be individually
+adjusted by `configure` arguments. If any of these are given, they will override
+the value derived from `SOURCE_DATE_EPOCH`. These arguments are:
 
-**Hint:** If your build environment already sets `SOURCE_DATE_EPOCH`, you can
-propagate this using `--with-source-date=$SOURCE_DATE_EPOCH`.
+ * `--with-source-date`
 
-  * Specify a hotspot build time
+    This option controls how the JDK build sets `SOURCE_DATE_EPOCH` when
+    building. It can be set to a value describing a date, either an epoch based
+    timestamp as an integer, or a valid ISO-8601 date.
 
-Set a fixed hotspot build time. This will be included in the hotspot library
-(`libjvm.so` or `jvm.dll`) and defaults to the current time when building
-hotspot. Use `--with-hotspot-build-time=<any fixed string>` for reproducible
-builds. It's a string so you don't need to format it specifically, so e.g. `n/a`
-will do. Another solution is to use the `SOURCE_DATE_EPOCH` variable, e.g.
-`--with-hotspot-build-time=$(date --date=@$SOURCE_DATE_EPOCH)`.
+    It can also be set to one of the special values `current`, `updated` or
+    `version`. `current` means that the time of running `configure` will be
+    used. `version` will use the nominal release date for the current JDK
+    version. `updated`, which means that `SOURCE_DATE_EPOCH` will be set to the
+    current time each time you are running `make`. All choices, except for
+    `updated`, will set a fixed value for the source date timestamp.
 
-  * Copyright year
+    When `SOURCE_DATE_EPOCH` is set, the default value for `--with-source-date`
+    will be the value given by `SOURCE_DATE_EPOCH`. Otherwise, the default value
+    is `updated`.
 
-The copyright year in some generated text files are normally set to the current
-year. This can be overridden by `--with-copyright-year=<year>`. For fully
-reproducible builds, this needs to be set to a fixed value.
+ * `--with-hotspot-build-time`
+
+    This option controls the build time string that will be included in the
+    hotspot library (`libjvm.so` or `jvm.dll`). When the source date is fixed
+    (e.g. by setting `SOURCE_DATE_EPOCH`), the default value for
+    `--with-hotspot-build-time` will be an ISO 8601 representation of that time
+    stamp. Otherwise the default value will be the current time when building
+    hotspot.
+
+ * `--with-copyright-year`
+
+    This option controls the copyright year in some generated text files. When
+    the source date is fixed (e.g. by setting `SOURCE_DATE_EPOCH`), the default
+    value for `--with-copyright-year` will be the year of that time stamp.
+    Otherwise the default is the current year at the time of running configure.
+    This can be overridden by `--with-copyright-year=<year>`.
+
+ * `--enable-reproducible-build`
+
+    This option controls some additional behavior needed to make the build
+    reproducible. When the source date is fixed (e.g. by setting
+    `SOURCE_DATE_EPOCH`), this flag will be turned on by default. Otherwise, the
+    value is determined by heuristics. If it is explicitly turned off, the build
+    might not be reproducible.
 
 ## Hints and Suggestions for Advanced Users
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ TARGETS += $(GENSRC_BASELOCALEDATA)
 CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 CLDR_GEN_DONE := $(GENSRC_DIR)/_cldr-gensrc.marker
-TZ_DATA_DIR := $(TOPDIR)/make/data/tzdata
-ZONENAME_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/java/time/format/ZoneName.java.template
+TZ_DATA_DIR := $(MODULE_SRC)/share/data/tzdata
+ZONENAME_TEMPLATE := $(MODULE_SRC)/share/classes/java/time/format/ZoneName.java.template
 
 $(CLDR_GEN_DONE): $(wildcard $(CLDR_DATA_DIR)/dtd/*.dtd) \
     $(wildcard $(CLDR_DATA_DIR)/main/en*.xml) \
@@ -74,12 +74,12 @@ TARGETS += $(CLDR_GEN_DONE)
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties, LIST_RESOURCE_BUNDLE, \
-    SRC_DIRS := $(TOPDIR)/src/java.base/share/classes/sun/launcher/resources, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/launcher/resources, \
     CLASS := ListResourceBundle, \
 ))
 
 $(eval $(call SetupCompileProperties, SUN_UTIL, \
-    SRC_DIRS := $(TOPDIR)/src/java.base/share/classes/sun/util/resources, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/util/resources, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
@@ -98,7 +98,7 @@ TARGETS += $(COPY_ZH_HK)
 
 GENSRC_LSREQUIVMAPS := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/LocaleEquivalentMaps.java
 
-$(GENSRC_LSREQUIVMAPS): $(TOPDIR)/make/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
+$(GENSRC_LSREQUIVMAPS): $(MODULE_SRC)/share/data/lsrdata/language-subtag-registry.txt $(BUILD_TOOLS_JDK)
 	$(call MakeDir, $(@D))
 	$(TOOL_GENERATELSREQUIVMAPS) $< $@ $(COPYRIGHT_YEAR)
 

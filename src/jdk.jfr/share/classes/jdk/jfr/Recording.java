@@ -70,7 +70,8 @@ public final class Recording implements Closeable {
 
         @Override
         public EventSettings with(String name, String value) {
-            Objects.requireNonNull(value);
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             recording.setSetting(identifier + "#" + name, value);
             return this;
         }
@@ -101,7 +102,7 @@ public final class Recording implements Closeable {
      * @see jdk.jfr
      */
     public Recording(Map<String, String> settings) {
-        Objects.requireNonNull(settings);
+        Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
@@ -155,7 +156,7 @@ public final class Recording implements Closeable {
      * @see Configuration
      */
     public Recording(Configuration configuration) {
-        this(configuration.getSettings());
+        this(Objects.requireNonNull(configuration, "configuration").getSettings());
     }
 
     /**
@@ -187,7 +188,7 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if the recording is not it the {@code NEW} state
      */
     public void scheduleStart(Duration delay) {
-        Objects.requireNonNull(delay);
+        Objects.requireNonNull(delay, "delay");
         internal.scheduleStart(delay);
     }
 
@@ -318,7 +319,7 @@ public final class Recording implements Closeable {
      * @param settings the settings to set, not {@code null}
      */
     public void setSettings(Map<String, String> settings) {
-        Objects.requireNonNull(settings);
+        Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         internal.setSettings(sanitized);
     }
@@ -375,7 +376,7 @@ public final class Recording implements Closeable {
      *         have {@code FilePermission} to write to the destination path
      */
     public void dump(Path destination) throws IOException {
-        Objects.requireNonNull(destination);
+        Objects.requireNonNull(destination, "destination");
         internal.dump(new WriteableUserPath(destination));
 
     }
@@ -509,7 +510,7 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if the recording is in {@code CLOSED} state
      */
     public void setName(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         internal.setName(name);
     }
 
@@ -619,7 +620,7 @@ public final class Recording implements Closeable {
      * @see EventType
      */
     public EventSettings enable(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         RecordingSettings rs = new RecordingSettings(this, name);
         rs.with("enabled", "true");
         return rs;
@@ -640,7 +641,7 @@ public final class Recording implements Closeable {
      *
      */
     public EventSettings disable(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         RecordingSettings rs = new RecordingSettings(this, name);
         rs.with("enabled", "false");
         return rs;
@@ -657,7 +658,7 @@ public final class Recording implements Closeable {
      * @return an event setting for further configuration, not {@code null}
      */
     public EventSettings enable(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         RecordingSettings rs = new RecordingSettings(this, eventClass);
         rs.with("enabled", "true");
         return rs;
@@ -675,7 +676,7 @@ public final class Recording implements Closeable {
      *
      */
     public EventSettings disable(Class<? extends Event> eventClass) {
-        Objects.requireNonNull(eventClass);
+        Objects.requireNonNull(eventClass, "eventClass");
         RecordingSettings rs = new RecordingSettings(this, eventClass);
         rs.with("enabled", "false");
         return rs;

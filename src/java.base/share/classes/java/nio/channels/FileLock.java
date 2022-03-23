@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,14 +269,36 @@ public abstract class FileLock implements AutoCloseable {
      * @param   size
      *          The size of the lock range
      *
-     * @return  {@code true} if, and only if, this lock and the given lock
-     *          range overlap by at least one byte
+     * @return  {@code true} if this lock and the given lock range overlap
+     *          by at least one byte; {@code false} if {@code size} is
+     *          negative or the lock range does not overlap this lock
      */
     public final boolean overlaps(long position, long size) {
-        if (position + size <= this.position)
-            return false;               // That is below this
-        if (this.position + this.size <= position)
-            return false;               // This is below that
+        if (size < 0)
+            return false;
+
+        // Test whether this is below that
+        try {
+            if (Math.addExact(this.position, this.size) <= position)
+                return false;
+        } catch (ArithmeticException ignored) {
+            // the sum of this.position and this.size overflows the range of
+            // long hence their mathematical sum is greater than position
+        }
+
+        // if size == 0 then the specified lock range is unbounded and
+        // cannot be below the range of this lock
+        if (size > 0) {
+            // Test whether that is below this
+            try {
+                if (Math.addExact(position, size) <= this.position)
+                    return false;
+            } catch (ArithmeticException ignored) {
+                // the sum of position and size overflows the range of long
+                // hence their mathematical sum is greater than this.position
+            }
+        }
+
         return true;
     }
 
