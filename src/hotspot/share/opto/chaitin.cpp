@@ -605,6 +605,16 @@ void PhaseChaitin::Register_Allocate() {
     // Return whether or not something spills.
     uint spills = Select(region);
 
+    if (regions.length() > 1) {
+      for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
+        LRG &lrg = lrgs(i);
+        if (lrg._region == region) {
+          tty->print("%d: ", i); lrg.dump();
+        }
+      }
+    }
+
+
     // If we spill, split and recycle the entire thing
     while (spills) {
       if (_trip_cnt++ > 24) {
