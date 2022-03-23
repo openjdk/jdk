@@ -1,3 +1,4 @@
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/liveness.hpp"
@@ -116,25 +117,36 @@ bool LivenessEstimatorThread::estimate_liveness() {
   log_info(gc)("Estimator: mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
   size_t oops_visited = _mark_stack.size();
+  size_t total_size_words = 0; // TODO: include roots size?
   LivenessOopClosure cl(this);
   SuspendibleThreadSetJoiner sst;
   while (!_mark_stack.is_empty()) {
     oop obj = _mark_stack.pop();
     obj->oop_iterate(&cl);
+    total_size_words += obj->size();
     ++oops_visited;
     if (!check_yield_and_continue(&sst)) {
       return false;
     }
   }
+  size_t total_size_bytes = total_size_words * HeapWordSize;
 
-  log_info(gc)("Estimator: visited " SIZE_FORMAT " oops", oops_visited);
+  log_info(gc)("Estimator: visited " SIZE_FORMAT " oops, total size " SIZE_FORMAT " bytes", oops_visited, total_size_bytes);
   return true;
 }
 
 void LivenessEstimatorThread::do_roots() {
   assert(Thread::current()->is_VM_thread(), "Expected to be on safepoint here");
+
   LivenessOopClosure cl(this);
   OopStorageSet::strong_oops_do(&cl);
+  Threads::oops_do(&cl, NULL);
+
+  CLDToOopClosure cldt(&cl, ClassLoaderData::_claim_none);
+  ClassLoaderDataGraph::always_strong_cld_do(&cldt);
+
+  // TODO: do we need to do anything with the code cache? 
+  // Compare GenCollectedHeap::process_roots with RootSetClosure::process
 }
 
 void LivenessEstimatorThread::do_oop(oop obj) {
