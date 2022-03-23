@@ -483,7 +483,14 @@ LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
 LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
 BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
 
-LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+
+ifeq ($(TOOLCHAIN_TYPE), gcc)
+  # gcc is particularly bad at handling the harfbuzz source code
+  # Turning on optimizations cause a massive spike in compile time
+  LIBFONTMANAGER_OPTIMIZATION := SIZE
+else
+  LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+endif
 
 ifeq ($(call isTargetOs, windows), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
