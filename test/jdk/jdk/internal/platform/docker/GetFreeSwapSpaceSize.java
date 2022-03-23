@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2020, 2022 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@ import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.ManagementFactory;
 
 // Usage:
-//   GetFreeSwapSpaceSize <memoryAlloc> <memory> <memorySwapAlloc> <expectedSwap>
+//   GetFreeSwapSpaceSize <memoryAlloc> <expectedMemory> <memorySwapAlloc> <expectedSwap>
 public class GetFreeSwapSpaceSize {
     public static void main(String[] args) {
         if (args.length != 4) {
-            throw new RuntimeException("Unexpected arguments. Expected 2, got " + args.length);
+            throw new RuntimeException("Unexpected arguments. Expected 4, got " + args.length);
         }
         String memoryAlloc = args[0];
         long expectedMemory = Long.parseLong(args[1]);
