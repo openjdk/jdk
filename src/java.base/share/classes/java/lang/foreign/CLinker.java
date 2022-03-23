@@ -43,14 +43,9 @@ import jdk.internal.reflect.Reflection;
  * follow the JVM's target platform C ABI. A C linker provides two main capabilities: first, it allows Java code
  * to <em>link</em> foreign functions into a so called <em>downcall method handle</em>; secondly, it allows
  * native code to call Java method handles via the generation of <em>upcall stubs</em>.
- * <p>
- * On unsupported platforms this class will fail to initialize with an {@link ExceptionInInitializerError}.
- * <p>
- * Unless otherwise specified, passing a {@code null} argument, or an array argument containing one or more {@code null}
- * elements to a method in this class causes a {@link NullPointerException} to be thrown.</p>
  *
  * <h2><a id = "downcall-method-handles">Downcall method handles</a></h2>
- * <p>
+ *
  * {@linkplain #downcallHandle(FunctionDescriptor) Linking a foreign function} is a process which requires a function descriptor,
  * a set of memory layouts which, together, specify the signature of the foreign function to be linked, and returns,
  * when complete, a downcall method handle, that is, a method handle that can be used to invoke the target native function.
@@ -134,6 +129,9 @@ import jdk.internal.reflect.Reflection;
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ *
+ * @implNote
+ * On unsupported platforms this class will fail to initialize with an {@link ExceptionInInitializerError}.
  *
  * @since 19
  */
