@@ -43,7 +43,7 @@ public class SerialJavaObjectTests extends BaseTest {
     }
 
     /*
-     * Validate that an SerialException is thrown when the object specified
+     * Validate that a SerialException is thrown when the object specified
      * contains public static fields
      */
     @Test(expectedExceptions = SerialException.class, enabled = false)
