@@ -24,12 +24,14 @@
  */
 package javax.swing.border;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.beans.ConstructorProperties;
 
@@ -121,18 +123,18 @@ public class EtchedBorder extends AbstractBorder
         this.shadow = shadow;
     }
 
-    private void paintBorderRect(Graphics g, Color c, int w, int h) {
+    private void paintBorderRect(Graphics g, Color c, int w, int h, int stkWidth) {
         g.setColor(c);
-        g.drawRect(0, 0, w-2, h-2);
+        g.drawRect(stkWidth/2, stkWidth/2, w-1-stkWidth, h-1-stkWidth);
     }
 
-    private void paintBorderShadow(Graphics g, Color c, int w, int h) {
+    private void paintBorderShadow(Graphics g, Color c, int w, int h, int stkWidth) {
         g.setColor(c);
-        g.drawLine(1, h-3, 1, 1);
-        g.drawLine(1, 1, w-3, 1);
+        g.drawLine(stkWidth, h-3, stkWidth, 1);
+        g.drawLine(1, stkWidth, w-3, stkWidth);
 
-        g.drawLine(0, h-1, w-1, h-1);
-        g.drawLine(w-1, h-1, w-1, 0);
+        g.drawLine(0, h-stkWidth, w-1, h-stkWidth);
+        g.drawLine(w-stkWidth, h-1, w-stkWidth, 0);
     }
 
     /**
@@ -150,9 +152,14 @@ public class EtchedBorder extends AbstractBorder
         // We remove any initial transforms to prevent rounding errors
         // when drawing in non-integer scales
         AffineTransform at = new AffineTransform();
+        Stroke oldStk = new BasicStroke();
+        int stkWidth = 1;
         if (g instanceof Graphics2D) {
             at = ((Graphics2D) g).getTransform();
             ((Graphics2D) g).setTransform(new AffineTransform());
+            oldStk = ((Graphics2D) g).getStroke();
+            stkWidth = (int) Math.floor(Math.min(at.getScaleX(),at.getScaleY()));
+            ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
         }
 
         int w = (int) (at.getScaleX()*width);
@@ -163,9 +170,9 @@ public class EtchedBorder extends AbstractBorder
 
         // Drawing the border last prevents the shadow from overdrawing the border
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
-                                                    : getShadowColor(c), w, h);
+                                                    : getShadowColor(c), w, h, stkWidth);
         paintBorderRect(g, (etchType == LOWERED) ? getShadowColor(c)
-                                                    : getHighlightColor(c), w, h);
+                                                    : getHighlightColor(c), w, h, stkWidth);
 
 
         g.translate(-((int) (at.getScaleX()*x+at.getTranslateX())),
@@ -173,6 +180,7 @@ public class EtchedBorder extends AbstractBorder
         // Set the transform we removed earlier
         if (g instanceof Graphics2D) {
             ((Graphics2D) g).setTransform(at);
+            ((Graphics2D) g).setStroke(oldStk);
         }
     }
 
