@@ -1,4 +1,4 @@
-.\" Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -762,6 +762,56 @@ The following \f[I]options\f[R] must be specified using either
 .IP \[bu] 2
 \f[CB]\-l\f[R]: (Optional) Prints \f[CB]java.util.concurrent\f[R] locks
 (BOOLEAN, false)
+.RE
+.TP
+.B \f[CB]VM.cds\f[R] [\f[I]arguments\f[R]]
+Dumps a static or dynamic shared archive that includes all currently
+loaded classes.
+.RS
+.PP
+Impact: Medium \-\-\- pause time depends on number of loaded classes
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.PP
+\f[I]arguments\f[R]:
+.IP \[bu] 2
+\f[CB]subcmd\f[R]: must be either \f[CB]static_dump\f[R] or
+.IP \[bu] 2
+\f[CB]filename\f[R]: (Optional) Name of the shared archive to be dumped
+(STRING, no default value)
+.PP
+If \f[CB]filename\f[R] is not specified, a default file name is chosen
+using the pid of the target JVM process.
+For example, java_pid1234_static.jsa, java_pid5678_dynamic.jsa, etc.
+.PP
+If \f[CB]filename\f[R] is not specified as an absolute path, the archive
+file is created in a directory relative to the current directory of the
+target JVM process.
+.RE
+.TP
+.B \f[CB]VM.classloaders\f[R] [\f[I]options\f[R]]
+Prints classloader hierarchy.
+.RS
+.PP
+Impact: Medium \-\-\- Depends on number of class loaders and classes
+loaded.
+.PP
+Permission: \f[CB]java.lang.management.ManagementPermission(monitor)\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[CB]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[CB]show\-classes\f[R]: (Optional) Print loaded classes.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]verbose\f[R]: (Optional) Print detailed information.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[CB]fold\f[R]: (Optional) Show loaders of the same name and class as
+one.
+(BOOLEAN, true)
 .RE
 .TP
 .B \f[CB]VM.classloader_stats\f[R]
