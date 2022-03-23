@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,11 @@ import java.util.Objects;
  *     SaltLength   -- 20
  *     TrailerField -- 1
  *
+ * <p>Its values are based on the default values in the ASN.1 encoding
+ * from PKCS#1 standard and may become obsolete as time progresses.
+ * Please do not rely on PSSParameterSpec.DEFAULT unless these values are
+ * really what you want to use.
+ *
  * @see MGF1ParameterSpec
  * @see AlgorithmParameterSpec
  * @see java.security.Signature
@@ -102,9 +107,15 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * The PSS parameter set with all default values
+     * @deprecated The default values defined in the ASN.1 encoding in
+     *         PKCS#1 may become obsolete as time progresses. Thus, it is
+     *         recommended to explicitly specify all desired parameter
+     *         values with
+     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      *
      * @since 1.5
      */
+    @Deprecated(since="19", forRemoval=true)
     public static final PSSParameterSpec DEFAULT = new PSSParameterSpec
         ("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, 20, TRAILER_FIELD_BC);
 
@@ -163,7 +174,14 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         PSS encoding
      * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
+     * @deprecated This constructor uses the default values as defined in
+     *         ASN.1 encoding in PKCS#1 except for the salt length. These
+     *         default values may become obsolete as time progresses.
+     *         Thus, it is recommended to explicitly specify all desired
+     *         parameter values with
+     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      */
+    @Deprecated(since="19", forRemoval=true)
     public PSSParameterSpec(int saltLen) {
         this("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, saltLen, TRAILER_FIELD_BC);
     }
