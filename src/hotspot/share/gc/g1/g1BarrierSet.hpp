@@ -59,7 +59,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   // pre-marking object graph. Prefer the version that takes location, as it
   // can avoid touching the heap unnecessarily.
   template <class T> static void enqueue(T* dst);
-  inline static void enqueue_oop(oop pre_val);
+  static void enqueue_oop(oop pre_val);
 
   static void enqueue_if_weak(DecoratorSet decorators, oop value);
 
