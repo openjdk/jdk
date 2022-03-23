@@ -40,8 +40,6 @@ public class InputSlotWidget extends SlotWidget {
     public InputSlotWidget(InputSlot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
         super(slot, scene, parent, fw);
         inputSlot = slot;
-        //init();
-        //getFigureWidget().getLeftWidget().addChild(this);
     }
 
     public InputSlot getInputSlot() {

@@ -51,8 +51,9 @@ public class LayoutGraph {
         outputPorts = new HashMap<>(links.size());
 
         for (Link l : links) {
-            if (l.getFrom() == null || l.getTo() == null)
+            if (l.getFrom() == null || l.getTo() == null) {
                 continue;
+            }
             Port p = l.getFrom();
             Port p2 = l.getTo();
             Vertex v1 = p.getVertex();

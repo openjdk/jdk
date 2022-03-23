@@ -29,7 +29,7 @@ import java.util.ArrayList;
 // Selects blocks where any node is selected.
 public class AnySelector implements BlockSelector {
 
-    private Selector selector;
+    private final Selector selector;
 
     public AnySelector(Selector s) {
         this.selector = s;

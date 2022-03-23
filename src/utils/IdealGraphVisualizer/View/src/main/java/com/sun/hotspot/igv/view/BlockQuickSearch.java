@@ -86,9 +86,7 @@ public class BlockQuickSearch implements SearchProvider {
 
             final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
             for (final InputBlock b : matches) {
-                if (!response.addResult(new Runnable() {
-                        @Override
-                        public void run() {
+                if (!response.addResult(() -> {
                             final EditorTopComponent comp = EditorTopComponent.getActive();
                             assert(comp != null);
                             if (theGraph != null) {
@@ -96,8 +94,7 @@ public class BlockQuickSearch implements SearchProvider {
                             }
                             comp.setSelectedNodes(b);
                             comp.requestActive();
-                        }
-                    },
+                        },
                         "B" + b.getName() + (theGraph != null ? " in " + theGraph.getName() : ""))) {
                     return;
                 }
@@ -117,16 +114,13 @@ public class BlockQuickSearch implements SearchProvider {
             return matches.size() == 0 ? null : matches;
         } catch (Exception e) {
             final String msg = e.getMessage();
-            response.addResult(new Runnable() {
-                @Override
-                public void run() {
+            response.addResult(() -> {
                     Message desc = new NotifyDescriptor.Message("An exception occurred during the search, "
                             + "perhaps due to a malformed query string:\n" + msg,
                             NotifyDescriptor.WARNING_MESSAGE);
                     DialogDisplayer.getDefault().notify(desc);
-                }
-            },
-                    "(Error during search)"
+                },
+                "(Error during search)"
             );
         }
         return null;

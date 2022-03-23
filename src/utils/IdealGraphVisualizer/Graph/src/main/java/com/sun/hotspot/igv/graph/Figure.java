@@ -31,7 +31,6 @@ import com.sun.hotspot.igv.data.Source;
 import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.*;
 
@@ -59,6 +58,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     private int heightCash = -1;
     private int widthCash = -1;
     private InputBlock block;
+    private FontMetrics metrics;
 
     public int getHeight() {
         if (heightCash == -1) {
@@ -68,10 +68,6 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     }
 
     private void updateHeight() {
-        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-        Graphics g = image.getGraphics();
-        g.setFont(diagram.getFont().deriveFont(Font.BOLD));
-        FontMetrics metrics = g.getFontMetrics();
         String nodeText = diagram.getNodeText();
         int lines = nodeText.split("\n").length;
         if (hasInputList() && lines > 1) {
@@ -120,10 +116,6 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     private void updateWidth() {
             int max = 0;
-            BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.getGraphics();
-            g.setFont(diagram.getFont().deriveFont(Font.BOLD));
-            FontMetrics metrics = g.getFontMetrics();
             for (String s : getLines()) {
                 int cur = metrics.stringWidth(s);
                 if (cur > max) {
@@ -147,6 +139,8 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
         this.position = new Point(0, 0);
         this.color = Color.WHITE;
+        Canvas canvas = new Canvas();
+        metrics = canvas.getFontMetrics(diagram.getFont().deriveFont(Font.BOLD));
     }
 
     public int getId() {

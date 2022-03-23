@@ -62,8 +62,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public InputBlockEdge addBlockEdge(InputBlock left, InputBlock right, String label) {
-        InputBlockEdge edge = new InputBlockEdge(left, right);
-        edge.setLabel(label);
+        InputBlockEdge edge = new InputBlockEdge(left, right, label);
         blockEdges.add(edge);
         left.addSuccessor(right);
         return edge;
@@ -174,7 +173,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             assert nodes.get(n.getId()) == n;
             if (!scheduledNodes.contains(n)) {
                 if (noBlock == null) {
-                    noBlock = this.addArtificialBlock();
+                    noBlock = addArtificialBlock();
                 }
                 noBlock.addNode(n.getId());
             }

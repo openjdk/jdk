@@ -638,58 +638,72 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             }
         }
 
-        if (getModel().getShowBlocks()) {
-            HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            manager.setMaxLayerLength(9);
-            manager.setMinLayerDifference(3);
-            m.setManager(manager);
-            m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
-            m.doLayout(new LayoutGraph(edges, figures));
+        if (getModel().getShowSea()) {
+            doSeaLayout(figures, edges);
+        } else if (getModel().getShowBlocks()) {
+            doClusteredLayout(figures, edges);
         } else if (getModel().getShowCFG()) {
-            HierarchicalCFGLayoutManager m = new HierarchicalCFGLayoutManager();
-            HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            manager.setMaxLayerLength(9);
-            manager.setMinLayerDifference(1);
-            manager.setLayoutSelfEdges(true);
-            manager.setXOffset(25);
-            manager.setLayerOffset(25);
-            m.setManager(manager);
-            Map<InputNode, Figure> nodeFig = new HashMap<InputNode, Figure>();
-            for (Figure f : figures) {
-                InputNode n = f.getFirstSourceNode();
-                if (n != null) {
-                    nodeFig.put(n, f);
-                }
-            }
-            // Compute global ranking among figures given by in-block order. If
-            // needed, this could be cached as long as it is computed for all
-            // the figures in the model, not just the visible ones.
-            Map<Figure, Integer> figureRank =
-                new HashMap<Figure, Integer>(figures.size());
-            int r = 0;
-            for (InputBlock b : getModel().getGraphToView().getBlocks()) {
-                for (InputNode n : b.getNodes()) {
-                    Figure f = nodeFig.get(n);
-                    if (f != null) {
-                        figureRank.put(f, r);
-                        r++;
-                    }
-                }
-            }
-            // Add connections for CFG edges.
-            edges.addAll(diagram.getBlockConnections());
-            m.setSubManager(new LinearLayoutManager(figureRank));
-            m.setClusters(new HashSet<>(diagram.getBlocks()));
-            m.doLayout(new LayoutGraph(edges, figures));
-        } else if (getModel().getShowSea()) {
-            HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            manager.setMaxLayerLength(10);
-            manager.doLayout(new LayoutGraph(edges, figures));
+            doCFGLayout(figures, edges);
         }
 
         relayoutWithoutLayout(oldVisibleWidgets);
     }
+
+    private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
+        HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+        manager.setMaxLayerLength(10);
+        manager.doLayout(new LayoutGraph(edges, figures));
+    }
+
+    private void doClusteredLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
+        HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+        HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+        manager.setMaxLayerLength(9);
+        manager.setMinLayerDifference(3);
+        m.setManager(manager);
+        m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
+        m.doLayout(new LayoutGraph(edges, figures));
+    }
+
+    private void doCFGLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
+        Diagram diagram = getModel().getDiagramToView();
+        HierarchicalCFGLayoutManager m = new HierarchicalCFGLayoutManager();
+        HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+        manager.setMaxLayerLength(9);
+        manager.setMinLayerDifference(1);
+        manager.setLayoutSelfEdges(true);
+        manager.setXOffset(25);
+        manager.setLayerOffset(25);
+        m.setManager(manager);
+        Map<InputNode, Figure> nodeFig = new HashMap<InputNode, Figure>();
+        for (Figure f : figures) {
+            InputNode n = f.getFirstSourceNode();
+            if (n != null) {
+                nodeFig.put(n, f);
+            }
+        }
+        // Compute global ranking among figures given by in-block order. If
+        // needed, this could be cached as long as it is computed for all the
+        // figures in the model, not just the visible ones.
+        Map<Figure, Integer> figureRank =
+            new HashMap<Figure, Integer>(figures.size());
+        int r = 0;
+        for (InputBlock b : getModel().getGraphToView().getBlocks()) {
+            for (InputNode n : b.getNodes()) {
+                Figure f = nodeFig.get(n);
+                if (f != null) {
+                    figureRank.put(f, r);
+                    r++;
+                }
+            }
+        }
+        // Add connections for CFG edges.
+        edges.addAll(diagram.getBlockConnections());
+        m.setSubManager(new LinearLayoutManager(figureRank));
+        m.setClusters(new HashSet<>(diagram.getBlocks()));
+        m.doLayout(new LayoutGraph(edges, figures));
+    }
+
     private Set<Pair<Point, Point>> lineCache = new HashSet<>();
 
     private void relayoutWithoutLayout(Set<Widget> oldVisibleWidgets) {

@@ -68,8 +68,6 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         p.x -= this.calculateClientArea().width / 2;
         p.y += yOffset();
         this.setPreferredLocation(p);
-
-        //this.setPreferredBounds(this.calculateClientArea());
     }
 
     @Override

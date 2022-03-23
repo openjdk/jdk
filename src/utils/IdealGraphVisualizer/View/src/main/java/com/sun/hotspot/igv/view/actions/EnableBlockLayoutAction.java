@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import org.openide.util.ImageUtilities;
  */
 public class EnableBlockLayoutAction extends AbstractAction {
 
-    private boolean state;
-
     public EnableBlockLayoutAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(SELECTED_KEY, false);
@@ -45,12 +43,6 @@ public class EnableBlockLayoutAction extends AbstractAction {
 
     public boolean isSelected() {
         return (Boolean)getValue(SELECTED_KEY);
-    }
-
-    public void setSelected(boolean b) {
-        if (isSelected() != b) {
-            this.putValue(SELECTED_KEY, b);
-        }
     }
 
     protected String iconResource() {

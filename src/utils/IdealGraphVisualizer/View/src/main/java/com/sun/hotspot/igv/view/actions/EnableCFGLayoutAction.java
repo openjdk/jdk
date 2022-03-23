@@ -31,8 +31,6 @@ import org.openide.util.ImageUtilities;
 
 public class EnableCFGLayoutAction extends AbstractAction {
 
-    private boolean state;
-
     public EnableCFGLayoutAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
         putValue(SELECTED_KEY, false);
@@ -41,12 +39,6 @@ public class EnableCFGLayoutAction extends AbstractAction {
 
     public boolean isSelected() {
         return (Boolean)getValue(SELECTED_KEY);
-    }
-
-    public void setSelected(boolean b) {
-        if (isSelected() != b) {
-            this.putValue(SELECTED_KEY, b);
-        }
     }
 
     protected String iconResource() {

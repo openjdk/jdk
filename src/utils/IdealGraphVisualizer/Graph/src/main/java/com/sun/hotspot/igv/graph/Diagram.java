@@ -52,8 +52,8 @@ public class Diagram {
     private final Font boldFont;
     // Whether widgets derived from this diagram should be adapted for the
     // control-flow graph view.
-    private boolean cfg = false;
-    private Set<BlockConnection> blockConnections;
+    private boolean cfg;
+    private final Set<BlockConnection> blockConnections;
 
     public Font getFont() {
         return font;
@@ -75,7 +75,8 @@ public class Diagram {
         this.cfg = cfg;
     }
 
-    private Diagram() {
+    private Diagram(InputGraph graph, String nodeText, String shortNodeText,
+                    String tinyNodeText) {
         figures = new ArrayList<>();
         blocks = new LinkedHashMap<>(8);
         this.nodeText = "";
@@ -85,6 +86,10 @@ public class Diagram {
         this.boldFont = this.font.deriveFont(Font.BOLD);
         this.cfg = false;
         this.blockConnections = new HashSet<>();
+        this.graph = graph;
+        this.nodeText = nodeText;
+        this.shortNodeText = shortNodeText;
+        this.tinyNodeText = tinyNodeText;
     }
 
     public Block getBlock(InputBlock b) {
@@ -116,16 +121,8 @@ public class Diagram {
         }
     }
 
-    public Diagram getNext() {
-        return Diagram.createDiagram(graph.getNext(), nodeText, shortNodeText, tinyNodeText);
-    }
-
     public Collection<Block> getBlocks() {
         return Collections.unmodifiableCollection(blocks.values());
-    }
-
-    public Diagram getPrev() {
-        return Diagram.createDiagram(graph.getPrev(), nodeText, shortNodeText, tinyNodeText);
     }
 
     public List<Figure> getFigures() {
@@ -168,12 +165,7 @@ public class Diagram {
             return null;
         }
 
-        Diagram d = new Diagram();
-        d.graph = graph;
-        d.nodeText = nodeText;
-        d.shortNodeText = shortNodeText;
-        d.tinyNodeText = tinyNodeText;
-
+        Diagram d = new Diagram(graph, nodeText, shortNodeText, tinyNodeText);
         d.updateBlocks();
 
         Collection<InputNode> nodes = graph.getNodes();
@@ -221,10 +213,7 @@ public class Diagram {
         for (InputBlockEdge e : graph.getBlockEdges()) {
             Block p = d.getBlock(e.getFrom());
             Block s = d.getBlock(e.getTo());
-            BlockConnection c = new BlockConnection(p, s, e.getLabel());
-            c.setStyle(Connection.ConnectionStyle.BOLD);
-            c.setColor(Color.BLUE);
-            d.blockConnections.add(c);
+            d.blockConnections.add(new BlockConnection(p, s, e.getLabel()));
         }
 
         return d;
@@ -293,15 +282,12 @@ public class Diagram {
     }
 
     public Set<FigureConnection> getConnections() {
-
         Set<FigureConnection> connections = new HashSet<>();
         for (Figure f : figures) {
-
             for (InputSlot s : f.getInputSlots()) {
                 connections.addAll(s.getConnections());
             }
         }
-
         return connections;
     }
 

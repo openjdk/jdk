@@ -40,11 +40,12 @@ public class InputBlockEdge {
     private State state = State.SAME;
     private String label;
 
-    public InputBlockEdge(InputBlock from, InputBlock to) {
+    public InputBlockEdge(InputBlock from, InputBlock to, String label) {
         assert from != null;
         assert to != null;
         this.from = from;
         this.to = to;
+        this.label = label;
     }
 
     public InputBlock getFrom() {
@@ -65,10 +66,6 @@ public class InputBlockEdge {
 
     public String getLabel() {
         return label;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
     }
 
     @Override

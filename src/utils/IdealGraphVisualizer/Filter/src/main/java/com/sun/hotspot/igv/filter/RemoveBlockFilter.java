@@ -33,8 +33,8 @@ import java.util.Set;
 
 public class RemoveBlockFilter extends AbstractFilter {
 
-    private List<RemoveBlockRule> rules;
-    private String name;
+    private final List<RemoveBlockRule> rules;
+    private final String name;
 
     public RemoveBlockFilter(String name) {
         this.name = name;
@@ -61,7 +61,7 @@ public class RemoveBlockFilter extends AbstractFilter {
 
     public static class RemoveBlockRule {
 
-        private BlockSelector selector;
+        private final BlockSelector selector;
 
         public RemoveBlockRule(BlockSelector selector) {
             this.selector = selector;

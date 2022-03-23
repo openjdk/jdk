@@ -43,7 +43,7 @@ public class BlockWidget extends Widget {
 
     public static final int BORDER = 20;
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
-    private static final Font titleFont = new Font("Arial", Font.BOLD, 14);
+    private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final Color TITLE_COLOR = new Color(42, 42, 171);
     private InputBlock blockNode;
     private Diagram diagram;
@@ -72,7 +72,7 @@ public class BlockWidget extends Widget {
         }
 
         g.setColor(TITLE_COLOR);
-        g.setFont(titleFont);
+        g.setFont(TITLE_FONT);
 
         String s = "B" + blockNode.getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);

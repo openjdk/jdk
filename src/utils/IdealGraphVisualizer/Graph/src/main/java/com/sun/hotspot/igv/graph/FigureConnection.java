@@ -36,12 +36,8 @@ import java.util.List;
  */
 public class FigureConnection implements Connection {
 
-    @Override
-    public boolean isVIP() {
-        return style == ConnectionStyle.BOLD;
-    }
-    private InputSlot inputSlot;
-    private OutputSlot outputSlot;
+    private final InputSlot inputSlot;
+    private final OutputSlot outputSlot;
     private Color color;
     private ConnectionStyle style;
     private List<Point> controlPoints;
@@ -135,6 +131,11 @@ public class FigureConnection implements Connection {
     @Override
     public Cluster getToCluster() {
         return getTo().getVertex().getCluster();
+    }
+
+    @Override
+    public boolean isVIP() {
+        return style == ConnectionStyle.BOLD;
     }
 
     @Override

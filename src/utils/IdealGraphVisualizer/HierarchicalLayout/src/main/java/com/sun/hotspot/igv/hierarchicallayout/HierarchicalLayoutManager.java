@@ -199,6 +199,21 @@ public class HierarchicalLayoutManager implements LayoutManager {
         this.layoutSelfEdges = layoutSelfEdges;
     }
 
+    // Remove self-edges, possibly saving them into the selfEdges set.
+    private void removeSelfEdges(boolean save) {
+        for (LayoutNode node : nodes) {
+            for (LayoutEdge e : new ArrayList<>(node.succs)) {
+                if (e.to == node) {
+                    if (save) {
+                        selfEdges.add(e);
+                    }
+                    node.succs.remove(e);
+                    node.preds.remove(e);
+                }
+            }
+        }
+    }
+
     @Override
     public void doLayout(LayoutGraph graph) {
         doLayout(graph, new HashSet<Link>());
@@ -227,15 +242,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
         if (!layoutSelfEdges) {
             // Remove self-edges from the beginning.
-            for (LayoutNode node : nodes) {
-                for (LayoutEdge e : new ArrayList<>(node.succs)) {
-                    assert e.from == node;
-                    if (e.to == node) {
-                        node.succs.remove(e);
-                        node.preds.remove(e);
-                    }
-                }
-            }
+            removeSelfEdges(false);
         }
 
         // #############################################################
@@ -256,16 +263,8 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
         }
 
-        // Hide self-edges from the core layout algorithm.
-        for (LayoutNode node : nodes) {
-            for (LayoutEdge e : new ArrayList<>(node.succs)) {
-                if (e.to == node) {
-                    selfEdges.add(e);
-                    node.succs.remove(e);
-                    node.preds.remove(e);
-                }
-            }
-        }
+        // Hide self-edges from the layout algorithm and save them for later.
+        removeSelfEdges(true);
 
         // #############################################################
         // STEP 3: Assign layers
@@ -287,7 +286,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
         // STEP 6: Assign Y coordinates
         new AssignYCoordinates().start();
 
-        // Put self-edges back so that they are assigned points.
+        // Put saved self-edges back so that they are assigned points.
         for (LayoutEdge e : selfEdges) {
             e.from.succs.add(e);
             e.to.preds.add(e);
@@ -1867,10 +1866,5 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
             }
         }
-    }
-
-    @Override
-    public void doRouting(LayoutGraph graph) {
-        // Do nothing for now
     }
 }

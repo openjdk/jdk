@@ -123,8 +123,7 @@ public class ServerCompilerScheduler implements Scheduler {
                     }
                 }
                 // Ensure that the block ordering is deterministic.
-                Collections.sort(nControlSuccs, (Node a, Node b) ->
-                                 Integer.compare(a.inputNode.getId(), b.inputNode.getId()));
+                nControlSuccs.sort(Comparator.comparingInt((Node a) -> a.inputNode.getId()));
                 controlSuccs.put(n, nControlSuccs);
             }
         }
@@ -567,25 +566,28 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    private static boolean isRegion(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Region");
-    }
-
     private static boolean isOtherBlockStart(Node n) {
-        return n.inputNode.getProperties().get("name").equals("CountedLoopEnd");
+        return hasName(n, "CountedLoopEnd");
     }
 
     private static boolean isPhi(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Phi");
+        return hasName(n, "Phi");
     }
 
     private static boolean isProj(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Proj") ||
-               n.inputNode.getProperties().get("name").equals("MachProj");
+        return hasName(n, "Proj") || hasName(n, "MachProj");
     }
 
     private static boolean isParm(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Parm");
+        return hasName(n, "Parm");
+    }
+
+    private static boolean hasName(Node n, String name) {
+        String nodeName = n.inputNode.getProperties().get("name");
+        if (nodeName == null) {
+            return false;
+        }
+        return nodeName.equals(name);
     }
 
     private static boolean isControl(Node n) {
@@ -597,9 +599,7 @@ public class ServerCompilerScheduler implements Scheduler {
         Node alternativeRoot = null;
 
         for (Node node : nodes) {
-            InputNode inputNode = node.inputNode;
-            String s = inputNode.getProperties().get("name");
-            if (s != null && s.equals("Root")) {
+            if (hasName(node, "Root")) {
                 return node;
             }
 

@@ -51,21 +51,30 @@ public class ClusterNode implements Vertex {
     private boolean dirty;
     private boolean root;
     private String name;
-    private int border;
-    private Dimension nodeOffset;
-    private int headerVerticalSpace;
-    private Dimension emptySize;
+    private final int border;
+    private final Dimension nodeOffset;
+    private final int headerVerticalSpace;
+    private final Dimension emptySize;
 
-    public ClusterNode(Cluster cluster, String name) {
+    public ClusterNode(Cluster cluster, String name, int border,
+                       Dimension nodeOffset, int headerVerticalSpace,
+                       Dimension emptySize) {
         this.subNodes = new HashSet<Vertex>();
         this.subEdges = new HashSet<Link>();
         this.cluster = cluster;
         position = new Point(0, 0);
         this.name = name;
-        this.border = 20;
-        this.nodeOffset = new Dimension(0, 0);
-        this.headerVerticalSpace = 0;
-        this.emptySize = new Dimension(0, 0);
+        this.border = border;
+        this.nodeOffset = nodeOffset;
+        this.headerVerticalSpace = headerVerticalSpace;
+        this.emptySize = emptySize;
+        if (emptySize.width > 0 || emptySize.height > 0) {
+            updateSize();
+        }
+    }
+
+    public ClusterNode(Cluster cluster, String name) {
+        this(cluster, name, 20, new Dimension(0, 0), 0, new Dimension(0, 0));
     }
 
     public String getName() {
@@ -241,25 +250,8 @@ public class ClusterNode implements Vertex {
         return root;
     }
 
-    public void setBorder(int border) {
-        this.border = border;
-    }
-
     public int getBorder() {
         return border;
-    }
-
-    public void setNodeOffset(Dimension nodeOffset) {
-        this.nodeOffset = nodeOffset;
-    }
-
-    public void setHeaderVerticalSpace(int headerVerticalSpace) {
-        this.headerVerticalSpace = headerVerticalSpace;
-    }
-
-    public void setEmptySize(Dimension emptySize) {
-        this.emptySize = emptySize;
-        updateSize();
     }
 
     public int compareTo(Vertex o) {

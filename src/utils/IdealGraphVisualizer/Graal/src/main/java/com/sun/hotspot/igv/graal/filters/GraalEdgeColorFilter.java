@@ -23,16 +23,10 @@
  */
 package com.sun.hotspot.igv.graal.filters;
 
-import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.filter.AbstractFilter;
-import com.sun.hotspot.igv.graph.FigureConnection;
-import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
 import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
 import java.awt.Color;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Filter that colors usage and successor edges differently.
@@ -54,26 +48,6 @@ public class GraalEdgeColorFilter extends AbstractFilter {
 
     @Override
     public void apply(Diagram d) {
-        List<Figure> figures = d.getFigures();
-        for (Figure f : figures) {
-            for (InputSlot is : f.getInputSlots()) {
-                for (FigureConnection c : is.getConnections()) {
-                    String type = null;
-
-                    if (type != null) {
-                        Color typeColor = usageColor.get(type);
-                        if (typeColor == null) {
-                            c.setColor(otherUsageColor);
-                        } else {
-                            c.setColor(typeColor);
-                        }
-                        if (c.getStyle() != ConnectionStyle.DASHED && type == "Successor") {
-                            c.setStyle(ConnectionStyle.BOLD);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public Color getUsageColor(String type) {

@@ -33,7 +33,7 @@ import java.util.*;
 public class LinearLayoutManager implements LayoutManager {
 
     // Ranking determining the vertical node ordering.
-    private Map<? extends Vertex, Integer> vertexRank;
+    private final Map<? extends Vertex, Integer> vertexRank;
 
     public LinearLayoutManager(Map<? extends Vertex, Integer> vertexRank) {
         this.vertexRank = vertexRank;
@@ -51,19 +51,17 @@ public class LinearLayoutManager implements LayoutManager {
 
         // Sort vertices according to given rank.
         List<Vertex> vertices = new ArrayList<>(graph.getVertices());
-        vertices.sort((Vertex a, Vertex b) ->
-                      Integer.compare(vertexRank.getOrDefault(a, Integer.MAX_VALUE),
-                                      vertexRank.getOrDefault(b, Integer.MAX_VALUE)));
+        vertices.sort(Comparator.comparingInt((Vertex v) -> vertexRank.getOrDefault(v, Integer.MAX_VALUE)));
 
         // Assign vertical coordinates in rank order.
+        assignVerticalCoordinates(vertices);
+    }
+
+    private void assignVerticalCoordinates(List<Vertex> vertices) {
         int curY = 0;
         for (Vertex v : vertices) {
             v.setPosition(new Point(0, curY));
             curY += v.getSize().getHeight();
         }
-
     }
-
-    @Override
-    public void doRouting(LayoutGraph graph) {}
 }

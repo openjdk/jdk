@@ -30,51 +30,30 @@ import java.util.List;
 
 public class BlockConnection implements Connection {
 
-    @Override
-    public boolean isVIP() {
-        return style == ConnectionStyle.BOLD;
-    }
-
-    private Block sourceBlock;
-    private Block destinationBlock;
-    private Color color;
-    private ConnectionStyle style;
+    private final Block sourceBlock;
+    private final Block destinationBlock;
+    private final String label;
     private List<Point> controlPoints;
-    private String label;
 
     public BlockConnection(Block src, Block dst, String label) {
         this.sourceBlock = src;
         this.destinationBlock = dst;
         this.label = label;
-        this.color = Color.BLACK;
-        this.style = ConnectionStyle.NORMAL;
     }
 
     public Color getColor() {
-        return color;
+        return Color.BLUE;
     }
 
     public ConnectionStyle getStyle() {
-        return style;
-    }
-
-    public void setColor(Color c) {
-        color = c;
-    }
-
-    public void setStyle(ConnectionStyle s) {
-        style = s;
-    }
-
-    public String getLabel() {
-        return label;
+        return ConnectionStyle.BOLD;
     }
 
     @Override
     public String getToolTipText() {
         StringBuilder builder = new StringBuilder();
-        builder.append("B" + sourceBlock.getInputBlock().getName() + " → " +
-                       "B" + destinationBlock.getInputBlock().getName());
+        builder.append("B").append(sourceBlock.getInputBlock().getName())
+               .append(" → B").append(destinationBlock.getInputBlock().getName());
         if (label != null) {
             builder.append(": ").append(label);
         }
@@ -104,6 +83,11 @@ public class BlockConnection implements Connection {
     @Override
     public Block getToCluster() {
         return destinationBlock;
+    }
+
+    @Override
+    public boolean isVIP() {
+        return true;
     }
 
     @Override
