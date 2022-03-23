@@ -1710,19 +1710,13 @@ public final class SSLSocketImpl
 
     private Plaintext handleEOF(EOFException eofe) throws IOException {
         if (requireCloseNotify || conContext.handshakeContext != null) {
-            SSLException ssle;
             if (conContext.handshakeContext != null) {
-                ssle = new SSLHandshakeException(
-                        "Remote host terminated the handshake");
+                throw new SSLHandshakeException(
+                        "Remote host terminated the handshake",  eofe);
             } else {
-                ssle = new SSLProtocolException(
-                        "Remote host terminated the connection");
+                throw new SSLProtocolException(
+                        "Remote host terminated the connection", eofe);
             }
-
-            if (eofe != null) {
-                ssle.initCause(eofe);
-            }
-            throw ssle;
         } else {
             // treat as if we had received a close_notify
             conContext.isInputCloseNotified = true;
