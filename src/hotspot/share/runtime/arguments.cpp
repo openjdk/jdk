@@ -902,6 +902,10 @@ static bool set_fp_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin 
   if ((errno != 0) || (*end != 0)) {
     return false;
   }
+  if (g_isnan(v) || !g_isfinite(v)) {
+    // Currently we cannot handle these special values.
+    return false;
+  }
 
   if (JVMFlagAccess::set_double(flag, &v, origin) == JVMFlag::SUCCESS) {
     return true;

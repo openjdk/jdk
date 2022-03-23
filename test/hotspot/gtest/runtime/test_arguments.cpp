@@ -277,7 +277,15 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
     check_invalid_numeric_string(flag, invalid_strings);
   }
 
-  if (!is_double) {
+  if (is_double) {
+    const char* invalid_strings_for_double[] = {
+      "INF", "Inf", "Infinity", "INFINITY",
+      "-INF", "-Inf", "-Infinity", "-INFINITY",
+      "nan", "NAN", "NaN",
+      NULL,
+    };
+    check_invalid_numeric_string(flag, invalid_strings_for_double);
+  } else {
     const char* invalid_strings_for_integers[] = {
       "1.0", "0x4.5", "0.001", "4e10",
       "999999999999999999999999999999",
@@ -577,8 +585,6 @@ TEST_VM_F(ArgumentsTest, set_numeric_flag_double) {
     // More test cases
     "1.5", "6.02e23", "-6.02e+23",
     "1.7976931348623157E+308", // max double
-    "INF", "Inf", "Infinity", "INFINITY",
-    "-INF", "-Inf", "-Infinity", "-INFINITY",
     "-0", "0",
     "0x1.91eb85p+1",
     "999999999999999999999999999999",
