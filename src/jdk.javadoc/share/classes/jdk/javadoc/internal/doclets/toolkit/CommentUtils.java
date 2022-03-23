@@ -504,26 +504,24 @@ public class CommentUtils {
     }
 
     /**
-     * Returns a list containing the string for a given key in the doclet's resources,
-     * formatted with given arguments.
+     * {@return a list containing the string for a given key in the doclet's
+     * resources, formatted with given arguments}
      *
      * @param key the key for the desired string
      * @param o0  string or DocTree argument to be formatted into the result
-     * @return a content for the text
      */
     public List<? extends DocTree> getComment(String key, Object o0) {
         return getComment(key, o0, null, null);
     }
 
     /**
-     * Returns a list containing the string for a given key in the doclet's resources,
-     * formatted with given arguments.
+     * {@return a list containing the string for a given key in the doclet's
+     * resources, formatted with given arguments}
      *
-     * @param key the key for the desired string
+     * @param key the key for the desired strings
      * @param o0  string or a DocTree argument to be formatted into the result
      * @param o1  string or a DocTree argument to be formatted into the result
      * @param o2  string or a DocTree argument to be formatted into the result
-     * @return a content for the text
      */
     public List<? extends DocTree> getComment(String key, Object o0, Object o1, Object o2) {
         List<DocTree> l = new ArrayList<>();
