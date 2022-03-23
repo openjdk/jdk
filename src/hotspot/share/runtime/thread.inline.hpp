@@ -157,7 +157,22 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   virtual bool should_throw() { return true; }
 };
 
+class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
+ public:
+  UnsafeAccessErrorHandshake() : AsyncHandshakeClosure("UnsafeAccessErrorHandshake") {}
+  void do_thread(Thread* thr) {
+    JavaThread* self = JavaThread::cast(thr);
+    assert(self == JavaThread::current(), "must be");
+
+    self->handshake_state()->handle_unsafe_access_error();
+  }
+  bool is_async_exception()   { return true; }
+};
+
 inline void JavaThread::set_pending_unsafe_access_error() {
+  if (!has_async_exception_condition()) {
+    Handshake::execute(new UnsafeAccessErrorHandshake(), this);
+  }
 }
 
 inline bool JavaThread::has_async_exception_condition(bool ThreadDeath_only) {

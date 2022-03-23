@@ -520,8 +520,8 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
   while (has_operation()) {
-    // Handshakes cannot safely safepoint. The exception to this rule is
-    // the asynchronous suspension.
+    // Handshakes cannot safely safepoint. The exceptions to this rule are
+    // the asynchronous suspension and unsafe access error handshakes.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
     HandshakeOperation* op = get_op_for_self(allow_suspend, check_async_exception);
@@ -540,8 +540,8 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
         // An asynchronous handshake may put the JavaThread in blocked state (safepoint safe).
         // The destructor ~PreserveExceptionMark touches the exception oop so it must not be executed,
         // since a safepoint may be in-progress when returning from the async handshake.
-        op->do_handshake(_handshakee);
         remove_op(op);
+        op->do_handshake(_handshakee);
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
         delete op;
         return true; // Must check for safepoints
@@ -752,4 +752,29 @@ bool HandshakeState::resume() {
   set_suspended(false);
   _lock.notify();
   return true;
+}
+
+void HandshakeState::handle_unsafe_access_error() {
+  if (is_suspended()) {
+    // A suspend handshake was added to the queue after the
+    // unsafe access error. Since the suspender has already
+    // considered this JT as suspended and assumes it won't go
+    // back to Java until resumed we cannot create the exception
+    // object yet. Add a new unsafe access error operation to
+    // the end of the queue and try again in the next attempt.
+    Handshake::execute(new UnsafeAccessErrorHandshake(), _handshakee);
+    log_error(handshake)("JavaThread " INTPTR_FORMAT " skipping unsafe accesss processing due to suspend.", p2i(_handshakee));
+    return;
+  }
+  // Release the handshake lock before constructing the oop to
+  // avoid deadlocks since that can block. This will allow the
+  // JavaThread to execute normally as if it would be outside
+  // a handshake. We will reacquire the handshake lock at return
+  // from ~MutexUnlocker.
+  MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
+  if (h_exception()->is_a(vmClasses::InternalError_klass())) {
+    java_lang_InternalError::set_during_unsafe_access(h_exception());
+  }
+  _handshakee->handle_async_exception(h_exception());
 }

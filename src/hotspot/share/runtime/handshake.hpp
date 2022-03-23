@@ -37,6 +37,7 @@ class AsyncHandshakeOperation;
 class JavaThread;
 class SuspendThreadHandshake;
 class ThreadSelfSuspensionHandshake;
+class UnsafeAccessErrorHandshake;
 class ThreadsListHandle;
 
 // A handshake closure is a callback that is executed for a JavaThread
@@ -90,6 +91,7 @@ class JvmtiRawMonitor;
 class HandshakeState {
   friend ThreadSelfSuspensionHandshake;
   friend SuspendThreadHandshake;
+  friend UnsafeAccessErrorHandshake;
   friend JavaThread;
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
@@ -156,6 +158,7 @@ class HandshakeState {
 
   bool async_exceptions_blocked() { return _async_exceptions_blocked; }
   void set_async_exceptions_blocked(bool b) { _async_exceptions_blocked = b; }
+  void handle_unsafe_access_error();
 
   // Suspend/resume support
  private:
