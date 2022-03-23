@@ -44,8 +44,8 @@ public class AddINodeIdealizationTests {
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
-                 "testXPlus_PosConMinusY_", "testXPlus_NegConMinusY_",
-                 "test_PosConMinusY_PlusX", "test_NegConMinusY_PlusX"})
+                 "test20", "test21", "test22",
+                 "test23"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -84,10 +84,10 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ(a*b + b*c        , test17(a, b, c));
         Asserts.assertEQ(a*c + b*c        , test18(a, b, c));
         Asserts.assertEQ(a*b + c*a        , test19(a, b, c));
-        Asserts.assertEQ((a - b) + 210    , testXPlus_PosConMinusY_(a, b));
-        Asserts.assertEQ((a - b) + 190    , testXPlus_NegConMinusY_(a, b));
-        Asserts.assertEQ((a - b) + 210    , test_PosConMinusY_PlusX(a, b));
-        Asserts.assertEQ((a - b) + 190    , test_NegConMinusY_PlusX(a, b));
+        Asserts.assertEQ((a - b) + 210    , test20(a, b));
+        Asserts.assertEQ((a - b) + 190    , test21(a, b));
+        Asserts.assertEQ((a - b) + 210    , test22(a, b));
+        Asserts.assertEQ((a - b) + 190    , test23(a, b));
     }
 
     @Test
@@ -260,7 +260,7 @@ public class AddINodeIdealizationTests {
                   IRNode.CON_I, "1"})
     // Checks x + (con - y) => (x - y) + con
     // where con > 0
-    public int testXPlus_PosConMinusY_(int x, int y) {
+    public int test20(int x, int y) {
         return x + (10 - y) + 200; // transformed to (x - y) + 210;
     }
 
@@ -270,7 +270,7 @@ public class AddINodeIdealizationTests {
                   IRNode.CON_I, "1"})
     // Checks x + (con - y) => (x - y) + con
     // where con < 0
-    public int testXPlus_NegConMinusY_(int x, int y) {
+    public int test21(int x, int y) {
         return x + (-10 - y) + 200; // transformed to (x - y) + 190;
     }
 
@@ -280,7 +280,7 @@ public class AddINodeIdealizationTests {
                   IRNode.CON_I, "1"})
     // Checks (con - y) + x => (x - y) + con
     // where con > 0
-    public int test_PosConMinusY_PlusX(int x, int y) {
+    public int test22(int x, int y) {
         return (10 - y) + x + 200; // transformed to (x - y) + 210;
     }
 
@@ -290,7 +290,7 @@ public class AddINodeIdealizationTests {
                   IRNode.CON_I, "1"})
     // Checks (con - y) + x => (x - y) + con
     // where con < 0
-    public int test_NegConMinusY_PlusX(int x, int y) {
+    public int test23(int x, int y) {
         return x + (-10 - y) + 200; // transformed to (x - y) + 190;
     }
 }

@@ -43,9 +43,8 @@ public class AddLNodeIdealizationTests {
                  "test8", "test9", "test10",
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
-                 "test17", "test18",
-                 "testXPlus_PosConMinusY_", "testXPlus_NegConMinusY_",
-                 "test_PosConMinusY_PlusX", "test_NegConMinusY_PlusX"})
+                 "test17", "test18", "test19",
+                 "test20","test21", "test22"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -83,10 +82,10 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ(a*b + b*c                   , test16(a, b, c));
         Asserts.assertEQ(a*c + b*c                   , test17(a, b, c));
         Asserts.assertEQ(a*b + c*a                   , test18(a, b, c));
-        Asserts.assertEQ((a - b) + 123_456_789_123L  , testXPlus_PosConMinusY_(a, b));
-        Asserts.assertEQ((a - b) + -123_456_788_877L , testXPlus_NegConMinusY_(a, b));
-        Asserts.assertEQ((a - b) + 123_456_789_123L  , test_PosConMinusY_PlusX(a, b));
-        Asserts.assertEQ((a - b) + -123_456_788_877L , test_NegConMinusY_PlusX(a, b));
+        Asserts.assertEQ((a - b) + 123_456_789_123L  , test19(a, b));
+        Asserts.assertEQ((a - b) + -123_456_788_877L , test20(a, b));
+        Asserts.assertEQ((a - b) + 123_456_789_123L  , test21(a, b));
+        Asserts.assertEQ((a - b) + -123_456_788_877L , test22(a, b));
     }
 
     @Test
@@ -251,7 +250,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.CON_L, "1"})
     // Checks x + (con - y) => (x - y) + con
     // where con > 0
-    public long testXPlus_PosConMinusY_(long x, long y) {
+    public long test19(long x, long y) {
         return x + (123_456_789_000L - y) + 123;
         // transformed to (x - y) + 123_456_789_123L;
     }
@@ -262,7 +261,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.CON_L, "1"})
     // Checks x + (con - y) => (x - y) + con
     // where con < 0
-    public long testXPlus_NegConMinusY_(long x, long y) {
+    public long test20(long x, long y) {
         return x + (-123_456_789_000L - y) + 123;
         // transformed to (x - y) + -123_456_788_877L;
     }
@@ -273,7 +272,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.CON_L, "1"})
     // Checks (con - y) + x => (x - y) + con
     // where con > 0
-    public long test_PosConMinusY_PlusX(long x, long y) {
+    public long test21(long x, long y) {
         return x + (123_456_789_000L - y) + 123;
         // transformed to (x - y) + 123_456_789_123L;
     }
@@ -284,7 +283,7 @@ public class AddLNodeIdealizationTests {
                   IRNode.CON_L, "1"})
     // Checks (con - y) + x => (x - y) + con
     // where con < 0
-    public long test_NegConMinusY_PlusX(long x, long y) {
+    public long test22(long x, long y) {
         return x + (-123_456_789_000L - y) + 123;
         // transformed to (x - y) + -123_456_788_877L;
     }
