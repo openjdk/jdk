@@ -421,7 +421,8 @@ class DirectMethodHandle extends MethodHandle {
                                                recv.getClass().getName(), caller.getName());
                     throw new IncompatibleClassChangeError(msg);
                 } else {
-                    throw new NullPointerException("Cannot invoke " + member + " with null receiver");
+                    String msg = String.format("Cannot invoke %s with null receiver", member);
+                    throw new NullPointerException(msg);
                 }
             }
             return recv;
@@ -453,7 +454,8 @@ class DirectMethodHandle extends MethodHandle {
                                                recv.getClass().getName(), refc.getName());
                     throw new IncompatibleClassChangeError(msg);
                 } else {
-                    throw new NullPointerException("Cannot invoke " + member + " with null receiver");
+                    String msg = String.format("Cannot invoke %s with null receiver", member);
+                    throw new NullPointerException(msg);
                 }
             }
             return recv;
