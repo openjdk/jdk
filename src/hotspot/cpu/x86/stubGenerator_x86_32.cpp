@@ -3633,7 +3633,6 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister zmm_bState = xmm5;
     const XMMRegister zmm_cState = xmm6;
     const XMMRegister zmm_dState = xmm7;
-    const XMMRegister zmm_addMask = xmm8;
 
     __ enter();
 
@@ -3646,19 +3645,18 @@ class StubGenerator: public StubCodeGenerator {
     // We will broadcast each 128-bit segment of the state array into
     // all four double-quadword slots on ZMM State registers.  They will
     // be copied into the working ZMM registers and then added back in
-    // at the very end of the block function.
-    // Also pull the add mask from memory into a register for use at the
-    // beginning and end of the block function.
+    // at the very end of the block function.  The add mask should be
+    // applied to the zmm_dState register so it does not need to be fetched
+    // when adding the start state back into the final working state.
     __ evbroadcasti32x4(zmm_aState, Address(state, 0), Assembler::AVX_512bit);
     __ evbroadcasti32x4(zmm_bState, Address(state, 16), Assembler::AVX_512bit);
     __ evbroadcasti32x4(zmm_cState, Address(state, 32), Assembler::AVX_512bit);
     __ evbroadcasti32x4(zmm_dState, Address(state, 48), Assembler::AVX_512bit);
-    __ evmovdquq(zmm_addMask, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx512()), Assembler::AVX_512bit, rax);
+    __ vpaddd(zmm_dState, zmm_dState, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx512()), Assembler::AVX_512bit, rax);
     __ evmovdquq(zmm_aVec, zmm_aState, Assembler::AVX_512bit);
     __ evmovdquq(zmm_bVec, zmm_bState, Assembler::AVX_512bit);
     __ evmovdquq(zmm_cVec, zmm_cState, Assembler::AVX_512bit);
     __ evmovdquq(zmm_dVec, zmm_dState, Assembler::AVX_512bit);
-    __ vpaddd(zmm_dVec, zmm_dVec, zmm_addMask, Assembler::AVX_512bit);
 
     __ movl(loopCounter, 10);                       // Set 10 2-round iterations
     __ BIND(L_twoRounds);
@@ -3740,7 +3738,6 @@ class StubGenerator: public StubCodeGenerator {
     __ vpaddd(zmm_bVec, zmm_bVec, zmm_bState, Assembler::AVX_512bit);
     __ vpaddd(zmm_cVec, zmm_cVec, zmm_cState, Assembler::AVX_512bit);
     __ vpaddd(zmm_dVec, zmm_dVec, zmm_dState, Assembler::AVX_512bit);
-    __ vpaddd(zmm_dVec, zmm_dVec, zmm_addMask, Assembler::AVX_512bit);
 
     // Write the ZMM state registers out to the key stream buffer
     // Each ZMM is divided into 4 128-bit segments.  Each segment
