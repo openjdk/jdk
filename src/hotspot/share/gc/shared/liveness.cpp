@@ -123,19 +123,15 @@ bool LivenessEstimatorThread::estimate_liveness() {
 
   log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
-  size_t oops_visited = _mark_stack.size(); // TODO: I think this is double-counting the roots, should start at zero.
   LivenessOopClosure cl(this);
   SuspendibleThreadSetJoiner sst;
   while (!_mark_stack.is_empty()) {
     oop obj = _mark_stack.pop();
     obj->oop_iterate(&cl);
-    ++oops_visited;
     if (!check_yield_and_continue(&sst)) {
       return false;
     }
   }
-
-  log_info(gc, estimator)("Visited " SIZE_FORMAT " oops", oops_visited);
 
   Tickspan total_scan_time = Ticks::now() - start;
   Tickspan non_root_scan_time = total_scan_time - root_scan_time;
