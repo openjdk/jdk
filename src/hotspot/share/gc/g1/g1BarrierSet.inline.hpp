@@ -34,11 +34,27 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
 
-inline void G1BarrierSet::enqueue(oop pre_val) {
+inline void G1BarrierSet::enqueue_oop(oop pre_val) {
   // Nulls should have been already filtered.
   assert(oopDesc::is_oop(pre_val, true), "Error");
+
+  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
+  if (!queue_set.is_active()) return;
+
   SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
-  G1BarrierSet::satb_mark_queue_set().enqueue(queue, pre_val);
+  queue_set.enqueue_known_active(queue, pre_val);
+}
+
+template <class T>
+inline void G1BarrierSet::enqueue(T* dst) {
+  G1SATBMarkQueueSet& queue_set = G1BarrierSet::satb_mark_queue_set();
+  if (!queue_set.is_active()) return;
+
+  T heap_oop = RawAccess<MO_RELAXED>::oop_load(dst);
+  if (!CompressedOops::is_null(heap_oop)) {
+    SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
+    queue_set.enqueue_known_active(queue, CompressedOops::decode_not_null(heap_oop));
+  }
 }
 
 template <DecoratorSet decorators, typename T>
@@ -48,10 +64,7 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
     return;
   }
 
-  T heap_oop = RawAccess<MO_RELAXED>::oop_load(field);
-  if (!CompressedOops::is_null(heap_oop)) {
-    enqueue(CompressedOops::decode_not_null(heap_oop));
-  }
+  enqueue(field);
 }
 
 template <DecoratorSet decorators, typename T>
@@ -73,7 +86,7 @@ inline void G1BarrierSet::enqueue_if_weak(DecoratorSet decorators, oop value) {
   const bool needs_enqueue     = (!peek && !on_strong_oop_ref);
 
   if (needs_enqueue && value != NULL) {
-    enqueue(value);
+    enqueue_oop(value);
   }
 }
 
