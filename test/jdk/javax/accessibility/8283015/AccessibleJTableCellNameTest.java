@@ -40,6 +40,7 @@ import javax.swing.SwingUtilities;
 public class AccessibleJTableCellNameTest {
     private static JTable jTable;
     private static JFrame jFrame;
+    private static volatile Accessible accessible;
 
     private static Object[][] rowData = {
         { "01", "02", "03", "04", "05" },
@@ -57,15 +58,17 @@ public class AccessibleJTableCellNameTest {
             robot.setAutoDelay(500);
             robot.waitForIdle();
 
-            for (int i = 0; i <= colNames.length - 1; i++) {
-                Accessible accessible = jTable.getAccessibleContext().getAccessibleTable()
-                    .getAccessibleColumnHeader().getAccessibleAt(0, i);
+            SwingUtilities.invokeAndWait(() -> {
+                for (int i = 0; i <= colNames.length - 1; i++) {
+                    Accessible accessible = jTable.getAccessibleContext().getAccessibleTable()
+                        .getAccessibleColumnHeader().getAccessibleAt(0, i);
 
-                if (!(accessible.getAccessibleContext().getAccessibleName().equals(colNames[i]))) {
-                    throw new RuntimeException(
-                        "AccessibleJTableCell.getAccessibleName returns correct name for header cells");
+                    if (!(accessible.getAccessibleContext().getAccessibleName().equals(colNames[i]))) {
+                        throw new RuntimeException(
+                            "AccessibleJTableCell.getAccessibleName returns correct name for header cells");
+                    }
                 }
-            }
+	    });
         } finally {
             SwingUtilities.invokeAndWait(() -> jFrame.dispose());
         }
