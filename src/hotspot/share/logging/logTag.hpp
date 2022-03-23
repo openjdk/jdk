@@ -73,6 +73,7 @@ class outputStream;
   LOG_TAG(dump) \
   LOG_TAG(dynamic) \
   LOG_TAG(ergo) \
+  LOG_TAG(estimator) \
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \

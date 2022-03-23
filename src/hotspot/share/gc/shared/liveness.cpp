@@ -68,7 +68,7 @@ void LivenessEstimatorThread::initialize_mark_bit_map() {
   size_t bitmap_size = MarkBitMap::compute_size(summary.reserved_size());
   bitmap_size = align_up(bitmap_size, bitmap_page_size);
 
-  log_info(gc)("LivenessEstimator: start: " PTR_FORMAT ", max_capacity: " SIZE_FORMAT ", reserved_size: " SIZE_FORMAT,
+  log_info(gc, estimator)("Start: " PTR_FORMAT ", max_capacity: " SIZE_FORMAT ", reserved_size: " SIZE_FORMAT,
                p2i(summary.start()), heap->max_capacity(), summary.reserved_size());
 
   ReservedSpace bitmap(bitmap_size, bitmap_page_size);
@@ -83,11 +83,11 @@ void LivenessEstimatorThread::run_service() {
     // Start with a wait because there is nothing interesting in the heap yet.
     MonitorLocker locker(&_lock,Monitor::SafepointCheckFlag::_no_safepoint_check_flag);
     bool timeout = locker.wait(ConcLivenessEstimateSeconds * MILLIUNITS);
-    log_info(gc)("Estimator: starting, scheduled: %s", BOOL_TO_STR(timeout));
+    log_info(gc, estimator)("Starting, scheduled: %s", BOOL_TO_STR(timeout));
 
     if (!is_concurrent_gc_active() && estimation_begin()) {
       bool completed = estimate_liveness();
-      log_info(gc)("Estimator: completed: %s", BOOL_TO_STR(completed));
+      log_info(gc, estimator)("Completed: %s", BOOL_TO_STR(completed));
       estimation_end(completed);
     }
   }
@@ -117,7 +117,7 @@ bool LivenessEstimatorThread::estimate_liveness() {
   VM_LivenessRootScan root_scan(this);
   VMThread::execute(&root_scan);
 
-  log_info(gc)("Estimator: mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
+  log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
   size_t oops_visited = _mark_stack.size();
   LivenessOopClosure cl(this);
@@ -131,7 +131,7 @@ bool LivenessEstimatorThread::estimate_liveness() {
     }
   }
 
-  log_info(gc)("Estimator: visited " SIZE_FORMAT " oops", oops_visited);
+  log_info(gc, estimator)("Visited " SIZE_FORMAT " oops", oops_visited);
   return true;
 }
 
@@ -152,7 +152,7 @@ void LivenessEstimatorThread::do_roots() {
 void LivenessEstimatorThread::do_oop(oop obj) {
   if (!_mark_bit_map.is_marked(obj)) {
     if (_mark_stack.is_full()) {
-      log_warning(gc)("Estimator: mark stack is full");
+      log_warning(gc, estimator)("Mark stack is full");
     } else {
       _mark_bit_map.mark(obj);
       _mark_stack.push(obj);
@@ -183,20 +183,20 @@ void LivenessEstimatorThread::stop_service() {
   // We could have a long timeout on the wait before the estimator thread wakes up
   MonitorLocker locker(&_lock);
   _lock.notify();
-  log_info(gc)("Notified estimator thread to wakeup.");
+  log_info(gc, estimator)("Notified estimator thread to wakeup.");
 }
 
 void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_bytes) {
-  log_info(gc)("Estimator: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " bytes", count, size_bytes);
+  log_info(gc, estimator)("Summary: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " bytes", count, size_bytes);
 
   EventLiveSetEstimate evt;
   if (evt.should_commit()) {
-    log_info(gc)("Estimator: sending JFR event");
+    log_info(gc, estimator)("Sending JFR event");
     evt.set_objectCount(count);
     evt.set_size(size_bytes);
     evt.commit();
   } else {
-    log_info(gc)("Estimator: skipping JFR event because it's disabled");
+    log_info(gc, estimator)("Skipping JFR event because it's disabled");
   }
 }
 
@@ -212,7 +212,7 @@ const char* LivenessEstimatorThread::type_name() const {
 
 bool LivenessEstimatorThread::commit_bit_map_memory() {
   if (!os::commit_memory((char*)_mark_bit_map_region.start(), _mark_bit_map_region.byte_size(), false)) {
-    log_warning(gc)("Estimator: could not commit native memory for marking bitmap, estimator failed");
+    log_warning(gc, estimator)("Could not commit native memory for marking bitmap, estimator failed");
     return false;
   }
   return true;
@@ -220,7 +220,7 @@ bool LivenessEstimatorThread::commit_bit_map_memory() {
 
 bool LivenessEstimatorThread::uncommit_bit_map_memory() {
   if (!os::uncommit_memory((char*)_mark_bit_map_region.start(), _mark_bit_map_region.byte_size())) {
-    log_warning(gc)("Estimator: could not uncommit native memory for marking bitmap");
+    log_warning(gc, estimator)("Could not uncommit native memory for marking bitmap");
     return false;
   }
   return true;
