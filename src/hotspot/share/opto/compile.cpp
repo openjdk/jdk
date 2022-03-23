@@ -249,6 +249,7 @@ void Compile::print_statistics() {
   { ttyLocker ttyl;
     if (xtty != NULL)  xtty->head("statistics type='opto'");
     Parse::print_statistics();
+    PhaseStringOpts::print_statistics();
     PhaseCCP::print_statistics();
     PhaseRegAlloc::print_statistics();
     PhaseOutput::print_statistics();
