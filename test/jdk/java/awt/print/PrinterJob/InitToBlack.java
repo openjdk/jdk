@@ -168,7 +168,7 @@ public class InitToBlack implements Printable {
                     "on Print button.");
         }
         if (!CountDownLatch.await(2, TimeUnit.MINUTES)) {
-            throw new RuntimeException("Timeout : User did not decided " +
+            throw new RuntimeException("Timeout : User did not decide " +
                     "whether test passed or failed");
         }
 
