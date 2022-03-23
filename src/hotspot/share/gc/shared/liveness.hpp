@@ -42,12 +42,14 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   bool estimate_liveness();
   void do_roots();
   void do_oop(oop obj);
-  void send_live_set_estimate(size_t live_set_bytes);
+  void send_live_set_estimate(size_t count, size_t size_bytes);
 
   Monitor _lock;
   MarkBitMap _mark_bit_map;
   MemRegion _mark_bit_map_region;
   EstimatorStack _mark_stack;
+  size_t _all_object_count;
+  size_t _all_object_size_words;
 };
 
 

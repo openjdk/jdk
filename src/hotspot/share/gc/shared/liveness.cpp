@@ -95,6 +95,8 @@ void LivenessEstimatorThread::run_service() {
 
 bool LivenessEstimatorThread::estimation_begin() {
   assert(_mark_stack.is_empty(), "Unexpected oops in mark stack");
+  _all_object_count = 0;
+  _all_object_size_words = 0;
   return commit_bit_map_memory();
 }
 
@@ -102,7 +104,8 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
   uncommit_bit_map_memory();
   if (completed) {
     assert(_mark_stack.is_empty(), "Should have empty mark stack if scan completed");
-    send_live_set_estimate(42);
+    size_t _all_object_size_bytes = _all_object_size_words * HeapWordSize;
+    send_live_set_estimate(_all_object_count, _all_object_size_bytes);
   } else {
     _mark_stack.clear(true);
   }
@@ -117,21 +120,18 @@ bool LivenessEstimatorThread::estimate_liveness() {
   log_info(gc)("Estimator: mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
   size_t oops_visited = _mark_stack.size();
-  size_t total_size_words = 0; // TODO: include roots size?
   LivenessOopClosure cl(this);
   SuspendibleThreadSetJoiner sst;
   while (!_mark_stack.is_empty()) {
     oop obj = _mark_stack.pop();
     obj->oop_iterate(&cl);
-    total_size_words += obj->size();
     ++oops_visited;
     if (!check_yield_and_continue(&sst)) {
       return false;
     }
   }
-  size_t total_size_bytes = total_size_words * HeapWordSize;
 
-  log_info(gc)("Estimator: visited " SIZE_FORMAT " oops, total size " SIZE_FORMAT " bytes", oops_visited, total_size_bytes);
+  log_info(gc)("Estimator: visited " SIZE_FORMAT " oops", oops_visited);
   return true;
 }
 
@@ -156,6 +156,8 @@ void LivenessEstimatorThread::do_oop(oop obj) {
     } else {
       _mark_bit_map.mark(obj);
       _mark_stack.push(obj);
+      _all_object_count++;
+      _all_object_size_words += obj->size();
     }
   }
 }
@@ -184,12 +186,17 @@ void LivenessEstimatorThread::stop_service() {
   log_info(gc)("Notified estimator thread to wakeup.");
 }
 
-void LivenessEstimatorThread::send_live_set_estimate(size_t live_set_bytes) {
+void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_bytes) {
+  log_info(gc)("Estimator: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " bytes", count, size_bytes);
+
   EventLiveSetEstimate evt;
   if (evt.should_commit()) {
-    // TODO: We could add object count here?
-    evt.set_estimatedLiveSetSize(live_set_bytes);
+    log_info(gc)("Estimator: sending JFR event");
+    evt.set_objectCount(count);
+    evt.set_size(size_bytes);
     evt.commit();
+  } else {
+    log_info(gc)("Estimator: skipping JFR event because it's disabled");
   }
 }
 
