@@ -11,6 +11,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/stack.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/ticks.hpp"
 
 
 class VM_LivenessRootScan : public VM_Operation {
@@ -112,10 +113,13 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
 }
 
 bool LivenessEstimatorThread::estimate_liveness() {
+  Ticks start = Ticks::now();
   // Run root scan on a safepoint. Much of this could be done concurrently,
   // but that would also take much longer to implement.
   VM_LivenessRootScan root_scan(this);
   VMThread::execute(&root_scan);
+
+  Tickspan root_scan_time = Ticks::now() - start;
 
   log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
@@ -132,6 +136,15 @@ bool LivenessEstimatorThread::estimate_liveness() {
   }
 
   log_info(gc, estimator)("Visited " SIZE_FORMAT " oops", oops_visited);
+
+  Tickspan total_scan_time = Ticks::now() - start;
+  Tickspan non_root_scan_time = total_scan_time - root_scan_time;
+
+  log_info(gc, estimator)("Phase timings:");
+  log_info(gc, estimator)("    Total scan       : %fms", total_scan_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Root scan (pause): %fms", root_scan_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Non-root scan    : %fms", non_root_scan_time.seconds() * MILLIUNITS);
+
   return true;
 }
 
