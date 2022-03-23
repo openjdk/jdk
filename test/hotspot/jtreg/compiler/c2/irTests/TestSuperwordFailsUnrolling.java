@@ -46,7 +46,6 @@ public class TestSuperwordFailsUnrolling {
             TestFramework.runWithFlags("-XX:UseAVX=2");
         }
         TestFramework.run();
-
     }
 
     @Test
