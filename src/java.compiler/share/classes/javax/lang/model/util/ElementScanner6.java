@@ -35,7 +35,7 @@ import static javax.lang.model.SourceVersion.*;
  * A scanning visitor of program elements with default behavior
  * appropriate for the {@link SourceVersion#RELEASE_6 RELEASE_6}
  * source version.  The <code>visit<i>Xyz</i></code> methods in this
- * class scan their component elements by calling {@code scan} on
+ * class scan their component elements by calling {@link #scan(Element, P) scan} on
  * their {@linkplain Element#getEnclosedElements enclosed elements},
  * {@linkplain ExecutableElement#getParameters parameters}, etc., as
  * indicated in the individual method specifications.  A subclass can
