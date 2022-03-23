@@ -25,7 +25,8 @@
  * @test
  * @key headful
  * @bug 4715496
- * @summary AccessibleJTableCell.getAccessible name incorrectly returns cell instance string instead of cell text.
+ * @summary AccessibleJTableCell.getAccessible name incorrectly returns
+ * cell instance string instead of cell text.
  * @run main AccessibleJTableCellNameTest
  */
 
