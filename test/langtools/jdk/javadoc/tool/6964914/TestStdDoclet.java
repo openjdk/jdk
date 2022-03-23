@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,8 @@ public class TestStdDoclet {
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",
+                "-J-Duser.language=en",
+                "-J-Duser.country=US",
                 new File(testSrc, thisClassName + ".java").getPath()
         ));
         Process p = new ProcessBuilder()
