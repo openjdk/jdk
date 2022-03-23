@@ -742,7 +742,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           maybe-uninitialized shift-negative-value implicit-fallthrough \
           unused-function, \
       DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare \
-          deprecated-declarations, \
+          deprecated-declarations null-pointer-subtraction, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
