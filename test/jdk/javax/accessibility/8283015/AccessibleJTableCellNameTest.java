@@ -68,7 +68,7 @@ public class AccessibleJTableCellNameTest {
                             "AccessibleJTableCell.getAccessibleName returns correct name for header cells");
                     }
                 }
-	    });
+            });
         } finally {
             SwingUtilities.invokeAndWait(() -> jFrame.dispose());
         }
