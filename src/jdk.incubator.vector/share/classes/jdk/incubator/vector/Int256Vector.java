@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,12 @@ final class Int256Vector extends IntVector {
     @ForceInline
     public final Int256Mask test(Test op) {
         return super.testTemplate(Int256Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Int256Mask test(Test op, VectorMask<Integer> m) {
+        return super.testTemplate(Int256Mask.class, op, (Int256Mask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -741,9 +747,9 @@ final class Int256Vector extends IntVector {
         @ForceInline
         /*package-private*/
         static Int256Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Int256Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Int256Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Int256Mask  TRUE_MASK = new Int256Mask(true);
         private static final Int256Mask FALSE_MASK = new Int256Mask(false);

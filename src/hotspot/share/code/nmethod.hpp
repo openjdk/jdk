@@ -256,7 +256,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  volatile long _stack_traversal_mark;
+  volatile int64_t _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -538,8 +538,8 @@ public:
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
 
   // Sweeper support
-  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
-  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
+  int64_t stack_traversal_mark()                  { return _stack_traversal_mark; }
+  void    set_stack_traversal_mark(int64_t l)     { _stack_traversal_mark = l; }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }

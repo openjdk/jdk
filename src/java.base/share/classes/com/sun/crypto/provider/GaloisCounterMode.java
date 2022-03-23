@@ -1304,7 +1304,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // 'len' includes ibuffer data
             checkDataLength(len, tagLenBytes);
             if (dst.remaining() < len + tagLenBytes) {
-                throw new ShortBufferException("Output buffer too small, must" +
+                throw new ShortBufferException("Output buffer too small, must " +
                     "be at least " + (len + tagLenBytes) + " bytes long");
             }
 
@@ -1472,7 +1472,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
 
             if (len - tagLenBytes > out.length - outOfs) {
-                throw new ShortBufferException("Output buffer too small, must" +
+                throw new ShortBufferException("Output buffer too small, must " +
                     "be at least " + (len - tagLenBytes) + " bytes long");
             }
 

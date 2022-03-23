@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,7 +54,7 @@ class InterfaceSupport: AllStatic {
  public:
   static unsigned int _scavenge_alot_counter;
   static unsigned int _fullgc_alot_counter;
-  static int _fullgc_alot_invocation;
+  static intx _fullgc_alot_invocation;
 
   // Helper methods used to implement +ScavengeALot and +FullGCALot
   static void check_gc_alot() { if (ScavengeALot || FullGCALot) gc_alot(); }
@@ -118,29 +118,6 @@ class ThreadStateTransition : public StackObj {
       thread->set_thread_state(to);
     }
   }
-};
-
-class ThreadInVMForHandshake : public ThreadStateTransition {
-  const JavaThreadState _original_state;
- public:
-  ThreadInVMForHandshake(JavaThread* thread) : ThreadStateTransition(thread),
-      _original_state(thread->thread_state()) {
-
-    if (thread->has_last_Java_frame()) {
-      thread->frame_anchor()->make_walkable(thread);
-    }
-
-    thread->set_thread_state(_thread_in_vm);
-
-    // Threads shouldn't block if they are in the middle of printing, but...
-    ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
-  }
-
-  ~ThreadInVMForHandshake() {
-    assert(_thread->thread_state() == _thread_in_vm, "should only call when leaving VM after handshake");
-    _thread->set_thread_state(_original_state);
-  }
-
 };
 
 class ThreadInVMfromJava : public ThreadStateTransition {
@@ -222,7 +199,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
   PRE_PROC& _pr;
   bool _allow_suspend;
  public:
-  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr = emptyOp, bool allow_suspend = false)
+  ThreadBlockInVMPreprocess(JavaThread* thread, PRE_PROC& pr, bool allow_suspend = false)
     : ThreadStateTransition(thread), _pr(pr), _allow_suspend(allow_suspend) {
     transition_from_vm(thread, _thread_blocked);
   }
@@ -236,11 +213,15 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
       SafepointMechanism::process_if_requested(_thread, _allow_suspend);
     }
   }
-
-  static void emptyOp(JavaThread* current) {}
 };
 
-typedef ThreadBlockInVMPreprocess<> ThreadBlockInVM;
+class ThreadBlockInVM  : public ThreadBlockInVMPreprocess<> {
+ public:
+  ThreadBlockInVM(JavaThread* thread, bool allow_suspend = false)
+    : ThreadBlockInVMPreprocess(thread, emptyOp, allow_suspend) {}
+ private:
+  static void emptyOp(JavaThread* current) {}
+};
 
 
 // Debug class instantiated in JRT_ENTRY macro.
@@ -359,6 +340,11 @@ class VMNativeEntryWrapper {
 #define JRT_END }
 
 // Definitions for JNI
+//
+// As the JNIEnv can be passed from external native code we validate
+// it in debug builds, primarily for our own testing. In general JNI
+// does not attempt to detect programming errors and a bad JNIEnv may
+// not even be readable.
 
 #define JNI_ENTRY(result_type, header)                               \
     JNI_ENTRY_NO_PRESERVE(result_type, header)                       \
@@ -368,7 +354,7 @@ class VMNativeEntryWrapper {
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    assert(thread == Thread::current(), "JNIEnv is only valid in same thread"); \
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
@@ -379,7 +365,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    assert(thread == Thread::current(), "JNIEnv is only valid in same thread"); \
     VM_LEAF_BASE(result_type, header)
 
 

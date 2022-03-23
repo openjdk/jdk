@@ -110,7 +110,7 @@ public class PKCS11 {
      * e.g. pk2priv.dll.
      */
     private final String pkcs11ModulePath;
-
+    private final CK_VERSION version;
     private long pNativeData;
 
     /**
@@ -141,13 +141,30 @@ public class PKCS11 {
      * path, if the driver is not in the system's search path.
      *
      * @param pkcs11ModulePath the PKCS#11 library path
+     * @param functionList the method name for retrieving the PKCS#11
+     *         function list; may be null if not set in config file
      * @preconditions (pkcs11ModulePath <> null)
      * @postconditions
      */
-    PKCS11(String pkcs11ModulePath, String functionListName)
+    PKCS11(String pkcs11ModulePath, String functionList)
             throws IOException {
-        connect(pkcs11ModulePath, functionListName);
+        this.version = connect(pkcs11ModulePath, functionList);
         this.pkcs11ModulePath = pkcs11ModulePath;
+        // bug in native PKCS#11 lib; workaround it by calling C_GetInfo()
+        // and get cryptoki version from there
+        if (this.version.major != 2 && this.version.major != 3) {
+            try {
+                CK_INFO p11Info = C_GetInfo();
+                this.version.major = p11Info.cryptokiVersion.major;
+                this.version.minor = p11Info.cryptokiVersion.minor;
+            } catch (PKCS11Exception e) {
+                // give up; just use what is returned by connect()
+            }
+        }
+    }
+
+    public CK_VERSION getVersion() {
+        return version;
     }
 
     public static synchronized PKCS11 getInstance(String pkcs11ModulePath,
@@ -186,11 +203,14 @@ public class PKCS11 {
      * native part.
      *
      * @param pkcs11ModulePath The PKCS#11 library path.
+     * @param functionList the method name for retrieving the PKCS#11
+     *         function list; may be null if not set in config file
+     * @return the actual PKCS11 interface version
      * @preconditions (pkcs11ModulePath <> null)
      * @postconditions
      */
-    private native void connect(String pkcs11ModulePath, String functionListName)
-            throws IOException;
+    private native CK_VERSION connect(String pkcs11ModulePath,
+            String functionList) throws IOException;
 
     /**
      * Disconnects the PKCS#11 library from this object. After calling this
@@ -463,6 +483,20 @@ public class PKCS11 {
     public native CK_SESSION_INFO C_GetSessionInfo(long hSession)
             throws PKCS11Exception;
 
+    /**
+     * C_SessionCancel terminates active session based operations.
+     * (Session management) (New in PKCS#11 v3.0)
+     *
+     * @param hSession the session's handle
+     *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+     * @param flags indicates the operations to cancel.
+     *         (PKCS#11 param: CK_FLAGS flags)
+     * @exception PKCS11Exception If function returns other value than CKR_OK.
+     * @preconditions
+     * @postconditions
+     */
+    public native void C_SessionCancel(long hSession, long flags)
+            throws PKCS11Exception;
 
     /**
      * C_GetOperationState obtains the state of the cryptographic operation
@@ -521,6 +555,24 @@ public class PKCS11 {
     public native void C_Login(long hSession, long userType, char[] pPin)
             throws PKCS11Exception;
 
+    ///**
+    // * C_LoginUser logs a user into a token. (New in PKCS#11 v3.0)
+    // * (Session management)
+    // *
+    // * @param hSession the session's handle
+    // *         (PKCS#11 param: CK_SESSION_HANDLE hSession)
+    // * @param userType the user type
+    // *         (PKCS#11 param: CK_USER_TYPE userType)
+    // * @param pPin the user's PIN and the length of the PIN
+    // *         (PKCS#11 param: CK_CHAR_PTR pPin, CK_ULONG ulPinLen)
+    // * @param pUsername the user name and the length of the user name
+    // *         (PKCS#11 param: CK_CHAR_PTR pUsername, CK_ULONG ulUsernameLen)
+    // * @exception PKCS11Exception If function returns other value than CKR_OK.
+    // * @preconditions
+    // * @postconditions
+    // */
+    //public native void C_LoginUser(long hSession, long userType, char[] pPin,
+    //        String pUsername) throws PKCS11Exception;
 
     /**
      * C_Logout logs a user out from a token.
@@ -807,7 +859,6 @@ public class PKCS11 {
     public native int C_EncryptFinal(long hSession, long directOut, byte[] out,
             int outOfs, int outLen) throws PKCS11Exception;
 
-
     /**
      * C_DecryptInit initializes a decryption operation.
      * (Encryption and decryption)
@@ -901,8 +952,6 @@ public class PKCS11 {
      */
     public native int C_DecryptFinal(long hSession, long directOut, byte[] out,
             int outOfs, int outLen) throws PKCS11Exception;
-
-
 
 /* *****************************************************************************
  * Message digesting
@@ -1615,7 +1664,7 @@ public class PKCS11 {
      *
      * @exception Throwable If finalization fails.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         disconnect();
     }
@@ -1624,9 +1673,9 @@ public class PKCS11 {
 // parent. Used for tokens that only support single threaded access
 static class SynchronizedPKCS11 extends PKCS11 {
 
-    SynchronizedPKCS11(String pkcs11ModulePath, String functionListName)
+    SynchronizedPKCS11(String pkcs11ModulePath, String functionList)
             throws IOException {
-        super(pkcs11ModulePath, functionListName);
+        super(pkcs11ModulePath, functionList);
     }
 
     synchronized void C_Initialize(Object pInitArgs) throws PKCS11Exception {
@@ -1682,10 +1731,21 @@ static class SynchronizedPKCS11 extends PKCS11 {
         return super.C_GetSessionInfo(hSession);
     }
 
-    public synchronized void C_Login(long hSession, long userType, char[] pPin)
+    public synchronized void C_SessionCancel(long hSession, long flags)
             throws PKCS11Exception {
+        super.C_SessionCancel(hSession, flags);
+    }
+
+    public synchronized void C_Login(long hSession, long userType,
+            char[] pPin) throws PKCS11Exception {
         super.C_Login(hSession, userType, pPin);
     }
+
+    //public synchronized void C_LoginUser(long hSession, long userType,
+    //        char[] pPin, String pUsername)
+    //        throws PKCS11Exception {
+    //    super.C_LoginUser(hSession, userType, pPin, pUsername);
+    //}
 
     public synchronized void C_Logout(long hSession) throws PKCS11Exception {
         super.C_Logout(hSession);

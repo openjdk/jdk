@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /*
  * @test
- * @bug 5047639
+ * @bug 5047639 8132785
  * @summary Check that the "java-level" APIs provide a consistent view of
  *          the thread list
+ * @comment Must run in othervm mode to avoid interference from other tests.
+ * @run main/othervm ThreadLists
  */
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -50,6 +52,19 @@ public class ThreadLists {
         // get the thread count
         int activeCount = top.activeCount();
 
+        // Now enumerate to see if we find any extras yet.
+        // Ensure the array is big enough for a few extras.
+        Thread[] threads = new Thread[activeCount * 2];
+        int newCount = top.enumerate(threads);
+        if (newCount != activeCount) {
+            System.out.println("Found different threads after enumeration:");
+        } else {
+            System.out.println("Initial set of enumerated threads:");
+        }
+        for (int i = 0; i < newCount; i++) {
+            System.out.println(" - Thread: " + threads[i].getName());
+        }
+
         Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
@@ -68,6 +83,11 @@ public class ThreadLists {
         if (activeCount != threadIds.length) failed = true;
 
         if (failed) {
+            System.out.println("Set of stack-traced threads:");
+            for (Thread t : stackTraces.keySet()) {
+                System.out.println(" - Thread: " +
+                                   (t != null ? t.getName() : "null!"));
+            }
             throw new RuntimeException("inconsistent results");
         }
     }

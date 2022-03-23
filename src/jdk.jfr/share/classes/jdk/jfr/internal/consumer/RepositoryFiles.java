@@ -213,7 +213,7 @@ public final class RepositoryFiles {
                 pathSet.remove(time);
                 pathLookup.remove(remove);
             }
-            Collections.sort(added, (p1, p2) -> p1.compareTo(p2));
+            Collections.sort(added);
             for (Path p : added) {
                 // Only add files that have a complete header
                 // as the JVM may be in progress writing the file

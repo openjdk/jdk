@@ -23,6 +23,7 @@
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.security.cert.Certificate;
 
 import javax.net.ssl.KeyManager;
@@ -52,7 +53,8 @@ class JSSEClient extends CipherTest.Client {
                     new TrustManager[] { CipherTest.trustManager },
                     CipherTest.secureRandom);
             SSLSocketFactory factory = (SSLSocketFactory)sslContext.getSocketFactory();
-            socket = (SSLSocket)factory.createSocket("127.0.0.1", CipherTest.serverPort);
+            socket = (SSLSocket)factory.createSocket(
+                    InetAddress.getLoopbackAddress().getHostAddress(), CipherTest.serverPort);
             socket.setSoTimeout(CipherTest.TIMEOUT);
             socket.setEnabledCipherSuites(new String[] { params.cipherSuite.name() });
             socket.setEnabledProtocols(new String[] { params.protocol.name });

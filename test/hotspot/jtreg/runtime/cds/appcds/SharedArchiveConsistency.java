@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ public class SharedArchiveConsistency {
     public static boolean shareAuto;       // true  == -Xshare:auto
                                            // false == -Xshare:on
 
+    private static int genericHeaderMinVersion;  // minimum supported CDS version
+    private static int currentCDSArchiveVersion; // current CDS version in java process
     // The following should be consistent with the enum in the C++ MetaspaceShared class
     public static String[] shared_region_name = {
         "rw",          // ReadWrite
@@ -78,6 +80,14 @@ public class SharedArchiveConsistency {
         OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         String stdtxt = output.getOutput();
         System.out.println("Note: this test may fail in very rare occasions due to CRC32 checksum collision");
+        for (String opt : execArgs) {
+          if (opt.equals("-XX:+VerifySharedSpaces")) {
+            // If VerifySharedSpaces is enabled, the VM should never crash even if the archive
+            // is corrupted (unless if we are so lucky that the corrupted archive ends up
+            // have the same checksum as recoreded in the header)
+            output.shouldNotContain("A fatal error has been detected by the Java Runtime Environment");
+          }
+        }
         for (String message : matchMessages) {
             if (stdtxt.contains(message)) {
                 // match any to return
@@ -104,6 +114,9 @@ public class SharedArchiveConsistency {
             throw new RuntimeException("Arg must be 'on' or 'auto'");
         }
         shareAuto = args[0].equals("auto");
+        genericHeaderMinVersion = CDSArchiveUtils.getGenericHeaderMinVersion();
+        currentCDSArchiveVersion = CDSArchiveUtils.getCurrentCDSArchiveVersion();
+
         String jarFile = JarBuilder.getOrCreateHelloJar();
 
         // dump (appcds.jsa created)
@@ -112,7 +125,8 @@ public class SharedArchiveConsistency {
         // test, should pass
         System.out.println("1. Normal, should pass but may fail\n");
 
-        String[] execArgs = {"-Xlog:cds=debug", "-cp", jarFile, "Hello"};
+        // disable VerifySharedSpaces, it may be turned on by jtreg args
+        String[] execArgs = {"-Xlog:cds=debug", "-XX:-VerifySharedSpaces", "-cp", jarFile, "Hello"};
         // tests that corrupt contents of the archive need to run with
         // VerifySharedSpaces enabled to detect inconsistencies
         String[] verifyExecArgs = {"-Xlog:cds", "-XX:+VerifySharedSpaces", "-cp", jarFile, "Hello"};
@@ -157,7 +171,7 @@ public class SharedArchiveConsistency {
         }
 
         // modify _magic, test should fail
-        System.out.println("\n2c. Corrupt _magic, should fail\n");
+        System.out.println("\n2b. Corrupt _magic, should fail\n");
         String modMagic = startNewArchive("modify-magic");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modMagic);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetMagic(), -1);
@@ -169,12 +183,24 @@ public class SharedArchiveConsistency {
         }
 
         // modify _version, test should fail
-        System.out.println("\n2d. Corrupt _version, should fail\n");
+        System.out.println("\n2c. Corrupt _version, should fail\n");
         String modVersion = startNewArchive("modify-version");
+        int version = currentCDSArchiveVersion + 1;
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
-        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), 0x00000000);
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file has the wrong version");
+        output.shouldContain("The shared archive file version " + version + " does not match the required version " + currentCDSArchiveVersion);
+        if (shareAuto) {
+            output.shouldContain(HELLO_WORLD);
+        }
+
+        System.out.println("\n2d. Corrupt _version, should fail\n");
+        String modVersion2 = startNewArchive("modify-version2");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion2);
+        version = genericHeaderMinVersion - 1;
+        CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
+        output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
+        output.shouldContain("Cannot handle shared archive file version " + version + ". Must be at least " + genericHeaderMinVersion);
         output.shouldNotContain("Checksum verification failed");
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);

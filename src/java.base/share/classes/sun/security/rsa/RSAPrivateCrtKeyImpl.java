@@ -141,7 +141,7 @@ public final class RSAPrivateCrtKeyImpl
             BigInteger n, BigInteger e, BigInteger d,
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
-        RSAPrivateKey key;
+
         if ((e.signum() == 0) || (p.signum() == 0) ||
             (q.signum() == 0) || (pe.signum() == 0) ||
             (qe.signum() == 0) || (coeff.signum() == 0)) {

@@ -51,7 +51,6 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
 
 import static jdk.internal.agent.AgentConfigurationError.*;
-import jdk.internal.agent.spi.AgentProvider;
 import jdk.internal.vm.VMSupport;
 import sun.management.jdp.JdpController;
 import sun.management.jdp.JdpException;
@@ -564,8 +563,7 @@ public class Agent {
         InputStream in = null;
         try {
             in = new FileInputStream(configFile);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            p.load(bin);
+            p.load(in);
         } catch (FileNotFoundException e) {
             error(CONFIG_FILE_OPEN_FAILED, e.getMessage());
         } catch (IOException e) {

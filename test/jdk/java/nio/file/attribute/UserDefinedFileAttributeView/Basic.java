@@ -242,7 +242,7 @@ public class Basic {
 
             // We need to run up to MAX_PATH for directories,
             // but not quite go over it.
-            int MAX_PATH = 247;
+            int MAX_PATH = 250;
             int requiredLen = MAX_PATH - len - 2;
 
             // Create a really long directory name.
@@ -252,11 +252,15 @@ public class Basic {
             Files.createDirectory(longPath);
 
             try {
-                // Try to set absolute path as extended attribute; expect IAE
+                System.out.println("Testing " + longPath);
+
+                // Try to set absolute path as extended attribute;
+                // expect IAE
                 tryCatch(IllegalArgumentException.class, new Task() {
                     public void run() throws IOException {
                         setEA(longPath, "user:C:\\");
-                    }});
+                    }
+                });
 
                 // Try to set an extended attribute on it.
                 setEA(longPath, "user:short");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -535,6 +535,62 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
 static unsigned int garbageCollected = 0;
 
 /*
+ * Run the event through each HandlerNode's filter, and if it passes, call the HandlerNode's
+ * HandlerFunction for the event, and then report all accumulated events to the debugger.
+ */
+static void
+filterAndHandleEvent(JNIEnv *env, EventInfo *evinfo, EventIndex ei,
+                     struct bag *eventBag, jbyte eventSessionID)
+{
+    debugMonitorEnter(handlerLock);
+    {
+        HandlerNode *node;
+        char        *classname;
+
+        /* We must keep track of all classes prepared to know what's unloaded */
+        if (evinfo->ei == EI_CLASS_PREPARE) {
+            classTrack_addPreparedClass(env, evinfo->clazz);
+        }
+
+        node = getHandlerChain(ei)->first;
+        classname = getClassname(evinfo->clazz);
+
+        /* Filter the event over each handler node. */
+        while (node != NULL) {
+            /* Save next so handlers can remove themselves. */
+            HandlerNode *next = NEXT(node);
+            jboolean shouldDelete;
+
+            if (eventFilterRestricted_passesFilter(env, classname,
+                                                   evinfo, node,
+                                                   &shouldDelete)) {
+                HandlerFunction func = HANDLER_FUNCTION(node);
+                if (func == NULL) {
+                    EXIT_ERROR(AGENT_ERROR_INTERNAL,"handler function NULL");
+                }
+                /* Handle the event by calling the event handler. */
+                (*func)(env, evinfo, node, eventBag);
+            }
+            if (shouldDelete) {
+                /* We can safely free the node now that we are done using it. */
+                (void)freeHandler(node);
+            }
+            node = next;
+        }
+        jvmtiDeallocate(classname);
+    }
+    debugMonitorExit(handlerLock);
+
+    /*
+     * The events destined for the debugger were accumulated in eventBag. Report all these events.
+     */
+    if (eventBag != NULL) {
+        reportEvents(env, eventSessionID, evinfo->thread, evinfo->ei,
+                     evinfo->clazz, evinfo->method, evinfo->location, eventBag);
+    }
+}
+
+/*
  * The JVMTI generic event callback. Each event is passed to a sequence of
  * handlers in a chain until the chain ends or one handler
  * consumes the event.
@@ -634,51 +690,7 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
         }
     }
 
-    debugMonitorEnter(handlerLock);
-    {
-        HandlerNode *node;
-        char        *classname;
-
-        /* We must keep track of all classes prepared to know what's unloaded */
-        if (evinfo->ei == EI_CLASS_PREPARE) {
-            classTrack_addPreparedClass(env, evinfo->clazz);
-        }
-
-        node = getHandlerChain(evinfo->ei)->first;
-        classname = getClassname(evinfo->clazz);
-
-        while (node != NULL) {
-            /* save next so handlers can remove themselves */
-            HandlerNode *next = NEXT(node);
-            jboolean shouldDelete;
-
-            if (eventFilterRestricted_passesFilter(env, classname,
-                                                   evinfo, node,
-                                                   &shouldDelete)) {
-                HandlerFunction func;
-
-                func = HANDLER_FUNCTION(node);
-                if ( func == NULL ) {
-                    EXIT_ERROR(AGENT_ERROR_INTERNAL,"handler function NULL");
-                }
-                (*func)(env, evinfo, node, eventBag);
-            }
-            if (shouldDelete) {
-                /* We can safely free the node now that we are done
-                 * using it.
-                 */
-                (void)freeHandler(node);
-            }
-            node = next;
-        }
-        jvmtiDeallocate(classname);
-    }
-    debugMonitorExit(handlerLock);
-
-    if (eventBag != NULL) {
-        reportEvents(env, eventSessionID, thread, evinfo->ei,
-                evinfo->clazz, evinfo->method, evinfo->location, eventBag);
-    }
+    filterAndHandleEvent(env, evinfo, ei, eventBag, eventSessionID);
 
     /* we are continuing after VMDeathEvent - now we are dead */
     if (evinfo->ei == EI_VM_DEATH) {

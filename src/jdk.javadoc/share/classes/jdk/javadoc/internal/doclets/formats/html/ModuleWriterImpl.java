@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,8 +180,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     @Override
     public Content getModuleHeader(String heading) {
         HtmlTree bodyTree = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.header);
+        HtmlTree div = HtmlTree.DIV(HtmlStyle.header);
         Content moduleHead = new ContentBuilder();
         moduleHead.add(mdle.isOpen() && (configuration.docEnv.getModuleMode() == ModuleMode.ALL)
                 ? contents.openModuleLabel : contents.moduleLabel);
@@ -222,7 +221,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      */
     @Override
     public Content getSummariesList() {
-        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
     /**
@@ -799,8 +798,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(mdle);
         if (utils.isDeprecated(mdle)) {
             CommentHelper ch = utils.getCommentHelper(mdle);
-            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
-            deprDiv.setStyle(HtmlStyle.deprecationBlock);
+            HtmlTree deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(mdle));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
@@ -859,8 +857,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
     public void addPackageDeprecationInfo(Content li, PackageElement pkg) {
         if (utils.isDeprecated(pkg)) {
             List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(pkg);
-            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
-            deprDiv.setStyle(HtmlStyle.deprecationBlock);
+            HtmlTree deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(pkg));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {

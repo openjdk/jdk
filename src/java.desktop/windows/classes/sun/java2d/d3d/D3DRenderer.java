@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.geom.Path2D;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.loops.GraphicsPrimitive;
-import sun.java2d.pipe.BufferedPaints;
 import sun.java2d.pipe.BufferedRenderPipe;
 import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.SpanIterator;
@@ -108,7 +107,7 @@ class D3DRenderer extends BufferedRenderPipe {
         return new Tracer(this);
     }
 
-    private class Tracer extends D3DRenderer {
+    private static class Tracer extends D3DRenderer {
         private D3DRenderer d3dr;
         Tracer(D3DRenderer d3dr) {
             super(d3dr.rq);

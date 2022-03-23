@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,6 +562,10 @@ implements X509Extension {
      *      uniformResourceIdentifier       [6]     IA5String,
      *      iPAddress                       [7]     OCTET STRING,
      *      registeredID                    [8]     OBJECT IDENTIFIER}
+     *
+     * OtherName ::= SEQUENCE {
+     *      type-id    OBJECT IDENTIFIER,
+     *      value      [0] EXPLICIT ANY DEFINED BY type-id }
      * </pre>
      * <p>
      * If this certificate does not contain a {@code SubjectAltName}
@@ -571,7 +575,7 @@ implements X509Extension {
      * {@code List} whose first entry is an {@code Integer}
      * (the name type, 0-8) and whose second entry is a {@code String}
      * or a byte array (the name, in string or ASN.1 DER encoded form,
-     * respectively).
+     * respectively). More entries may exist depending on the name type.
      * <p>
      * <a href="http://www.ietf.org/rfc/rfc822.txt">RFC 822</a>, DNS, and URI
      * names are returned as {@code String}s,
@@ -581,12 +585,18 @@ implements X509Extension {
      * in the form "a1:a2:...:a8", where a1-a8 are hexadecimal values
      * representing the eight 16-bit pieces of the address. OID names are
      * returned as {@code String}s represented as a series of nonnegative
-     * integers separated by periods. And directory names (distinguished names)
+     * integers separated by periods. Directory names (distinguished names)
      * are returned in <a href="http://www.ietf.org/rfc/rfc2253.txt">
-     * RFC 2253</a> string format. No standard string format is
-     * defined for otherNames, X.400 names, EDI party names, or any
-     * other type of names. They are returned as byte arrays
-     * containing the ASN.1 DER encoded form of the name.
+     * RFC 2253</a> string format. No standard string format is defined for
+     * X.400 names or EDI party names. They are returned as byte arrays
+     * containing the ASN.1 DER encoded form of the name. otherNames are also
+     * returned as byte arrays containing the ASN.1 DER encoded form of the
+     * name. A third entry may also be present in the list containing the
+     * {@code type-id} of the otherName in string form, and a fourth entry
+     * containing its {@code value} as either a string (if the value is
+     * a valid supported character string) or a byte array containing the
+     * ASN.1 DER encoded form of the value without the context-specific
+     * constructed tag with number 0.
      * <p>
      * Note that the {@code Collection} returned may contain more
      * than one name of the same type. Also, note that the returned
@@ -598,6 +608,9 @@ implements X509Extension {
      * service providers, this method is not {@code abstract}
      * and it provides a default implementation. Subclasses
      * should override this method with a correct implementation.
+     *
+     * @implNote The JDK SUN provider supports the third and fourth
+     * otherName entries.
      *
      * @return an immutable {@code Collection} of subject alternative
      * names (or {@code null})
@@ -627,7 +640,8 @@ implements X509Extension {
      * {@code List} whose first entry is an {@code Integer}
      * (the name type, 0-8) and whose second entry is a {@code String}
      * or a byte array (the name, in string or ASN.1 DER encoded form,
-     * respectively). For more details about the formats used for each
+     * respectively).  More entries may exist depending on the name type.
+     * For more details about the formats used for each
      * name type, see the {@code getSubjectAlternativeNames} method.
      * <p>
      * Note that the {@code Collection} returned may contain more

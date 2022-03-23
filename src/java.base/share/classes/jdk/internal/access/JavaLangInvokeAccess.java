@@ -181,4 +181,11 @@ public interface JavaLangInvokeAccess {
      * The given bytes is trusted.
      */
     Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize);
+
+    /**
+     * A best-effort method that tries to find any exceptions thrown by the given method handle.
+     * @param handle the handle to check
+     * @return an array of exceptions, or {@code null}.
+     */
+    Class<?>[] exceptionTypes(MethodHandle handle);
 }

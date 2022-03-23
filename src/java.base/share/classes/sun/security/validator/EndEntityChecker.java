@@ -105,6 +105,7 @@ class EndEntityChecker {
 
     // bit numbers in the key usage extension
     private static final int KU_SIGNATURE = 0;
+    private static final int KU_NON_REPUDIATION = 1;
     private static final int KU_KEY_ENCIPHERMENT = 2;
     private static final int KU_KEY_AGREEMENT = 4;
 
@@ -356,9 +357,11 @@ class EndEntityChecker {
      */
     private void checkTSAServer(X509Certificate cert, Set<String> exts)
             throws CertificateException {
-        if (checkKeyUsage(cert, KU_SIGNATURE) == false) {
+        // KU and EKU should be consistent
+        if (!checkKeyUsage(cert, KU_SIGNATURE)
+                && !checkKeyUsage(cert, KU_NON_REPUDIATION)) {
             throw new ValidatorException
-                ("KeyUsage does not allow digital signatures",
+                ("KeyUsage does not allow digital signatures or non repudiation",
                 ValidatorException.T_EE_EXTENSIONS, cert);
         }
 

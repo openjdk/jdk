@@ -354,9 +354,9 @@ class methodHandle;
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
-  do_intrinsic(_hasNegatives,             java_lang_StringCoding, hasNegatives_name, hasNegatives_signature,     F_S)   \
-   do_name(     hasNegatives_name,                               "hasNegatives")                                        \
-   do_signature(hasNegatives_signature,                          "([BII)Z")                                             \
+  do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
+   do_name(     countPositives_name,                       "countPositives")                                            \
+   do_signature(countPositives_signature,                  "([BII)I")                                                   \
                                                                                                                         \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \
@@ -459,9 +459,8 @@ class methodHandle;
                                                                                                                         \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
-  do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \
+  do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, countPositives_signature, F_R)   \
    do_name(     implCompressMB_name,                               "implCompressMultiBlock0")                           \
-   do_signature(implCompressMB_signature,                          "([BII)I")                                           \
                                                                                                                         \
    /* support for java.util.Base64.Encoder*/                                                                            \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
@@ -869,15 +868,16 @@ class methodHandle;
                                         "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                       \
    do_name(vector_ternary_op_name,     "ternaryOp")                                                                                            \
                                                                                                                                                \
-  do_intrinsic(_VectorBroadcastCoerced, jdk_internal_vm_vector_VectorSupport, vector_broadcast_coerced_name, vector_broadcast_coerced_sig, F_S)\
-   do_signature(vector_broadcast_coerced_sig, "(Ljava/lang/Class;"                                                                             \
+  do_intrinsic(_VectorFromBitsCoerced, jdk_internal_vm_vector_VectorSupport, vector_frombits_coerced_name, vector_frombits_coerced_sig, F_S)   \
+   do_signature(vector_frombits_coerced_sig, "(Ljava/lang/Class;"                                                                              \
                                                "Ljava/lang/Class;"                                                                             \
                                                "I"                                                                                             \
                                                "J"                                                                                             \
+                                               "I"                                                                                             \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                          \
-                                               "Ljdk/internal/vm/vector/VectorSupport$BroadcastOperation;)"                                    \
+                                               "Ljdk/internal/vm/vector/VectorSupport$FromBitsCoercedOperation;)"                              \
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                         \
-   do_name(vector_broadcast_coerced_name, "broadcastCoerced")                                                                                  \
+   do_name(vector_frombits_coerced_name, "fromBitsCoerced")                                                                                    \
                                                                                                                                                \
   do_intrinsic(_VectorShuffleIota, jdk_internal_vm_vector_VectorSupport, vector_shuffle_step_iota_name, vector_shuffle_step_iota_sig, F_S)     \
    do_signature(vector_shuffle_step_iota_sig, "(Ljava/lang/Class;"                                                                             \

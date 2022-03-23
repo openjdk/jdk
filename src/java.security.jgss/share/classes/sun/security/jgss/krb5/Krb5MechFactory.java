@@ -154,7 +154,7 @@ public final class Krb5MechFactory implements MechanismFactory {
                 sm.checkPermission(perm);
             } catch (SecurityException e) {
                 if (DEBUG) {
-                    System.out.println("Permission to initiate" +
+                    System.out.println("Permission to initiate " +
                         "kerberos init credential" + e.getMessage());
                 }
                 throw e;

@@ -63,17 +63,18 @@ public class VectorSupport {
     public static final int VECTOR_OP_URSHIFT = 16;
 
     public static final int VECTOR_OP_CAST        = 17;
-    public static final int VECTOR_OP_REINTERPRET = 18;
+    public static final int VECTOR_OP_UCAST       = 18;
+    public static final int VECTOR_OP_REINTERPRET = 19;
 
     // Mask manipulation operations
-    public static final int VECTOR_OP_MASK_TRUECOUNT = 19;
-    public static final int VECTOR_OP_MASK_FIRSTTRUE = 20;
-    public static final int VECTOR_OP_MASK_LASTTRUE  = 21;
-    public static final int VECTOR_OP_MASK_TOLONG    = 22;
+    public static final int VECTOR_OP_MASK_TRUECOUNT = 20;
+    public static final int VECTOR_OP_MASK_FIRSTTRUE = 21;
+    public static final int VECTOR_OP_MASK_LASTTRUE  = 22;
+    public static final int VECTOR_OP_MASK_TOLONG    = 23;
 
     // Rotate operations
-    public static final int VECTOR_OP_LROTATE = 23;
-    public static final int VECTOR_OP_RROTATE = 24;
+    public static final int VECTOR_OP_LROTATE = 24;
+    public static final int VECTOR_OP_RROTATE = 25;
 
     // Math routines
     public static final int VECTOR_OP_TAN = 101;
@@ -113,6 +114,10 @@ public class VectorSupport {
     public static final int BT_uge = BT_ge | BT_unsigned_compare;
     public static final int BT_ult = BT_lt | BT_unsigned_compare;
     public static final int BT_ugt = BT_gt | BT_unsigned_compare;
+
+    // Various broadcasting modes.
+    public static final int MODE_BROADCAST = 0;
+    public static final int MODE_BITS_COERCED_LONG_TO_MASK = 1;
 
     // BasicType codes, for primitives only:
     public static final int
@@ -157,9 +162,9 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
-    public interface BroadcastOperation<VM extends VectorPayload,
-                                        S extends VectorSpecies<?>> {
-        VM broadcast(long l, S s);
+    public interface FromBitsCoercedOperation<VM extends VectorPayload,
+                                              S extends VectorSpecies<?>> {
+        VM fromBits(long l, S s);
     }
 
     @IntrinsicCandidate
@@ -167,12 +172,12 @@ public class VectorSupport {
     <VM extends VectorPayload,
      S extends VectorSpecies<E>,
      E>
-    VM broadcastCoerced(Class<? extends VM> vmClass, Class<E> eClass,
-                        int length,
-                        long bits, S s,
-                        BroadcastOperation<VM, S> defaultImpl) {
+    VM fromBitsCoerced(Class<? extends VM> vmClass, Class<E> eClass,
+                       int length,
+                       long bits, int mode, S s,
+                       FromBitsCoercedOperation<VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.broadcast(bits, s);
+        return defaultImpl.fromBits(bits, s);
     }
 
     /* ============================================================================ */

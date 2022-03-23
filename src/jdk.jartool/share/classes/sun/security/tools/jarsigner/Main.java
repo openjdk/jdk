@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@ package sun.security.tools.jarsigner;
 
 import java.io.*;
 import java.net.UnknownHostException;
+import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.interfaces.ECKey;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -59,6 +61,7 @@ import sun.security.pkcs.SignerInfo;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
 import sun.security.timestamp.TimestampToken;
 import sun.security.tools.KeyStoreUtil;
+import sun.security.tools.PathList;
 import sun.security.validator.Validator;
 import sun.security.validator.ValidatorException;
 import sun.security.x509.*;
@@ -152,6 +155,7 @@ public class Main {
     List<String> providerClasses = null; // list of provider classes
     // arguments for provider constructors
     HashMap<String,String> providerArgs = new HashMap<>();
+    String pathlist = null;
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
@@ -246,7 +250,18 @@ public class Main {
             }
 
             if (providerClasses != null) {
-                ClassLoader cl = ClassLoader.getSystemClassLoader();
+                ClassLoader cl;
+                if (pathlist != null) {
+                    String path = System.getProperty("java.class.path");
+                    path = PathList.appendPath(
+                            path, System.getProperty("env.class.path"));
+                    path = PathList.appendPath(path, pathlist);
+
+                    URL[] urls = PathList.pathToURLs(path);
+                    cl = new URLClassLoader(urls);
+                } else {
+                    cl = ClassLoader.getSystemClassLoader();
+                }
                 for (String provClass: providerClasses) {
                     try {
                         KeyStoreUtil.loadProviderByClass(provClass,
@@ -434,6 +449,9 @@ public class Main {
                         n += 2;
                     }
                 }
+            } else if (collator.compare(flags, "-providerpath") == 0) {
+                if (++n == args.length) usageNoArg();
+                pathlist = args[n];
             } else if (collator.compare(flags, "-protected") ==0) {
                 protectedPath = true;
             } else if (collator.compare(flags, "-certchain") ==0) {
@@ -706,6 +724,9 @@ public class Main {
                 (".providerArg.option.2"));
         System.out.println();
         System.out.println(rb.getString
+                (".providerPath.option"));
+        System.out.println();
+        System.out.println(rb.getString
                 (".strict.treat.warnings.as.errors"));
         System.out.println();
         System.out.println(rb.getString
@@ -834,9 +855,9 @@ public class Main {
                     }
 
                     // Only used when -verbose provided
-                    StringBuffer sb = null;
+                    StringBuilder sb = null;
                     if (verbose != null) {
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                         boolean inManifest =
                             ((man.getAttributes(name) != null) ||
                              (man.getAttributes("./"+name) != null) ||
@@ -1001,6 +1022,8 @@ public class Main {
                                     si.getDigestAlgorithmId(),
                                     si.getDigestEncryptionAlgorithmId(),
                                     si.getAuthenticatedAttributes() == null);
+                            AlgorithmId encAlgId = si.getDigestEncryptionAlgorithmId();
+                            AlgorithmParameters sigAlgParams = encAlgId.getParameters();
                             PublicKey key = signer.getPublicKey();
                             PKCS7 tsToken = si.getTsToken();
                             if (tsToken != null) {
@@ -1015,31 +1038,38 @@ public class Main {
                                         tsSi.getDigestAlgorithmId(),
                                         tsSi.getDigestEncryptionAlgorithmId(),
                                         tsSi.getAuthenticatedAttributes() == null);
+                                AlgorithmId tsEncAlgId = tsSi.getDigestEncryptionAlgorithmId();
+                                AlgorithmParameters tsSigAlgParams = tsEncAlgId.getParameters();
                                 Calendar c = Calendar.getInstance(
                                         TimeZone.getTimeZone("UTC"),
                                         Locale.getDefault(Locale.Category.FORMAT));
-                                c.setTime(tsTokenInfo.getDate());
+                                Date tsDate = tsTokenInfo.getDate();
+                                c.setTime(tsDate);
                                 JarConstraintsParameters jcp =
-                                    new JarConstraintsParameters(chain, si.getTimestamp());
+                                    new JarConstraintsParameters(chain, tsDate);
+                                JarConstraintsParameters jcpts =
+                                    new JarConstraintsParameters(
+                                        tsSi.getCertificateChain(tsToken),
+                                        tsDate);
                                 history = String.format(
                                         rb.getString("history.with.ts"),
                                         signer.getSubjectX500Principal(),
-                                        verifyWithWeak(digestAlg, DIGEST_PRIMITIVE_SET, false, jcp),
-                                        verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp),
+                                        verifyWithWeak(digestAlg, DIGEST_PRIMITIVE_SET, false, jcp, null),
+                                        verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp, sigAlgParams),
                                         verifyWithWeak(key, jcp),
                                         c,
                                         tsSigner.getSubjectX500Principal(),
-                                        verifyWithWeak(tsDigestAlg, DIGEST_PRIMITIVE_SET, true, jcp),
-                                        verifyWithWeak(tsSigAlg, SIG_PRIMITIVE_SET, true, jcp),
-                                        verifyWithWeak(tsKey, jcp));
+                                        verifyWithWeak(tsDigestAlg, DIGEST_PRIMITIVE_SET, true, jcpts, null),
+                                        verifyWithWeak(tsSigAlg, SIG_PRIMITIVE_SET, true, jcpts, tsSigAlgParams),
+                                        verifyWithWeak(tsKey, jcpts));
                             } else {
                                 JarConstraintsParameters jcp =
                                     new JarConstraintsParameters(chain, null);
                                 history = String.format(
                                         rb.getString("history.without.ts"),
                                         signer.getSubjectX500Principal(),
-                                        verifyWithWeak(digestAlg, DIGEST_PRIMITIVE_SET, false, jcp),
-                                        verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp),
+                                        verifyWithWeak(digestAlg, DIGEST_PRIMITIVE_SET, false, jcp, null),
+                                        verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp, sigAlgParams),
                                         verifyWithWeak(key, jcp));
                             }
                         } catch (Exception e) {
@@ -1215,13 +1245,13 @@ public class Main {
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
+                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
             }
 
             if ((disabledAlg & 8) == 8) {
                 errors.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled."),
-                        privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
+                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
             }
         } else {
             if ((legacyAlg & 1) != 0) {
@@ -1245,7 +1275,7 @@ public class Main {
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        weakPublicKey.getAlgorithm(), KeyUtil.getKeySize(weakPublicKey)));
+                        KeyUtil.fullDisplayAlgName(weakPublicKey), KeyUtil.getKeySize(weakPublicKey)));
             }
         }
 
@@ -1368,17 +1398,26 @@ public class Main {
     }
 
     private String verifyWithWeak(String alg, Set<CryptoPrimitive> primitiveSet,
-        boolean tsa, JarConstraintsParameters jcp) {
+        boolean tsa, JarConstraintsParameters jcp, AlgorithmParameters algParams) {
 
         try {
-            JAR_DISABLED_CHECK.permits(alg, jcp);
+            JAR_DISABLED_CHECK.permits(alg, jcp, false);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
             return String.format(rb.getString("with.disabled"), alg);
         }
+        if (algParams != null) {
+            try {
+                JAR_DISABLED_CHECK.permits(algParams, jcp);
+            } catch (CertPathValidatorException e) {
+                disabledAlgFound = true;
+                return String.format(rb.getString("with.algparams.disabled"),
+                        alg, algParams);
+            }
+        }
+
         try {
-            LEGACY_CHECK.permits(alg, jcp);
-            return alg;
+            LEGACY_CHECK.permits(alg, jcp, false);
         } catch (CertPathValidatorException e) {
             if (primitiveSet == SIG_PRIMITIVE_SET) {
                 legacyAlg |= 2;
@@ -1394,18 +1433,34 @@ public class Main {
             }
             return String.format(rb.getString("with.weak"), alg);
         }
+        if (algParams != null) {
+            try {
+                LEGACY_CHECK.permits(algParams, jcp);
+            } catch (CertPathValidatorException e) {
+                legacyAlg |= 2;
+                legacySigAlg = alg;
+                return String.format(rb.getString("with.algparams.weak"),
+                        alg, algParams);
+            }
+        }
+        return alg;
     }
 
     private String verifyWithWeak(PublicKey key, JarConstraintsParameters jcp) {
         int kLen = KeyUtil.getKeySize(key);
         try {
-            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp);
+            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
-            return String.format(rb.getString("key.bit.disabled"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.disabled"), kLen);
+            }
         }
         try {
-            LEGACY_CHECK.permits(key.getAlgorithm(), jcp);
+            LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
             if (kLen >= 0) {
                 return String.format(rb.getString("key.bit"), kLen);
             } else {
@@ -1414,7 +1469,12 @@ public class Main {
         } catch (CertPathValidatorException e) {
             weakPublicKey = key;
             legacyAlg |= 8;
-            return String.format(rb.getString("key.bit.weak"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
         }
     }
 
@@ -1422,9 +1482,9 @@ public class Main {
         boolean tsa, JarConstraintsParameters jcp) {
 
         try {
-            JAR_DISABLED_CHECK.permits(alg, jcp);
+            JAR_DISABLED_CHECK.permits(alg, jcp, false);
             try {
-                LEGACY_CHECK.permits(alg, jcp);
+                LEGACY_CHECK.permits(alg, jcp, false);
             } catch (CertPathValidatorException e) {
                 if (primitiveSet == SIG_PRIMITIVE_SET) {
                     legacyAlg |= 2;
@@ -1451,9 +1511,9 @@ public class Main {
 
     private void checkWeakSign(PrivateKey key, JarConstraintsParameters jcp) {
         try {
-            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp);
+            JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
             try {
-                LEGACY_CHECK.permits(key.getAlgorithm(), jcp);
+                LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
             } catch (CertPathValidatorException e) {
                 legacyAlg |= 8;
             }
@@ -1465,30 +1525,40 @@ public class Main {
     private static String checkWeakKey(PublicKey key, CertPathConstraintsParameters cpcp) {
         int kLen = KeyUtil.getKeySize(key);
         try {
-            CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp);
+            CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.disabled"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.disabled"), kLen);
+            }
         }
         try {
-            LEGACY_CHECK.permits(key.getAlgorithm(), cpcp);
+            LEGACY_CHECK.permits(key.getAlgorithm(), cpcp, true);
             if (kLen >= 0) {
                 return String.format(rb.getString("key.bit"), kLen);
             } else {
                 return rb.getString("unknown.size");
             }
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.weak"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
         }
     }
 
     private static String checkWeakAlg(String alg, CertPathConstraintsParameters cpcp) {
         try {
-            CERTPATH_DISABLED_CHECK.permits(alg, cpcp);
+            CERTPATH_DISABLED_CHECK.permits(alg, cpcp, false);
         } catch (CertPathValidatorException e) {
             return String.format(rb.getString("with.disabled"), alg);
         }
         try {
-            LEGACY_CHECK.permits(alg, cpcp);
+            LEGACY_CHECK.permits(alg, cpcp, false);
             return alg;
         } catch (CertPathValidatorException e) {
             return String.format(rb.getString("with.weak"), alg);
@@ -2160,7 +2230,7 @@ public class Main {
                     && !KeyStoreUtil.isWindowsKeyStore(storetype)) {
                 storepass = getPass
                         (rb.getString("Enter.Passphrase.for.keystore."));
-            } else if (!token && storepass == null && prompt) {
+            } else if (!token && storepass == null && prompt && !protectedPath) {
                 storepass = getPass
                         (rb.getString("Enter.Passphrase.for.keystore."));
             }

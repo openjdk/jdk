@@ -43,11 +43,11 @@ import static org.testng.Assert.*;
 
 public class TestSharedAccess {
 
-    static final VarHandle intHandle = MemoryLayouts.JAVA_INT.varHandle(int.class);
+    static final VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
 
     @Test
     public void testShared() throws Throwable {
-        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, MemoryLayouts.JAVA_INT);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
         try (ResourceScope scope = ResourceScope.newSharedScope()) {
             MemorySegment s = MemorySegment.allocateNative(layout, scope);
             for (int i = 0 ; i < layout.elementCount().getAsLong() ; i++) {
@@ -98,7 +98,7 @@ public class TestSharedAccess {
             setInt(s, 42);
             assertEquals(getInt(s), 42);
             List<Thread> threads = new ArrayList<>();
-            MemorySegment sharedSegment = s.address().asSegment(s.byteSize(), scope);
+            MemorySegment sharedSegment = MemorySegment.ofAddress(s.address(), s.byteSize(), scope);
             for (int i = 0 ; i < 1000 ; i++) {
                 threads.add(new Thread(() -> {
                     assertEquals(getInt(sharedSegment), 42);
@@ -121,7 +121,7 @@ public class TestSharedAccess {
         CountDownLatch b = new CountDownLatch(1);
         CompletableFuture<?> r;
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(2, MemoryLayouts.JAVA_INT), scope);
+            MemorySegment s1 = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT), scope);
             r = CompletableFuture.runAsync(() -> {
                 try {
                     ByteBuffer bb = s1.asByteBuffer();

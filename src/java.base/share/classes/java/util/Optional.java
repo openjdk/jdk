@@ -454,7 +454,7 @@ public final class Optional<T> {
     @Override
     public String toString() {
         return value != null
-            ? String.format("Optional[%s]", value)
+            ? ("Optional[" + value + "]")
             : "Optional.empty";
     }
 }

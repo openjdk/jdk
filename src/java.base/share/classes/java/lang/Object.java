@@ -478,6 +478,12 @@ public class Object {
      * A subclass overrides the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
      * <p>
+     * <b>When running in a Java virtual machine in which finalization has been
+     * disabled or removed, the garbage collector will never call
+     * {@code finalize()}. In a Java virtual machine in which finalization is
+     * enabled, the garbage collector might call {@code finalize} only after an
+     * indefinite delay.</b>
+     * <p>
      * The general contract of {@code finalize} is that it is invoked
      * if and when the Java virtual
      * machine has determined that there is no longer any
@@ -543,27 +549,29 @@ public class Object {
      *     }
      * }</pre>
      *
-     * @deprecated The finalization mechanism is inherently problematic.
-     * Finalization can lead to performance issues, deadlocks, and hangs.
-     * Errors in finalizers can lead to resource leaks; there is no way to cancel
-     * finalization if it is no longer necessary; and no ordering is specified
-     * among calls to {@code finalize} methods of different objects.
-     * Furthermore, there are no guarantees regarding the timing of finalization.
-     * The {@code finalize} method might be called on a finalizable object
-     * only after an indefinite delay, if at all.
-     *
-     * Classes whose instances hold non-heap resources should provide a method
-     * to enable explicit release of those resources, and they should also
-     * implement {@link AutoCloseable} if appropriate.
-     * The {@link java.lang.ref.Cleaner} and {@link java.lang.ref.PhantomReference}
-     * provide more flexible and efficient ways to release resources when an object
-     * becomes unreachable.
+     * @deprecated Finalization is deprecated and subject to removal in a future
+     * release. The use of finalization can lead to problems with security,
+     * performance, and reliability.
+     * See <a href="https://openjdk.java.net/jeps/421">JEP 421</a> for
+     * discussion and alternatives.
+     * <p>
+     * Subclasses that override {@code finalize} to perform cleanup should use
+     * alternative cleanup mechanisms and remove the {@code finalize} method.
+     * Use {@link java.lang.ref.Cleaner} and
+     * {@link java.lang.ref.PhantomReference} as safer ways to release resources
+     * when an object becomes unreachable. Alternatively, add a {@code close}
+     * method to explicitly release resources, and implement
+     * {@code AutoCloseable} to enable use of the {@code try}-with-resources
+     * statement.
+     * <p>
+     * This method will remain in place until finalizers have been removed from
+     * most existing code.
      *
      * @throws Throwable the {@code Exception} raised by this method
      * @see java.lang.ref.WeakReference
      * @see java.lang.ref.PhantomReference
      * @jls 12.6 Finalization of Class Instances
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
     protected void finalize() throws Throwable { }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,8 +455,8 @@ public abstract class LongVector extends AbstractVector<Long> {
     @ForceInline
     public static LongVector zero(VectorSpecies<Long> species) {
         LongSpecies vsp = (LongSpecies) species;
-        return VectorSupport.broadcastCoerced(vsp.vectorType(), long.class, species.length(),
-                                0, vsp,
+        return VectorSupport.fromBitsCoerced(vsp.vectorType(), long.class, species.length(),
+                                0, MODE_BROADCAST, vsp,
                                 ((bits_, s_) -> s_.rvOp(i -> bits_)));
     }
 
@@ -1767,12 +1767,11 @@ public abstract class LongVector extends AbstractVector<Long> {
     M testTemplate(Class<M> maskType, Test op) {
         LongSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            LongVector bits = this.viewAsIntegralLanes();
             VectorMask<Long> m;
             if (op == IS_DEFAULT) {
-                m = bits.compare(EQ, (long) 0);
+                m = compare(EQ, (long) 0);
             } else if (op == IS_NEGATIVE) {
-                m = bits.compare(LT, (long) 0);
+                m = compare(LT, (long) 0);
             }
             else {
                 throw new AssertionError(op);
@@ -1787,11 +1786,31 @@ public abstract class LongVector extends AbstractVector<Long> {
      * {@inheritDoc} <!--workaround-->
      */
     @Override
-    @ForceInline
-    public final
+    public abstract
     VectorMask<Long> test(VectorOperators.Test op,
-                                  VectorMask<Long> m) {
-        return test(op).and(m);
+                                  VectorMask<Long> m);
+
+    /*package-private*/
+    @ForceInline
+    final
+    <M extends VectorMask<Long>>
+    M testTemplate(Class<M> maskType, Test op, M mask) {
+        LongSpecies vsp = vspecies();
+        mask.check(maskType, this);
+        if (opKind(op, VO_SPECIAL)) {
+            VectorMask<Long> m = mask;
+            if (op == IS_DEFAULT) {
+                m = compare(EQ, (long) 0, m);
+            } else if (op == IS_NEGATIVE) {
+                m = compare(LT, (long) 0, m);
+            }
+            else {
+                throw new AssertionError(op);
+            }
+            return maskType.cast(m);
+        }
+        int opc = opCode(op);
+        throw new AssertionError(op);
     }
 
     /**
@@ -2460,7 +2479,8 @@ public abstract class LongVector extends AbstractVector<Long> {
                                VectorMask<Long> m) {
         m.check(maskClass, this);
         if (op == FIRST_NONZERO) {
-            LongVector v = reduceIdentityVector(op).blend(this, m);
+            // FIXME:  The JIT should handle this.
+            LongVector v = broadcast((long) 0).blend(this, m);
             return v.reduceLanesTemplate(op);
         }
         int opc = opCode(op);
@@ -2475,10 +2495,11 @@ public abstract class LongVector extends AbstractVector<Long> {
     final
     long reduceLanesTemplate(VectorOperators.Associative op) {
         if (op == FIRST_NONZERO) {
-            // FIXME:  The JIT should handle this, and other scan ops alos.
+            // FIXME:  The JIT should handle this.
             VectorMask<Long> thisNZ
                 = this.viewAsIntegralLanes().compare(NE, (long) 0);
-            return this.lane(thisNZ.firstTrue());
+            int ft = thisNZ.firstTrue();
+            return ft < length() ? this.lane(ft) : (long) 0;
         }
         int opc = opCode(op);
         return fromBits(VectorSupport.reductionCoerced(
@@ -2510,34 +2531,6 @@ public abstract class LongVector extends AbstractVector<Long> {
             default: return null;
         }
     }
-
-    private
-    @ForceInline
-    LongVector reduceIdentityVector(VectorOperators.Associative op) {
-        int opc = opCode(op);
-        UnaryOperator<LongVector> fn
-            = REDUCE_ID_IMPL.find(op, opc, (opc_) -> {
-                switch (opc_) {
-                case VECTOR_OP_ADD:
-                case VECTOR_OP_OR:
-                case VECTOR_OP_XOR:
-                    return v -> v.broadcast(0);
-                case VECTOR_OP_MUL:
-                    return v -> v.broadcast(1);
-                case VECTOR_OP_AND:
-                    return v -> v.broadcast(-1);
-                case VECTOR_OP_MIN:
-                    return v -> v.broadcast(MAX_OR_INF);
-                case VECTOR_OP_MAX:
-                    return v -> v.broadcast(MIN_OR_INF);
-                default: return null;
-                }
-            });
-        return fn.apply(this);
-    }
-    private static final
-    ImplCache<Associative,UnaryOperator<LongVector>> REDUCE_ID_IMPL
-        = new ImplCache<>(Associative.class, LongVector.class);
 
     private static final long MIN_OR_INF = Long.MIN_VALUE;
     private static final long MAX_OR_INF = Long.MAX_VALUE;
@@ -3809,9 +3802,9 @@ public abstract class LongVector extends AbstractVector<Long> {
         @ForceInline
         final LongVector broadcastBits(long bits) {
             return (LongVector)
-                VectorSupport.broadcastCoerced(
+                VectorSupport.fromBitsCoerced(
                     vectorType, long.class, laneCount,
-                    bits, this,
+                    bits, MODE_BROADCAST, this,
                     (bits_, s_) -> s_.rvOp(i -> bits_));
         }
 
@@ -3994,12 +3987,12 @@ public abstract class LongVector extends AbstractVector<Long> {
      */
     static LongSpecies species(VectorShape s) {
         Objects.requireNonNull(s);
-        switch (s) {
-            case S_64_BIT: return (LongSpecies) SPECIES_64;
-            case S_128_BIT: return (LongSpecies) SPECIES_128;
-            case S_256_BIT: return (LongSpecies) SPECIES_256;
-            case S_512_BIT: return (LongSpecies) SPECIES_512;
-            case S_Max_BIT: return (LongSpecies) SPECIES_MAX;
+        switch (s.switchKey) {
+            case VectorShape.SK_64_BIT: return (LongSpecies) SPECIES_64;
+            case VectorShape.SK_128_BIT: return (LongSpecies) SPECIES_128;
+            case VectorShape.SK_256_BIT: return (LongSpecies) SPECIES_256;
+            case VectorShape.SK_512_BIT: return (LongSpecies) SPECIES_512;
+            case VectorShape.SK_Max_BIT: return (LongSpecies) SPECIES_MAX;
             default: throw new IllegalArgumentException("Bad shape: " + s);
         }
     }

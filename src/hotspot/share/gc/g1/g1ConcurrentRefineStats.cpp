@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,12 @@ G1ConcurrentRefineStats::G1ConcurrentRefineStats() :
   _precleaned_cards(0),
   _dirtied_cards(0)
 {}
+
+double G1ConcurrentRefineStats::refinement_rate_ms() const {
+  // Report 0 when no time recorded because no refinement performed.
+  double secs = refinement_time().seconds();
+  return (secs > 0) ? (refined_cards() / (secs * MILLIUNITS)) : 0.0;
+}
 
 G1ConcurrentRefineStats&
 G1ConcurrentRefineStats::operator+=(const G1ConcurrentRefineStats& other) {

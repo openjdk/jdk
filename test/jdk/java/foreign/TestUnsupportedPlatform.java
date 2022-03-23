@@ -39,7 +39,7 @@ public class TestUnsupportedPlatform {
 
     @Test(expectedExceptions = ExceptionInInitializerError.class)
     public void testNoInitialization() {
-        CLinker.getInstance(); // trigger initialization
+        CLinker.systemCLinker(); // trigger initialization
     }
 
 }

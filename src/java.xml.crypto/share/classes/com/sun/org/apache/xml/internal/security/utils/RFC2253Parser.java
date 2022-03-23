@@ -190,20 +190,21 @@ public class RFC2253Parser {
 
         if (value.startsWith("\"")) {
             StringBuilder sb = new StringBuilder();
-            StringReader sr = new StringReader(value.substring(1, value.length() - 1));
-            int i = 0;
-            char c;
+            try (StringReader sr = new StringReader(value.substring(1, value.length() - 1))) {
+                int i = 0;
+                char c;
 
-            while ((i = sr.read()) > -1) {
-                c = (char) i;
+                while ((i = sr.read()) > -1) {
+                    c = (char) i;
 
-                //the following char is defined at 4.Relationship with RFC1779 and LDAPv2 inrfc2253
-                if (c == ',' || c == '=' || c == '+' || c == '<'
-                    || c == '>' || c == '#' || c == ';') {
-                    sb.append('\\');
+                    //the following char is defined at 4.Relationship with RFC1779 and LDAPv2 inrfc2253
+                    if (c == ',' || c == '=' || c == '+' || c == '<'
+                            || c == '>' || c == '#' || c == ';') {
+                        sb.append('\\');
+                    }
+
+                    sb.append(c);
                 }
-
-                sb.append(c);
             }
 
             value = trim(sb.toString());
@@ -263,37 +264,38 @@ public class RFC2253Parser {
      */
     static String changeLess32toRFC(String string) throws IOException {
         StringBuilder sb = new StringBuilder();
-        StringReader sr = new StringReader(string);
         int i = 0;
         char c;
 
-        while ((i = sr.read()) > -1) {
-            c = (char) i;
+        try (StringReader sr = new StringReader(string)) {
+            while ((i = sr.read()) > -1) {
+                c = (char) i;
 
-            if (c == '\\') {
-                sb.append(c);
+                if (c == '\\') {
+                    sb.append(c);
 
-                char c1 = (char) sr.read();
-                char c2 = (char) sr.read();
+                    char c1 = (char) sr.read();
+                    char c2 = (char) sr.read();
 
-                //65 (A) 97 (a)
-                if ((c1 >= 48 && c1 <= 57 || c1 >= 65 && c1 <= 70 || c1 >= 97 && c1 <= 102)
-                    && (c2 >= 48 && c2 <= 57
-                        || c2 >= 65 && c2 <= 70
-                        || c2 >= 97 && c2 <= 102)) {
-                    try {
-                        char ch = (char) Byte.parseByte("" + c1 + c2, 16);
+                    //65 (A) 97 (a)
+                    if ((c1 >= 48 && c1 <= 57 || c1 >= 65 && c1 <= 70 || c1 >= 97 && c1 <= 102)
+                            && (c2 >= 48 && c2 <= 57
+                            || c2 >= 65 && c2 <= 70
+                            || c2 >= 97 && c2 <= 102)) {
+                        try {
+                            char ch = (char) Byte.parseByte("" + c1 + c2, 16);
 
-                        sb.append(ch);
-                    } catch (NumberFormatException ex) {
-                        throw new IOException(ex);
+                            sb.append(ch);
+                        } catch (NumberFormatException ex) {
+                            throw new IOException(ex);
+                        }
+                    } else {
+                        sb.append(c1);
+                        sb.append(c2);
                     }
                 } else {
-                    sb.append(c1);
-                    sb.append(c2);
+                    sb.append(c);
                 }
-            } else {
-                sb.append(c);
             }
         }
 
@@ -309,15 +311,16 @@ public class RFC2253Parser {
      */
     static String changeLess32toXML(String string) throws IOException {
         StringBuilder sb = new StringBuilder();
-        StringReader sr = new StringReader(string);
         int i = 0;
 
-        while ((i = sr.read()) > -1) {
-            if (i < 32) {
-                sb.append('\\');
-                sb.append(Integer.toHexString(i));
-            } else {
-                sb.append((char) i);
+        try (StringReader sr = new StringReader(string)) {
+            while ((i = sr.read()) > -1) {
+                if (i < 32) {
+                    sb.append('\\');
+                    sb.append(Integer.toHexString(i));
+                } else {
+                    sb.append((char) i);
+                }
             }
         }
 
@@ -333,28 +336,29 @@ public class RFC2253Parser {
      */
     static String changeWStoXML(String string) throws IOException {
         StringBuilder sb = new StringBuilder();
-        StringReader sr = new StringReader(string);
         int i = 0;
         char c;
 
-        while ((i = sr.read()) > -1) {
-            c = (char) i;
+        try (StringReader sr = new StringReader(string)) {
+            while ((i = sr.read()) > -1) {
+                c = (char) i;
 
-            if (c == '\\') {
-                char c1 = (char) sr.read();
+                if (c == '\\') {
+                    char c1 = (char) sr.read();
 
-                if (c1 == ' ') {
-                    sb.append('\\');
+                    if (c1 == ' ') {
+                        sb.append('\\');
 
-                    String s = "20";
+                        String s = "20";
 
-                    sb.append(s);
+                        sb.append(s);
+                    } else {
+                        sb.append('\\');
+                        sb.append(c1);
+                    }
                 } else {
-                    sb.append('\\');
-                    sb.append(c1);
+                    sb.append(c);
                 }
-            } else {
-                sb.append(c);
             }
         }
 

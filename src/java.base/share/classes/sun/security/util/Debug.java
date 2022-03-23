@@ -161,10 +161,10 @@ public class Debug {
         if (args == null)
             return false;
         else {
-            if (args.indexOf("all") != -1)
+            if (args.contains("all"))
                 return true;
             else
-                return (args.indexOf(option) != -1);
+                return (args.contains(option));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,7 +529,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ").", os::current_thread_id());
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / 1024);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -568,7 +568,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) return NULL;
 
   // Initialize the JDK library's interrupt event.
@@ -671,10 +671,13 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   unsigned thread_id;
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
+
+  // Initial state is ALLOCATED but not INITIALIZED
+  osthread->set_state(ALLOCATED);
 
   // Initialize the JDK library's interrupt event.
   // This should really be done when OSThread is constructed,
@@ -777,7 +780,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
 
-  // Initial thread state is INITIALIZED, not SUSPENDED
+  // Thread state now is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
 
   // The thread is returned suspended (in state INITIALIZED), and is started higher up in the call chain
@@ -1550,7 +1553,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
      ||
      // Read location of signature
      (sizeof(signature_offset) !=
-     (os::read(fd, (void*)&signature_offset, sizeof(signature_offset))))
+     (::read(fd, (void*)&signature_offset, sizeof(signature_offset))))
      ||
      // Go to COFF File Header in dll
      // that is located after "signature" (4 bytes long)
@@ -1559,7 +1562,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
      ||
      // Read field that contains code of architecture
      // that dll was built for
-     (sizeof(lib_arch) != (os::read(fd, (void*)&lib_arch, sizeof(lib_arch))))
+     (sizeof(lib_arch) != (::read(fd, (void*)&lib_arch, sizeof(lib_arch))))
     );
 
   ::close(fd);
@@ -4455,7 +4458,7 @@ static errno_t get_full_path(LPCWSTR unicode_path, LPWSTR* full_path) {
   return ERROR_SUCCESS;
 }
 
-static void set_path_prefix(char* buf, LPWSTR* prefix, int* prefix_off, bool* needs_fullpath) {
+static void set_path_prefix(char* buf, LPCWSTR* prefix, int* prefix_off, bool* needs_fullpath) {
   *prefix_off = 0;
   *needs_fullpath = true;
 
@@ -4491,7 +4494,7 @@ static wchar_t* wide_abs_unc_path(char const* path, errno_t & err, int additiona
   strncpy(buf, path, buf_len);
   os::native_path(buf);
 
-  LPWSTR prefix = NULL;
+  LPCWSTR prefix = NULL;
   int prefix_off = 0;
   bool needs_fullpath = true;
   set_path_prefix(buf, &prefix, &prefix_off, &needs_fullpath);
@@ -4751,16 +4754,12 @@ int os::open(const char *path, int oflag, int mode) {
   return fd;
 }
 
-FILE* os::open(int fd, const char* mode) {
+FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
-size_t os::write(int fd, const void *buf, unsigned int nBytes) {
+ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
   return ::write(fd, buf, nBytes);
-}
-
-int os::close(int fd) {
-  return ::close(fd);
 }
 
 void os::exit(int num) {
@@ -5720,10 +5719,6 @@ struct hostent* os::get_host_by_name(char* name) {
 
 int os::socket_close(int fd) {
   return ::closesocket(fd);
-}
-
-int os::socket(int domain, int type, int protocol) {
-  return ::socket(domain, type, protocol);
 }
 
 int os::connect(int fd, struct sockaddr* him, socklen_t len) {

@@ -25,8 +25,8 @@
 
 package java.io;
 
-import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Vector;
 
 /**
@@ -189,9 +189,9 @@ public class SequenceInputStream extends InputStream {
             return -1;
         } else if (b == null) {
             throw new NullPointerException();
-        } else if (off < 0 || len < 0 || len > b.length - off) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        }
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
             return 0;
         }
         do {

@@ -129,10 +129,10 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     @Override
     public int write(Sequence in, int type, File out) throws IOException {
         Objects.requireNonNull(in);
-        FileOutputStream fos = new FileOutputStream(out); // throws IOException
-        int bytesWritten = write( in, type, fos );
-        fos.close();
-        return bytesWritten;
+        try (FileOutputStream fos = new FileOutputStream(out)) { // throws IOException
+            int bytesWritten = write(in, type, fos);
+            return bytesWritten;
+        }
     }
 
     //=================================================================================

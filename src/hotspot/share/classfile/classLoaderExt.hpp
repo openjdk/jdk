@@ -111,7 +111,7 @@ public:
     return _has_non_jar_in_classpath;
   }
 
-  static void record_result(const s2 classpath_index, InstanceKlass* result);
+  static void record_result(const s2 classpath_index, InstanceKlass* result, bool redefined);
   static void set_has_app_classes() {
     _has_app_classes = true;
   }

@@ -68,10 +68,9 @@ public class NetProperties {
             File f = new File(fname, "conf");
             f = new File(f, "net.properties");
             fname = f.getCanonicalPath();
-            InputStream in = new FileInputStream(fname);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            props.load(bin);
-            bin.close();
+            try (FileInputStream in = new FileInputStream(fname)) {
+                props.load(in);
+            }
         } catch (Exception e) {
             // Do nothing. We couldn't find or access the file
             // so we won't have default properties...

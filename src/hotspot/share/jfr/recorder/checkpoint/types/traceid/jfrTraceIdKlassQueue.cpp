@@ -247,6 +247,14 @@ void JfrTraceIdKlassQueue::enqueue(const Klass* klass) {
   _queue->enqueue(klass);
 }
 
+JfrBuffer* JfrTraceIdKlassQueue::get_enqueue_buffer(Thread* thread) {
+  return _queue->thread_local_storage(thread);
+}
+
+JfrBuffer* JfrTraceIdKlassQueue::renew_enqueue_buffer(size_t size, Thread* thread) {
+  return _queue->renew(size, thread);
+}
+
 void JfrTraceIdKlassQueue::iterate(klass_callback callback, bool previous_epoch) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   KlassFunctor functor(callback);

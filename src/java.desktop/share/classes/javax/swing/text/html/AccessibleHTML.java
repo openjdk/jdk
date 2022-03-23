@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,8 +370,8 @@ class AccessibleHTML implements Accessible {
          */
         public Accessible getAccessibleChild(int i) {
             ElementInfo childInfo = elementInfo.getChild(i);
-            if (childInfo != null && childInfo instanceof Accessible) {
-                return (Accessible)childInfo;
+            if (childInfo instanceof Accessible accessibleChild) {
+                return accessibleChild;
             } else {
                 return null;
             }
@@ -384,7 +384,7 @@ class AccessibleHTML implements Accessible {
          * @return this component's locale.  If this component does not have
          * a locale, the locale of its parent is returned.
          *
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet been
          * added to a containment hierarchy such that the locale can be
          * determined from the containing parent.
@@ -464,7 +464,7 @@ class AccessibleHTML implements Accessible {
         /**
          * Gets the Font of this object.
          *
-         * @return the Font,if supported, for the object; otherwise, null
+         * @return the Font, if supported, for the object; otherwise, null
          * @see #setFont
          */
         public Font getFont() {
@@ -1212,9 +1212,8 @@ class AccessibleHTML implements Accessible {
             private String getText(int offset, int length)
                 throws BadLocationException {
 
-                if (model != null && model instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)model;
-                    return model.getText(offset, length);
+                if (model instanceof StyledDocument doc) {
+                    return doc.getText(offset, length);
                 } else {
                     return null;
                 }

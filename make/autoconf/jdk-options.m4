@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,23 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(CACERTS_FILE)
 
+  # Choose cacerts source folder for user provided PEM files
+  AC_ARG_WITH(cacerts-src, [AS_HELP_STRING([--with-cacerts-src],
+      [specify alternative cacerts source folder containing certificates])])
+  CACERTS_SRC=""
+  AC_MSG_CHECKING([for cacerts source])
+  if test "x$with_cacerts_src" == x; then
+    AC_MSG_RESULT([default])
+  else
+    CACERTS_SRC=$with_cacerts_src
+    if test ! -d "$CACERTS_SRC"; then
+      AC_MSG_RESULT([fail])
+      AC_MSG_ERROR([Specified cacerts source folder "$CACERTS_SRC" does not exist])
+    fi
+    AC_MSG_RESULT([$CACERTS_SRC])
+  fi
+  AC_SUBST(CACERTS_SRC)
+
   # Enable or disable unlimited crypto
   UTIL_ARG_ENABLE(NAME: unlimited-crypto, DEFAULT: true, RESULT: UNLIMITED_CRYPTO,
       DESC: [enable unlimited crypto policy])
@@ -194,11 +211,17 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   # Setup default copyright year. Mostly overridden when building close to a new year.
   AC_ARG_WITH(copyright-year, [AS_HELP_STRING([--with-copyright-year],
-      [Set copyright year value for build @<:@current year@:>@])])
+      [Set copyright year value for build @<:@current year/source-date@:>@])])
   if test "x$with_copyright_year" = xyes; then
     AC_MSG_ERROR([Copyright year must have a value])
   elif test "x$with_copyright_year" != x; then
     COPYRIGHT_YEAR="$with_copyright_year"
+  elif test "x$SOURCE_DATE" != xupdated; then
+    if test "x$IS_GNU_DATE" = xyes; then
+      COPYRIGHT_YEAR=`$DATE --date=@$SOURCE_DATE +%Y`
+    else
+      COPYRIGHT_YEAR=`$DATE -j -f %s $SOURCE_DATE +%Y`
+    fi
   else
     COPYRIGHT_YEAR=`$DATE +'%Y'`
   fi
@@ -639,15 +662,28 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
 [
   AC_ARG_WITH([source-date], [AS_HELP_STRING([--with-source-date],
-      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated@:>@])],
+      [how to set SOURCE_DATE_EPOCH ('updated', 'current', 'version' a timestamp or an ISO-8601 date) @<:@updated/value of SOURCE_DATE_EPOCH@:>@])],
       [with_source_date_present=true], [with_source_date_present=false])
+
+  if test "x$SOURCE_DATE_EPOCH" != x && test "x$with_source_date" != x; then
+    AC_MSG_WARN([--with-source-date will override SOURCE_DATE_EPOCH])
+  fi
 
   AC_MSG_CHECKING([what source date to use])
 
   if test "x$with_source_date" = xyes; then
     AC_MSG_ERROR([--with-source-date must have a value])
-  elif test "x$with_source_date" = xupdated || test "x$with_source_date" = x; then
-    # Tell the makefiles to update at each build
+  elif test "x$with_source_date" = x; then
+    if test "x$SOURCE_DATE_EPOCH" != x; then
+      SOURCE_DATE=$SOURCE_DATE_EPOCH
+      with_source_date_present=true
+      AC_MSG_RESULT([$SOURCE_DATE, from SOURCE_DATE_EPOCH])
+    else
+      # Tell the makefiles to update at each build
+      SOURCE_DATE=updated
+      AC_MSG_RESULT([determined at build time (default)])
+    fi
+  elif test "x$with_source_date" = xupdated; then
     SOURCE_DATE=updated
     AC_MSG_RESULT([determined at build time, from 'updated'])
   elif test "x$with_source_date" = xcurrent; then
@@ -679,6 +715,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
+  ISO_8601_FORMAT_STRING="%Y-%m-%dT%H:%M:%SZ"
+  if test "x$SOURCE_DATE" != xupdated; then
+    # If we have a fixed value for SOURCE_DATE, we need to set SOURCE_DATE_EPOCH
+    # for the rest of configure.
+    SOURCE_DATE_EPOCH="$SOURCE_DATE"
+    if test "x$IS_GNU_DATE" = xyes; then
+      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    else
+      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+    fi
+  fi
+
   REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
 
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
@@ -696,153 +744,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
   if test "x$OPENJDK_BUILD_OS" = xwindows && \
       test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
       test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-builds])
+    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
     AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
     AC_MSG_ERROR([Cannot continue])
   fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
-])
-
-################################################################################
-#
-# Helper function to build binutils from source.
-#
-AC_DEFUN([JDKOPT_BUILD_BINUTILS],
-[
-  BINUTILS_SRC="$with_binutils_src"
-  UTIL_FIXUP_PATH(BINUTILS_SRC)
-
-  if ! test -d $BINUTILS_SRC; then
-    AC_MSG_ERROR([--with-binutils-src is not pointing to a directory])
-  fi
-  if ! test -x $BINUTILS_SRC/configure; then
-    AC_MSG_ERROR([--with-binutils-src does not look like a binutils source directory])
-  fi
-
-  if test -e $BINUTILS_SRC/bfd/libbfd.a && \
-      test -e $BINUTILS_SRC/opcodes/libopcodes.a && \
-      test -e $BINUTILS_SRC/libiberty/libiberty.a && \
-      test -e $BINUTILS_SRC/zlib/libz.a; then
-    AC_MSG_NOTICE([Found binutils binaries in binutils source directory -- not building])
-  else
-    # On Windows, we cannot build with the normal Microsoft CL, but must instead use
-    # a separate mingw toolchain.
-    if test "x$OPENJDK_BUILD_OS" = xwindows; then
-      if test "x$OPENJDK_TARGET_CPU" = "xx86"; then
-        target_base="i686-w64-mingw32"
-      else
-        target_base="$OPENJDK_TARGET_CPU-w64-mingw32"
-      fi
-      binutils_cc="$target_base-gcc"
-      binutils_target="--host=$target_base --target=$target_base"
-      # Somehow the uint typedef is not included when building with mingw
-      binutils_cflags="-Duint=unsigned"
-      compiler_version=`$binutils_cc --version 2>&1`
-      if ! [ [[ "$compiler_version" =~ GCC ]] ]; then
-        AC_MSG_NOTICE([Could not find correct mingw compiler $binutils_cc.])
-        HELP_MSG_MISSING_DEPENDENCY([$binutils_cc])
-        AC_MSG_ERROR([Cannot continue. $HELP_MSG])
-      else
-        AC_MSG_NOTICE([Using compiler $binutils_cc with version $compiler_version])
-      fi
-    elif test "x$OPENJDK_BUILD_OS" = xmacosx; then
-      if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
-        binutils_target="--enable-targets=aarch64-darwin"
-      else
-        binutils_target=""
-      fi
-    else
-      binutils_cc="$CC $SYSROOT_CFLAGS"
-      binutils_target=""
-    fi
-    binutils_cflags="$binutils_cflags $MACHINE_FLAG $JVM_PICFLAG $C_O_FLAG_NORM"
-
-    AC_MSG_NOTICE([Running binutils configure])
-    AC_MSG_NOTICE([configure command line: ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target])
-    saved_dir=`pwd`
-    cd "$BINUTILS_SRC"
-    ./configure --disable-nls CFLAGS="$binutils_cflags" CC="$binutils_cc" $binutils_target
-    if test $? -ne 0 || ! test -e $BINUTILS_SRC/Makefile; then
-      AC_MSG_NOTICE([Automatic building of binutils failed on configure. Try building it manually])
-      AC_MSG_ERROR([Cannot continue])
-    fi
-    AC_MSG_NOTICE([Running binutils make])
-    $MAKE all-opcodes
-    if test $? -ne 0; then
-      AC_MSG_NOTICE([Automatic building of binutils failed on make. Try building it manually])
-      AC_MSG_ERROR([Cannot continue])
-    fi
-    cd $saved_dir
-    AC_MSG_NOTICE([Building of binutils done])
-  fi
-
-  BINUTILS_DIR="$BINUTILS_SRC"
-])
-
-################################################################################
-#
-# Determine if hsdis should be built, and if so, with which backend.
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_HSDIS],
-[
-  AC_ARG_WITH([hsdis], [AS_HELP_STRING([--with-hsdis],
-      [what hsdis backend to use ('none', 'binutils') @<:@none@:>@])])
-
-  AC_ARG_WITH([binutils], [AS_HELP_STRING([--with-binutils],
-      [where to find the binutils files needed for hsdis/binutils])])
-
-  AC_ARG_WITH([binutils-src], [AS_HELP_STRING([--with-binutils-src],
-      [where to find the binutils source for building])])
-
-  AC_MSG_CHECKING([what hsdis backend to use])
-
-  if test "x$with_hsdis" = xyes; then
-    AC_MSG_ERROR([--with-hsdis must have a value])
-  elif test "x$with_hsdis" = xnone || test "x$with_hsdis" = xno || test "x$with_hsdis" = x; then
-    HSDIS_BACKEND=none
-    AC_MSG_RESULT(['none', hsdis will not be built])
-  elif test "x$with_hsdis" = xbinutils; then
-    HSDIS_BACKEND=binutils
-    AC_MSG_RESULT(['binutils'])
-
-    # We need the binutils static libs and includes.
-    if test "x$with_binutils_src" != x; then
-      # Try building the source first. If it succeeds, it sets $BINUTILS_DIR.
-      JDKOPT_BUILD_BINUTILS
-    fi
-
-    if test "x$with_binutils" != x; then
-      BINUTILS_DIR="$with_binutils"
-    fi
-
-    AC_MSG_CHECKING([for binutils to use with hsdis])
-    if test "x$BINUTILS_DIR" != x; then
-      if test -e $BINUTILS_DIR/bfd/libbfd.a && \
-          test -e $BINUTILS_DIR/opcodes/libopcodes.a && \
-          test -e $BINUTILS_DIR/libiberty/libiberty.a; then
-        AC_MSG_RESULT([$BINUTILS_DIR])
-        HSDIS_CFLAGS="-I$BINUTILS_DIR/include -I$BINUTILS_DIR/bfd -DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB"
-        HSDIS_LIBS="$BINUTILS_DIR/bfd/libbfd.a $BINUTILS_DIR/opcodes/libopcodes.a $BINUTILS_DIR/libiberty/libiberty.a $BINUTILS_DIR/zlib/libz.a"
-      else
-        AC_MSG_RESULT([invalid])
-        AC_MSG_ERROR([$BINUTILS_DIR does not contain a proper binutils installation])
-      fi
-    else
-      AC_MSG_RESULT([missing])
-      AC_MSG_NOTICE([--with-hsdis=binutils requires specifying a binutils installation.])
-      AC_MSG_NOTICE([Download binutils from https://www.gnu.org/software/binutils and unpack it,])
-      AC_MSG_NOTICE([and point --with-binutils-src to the resulting directory, or use])
-      AC_MSG_NOTICE([--with-binutils to point to a pre-built binutils installation.])
-      AC_MSG_ERROR([Cannot continue])
-    fi
-  else
-    AC_MSG_RESULT([invalid])
-    AC_MSG_ERROR([Incorrect hsdis backend "$with_hsdis"])
-  fi
-
-  AC_SUBST(HSDIS_BACKEND)
-  AC_SUBST(HSDIS_CFLAGS)
-  AC_SUBST(HSDIS_LIBS)
+  AC_SUBST(ISO_8601_FORMAT_STRING)
+  AC_SUBST(SOURCE_DATE_ISO_8601)
 ])

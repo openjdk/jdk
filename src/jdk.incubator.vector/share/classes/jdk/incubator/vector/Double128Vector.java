@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,12 @@ final class Double128Vector extends DoubleVector {
     @ForceInline
     public final Double128Mask test(Test op) {
         return super.testTemplate(Double128Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Double128Mask test(Test op, VectorMask<Double> m) {
+        return super.testTemplate(Double128Mask.class, op, (Double128Mask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -718,9 +724,9 @@ final class Double128Vector extends DoubleVector {
         @ForceInline
         /*package-private*/
         static Double128Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Double128Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Double128Mask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Double128Mask  TRUE_MASK = new Double128Mask(true);
         private static final Double128Mask FALSE_MASK = new Double128Mask(false);

@@ -116,7 +116,11 @@ class MultiThreadedRefCounter {
   }
 
   bool dec() const {
-    return 0 == Atomic::sub(&_refs, 1, memory_order_relaxed);
+    if (0 == Atomic::sub(&_refs, 1, memory_order_release)) {
+      OrderAccess::acquire();
+      return true;
+    }
+    return false;
   }
 
   intptr_t current() const {

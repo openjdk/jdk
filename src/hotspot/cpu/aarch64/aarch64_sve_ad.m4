@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2022, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -356,7 +356,7 @@ instruct vmaskAll_imm$1(pRegGov dst, imm$1 src) %{
   predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   ins_cost(SVE_COST);
-  format %{ "sve_ptrue/sve_pfalse $dst\t# mask all (sve) ($2)" %}
+  format %{ "sve_ptrue_lanecnt/sve_pfalse $dst\t# mask all (sve) ($2)" %}
   ins_encode %{
     ifelse($1, `I', int, long) con = (ifelse($1, `I', int, long))$src$$constant;
     if (con == 0) {
@@ -364,7 +364,8 @@ instruct vmaskAll_imm$1(pRegGov dst, imm$1 src) %{
     } else {
       assert(con == -1, "invalid constant value for mask");
       BasicType bt = Matcher::vector_element_basic_type(this);
-      __ sve_ptrue(as_PRegister($dst$$reg), __ elemType_to_regVariant(bt));
+      __ sve_ptrue_lanecnt(as_PRegister($dst$$reg), __ elemType_to_regVariant(bt),
+                           Matcher::vector_length(this));
     }
   %}
   ins_pipe(pipe_slow);
@@ -377,19 +378,27 @@ instruct vmaskAll$1(pRegGov dst, ifelse($1, `I', iRegIorL2I, iRegL) src, vReg tm
   predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(TEMP tmp, KILL cr);
-  ins_cost(2 * SVE_COST);
+  ins_cost(3 * SVE_COST);
   format %{ "sve_dup $tmp, $src\n\t"
-            "sve_cmpne $dst, $tmp, 0\t# mask all (sve) ($2)" %}
+            "sve_ptrue_lanecnt $dst\n\t"
+            "sve_cmpne $dst, $dst, $tmp, 0\t# mask all (sve) ($2)" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ sve_dup(as_FloatRegister($tmp$$reg), size, as_Register($src$$reg));
-    __ sve_cmp(Assembler::NE, as_PRegister($dst$$reg), size, ptrue, as_FloatRegister($tmp$$reg), 0);
+    if (length_in_bytes < MaxVectorSize) {
+      __ sve_ptrue_lanecnt(as_PRegister($dst$$reg), size, Matcher::vector_length(this));
+      __ sve_cmp(Assembler::NE, as_PRegister($dst$$reg), size,
+                 as_PRegister($dst$$reg), as_FloatRegister($tmp$$reg), 0);
+    } else {
+      __ sve_cmp(Assembler::NE, as_PRegister($dst$$reg), size, ptrue, as_FloatRegister($tmp$$reg), 0);
+    }
   %}
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-// maskAll
+// maskAll (full or partial predicate size)
 MASKALL_IMM(I, B/H/S)
 MASKALL(I, B/H/S)
 MASKALL_IMM(L, D)
@@ -603,7 +612,61 @@ BINARY_OP_PREDICATE(vaddI, AddVI, S, sve_add)
 BINARY_OP_PREDICATE(vaddL, AddVL, D, sve_add)
 BINARY_OP_PREDICATE(vaddF, AddVF, S, sve_fadd)
 BINARY_OP_PREDICATE(vaddD, AddVD, D, sve_fadd)
+dnl
+dnl ADD_IMM($1,          $2,   $3      )
+dnl ADD_IMM(name_suffix, size, imm_type)
+define(`ADD_IMM', `
+instruct vaddImm$1(vReg dst_src, $3 con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src (AddV$1 dst_src (Replicate$1 con)));
+  ins_cost(SVE_COST);
+  format %{ "sve_add $dst_src, $dst_src, $con\t # vector (sve) ($2)" %}
+  ins_encode %{
+    int32_t val = $con$$constant;
+    if (val > 0){
+      __ sve_add(as_FloatRegister($dst_src$$reg), __ $2, val);
+    } else if (val < 0){
+      __ sve_sub(as_FloatRegister($dst_src$$reg), __ $2, -val);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
 
+// vector add reg imm (unpredicated)
+ADD_IMM(B, B, immBAddSubV)
+ADD_IMM(S, H, immIAddSubV)
+ADD_IMM(I, S, immIAddSubV)
+ADD_IMM(L, D, immLAddSubV)
+dnl
+dnl BITWISE_OP_IMM($1,        $2        $3,   $4    $5      )
+dnl BITWISE_OP_IMM(insn_name, op_name1, size, type, op_name2)
+define(`BITWISE_OP_IMM', `
+instruct $1(vReg dst_src, imm$4Log con) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src ($2 dst_src (Replicate$4 con)));
+  ins_cost(SVE_COST);
+  format %{ "$5 $dst_src, $dst_src, $con\t # vector (sve) ($3)" %}
+  ins_encode %{
+    __ $5(as_FloatRegister($dst_src$$reg), __ $3,
+         (uint64_t)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+
+// vector binary op reg imm (unpredicated)
+BITWISE_OP_IMM(vandB, AndV, B, B, sve_and)
+BITWISE_OP_IMM(vandH, AndV, H, S, sve_and)
+BITWISE_OP_IMM(vandS, AndV, S, I, sve_and)
+BITWISE_OP_IMM(vandD, AndV, D, L, sve_and)
+BITWISE_OP_IMM(vorB,  OrV,  B, B, sve_orr)
+BITWISE_OP_IMM(vorH,  OrV,  H, S, sve_orr)
+BITWISE_OP_IMM(vorS,  OrV,  S, I, sve_orr)
+BITWISE_OP_IMM(vorD,  OrV,  D, L, sve_orr)
+BITWISE_OP_IMM(vxorB, XorV, B, B, sve_eor)
+BITWISE_OP_IMM(vxorH, XorV, H, S, sve_eor)
+BITWISE_OP_IMM(vxorS, XorV, S, I, sve_eor)
+BITWISE_OP_IMM(vxorD, XorV, D, L, sve_eor)
+dnl
 dnl
 dnl BINARY_OP_UNSIZED($1,        $2,      $3  )
 dnl BINARY_OP_UNSIZED(insn_name, op_name, insn)
@@ -682,6 +745,32 @@ VECTOR_NOT(I, B/H/S)
 VECTOR_NOT(L, D)
 undefine(MATCH_RULE)
 dnl
+// vector not - predicated
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst (XorV (Binary src (ReplicateB m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateS m1)) pg));
+  match(Set dst (XorV (Binary src (ReplicateI m1)) pg));',
+`match(Set dst (XorV (Binary src (ReplicateL m1)) pg));')')dnl
+dnl
+define(`VECTOR_NOT_PREDICATE', `
+instruct vnot$1_masked`'(vReg dst, vReg src, imm$1_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_not $dst, $pg, $src\t# vector (sve) $2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_not(as_FloatRegister($dst$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl                 $1, $2
+VECTOR_NOT_PREDICATE(I, B/H/S)
+VECTOR_NOT_PREDICATE(L, D)
+undefine(MATCH_RULE)
+dnl
 // vector and_not
 dnl
 define(`MATCH_RULE', `ifelse($1, I,
@@ -706,6 +795,32 @@ instruct vand_not$1`'(vReg dst, vReg src1, vReg src2, imm$1_M1 m1) %{
 dnl            $1,$2
 VECTOR_AND_NOT(I, B/H/S)
 VECTOR_AND_NOT(L, D)
+undefine(MATCH_RULE)
+dnl
+// vector and_not - predicated
+dnl
+define(`MATCH_RULE', `ifelse($1, I,
+`match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateB m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateS m1))) pg));
+  match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateI m1))) pg));',
+`match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateL m1))) pg));')')dnl
+dnl
+define(`VECTOR_AND_NOT_PREDICATE', `
+instruct vand_not$1_masked`'(vReg dst_src1, vReg src2, imm$1_M1 m1, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  MATCH_RULE($1)
+  ins_cost(SVE_COST);
+  format %{ "sve_bic $dst_src1, $pg, $dst_src1, $src2\t# vector (sve) $2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_bic(as_FloatRegister($dst_src1$$reg), __ elemType_to_regVariant(bt),
+               as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl                     $1, $2
+VECTOR_AND_NOT_PREDICATE(I, B/H/S)
+VECTOR_AND_NOT_PREDICATE(L, D)
 undefine(MATCH_RULE)
 dnl
 dnl VDIVF($1,          $2  , $3         )
@@ -1753,6 +1868,7 @@ instruct reduce_$1$2_masked($5 dst, $5 src1, vReg src2, pRegGov pg) %{
             n->in(1)->in(2)->bottom_type()->is_vect()->length_in_bytes() == MaxVectorSize);
   match(Set dst (translit($1, `m', `M')ReductionV (Binary src1 src2) pg));
   ins_cost(SVE_COST);
+  effect(TEMP_DEF dst);
   format %{ "sve_reduce_$1$2 $dst, $src1, $pg, $src2\t# $1$2 reduction predicated (sve)" %}
   ins_encode %{
     __ sve_f$1v(as_FloatRegister($dst$$reg), __ $4, as_PRegister($pg$$reg), as_FloatRegister($src2$$reg));
@@ -3084,4 +3200,36 @@ instruct vmask_lasttrue_partial(iRegINoSp dst, pReg src, pReg ptmp, rFlagsReg cr
     __ sve_vmask_lasttrue($dst$$Register, bt, as_PRegister($ptmp$$reg), as_PRegister($ptmp$$reg));
   %}
   ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2, pRegGov pgtmp, rFlagsReg cr) %{
+  predicate(UseSVE > 0 &&
+            n->in(1)->bottom_type()->is_vect()->length() <= 64);
+  match(Set dst (VectorMaskToLong src));
+  effect(TEMP vtmp1, TEMP vtmp2, TEMP pgtmp, KILL cr);
+  ins_cost(13 * SVE_COST);
+  format %{ "vmask_tolong $dst, $src\t# vector mask tolong (sve)" %}
+  ins_encode %{
+    __ sve_vmask_tolong(as_Register($dst$$reg), as_PRegister($src$$reg),
+                        Matcher::vector_element_basic_type(this, $src),
+                        Matcher::vector_length(this, $src),
+                        as_FloatRegister($vtmp1$$reg), as_FloatRegister($vtmp2$$reg),
+                        as_PRegister($pgtmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
 %}dnl
+
+// ---------------------------- Vector mask generation ---------------------------
+instruct vmask_gen(pRegGov pg, iRegL len, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set pg (VectorMaskGen len));
+  effect(KILL cr);
+  ins_cost(SVE_COST);
+  format %{ "sve_whilelo $pg, zr, $len\t # sve" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ sve_whilelo(as_PRegister($pg$$reg), size, zr, as_Register($len$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}

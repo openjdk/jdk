@@ -25,11 +25,11 @@
 
 package jdk.internal.foreign;
 
-import jdk.incubator.foreign.ResourceScope;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
-import java.lang.ref.Reference;
 
 /**
  * A confined scope, which features an owner thread. The liveness check features an additional
@@ -39,49 +39,58 @@ import java.lang.ref.Reference;
  */
 final class ConfinedScope extends ResourceScopeImpl {
 
-    private boolean closed; // = false
-    private int lockCount = 0;
-    private final Thread owner;
+    private int asyncReleaseCount = 0;
 
-    public ConfinedScope(Thread owner, Cleaner cleaner) {
-        super(cleaner, new ConfinedResourceList());
-        this.owner = owner;
+    static final VarHandle ASYNC_RELEASE_COUNT;
+
+    static {
+        try {
+            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(ConfinedScope.class, "asyncReleaseCount", int.class);
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
     }
 
-    @ForceInline
-    public final void checkValidState() {
-        if (owner != Thread.currentThread()) {
-            throw new IllegalStateException("Attempted access outside owning thread");
-        }
-        if (closed) {
-            throw new IllegalStateException("Already closed");
-        }
+    public ConfinedScope(Thread owner, Cleaner cleaner) {
+        super(owner, new ConfinedResourceList(), cleaner);
     }
 
     @Override
     public boolean isAlive() {
-        return !closed;
+        return state != CLOSED;
     }
 
     @Override
-    public HandleImpl acquire() {
-        checkValidState();
-        lockCount++;
-        return new ConfinedHandle();
+    @ForceInline
+    public void acquire0() {
+        checkValidStateSlow();
+        if (state == MAX_FORKS) {
+            throw new IllegalStateException("Scope keep alive limit exceeded");
+        }
+        state++;
     }
 
-    void justClose() {
-        this.checkValidState();
-        if (lockCount == 0) {
-            closed = true;
+    @Override
+    @ForceInline
+    public void release0() {
+        if (Thread.currentThread() == owner) {
+            state--;
         } else {
-            throw new IllegalStateException("Scope is acquired by " + lockCount + " locks");
+            // It is possible to end up here in two cases: this scope was kept alive by some other confined scope
+            // which is implicitly released (in which case the release call comes from the cleaner thread). Or,
+            // this scope might be kept alive by a shared scope, which means the release call can come from any
+            // thread.
+            ASYNC_RELEASE_COUNT.getAndAdd(this, 1);
         }
     }
 
-    @Override
-    public Thread ownerThread() {
-        return owner;
+    void justClose() {
+        checkValidStateSlow();
+        if (state == 0 || state - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
+            state = CLOSED;
+        } else {
+            throw new IllegalStateException("Scope is kept alive by " + state + " scopes");
+        }
     }
 
     /**
@@ -106,27 +115,6 @@ final class ConfinedScope extends ResourceScopeImpl {
                 cleanup(prev);
             } else {
                 throw new IllegalStateException("Attempt to cleanup an already closed resource list");
-            }
-        }
-    }
-
-    /**
-     * A confined resource scope handle; no races are possible here.
-     */
-    final class ConfinedHandle implements HandleImpl {
-        boolean released = false;
-
-        @Override
-        public ResourceScopeImpl scope() {
-            return ConfinedScope.this;
-        }
-
-        @Override
-        public void release() {
-            checkValidState(); // thread check
-            if (!released) {
-                released = true;
-                lockCount--;
             }
         }
     }

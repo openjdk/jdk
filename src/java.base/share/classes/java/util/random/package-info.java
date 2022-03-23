@@ -347,12 +347,12 @@
  * supported by the interface {@link RandomGenerator.JumpableGenerator}.
  * Sometimes it is desirable to support two levels of jumping (by long distances
  * and by <i>really</i> long distances); this strategy is supported by the
- * interface {@link RandomGenerator.LeapableGenerator}. There is also an interface
+ * interface {@link RandomGenerator.LeapableGenerator}. In this package,
+ * implementations of this interface include "Xoroshiro128PlusPlus" and
+ * "Xoshiro256PlusPlus". There is also an interface
  * {@link RandomGenerator.ArbitrarilyJumpableGenerator} for algorithms that allow
- * jumping along the state cycle by any user-specified distance. In this package,
- * implementations of these interfaces include
- * "Xoroshiro128PlusPlus", and
- * "Xoshiro256PlusPlus".
+ * jumping along the state cycle by any user-specified distance; there are currently
+ * no implementations of this interface in this package.
  *
  * <p> A more recent category of "splittable" pseudorandom generator algorithms
  * uses a large family of state cycles and makes some attempt to ensure that
@@ -382,13 +382,18 @@
  * equidistribution, scalability, and better quality.  Each of the
  * specific implementations here combines one of the best currently known
  * XBG algorithms (xoroshiro128 or xoshiro256, described by Blackman and
- * Vigna in "Scrambled Linear Pseudorandom Number Generators", ACM Transactions
- * on Mathematical Software, 2021) with an LCG that uses one of the best
+ * Vigna in "Scrambled Linear Pseudorandom Number Generators", <i>ACM Transactions
+ * on Mathematical Software</i>, 2021) with an LCG that uses one of the best
  * currently known multipliers (found by a search for better multipliers
- * in 2019 by Steele and Vigna), and then applies either a mixing function
- * identified by Doug Lea or a simple scrambler proposed by Blackman and Vigna.
- * Testing has confirmed that the LXM algorithm is far superior in quality to
- * the SplitMix algorithm (2014) used by {@code SplittableRandom}.
+ * in 2019 by Steele and Vigna, described in "Computationally Easy, Spectrally
+ * Good Multipliers for Congruential Pseudorandom Number Generators",
+ * <i>Software: Practice and Experience</i> (2021), doi:10.1002/spe.3030),
+ * and then applies either a mixing function identified by Doug Lea or
+ * or a simple scrambler proposed by Blackman and Vigna. Testing has
+ * confirmed that the LXM algorithm is far superior in quality to the
+ * SplitMix algorithm (2014) used by {@code SplittableRandom}
+ * (see Steele and Vigna, "LXM: Better Splittable Pseudorandom Number
+ * Generators (and Almost as Fast)", <i>Proc. 2021 ACM OOPSLA Conference</i>).
  *
  * Each class with a name of the form
  * {@code L}<i>p</i>{@code X}<i>q</i>{@code SomethingRandom}

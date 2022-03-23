@@ -509,6 +509,16 @@ const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
 //----------------------------------------------------------------------------------------------------
+// old CDS options
+extern bool DumpSharedSpaces;
+extern bool DynamicDumpSharedSpaces;
+extern bool RequireSharedSpaces;
+extern "C" {
+// Make sure UseSharedSpaces is accessible to the serviceability agent.
+extern JNIEXPORT jboolean UseSharedSpaces;
+}
+
+//----------------------------------------------------------------------------------------------------
 // Object alignment, in units of HeapWords.
 //
 // Minimum is max(BytesPerLong, BytesPerDouble, BytesPerOop) / HeapWordSize, so jlong, jdouble and
@@ -1209,5 +1219,9 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
   return k0 == k1;
 }
 
+//----------------------------------------------------------------------------------------------------
+
+// Allow use of C++ thread_local when approved - see JDK-8282469.
+#define APPROVED_CPP_THREAD_LOCAL thread_local
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

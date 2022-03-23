@@ -27,8 +27,6 @@
 #
 #############################################################################
 
-vmTestbase/jit/escape/AdaptiveBlocking/AdaptiveBlocking001/AdaptiveBlocking001.java 8260303 windows-x64
-
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8276539   generic-all
 serviceability/sa/CDSJMapClstats.java                         8276539   generic-all
 serviceability/sa/ClhsdbJhisto.java                           8276539   generic-all
