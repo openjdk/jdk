@@ -26,10 +26,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/osThread.hpp"
 
-OSThread::OSThread(OSThreadStartFunc start_proc, void* start_parm) {
+OSThread::OSThread() {
   pd_initialize();
-  set_start_proc(start_proc);
-  set_start_parm(start_parm);
 }
 
 OSThread::~OSThread() {

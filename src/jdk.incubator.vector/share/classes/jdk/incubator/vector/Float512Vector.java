@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,12 @@ final class Float512Vector extends FloatVector {
     @ForceInline
     public final Float512Mask test(Test op) {
         return super.testTemplate(Float512Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Float512Mask test(Test op, VectorMask<Float> m) {
+        return super.testTemplate(Float512Mask.class, op, (Float512Mask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -746,9 +752,9 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         /*package-private*/
         static Float512Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Float512Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Float512Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Float512Mask  TRUE_MASK = new Float512Mask(true);
         private static final Float512Mask FALSE_MASK = new Float512Mask(false);

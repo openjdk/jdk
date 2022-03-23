@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cdsHeapVerifier.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -42,7 +43,6 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "logging/log.hpp"
-#include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -71,10 +71,12 @@
 bool HeapShared::_closed_regions_mapped = false;
 bool HeapShared::_open_regions_mapped = false;
 bool HeapShared::_is_loaded = false;
+bool HeapShared::_disable_writing = false;
 address   HeapShared::_narrow_oop_base;
 int       HeapShared::_narrow_oop_shift;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = NULL;
 
+// Support for loaded heap.
 uintptr_t HeapShared::_loaded_heap_bottom = 0;
 uintptr_t HeapShared::_loaded_heap_top = 0;
 uintptr_t HeapShared::_dumptime_base_0 = UINTPTR_MAX;
@@ -87,6 +89,10 @@ intx HeapShared::_runtime_offset_1 = 0;
 intx HeapShared::_runtime_offset_2 = 0;
 intx HeapShared::_runtime_offset_3 = 0;
 bool HeapShared::_loading_failed = false;
+
+// Suport for mapped heap (!UseCompressedOops only)
+ptrdiff_t HeapShared::_runtime_delta = 0;
+
 //
 // If you add new entries to the following tables, you should know what you're doing!
 //
@@ -127,7 +133,6 @@ const static int num_fmg_open_archive_subgraph_entry_fields =
   sizeof(fmg_open_archive_subgraph_entry_fields) / sizeof(ArchivableStaticFieldInfo);
 
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = NULL;
-narrowOop HeapShared::_roots_narrow;
 OopHandle HeapShared::_roots;
 
 #ifdef ASSERT
@@ -138,11 +143,24 @@ bool HeapShared::is_archived_object_during_dumptime(oop p) {
 }
 #endif
 
-////////////////////////////////////////////////////////////////
-//
-// Java heap object archiving support
-//
-////////////////////////////////////////////////////////////////
+static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], int num, InstanceKlass* ik) {
+  for (int i = 0; i < num; i++) {
+    if (fields[i].klass == ik) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool HeapShared::is_subgraph_root_class(InstanceKlass* ik) {
+  return is_subgraph_root_class_of(closed_archive_subgraph_entry_fields,
+                                   num_closed_archive_subgraph_entry_fields, ik) ||
+         is_subgraph_root_class_of(open_archive_subgraph_entry_fields,
+                                   num_open_archive_subgraph_entry_fields, ik) ||
+         is_subgraph_root_class_of(fmg_open_archive_subgraph_entry_fields,
+                                   num_fmg_open_archive_subgraph_entry_fields, ik);
+}
+
 void HeapShared::fixup_regions() {
   FileMapInfo* mapinfo = FileMapInfo::current_info();
   if (is_mapped()) {
@@ -151,7 +169,6 @@ void HeapShared::fixup_regions() {
     fill_failed_loaded_region();
   }
   if (is_fully_available()) {
-    _roots = OopHandle(Universe::vm_global(), decode_from_archive(_roots_narrow));
     if (!MetaspaceShared::use_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
@@ -199,9 +216,9 @@ HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = NULL;
 oop HeapShared::find_archived_heap_object(oop obj) {
   assert(DumpSharedSpaces, "dump-time only");
   ArchivedObjectCache* cache = archived_object_cache();
-  oop* p = cache->get(obj);
+  CachedOopInfo* p = cache->get(obj);
   if (p != NULL) {
-    return *p;
+    return p->_obj;
   } else {
     return NULL;
   }
@@ -233,12 +250,6 @@ objArrayOop HeapShared::roots() {
   objArrayOop roots = (objArrayOop)_roots.resolve();
   assert(roots != NULL, "should have been initialized");
   return roots;
-}
-
-void HeapShared::set_roots(narrowOop roots) {
-  assert(UseSharedSpaces, "runtime only");
-  assert(is_fully_available(), "must be");
-  _roots_narrow = roots;
 }
 
 // Returns an objArray that contains all the roots of the archived objects
@@ -304,7 +315,8 @@ oop HeapShared::archive_object(oop obj) {
     assert(hash_original == hash_archived, "Different hash codes: original %x, archived %x", hash_original, hash_archived);
 
     ArchivedObjectCache* cache = archived_object_cache();
-    cache->put(obj, archived_oop);
+    CachedOopInfo info = make_cached_oop_info(archived_oop);
+    cache->put(obj, info);
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT " : %s",
@@ -338,6 +350,94 @@ void HeapShared::archive_klass_objects() {
   }
 }
 
+// -- Handling of Enum objects
+// Java Enum classes have synthetic <clinit> methods that look like this
+//     enum MyEnum {FOO, BAR}
+//     MyEnum::<clinint> {
+//        /*static final MyEnum*/ MyEnum::FOO = new MyEnum("FOO");
+//        /*static final MyEnum*/ MyEnum::BAR = new MyEnum("BAR");
+//     }
+//
+// If MyEnum::FOO object is referenced by any of the archived subgraphs, we must
+// ensure the archived value equals (in object address) to the runtime value of
+// MyEnum::FOO.
+//
+// However, since MyEnum::<clinint> is synthetically generated by javac, there's
+// no way of programatically handling this inside the Java code (as you would handle
+// ModuleLayer::EMPTY_LAYER, for example).
+//
+// Instead, we archive all static field of such Enum classes. At runtime,
+// HeapShared::initialize_enum_klass() will skip the <clinit> method and pull
+// the static fields out of the archived heap.
+void HeapShared::check_enum_obj(int level,
+                                KlassSubGraphInfo* subgraph_info,
+                                oop orig_obj,
+                                bool is_closed_archive) {
+  Klass* k = orig_obj->klass();
+  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
+  if (!k->is_instance_klass()) {
+    return;
+  }
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik->java_super() == vmClasses::Enum_klass() && !ik->has_archived_enum_objs()) {
+    ResourceMark rm;
+    ik->set_has_archived_enum_objs();
+    relocated_k->set_has_archived_enum_objs();
+    oop mirror = ik->java_mirror();
+
+    for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_static()) {
+        fieldDescriptor& fd = fs.field_descriptor();
+        if (fd.field_type() != T_OBJECT && fd.field_type() != T_ARRAY) {
+          guarantee(false, "static field %s::%s must be T_OBJECT or T_ARRAY",
+                    ik->external_name(), fd.name()->as_C_string());
+        }
+        oop oop_field = mirror->obj_field(fd.offset());
+        if (oop_field == NULL) {
+          guarantee(false, "static field %s::%s must not be null",
+                    ik->external_name(), fd.name()->as_C_string());
+        } else if (oop_field->klass() != ik && oop_field->klass() != ik->array_klass_or_null()) {
+          guarantee(false, "static field %s::%s is of the wrong type",
+                    ik->external_name(), fd.name()->as_C_string());
+        }
+        oop archived_oop_field = archive_reachable_objects_from(level, subgraph_info, oop_field, is_closed_archive);
+        int root_index = append_root(archived_oop_field);
+        log_info(cds, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT " -> " INTPTR_FORMAT ")",
+                            root_index, ik->external_name(), fd.name()->as_C_string(),
+                            p2i((oopDesc*)oop_field), p2i((oopDesc*)archived_oop_field));
+        SystemDictionaryShared::add_enum_klass_static_field(ik, root_index);
+      }
+    }
+  }
+}
+
+// See comments in HeapShared::check_enum_obj()
+bool HeapShared::initialize_enum_klass(InstanceKlass* k, TRAPS) {
+  if (!is_fully_available()) {
+    return false;
+  }
+
+  RunTimeClassInfo* info = RunTimeClassInfo::get_for(k);
+  assert(info != NULL, "sanity");
+
+  if (log_is_enabled(Info, cds, heap)) {
+    ResourceMark rm;
+    log_info(cds, heap)("Initializing Enum class: %s", k->external_name());
+  }
+
+  oop mirror = k->java_mirror();
+  int i = 0;
+  for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      int root_index = info->enum_klass_static_field_root_index_at(i++);
+      fieldDescriptor& fd = fs.field_descriptor();
+      assert(fd.field_type() == T_OBJECT || fd.field_type() == T_ARRAY, "must be");
+      mirror->obj_field_put(fd.offset(), get_root(root_index, /*clear=*/true));
+    }
+  }
+  return true;
+}
+
 void HeapShared::run_full_gc_in_vm_thread() {
   if (HeapShared::can_write()) {
     // Avoid fragmentation while archiving heap objects.
@@ -369,13 +469,17 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
     create_archived_object_cache();
 
     log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                  p2i(CompressedOops::begin()), p2i(CompressedOops::end()));
+                   UseCompressedOops ? p2i(CompressedOops::begin()) :
+                                       p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                   UseCompressedOops ? p2i(CompressedOops::end()) :
+                                       p2i((address)G1CollectedHeap::heap()->reserved().end()));
     log_info(cds)("Dumping objects to closed archive heap region ...");
     copy_closed_objects(closed_regions);
 
     log_info(cds)("Dumping objects to open archive heap region ...");
     copy_open_objects(open_regions);
 
+    CDSHeapVerifier::verify();
     destroy_archived_object_cache();
   }
 
@@ -470,7 +574,7 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_
   bool created;
   Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
   KlassSubGraphInfo* info =
-    _dump_time_subgraph_info_table->put_if_absent(relocated_k, KlassSubGraphInfo(relocated_k, is_full_module_graph),
+    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(relocated_k, is_full_module_graph),
                                                   &created);
   assert(created, "must not initialize twice");
   return info;
@@ -478,8 +582,7 @@ KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_
 
 KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
   assert(DumpSharedSpaces, "dump time only");
-  Klass* relocated_k = ArchiveBuilder::get_relocated_klass(k);
-  KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(relocated_k);
+  KlassSubGraphInfo* info = _dump_time_subgraph_info_table->get(k);
   assert(info != NULL, "must have been initialized");
   return info;
 }
@@ -640,7 +743,8 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
         (ArchivedKlassSubGraphInfoRecord*)ArchiveBuilder::ro_region_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));
       record->init(&info);
 
-      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)klass);
+      Klass* relocated_k = ArchiveBuilder::get_relocated_klass(klass);
+      unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary((address)relocated_k);
       u4 delta = ArchiveBuilder::current()->any_to_offset_u4(record);
       _writer->add(hash, delta);
     }
@@ -665,11 +769,26 @@ void HeapShared::write_subgraph_info_table() {
   CompactHashtableWriter writer(d_table->_count, &stats);
   CopyKlassSubGraphInfoToArchive copy(&writer);
   d_table->iterate(&copy);
-
   writer.dump(&_run_time_subgraph_info_table, "subgraphs");
 }
 
-void HeapShared::serialize_subgraph_info_table_header(SerializeClosure* soc) {
+void HeapShared::serialize(SerializeClosure* soc) {
+  oop roots_oop = NULL;
+
+  if (soc->reading()) {
+    soc->do_oop(&roots_oop); // read from archive
+    assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
+    // Create an OopHandle only if we have actually mapped or loaded the roots
+    if (roots_oop != NULL) {
+      assert(HeapShared::is_fully_available(), "must be");
+      _roots = OopHandle(Universe::vm_global(), roots_oop);
+    }
+  } else {
+    // writing
+    roots_oop = roots();
+    soc->do_oop(&roots_oop); // write to archive
+  }
+
   _run_time_subgraph_info_table.serialize_header(soc);
 }
 
@@ -887,6 +1006,11 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
   KlassSubGraphInfo* _subgraph_info;
   oop _orig_referencing_obj;
   oop _archived_referencing_obj;
+
+  // The following are for maintaining a stack for determining
+  // CachedOopInfo::_referrer
+  static WalkOopAndArchiveClosure* _current;
+  WalkOopAndArchiveClosure* _last;
  public:
   WalkOopAndArchiveClosure(int level,
                            bool is_closed_archive,
@@ -896,7 +1020,13 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
     _level(level), _is_closed_archive(is_closed_archive),
     _record_klasses_only(record_klasses_only),
     _subgraph_info(subgraph_info),
-    _orig_referencing_obj(orig), _archived_referencing_obj(archived) {}
+    _orig_referencing_obj(orig), _archived_referencing_obj(archived) {
+    _last = _current;
+    _current = this;
+  }
+  ~WalkOopAndArchiveClosure() {
+    _current = _last;
+  }
   void do_oop(narrowOop *p) { WalkOopAndArchiveClosure::do_oop_work(p); }
   void do_oop(      oop *p) { WalkOopAndArchiveClosure::do_oop_work(p); }
 
@@ -933,7 +1063,25 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
       }
     }
   }
+
+ public:
+  static WalkOopAndArchiveClosure* current()  { return _current;              }
+  oop orig_referencing_obj()                  { return _orig_referencing_obj; }
+  KlassSubGraphInfo* subgraph_info()          { return _subgraph_info;        }
 };
+
+WalkOopAndArchiveClosure* WalkOopAndArchiveClosure::_current = NULL;
+
+HeapShared::CachedOopInfo HeapShared::make_cached_oop_info(oop orig_obj) {
+  CachedOopInfo info;
+  WalkOopAndArchiveClosure* walker = WalkOopAndArchiveClosure::current();
+
+  info._subgraph_info = (walker == NULL) ? NULL : walker->subgraph_info();
+  info._referrer = (walker == NULL) ? NULL : walker->orig_referencing_obj();
+  info._obj = orig_obj;
+
+  return info;
+}
 
 void HeapShared::check_closed_region_object(InstanceKlass* k) {
   // Check fields in the object
@@ -1060,6 +1208,8 @@ oop HeapShared::archive_reachable_objects_from(int level,
   if (is_closed_archive && orig_k->is_instance_klass()) {
     check_closed_region_object(InstanceKlass::cast(orig_k));
   }
+
+  check_enum_obj(level + 1, subgraph_info, orig_obj, is_closed_archive);
   return archived_obj;
 }
 
@@ -1391,39 +1541,44 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
 // region. This way we can quickly relocate all the pointers without using
 // BasicOopIterateClosure at runtime.
 class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
-  narrowOop* _start;
+  void* _start;
   BitMap *_oopmap;
   int _num_total_oops;
   int _num_null_oops;
  public:
-  FindEmbeddedNonNullPointers(narrowOop* start, BitMap* oopmap)
+  FindEmbeddedNonNullPointers(void* start, BitMap* oopmap)
     : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
 
   virtual void do_oop(narrowOop* p) {
     _num_total_oops ++;
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
-      size_t idx = p - _start;
+      size_t idx = p - (narrowOop*)_start;
       _oopmap->set_bit(idx);
     } else {
       _num_null_oops ++;
     }
   }
-  virtual void do_oop(oop *p) {
-    ShouldNotReachHere();
+  virtual void do_oop(oop* p) {
+    _num_total_oops ++;
+    if ((*p) != NULL) {
+      size_t idx = p - (oop*)_start;
+      _oopmap->set_bit(idx);
+    } else {
+      _num_null_oops ++;
+    }
   }
   int num_total_oops() const { return _num_total_oops; }
   int num_null_oops()  const { return _num_null_oops; }
 };
 
 ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
-  assert(UseCompressedOops, "must be");
-  size_t num_bits = region.byte_size() / sizeof(narrowOop);
+  size_t num_bits = region.byte_size() / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   ResourceBitMap oopmap(num_bits);
 
   HeapWord* p   = region.start();
   HeapWord* end = region.end();
-  FindEmbeddedNonNullPointers finder((narrowOop*)p, &oopmap);
+  FindEmbeddedNonNullPointers finder((void*)p, &oopmap);
   ArchiveBuilder* builder = DumpSharedSpaces ? ArchiveBuilder::current() : NULL;
 
   int num_objs = 0;
@@ -1444,11 +1599,11 @@ ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
 
 // Patch all the embedded oop pointers inside an archived heap region,
 // to be consistent with the runtime oop encoding.
-class PatchEmbeddedPointers: public BitMapClosure {
+class PatchCompressedEmbeddedPointers: public BitMapClosure {
   narrowOop* _start;
 
  public:
-  PatchEmbeddedPointers(narrowOop* start) : _start(start) {}
+  PatchCompressedEmbeddedPointers(narrowOop* start) : _start(start) {}
 
   bool do_bit(size_t offset) {
     narrowOop* p = _start + offset;
@@ -1456,6 +1611,22 @@ class PatchEmbeddedPointers: public BitMapClosure {
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     oop o = HeapShared::decode_from_archive(v);
     RawAccess<IS_NOT_NULL>::oop_store(p, o);
+    return true;
+  }
+};
+
+class PatchUncompressedEmbeddedPointers: public BitMapClosure {
+  oop* _start;
+
+ public:
+  PatchUncompressedEmbeddedPointers(oop* start) : _start(start) {}
+
+  bool do_bit(size_t offset) {
+    oop* p = _start + offset;
+    intptr_t dumptime_oop = (intptr_t)((void*)*p);
+    assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
+    intptr_t runtime_oop = dumptime_oop + HeapShared::runtime_delta();
+    RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
 };
@@ -1472,8 +1643,13 @@ void HeapShared::patch_embedded_pointers(MemRegion region, address oopmap,
   assert(bm.is_same(checkBm), "sanity");
 #endif
 
-  PatchEmbeddedPointers patcher((narrowOop*)region.start());
-  bm.iterate(&patcher);
+  if (UseCompressedOops) {
+    PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
+    bm.iterate(&patcher);
+  } else {
+    PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
+    bm.iterate(&patcher);
+  }
 }
 
 // The CDS archive remembers each heap object by its address at dump time, but
@@ -1637,6 +1813,10 @@ void HeapShared::sort_loaded_regions(LoadedArchiveHeapRegion* loaded_regions, in
 bool HeapShared::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
                               int num_loaded_regions, uintptr_t buffer) {
   uintptr_t bitmap_base = (uintptr_t)mapinfo->map_bitmap_region();
+  if (bitmap_base == 0) {
+    _loading_failed = true;
+    return false; // OOM or CRC error
+  }
   uintptr_t load_address = buffer;
   for (int i = 0; i < num_loaded_regions; i++) {
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
@@ -1694,7 +1874,6 @@ bool HeapShared::load_heap_regions(FileMapInfo* mapinfo) {
 
   init_loaded_heap_relocation(loaded_regions, num_loaded_regions);
   _is_loaded = true;
-  set_roots(mapinfo->heap_obj_roots());
 
   return true;
 }

@@ -26,6 +26,7 @@
 package build.tools.cldrconverter;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -131,8 +132,7 @@ class CopyrightHeaders {
         " * questions.\n" +
         " */\n";
 
-    static String getOracleCopyright() {
-        int year = getYear();
+    static String getOracleCopyright(int year) {
         return String.format(year > 2012 ? ORACLE_AFTER2012 : ORACLE2012, year);
     }
 
@@ -140,14 +140,8 @@ class CopyrightHeaders {
         return UNICODE;
     }
 
-    static String getOpenJDKCopyright() {
-        int year = getYear();
+    static String getOpenJDKCopyright(int year) {
         return String.format(year > 2012 ? OPENJDK_AFTER2012 : OPENJDK2012, year);
-    }
-
-    private static int getYear() {
-        return new GregorianCalendar(TimeZone.getTimeZone("America/Los_Angeles"),
-                                         Locale.US).get(Calendar.YEAR);
     }
 
     // no instantiation

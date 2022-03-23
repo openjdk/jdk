@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -952,9 +953,29 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         Element e = env.trees.getElement(getCurrentPath());
-        if (e == null)
-            env.messages.error(REFERENCE, tree, "dc.ref.not.found");
+        if (e == null) {
+            reportBadReference(tree);
+        }
         return super.visitReference(tree, ignore);
+    }
+
+    private void reportBadReference(ReferenceTree tree) {
+        if (!env.strictReferenceChecks) {
+            String refSig = tree.getSignature();
+            int sep = refSig.indexOf("/");
+            if (sep > 0) {
+                String moduleName = refSig.substring(0, sep);
+                if (SourceVersion.isName(moduleName)) {
+                    Element m = env.elements.getModuleElement(moduleName);
+                    if (m == null) {
+                        env.messages.warning(REFERENCE, tree, "dc.ref.in.missing.module", moduleName);
+                        return;
+                    }
+                }
+            }
+        }
+
+        env.messages.error(REFERENCE, tree, "dc.ref.not.found");
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -964,8 +985,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         if (tree.isInline()) {
             DocCommentTree dct = getCurrentPath().getDocComment();
-            if (tree != dct.getFirstSentence().get(0)) {
-                env.messages.warning(REFERENCE, tree, "dc.return.not.first");
+            if (dct.getFirstSentence().isEmpty() || tree != dct.getFirstSentence().get(0)) {
+                env.messages.warning(SYNTAX, tree, "dc.return.not.first");
             }
         }
 
@@ -1236,13 +1257,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     boolean hasNonWhitespace(TextTree tree) {
-        String s = tree.getBody();
-        for (int i = 0; i < s.length(); i++) {
-            Character c = s.charAt(i);
-            if (!Character.isWhitespace(s.charAt(i)))
-                return true;
-        }
-        return false;
+        return !tree.getBody().isBlank();
     }
 
     // </editor-fold>

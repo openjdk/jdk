@@ -148,8 +148,8 @@ public abstract class SysDictTest extends ThreadedGCTest {
                     // set name into public variable just to be sure
                     // that class is loaded
                     tmp = clz.getName();
-                } catch (OutOfMemoryError | ClassNotFoundException e) {
-                    // just ignore
+                } catch (OutOfMemoryError | ClassNotFoundException | NoClassDefFoundError e) {
+                    // just ignore, note that CNFE and NCDFE can be caused by OOM exceptions.
                 } catch (StackOverflowError soe) {
                     // just ignore, chains could be too large
                     // StackOverflowError could be in some sparcs

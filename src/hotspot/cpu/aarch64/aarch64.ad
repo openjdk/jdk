@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1311,6 +1311,9 @@ public:
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
 
+  // Assert that the given node is not a variable shift.
+  bool assert_not_var_shift(const Node* n);
+
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
 %}
@@ -1725,6 +1728,12 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
+// Assert that the given node is not a variable shift.
+bool assert_not_var_shift(const Node* n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
+  return true;
+}
+
 #define __ _masm.
 
 // advance declarations for helper functions to convert register
@@ -1853,6 +1862,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->output()->need_stack_bang(framesize))
     st->print("# stack bang size=%d\n\t", framesize);
 
+  if (VM_Version::use_rop_protection()) {
+    st->print("ldr zr, [lr]\n\t");
+    st->print("pacia  lr, rfp\n\t");
+  }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
     st->print("stp  rfp, lr, [sp, #%d]", framesize - 2 * wordSize);
@@ -1960,6 +1973,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("add  sp, sp, rscratch1\n\t");
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
+  }
+  if (VM_Version::use_rop_protection()) {
+    st->print("autia lr, rfp\n\t");
+    st->print("ldr zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {
@@ -2478,7 +2495,7 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_PR_REG_mask;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(elemTy, length);
 }
 
@@ -2685,12 +2702,52 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
+bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
+  if (UseSVE == 0 || !VectorNode::is_invariant_vector(replicate_node)){
+    return false;
+  }
+  Node* imm_node = replicate_node->in(1);
+  if (!imm_node->is_Con()) {
+    return false;
+  }
+
+  const Type* t = imm_node->bottom_type();
+  if (!(t->isa_int() || t->isa_long())) {
+    return false;
+  }
+
+  switch (binary_node->Opcode()) {
+  case Op_AndV:
+  case Op_OrV:
+  case Op_XorV: {
+    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(binary_node));
+    uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
+    return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
+  }
+  case Op_AddVB:
+    return (imm_node->get_int() <= 255 && imm_node->get_int() >= -255);
+  case Op_AddVS:
+  case Op_AddVI:
+    return Assembler::operand_valid_for_sve_add_sub_immediate((int64_t)imm_node->get_int());
+  case Op_AddVL:
+    return Assembler::operand_valid_for_sve_add_sub_immediate(imm_node->get_long());
+  default:
+    return false;
+  }
+}
+
+bool is_vector_arith_imm_pattern(Node* n, Node* m) {
+  if (n != NULL && m != NULL) {
+    return can_combine_with_imm(n, m);
+  }
+  return false;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // ShiftV src (ShiftCntV con)
-  // StoreVector (VectorStoreMask src)
-  if (is_vshift_con_pattern(n, m) ||
-      (UseSVE > 0 && m->Opcode() == Op_VectorStoreMask && n->Opcode() == Op_StoreVector)) {
+  // Binary src (Replicate con)
+  if (is_vshift_con_pattern(n, m) || is_vector_arith_imm_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -3161,8 +3218,18 @@ encode %{
                  rscratch1, stlrb);
   %}
 
+  enc_class aarch64_enc_stlrb0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrb);
+  %}
+
   enc_class aarch64_enc_stlrh(iRegI src, memory mem) %{
     MOV_VOLATILE(as_Register($src$$reg), $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrh);
+  %}
+
+  enc_class aarch64_enc_stlrh0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlrh);
   %}
 
@@ -3171,6 +3238,10 @@ encode %{
                  rscratch1, stlrw);
   %}
 
+  enc_class aarch64_enc_stlrw0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrw);
+  %}
 
   enc_class aarch64_enc_ldarsbw(iRegI dst, memory mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -3258,6 +3329,11 @@ encode %{
       src_reg = rscratch2;
     }
     MOV_VOLATILE(src_reg, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlr);
+  %}
+
+  enc_class aarch64_enc_stlr0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlr);
   %}
 
@@ -3860,37 +3936,40 @@ encode %{
     // Check for existing monitor
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Set tmp to be (markWord of object | UNLOCK_VALUE).
-    __ orr(tmp, disp_hdr, markWord::unlocked_value);
+    if (!UseHeavyMonitors) {
+      // Set tmp to be (markWord of object | UNLOCK_VALUE).
+      __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
-    // Initialize the box. (Must happen before we update the object mark!)
-    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      // Initialize the box. (Must happen before we update the object mark!)
+      __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Compare object markWord with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markWord.
-    // On failure disp_hdr contains the possibly locked markWord.
-    __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, disp_hdr);
-    __ br(Assembler::EQ, cont);
+      // Compare object markWord with an unlocked value (tmp) and if
+      // equal exchange the stack address of our box with object markWord.
+      // On failure disp_hdr contains the possibly locked markWord.
+      __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
+                 /*release*/ true, /*weak*/ false, disp_hdr);
+      __ br(Assembler::EQ, cont);
 
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label cont
+      // If the compare-and-exchange succeeded, then we found an unlocked
+      // object, will have now locked it will continue at label cont
 
-    __ bind(cas_failed);
-    // We did not see an unlocked object so try the fast recursive case.
+      __ bind(cas_failed);
+      // We did not see an unlocked object so try the fast recursive case.
 
-    // Check if the owner is self by comparing the value in the
-    // markWord of object (disp_hdr) with the stack pointer.
-    __ mov(rscratch1, sp);
-    __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    // If condition is true we are cont and hence we can store 0 as the
-    // displaced header in the box, which indicates that it is a recursive lock.
-    __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-    __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
+      // Check if the owner is self by comparing the value in the
+      // markWord of object (disp_hdr) with the stack pointer.
+      __ mov(rscratch1, sp);
+      __ sub(disp_hdr, disp_hdr, rscratch1);
+      __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+      // If condition is true we are cont and hence we can store 0 as the
+      // displaced header in the box, which indicates that it is a recursive lock.
+      __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
+      __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    } else {
+      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    }
     __ b(cont);
 
     // Handle existing monitor.
@@ -3902,7 +3981,7 @@ encode %{
     // Try to CAS m->owner from NULL to current thread.
     __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, noreg); // Sets flags for result
+               /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
 
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
@@ -3910,6 +3989,15 @@ encode %{
     // relevant bit set, and also matches ObjectSynchronizer::enter.
     __ mov(tmp, (address)markWord::unused_mark().value());
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+    __ br(Assembler::EQ, cont); // CAS success means locking succeeded
+
+    __ cmp(rscratch1, rthread);
+    __ br(Assembler::NE, cont); // Check for recursive locking
+
+    // Recursive lock case
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1);
+    // flag == EQ still from the cmp above, checking if this is a reentrant lock
 
     __ bind(cont);
     // flag == EQ indicates success
@@ -3927,23 +4015,29 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    // Find the lock address and load the displaced header from the stack.
-    __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    if (!UseHeavyMonitors) {
+      // Find the lock address and load the displaced header from the stack.
+      __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // If the displaced header is 0, we have a recursive unlock.
-    __ cmp(disp_hdr, zr);
-    __ br(Assembler::EQ, cont);
+      // If the displaced header is 0, we have a recursive unlock.
+      __ cmp(disp_hdr, zr);
+      __ br(Assembler::EQ, cont);
+    }
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markWord of the
-    // object.
+    if (!UseHeavyMonitors) {
+      // Check if it is still a light weight lock, this is is true if we
+      // see the stack address of the basicLock in the markWord of the
+      // object.
 
-    __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-               /*release*/ true, /*weak*/ false, tmp);
+      __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
+                 /*release*/ true, /*weak*/ false, tmp);
+    } else {
+      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    }
     __ b(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
@@ -3952,13 +4046,18 @@ encode %{
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-    __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
-    __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if there are 0 recursions
-    __ cmp(rscratch1, zr); // Sets flags for result
-    __ br(Assembler::NE, cont);
 
+    Label notRecursive;
+    __ cbz(disp_hdr, notRecursive);
+
+    // Recursive lock
+    __ sub(disp_hdr, disp_hdr, 1u);
+    __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ cmp(disp_hdr, disp_hdr); // Sets flags for result
+    __ b(cont);
+
+    __ bind(notRecursive);
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
     __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
@@ -4611,6 +4710,17 @@ operand immL8_shift8()
   interface(CONST_INTER);
 %}
 
+// 8 bit integer valid for vector add sub immediate
+operand immBAddSubV()
+%{
+  predicate(n->get_int() <= 255 && n->get_int() >= -255);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // 32 bit integer valid for add sub immediate
 operand immIAddSub()
 %{
@@ -4621,8 +4731,39 @@ operand immIAddSub()
   interface(CONST_INTER);
 %}
 
+// 32 bit integer valid for vector add sub immediate
+operand immIAddSubV()
+%{
+  predicate(Assembler::operand_valid_for_sve_add_sub_immediate((int64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // 32 bit unsigned integer valid for logical immediate
-// TODO -- check this is right when e.g the mask is 0x80000000
+
+operand immBLog()
+%{
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerByte, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immSLog()
+%{
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerShort, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immILog()
 %{
   predicate(Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
@@ -4695,6 +4836,17 @@ operand immLAddSub()
 %{
   predicate(Assembler::operand_valid_for_add_sub_immediate(n->get_long()));
   match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 64 bit integer valid for addv subv immediate
+operand immLAddSubV()
+%{
+  predicate(Assembler::operand_valid_for_sve_add_sub_immediate(n->get_long()));
+  match(ConL);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -8159,6 +8311,18 @@ instruct storeB_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmB0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreB mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrb  zr, $mem\t# byte" %}
+
+  ins_encode(aarch64_enc_stlrb0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Char/Short
 instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
 %{
@@ -8168,6 +8332,18 @@ instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   format %{ "stlrh  $src, $mem\t# short" %}
 
   ins_encode(aarch64_enc_stlrh(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmC0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreC mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrh  zr, $mem\t# short" %}
+
+  ins_encode(aarch64_enc_stlrh0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8186,6 +8362,18 @@ instruct storeI_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmI0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem(StoreI mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Long (64 bit signed)
 instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
 %{
@@ -8195,6 +8383,18 @@ instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
   format %{ "stlr  $src, $mem\t# int" %}
 
   ins_encode(aarch64_enc_stlr(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmL0_volatile(immL0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreL mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8212,6 +8412,18 @@ instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreP mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# ptr" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Compressed Pointer
 instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
 %{
@@ -8221,6 +8433,18 @@ instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
   format %{ "stlrw  $src, $mem\t# compressed ptr" %}
 
   ins_encode(aarch64_enc_stlrw(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmN0_volatile(immN0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreN mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# compressed ptr" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8425,10 +8649,10 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
     __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
-    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8450,7 +8674,7 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8468,10 +8692,10 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8493,7 +8717,7 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -16856,13 +17080,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
+instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
 %{
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(USE_KILL ary1, USE_KILL len, KILL cr);
-  format %{ "has negatives byte[] $ary1,$len -> $result" %}
+  format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
-    address tpc = __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
     if (tpc == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
@@ -16878,16 +17102,17 @@ instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                          iRegI_R0 result, rFlagsReg cr)
 %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
+         USE_KILL src, USE_KILL dst, USE len, KILL cr);
 
-  format %{ "String Compress $src,$dst -> $result    // KILL R1, R2, R3, R4" %}
+  format %{ "String Compress $src,$dst,$len -> $result  // KILL $src,$dst" %}
   ins_encode %{
     __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
+                           $result$$Register,
                            $tmp1$$FloatRegister, $tmp2$$FloatRegister,
-                           $tmp3$$FloatRegister, $tmp4$$FloatRegister,
-                           $result$$Register);
+                           $tmp3$$FloatRegister, $tmp4$$FloatRegister);
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 // fast byte[] to char[] inflation
@@ -16912,22 +17137,43 @@ instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                          vRegD_V0 Vtmp1, vRegD_V1 Vtmp2,
-                          vRegD_V2 Vtmp3, vRegD_V3 Vtmp4,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1,
+                          vRegD_V2 vtmp2, vRegD_V3 vtmp3,
                           iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
-  effect(USE_KILL src, USE_KILL dst, USE_KILL len,
-         KILL Vtmp1, KILL Vtmp2, KILL Vtmp3, KILL Vtmp4, KILL cr);
+  effect(USE_KILL src, USE_KILL dst, USE len,
+         KILL vtmp0, KILL vtmp1, KILL vtmp2, KILL vtmp3, KILL cr);
 
-  format %{ "Encode array $src,$dst,$len -> $result" %}
+  format %{ "Encode ISO array $src,$dst,$len -> $result" %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
-         $result$$Register, $Vtmp1$$FloatRegister,  $Vtmp2$$FloatRegister,
-         $Vtmp3$$FloatRegister,  $Vtmp4$$FloatRegister);
+                        $result$$Register, false,
+                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
   %}
-  ins_pipe( pipe_class_memory );
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct encode_ascii_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+                            vRegD_V0 vtmp0, vRegD_V1 vtmp1,
+                            vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                            iRegI_R0 result, rFlagsReg cr)
+%{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(USE_KILL src, USE_KILL dst, USE len,
+         KILL vtmp0, KILL vtmp1, KILL vtmp2, KILL vtmp3, KILL cr);
+
+  format %{ "Encode ASCII array $src,$dst,$len -> $result" %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $result$$Register, true,
+                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_memory);
 %}
 
 // ============================================================================

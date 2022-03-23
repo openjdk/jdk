@@ -50,7 +50,7 @@ abstract class MemoryAccessVarHandleBase extends VarHandle {
         this.alignmentMask = alignmentMask;
     }
 
-    static IllegalStateException newIllegalStateExceptionForMisalignedAccess(long address) {
-        return new IllegalStateException("Misaligned access at address: " + address);
+    static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
+        return new IllegalArgumentException("Misaligned access at address: " + address);
     }
 }

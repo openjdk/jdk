@@ -34,11 +34,20 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Parser for GNU Style Options.
  */
 class GNUStyleOptions {
+
+    // Valid --date range
+    static final ZonedDateTime DATE_MIN = ZonedDateTime.parse("1980-01-01T00:00:02Z");
+    static final ZonedDateTime DATE_MAX = ZonedDateTime.parse("2099-12-31T23:59:59Z");
 
     static class BadArgs extends Exception {
         static final long serialVersionUID = 0L;
@@ -186,6 +195,20 @@ class GNUStyleOptions {
             new Option(false, OptionType.CREATE_UPDATE_INDEX, "--no-compress", "-0") {
                 void process(Main jartool, String opt, String arg) {
                     jartool.flag0 = true;
+                }
+            },
+            new Option(true, OptionType.CREATE_UPDATE_INDEX, "--date") {
+                void process(Main jartool, String opt, String arg) throws BadArgs {
+                    try {
+                        ZonedDateTime date = ZonedDateTime.parse(arg, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+                                                             .withZoneSameInstant(ZoneOffset.UTC);
+                        if (date.isBefore(DATE_MIN) || date.isAfter(DATE_MAX)) {
+                            throw new BadArgs("error.date.out.of.range", arg);
+                        }
+                        jartool.date = date.toLocalDateTime();
+                    } catch (DateTimeParseException x) {
+                        throw new BadArgs("error.date.notvalid", arg);
+                    }
                 }
             },
 

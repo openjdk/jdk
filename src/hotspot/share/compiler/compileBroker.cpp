@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ int CompileBroker::_sum_standard_bytes_compiled    = 0;
 int CompileBroker::_sum_nmethod_size               = 0;
 int CompileBroker::_sum_nmethod_code_size          = 0;
 
-long CompileBroker::_peak_compilation_time         = 0;
+jlong CompileBroker::_peak_compilation_time        = 0;
 
 CompilerStatistics CompileBroker::_stats_per_level[CompLevel_full_optimization];
 
@@ -225,11 +225,13 @@ class CompilationLog : public StringEventLog {
   }
 
   void log_metaspace_failure(const char* reason) {
+    // Note: This method can be called from non-Java/compiler threads to
+    // log the global metaspace failure that might affect profiling.
     ResourceMark rm;
     StringLogMessage lm;
     lm.print("%4d   COMPILE PROFILING SKIPPED: %s", -1, reason);
     lm.print("\n");
-    log(JavaThread::current(), "%s", (const char*)lm);
+    log(Thread::current(), "%s", (const char*)lm);
   }
 };
 
@@ -411,6 +413,7 @@ void CompileQueue::free_all() {
     CompileTask::free(current);
   }
   _first = NULL;
+  _last = NULL;
 
   // Wake up all threads that block on the queue.
   MethodCompileQueue_lock->notify_all();
@@ -613,9 +616,8 @@ void register_jfr_phasetype_serializer(CompilerType compiler_type) {
 #ifdef COMPILER2
   } else if (compiler_type == compiler_c2) {
     assert(first_registration, "invariant"); // c2 must be registered first.
-    GrowableArray<const char*>* c2_phase_names = new GrowableArray<const char*>(PHASE_NUM_TYPES);
     for (int i = 0; i < PHASE_NUM_TYPES; i++) {
-      const char* phase_name = CompilerPhaseTypeHelper::to_string((CompilerPhaseType) i);
+      const char* phase_name = CompilerPhaseTypeHelper::to_description((CompilerPhaseType) i);
       CompilerEvent::PhaseEvent::get_phase_id(phase_name, false, false, false);
     }
     first_registration = false;
@@ -1969,6 +1971,8 @@ void CompileBroker::compiler_thread_loop() {
           method->clear_queued_for_compilation();
           task->set_failure_reason("compilation is disabled");
         }
+      } else {
+        task->set_failure_reason("breakpoints are present");
       }
 
       if (UseDynamicNumberOfCompilerThreads) {
@@ -2002,7 +2006,7 @@ void CompileBroker::init_compiler_thread_log() {
                      os::file_separator(), thread_id, os::current_process_id());
       }
 
-      fp = fopen(file_name, "wt");
+      fp = os::fopen(file_name, "wt");
       if (fp != NULL) {
         if (LogCompilation && Verbose) {
           tty->print_cr("Opening compilation log %s", file_name);

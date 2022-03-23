@@ -1763,10 +1763,10 @@ public class X509CertSelector implements CertSelector {
         StringBuilder sb = new StringBuilder();
         sb.append("X509CertSelector: [\n");
         if (x509Cert != null) {
-            sb.append("  Certificate: " + x509Cert.toString() + "\n");
+            sb.append("  Certificate: " + x509Cert + "\n");
         }
         if (serialNumber != null) {
-            sb.append("  Serial Number: " + serialNumber.toString() + "\n");
+            sb.append("  Serial Number: " + serialNumber + "\n");
         }
         if (issuer != null) {
             sb.append("  Issuer: " + getIssuerAsString() + "\n");
@@ -1775,7 +1775,7 @@ public class X509CertSelector implements CertSelector {
             sb.append("  Subject: " + getSubjectAsString() + "\n");
         }
         sb.append("  matchAllSubjectAltNames flag: "
-                  + String.valueOf(matchAllSubjectAltNames) + "\n");
+                  + matchAllSubjectAltNames + "\n");
         if (subjectAlternativeNames != null) {
             sb.append("  SubjectAlternativeNames:\n");
             for (List<?> list : subjectAlternativeNames) {
@@ -1795,29 +1795,29 @@ public class X509CertSelector implements CertSelector {
         }
         if (certificateValid != null) {
             sb.append("  Certificate Valid: " +
-                      certificateValid.toString() + "\n");
+                      certificateValid + "\n");
         }
         if (privateKeyValid != null) {
             sb.append("  Private Key Valid: " +
-                      privateKeyValid.toString() + "\n");
+                      privateKeyValid + "\n");
         }
         if (subjectPublicKeyAlgID != null) {
             sb.append("  Subject Public Key AlgID: " +
-                      subjectPublicKeyAlgID.toString() + "\n");
+                      subjectPublicKeyAlgID + "\n");
         }
         if (subjectPublicKey != null) {
             sb.append("  Subject Public Key: " +
-                      subjectPublicKey.toString() + "\n");
+                      subjectPublicKey + "\n");
         }
         if (keyUsage != null) {
             sb.append("  Key Usage: " + keyUsageToString(keyUsage) + "\n");
         }
         if (keyPurposeSet != null) {
             sb.append("  Extended Key Usage: " +
-                      keyPurposeSet.toString() + "\n");
+                      keyPurposeSet + "\n");
         }
         if (policy != null) {
-            sb.append("  Policy: " + policy.toString() + "\n");
+            sb.append("  Policy: " + policy + "\n");
         }
         if (pathToGeneralNames != null) {
             sb.append("  Path to names:\n");
@@ -2145,7 +2145,7 @@ public class X509CertSelector implements CertSelector {
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_BEFORE: "
                     + time + "; X509CertSelector: "
-                    + this.toString());
+                    + this);
                 e2.printStackTrace();
             }
             return false;
@@ -2153,7 +2153,7 @@ public class X509CertSelector implements CertSelector {
             if (debug != null) {
                 debug.println("X509CertSelector.match: IOException in "
                     + "private key usage check; X509CertSelector: "
-                    + this.toString());
+                    + this);
                 e4.printStackTrace();
             }
             return false;

@@ -95,7 +95,11 @@ static jobject sAccessibilityClass = NULL;
         return NO;
     }
 
-    return isChildSelected(env, ((CommonComponentAccessibility *)[self parent])->fAccessible, fIndex, fComponent);
+    CommonComponentAccessibility* parent = [self typeSafeParent];
+    if (parent != nil) {
+        return isChildSelected(env, parent->fAccessible, fIndex, fComponent);
+    }
+    return NO;
 }
 
 - (BOOL)isSelectable:(JNIEnv *)env
@@ -122,7 +126,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:46];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -152,6 +156,11 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"ListAccessibility" forKey:@"list"];
     [rolesMap setObject:@"OutlineAccessibility" forKey:@"tree"];
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];
+    [rolesMap setObject:@"MenuBarAccessibility" forKey:@"menubar"];
+    [rolesMap setObject:@"MenuAccessibility" forKey:@"menu"];
+    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
+    [rolesMap setObject:@"MenuAccessibility" forKey:@"popupmenu"];
+    [rolesMap setObject:@"ProgressIndicatorAccessibility" forKey:@"progressbar"];
 
     /*
      * All the components below should be ignored by the accessibility subsystem,
@@ -703,6 +712,15 @@ static jobject sAccessibilityClass = NULL;
     return fParent;
 }
 
+- (CommonComponentAccessibility *)typeSafeParent
+{
+    id parent = [self parent];
+    if ([parent isKindOfClass:[CommonComponentAccessibility class]]) {
+        return (CommonComponentAccessibility*)parent;
+    }
+    return nil;
+}
+
 - (NSString *)javaRole
 {
     if(fJavaRole == nil) {
@@ -787,7 +805,7 @@ static jobject sAccessibilityClass = NULL;
     (*env)->DeleteLocalRef(env, axComponent);
     point.y += size.height;
 
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     return NSMakeRect(point.x, point.y, size.width, size.height);
 }
@@ -819,11 +837,13 @@ static jobject sAccessibilityClass = NULL;
     if (fNSRole == nil) {
         NSString *javaRole = [self javaRole];
         fNSRole = [sRoles objectForKey:javaRole];
+        CommonComponentAccessibility* parent = [self typeSafeParent];
         // The sRoles NSMutableDictionary maps popupmenu to Mac's popup button.
         // JComboBox behavior currently relies on this.  However this is not the
         // proper mapping for a JPopupMenu so fix that.
         if ( [javaRole isEqualToString:@"popupmenu"] &&
-             ![[[self parent] javaRole] isEqualToString:@"combobox"] ) {
+             parent != nil &&
+             ![[parent javaRole] isEqualToString:@"combobox"] ) {
              fNSRole = NSAccessibilityMenuRole;
         }
         if (fNSRole == nil) {
@@ -985,7 +1005,7 @@ static jobject sAccessibilityClass = NULL;
     point.y += size.height;
 
     // Now make it into Cocoa screen coords.
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     return point;
 }
@@ -1020,8 +1040,9 @@ static jobject sAccessibilityClass = NULL;
     // This may change when later fixing issues which currently
     // exist for combo boxes, but for now the following is only
     // for JPopupMenus, not for combobox menus.
-    id parent = [self parent];
+    id parent = [self typeSafeParent];
     if ( [[self javaRole] isEqualToString:@"popupmenu"] &&
+         parent != nil &&
          ![[parent javaRole] isEqualToString:@"combobox"] ) {
         NSArray *children =
             [CommonComponentAccessibility childrenOfParent:self
@@ -1093,7 +1114,7 @@ static jobject sAccessibilityClass = NULL;
                                  "(Ljava/awt/Container;FF)Ljavax/accessibility/Accessible;", nil);
 
     // Make it into java screen coords
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     jobject jparent = fComponent;
 
@@ -1248,6 +1269,54 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_selectedCellsChanged
 {
     JNI_COCOA_ENTER(env);
         [ThreadUtilities performOnMainThread:@selector(postSelectedCellsChanged)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuOpened
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuClosed
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
+                         on:(CommonComponentAccessibility *)jlong_to_ptr(element)
+                         withObject:nil
+                         waitUntilDone:NO];
+    JNI_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CAccessible
+ * Method:    menuItemSelected
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
+    (JNIEnv *env, jclass jklass, jlong element)
+{
+    JNI_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
                          on:(CommonComponentAccessibility *)jlong_to_ptr(element)
                          withObject:nil
                          waitUntilDone:NO];

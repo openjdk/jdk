@@ -23,6 +23,7 @@
  * questions.
  */
 
+#include <cstddef>
 #include <cstring>
 #include "tstrings.h"
 #include "JvmLauncher.h"

@@ -237,26 +237,25 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      */
     @ForceInline
     public static <E> VectorMask<E> fromLong(VectorSpecies<E> species, long bits) {
-        AbstractSpecies<E> vspecies = (AbstractSpecies<E>) species;
-        int laneCount = vspecies.laneCount();
-        if (laneCount < Long.SIZE) {
-            int extraSignBits = Long.SIZE - laneCount;
-            bits <<= extraSignBits;
-            bits >>= extraSignBits;
-        }
-        if (bits == (bits >> 1)) {
-            // Special case.
-            assert(bits == 0 || bits == -1);
-            return vspecies.maskAll(bits != 0);
-        }
-        // FIXME: Intrinsify this.
-        long shifted = bits;
-        boolean[] a = new boolean[laneCount];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = ((shifted & 1) != 0);
-            shifted >>= 1;  // replicate sign bit
-        }
-        return fromValues(vspecies, a);
+        AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
+        bits = bits & (0xFFFFFFFFFFFFFFFFL >>> (64 - vsp.laneCount()));
+        return VectorSupport.fromBitsCoerced(vsp.maskType(), vsp.elementType(), vsp.laneCount(), bits,
+                                             VectorSupport.MODE_BITS_COERCED_LONG_TO_MASK, vsp,
+                                             (m, s) -> {
+                                                 if (m == (m >> 1)) {
+                                                     // Special case.
+                                                     assert(m == 0 || m == -1);
+                                                     return s.maskAll(m != 0);
+                                                 }
+
+                                                 long shifted = m;
+                                                 boolean[] a = new boolean[s.laneCount()];
+                                                 for (int i = 0; i < a.length; i++) {
+                                                     a[i] = ((shifted & 1) != 0);
+                                                     shifted >>= 1;  // replicate sign bit
+                                                 }
+                                                 return fromValues(s, a);
+                                              });
     }
 
     /**

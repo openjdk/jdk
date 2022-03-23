@@ -25,10 +25,10 @@
 package jdk.internal.foreign.abi.x64.sysv;
 
 import jdk.incubator.foreign.GroupLayout;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
-import jdk.internal.foreign.PlatformLayouts;
 import jdk.internal.foreign.Utils;
 
 import java.util.ArrayList;
@@ -107,11 +107,17 @@ class TypeClass {
     }
 
     private static ArgumentClassImpl argumentClassFor(MemoryLayout layout) {
-        return switch (PlatformLayouts.getKind(layout)) {
-            case CHAR, SHORT, INT, LONG, LONG_LONG -> ArgumentClassImpl.INTEGER;
-            case FLOAT, DOUBLE -> ArgumentClassImpl.SSE;
-            case POINTER -> ArgumentClassImpl.POINTER;
-        };
+        Class<?> carrier = ((ValueLayout)layout).carrier();
+        if (carrier == boolean.class || carrier == byte.class || carrier == char.class ||
+                carrier == short.class || carrier == int.class || carrier == long.class) {
+            return ArgumentClassImpl.INTEGER;
+        } else if (carrier == float.class || carrier == double.class) {
+            return ArgumentClassImpl.SSE;
+        } else if (carrier == MemoryAddress.class) {
+            return ArgumentClassImpl.POINTER;
+        } else {
+            throw new IllegalStateException("Cannot get here: " + carrier.getName());
+        }
     }
 
     // TODO: handle zero length arrays

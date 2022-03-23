@@ -380,7 +380,7 @@ public class FormView extends ComponentView implements ActionListener {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getMaximumSpan(int axis) {
         switch (axis) {

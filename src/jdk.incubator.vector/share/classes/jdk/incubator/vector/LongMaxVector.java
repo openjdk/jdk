@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,6 +365,12 @@ final class LongMaxVector extends LongVector {
         return super.testTemplate(LongMaxMask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final LongMaxMask test(Test op, VectorMask<Long> m) {
+        return super.testTemplate(LongMaxMask.class, op, (LongMaxMask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -717,9 +723,9 @@ final class LongMaxVector extends LongVector {
         @ForceInline
         /*package-private*/
         static LongMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(LongMaxMask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(LongMaxMask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final LongMaxMask  TRUE_MASK = new LongMaxMask(true);
         private static final LongMaxMask FALSE_MASK = new LongMaxMask(false);

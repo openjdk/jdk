@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           _cached_src_lines = new (ResourceObj::C_HEAP, mtCode)GrowableArray<const char*>(0, mtCode);
         }
 
-        if ((fp = fopen(file, "r")) == NULL) {
+        if ((fp = os::fopen(file, "r")) == NULL) {
           _cached_src = NULL;
           return;
         }

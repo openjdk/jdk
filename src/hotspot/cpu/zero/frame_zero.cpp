@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
+ * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,13 +116,67 @@ void frame::patch_pc(Thread* thread, address pc) {
 }
 
 bool frame::safe_for_sender(JavaThread *thread) {
-  ShouldNotCallThis();
-  return false;
+  address sp = (address)_sp;
+
+  // consider stack guards when trying to determine "safe" stack pointers
+  // sp must be within the usable part of the stack (not in guards)
+  if (!thread->is_in_usable_stack(sp)) {
+    return false;
+  }
+
+  // an fp must be within the stack and above (but not equal) sp
+  if (!thread->is_in_stack_range_excl((address)fp(), sp)) {
+    return false;
+  }
+
+  // All good.
+  return true;
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread *thread) const {
-  ShouldNotCallThis();
-  return false;
+  assert(is_interpreted_frame(), "Not an interpreted frame");
+  // These are reasonable sanity checks
+  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+    return false;
+  }
+  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+    return false;
+  }
+  // These are hacks to keep us out of trouble.
+  // The problem with these is that they mask other problems
+  if (fp() <= sp()) {        // this attempts to deal with unsigned comparison above
+    return false;
+  }
+
+  // do some validation of frame elements
+  // first the method
+
+  Method* m = *interpreter_frame_method_addr();
+
+  // validate the method we'd find in this potential sender
+  if (!Method::is_valid_method(m)) {
+    return false;
+  }
+
+  // validate bci/bcp
+  address bcp = interpreter_frame_bcp();
+  if (m->validate_bci_from_bcp(bcp) < 0) {
+    return false;
+  }
+
+  // validate ConstantPoolCache*
+  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  if (MetaspaceObj::is_valid(cp) == false) {
+    return false;
+  }
+
+  // validate locals
+  address locals = (address) *interpreter_frame_locals_addr();
+  if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
+    return false;
+  }
+
+  return true;
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result,

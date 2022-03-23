@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
 
 //------------------------------Static Initializers----------------------------
 // allocate arena used by forms
-Arena  *Form::arena = Form::generate_arena(); //  = Form::generate_arena();
-Arena *Form::generate_arena() {
-  return (new Arena);
+AdlArena  *Form::arena = Form::generate_arena(); //  = Form::generate_arena();
+AdlArena *Form::generate_arena() {
+  return (new AdlArena);
 }
 
 //------------------------------NameList---------------------------------------
@@ -40,7 +40,7 @@ const char  *NameList::_signal3  = "$$SIGNAL3$$";
 
 // Constructor and Destructor
 NameList::NameList() : _cur(0), _max(4), _iter(0), _justReset(true) {
-  _names = (const char**) AllocateHeap(_max*sizeof(char*));
+  _names = (const char**) AdlAllocateHeap(_max*sizeof(char*));
 }
 NameList::~NameList() {
   // The following free is a double-free, and crashes the program:
@@ -49,7 +49,7 @@ NameList::~NameList() {
 
 void   NameList::addName(const char *name) {
   if (_cur == _max) {
-    _names = (const char**) ReAllocateHeap(_names, (_max *=2)*sizeof(char*));
+    _names = (const char**) AdlReAllocateHeap(_names, (_max *=2)*sizeof(char*));
   }
   _names[_cur++] = name;
 }
@@ -312,7 +312,7 @@ FormList::~FormList()  {
 
 //------------------------------FormDict---------------------------------------
 // Constructor
-FormDict::FormDict( CmpKey cmp, Hash hash, Arena *arena )
+FormDict::FormDict( CmpKey cmp, Hash hash, AdlArena *arena )
   : _form(cmp, hash, arena) {
 }
 FormDict::~FormDict() {

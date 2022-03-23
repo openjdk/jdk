@@ -175,7 +175,7 @@ public class BasicTypeDataBase implements TypeDataBase {
     }
 
     // This implementation should be suitably platform-independent; we
-    // search nearby memory for the vtbl value of the given type.
+    // search the first word for the vtbl value of the given type.
 
     Address vtblAddr = vtblForType(type);
 
@@ -231,12 +231,9 @@ public class BasicTypeDataBase implements TypeDataBase {
     // switch to this logic but in the interests of stability it will
     // be separate for the moment.
 
-    // Assuming that the base type is truly the first polymorphic type
-    // then the vtbl for all subclasss should be at several defined
-    // locations so only those locations will be checked.  It's also
-    // required that the caller knows that the static type is at least
-    // baseType.  See the notes in guessTypeForAddress for the logic of
-    // the locations searched.
+    // Assuming that the base type is truly the first polymorphic type,
+    // then the vtbl for all subclassses should be in the first word of
+    // the object.
 
     Address loc1 = addr.getAddressAt(0);
 
@@ -248,50 +245,25 @@ public class BasicTypeDataBase implements TypeDataBase {
       }
     }
 
-    Address loc2 = null;
-    Address loc3 = null;
-    long offset2 = baseType.getSize();
-    // I don't think this should be misaligned under any
-    // circumstances, but I'm not sure (FIXME: also not sure which
-    // way to go here, up or down -- assuming down)
-    offset2 = offset2 - (offset2 % getAddressSize()) - getAddressSize();
-    if (offset2 > 0) {
-      loc2 = addr.getAddressAt(offset2);
-    }
-    long offset3 = offset2 - getAddressSize();
-    if (offset3 > 0) {
-      loc3 = addr.getAddressAt(offset3);
-    }
-
-    Type loc2Match = null;
-    Type loc3Match = null;
     for (Iterator iter = getTypes(); iter.hasNext(); ) {
       Type type = (Type) iter.next();
       Type superClass = type;
       while (superClass != baseType && superClass != null) {
         superClass = superClass.getSuperclass();
       }
-      if (superClass == null) continue;
+      if (superClass == null) continue;  // type is not a subclass of baseType
       Address vtblAddr = vtblForType(type);
       if (vtblAddr == null) {
-        // This occurs sometimes for intermediate types that are never
-        // instantiated.
+        // This occurs sometimes for intermediate types that are never instantiated.
         if (DEBUG) {
           System.err.println("null vtbl for " + type);
         }
         continue;
       }
-      // Prefer loc1 match
-      if (vtblAddr.equals(loc1)) return type;
-      if (loc2 != null && loc2Match == null && vtblAddr.equals(loc2)) {
-          loc2Match = type;
-      }
-      if (loc3 != null && loc3Match == null && vtblAddr.equals(loc3)) {
-          loc3Match = type;
+      if (vtblAddr.equals(loc1)) {
+        return type;
       }
     }
-    if (loc2Match != null) return loc2Match;
-    if (loc3Match != null) return loc3Match;
     return null;
   }
 

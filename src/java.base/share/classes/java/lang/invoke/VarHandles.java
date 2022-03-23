@@ -31,12 +31,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,8 +42,6 @@ import java.util.stream.Stream;
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.VAR_HANDLE_IDENTITY_ADAPT;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 final class VarHandles {
 
@@ -359,13 +354,13 @@ final class VarHandles {
         return target;
     }
 
-    public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
+    public static VarHandle filterValue(VarHandle target, MethodHandle pFilterToTarget, MethodHandle pFilterFromTarget) {
         Objects.requireNonNull(target);
-        Objects.requireNonNull(filterToTarget);
-        Objects.requireNonNull(filterFromTarget);
+        Objects.requireNonNull(pFilterToTarget);
+        Objects.requireNonNull(pFilterFromTarget);
         //check that from/to filters do not throw checked exceptions
-        noCheckedExceptions(filterToTarget);
-        noCheckedExceptions(filterFromTarget);
+        MethodHandle filterToTarget = adaptForCheckedExceptions(pFilterToTarget);
+        MethodHandle filterFromTarget = adaptForCheckedExceptions(pFilterFromTarget);
 
         List<Class<?>> newCoordinates = new ArrayList<>();
         List<Class<?>> additionalCoordinates = new ArrayList<>();
@@ -473,8 +468,9 @@ final class VarHandles {
 
         List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
         for (int i = 0 ; i < filters.length ; i++) {
-            noCheckedExceptions(filters[i]);
-            MethodType filterType = filters[i].type();
+            MethodHandle filter = Objects.requireNonNull(filters[i]);
+            filter = adaptForCheckedExceptions(filter);
+            MethodType filterType = filter.type();
             if (filterType.parameterCount() != 1) {
                 throw newIllegalArgumentException("Invalid filter type " + filterType);
             } else if (newCoordinates.get(pos + i) != filterType.returnType()) {
@@ -564,10 +560,10 @@ final class VarHandles {
         return adjustedType;
     }
 
-    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
+    public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle pFilter) {
         Objects.requireNonNull(target);
-        Objects.requireNonNull(filter);
-        noCheckedExceptions(filter);
+        Objects.requireNonNull(pFilter);
+        MethodHandle filter = adaptForCheckedExceptions(pFilter);
 
         List<Class<?>> targetCoordinates = target.coordinateTypes();
         if (pos < 0 || pos >= targetCoordinates.size()) {
@@ -604,42 +600,55 @@ final class VarHandles {
                 (mode, modeHandle) -> MethodHandles.dropArguments(modeHandle, 1 + pos, valueTypes));
     }
 
-    private static void noCheckedExceptions(MethodHandle handle) {
+    private static MethodHandle adaptForCheckedExceptions(MethodHandle target) {
+        Class<?>[] exceptionTypes = exceptionTypes(target);
+        if (exceptionTypes != null) { // exceptions known
+            if (Stream.of(exceptionTypes).anyMatch(VarHandles::isCheckedException)) {
+                throw newIllegalArgumentException("Cannot adapt a var handle with a method handle which throws checked exceptions");
+            }
+            return target; // no adaptation needed
+        } else {
+            MethodHandle handler = MethodHandleImpl.getConstantHandle(MethodHandleImpl.MH_VarHandles_handleCheckedExceptions);
+            MethodHandle zero = MethodHandles.zero(target.type().returnType()); // dead branch
+            handler = MethodHandles.collectArguments(zero, 0, handler);
+            return MethodHandles.catchException(target, Throwable.class, handler);
+        }
+    }
+
+    static void handleCheckedExceptions(Throwable throwable) throws Throwable {
+        if (isCheckedException(throwable.getClass())) {
+            throw new IllegalStateException("Adapter handle threw checked exception", throwable);
+        }
+        throw throwable;
+    }
+
+    static Class<?>[] exceptionTypes(MethodHandle handle) {
         if (handle instanceof DirectMethodHandle directHandle) {
             byte refKind = directHandle.member.getReferenceKind();
             MethodHandleInfo info = new InfoFromMemberName(
                     MethodHandles.Lookup.IMPL_LOOKUP,
                     directHandle.member,
                     refKind);
-            final Class<?>[] exceptionTypes;
             if (MethodHandleNatives.refKindIsMethod(refKind)) {
-                exceptionTypes = info.reflectAs(Method.class, MethodHandles.Lookup.IMPL_LOOKUP)
+                return info.reflectAs(Method.class, MethodHandles.Lookup.IMPL_LOOKUP)
                         .getExceptionTypes();
             } else if (MethodHandleNatives.refKindIsField(refKind)) {
-                exceptionTypes = null;
+                return new Class<?>[0];
             } else if (MethodHandleNatives.refKindIsConstructor(refKind)) {
-                exceptionTypes = info.reflectAs(Constructor.class, MethodHandles.Lookup.IMPL_LOOKUP)
+                return info.reflectAs(Constructor.class, MethodHandles.Lookup.IMPL_LOOKUP)
                         .getExceptionTypes();
             } else {
                 throw new AssertionError("Cannot get here");
             }
-            if (exceptionTypes != null) {
-                if (Stream.of(exceptionTypes).anyMatch(VarHandles::isCheckedException)) {
-                    throw newIllegalArgumentException("Cannot adapt a var handle with a method handle which throws checked exceptions");
-                }
-            }
         } else if (handle instanceof DelegatingMethodHandle) {
-            noCheckedExceptions(((DelegatingMethodHandle)handle).getTarget());
-        } else {
-            //bound
-            BoundMethodHandle boundHandle = (BoundMethodHandle)handle;
-            for (int i = 0 ; i < boundHandle.fieldCount() ; i++) {
-                Object arg = boundHandle.arg(i);
-                if (arg instanceof MethodHandle){
-                    noCheckedExceptions((MethodHandle) arg);
-                }
-            }
+            return exceptionTypes(((DelegatingMethodHandle)handle).getTarget());
+        } else if (handle instanceof NativeMethodHandle) {
+            return new Class<?>[0];
         }
+
+        assert handle instanceof BoundMethodHandle : "Unexpected handle type: " + handle;
+        // unknown
+        return null;
     }
 
     private static boolean isCheckedException(Class<?> clazz) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                          AccessFlags access_flags,
                          InlineTableSizes* sizes,
                          ConstMethod::MethodType method_type,
+                         Symbol* name,
                          TRAPS) {
   assert(!access_flags.is_native() || byte_code_size == 0,
          "native methods should not contain byte codes");
@@ -92,10 +93,10 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           method_type,
                                           CHECK_NULL);
   int size = Method::size(access_flags.is_native());
-  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags);
+  return new (loader_data, size, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags, name);
 }
 
-Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
+Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
@@ -119,6 +120,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
+  // Name is very useful for debugging.
+  NOT_PRODUCT(_name = name;)
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -324,14 +327,11 @@ int Method::bci_from(address bcp) const {
   if (is_native() && bcp == 0) {
     return 0;
   }
-#ifdef ASSERT
-  {
-    ResourceMark rm;
-    assert(is_native() && bcp == code_base() || contains(bcp) || VMError::is_error_reported(),
-           "bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s",
-           p2i(bcp), name_and_sig_as_C_string());
-  }
-#endif
+  // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
+  // may call this after interrupting a nested ResourceMark.
+  assert(is_native() && bcp == code_base() || contains(bcp) || VMError::is_error_reported(),
+         "bcp doesn't belong to this method. bcp: " INTPTR_FORMAT, p2i(bcp));
+
   return bcp - code_base();
 }
 
@@ -396,6 +396,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   }
   it->push(&_method_data);
   it->push(&_method_counters);
+  NOT_PRODUCT(it->push(&_name);)
 }
 
 // Attempt to return method to original state.  Clear any pointers
@@ -821,6 +822,18 @@ bool Method::can_be_statically_bound(InstanceKlass* context) const {
   return (method_holder() == context) && can_be_statically_bound();
 }
 
+/**
+ *  Returns false if this is one of specially treated methods for
+ *  which we have to provide stack trace in throw in compiled code.
+ *  Returns true otherwise.
+ */
+bool Method::can_omit_stack_trace() {
+  if (klass_name() == vmSymbols::sun_invoke_util_ValueConversions()) {
+    return false; // All methods in sun.invoke.util.ValueConversions
+  }
+  return true;
+}
+
 bool Method::is_accessor() const {
   return is_getter() || is_setter();
 }
@@ -1189,7 +1202,7 @@ void Method::unlink_method() {
 void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
-  if (_i2i_entry != NULL) {
+  if (adapter() != NULL) {
     return;
   }
   assert( _code == NULL, "nothing compiled yet" );
@@ -1437,7 +1450,9 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
     InlineTableSizes sizes;
     Method* m_oop = Method::allocate(loader_data, 0,
                                      accessFlags_from(flags_bits), &sizes,
-                                     ConstMethod::NORMAL, CHECK_(empty));
+                                     ConstMethod::NORMAL,
+                                     name,
+                                     CHECK_(empty));
     m = methodHandle(THREAD, m_oop);
   }
   m->set_constants(cp());
@@ -1517,6 +1532,7 @@ methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code
                                       flags,
                                       &sizes,
                                       m->method_type(),
+                                      m->name(),
                                       CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
 

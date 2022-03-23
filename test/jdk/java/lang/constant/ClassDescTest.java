@@ -42,7 +42,7 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @bug 8215510
+ * @bug 8215510 8283075
  * @compile ClassDescTest.java
  * @run testng ClassDescTest
  * @summary unit tests for java.lang.constant.ClassDesc
@@ -184,6 +184,19 @@ public class ClassDescTest extends SymbolicDescTest {
         }
     }
 
+    private void testArrayRankOverflow() {
+        ClassDesc TwoDArrayDesc =
+            String.class.describeConstable().get().arrayType().arrayType();
+
+        try {
+            TwoDArrayDesc.arrayType(Integer.MAX_VALUE);
+            fail("");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
+    }
+
+
     public void testArrayClassDesc() throws ReflectiveOperationException {
         for (String d : basicDescs) {
             ClassDesc a0 = ClassDesc.ofDescriptor(d);
@@ -218,6 +231,7 @@ public class ClassDescTest extends SymbolicDescTest {
             testBadArrayRank(ConstantDescs.CD_int);
             testBadArrayRank(ConstantDescs.CD_String);
             testBadArrayRank(ClassDesc.of("Bar"));
+            testArrayRankOverflow();
         }
     }
 

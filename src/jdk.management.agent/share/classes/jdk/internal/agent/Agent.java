@@ -564,8 +564,7 @@ public class Agent {
         InputStream in = null;
         try {
             in = new FileInputStream(configFile);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            p.load(bin);
+            p.load(in);
         } catch (FileNotFoundException e) {
             error(CONFIG_FILE_OPEN_FAILED, e.getMessage());
         } catch (IOException e) {

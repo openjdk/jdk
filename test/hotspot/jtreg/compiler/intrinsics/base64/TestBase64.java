@@ -48,6 +48,7 @@ import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Arrays;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import sun.hotspot.code.Compiler;
@@ -79,9 +80,9 @@ public class TestBase64 {
 
     private static void warmup() {
         final int warmupCount = 20_000;
-        final int bufSize = 60;
+        final int bufSize = 15308;
         byte[] srcBuf = new byte[bufSize];
-        byte[] encBuf = new byte[(bufSize / 3) * 4];
+        byte[] encBuf = new byte[((bufSize + 2) / 3) * 4];
         byte[] decBuf = new byte[bufSize];
 
         ran.nextBytes(srcBuf);
@@ -163,10 +164,13 @@ public class TestBase64 {
                 assertEqual(resEncodeStr, encodedStr);
 
                 // test int decode(byte[], byte[])
-                resArr = new byte[srcArr.length];
+                // JDK-8273108: Test for output buffer overrun
+                resArr = new byte[srcArr.length + 2];
+                resArr[srcArr.length + 1] = (byte) 167;
                 len = decoder.decode(encodedArr, resArr);
                 assertEqual(len, srcArr.length);
-                assertEqual(resArr, srcArr);
+                assertEqual(Arrays.copyOfRange(resArr, 0, srcArr.length), srcArr);
+                assertEqual(resArr[srcArr.length + 1], (byte) 167);
 
                 // test byte[] decode(byte[])
                 resArr = decoder.decode(encodedArr);

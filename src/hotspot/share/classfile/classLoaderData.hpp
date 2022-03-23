@@ -174,7 +174,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool has_modified_oops()               { return _modified_oops; }
 
   oop holder_no_keepalive() const;
-  oop holder_phantom() const;
+  oop holder() const;
 
  private:
   void unload();

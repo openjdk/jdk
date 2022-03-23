@@ -533,6 +533,8 @@ class VM_Version: public Abstract_VM_Version {
   // Sometimes helpful for debugging.
   static unsigned long z_SIGILL();
   static unsigned long z_SIGSEGV();
+
+  static void initialize_cpu_information(void);
 };
 
 #endif // CPU_S390_VM_VERSION_S390_HPP

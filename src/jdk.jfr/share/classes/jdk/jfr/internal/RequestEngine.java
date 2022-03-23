@@ -28,7 +28,6 @@ package jdk.jfr.internal;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -162,10 +161,8 @@ public final class RequestEngine {
     // Only to be used for JVM events. No access control contest
     // or check if hook already exists
     static void addHooks(List<RequestHook> newEntries) {
-        List<RequestHook> addEntries = new ArrayList<>();
         for (RequestHook rh : newEntries) {
             rh.type.setEventHook(true);
-            addEntries.add(rh);
             logHook("Added", rh.type);
         }
         entries.addAll(newEntries);

@@ -99,7 +99,9 @@ public class OutputStreamWriter extends Writer {
     }
 
     /**
-     * Creates an OutputStreamWriter that uses the default character encoding.
+     * Creates an OutputStreamWriter that uses the default character encoding, or
+     * where {@code out} is a {@code PrintStream}, the charset used by the print
+     * stream.
      *
      * @param  out  An OutputStream
      * @see Charset#defaultCharset()
@@ -107,7 +109,7 @@ public class OutputStreamWriter extends Writer {
     public OutputStreamWriter(OutputStream out) {
         super(out);
         se = StreamEncoder.forOutputStreamWriter(out, this,
-                Charset.defaultCharset());
+                out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset());
     }
 
     /**

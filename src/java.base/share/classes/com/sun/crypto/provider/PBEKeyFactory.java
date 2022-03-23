@@ -243,7 +243,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
 
             // Check if requested key spec is amongst the valid ones
             if ((keySpecCl != null)
-                && PBEKeySpec.class.isAssignableFrom(keySpecCl)) {
+                    && keySpecCl.isAssignableFrom(PBEKeySpec.class)) {
                 byte[] passwdBytes = key.getEncoded();
                 char[] passwdChars = new char[passwdBytes.length];
                 for (int i=0; i<passwdChars.length; i++)

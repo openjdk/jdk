@@ -345,10 +345,8 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *         value
      */
     public boolean containsValue(Attribute attribute) {
-        return
-           attribute != null &&
-           attribute instanceof Attribute &&
-           attribute.equals(attrMap.get(attribute.getCategory()));
+        return attribute != null &&
+                attribute.equals(attrMap.get(attribute.getCategory()));
     }
 
     /**
@@ -441,11 +439,10 @@ public class HashAttributeSet implements AttributeSet, Serializable {
      *         set
      */
     public boolean equals(Object object) {
-        if (object == null || !(object instanceof AttributeSet)) {
+        if (!(object instanceof AttributeSet aset)) {
             return false;
         }
 
-        AttributeSet aset = (AttributeSet)object;
         if (aset.size() != size()) {
             return false;
         }

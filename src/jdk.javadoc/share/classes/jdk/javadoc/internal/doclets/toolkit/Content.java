@@ -28,6 +28,8 @@ package jdk.javadoc.internal.doclets.toolkit;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collection;
+import java.util.function.Function;
 
 /**
  * A class to create content for javadoc output pages.
@@ -87,6 +89,25 @@ public abstract class Content {
      */
     public Content add(CharSequence stringContent) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Adds content to the existing content, generated from a collection of items
+     * This is an optional operation.
+     *
+     * @implSpec This implementation delegates to {@link #add(Content)}.
+     *
+     * @param items  the items to be added
+     * @param mapper the function to create content for each item
+     *
+     * @return this object
+     * @throws UnsupportedOperationException if this operation is not supported by
+     *                                       a particular implementation
+     * @throws IllegalArgumentException      if the content is not suitable to be added
+     */
+    public <T> Content addAll(Collection<T> items, Function<T, Content> mapper) {
+        items.forEach(item -> add(mapper.apply(item)));
+        return this;
     }
 
     /**

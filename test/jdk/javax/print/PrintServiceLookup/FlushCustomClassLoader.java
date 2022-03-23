@@ -34,6 +34,9 @@ import javax.print.PrintServiceLookup;
  * @test
  * @bug 8273831
  * @summary Tests custom class loader cleanup
+ * @library /javax/swing/regtesthelpers
+ * @build Util
+ * @run main/timeout=60/othervm -mx32m FlushCustomClassLoader
  */
 public final class FlushCustomClassLoader {
 
@@ -42,12 +45,8 @@ public final class FlushCustomClassLoader {
 
         int attempt = 0;
         while (loader.get() != null) {
-            if (++attempt > 10) {
-                throw new RuntimeException("Too many attempts: " + attempt);
-            }
-            System.gc();
-            Thread.sleep(1000);
-            System.out.println("Not freed, attempt: " + attempt);
+            Util.generateOOME();
+            System.out.println("Not freed, attempt: " + attempt++);
         }
     }
 

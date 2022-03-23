@@ -25,9 +25,11 @@
 
 package jdk.jfr.internal.jfc;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -62,9 +64,11 @@ public final class JFC {
         private final String content;
         private final String filename;
         private final String name;
+        private final SafePath path;
         private Configuration configuration;
 
         public KnownConfiguration(SafePath knownPath) throws IOException {
+            this.path = knownPath;
             this.content = readContent(knownPath);
             this.name = nameFromPath(knownPath.toPath());
             this.filename = nullSafeFileName(knownPath.toPath());
@@ -269,5 +273,14 @@ public final class JFC {
             }
         }
         throw new NoSuchFileException("Could not locate configuration with name " + name);
+    }
+
+    public static Reader newReader(SafePath sf) throws IOException {
+        for (KnownConfiguration c : getKnownConfigurations()) {
+            if (c.path.equals(sf)) {
+                return new StringReader(c.content);
+            }
+        }
+        return new FileReader(sf.toFile(), StandardCharsets.UTF_8);
     }
 }

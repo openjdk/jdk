@@ -392,7 +392,7 @@ public class Krb5InitCredential
             Krb5NameElement kname = (Krb5NameElement)name;
             Credentials newCred = Credentials.acquireS4U2selfCreds(
                     kname.getKrb5PrincipalName(), krb5Credentials);
-            return new Krb5ProxyCredential(this, kname, newCred.getTicket());
+            return new Krb5ProxyCredential(this, kname, newCred);
         } catch (IOException | KrbException ke) {
             GSSException ge =
                 new GSSException(GSSException.FAILURE, -1,

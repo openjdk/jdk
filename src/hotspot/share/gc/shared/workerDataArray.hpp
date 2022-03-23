@@ -46,7 +46,7 @@ private:
   WorkerDataArray<size_t>* _thread_work_items[MaxThreadWorkItems];
 
  public:
-  WorkerDataArray(const char* short_name, const char* title, uint length, bool is_serial = false);
+  WorkerDataArray(const char* short_name, const char* title, uint length);
   ~WorkerDataArray();
 
   // Create an integer sub-item at the given index to this WorkerDataArray. If length_override
@@ -91,9 +91,7 @@ private:
  private:
   class WDAPrinter {
   public:
-    static void summary(outputStream* out, double time);
     static void summary(outputStream* out, double min, double avg, double max, double diff, double sum, bool print_sum);
-    static void summary(outputStream* out, size_t value);
     static void summary(outputStream* out, size_t min, double avg, size_t max, size_t diff, size_t sum, bool print_sum);
 
     static void details(const WorkerDataArray<double>* phase, outputStream* out);

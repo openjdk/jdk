@@ -332,7 +332,7 @@ public:
   static const bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
   static const RegMask* predicate_reg_mask(void);
-  static const TypeVect* predicate_reg_type(const Type* elemTy, int length);
+  static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);
 
   // Vector width in bytes
   static const int vector_width_in_bytes(BasicType bt);

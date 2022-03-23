@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,34 @@ public abstract class TypeVectorOperations {
     public void negD() {
         for (int i = 0; i < COUNT; i++) {
             resD[i] = -doubles[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_i2f() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = (float) ints[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_f2i() {
+        for (int i = 0; i < COUNT; i++) {
+            resI[i] = (int) floats[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_l2d() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = (double) longs[i];
+        }
+    }
+
+    @Benchmark
+    public void convert_d2l() {
+        for (int i = 0; i < COUNT; i++) {
+            resL[i] = (long) doubles[i];
         }
     }
 

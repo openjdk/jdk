@@ -395,7 +395,7 @@ final class CryptoPolicyParser {
         switch (lookahead) {
         case StreamTokenizer.TT_NUMBER:
             throw new ParsingException(st.lineno(), expect,
-                                       "number "+String.valueOf(st.nval));
+                                       "number " + st.nval);
         case StreamTokenizer.TT_EOF:
            throw new ParsingException("expected "+expect+", read end of file");
         case StreamTokenizer.TT_WORD:

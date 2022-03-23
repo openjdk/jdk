@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
  * 8151481 4867170 7080302 6728861 6995635 6736245 4916384 6328855 6192895
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
  * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
- * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753
+ * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753 8276694
  *
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
@@ -4538,4 +4538,55 @@ public class RegExTest {
         var sep = System.lineSeparator();
         assertTrue(e.getMessage().contains(sep + "\t ^"));
     }
+
+    //This test is for 8276694
+    @Test
+    public static void unescapedBackslash() {
+        String pattern = "\\";
+        var e = expectThrows(PatternSyntaxException.class, () ->
+                Pattern.compile(pattern));
+        assertTrue(e.getMessage().contains("Unescaped trailing backslash"));
+    }
+
+    //This test is for 8280403
+    @Test
+    public static void badIntersectionSyntax() {
+        String pattern = "[˜\\H +F&&]";
+        var e = expectThrows(PatternSyntaxException.class, () ->
+                Pattern.compile(pattern));
+        assertTrue(e.getMessage().contains("Bad intersection syntax"));
+    }
+
+    //This test is for 8281560
+    @Test
+    public static void prematureHitEndInNFCCharProperty() {
+        var testInput = "a1a1";
+        var pat1 = "(a+|1+)";
+        var pat2 = "([a]+|[1]+)";
+
+        var matcher1 = Pattern.compile(pat1, Pattern.CANON_EQ).matcher(testInput);
+        var matcher2 = Pattern.compile(pat2, Pattern.CANON_EQ).matcher(testInput);
+
+        ArrayList<Boolean> results1 = new ArrayList<>();
+        ArrayList<Boolean> results2 = new ArrayList<>();
+
+        while (matcher1.find()) {
+            results1.add(matcher1.hitEnd());
+        }
+
+        while (matcher2.find()) {
+            results2.add(matcher2.hitEnd());
+        }
+
+        assertEquals(results1, results2);
+    }
+
+    //This test is for 8281315
+    @Test
+    public static void iOOBForCIBackrefs(){
+        String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
+        var pattern2 = Pattern.compile("(?i)(.)\\1{2,}");
+        assertTrue(pattern2.matcher(line).find());
+    }
 }
+

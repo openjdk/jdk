@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ void ElfFile::cleanup_tables() {
 NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
   assert(filepath, "null file path");
 
-  _file = fopen(filepath, "r");
+  _file = os::fopen(filepath, "r");
   if (_file != NULL) {
     return load_tables();
   } else {
