@@ -2330,8 +2330,9 @@ void FileMapInfo::fixup_mapped_heap_regions() {
            "Null closed_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(closed_heap_regions,
                                                   num_closed_heap_regions);
-    // G1 marking uses the BOT for object chunking; for this reason we need to
-    // initialize the BOT for these regions.
+    // G1 marking uses the BOT for object chunking during marking in
+    // G1CMObjArrayProcessor::process_slice(); for this reason we need to
+    // initialize the BOT for closed archive regions too.
     G1CollectedHeap::heap()->populate_archive_regions_bot_part(closed_heap_regions,
                                                                num_closed_heap_regions);
   }
