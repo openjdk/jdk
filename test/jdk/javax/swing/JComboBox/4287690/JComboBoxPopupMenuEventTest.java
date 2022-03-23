@@ -49,9 +49,9 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 /*
  * @test
  * @key headful
- * @bug 4287690
- * @summary This testcase tests the RFE 4287690 request, JComboBox should
- *          send drop down visible as well as invisible events.
+ * @bug 4287690 4331058
+ * @summary This testcase tests RFE-4287690 and RFE-4331058 requests,
+ *          JComboBox should send drop down visible as well as invisible events.
  * @run main JComboBoxPopupMenuEventTest
  */
 public class JComboBoxPopupMenuEventTest {
