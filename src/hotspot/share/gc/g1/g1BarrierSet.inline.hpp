@@ -28,10 +28,18 @@
 #include "gc/g1/g1BarrierSet.hpp"
 
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
+
+inline void G1BarrierSet::enqueue(oop pre_val) {
+  // Nulls should have been already filtered.
+  assert(oopDesc::is_oop(pre_val, true), "Error");
+  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(Thread::current());
+  G1BarrierSet::satb_mark_queue_set().enqueue(queue, pre_val);
+}
 
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_pre(T* field) {
