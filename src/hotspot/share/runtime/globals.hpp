@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -543,7 +543,7 @@ const intx ObjectAlignmentInBytes = 8;
           "compression. Otherwise the level must be between 1 and 9.")      \
           range(0, 9)                                                       \
                                                                             \
-  product(ccstr, NativeMemoryTracking, "off",                               \
+  product(ccstr, NativeMemoryTracking, DEBUG_ONLY("summary") NOT_DEBUG("off"), \
           "Native memory tracking options")                                 \
                                                                             \
   product(bool, PrintNMTStatistics, false, DIAGNOSTIC,                      \
@@ -718,10 +718,6 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   product(intx, hashCode, 5, EXPERIMENTAL,                                  \
                "(Unstable) select hashCode generation algorithm")           \
-                                                                            \
-  product(bool, FilterSpuriousWakeups, true,                                \
-          "(Deprecated) When true prevents OS-level spurious, or premature,"\
-          " wakeups from Object.wait (Ignored for Windows)")                \
                                                                             \
   product(bool, ReduceSignalUsage, false,                                   \
           "Reduce the use of OS signals in Java and/or the VM")             \
@@ -1066,7 +1062,12 @@ const intx ObjectAlignmentInBytes = 8;
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
   product(bool, UseHeavyMonitors, false,                                    \
-          "use heavyweight instead of lightweight Java monitors")           \
+          "(Deprecated) Use heavyweight instead of lightweight Java "       \
+          "monitors")                                                       \
+                                                                            \
+  develop(bool, VerifyHeavyMonitors, false,                                 \
+          "Checks that no stack locking happens when using "                \
+          "+UseHeavyMonitors")                                              \
                                                                             \
   product(bool, PrintStringTableStatistics, false,                          \
           "print statistics about the StringTable and SymbolTable")         \
@@ -1190,10 +1191,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, VerifyJNIFields, trueInDebug,                               \
           "Verify jfieldIDs for instance fields")                           \
                                                                             \
-  notproduct(bool, VerifyJNIEnvThread, false,                               \
-          "Verify JNIEnv.thread == Thread::current() when entering VM "     \
-          "from JNI")                                                       \
-                                                                            \
   develop(bool, VerifyFPU, false,                                           \
           "Verify FPU state (check for NaN's, etc.)")                       \
                                                                             \
@@ -1280,7 +1277,7 @@ const intx ObjectAlignmentInBytes = 8;
           constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
                                                                             \
   /* deoptimization */                                                      \
-  develop(bool, TraceDeoptimization, false,                                 \
+  product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
           "Trace deoptimization")                                           \
                                                                             \
   develop(bool, PrintDeoptimizationDetails, false,                          \
@@ -1343,11 +1340,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
           "(using CompileCommand or marked w/ @ForceInline)")               \
-          range(0, max_jint)                                                \
-                                                                            \
-  product(intx, MinInliningThreshold, 0,                                    \
-          "(Deprecated) The minimum invocation count a method needs to"     \
-          "have to be inlined")                                             \
           range(0, max_jint)                                                \
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
@@ -1536,13 +1528,13 @@ const intx ObjectAlignmentInBytes = 8;
           range(1, 1024)                                                    \
           constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
-  develop_pd(intx, CodeEntryAlignment,                                      \
+  product_pd(intx, CodeEntryAlignment, EXPERIMENTAL,                        \
           "Code entry alignment for generated code (in bytes)")             \
           constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
           "Align inner loops to zero relative to this modulus")             \
-          range(1, 16)                                                      \
+          range(1, 128)                                                     \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
@@ -1800,25 +1792,14 @@ const intx ObjectAlignmentInBytes = 8;
                                                                             \
   /* Shared spaces */                                                       \
                                                                             \
-  product(bool, UseSharedSpaces, true,                                      \
-          "Use shared spaces for metadata")                                 \
-                                                                            \
   product(bool, VerifySharedSpaces, false,                                  \
           "Verify integrity of shared spaces")                              \
                                                                             \
-  product(bool, RequireSharedSpaces, false,                                 \
-          "Require shared spaces for metadata")                             \
-                                                                            \
-  product(bool, DumpSharedSpaces, false,                                    \
-          "Special mode: JVM reads a class list, loads classes, builds "    \
-          "shared spaces, and dumps the shared spaces to a file to be "     \
-          "used in future JVM runs")                                        \
-                                                                            \
-  product(bool, DynamicDumpSharedSpaces, false,                             \
-          "Dynamic archive")                                                \
-                                                                            \
   product(bool, RecordDynamicDumpInfo, false,                               \
           "Record class info for jcmd VM.cds dynamic_dump")                 \
+                                                                            \
+  product(bool, AutoCreateSharedArchive, false,                             \
+          "Create shared archive at exit if cds mapping failed")            \
                                                                             \
   product(bool, PrintSharedArchiveAndExit, false,                           \
           "Print shared archive file contents")                             \
@@ -1877,16 +1858,18 @@ const intx ObjectAlignmentInBytes = 8;
           "Pause and wait for keypress on exit if a debugger is attached")  \
                                                                             \
   product(bool, ExtendedDTraceProbes,    false,                             \
-          "Enable performance-impacting dtrace probes")                     \
+          "(Deprecated) Enable performance-impacting dtrace probes. "       \
+          "Use the combination of -XX:+DTraceMethodProbes, "                \
+          "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
-          "Enable dtrace probes for method-entry and method-exit")          \
+          "Enable dtrace tool probes for method-entry and method-exit")     \
                                                                             \
   product(bool, DTraceAllocProbes, false,                                   \
-          "Enable dtrace probes for object allocation")                     \
+          "Enable dtrace tool probes for object allocation")                \
                                                                             \
   product(bool, DTraceMonitorProbes, false,                                 \
-          "Enable dtrace probes for monitor events")                        \
+          "Enable dtrace tool probes for monitor events")                   \
                                                                             \
   product(bool, RelaxAccessControlCheck, false,                             \
           "Relax the access control checks in the verifier")                \

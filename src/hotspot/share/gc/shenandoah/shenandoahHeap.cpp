@@ -416,7 +416,7 @@ void ShenandoahHeap::initialize_mode() {
       vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option");
     }
   } else {
-    ShouldNotReachHere();
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCMode option (null)");
   }
   _gc_mode->initialize_flags();
   if (_gc_mode->is_diagnostic() && !UnlockDiagnosticVMOptions) {
@@ -1366,7 +1366,7 @@ public:
 // parallel marking queues.
 // Every worker processes it's own marking queue. work-stealing is used
 // to balance workload.
-class ShenandoahParallelObjectIterator : public ParallelObjectIterator {
+class ShenandoahParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   uint                         _num_workers;
   bool                         _init_ready;
@@ -1465,7 +1465,7 @@ private:
   }
 };
 
-ParallelObjectIterator* ShenandoahHeap::parallel_object_iterator(uint workers) {
+ParallelObjectIteratorImpl* ShenandoahHeap::parallel_object_iterator(uint workers) {
   return new ShenandoahParallelObjectIterator(workers, &_aux_bit_map);
 }
 

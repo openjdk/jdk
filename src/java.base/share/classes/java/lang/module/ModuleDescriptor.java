@@ -893,7 +893,8 @@ public class ModuleDescriptor
      * integer or a string.  Tokens are separated by the punctuation characters
      * {@code '.'}, {@code '-'}, or {@code '+'}, or by transitions from a
      * sequence of digits to a sequence of characters that are neither digits
-     * nor punctuation characters, or vice versa.
+     * nor punctuation characters, or vice versa.  Consecutive repeated
+     * punctuation characters are treated as a single punctuation character.
      *
      * <ul>
      *

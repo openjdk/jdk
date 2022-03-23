@@ -176,6 +176,8 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     DWORD i;
     int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, wlan=0, net=0, wlen=0;
 
+    *netifPP = NULL;
+
     /*
      * Ask the IP Helper library to enumerate the adapters
      */
@@ -213,9 +215,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
                     "IP Helper Library GetIfTable function failed");
                 break;
         }
-        // this different error code is to handle the case when we call
-        // GetIpAddrTable in pure IPv6 environment
-        return -2;
+        return -1;
     }
 
     /*
@@ -373,6 +373,9 @@ int lookupIPAddrTable(JNIEnv *env, MIB_IPADDRTABLE **tablePP)
     MIB_IPADDRTABLE *tableP;
     ULONG size;
     DWORD ret;
+
+    *tablePP = NULL;
+
     /*
      * Use GetIpAddrTable to enumerate the IP Addresses
      */
@@ -434,12 +437,15 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
     int count = 0;
     unsigned long mask;
 
+    *netaddrPP = NULL;
+
     /*
      * Iterate through the table to find the addresses with the
      * matching dwIndex. Ignore 0.0.0.0 addresses.
      */
-    if (tableP == NULL)
+    if (tableP == NULL) {
         return 0;
+    }
     count = 0;
     netaddrP = NULL;
 
@@ -452,7 +458,6 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
             if (curr == NULL) {
                 JNU_ThrowOutOfMemoryError(env, "Native heap allocation failure");
                 free_netaddr(netaddrP);
-                free(tableP);
                 return -1;
             }
 
@@ -518,9 +523,12 @@ int enumAddresses_win_ipaddrtable(JNIEnv *env, netif *netifP, netaddr **netaddrP
 int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP) {
     MIB_IPADDRTABLE *tableP;
     int count;
+
+    *netaddrPP = NULL;
+
     int ret = lookupIPAddrTable(env, &tableP);
     if (ret < 0) {
-      return NULL;
+      return ret;
     }
     count = enumAddresses_win_ipaddrtable(env, netifP, netaddrPP, tableP);
     free(tableP);
@@ -850,9 +858,7 @@ JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0
                     break;
                 }
             }
-        }
-        if (tableP != NULL) {
-          free(tableP);
+            free(tableP);
         }
         return found;
     } else {
@@ -922,16 +928,16 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                 /* createNetworkInterface will free addrList */
                 netifObj = createNetworkInterface(env, curr, count, addrList);
                 break;
+            } else {
+                free_netaddr(addrList);
             }
 
             /* on next interface */
             curr = curr->next;
         }
-    }
-
-    /* release the IP address table */
-    if (tableP != NULL)
+        /* release the IP address table */
         free(tableP);
+    }
 
     /* release the interface list */
     free_netif(ifList);
@@ -948,7 +954,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     (JNIEnv *env, jclass cls)
 {
     int count;
-    netif *ifList = NULL, *curr;
+    netif *ifList, *curr;
     jobjectArray netIFArr;
     jint arr_index;
 

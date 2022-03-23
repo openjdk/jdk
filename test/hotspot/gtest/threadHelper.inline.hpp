@@ -49,13 +49,13 @@ static void startTestThread(JavaThread* thread, const char* name) {
   }
 }
 
-class VM_StopSafepoint : public VM_Operation {
+class VM_GTestStopSafepoint : public VM_Operation {
 public:
   Semaphore* _running;
   Semaphore* _test_complete;
-  VM_StopSafepoint(Semaphore* running, Semaphore* wait_for) :
+  VM_GTestStopSafepoint(Semaphore* running, Semaphore* wait_for) :
     _running(running), _test_complete(wait_for) {}
-  VMOp_Type type() const          { return VMOp_None; }
+  VMOp_Type type() const          { return VMOp_GTestStopSafepoint; }
   bool evaluate_at_safepoint() const { return false; }
   void doit()                     { _running->signal(); _test_complete->wait(); }
 };
@@ -67,7 +67,7 @@ class VMThreadBlocker : public JavaThread {
 
   static void blocker_thread_entry(JavaThread* thread, TRAPS) {
     VMThreadBlocker* t = static_cast<VMThreadBlocker*>(thread);
-    VM_StopSafepoint ss(&t->_ready, &t->_unblock);
+    VM_GTestStopSafepoint ss(&t->_ready, &t->_unblock);
     VMThread::execute(&ss);
   }
 

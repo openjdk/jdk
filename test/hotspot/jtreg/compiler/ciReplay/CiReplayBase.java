@@ -24,10 +24,17 @@
 package compiler.ciReplay;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import java.io.IOException;
-import java.io.File;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.CoreUtils;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,14 +43,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import jdk.test.lib.util.CoreUtils;
 
 public abstract class CiReplayBase {
     public static final String REPLAY_FILE_NAME = "test_replay.txt";
@@ -294,6 +293,43 @@ public abstract class CiReplayBase {
                 + (Platform.isWindows() ? cmd.replace('\\', '/').replace(";", "\\;").replace("|", "\\|") : cmd)};
         } catch(Throwable t) {
             throw new Error("Can't create process builder: " + t, t);
+        }
+    }
+
+    protected void removeVersionFromReplayFile() {
+        setNewVersionLineInReplayFile(null);
+    }
+
+    protected void setNewVersionInReplayFile(int newVersionNumber) {
+        setNewVersionLineInReplayFile("version " + newVersionNumber);
+    }
+
+    private void setNewVersionLineInReplayFile(String firstLineString) {
+        List<String> newLines = new ArrayList<>();
+        Path replayFilePath = Paths.get(getReplayFileName());
+        try (var br = Files.newBufferedReader(replayFilePath)) {
+            String line;
+            boolean firstLine = true;
+            while ((line = br.readLine()) != null) {
+                if (firstLine) {
+                    firstLine = false;
+                    Asserts.assertTrue(line.startsWith("version"), "version number must exist in a proper replay file");
+                    if (firstLineString != null) {
+                        newLines.add(firstLineString);
+                    }
+                    // Else: Remove first line by skipping it.
+                } else {
+                    newLines.add(line);
+                }
+            }
+            Asserts.assertFalse(firstLine, replayFilePath + " should not be empty");
+        } catch (IOException e) {
+            throw new Error("Failed to read replay data: " + e, e);
+        }
+        try {
+            Files.write(replayFilePath, newLines, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            throw new Error("Failed to write replay data: " + e, e);
         }
     }
 }

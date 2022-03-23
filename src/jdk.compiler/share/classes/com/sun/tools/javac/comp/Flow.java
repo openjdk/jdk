@@ -207,7 +207,6 @@ public class Flow {
     private final JCDiagnostic.Factory diags;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
-    private final DeferredCompletionFailureHandler dcfh;
     private final boolean allowEffectivelyFinalInInnerClasses;
 
     public static Flow instance(Context context) {
@@ -332,7 +331,6 @@ public class Flow {
         lint = Lint.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        dcfh = DeferredCompletionFailureHandler.instance(context);
         Source source = Source.instance(context);
         allowEffectivelyFinalInInnerClasses = Feature.EFFECTIVELY_FINAL_IN_INNER_CLASSES.allowedInSource(source);
     }
@@ -666,10 +664,7 @@ public class Flow {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             scan(tree.selector);
-            boolean exhaustiveSwitch = tree.patternSwitch ||
-                                       tree.cases.stream()
-                                                 .flatMap(c -> c.labels.stream())
-                                                 .anyMatch(l -> TreeInfo.isNull(l));
+            boolean exhaustiveSwitch = TreeInfo.expectedExhaustive(tree);
             Set<Symbol> constants = exhaustiveSwitch ? new HashSet<>() : null;
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
@@ -691,10 +686,13 @@ public class Flow {
                                 l.tail.head.pos(),
                                 Warnings.PossibleFallThroughIntoCase);
             }
-            if (!tree.hasTotalPattern && exhaustiveSwitch &&
-                !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
-                (constants == null || !isExhaustive(tree.selector.type, constants))) {
-                log.error(tree, Errors.NotExhaustiveStatement);
+            tree.isExhaustive = tree.hasTotalPattern ||
+                                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
+            if (exhaustiveSwitch) {
+                tree.isExhaustive |= isExhaustive(tree.selector.pos(), tree.selector.type, constants);
+                if (!tree.isExhaustive) {
+                    log.error(tree, Errors.NotExhaustiveStatement);
+                }
             }
             if (!tree.hasTotalPattern) {
                 alive = Liveness.ALIVE;
@@ -727,8 +725,10 @@ public class Flow {
                     }
                 }
             }
-            if (!tree.hasTotalPattern && !TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) &&
-                !isExhaustive(tree.selector.type, constants)) {
+            tree.isExhaustive = tree.hasTotalPattern ||
+                                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
+                                isExhaustive(tree.selector.pos(), tree.selector.type, constants);
+            if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
             alive = prevAlive;
@@ -751,7 +751,7 @@ public class Flow {
             }
         }
 
-        private void transitiveCovers(Set<Symbol> covered) {
+        private void transitiveCovers(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
             List<Symbol> todo = List.from(covered);
             while (todo.nonEmpty()) {
                 Symbol sym = todo.head;
@@ -773,7 +773,7 @@ public class Flow {
                     case TYP -> {
                         for (Type sup : types.directSupertypes(sym.type)) {
                             if (sup.tsym.kind == TYP) {
-                                if (isTransitivelyCovered(sup.tsym, covered) &&
+                                if (isTransitivelyCovered(pos, seltype, sup.tsym, covered) &&
                                     covered.add(sup.tsym)) {
                                     todo = todo.prepend(sup.tsym);
                                 }
@@ -784,39 +784,41 @@ public class Flow {
             }
         }
 
-        private boolean isTransitivelyCovered(Symbol sealed, Set<Symbol> covered) {
-            DeferredCompletionFailureHandler.Handler prevHandler =
-                    dcfh.setHandler(dcfh.speculativeCodeHandler);
+        private boolean isTransitivelyCovered(DiagnosticPosition pos, Type seltype,
+                                              Symbol sealed, Set<Symbol> covered) {
             try {
                 if (covered.stream().anyMatch(c -> sealed.isSubClass(c, types)))
                     return true;
                 if (sealed.kind == TYP && sealed.isAbstract() && sealed.isSealed()) {
                     return ((ClassSymbol) sealed).permitted
                                                  .stream()
-                                                 .allMatch(s -> isTransitivelyCovered(s, covered));
+                                                 .filter(s -> {
+                                                     return types.isCastable(seltype, s.type/*, types.noWarnings*/);
+                                                 })
+                                                 .allMatch(s -> isTransitivelyCovered(pos, seltype, s, covered));
                 }
                 return false;
             } catch (CompletionFailure cf) {
-                //safe to ignore, the symbol will be un-completed when the speculative handler is removed.
-                return false;
-            } finally {
-                dcfh.setHandler(prevHandler);
+                chk.completionError(pos, cf);
+                return true;
             }
         }
 
-        private boolean isExhaustive(Type seltype, Set<Symbol> covered) {
-            transitiveCovers(covered);
+        private boolean isExhaustive(DiagnosticPosition pos, Type seltype, Set<Symbol> covered) {
+            transitiveCovers(pos, seltype, covered);
             return switch (seltype.getTag()) {
                 case CLASS -> {
                     if (seltype.isCompound()) {
                         if (seltype.isIntersection()) {
-                            yield ((Type.IntersectionClassType) seltype).getComponents().stream().anyMatch(t -> isExhaustive(t, covered));
+                            yield ((Type.IntersectionClassType) seltype).getComponents()
+                                                                        .stream()
+                                                                        .anyMatch(t -> isExhaustive(pos, t, covered));
                         }
                         yield false;
                     }
                     yield covered.contains(seltype.tsym);
                 }
-                case TYPEVAR -> isExhaustive(((TypeVar) seltype).getUpperBound(), covered);
+                case TYPEVAR -> isExhaustive(pos, ((TypeVar) seltype).getUpperBound(), covered);
                 default -> false;
             };
         }
@@ -2432,15 +2434,15 @@ public class Flow {
         }
 
         public void visitSwitch(JCSwitch tree) {
-            handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern);
+            handleSwitch(tree, tree.selector, tree.cases, tree.isExhaustive);
         }
 
         public void visitSwitchExpression(JCSwitchExpression tree) {
-            handleSwitch(tree, tree.selector, tree.cases, tree.hasTotalPattern);
+            handleSwitch(tree, tree.selector, tree.cases, tree.isExhaustive);
         }
 
         private void handleSwitch(JCTree tree, JCExpression selector,
-                                  List<JCCase> cases, boolean hasTotalPattern) {
+                                  List<JCCase> cases, boolean isExhaustive) {
             ListBuffer<PendingExit> prevPendingExits = pendingExits;
             pendingExits = new ListBuffer<>();
             int nextadrPrev = nextadr;
@@ -2478,10 +2480,10 @@ public class Flow {
                 addVars(c.stats, initsSwitch, uninitsSwitch);
                 // Warn about fall-through if lint switch fallthrough enabled.
             }
-            if (!hasTotalPattern) {
+            if (!isExhaustive) {
                 if (tree.hasTag(SWITCH_EXPRESSION)) {
                     markDead();
-                } else {
+                } else if (tree.hasTag(SWITCH) && !TreeInfo.expectedExhaustive((JCSwitch) tree)) {
                     inits.assign(initsSwitch);
                     uninits.assign(uninits.andSet(uninitsSwitch));
                 }

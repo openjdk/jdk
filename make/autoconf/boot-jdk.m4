@@ -379,6 +379,16 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 
   # Finally, set some other options...
 
+  # Determine if the boot jdk jar supports the --date option
+  if $JAR --help 2>&1 | $GREP -q "\-\-date=TIMESTAMP"; then
+    BOOT_JDK_JAR_SUPPORTS_DATE=true
+  else
+    BOOT_JDK_JAR_SUPPORTS_DATE=false
+  fi
+  AC_MSG_CHECKING([if Boot JDK jar supports --date=TIMESTAMP])
+  AC_MSG_RESULT([$BOOT_JDK_JAR_SUPPORTS_DATE])
+  AC_SUBST(BOOT_JDK_JAR_SUPPORTS_DATE)
+
   # When compiling code to be executed by the Boot JDK, force compatibility with the
   # oldest supported bootjdk.
   OLDEST_BOOT_JDK=`$ECHO $DEFAULT_ACCEPTABLE_BOOT_VERSIONS \

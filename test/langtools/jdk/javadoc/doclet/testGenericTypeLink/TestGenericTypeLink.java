@@ -166,18 +166,48 @@ public class TestGenericTypeLink extends JavadocTester {
         checkExit(Exit.ERROR);
         checkOutput("pkg2/B.html", true,
                 """
-                    <div class="block"><code>java.util.Foo&lt;String&gt;</code>
-                     Baz&lt;Object&gt;
-                     <code>#b(List&lt;Integer&gt;)</code></div>""",
+                    <div class="block">
+                    <details class="invalid-tag">
+                    <summary>invalid @link</summary>
+                    <pre><code>java.util.Foo&lt;String&gt;</code></pre>
+                    </details>
+
+                    \s
+                    <details class="invalid-tag">
+                    <summary>invalid @linkplain</summary>
+                    <pre>Baz&lt;Object&gt;</pre>
+                    </details>
+
+                    \s
+                    <details class="invalid-tag">
+                    <summary>invalid @link</summary>
+                    <pre><code>#b(List&lt;Integer&gt;)</code></pre>
+                    </details>
+                    </div>""",
 
                 """
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
                     <ul class="see-list-long">
-                    <li><code>java.util.List&lt;Bar&gt;</code></li>
-                    <li><code>Baz&lt;Object, String&gt;</code></li>
-                    <li><code>B#b(List&lt;Baz&gt;)</code></li>
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid @see</summary>
+                    <pre><code>java.util.List&lt;Bar&gt;</code></pre>
+                    </details>
+                    </li>
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid @see</summary>
+                    <pre><code>Baz&lt;Object, String&gt;</code></pre>
+                    </details>
+                    </li>
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid @see</summary>
+                    <pre><code>B#b(List&lt;Baz&gt;)</code></pre>
+                    </details>
+                    </li>
                     </ul>
                     </dd>
                     </dl>""");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -488,10 +488,11 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
 bool HandshakeState::process_by_self(bool allow_suspend) {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
-  assert(_handshakee->thread_state() != _thread_blocked, "should not be in a blocked state");
-  assert(_handshakee->thread_state() != _thread_in_native, "should not be in native");
 
-  ThreadInVMForHandshake tivm(_handshakee);
+  _handshakee->frame_anchor()->make_walkable(_handshakee);
+  // Threads shouldn't block if they are in the middle of printing, but...
+  ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
+
   // Handshakes cannot safely safepoint.
   // The exception to this rule is the asynchronous suspension handshake.
   // It by-passes the NSV by manually doing the transition.

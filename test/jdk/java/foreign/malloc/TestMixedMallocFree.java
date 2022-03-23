@@ -23,13 +23,13 @@
 
 /*
  * @test
+ * @library ../
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMixedMallocFree
  */
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -37,12 +37,11 @@ import jdk.incubator.foreign.SymbolLookup;
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
 
-import static jdk.incubator.foreign.CLinker.*;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.assertEquals;
 
-public class TestMixedMallocFree {
+public class TestMixedMallocFree extends NativeTestHelper {
 
     static final MethodHandle MH_my_malloc;
 
@@ -50,21 +49,20 @@ public class TestMixedMallocFree {
         System.loadLibrary("Malloc");
         SymbolLookup MALLOC = SymbolLookup.loaderLookup();
 
-        MH_my_malloc = CLinker.getInstance().downcallHandle(
+        MH_my_malloc = CLinker.systemCLinker().downcallHandle(
             MALLOC.lookup("my_malloc").orElseThrow(),
-            MethodType.methodType(MemoryAddress.class, long.class),
-            FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
+                FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
     }
 
     @Test
     public void testMalloc() throws Throwable {
         MemoryAddress ma = (MemoryAddress) MH_my_malloc.invokeExact(4L);
-        MemorySegment seg = ma.asSegment(4L, ResourceScope.newImplicitScope());
-        MemoryAccess.setInt(seg, 42);
-        assertEquals(MemoryAccess.getInt(seg), 42);
+        MemorySegment seg = MemorySegment.ofAddress(ma, 4L, ResourceScope.newImplicitScope());
+        seg.set(JAVA_INT, 0, 42);
+        assertEquals(seg.get(JAVA_INT, 0), 42);
         // Test if this free crashes the VM, which might be the case if we load the wrong default library
         // and end up mixing two allocators together.
-        CLinker.freeMemory(ma);
+        freeMemory(ma);
     }
 
 }

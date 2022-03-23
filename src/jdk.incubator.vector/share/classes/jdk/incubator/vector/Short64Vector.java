@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,6 +370,12 @@ final class Short64Vector extends ShortVector {
         return super.testTemplate(Short64Mask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final Short64Mask test(Test op, VectorMask<Short> m) {
+        return super.testTemplate(Short64Mask.class, op, (Short64Mask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -733,9 +739,9 @@ final class Short64Vector extends ShortVector {
         @ForceInline
         /*package-private*/
         static Short64Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Short64Mask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Short64Mask.class, short.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Short64Mask  TRUE_MASK = new Short64Mask(true);
         private static final Short64Mask FALSE_MASK = new Short64Mask(false);

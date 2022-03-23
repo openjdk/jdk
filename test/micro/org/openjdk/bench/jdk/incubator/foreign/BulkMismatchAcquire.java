@@ -26,7 +26,6 @@
 package org.openjdk.bench.jdk.incubator.foreign;
 
 import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,14 +37,11 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import sun.misc.Unsafe;
 
 import jdk.incubator.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -71,7 +67,7 @@ public class BulkMismatchAcquire {
         }
     }
 
-    @Param({"CONFINED", "SHARED", "IMPLICIT"})
+    @Param({"CONFINED", "SHARED"})
     public ScopeKind scopeKind;
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
@@ -121,8 +117,7 @@ public class BulkMismatchAcquire {
 
     @TearDown
     public void tearDown() {
-        if (!scope.isImplicit())
-            scope.close();
+        scope.close();
     }
 
     @Benchmark
@@ -134,11 +129,9 @@ public class BulkMismatchAcquire {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public long mismatch_large_segment_acquire() {
-        var handle = mismatchSegmentLarge1.scope().acquire();
-        try {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            scope.keepAlive(mismatchSegmentLarge1.scope());
             return mismatchSegmentLarge1.mismatch(mismatchSegmentLarge2);
-        } finally {
-            mismatchSegmentLarge1.scope().release(handle);
         }
     }
 
@@ -157,11 +150,9 @@ public class BulkMismatchAcquire {
     @Benchmark
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public long mismatch_small_segment_acquire() {
-        var handle = mismatchSegmentLarge1.scope().acquire();
-        try {
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            scope.keepAlive(mismatchSegmentLarge1.scope());
             return mismatchSegmentSmall1.mismatch(mismatchSegmentSmall2);
-        } finally {
-            mismatchSegmentLarge1.scope().release(handle);
         }
     }
 

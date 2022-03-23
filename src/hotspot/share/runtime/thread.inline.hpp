@@ -124,7 +124,9 @@ inline void JavaThread::clear_obj_deopt_flag() {
 
 inline bool JavaThread::clear_async_exception_condition() {
   bool ret = has_async_exception_condition();
-  clear_suspend_flag(_has_async_exception);
+  if (ret) {
+    clear_suspend_flag(_has_async_exception);
+  }
   return ret;
 }
 
@@ -136,6 +138,15 @@ inline void JavaThread::set_pending_async_exception(oop e) {
 inline void JavaThread::set_pending_unsafe_access_error() {
   set_suspend_flag(_has_async_exception);
   DEBUG_ONLY(_is_unsafe_access_error = true);
+}
+
+
+inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
+  assert((_target->_suspend_flags & _async_delivery_disabled) == 0, "Nesting is not supported");
+  _target->set_suspend_flag(_async_delivery_disabled);
+}
+inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark() {
+  _target->clear_suspend_flag(_async_delivery_disabled);
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {

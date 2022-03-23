@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,9 +294,57 @@ void frame::patch_pc(Thread* thread, address pc) {
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
-  // Is there anything to do?
   assert(is_interpreted_frame(), "Not an interpreted frame");
-  return true;
+  // These are reasonable sanity checks
+  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+    return false;
+  }
+  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+    return false;
+  }
+  int min_frame_slots = (abi_minframe_size + ijava_state_size) / sizeof(intptr_t);
+  if (fp() - min_frame_slots < sp()) {
+    return false;
+  }
+  // These are hacks to keep us out of trouble.
+  // The problem with these is that they mask other problems
+  if (fp() <= sp()) {        // this attempts to deal with unsigned comparison above
+    return false;
+  }
+
+  // do some validation of frame elements
+
+  // first the method
+
+  Method* m = *interpreter_frame_method_addr();
+
+  // validate the method we'd find in this potential sender
+  if (!Method::is_valid_method(m)) return false;
+
+  // stack frames shouldn't be much larger than max_stack elements
+  // this test requires the use of unextended_sp which is the sp as seen by
+  // the current frame, and not sp which is the "raw" pc which could point
+  // further because of local variables of the callee method inserted after
+  // method arguments
+  if (fp() - unextended_sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
+    return false;
+  }
+
+  // validate bci/bcx
+
+  address  bcp    = interpreter_frame_bcp();
+  if (m->validate_bci_from_bcp(bcp) < 0) {
+    return false;
+  }
+
+  // validate constantPoolCache*
+  ConstantPoolCache* cp = *interpreter_frame_cache_addr();
+  if (MetaspaceObj::is_valid(cp) == false) return false;
+
+  // validate locals
+
+  address locals =  (address) *interpreter_frame_locals_addr();
+  return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {

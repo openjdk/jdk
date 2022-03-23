@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -51,14 +50,14 @@ import java.nio.file.StandardOpenOption;
 import java.util.concurrent.TimeUnit;
 
 import static jdk.incubator.foreign.MemoryLayout.PathElement.sequenceElement;
-import static jdk.incubator.foreign.MemoryLayouts.JAVA_INT;
+import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign" })
+@Fork(value = 3, jvmArgsAppend = { "--add-modules=jdk.incubator.foreign", "--enable-native-access=ALL-UNNAMED" })
 public class LoopOverNonConstantMapped {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -81,7 +80,7 @@ public class LoopOverNonConstantMapped {
         }
     }
 
-    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(int.class, sequenceElement());
+    static final VarHandle VH_int = MemoryLayout.sequenceLayout(JAVA_INT).varHandle(sequenceElement());
     MemorySegment segment;
     long unsafe_addr;
 
@@ -143,10 +142,19 @@ public class LoopOverNonConstantMapped {
     }
 
     @Benchmark
-    public int segment_loop_static() {
+    public int segment_loop_instance() {
         int res = 0;
         for (int i = 0; i < ELEM_SIZE; i ++) {
-            res += MemoryAccess.getIntAtIndex(segment, i);
+            res += segment.get(JAVA_INT, i * CARRIER_SIZE);
+        }
+        return res;
+    }
+
+    @Benchmark
+    public int segment_loop_instance_address() {
+        int res = 0;
+        for (int i = 0; i < ELEM_SIZE; i ++) {
+            res += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
         }
         return res;
     }

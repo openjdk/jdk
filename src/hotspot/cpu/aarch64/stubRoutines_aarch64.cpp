@@ -45,8 +45,8 @@ address StubRoutines::aarch64::_float_sign_flip = NULL;
 address StubRoutines::aarch64::_double_sign_mask = NULL;
 address StubRoutines::aarch64::_double_sign_flip = NULL;
 address StubRoutines::aarch64::_zero_blocks = NULL;
-address StubRoutines::aarch64::_has_negatives = NULL;
-address StubRoutines::aarch64::_has_negatives_long = NULL;
+address StubRoutines::aarch64::_count_positives = NULL;
+address StubRoutines::aarch64::_count_positives_long = NULL;
 address StubRoutines::aarch64::_large_array_equals = NULL;
 address StubRoutines::aarch64::_compare_long_string_LL = NULL;
 address StubRoutines::aarch64::_compare_long_string_UU = NULL;
@@ -57,6 +57,10 @@ address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
 address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
 address StubRoutines::aarch64::_method_entry_barrier = NULL;
+
+static void empty_spin_wait() { }
+address StubRoutines::aarch64::_spin_wait = CAST_FROM_FN_PTR(address, empty_spin_wait);
+
 bool StubRoutines::aarch64::_completed = false;
 
 /**

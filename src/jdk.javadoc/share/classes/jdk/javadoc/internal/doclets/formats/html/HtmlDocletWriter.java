@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -262,7 +264,7 @@ public class HtmlDocletWriter {
         do {
             int match = docrootMatcher.start();
             // append htmlstr up to start of next {@docroot}
-            buf.append(htmlstr.substring(prevEnd, match));
+            buf.append(htmlstr, prevEnd, match);
             prevEnd = docrootMatcher.end();
             if (options.docrootParent().length() > 0 && htmlstr.startsWith("/..", prevEnd)) {
                 // Insert the absolute link if {@docRoot} is followed by "/..".
@@ -451,7 +453,7 @@ public class HtmlDocletWriter {
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))
@@ -548,8 +550,7 @@ public class HtmlDocletWriter {
     protected Content getNavLinkMainTree(String label) {
         Content mainTreeContent = links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
                 Text.of(label));
-        Content li = HtmlTree.LI(mainTreeContent);
-        return li;
+        return HtmlTree.LI(mainTreeContent);
     }
 
     /**
@@ -622,7 +623,7 @@ public class HtmlDocletWriter {
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
         }
-        DocLink targetLink = null;
+        DocLink targetLink;
         if (included || packageElement == null) {
             targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY));
         } else {
@@ -896,7 +897,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -912,7 +913,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -929,7 +930,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -945,7 +946,7 @@ public class HtmlDocletWriter {
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
-     * @param typeElement the typeElement that we should link to. This is not
+     * @param typeElement the typeElement that we should link to. This is
      *            not necessarily the type containing element since we may be
      *            inheriting comments.
      * @param element the member being linked to.
@@ -1009,6 +1010,10 @@ public class HtmlDocletWriter {
                         // @see reference label...
                         label = ref.subList(1, ref.size());
                     }
+                    case ERRONEOUS -> {
+                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input", seeText),
+                                Optional.empty());
+                    }
                     default ->
                         throw new IllegalStateException(ref.get(0).getKind().toString());
                 }
@@ -1063,7 +1068,8 @@ public class HtmlDocletWriter {
                             "doclet.see.class_or_package_not_found",
                             "@" + tagName,
                             seeText);
-                    return (labelContent.isEmpty() ? text: labelContent);
+                    return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                            Optional.of(labelContent.isEmpty() ? text: labelContent));
                 }
             }
         } else if (refMemName == null) {
@@ -1407,14 +1413,6 @@ public class HtmlDocletWriter {
         return false;
     }
 
-    boolean isAllWhiteSpace(String body) {
-        for (int i = 0 ; i < body.length(); i++) {
-            if (!Character.isWhitespace(body.charAt(i)))
-                return false;
-        }
-        return true;
-    }
-
     // Notify the next DocTree handler to take necessary action
     private boolean commentRemoved = false;
 
@@ -1505,7 +1503,7 @@ public class HtmlDocletWriter {
                 // Ignore any trailing whitespace OR whitespace after removed html comment
                 if ((isLastNode || commentRemoved)
                         && tag.getKind() == TEXT
-                        && isAllWhiteSpace(ch.getText(tag)))
+                        && ch.getText(tag).isBlank())
                     continue;
 
                 // Ignore any leading html comments
@@ -1537,18 +1535,11 @@ public class HtmlDocletWriter {
                         return false;
                     }
                     sb.append("=");
-                    String quote;
-                    switch (node.getValueKind()) {
-                        case DOUBLE:
-                            quote = "\"";
-                            break;
-                        case SINGLE:
-                            quote = "'";
-                            break;
-                        default:
-                            quote = "";
-                            break;
-                    }
+                    String quote = switch (node.getValueKind()) {
+                        case DOUBLE -> "\"";
+                        case SINGLE -> "'";
+                        default -> "";
+                    };
                     sb.append(quote);
                     result.add(sb);
                     Content docRootContent = new ContentBuilder();
@@ -1622,13 +1613,18 @@ public class HtmlDocletWriter {
                     DocTreePath dtp = ch.getDocTreePath(node);
                     if (dtp != null) {
                         String body = node.getBody();
-                        if (body.matches("(?i)\\{@[a-z]+.*")) {
-                            messages.warning(dtp,"doclet.tag.invalid_usage", body);
-                        } else {
+                        Matcher m = Pattern.compile("(?i)\\{@([a-z]+).*").matcher(body);
+                        String tagName = m.matches() ? m.group(1) : null;
+                        if (tagName == null) {
                             messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
+                                    Optional.empty()));
+                        } else {
+                            messages.warning(dtp, "doclet.tag.invalid_usage", body);
+                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                                    Optional.of(Text.of(body))));
                         }
                     }
-                    result.add(Text.of(node.toString()));
                     return false;
                 }
 
@@ -1780,6 +1776,24 @@ public class HtmlDocletWriter {
         return currentPageElement == null
                 || (currentPageElement != element
                     &&  currentPageElement != utils.getEnclosingTypeElement(element));
+    }
+
+    /**
+     * Returns the output for an invalid tag. The returned content uses special styling to
+     * highlight the problem. Depending on the presence of the {@code detail} string the method
+     * returns a plain text span or an expandable component.
+     *
+     * @param summary the single-line summary message
+     * @param detail the optional detail message which may contain preformatted text
+     * @return the output
+     */
+    protected Content invalidTagOutput(String summary, Optional<Content> detail) {
+        if (detail.isEmpty() || detail.get().isEmpty()) {
+            return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
+        }
+        return HtmlTree.DETAILS(HtmlStyle.invalidTag)
+                .add(HtmlTree.SUMMARY(Text.of(summary)))
+                .add(HtmlTree.PRE(detail.get()));
     }
 
     /**
@@ -2209,17 +2223,13 @@ public class HtmlDocletWriter {
         for (Element e: chain) {
             String name;
             switch (e.getKind()) {
-                case MODULE:
-                case PACKAGE:
+                case MODULE, PACKAGE -> {
                     name = ((QualifiedNameable) e).getQualifiedName().toString();
                     if (name.length() == 0) {
                         name = "<unnamed>";
                     }
-                    break;
-
-                default:
-                    name = e.getSimpleName().toString();
-                    break;
+                }
+                default -> name = e.getSimpleName().toString();
             }
 
             if (sb.length() == 0) {
@@ -2363,8 +2373,7 @@ public class HtmlDocletWriter {
                 Content leadingNote = contents.getContent("doclet.PreviewLeadingNote", nameCode);
                 previewDiv.add(HtmlTree.SPAN(HtmlStyle.previewLabel,
                                              leadingNote));
-                HtmlTree ul = new HtmlTree(TagName.UL);
-                ul.setStyle(HtmlStyle.previewComment);
+                HtmlTree ul = HtmlTree.UL(HtmlStyle.previewComment);
                 for (Content note : previewNotes) {
                     ul.add(HtmlTree.LI(note));
                 }
@@ -2392,6 +2401,10 @@ public class HtmlDocletWriter {
         Set<DeclarationPreviewLanguageFeatures> previewLanguageFeatures = new HashSet<>();
         for (Element enclosed : el.getEnclosedElements()) {
             if (!utils.isIncluded(enclosed)) {
+                continue;
+            }
+            if (utils.isPreviewAPI(enclosed)) {
+                //for class summary, ignore methods that are themselves preview:
                 continue;
             }
             if (!enclosed.getKind().isClass() && !enclosed.getKind().isInterface()) {
@@ -2428,8 +2441,7 @@ public class HtmlDocletWriter {
     private Content withPreviewFeatures(String key, String className, String featureName, List<String> features) {
         String[] sep = new String[] {""};
         ContentBuilder featureCodes = new ContentBuilder();
-        features.stream()
-                .forEach(c -> {
+        features.forEach(c -> {
                     featureCodes.add(sep[0]);
                     featureCodes.add(HtmlTree.CODE(new ContentBuilder().add(c)));
                     sep[0] = ", ";
@@ -2444,7 +2456,7 @@ public class HtmlDocletWriter {
         String[] sep = new String[] {""};
         ContentBuilder links = new ContentBuilder();
         elements.stream()
-                .sorted((te1, te2) -> te1.getSimpleName().toString().compareTo(te2.getSimpleName().toString()))
+                .sorted(Comparator.comparing(te -> te.getSimpleName().toString()))
                 .distinct()
                 .map(te -> getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS, te)
                         .label(HtmlTree.CODE(Text.of(te.getSimpleName()))).skipPreview(true)))

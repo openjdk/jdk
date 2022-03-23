@@ -1413,6 +1413,30 @@ const TypeInteger* TypeInteger::bottom(BasicType bt) {
   return TypeLong::LONG;
 }
 
+const TypeInteger* TypeInteger::zero(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::ZERO;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::ZERO;
+}
+
+const TypeInteger* TypeInteger::one(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::ONE;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::ONE;
+}
+
+const TypeInteger* TypeInteger::minus_1(BasicType bt) {
+  if (bt == T_INT) {
+    return TypeInt::MINUS_1;
+  }
+  assert(bt == T_LONG, "basic type not an int or long");
+  return TypeLong::MINUS_1;
+}
+
 //=============================================================================
 // Convience common pre-built types.
 const TypeInt *TypeInt::MAX;    // INT_MAX
@@ -2390,8 +2414,7 @@ const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
   BasicType elem_bt = elem->array_element_basic_type();
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
-    const TypeVect* mtype = Matcher::predicate_reg_type(elem, length);
-    return (TypeVect*)(const_cast<TypeVect*>(mtype))->hashcons();
+    return TypeVectMask::make(elem, length);
   } else {
     return make(elem, length);
   }
@@ -2503,6 +2526,15 @@ bool TypeVectMask::eq(const Type *t) const {
 
 const Type *TypeVectMask::xdual() const {
   return new TypeVectMask(element_type()->dual(), length());
+}
+
+const TypeVectMask *TypeVectMask::make(const BasicType elem_bt, uint length) {
+  return make(get_const_basic_type(elem_bt), length);
+}
+
+const TypeVectMask *TypeVectMask::make(const Type* elem, uint length) {
+  const TypeVectMask* mtype = Matcher::predicate_reg_type(elem, length);
+  return (TypeVectMask*) const_cast<TypeVectMask*>(mtype)->hashcons();
 }
 
 //=============================================================================

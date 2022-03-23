@@ -91,8 +91,7 @@ public final class Security {
         if (propFile.exists()) {
             InputStream is = null;
             try {
-                FileInputStream fis = new FileInputStream(propFile);
-                is = new BufferedInputStream(fis);
+                is = new FileInputStream(propFile);
                 props.load(is);
                 loadedProps = true;
 
@@ -140,7 +139,7 @@ public final class Security {
             // now load the user-specified file so its values
             // will win if they conflict with the earlier values
             if (extraPropFile != null) {
-                BufferedInputStream bis = null;
+                InputStream is = null;
                 try {
                     URL propURL;
 
@@ -152,8 +151,8 @@ public final class Security {
                     } else {
                         propURL = new URL(extraPropFile);
                     }
-                    bis = new BufferedInputStream(propURL.openStream());
-                    props.load(bis);
+                    is = propURL.openStream();
+                    props.load(is);
                     loadedProps = true;
 
                     if (sdebug != null) {
@@ -172,9 +171,9 @@ public final class Security {
                         e.printStackTrace();
                     }
                 } finally {
-                    if (bis != null) {
+                    if (is != null) {
                         try {
-                            bis.close();
+                            is.close();
                         } catch (IOException ioe) {
                             if (sdebug != null) {
                                 sdebug.println("unable to close input stream");

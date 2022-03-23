@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ import jdk.internal.util.ArraysSupport;
  * <p> Backslashes within string literals in Java source code are interpreted
  * as required by
  * <cite>The Java Language Specification</cite>
- * as either Unicode escapes (section {@jls 3.3}) or other character escapes (section {@jls 3.10.6})
+ * as either Unicode escapes (section {@jls 3.3}) or other character escapes (section {@jls 3.10.6}).
  * It is therefore necessary to double backslashes in string
  * literals that represent regular expressions to protect them from
  * interpretation by the Java bytecode compiler.  The string literal
@@ -1795,6 +1795,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (patternLength != cursor) {
                 if (peek() == ')') {
                     throw error("Unmatched closing ')'");
+                } else if (cursor == patternLength + 1 && temp[patternLength - 1] == '\\') {
+                    throw error("Unescaped trailing backslash");
                 } else {
                     throw error("Unexpected internal error");
                 }
@@ -2687,6 +2689,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             else
                                 prev = right;
                         } else {
+                            if (curr == null)
+                                throw error("Bad intersection syntax");
                             prev = prev.and(curr);
                         }
                     } else {
@@ -3438,8 +3442,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     private static final int countChars(CharSequence seq, int index,
                                         int lengthInCodePoints) {
         // optimization
-        if (lengthInCodePoints == 1 && !Character.isHighSurrogate(seq.charAt(index))) {
-            assert (index >= 0 && index < seq.length());
+        if (lengthInCodePoints == 1 && index >= 0 && index < seq.length() &&
+            !Character.isHighSurrogate(seq.charAt(index))) {
             return 1;
         }
         int length = seq.length();
@@ -4001,8 +4005,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 if (j < matcher.to)
                     return false;
+            } else {
+                matcher.hitEnd = true;
             }
-            matcher.hitEnd = true;
             return false;
         }
 
@@ -5056,14 +5061,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
-            int groupSize = k - j;
+            int groupSizeChars = k - j; //Group size in chars
 
             // If the referenced group didn't match, neither can this
             if (j < 0)
                 return false;
 
             // If there isn't enough input left no match
-            if (i + groupSize > matcher.to) {
+            if (i + groupSizeChars > matcher.to) {
                 matcher.hitEnd = true;
                 return false;
             }
@@ -5071,7 +5076,13 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             // Check each new char to make sure it matches what the group
             // referenced matched last time around
             int x = i;
-            for (int index=0; index<groupSize; index++) {
+
+            // We set groupCodepoints to the number of chars
+            // in the given subsequence but this is an upper bound estimate
+            // we reduce by one if we spot 2-char codepoints.
+            int groupCodepoints = groupSizeChars;
+
+            for (int index=0; index<groupCodepoints; index++) {
                 int c1 = Character.codePointAt(seq, x);
                 int c2 = Character.codePointAt(seq, j);
                 if (c1 != c2) {
@@ -5089,9 +5100,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 x += Character.charCount(c1);
                 j += Character.charCount(c2);
+
+                if(c1 >= Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+                    //Group size is guessed in terms of chars, but we need to
+                    //adjust if we spot a 2-char codePoint.
+                    groupCodepoints--;
+                }
             }
 
-            return next.match(matcher, i+groupSize, seq);
+            return next.match(matcher, i+groupSizeChars, seq);
         }
         boolean study(TreeInfo info) {
             info.maxValid = false;
@@ -5605,50 +5622,69 @@ NEXT:       while (i <= last) {
         }
     }
 
+    private static CharPredicate and(CharPredicate p1, CharPredicate p2,
+                                     boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) && p2.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) && p2.is(ch));
+        }
+    }
+
+    private static CharPredicate union(CharPredicate p1, CharPredicate p2,
+                                       boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) || p2.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) || p2.is(ch));
+        }
+    }
+
+    private static CharPredicate union(CharPredicate p1, CharPredicate p2,
+                                       CharPredicate p3, boolean bmpChar) {
+        if (bmpChar) {
+            return (BmpCharPredicate)(ch -> p1.is(ch) || p2.is(ch) || p3.is(ch));
+        } else {
+            return (CharPredicate)(ch -> p1.is(ch) || p2.is(ch) || p3.is(ch));
+        }
+    }
+
+    private static CharPredicate negate(CharPredicate p1) {
+        return (CharPredicate)(ch -> !p1.is(ch));
+    }
+
     @FunctionalInterface
     static interface CharPredicate {
         boolean is(int ch);
 
         default CharPredicate and(CharPredicate p) {
-            return ch -> is(ch) && p.is(ch);
+            return Pattern.and(this, p, false);
         }
         default CharPredicate union(CharPredicate p) {
-            return ch -> is(ch) || p.is(ch);
+            return Pattern.union(this, p, false);
         }
         default CharPredicate union(CharPredicate p1,
                                     CharPredicate p2) {
-            return ch -> is(ch) || p1.is(ch) || p2.is(ch);
+            return Pattern.union(this, p1, p2, false);
         }
         default CharPredicate negate() {
-            return ch -> !is(ch);
+            return Pattern.negate(this);
         }
     }
 
     static interface BmpCharPredicate extends CharPredicate {
 
         default CharPredicate and(CharPredicate p) {
-            if (p instanceof BmpCharPredicate)
-                return (BmpCharPredicate)(ch -> is(ch) && p.is(ch));
-            return ch -> is(ch) && p.is(ch);
+            return Pattern.and(this, p, p instanceof BmpCharPredicate);
         }
         default CharPredicate union(CharPredicate p) {
-            if (p instanceof BmpCharPredicate)
-                return (BmpCharPredicate)(ch -> is(ch) || p.is(ch));
-            return ch -> is(ch) || p.is(ch);
+            return Pattern.union(this, p, p instanceof BmpCharPredicate);
         }
-        static CharPredicate union(CharPredicate... predicates) {
-            CharPredicate cp = ch -> {
-                for (CharPredicate p : predicates) {
-                    if (!p.is(ch))
-                        return false;
-                }
-                return true;
-            };
-            for (CharPredicate p : predicates) {
-                if (! (p instanceof BmpCharPredicate))
-                    return cp;
-            }
-            return (BmpCharPredicate)cp;
+        default CharPredicate union(CharPredicate p1,
+                                    CharPredicate p2) {
+            return Pattern.union(this, p1, p2,
+                                 p1 instanceof BmpCharPredicate &&
+                                 p2 instanceof BmpCharPredicate);
         }
     }
 

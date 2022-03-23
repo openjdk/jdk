@@ -30,7 +30,6 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/g1EvacFailureObjectsSet.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -84,10 +83,6 @@ inline HeapWord* HeapRegion::block_start(const void* p) {
   return _bot_part.block_start(p);
 }
 
-inline HeapWord* HeapRegion::block_start_const(const void* p) const {
-  return _bot_part.block_start_const(p);
-}
-
 inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {
   HeapWord* addr = cast_from_oop<HeapWord*>(obj);
 
@@ -108,12 +103,8 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
 }
 
 inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  if (!this->is_in(p)) {
-    assert(is_continues_humongous(), "This case can only happen for humongous regions");
-    return (p == humongous_start_region()->bottom());
-  }
+  assert(p >= bottom() && p < top(), "precondition");
+  assert(!is_continues_humongous(), "p must point to block-start");
   // When class unloading is enabled it is not safe to only consider top() to conclude if the
   // given pointer is a valid object. The situation can occur both for class unloading in a
   // Full GC and during a concurrent cycle.
@@ -122,9 +113,9 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
   // During a concurrent cycle class unloading is done after marking is complete and objects
   // for the unloaded classes will be stale until the regions are collected.
   if (ClassUnloading) {
-    return !g1h->is_obj_dead(cast_to_oop(p), this);
+    return !G1CollectedHeap::heap()->is_obj_dead(cast_to_oop(p), this);
   }
-  return p < top();
+  return true;
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
@@ -192,10 +183,6 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 }
 
 inline void HeapRegion::reset_after_full_gc_common() {
-  if (is_empty()) {
-    reset_bot();
-  }
-
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
     mangle_unused_area();
@@ -240,33 +227,17 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::bot_threshold_for_addr(const void* addr) {
-  HeapWord* threshold = _bot_part.threshold_for_addr(addr);
-  assert(threshold >= addr,
-         "threshold must be at or after given address. " PTR_FORMAT " >= " PTR_FORMAT,
-         p2i(threshold), p2i(addr));
-  assert(is_old(),
-         "Should only calculate BOT threshold for old regions. addr: " PTR_FORMAT " region:" HR_FORMAT,
-         p2i(addr), HR_FORMAT_PARAMS(this));
-  return threshold;
-}
-
-inline void HeapRegion::update_bot_crossing_threshold(HeapWord** threshold, HeapWord* obj_start, HeapWord* obj_end) {
+inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
   assert(is_old(), "should only do BOT updates for old regions");
-  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
-         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT " threshold " PTR_FORMAT,
-         HR_FORMAT_PARAMS(this),
-         p2i(obj_start), p2i(obj_end), p2i(*threshold));
-  _bot_part.alloc_block_work(threshold, obj_start, obj_end);
-}
 
-inline void HeapRegion::update_bot_at(HeapWord* obj_start, size_t obj_size) {
-  HeapWord* threshold = bot_threshold_for_addr(obj_start);
   HeapWord* obj_end = obj_start + obj_size;
 
-  if (obj_end > threshold) {
-    update_bot_crossing_threshold(&threshold, obj_start, obj_end);
-  }
+  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
+         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
+         HR_FORMAT_PARAMS(this),
+         p2i(obj_start), p2i(obj_end));
+
+  _bot_part.update_for_block(obj_start, obj_end);
 }
 
 inline void HeapRegion::note_start_of_marking() {
@@ -356,19 +327,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   HeapWord* const end = mr.end();
 
   // Find the obj that extends onto mr.start().
-  // Update BOT as needed while finding start of (possibly dead)
-  // object containing the start of the region.
   HeapWord* cur = block_start(start);
-
-#ifdef ASSERT
-  {
-    assert(cur <= start,
-           "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
-    HeapWord* next = cur + block_size(cur);
-    assert(start < next,
-           "start: " PTR_FORMAT ", next: " PTR_FORMAT, p2i(start), p2i(next));
-  }
-#endif
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {
@@ -447,10 +406,6 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
-}
-
-inline void HeapRegion::record_evac_failure_obj(oop obj) {
-  _evac_failure_objs.record(obj);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,28 +191,14 @@ public class ToolEnvironment {
     }
 
     /**
-     * Print a notice, iff <em>quiet</em> is not specified.
+     * Prints a notice unless {@code -quiet} was specified.
      *
      * @param key selects message from resource
      */
-    public void notice(String key) {
-        if (quiet) {
-            return;
+    public void printInfo(String key, Object... args) {
+        if (!quiet) {
+            log.printNoteUsingKey(key, args);
         }
-        JavadocLog.printRawLines(log.getDiagnosticWriter(), log.getText(key));
-    }
-
-    /**
-     * Print a notice, iff <em>quiet</em> is not specified.
-     *
-     * @param key selects message from resource
-     * @param a1 first argument
-     */
-    public void notice(String key, String a1) {
-        if (quiet) {
-            return;
-        }
-        JavadocLog.printRawLines(log.getDiagnosticWriter(), log.getText(key, a1));
     }
 
     TreePath getTreePath(JCCompilationUnit tree) {
@@ -246,9 +232,5 @@ public class ToolEnvironment {
 
     public Env<AttrContext> getEnv(ClassSymbol tsym) {
         return enter.getEnv(tsym);
-    }
-
-    public boolean isQuiet() {
-        return quiet;
     }
 }

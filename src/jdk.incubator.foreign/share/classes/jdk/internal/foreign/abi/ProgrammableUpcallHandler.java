@@ -26,10 +26,10 @@
 package jdk.internal.foreign.abi;
 
 import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayouts;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SegmentAllocator;
+import jdk.incubator.foreign.ValueLayout;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemoryAddressImpl;
@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandles.dropArguments;
+import static java.lang.invoke.MethodHandles.exactInvoker;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
 import static java.lang.invoke.MethodHandles.identity;
 import static java.lang.invoke.MethodHandles.insertArguments;
@@ -69,7 +70,7 @@ public class ProgrammableUpcallHandler {
 
     private static final JavaLangInvokeAccess JLI = SharedSecrets.getJavaLangInvokeAccess();
 
-    private static final VarHandle VH_LONG = MemoryLayouts.JAVA_LONG.varHandle(long.class);
+    private static final VarHandle VH_LONG = ValueLayout.JAVA_LONG.varHandle();
 
     private static final MethodHandle MH_invokeMoves;
     private static final MethodHandle MH_invokeInterpBindings;
@@ -88,7 +89,7 @@ public class ProgrammableUpcallHandler {
         }
     }
 
-    public static UpcallHandler make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence) {
+    public static NativeSymbol make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence, ResourceScope scope) {
         Binding.VMLoad[] argMoves = argMoveBindings(callingSequence);
         Binding.VMStore[] retMoves = retMoveBindings(callingSequence);
 
@@ -134,7 +135,7 @@ public class ProgrammableUpcallHandler {
             MethodHandle invokeMoves = insertArguments(MH_invokeMoves, 1, doBindingsErased, argMoves, retMoves, abi, layout);
             entryPoint = allocateUpcallStub(invokeMoves, abi, layout);
         }
-        return () -> entryPoint;
+        return UpcallStubs.makeUpcall(entryPoint, scope);
     }
 
     private static void checkPrimitive(MethodType type) {

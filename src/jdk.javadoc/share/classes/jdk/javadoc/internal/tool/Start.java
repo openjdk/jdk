@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -195,7 +196,7 @@ public class Start {
     }
 
     private void showUsage(String headerKey, ToolOption.Kind kind, String footerKey) {
-        log.noticeUsingKey(headerKey);
+        showLinesUsingKey(headerKey);
         showToolOptions(kind);
 
         // let doclet print usage information
@@ -204,12 +205,13 @@ public class Start {
                     ? Option.Kind.EXTENDED
                     : Option.Kind.STANDARD);
         }
-        if (footerKey != null)
-            log.noticeUsingKey(footerKey);
+        if (footerKey != null) {
+            showLinesUsingKey(footerKey);
+        }
     }
 
     private void showVersion(String labelKey, String value) {
-        log.noticeUsingKey(labelKey, log.programName, value);
+        showLinesUsingKey(labelKey, log.programName, value);
     }
 
     private void showToolOptions(ToolOption.Kind kind) {
@@ -252,7 +254,7 @@ public class Start {
         if (options.isEmpty()) {
             return;
         }
-        log.noticeUsingKey("main.doclet.usage.header", name);
+        showLinesUsingKey("main.doclet.usage.header", name);
 
         Comparator<Doclet.Option> comp = new Comparator<Doclet.Option>() {
             final Collator collator = Collator.getInstance(Locale.US);
@@ -307,22 +309,30 @@ public class Start {
         if (synopses.length() < DEFAULT_SYNOPSIS_WIDTH
                 && !description.contains("\n")
                 && (SMALL_INDENT.length() + DEFAULT_SYNOPSIS_WIDTH + 1 + description.length() <= DEFAULT_MAX_LINE_LENGTH)) {
-            log.notice(String.format(COMPACT_FORMAT, synopses, description));
+            showLines(String.format(COMPACT_FORMAT, synopses, description));
             return;
         }
 
         // If option synopses fit on a single line of reasonable length, show that;
         // otherwise, show 1 per line
         if (synopses.length() <= DEFAULT_MAX_LINE_LENGTH) {
-            log.notice(SMALL_INDENT + synopses);
+            showLines(SMALL_INDENT + synopses);
         } else {
             for (String name: names) {
-                log.notice(SMALL_INDENT + name + parameters);
+                showLines(SMALL_INDENT + name + parameters);
             }
         }
 
         // Finally, show the description
-        log.notice(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
+        showLines(LARGE_INDENT + description.replace("\n", "\n" + LARGE_INDENT));
+    }
+
+    private void showLinesUsingKey(String key, Object... args) {
+        showLines(log.getText(key, args));
+    }
+
+    private void showLines(String message) {
+        log.printRawLines(Log.WriterKind.STDOUT, message);
     }
 
 
@@ -520,7 +530,21 @@ public class Start {
         }
 
         if (fileManager instanceof BaseFileManager bfm) {
+            // standard file manager: use direct support for handling options
             bfm.handleOptions(options.fileManagerOptions());
+        } else {
+            // unrecognized file manager:
+            for (Map.Entry<com.sun.tools.javac.main.Option, String> e: options.fileManagerOptions().entrySet()) {
+                String optName = e.getKey().getPrimaryName();
+                String optValue = e.getValue();
+                try {
+                    if (!fileManager.handleOption(optName, List.of(optValue).iterator())) {
+                        log.error("main.unknown.option.for.filemanager", optName);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    log.error("main.bad.arg.for.filemanager.option", optName, ex.getMessage());
+                }
+            }
         }
 
         String mr = com.sun.tools.javac.main.Option.MULTIRELEASE.primaryName;

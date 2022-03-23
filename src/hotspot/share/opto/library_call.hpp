@@ -296,7 +296,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
-  bool inline_hasNegatives();
+  bool inline_countPositives();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
@@ -314,7 +314,7 @@ class LibraryCallKit : public GraphKit {
 
   // Vector API support
   bool inline_vector_nary_operation(int n);
-  bool inline_vector_broadcast_coerced();
+  bool inline_vector_frombits_coerced();
   bool inline_vector_shuffle_to_vector();
   bool inline_vector_shuffle_iota();
   bool inline_vector_mask_operation();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,9 +208,8 @@ public final class SunEC extends Provider {
         /*
          *  Key Factory engine
          */
-        putService(new ProviderService(this, "KeyFactory",
-            "EC", "sun.security.ec.ECKeyFactory",
-            List.of("EllipticCurve"), ATTRS));
+        putService(new ProviderServiceA(this, "KeyFactory",
+            "EC", "sun.security.ec.ECKeyFactory", ATTRS));
 
         /*
          * Algorithm Parameter engine
@@ -319,9 +318,8 @@ public final class SunEC extends Provider {
         /*
          *  Key Pair Generator engine
          */
-        putService(new ProviderService(this, "KeyPairGenerator",
-            "EC", "sun.security.ec.ECKeyPairGenerator",
-            List.of("EllipticCurve"), ATTRS));
+        putService(new ProviderServiceA(this, "KeyPairGenerator",
+            "EC", "sun.security.ec.ECKeyPairGenerator", ATTRS));
 
         /*
          * Key Agreement engine

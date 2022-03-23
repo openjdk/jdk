@@ -48,6 +48,107 @@ static jint state[] = {
     JVMTI_THREAD_STATE_IN_OBJECT_WAIT
 };
 
+
+#if 1 // support for debug tracing
+
+#define LOG(...) \
+  { \
+    printf(__VA_ARGS__); \
+    fflush(stdout); \
+  }
+
+#define MAX_FRAME_COUNT_PRINT_STACK_TRACE 200
+
+static void
+check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
+  if (err != JVMTI_ERROR_NONE) {
+    LOG("check_jvmti_status: JVMTI function returned error: %s (%d)\n", TranslateError(err), err);
+    jni->FatalError(msg);
+  }
+}
+
+static void
+deallocate(jvmtiEnv *jvmti, JNIEnv* jni, void* ptr) {
+  jvmtiError err;
+
+  err = jvmti->Deallocate((unsigned char*)ptr);
+  check_jvmti_status(jni, err, "deallocate: error in JVMTI Deallocate call");
+}
+
+static char*
+get_method_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
+  jclass klass = NULL;
+  char*  cname = NULL;
+  char*  result = NULL;
+  jvmtiError err;
+
+  err = jvmti->GetMethodDeclaringClass(method, &klass);
+  check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI GetMethodDeclaringClass");
+
+  err = jvmti->GetClassSignature(klass, &cname, NULL);
+  check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI GetClassSignature");
+
+  size_t len = strlen(cname) - 2; // get rid of leading 'L' and trailing ';'
+
+  err = jvmti->Allocate((jlong)(len + 1), (unsigned char**)&result);
+  check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI Allocate");
+
+  strncpy(result, cname + 1, len); // skip leading 'L'
+  result[len] = '\0';
+  deallocate(jvmti, jni, (void*)cname);
+  return result;
+}
+
+static void
+print_method(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method, jint depth) {
+  char*  cname = NULL;
+  char*  mname = NULL;
+  char*  msign = NULL;
+  jvmtiError err;
+
+  cname = get_method_class_name(jvmti, jni, method);
+
+  err = jvmti->GetMethodName(method, &mname, &msign, NULL);
+  check_jvmti_status(jni, err, "print_method: error in JVMTI GetMethodName");
+
+  LOG("%2d: %s: %s%s\n", depth, cname, mname, msign);
+  fflush(0);
+  deallocate(jvmti, jni, (void*)cname);
+  deallocate(jvmti, jni, (void*)mname);
+  deallocate(jvmti, jni, (void*)msign);
+}
+
+static char*
+get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  jvmtiThreadInfo thr_info;
+  jvmtiError err;
+
+  memset(&thr_info, 0, sizeof(thr_info));
+  err = jvmti->GetThreadInfo(thread, &thr_info);
+  check_jvmti_status(jni, err, "get_thread_name: error in JVMTI GetThreadInfo call");
+
+  return thr_info.name == NULL ? (char*)"<Unnamed thread>" : thr_info.name;
+}
+
+static void
+print_stack_trace(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
+  jvmtiFrameInfo frames[MAX_FRAME_COUNT_PRINT_STACK_TRACE];
+  char* tname = get_thread_name(jvmti, jni, thread);
+  jint count = 0;
+  jvmtiError err;
+
+  err = jvmti->GetStackTrace(thread, 0, MAX_FRAME_COUNT_PRINT_STACK_TRACE, frames, &count);
+  check_jvmti_status(jni, err, "print_stack_trace: error in JVMTI GetStackTrace");
+
+  LOG("JVMTI Stack Trace for thread %s: frame count: %d\n", tname, count);
+  for (int depth = 0; depth < count; depth++) {
+    print_method(jvmti, jni, frames[depth].method, depth);
+  }
+  deallocate(jvmti, jni, (void*)tname);
+  LOG("\n");
+}
+#endif // support for debug tracing
+
 void printStateFlags(jint flags) {
     if (flags & JVMTI_THREAD_STATE_SUSPENDED)
         printf(" JVMTI_THREAD_STATE_SUSPENDED");
@@ -337,6 +438,9 @@ Java_nsk_jvmti_GetThreadState_thrstat002_checkStatus(JNIEnv *env, jclass cls,
                 TranslateState(state[statInd]), state[statInd]);
             printf("      actual: %s (%d)\n",
                 TranslateState(thrState), thrState);
+#ifdef DBG
+            print_stack_trace(jvmti, env, thr_ptr);
+#endif
             result = STATUS_FAILED;
         }
         if (suspState != JVMTI_THREAD_STATE_SUSPENDED) {

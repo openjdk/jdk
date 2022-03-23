@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,31 @@ void JvmtiClassFileReconstituter::write_exceptions_attribute(ConstMethod* const_
   write_u2(checked_exceptions_length);
   for (int index = 0; index < checked_exceptions_length; index++) {
     write_u2(checked_exceptions[index].class_cp_index);
+  }
+}
+
+// Write MethodParameters attribute
+// JVMSpec|   MethodParameters_attribute {
+// JVMSpec|     u2 attribute_name_index;
+// JVMSpec|     u4 attribute_length;
+// JVMSpec|     u1 parameters_count;
+// JVMSpec|     {   u2 name_index;
+// JVMSpec|         u2 access_flags;
+// JVMSpec|     } parameters[parameters_count];
+// JVMSpec|   }
+void JvmtiClassFileReconstituter::write_method_parameter_attribute(const ConstMethod* const_method) {
+  const MethodParametersElement *parameters = const_method->method_parameters_start();
+  int length = const_method->method_parameters_length();
+  assert(length <= max_jubyte, "must fit u1");
+  int size = 1                  // parameters_count
+           + (2 + 2) * length;  // parameters
+
+  write_attribute_name_index("MethodParameters");
+  write_u4(size);
+  write_u1(length);
+  for (int index = 0; index < length; index++) {
+    write_u2(parameters[index].name_cp_index);
+    write_u2(parameters[index].flags);
   }
 }
 
@@ -689,6 +714,9 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
   if (default_anno != NULL) {
     ++attr_count;     // has AnnotationDefault attribute
   }
+  if (const_method->has_method_parameters()) {
+    ++attr_count;     // has MethodParameters attribute
+  }
   // Deprecated attribute would go here
   if (access_flags.is_synthetic()) { // FIXME
     // ++attr_count;
@@ -715,6 +743,9 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
   }
   if (default_anno != NULL) {
     write_annotations_attribute("AnnotationDefault", default_anno);
+  }
+  if (const_method->has_method_parameters()) {
+    write_method_parameter_attribute(const_method);
   }
   // Deprecated attribute would go here
   if (access_flags.is_synthetic()) {

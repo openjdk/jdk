@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363
+ * @bug 8262891 8268871 8274363 8281100
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -370,102 +370,6 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test
-    public void testInaccessiblePermitted(Path base) throws IOException {
-        Path current = base.resolve(".");
-        Path libSrc = current.resolve("lib-src");
-
-        tb.writeJavaFiles(libSrc,
-                           """
-                           package lib;
-                           public sealed interface S permits A, B {}
-                           """,
-                           """
-                           package lib;
-                           public final class A implements S {}
-                           """,
-                           """
-                           package lib;
-                           final class B implements S {}
-                           """);
-
-        Path libClasses = current.resolve("libClasses");
-
-        Files.createDirectories(libClasses);
-
-        new JavacTask(tb)
-                .options("--enable-preview",
-                         "-source", JAVA_VERSION)
-                .outdir(libClasses)
-                .files(tb.findJavaFiles(libSrc))
-                .run();
-
-        Path src = current.resolve("src");
-        tb.writeJavaFiles(src,
-                           """
-                           package test;
-                           import lib.*;
-                           public class Test {
-                               private int test(S obj) {
-                                   return switch (obj) {
-                                       case A a -> 0;
-                                   };
-                               }
-                           }
-                           """);
-
-        Path classes = current.resolve("libClasses");
-
-        Files.createDirectories(libClasses);
-
-        var log =
-                new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION,
-                             "-XDrawDiagnostics",
-                             "-Xlint:-preview",
-                             "--class-path", libClasses.toString())
-                    .outdir(classes)
-                    .files(tb.findJavaFiles(src))
-                    .run(Task.Expect.FAIL)
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
-
-        List<String> expectedErrors = List.of(
-               "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
-               "1 error");
-
-        if (!expectedErrors.equals(log)) {
-            throw new AssertionError("Incorrect errors, expected: " + expectedErrors +
-                                      ", actual: " + log);
-        }
-
-        Path bClass = libClasses.resolve("lib").resolve("B.class");
-
-        Files.delete(bClass);
-
-        var log2 =
-                new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION,
-                             "-XDrawDiagnostics",
-                             "-Xlint:-preview",
-                             "--class-path", libClasses.toString())
-                    .outdir(classes)
-                    .files(tb.findJavaFiles(src))
-                    .run(Task.Expect.FAIL)
-                    .writeAll()
-                    .getOutputLines(Task.OutputKind.DIRECT);
-
-        if (!expectedErrors.equals(log2)) {
-            throw new AssertionError("Incorrect errors, expected: " + expectedErrors +
-                                      ", actual: " + log2);
-        }
-
-    }
-
-    @Test
     public void testExhaustiveStatement1(Path base) throws Exception {
         doTest(base,
                new String[]{"""
@@ -799,6 +703,170 @@ public class Exhaustiveness extends TestRunner {
                """);
     }
 
+    @Test
+    public void testOnlyApplicable(Path base) throws Exception {
+        record TestCase(String cases, String... errors) {}
+        TestCase[] subCases = new TestCase[] {
+            new TestCase("""
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """), //OK
+            new TestCase("""
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:11:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C3<Integer> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:11:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                         """,
+                         "Test.java:11:9: compiler.err.not.exhaustive.statement",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C1 c -> {}
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C1)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C2<?> c -> {}
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C2<?>)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+            new TestCase("""
+                                     case C4<?, ?> c -> {}
+                                     case C3<Integer> c -> {}
+                                     case C5<Integer, ?> c -> {}
+                                     case C6<?, Integer> c -> {}
+                         """,
+                         "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C4<?,?>)",
+                         "- compiler.note.preview.filename: Test.java, DEFAULT",
+                         "- compiler.note.preview.recompile",
+                         "1 error"),
+        };
+        for (TestCase tc : subCases) {
+            doTest(base,
+                   new String[0],
+                   """
+                   package test;
+                   public class Test {
+                       sealed interface I<T> {}
+                       final class C1 implements I<String> {}
+                       final class C2<T> implements I<String> {}
+                       final class C3<T> implements I<T> {}
+                       final class C4<T, E> implements I<String> {}
+                       final class C5<T, E> implements I<T> {}
+                       final class C6<T, E> implements I<E> {}
+                       void t(I<Integer> i) {
+                           switch (i) {
+                   ${cases}
+                           }
+                       }
+                   }
+                   """.replace("${cases}", tc.cases),
+                   tc.errors);
+        }
+    }
+
+    @Test
+    public void testDefiniteAssignment(Path base) throws Exception {
+        doTest(base,
+               new String[]{"""
+                            package lib;
+                            public sealed interface S permits A, B {}
+                            """,
+                            """
+                            package lib;
+                            public final class A implements S {}
+                            """,
+                            """
+                            package lib;
+                            public final class B implements S {}
+                            """},
+               """
+               package test;
+               import lib.*;
+               public class Test {
+                   private void testStatement(S obj) {
+                       int data;
+                       switch (obj) {
+                           case A a -> data = 0;
+                           case B b -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpression(S obj) {
+                       int data;
+                       int v = switch (obj) {
+                           case A a -> data = 0;
+                           case B b -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testStatementNotExhaustive(S obj) {
+                       int data;
+                       switch (obj) {
+                           case A a -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpressionNotExhaustive(S obj) {
+                       int data;
+                       int v = switch (obj) {
+                           case A a -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testStatementErrorEnum(E e) { //"E" is intentionally unresolvable
+                       int data;
+                       switch (e) {
+                           case A -> data = 0;
+                           case B -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+                   private void testExpressionErrorEnum(E e) { //"E" is intentionally unresolvable
+                       int data;
+                       int v = switch (e) {
+                           case A -> data = 0;
+                           case B -> data = 0;
+                       };
+                       System.err.println(data);
+                   }
+               }
+               """,
+               "Test.java:34:41: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:42:42: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
+               "Test.java:22:9: compiler.err.not.exhaustive.statement",
+               "Test.java:29:17: compiler.err.not.exhaustive",
+               "- compiler.note.preview.filename: Test.java, DEFAULT",
+               "- compiler.note.preview.recompile",
+               "4 errors");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -833,7 +901,8 @@ public class Exhaustiveness extends TestRunner {
                              "-source", JAVA_VERSION,
                              "-XDrawDiagnostics",
                              "-Xlint:-preview",
-                             "--class-path", libClasses.toString())
+                             "--class-path", libClasses.toString(),
+                             "-XDshould-stop.at=FLOW")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))
                     .run(expectedErrors.length > 0 ? Task.Expect.FAIL : Task.Expect.SUCCESS)

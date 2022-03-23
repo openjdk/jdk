@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,11 @@
 
 class Compilation;
 class ScopeValue;
-class BarrierSet;
 
 class LIR_Assembler: public CompilationResourceObj {
  private:
   C1_MacroAssembler* _masm;
   CodeStubList*      _slow_case_stubs;
-  BarrierSet*        _bs;
 
   Compilation*       _compilation;
   FrameMap*          _frame_map;
@@ -197,6 +195,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null);
   void emit_compare_and_swap(LIR_OpCompareAndSwap* op);
   void emit_lock(LIR_OpLock* op);
+  void emit_load_klass(LIR_OpLoadKlass* op);
   void emit_call(LIR_OpJavaCall* op);
   void emit_rtcall(LIR_OpRTCall* op);
   void emit_profile_call(LIR_OpProfileCall* op);

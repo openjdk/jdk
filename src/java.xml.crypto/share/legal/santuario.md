@@ -1,4 +1,4 @@
-## Apache Santuario v2.2.1
+## Apache Santuario v2.3.0
 
 ### Apache Santuario Notice
 <pre>

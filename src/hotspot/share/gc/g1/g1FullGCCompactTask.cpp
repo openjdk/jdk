@@ -46,25 +46,42 @@ public:
     uint region_index = r->hrm_index();
     // Only for skip-compaction regions; early return otherwise.
     if (!_collector->is_skip_compacting(region_index)) {
-
       return false;
     }
-    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold() ||
-         !r->is_starts_humongous() ||
-         _collector->mark_bitmap()->is_marked(cast_to_oop(r->bottom())),
-         "must be, otherwise reclaimed earlier");
+#ifdef ASSERT
+    if (r->is_humongous()) {
+      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
+      assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
+    } else if (r->is_open_archive()) {
+      bool is_empty = (_collector->live_words(r->hrm_index()) == 0);
+      assert(!is_empty, "should contain at least one live obj");
+    } else if (r->is_closed_archive()) {
+      // should early-return above
+      ShouldNotReachHere();
+    } else {
+      assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
+             "should be quite full");
+    }
+#endif
     r->reset_skip_compacting_after_full_gc();
     return false;
   }
 };
 
+void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_prev_bitmap(oop obj) {
+  assert(_bitmap->is_marked(obj), "Should only compact marked objects");
+  _bitmap->clear(obj);
+}
+
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
-  if (destination == NULL) {
-    // Object not moving
+  if (!obj->is_forwarded()) {
+    // Object not moving, but clear the mark to allow reuse of the bitmap.
+    clear_in_prev_bitmap(obj);
     return size;
   }
+
+  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
 
   // copy object and reinit its mark
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
@@ -73,6 +90,9 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   cast_to_oop(destination)->init_mark();
   assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
 
+  // Clear the mark for the compacted object to allow reuse of the
+  // bitmap without an additional clearing step.
+  clear_in_prev_bitmap(obj);
   return size;
 }
 
@@ -81,13 +101,15 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
 
   if (!collector()->is_free(hr->hrm_index())) {
+    // The compaction closure not only copies the object to the new
+    // location, but also clears the bitmap for it. This is needed
+    // for bitmap verification and to be able to use the prev_bitmap
+    // for evacuation failures in the next young collection. Testing
+    // showed that it was better overall to clear bit by bit, compared
+    // to clearing the whole region at the end. This difference was
+    // clearly seen for regions with few marks.
     G1CompactRegionClosure compact(collector()->mark_bitmap());
     hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
-    // Clear the liveness information for this region if necessary i.e. if we actually look at it
-    // for bitmap verification. Otherwise it is sufficient that we move the TAMS to bottom().
-    if (G1VerifyBitmaps) {
-      collector()->mark_bitmap()->clear_region(hr);
-    }
   }
 
   hr->reset_compacted_after_full_gc();

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,11 +94,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
-
-  # Setup username (for use in adhoc version strings etc)
-  # Outer [ ] to quote m4.
-  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
-  AC_SUBST(USERNAME)
 ])
 
 ###############################################################################
@@ -443,7 +438,9 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 [
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    file_to_test="$TOPDIR/LICENSE"
+    # The choice of file here is somewhat arbitrary, it just needs to be there
+    # in the source tree when configure runs
+    file_to_test="$TOPDIR/Makefile"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
       AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])
     fi

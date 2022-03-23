@@ -7,6 +7,55 @@ AARCH64_AS = "as"
 AARCH64_OBJDUMP = "objdump"
 AARCH64_OBJCOPY = "objcopy"
 
+# These tables are legal immediate logical operands
+immediates8 \
+     = [0x1, 0x0c, 0x3e, 0x60, 0x7c, 0x80, 0x83,
+        0xe1, 0xbf, 0xef, 0xf3, 0xfe]
+
+immediates16 \
+     = [0x1, 0x38, 0x7e, 0xff, 0x1fc, 0x1ff, 0x3f0,
+        0x7e0, 0xfc0, 0x1f80, 0x3ff0, 0x7e00, 0x7e00,
+        0x8000, 0x81ff, 0xc1ff, 0xc003, 0xc7ff, 0xdfff,
+        0xe03f, 0xe10f, 0xe1ff, 0xf801, 0xfc00, 0xfc07,
+        0xff03, 0xfffe]
+
+immediates32 \
+     = [0x1, 0x3f, 0x1f0, 0x7e0,
+        0x1c00, 0x3ff0, 0x8000, 0x1e000,
+        0x3e000, 0x78000, 0xe0000, 0x100000,
+        0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
+        0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
+        0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
+        0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
+        0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
+        0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
+        0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
+        0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
+        0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
+        0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
+        0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
+        0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
+        0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
+        0xffffffbf, 0xfffffffd]
+
+immediates64 \
+     = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
+        0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
+        0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
+        0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
+        0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
+        0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
+        0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
+        0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
+        0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
+        0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
+        0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
+        0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
+        0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
+        0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
+        0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
+        0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
+
 class Operand(object):
 
      def generate(self):
@@ -160,15 +209,17 @@ class Instruction(object):
         self._name = name
         self.isWord = name.endswith("w") | name.endswith("wi")
         self.asmRegPrefix = ["x", "w"][self.isWord]
+        self.isPostfixException = False
 
     def aname(self):
-        if (self._name.endswith("wi")):
+        if self.isPostfixException:
+            return self._name
+        elif (self._name.endswith("wi")):
             return self._name[:len(self._name)-2]
+        elif (self._name.endswith("i") | self._name.endswith("w")):
+            return self._name[:len(self._name)-1]
         else:
-            if (self._name.endswith("i") | self._name.endswith("w")):
-                return self._name[:len(self._name)-1]
-            else:
-                return self._name
+            return self._name
 
     def emit(self) :
         pass
@@ -299,6 +350,12 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class PostfixExceptionOneRegOp(OneRegOp):
+
+    def __init__(self, op):
+        OneRegOp.__init__(self, op)
+        self.isPostfixException=True
+
 class ArithOp(ThreeRegInstruction):
 
     def generate(self):
@@ -351,51 +408,12 @@ class AddSubImmOp(TwoRegImmedInstruction):
          return super(AddSubImmOp, self).cstr() + ");"
 
 class LogicalImmOp(AddSubImmOp):
-
-     # These tables are legal immediate logical operands
-     immediates32 \
-         = [0x1, 0x3f, 0x1f0, 0x7e0,
-            0x1c00, 0x3ff0, 0x8000, 0x1e000,
-            0x3e000, 0x78000, 0xe0000, 0x100000,
-            0x1fffe0, 0x3fe000, 0x780000, 0x7ffff8,
-            0xff8000, 0x1800180, 0x1fffc00, 0x3c003c0,
-            0x3ffff00, 0x7c00000, 0x7fffe00, 0xf000f00,
-            0xfffe000, 0x18181818, 0x1ffc0000, 0x1ffffffe,
-            0x3f003f00, 0x3fffe000, 0x60006000, 0x7f807f80,
-            0x7ffffc00, 0x800001ff, 0x803fffff, 0x9f9f9f9f,
-            0xc0000fff, 0xc0c0c0c0, 0xe0000000, 0xe003e003,
-            0xe3ffffff, 0xf0000fff, 0xf0f0f0f0, 0xf80000ff,
-            0xf83ff83f, 0xfc00007f, 0xfc1fffff, 0xfe0001ff,
-            0xfe3fffff, 0xff003fff, 0xff800003, 0xff87ff87,
-            0xffc00fff, 0xffe0000f, 0xffefffef, 0xfff1fff1,
-            0xfff83fff, 0xfffc0fff, 0xfffe0fff, 0xffff3fff,
-            0xffffc007, 0xffffe1ff, 0xfffff80f, 0xfffffe07,
-            0xffffffbf, 0xfffffffd]
-
-     immediates \
-         = [0x1, 0x1f80, 0x3fff0, 0x3ffffc,
-            0x3fe0000, 0x1ffc0000, 0xf8000000, 0x3ffffc000,
-            0xffffffe00, 0x3ffffff800, 0xffffc00000, 0x3f000000000,
-            0x7fffffff800, 0x1fe000001fe0, 0x3ffffff80000, 0xc00000000000,
-            0x1ffc000000000, 0x3ffff0003ffff, 0x7ffffffe00000, 0xfffffffffc000,
-            0x1ffffffffffc00, 0x3fffffffffff00, 0x7ffffffffffc00, 0xffffffffff8000,
-            0x1ffffffff800000, 0x3fffffc03fffffc, 0x7fffc0000000000, 0xff80ff80ff80ff8,
-            0x1c00000000000000, 0x1fffffffffff0000, 0x3fffff803fffff80, 0x7fc000007fc00000,
-            0x8000000000000000, 0x803fffff803fffff, 0xc000007fc000007f, 0xe00000000000ffff,
-            0xe3ffffffffffffff, 0xf007f007f007f007, 0xf80003ffffffffff, 0xfc000003fc000003,
-            0xfe000000007fffff, 0xff00000000007fff, 0xff800000000003ff, 0xffc00000000000ff,
-            0xffe00000000003ff, 0xfff0000000003fff, 0xfff80000001fffff, 0xfffc0000fffc0000,
-            0xfffe003fffffffff, 0xffff3fffffffffff, 0xffffc0000007ffff, 0xffffe01fffffe01f,
-            0xfffff800000007ff, 0xfffffc0fffffffff, 0xffffff00003fffff, 0xffffffc0000007ff,
-            0xfffffff0000001ff, 0xfffffffc00003fff, 0xffffffff07ffffff, 0xffffffffe003ffff,
-            0xfffffffffc01ffff, 0xffffffffffc00003, 0xfffffffffffc000f, 0xffffffffffffe07f]
-
      def generate(self):
           AddSubImmOp.generate(self)
           self.immed = \
-              self.immediates32[random.randint(0, len(self.immediates32)-1)] \
+              immediates32[random.randint(0, len(immediates32)-1)] \
               if self.isWord else \
-              self.immediates[random.randint(0, len(self.immediates)-1)]
+              immediates64[random.randint(0, len(immediates64)-1)]
 
           return self
 
@@ -405,6 +423,44 @@ class LogicalImmOp(AddSubImmOp):
 
      def cstr(self):
           return super(AddSubImmOp, self).cstr() + "ll);"
+
+class SVEBinaryImmOp(Instruction):
+    def __init__(self, name):
+        reg = SVEVectorRegister().generate()
+        self.reg = [reg, reg]
+        self.numRegs = len(self.reg)
+        self._width = RegVariant(0, 3)
+        self._isLogical = False
+        if name in ["and", "eor", "orr"]:
+            self._isLogical = True
+        Instruction.__init__(self, name)
+
+    def generate(self):
+        Instruction.generate(self)
+        self.immed = random.randint(0, (1<<8)-1)
+        if self._isLogical:
+            vectype = self._width.cstr()
+            if vectype == "__ B":
+                self.immed = immediates8[random.randint(0, len(immediates8)-1)]
+            elif vectype == "__ H":
+                self.immed = immediates16[random.randint(0, len(immediates16)-1)]
+            elif vectype == "__ S":
+                self.immed = immediates32[random.randint(0, len(immediates32)-1)]
+            elif vectype == "__ D":
+                self.immed = immediates64[random.randint(0, len(immediates64)-1)]
+        return self
+
+    def cstr(self):
+        formatStr = "%s%s, %s, %su);"
+        return (formatStr
+                % tuple(["__ sve_" + self._name + "("] +
+                        [str(self.reg[0]), self._width.cstr(), self.immed]))
+
+    def astr(self):
+        formatStr = "%s%s, %s, #0x%x"
+        Regs = [str(self.reg[i]) + self._width.astr() for i in range(0, self.numRegs)]
+        return (formatStr
+                % tuple([Instruction.astr(self)] + Regs + [self.immed]))
 
 class MultiOp():
 
@@ -548,6 +604,13 @@ class Op(Instruction):
         return Instruction.cstr(self) + ");"
     def astr(self):
         return self.aname();
+
+
+class PostfixExceptionOp(Op):
+
+    def __init__(self, op):
+        Op.__init__(self, op)
+        self.isPostfixException=True
 
 class SystemOp(Instruction):
 
@@ -1287,14 +1350,26 @@ generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "
 generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
                ])
 
-generate (Op, ["nop", "eret", "drps", "isb"])
+generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
+               "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
+               "pacia1716", "paciasp", "paciaz", "pacib1716", "pacibsp", "pacibz",
+               "eret", "drps", "isb",])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOp, ["wfi", "xpaclri"])
 
 barriers = ["OSHLD", "OSHST", "OSH", "NSHLD", "NSHST", "NSH",
             "ISHLD", "ISHST", "ISH", "LD", "ST", "SY"]
 
 generate (SystemOp, [["dsb", barriers], ["dmb", barriers]])
 
-generate (OneRegOp, ["br", "blr"])
+generate (OneRegOp, ["br", "blr",
+                     "paciza", "pacizb", "pacdza", "pacdzb",
+                     "autiza", "autizb", "autdza", "autdzb", "xpacd",
+                     "braaz", "brabz", "blraaz", "blrabz"])
+
+# Ensure the "i" is not stripped off the end of the instruction
+generate (PostfixExceptionOneRegOp, ["xpaci"])
 
 for mode in 'xwhb':
     generate (LoadStoreExclusiveOp, [["stxr", mode, 3], ["stlxr", mode, 3],
@@ -1339,7 +1414,10 @@ generate(ConditionalSelectOp,
 
 generate(TwoRegOp,
          ["rbitw", "rev16w", "revw", "clzw", "clsw", "rbit",
-          "rev16", "rev32", "rev", "clz", "cls"])
+          "rev16", "rev32", "rev", "clz", "cls",
+          "pacia",  "pacib", "pacda", "pacdb", "autia", "autib", "autda", "autdb",
+          "braa", "brab", "blraa", "blrab"])
+
 generate(ThreeRegOp,
          ["udivw", "sdivw", "lslvw", "lsrvw", "asrvw", "rorvw", "udiv", "sdiv",
           "lslv", "lsrv", "asrv", "rorv", "umulh", "smulh"])
@@ -1523,10 +1601,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["stxpw",  "__ stxpw(r6, zr, zr, sp);",                          "stxp\tw6, wzr, wzr, [sp]"],
                         ["dup",    "__ dup(v0, __ T16B, zr);",                           "dup\tv0.16b, wzr"],
                         ["dup",    "__ dup(v0, __ S, v1);",                              "dup\ts0, v1.s[0]"],
-                        ["mov",    "__ mov(v1, __ T1D, 0, zr);",                         "mov\tv1.d[0], xzr"],
-                        ["mov",    "__ mov(v1, __ T2S, 1, zr);",                         "mov\tv1.s[1], wzr"],
-                        ["mov",    "__ mov(v1, __ T4H, 2, zr);",                         "mov\tv1.h[2], wzr"],
-                        ["mov",    "__ mov(v1, __ T8B, 3, zr);",                         "mov\tv1.b[3], wzr"],
+                        ["mov",    "__ mov(v1, __ D, 0, zr);",                           "mov\tv1.d[0], xzr"],
+                        ["mov",    "__ mov(v1, __ S, 1, zr);",                           "mov\tv1.s[1], wzr"],
+                        ["mov",    "__ mov(v1, __ H, 2, zr);",                           "mov\tv1.h[2], wzr"],
+                        ["mov",    "__ mov(v1, __ B, 3, zr);",                           "mov\tv1.b[3], wzr"],
                         ["smov",   "__ smov(r0, v1, __ S, 0);",                          "smov\tx0, v1.s[0]"],
                         ["smov",   "__ smov(r0, v1, __ H, 1);",                          "smov\tx0, v1.h[1]"],
                         ["smov",   "__ smov(r0, v1, __ B, 2);",                          "smov\tx0, v1.b[2]"],
@@ -1675,9 +1753,22 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["bic",     "__ sve_bic(p10, p7, p9, p11);",                      "bic\tp10.b, p7/z, p9.b, p11.b"],
                         ["ptest",   "__ sve_ptest(p7, p1);",                              "ptest\tp7, p1.b"],
                         ["ptrue",   "__ sve_ptrue(p1, __ B);",                            "ptrue\tp1.b"],
+                        ["ptrue",   "__ sve_ptrue(p1, __ B, 0b00001);",                   "ptrue\tp1.b, vl1"],
+                        ["ptrue",   "__ sve_ptrue(p1, __ B, 0b00101);",                   "ptrue\tp1.b, vl5"],
+                        ["ptrue",   "__ sve_ptrue(p1, __ B, 0b01001);",                   "ptrue\tp1.b, vl16"],
+                        ["ptrue",   "__ sve_ptrue(p1, __ B, 0b01101);",                   "ptrue\tp1.b, vl256"],
                         ["ptrue",   "__ sve_ptrue(p2, __ H);",                            "ptrue\tp2.h"],
+                        ["ptrue",   "__ sve_ptrue(p2, __ H, 0b00010);",                   "ptrue\tp2.h, vl2"],
+                        ["ptrue",   "__ sve_ptrue(p2, __ H, 0b00110);",                   "ptrue\tp2.h, vl6"],
+                        ["ptrue",   "__ sve_ptrue(p2, __ H, 0b01010);",                   "ptrue\tp2.h, vl32"],
                         ["ptrue",   "__ sve_ptrue(p3, __ S);",                            "ptrue\tp3.s"],
+                        ["ptrue",   "__ sve_ptrue(p3, __ S, 0b00011);",                   "ptrue\tp3.s, vl3"],
+                        ["ptrue",   "__ sve_ptrue(p3, __ S, 0b00111);",                   "ptrue\tp3.s, vl7"],
+                        ["ptrue",   "__ sve_ptrue(p3, __ S, 0b01011);",                   "ptrue\tp3.s, vl64"],
                         ["ptrue",   "__ sve_ptrue(p4, __ D);",                            "ptrue\tp4.d"],
+                        ["ptrue",   "__ sve_ptrue(p4, __ D, 0b00100);",                   "ptrue\tp4.d, vl4"],
+                        ["ptrue",   "__ sve_ptrue(p4, __ D, 0b01000);",                   "ptrue\tp4.d, vl8"],
+                        ["ptrue",   "__ sve_ptrue(p4, __ D, 0b01100);",                   "ptrue\tp4.d, vl128"],
                         ["pfalse",  "__ sve_pfalse(p7);",                                 "pfalse\tp7.b"],
                         ["uzp1",    "__ sve_uzp1(p0, __ B, p0, p1);",                     "uzp1\tp0.b, p0.b, p1.b"],
                         ["uzp1",    "__ sve_uzp1(p0, __ H, p0, p1);",                     "uzp1\tp0.h, p0.h, p1.h"],
@@ -1719,6 +1810,9 @@ generate(SHA3SIMDOp, ["bcax", "eor3", "rax1", "xar"])
 
 generate(SHA512SIMDOp, ["sha512h", "sha512h2", "sha512su0", "sha512su1"])
 
+for i in range(6):
+    generate(SVEBinaryImmOp, ["add", "sub", "and", "eor", "orr"])
+
 generate(SVEVectorOp, [["add", "ZZZ"],
                        ["sub", "ZZZ"],
                        ["fadd", "ZZZ"],
@@ -1728,6 +1822,7 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["add", "ZPZ", "m", "dn"],
                        ["and", "ZPZ", "m", "dn"],
                        ["asr", "ZPZ", "m", "dn"],
+                       ["bic", "ZPZ", "m", "dn"],
                        ["cnt", "ZPZ", "m"],
                        ["eor", "ZPZ", "m", "dn"],
                        ["lsl", "ZPZ", "m", "dn"],
@@ -1774,8 +1869,8 @@ outfile.write("forth:\n")
 
 outfile.close()
 
-# compile for sve with 8.2 and sha3 because of SHA3 crypto extension.
-subprocess.check_call([AARCH64_AS, "-march=armv8.2-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
+# compile for sve with 8.3 and sha3 because of SHA3 crypto extension.
+subprocess.check_call([AARCH64_AS, "-march=armv8.3-a+sha3+sve", "aarch64ops.s", "-o", "aarch64ops.o"])
 
 print
 print "/*"

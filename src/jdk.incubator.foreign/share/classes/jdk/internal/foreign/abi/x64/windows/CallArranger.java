@@ -29,9 +29,10 @@ import jdk.incubator.foreign.GroupLayout;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
+import jdk.incubator.foreign.ResourceScope;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
-import jdk.internal.foreign.abi.UpcallHandler;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
@@ -82,8 +83,6 @@ public class CallArranger {
     }
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
-        SharedUtils.checkFunctionTypes(mt, cDesc, Windowsx64Linker.ADDRESS_SIZE);
-
         class CallingSequenceBuilderHelper {
             final CallingSequenceBuilder csb = new CallingSequenceBuilder(forUpcall);
             final BindingCalculator argCalc =
@@ -91,12 +90,12 @@ public class CallArranger {
             final BindingCalculator retCalc =
                 forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
 
-            void addArgumentBindings(Class<?> carrier, MemoryLayout layout) {
-                csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout));
+            void addArgumentBindings(Class<?> carrier, MemoryLayout layout, boolean isVararg) {
+                csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout, isVararg));
             }
 
             void setReturnBindings(Class<?> carrier, MemoryLayout layout) {
-                csb.setReturnBindings(carrier, layout, retCalc.getBindings(carrier, layout));
+                csb.setReturnBindings(carrier, layout, retCalc.getBindings(carrier, layout, false));
             }
         }
         var csb = new CallingSequenceBuilderHelper();
@@ -105,7 +104,7 @@ public class CallArranger {
         if (returnInMemory) {
             Class<?> carrier = MemoryAddress.class;
             MemoryLayout layout = Win64.C_POINTER;
-            csb.addArgumentBindings(carrier, layout);
+            csb.addArgumentBindings(carrier, layout, false);
             if (forUpcall) {
                 csb.setReturnBindings(carrier, layout);
             }
@@ -114,7 +113,7 @@ public class CallArranger {
         }
 
         for (int i = 0; i < mt.parameterCount(); i++) {
-            csb.addArgumentBindings(mt.parameterType(i), cDesc.argumentLayouts().get(i));
+            csb.addArgumentBindings(mt.parameterType(i), cDesc.argumentLayouts().get(i), SharedUtils.isVarargsIndex(cDesc, i));
         }
 
         csb.csb.setTrivial(SharedUtils.isTrivial(cDesc));
@@ -134,14 +133,14 @@ public class CallArranger {
         return handle;
     }
 
-    public static UpcallHandler arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc) {
+    public static NativeSymbol arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, ResourceScope scope) {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
             target = SharedUtils.adaptUpcallForIMR(target, false /* need the return value as well */);
         }
 
-        return ProgrammableUpcallHandler.make(CWindows, target, bindings.callingSequence);
+        return ProgrammableUpcallHandler.make(CWindows, target, bindings.callingSequence, scope);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -185,7 +184,7 @@ public class CallArranger {
     }
 
     private interface BindingCalculator {
-        List<Binding> getBindings(Class<?> carrier, MemoryLayout layout);
+        List<Binding> getBindings(Class<?> carrier, MemoryLayout layout, boolean isVararg);
     }
 
     static class UnboxBindingCalculator implements BindingCalculator {
@@ -196,8 +195,8 @@ public class CallArranger {
         }
 
         @Override
-        public List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.typeClassFor(layout);
+        public List<Binding> getBindings(Class<?> carrier, MemoryLayout layout, boolean isVararg) {
+            TypeClass argumentClass = TypeClass.typeClassFor(layout, isVararg);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER: {
@@ -211,14 +210,13 @@ public class CallArranger {
                 case STRUCT_REFERENCE: {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
-                            .baseAddress()
-                            .unboxAddress();
+                            .unboxAddress(MemorySegment.class);
                     VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmStore(storage, long.class);
                     break;
                 }
                 case POINTER: {
-                    bindings.unboxAddress();
+                    bindings.unboxAddress(carrier);
                     VMStorage storage = storageCalculator.nextStorage(StorageClasses.INTEGER, layout);
                     bindings.vmStore(storage, long.class);
                     break;
@@ -259,8 +257,8 @@ public class CallArranger {
         }
 
         @Override
-        public List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.typeClassFor(layout);
+        public List<Binding> getBindings(Class<?> carrier, MemoryLayout layout, boolean isVararg) {
+            TypeClass argumentClass = TypeClass.typeClassFor(layout, isVararg);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER: {

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -71,11 +73,12 @@ final class SimpleFileServerImpl {
      *
      * @param  writer the writer to which output should be written
      * @param  args the command line options
+     * @param  launcher the launcher the server is started from
      * @throws NullPointerException if any of the arguments are {@code null},
      *         or if there are any {@code null} values in the {@code args} array
      * @return startup status code
      */
-    static int start(PrintWriter writer, String[] args) {
+    static int start(PrintWriter writer, String launcher, String[] args) {
         Objects.requireNonNull(args);
         for (var arg : args) {
             Objects.requireNonNull(arg);
@@ -96,7 +99,11 @@ final class SimpleFileServerImpl {
                 option = options.next();
                 switch (option) {
                     case "-h", "-?", "--help" -> {
-                        out.showHelp();
+                        out.showHelp(launcher);
+                        return Startup.OK.statusCode;
+                    }
+                    case "-version", "--version" -> {
+                        out.showVersion(launcher);
                         return Startup.OK.statusCode;
                     }
                     case "-b", "--bind-address" -> {
@@ -115,7 +122,7 @@ final class SimpleFileServerImpl {
             }
         } catch (AssertionError ae) {
             out.reportError(ResourceBundleHelper.getMessage("err.unknown.option", option));
-            out.showUsage();
+            out.showUsage(launcher);
             return Startup.CMDERR.statusCode;
         } catch (NoSuchElementException nsee) {
             out.reportError(ResourceBundleHelper.getMessage("err.missing.arg", option));
@@ -169,12 +176,16 @@ final class SimpleFileServerImpl {
             }
         }
 
-        void showUsage() {
-            writer.println(ResourceBundleHelper.getMessage("usage"));
+        void showUsage(String launcher) {
+            writer.println(ResourceBundleHelper.getMessage("usage." + launcher));
         }
 
-        void showHelp() {
-            writer.println(ResourceBundleHelper.getMessage("usage"));
+        void showVersion(String launcher) {
+            writer.println(ResourceBundleHelper.getMessage("version", launcher, System.getProperty("java.version")));
+        }
+
+        void showHelp(String launcher) {
+            writer.println(ResourceBundleHelper.getMessage("usage." + launcher));
             writer.println(ResourceBundleHelper.getMessage("options", LOOPBACK_ADDR.getHostAddress()));
         }
 

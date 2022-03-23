@@ -26,6 +26,7 @@
 #include "jvm.h"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -36,6 +37,7 @@
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -101,6 +103,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDictionaryDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHierarchyDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassesDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SymboltableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<StringtableDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<metaspace::MetaspaceDCmd>(full_export, true, false));
@@ -418,6 +421,11 @@ void HeapInfoDCmd::execute(DCmdSource source, TRAPS) {
 
 void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
   ResourceMark rm(THREAD);
+
+  if (!InstanceKlass::is_finalization_enabled()) {
+    output()->print_cr("Finalization is disabled");
+    return;
+  }
 
   Klass* k = SystemDictionary::resolve_or_fail(
     vmSymbols::finalizer_histogram_klass(), true, CHECK);
@@ -906,8 +914,9 @@ void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
   _print_interfaces("-i", "Inherited interfaces should be printed.", "BOOLEAN", false, "false"),
-  _print_subclasses("-s", "If a classname is specified, print its subclasses. "
-                    "Otherwise only its superclasses are printed.", "BOOLEAN", false, "false"),
+  _print_subclasses("-s", "If a classname is specified, print its subclasses "
+                    "in addition to its superclasses. Without this option only the "
+                    "superclasses will be printed.", "BOOLEAN", false, "false"),
   _classname("classname", "Name of class whose hierarchy should be printed. "
              "If not specified, all class hierarchies are printed.",
              "STRING", false) {
@@ -945,6 +954,41 @@ void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
   }
   VM_DumpTouchedMethods dumper(output());
   VMThread::execute(&dumper);
+}
+
+ClassesDCmd::ClassesDCmd(outputStream* output, bool heap) :
+                                     DCmdWithParser(output, heap),
+  _verbose("-verbose",
+           "Dump the detailed content of a Java class. "
+           "Some classes are annotated with flags: "
+           "F = has, or inherits, a non-empty finalize method, "
+           "f = has final method, "
+           "W = methods rewritten, "
+           "C = marked with @Contended annotation, "
+           "R = has been redefined, "
+           "S = is shared class",
+           "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_verbose);
+}
+
+class VM_PrintClasses : public VM_Operation {
+private:
+  outputStream* _out;
+  bool _verbose;
+public:
+  VM_PrintClasses(outputStream* out, bool verbose) : _out(out), _verbose(verbose) {}
+
+  virtual VMOp_Type type() const { return VMOp_PrintClasses; }
+
+  virtual void doit() {
+    PrintClassClosure closure(_out, _verbose);
+    ClassLoaderDataGraph::classes_do(&closure);
+  }
+};
+
+void ClassesDCmd::execute(DCmdSource source, TRAPS) {
+  VM_PrintClasses vmop(output(), _verbose.is_set());
+  VMThread::execute(&vmop);
 }
 
 #if INCLUDE_CDS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.Functional.ThrowingSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
@@ -46,7 +47,7 @@ import jdk.jpackage.internal.RetryExecutor;
 import org.xml.sax.SAXException;
 import org.w3c.dom.NodeList;
 
-public class MacHelper {
+public final class MacHelper {
 
     public static void withExplodedDmg(JPackageCommand cmd,
             ThrowingConsumer<Path> consumer) {
@@ -172,41 +173,62 @@ public class MacHelper {
         pkg.installHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);
             Executor.of("sudo", "/usr/sbin/installer", "-allowUntrusted", "-pkg")
-            .addArgument(cmd.outputBundle())
-            .addArguments("-target", "/")
-            .execute();
+                    .addArgument(cmd.outputBundle())
+                    .addArguments("-target", "/")
+                    .execute();
         };
         pkg.unpackHandler = (cmd, destinationDir) -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);
+
+            var dataDir = destinationDir.resolve("data");
+
             Executor.of("pkgutil", "--expand")
-            .addArgument(cmd.outputBundle())
-            .addArgument(destinationDir.resolve("data")) // We need non-existing folder
-            .execute();
+                    .addArgument(cmd.outputBundle())
+                    .addArgument(dataDir) // We need non-existing folder
+                    .execute();
 
             final Path unpackRoot = destinationDir.resolve("unpacked");
 
-            Path installDir = TKit.removeRootFromAbsolutePath(
-                    getInstallationDirectory(cmd)).getParent();
-            final Path unpackDir = unpackRoot.resolve(installDir);
-            try {
-                Files.createDirectories(unpackDir);
+            // Unpack all ".pkg" files from $dataDir folder in $unpackDir folder
+            try (var dataListing = Files.list(dataDir)) {
+                dataListing.filter(file -> {
+                    return ".pkg".equals(IOUtils.getSuffix(file.getFileName()));
+                }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
+                    // Installation root of the package is stored in
+                    // /pkg-info@install-location attribute in $pkgDir/PackageInfo xml file
+                    var doc = createDocumentBuilder().parse(
+                            new ByteArrayInputStream(Files.readAllBytes(
+                                    pkgDir.resolve("PackageInfo"))));
+                    var xPath = XPathFactory.newInstance().newXPath();
+
+                    final String installRoot = (String) xPath.evaluate(
+                            "/pkg-info/@install-location", doc,
+                            XPathConstants.STRING);
+
+                    final Path unpackDir = unpackRoot.resolve(
+                            TKit.removeRootFromAbsolutePath(Path.of(installRoot)));
+
+                    Files.createDirectories(unpackDir);
+
+                    Executor.of("tar", "-C")
+                            .addArgument(unpackDir)
+                            .addArgument("-xvf")
+                            .addArgument(pkgDir.resolve("Payload"))
+                            .execute();
+                }));
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
 
-            Executor.of("tar", "-C")
-            .addArgument(unpackDir)
-            .addArgument("-xvf")
-            .addArgument(Path.of(destinationDir.toString(), "data",
-                                 cmd.name() + "-app.pkg", "Payload"))
-            .execute();
             return unpackRoot;
         };
         pkg.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);
+
             Executor.of("sudo", "rm", "-rf")
-            .addArgument(cmd.appInstallationDirectory())
-            .execute();
+                    .addArgument(cmd.appInstallationDirectory())
+                    .execute();
+
         };
 
         return pkg;
@@ -220,13 +242,13 @@ public class MacHelper {
 
     static Path getInstallationDirectory(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC);
-        return Path.of(cmd.getArgumentValue("--install-dir", () -> "/Applications"))
-                .resolve(cmd.name() + (cmd.isRuntime() ? "" : ".app"));
+        return Path.of(cmd.getArgumentValue("--install-dir",
+                () -> cmd.isRuntime() ? "/Library/Java/JavaVirtualMachines" : "/Applications")).resolve(
+                        cmd.name() + (cmd.isRuntime() ? "" : ".app"));
     }
 
     private static String getPackageName(JPackageCommand cmd) {
-        return cmd.getArgumentValue("--mac-package-name",
-                () -> cmd.installerName());
+        return cmd.getArgumentValue("--mac-package-name", cmd::installerName);
     }
 
     public static final class PListWrapper {
@@ -274,25 +296,24 @@ public class MacHelper {
             return values;
         }
 
-        PListWrapper(String xml) throws ParserConfigurationException,
+        private PListWrapper(String xml) throws ParserConfigurationException,
                 SAXException, IOException {
             doc = createDocumentBuilder().parse(new ByteArrayInputStream(
                     xml.getBytes(StandardCharsets.UTF_8)));
         }
 
-        private static DocumentBuilder createDocumentBuilder() throws
-                ParserConfigurationException {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
-            dbf.setFeature(
-                    "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                    false);
-            return dbf.newDocumentBuilder();
-        }
-
         private final org.w3c.dom.Document doc;
+    }
+
+    private static DocumentBuilder createDocumentBuilder() throws
+                ParserConfigurationException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultInstance();
+        dbf.setFeature(
+                "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+                false);
+        return dbf.newDocumentBuilder();
     }
 
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
-
 }

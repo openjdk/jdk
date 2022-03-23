@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method(PHASE_BEFORE_MATCHING);
+  C->print_method(PHASE_BEFORE_MATCHING, 1);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.
@@ -634,18 +634,20 @@ void Matcher::init_first_stack_mask() {
   if (Matcher::supports_scalable_vector()) {
     int k = 1;
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
-    // Exclude last input arg stack slots to avoid spilling vector register there,
-    // otherwise RegVectMask spills could stomp over stack slots in caller frame.
-    for (; (in >= init_in) && (k < scalable_predicate_reg_slots()); k++) {
-      scalable_stack_mask.Remove(in);
-      in = OptoReg::add(in, -1);
-    }
+    if (Matcher::has_predicated_vectors()) {
+      // Exclude last input arg stack slots to avoid spilling vector register there,
+      // otherwise RegVectMask spills could stomp over stack slots in caller frame.
+      for (; (in >= init_in) && (k < scalable_predicate_reg_slots()); k++) {
+        scalable_stack_mask.Remove(in);
+        in = OptoReg::add(in, -1);
+      }
 
-    // For RegVectMask
-    scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
-    assert(scalable_stack_mask.is_AllStack(), "should be infinite stack");
-    *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
-    idealreg2spillmask[Op_RegVectMask]->OR(scalable_stack_mask);
+      // For RegVectMask
+      scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
+      assert(scalable_stack_mask.is_AllStack(), "should be infinite stack");
+      *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
+      idealreg2spillmask[Op_RegVectMask]->OR(scalable_stack_mask);
+    }
 
     // Exclude last input arg stack slots to avoid spilling vector register there,
     // otherwise vector spills could stomp over stack slots in caller frame.
@@ -1064,7 +1066,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
     case Op_StrInflatedCopy:
@@ -2250,7 +2252,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
@@ -2316,6 +2318,14 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     } else if (n->req() == 5) {
       n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
       n->set_req(2, new BinaryNode(n->in(3), n->in(4)));
+      n->del_req(4);
+      n->del_req(3);
+    } else if (n->req() == 6) {
+      Node* b3 = new BinaryNode(n->in(4), n->in(5));
+      Node* b2 = new BinaryNode(n->in(3), b3);
+      Node* b1 = new BinaryNode(n->in(2), b2);
+      n->set_req(2, b1);
+      n->del_req(5);
       n->del_req(4);
       n->del_req(3);
     }

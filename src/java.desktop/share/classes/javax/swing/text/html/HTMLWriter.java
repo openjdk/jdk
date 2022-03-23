@@ -125,8 +125,8 @@ public class HTMLWriter extends AbstractWriter {
      * Element tree and controls the writing out of
      * all the tags and its attributes.
      *
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      *
      */
@@ -248,7 +248,7 @@ public class HTMLWriter extends AbstractWriter {
      * HTML.Attribute.ENDTAG.
      *
      * @param attr   an AttributeSet
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      *
      */
     protected void writeAttributes(AttributeSet attr) throws IOException {
@@ -273,8 +273,8 @@ public class HTMLWriter extends AbstractWriter {
      * corresponding end tag).
      *
      * @param elem   an Element
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      */
     protected void emptyTag(Element elem) throws BadLocationException, IOException {
@@ -308,9 +308,7 @@ public class HTMLWriter extends AbstractWriter {
             // If an instance of an UNKNOWN Tag, or an instance of a
             // tag that is only visible during editing
             //
-            if (nameTag != null && endTag != null &&
-                (endTag instanceof String) &&
-                endTag.equals("true")) {
+            if (nameTag != null && "true".equals(endTag)) {
                 outputEndTag = true;
             }
 
@@ -453,8 +451,8 @@ public class HTMLWriter extends AbstractWriter {
      * element.
      *
      * @param attr  an AttributeSet
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      */
     protected void textAreaContent(AttributeSet attr) throws BadLocationException, IOException {
@@ -487,8 +485,8 @@ public class HTMLWriter extends AbstractWriter {
      * out.
      *
      * @param elem   an Element
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      */
     protected void text(Element elem) throws BadLocationException, IOException {
@@ -525,7 +523,7 @@ public class HTMLWriter extends AbstractWriter {
      * Writes out the content of the SELECT form element.
      *
      * @param attr the AttributeSet associated with the form element
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void selectContent(AttributeSet attr) throws IOException {
         Object model = attr.getAttribute(StyleConstants.ModelAttribute);
@@ -554,7 +552,7 @@ public class HTMLWriter extends AbstractWriter {
     /**
      * Writes out the content of the Option form element.
      * @param option  an Option
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      *
      */
     protected void writeOption(Option option) throws IOException {
@@ -582,7 +580,7 @@ public class HTMLWriter extends AbstractWriter {
      * Writes out an end tag for the element.
      *
      * @param elem    an Element
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void endTag(Element elem) throws IOException {
         if (synthesizedElement(elem)) {
@@ -617,8 +615,8 @@ public class HTMLWriter extends AbstractWriter {
      * Writes out comments.
      *
      * @param elem    an Element
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      */
     protected void comment(Element elem) throws BadLocationException, IOException {
@@ -639,8 +637,8 @@ public class HTMLWriter extends AbstractWriter {
      * Writes out comment string.
      *
      * @param string   the comment
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      */
     void writeComment(String string) throws IOException {
@@ -714,7 +712,7 @@ public class HTMLWriter extends AbstractWriter {
      * written out.
      *
      * @param attr a set of attributes
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void writeEmbeddedTags(AttributeSet attr) throws IOException {
 
@@ -732,8 +730,8 @@ public class HTMLWriter extends AbstractWriter {
                 write('<');
                 write(tag.toString());
                 Object o = attr.getAttribute(tag);
-                if (o != null && o instanceof AttributeSet) {
-                    writeAttributes((AttributeSet)o);
+                if (o instanceof AttributeSet as) {
+                    writeAttributes(as);
                 }
                 write('>');
                 tags.addElement(tag);
@@ -769,7 +767,7 @@ public class HTMLWriter extends AbstractWriter {
      * end tag is written out.
      *
      * @param attr a set of attributes
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void closeOutUnwantedEmbeddedTags(AttributeSet attr) throws IOException {
 
@@ -813,8 +811,8 @@ public class HTMLWriter extends AbstractWriter {
                 write('<');
                 write(t.toString());
                 Object o = tagValues.elementAt(i);
-                if (o != null && o instanceof AttributeSet) {
-                    writeAttributes((AttributeSet)o);
+                if (o instanceof AttributeSet as) {
+                    writeAttributes(as);
                 }
                 write('>');
             }

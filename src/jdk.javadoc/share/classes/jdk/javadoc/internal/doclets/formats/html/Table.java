@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,7 +386,7 @@ public class Table extends Content {
             default -> throw new IllegalStateException();
         };
 
-        HtmlTree table = new HtmlTree(TagName.DIV).setStyle(tableStyle).addStyle(columnStyle);
+        HtmlTree table = HtmlTree.DIV(tableStyle).addStyle(columnStyle);
         if ((tabMap == null || tabs.size() == 1) && !alwaysShowDefaultTab) {
             if (tabMap == null) {
                 main.add(caption);
@@ -396,7 +396,7 @@ public class Table extends Content {
             table.add(getTableBody());
             main.add(table);
         } else {
-            HtmlTree tablist = new HtmlTree(TagName.DIV).setStyle(tabListStyle)
+            HtmlTree tablist = HtmlTree.DIV(tabListStyle)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
@@ -481,8 +481,6 @@ public class Table extends Content {
     }
 
     private HtmlTree getCaption(Content title) {
-        return new HtmlTree(TagName.DIV)
-                .setStyle(HtmlStyle.caption)
-                .add(HtmlTree.SPAN(title));
+        return HtmlTree.DIV(HtmlStyle.caption, HtmlTree.SPAN(title));
     }
 }

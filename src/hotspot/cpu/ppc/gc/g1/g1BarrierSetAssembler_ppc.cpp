@@ -245,7 +245,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   Register Rbase = tmp2;
   __ load_const_optimized(Rbase, (address)(ct->card_table()->byte_map_base()), /*temp*/ tmp3);
 
-  __ srdi(Rcard_addr, store_addr, CardTable::card_shift);
+  __ srdi(Rcard_addr, store_addr, CardTable::card_shift());
 
   // Get the address of the card.
   __ lbzx(/*card value*/ tmp3, Rbase, Rcard_addr);
@@ -516,7 +516,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ std(addr, -8, R1_SP);
   __ std(tmp2, -16, R1_SP);
 
-  __ srdi(addr, R0, CardTable::card_shift); // Addr is passed in R0.
+  __ srdi(addr, R0, CardTable::card_shift()); // Addr is passed in R0.
   __ load_const_optimized(/*cardtable*/ tmp2, byte_map_base, tmp);
   __ add(addr, tmp2, addr);
   __ lbz(tmp, 0, addr); // tmp := [addr + cardtable]

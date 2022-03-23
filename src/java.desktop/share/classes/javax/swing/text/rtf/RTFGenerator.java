@@ -391,7 +391,7 @@ public void writeRTFHeader()
             updateCharacterAttributes(goat, style, false);
 
             basis = style.getResolveParent();
-            if (basis != null && basis instanceof Style) {
+            if (basis instanceof Style) {
                 Integer basedOn = styleTable.get(basis);
                 if (basedOn != null) {
                     writeControlWord("sbasedon", basedOn.intValue());

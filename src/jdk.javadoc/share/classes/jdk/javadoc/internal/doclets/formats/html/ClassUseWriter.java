@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,8 +296,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the class elements will be added
      */
     protected void addClassList(Content contentTree) {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
+        HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
             HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail)
                     .setId(htmlIds.forPackage(pkg));

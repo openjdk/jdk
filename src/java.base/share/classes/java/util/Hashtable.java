@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1254,7 +1254,7 @@ public class Hashtable<K,V>
      * Reconstitute the Hashtable from a stream (i.e., deserialize it).
      */
     @java.io.Serial
-    private void readObject(java.io.ObjectInputStream s)
+    private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         readHashtable(s);
     }
@@ -1263,14 +1263,16 @@ public class Hashtable<K,V>
      * Perform deserialization of the Hashtable from an ObjectInputStream.
      * The Properties class overrides this method.
      */
-    void readHashtable(java.io.ObjectInputStream s)
+    void readHashtable(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
-        // Read in the threshold and loadFactor
-        s.defaultReadObject();
 
-        // Validate loadFactor (ignore threshold - it will be re-computed)
-        if (loadFactor <= 0 || Float.isNaN(loadFactor))
-            throw new StreamCorruptedException("Illegal Load: " + loadFactor);
+        ObjectInputStream.GetField fields = s.readFields();
+
+        // Read and validate loadFactor (ignore threshold - it will be re-computed)
+        float lf = fields.get("loadFactor", 0.75f);
+        if (lf <= 0 || Float.isNaN(lf))
+            throw new StreamCorruptedException("Illegal load factor: " + lf);
+        lf = Math.min(Math.max(0.25f, lf), 4.0f);
 
         // Read the original length of the array and number of elements
         int origlength = s.readInt();
@@ -1282,13 +1284,13 @@ public class Hashtable<K,V>
 
         // Clamp original length to be more than elements / loadFactor
         // (this is the invariant enforced with auto-growth)
-        origlength = Math.max(origlength, (int)(elements / loadFactor) + 1);
+        origlength = Math.max(origlength, (int)(elements / lf) + 1);
 
         // Compute new length with a bit of room 5% + 3 to grow but
         // no larger than the clamped original length.  Make the length
         // odd if it's large enough, this helps distribute the entries.
         // Guard against the length ending up zero, that's not valid.
-        int length = (int)((elements + elements / 20) / loadFactor) + 3;
+        int length = (int)(elements * 1.05f / lf) + 3;
         if (length > elements && (length & 1) == 0)
             length--;
         length = Math.min(length, origlength);
@@ -1300,8 +1302,9 @@ public class Hashtable<K,V>
         // Check Map.Entry[].class since it's the nearest public type to
         // what we're actually creating.
         SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Map.Entry[].class, length);
+        Hashtable.UnsafeHolder.putLoadFactor(this, lf);
         table = new Entry<?,?>[length];
-        threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
+        threshold = (int)Math.min(length * lf, MAX_ARRAY_SIZE + 1);
         count = 0;
 
         // Read the number of elements and then all the key/value objects
@@ -1312,6 +1315,18 @@ public class Hashtable<K,V>
                 V value = (V)s.readObject();
             // sync is eliminated for performance
             reconstitutionPut(table, key, value);
+        }
+    }
+
+    // Support for resetting final field during deserializing
+    private static final class UnsafeHolder {
+        private UnsafeHolder() { throw new InternalError(); }
+        private static final jdk.internal.misc.Unsafe unsafe
+                = jdk.internal.misc.Unsafe.getUnsafe();
+        private static final long LF_OFFSET
+                = unsafe.objectFieldOffset(Hashtable.class, "loadFactor");
+        static void putLoadFactor(Hashtable<?, ?> table, float lf) {
+            unsafe.putFloat(table, LF_OFFSET, lf);
         }
     }
 
