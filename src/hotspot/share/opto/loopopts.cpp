@@ -3956,6 +3956,10 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     exit_test = back_control->in(0)->as_If();
   }
 
+  if (idom(region)->is_Catch()) {
+    return false;
+  }
+
   // Collect all control nodes that need to be cloned (shared_stmt in the diagram)
   Unique_Node_List wq;
   wq.push(head->in(LoopNode::LoopBackControl));
