@@ -27,8 +27,8 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8259609 8276116
- * @summary C2: optimize long range checks in long counted loops
+ * @bug 8281429
+ * @summary PhiNode::Value() is too conservative for tripcount of CountedLoop
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestCountedLoopPhiValue
  */
