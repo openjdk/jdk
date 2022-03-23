@@ -2151,7 +2151,10 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         // zero trip guard limit will be different from loop limit.
         assert(has_ctrl(opaq), "should have it");
         Node* opaq_ctrl = get_ctrl(opaq);
+        const Type* limit_t = _igvn.type(limit);
         limit = new Opaque2Node(C, limit);
+        register_new_node(limit, opaq_ctrl);
+        limit = new CastIINode(limit, limit_t);
         register_new_node(limit, opaq_ctrl);
       }
       if ((stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo)) ||
