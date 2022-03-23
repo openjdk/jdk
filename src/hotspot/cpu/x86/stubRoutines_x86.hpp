@@ -151,10 +151,9 @@ class x86 {
   static address _ghash_poly_addr;
   static address _ghash_shuffmask_addr;
 
-  // ChaCha20 add and scatter masks
+  // ChaCha20 add masks
   static address _chacha20_counter_addmask_avx2;
   static address _chacha20_counter_addmask_avx512;
-  static address _chacha20_scattermask_avx512;
 
   // upper word mask for sha1
   static address _upper_word_mask_addr;
@@ -271,7 +270,6 @@ class x86 {
   static address ghash_polynomial_addr() { return _ghash_poly_addr; }
   static address chacha20_counter_addmask_avx2() { return _chacha20_counter_addmask_avx2; }
   static address chacha20_counter_addmask_avx512() { return _chacha20_counter_addmask_avx512; }
-  static address chacha20_scattermask_avx512() { return _chacha20_scattermask_avx512; }
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }

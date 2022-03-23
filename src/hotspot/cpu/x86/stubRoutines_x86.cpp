@@ -42,7 +42,6 @@ address StubRoutines::x86::_ghash_poly_addr = NULL;
 address StubRoutines::x86::_ghash_shuffmask_addr = NULL;
 address StubRoutines::x86::_chacha20_counter_addmask_avx2 = NULL;
 address StubRoutines::x86::_chacha20_counter_addmask_avx512 = NULL;
-address StubRoutines::x86::_chacha20_scattermask_avx512 = NULL;
 address StubRoutines::x86::_upper_word_mask_addr = NULL;
 address StubRoutines::x86::_shuffle_byte_flip_mask_addr = NULL;
 address StubRoutines::x86::_k256_adr = NULL;
