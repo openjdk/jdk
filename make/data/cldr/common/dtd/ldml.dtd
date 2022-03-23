@@ -5,7 +5,7 @@ SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT ldml ( identity, ( alias | ( fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, characterLabels?, segmentations?, rbnf?, typographicNames?, annotations?, metadata?, references?, special* ) ) ) >
+<!ELEMENT ldml ( identity, ( alias | ( fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, characterLabels?, segmentations?, rbnf?, typographicNames?, personNames?, annotations?, metadata?, references?, special* ) ) ) >
 <!ATTLIST ldml version CDATA #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -3162,6 +3162,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST annotation alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST annotation draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT personNames ( alias | ( nameOrder*, personName+, special* ) ) >
+
+<!ELEMENT nameOrder EMPTY >
+<!ATTLIST nameOrder nameLocales NMTOKENS #REQUIRED >
+    <!--@MATCH:set/validity/locale-->
+<!ATTLIST nameOrder order (surnameFirst | givenFirst) #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST nameOrder draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST nameOrder references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT personName ( alias | ( namePattern+, special* ) ) >
+<!ATTLIST personName length NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/long, medium, short, monogram, monogramNarrow-->
+<!ATTLIST personName usage NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/addressing, referring, sorting-->
+<!ATTLIST personName style NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/formal, informal-->
+<!ATTLIST personName order NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/surnameFirst, givenFirst-->
+
+<!ELEMENT namePattern ( #PCDATA ) >
+<!ATTLIST namePattern alt (2|3) #IMPLIED >
+<!ATTLIST namePattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST namePattern references CDATA #IMPLIED >
     <!--@METADATA-->
 
 <!-- ######################################################### -->
