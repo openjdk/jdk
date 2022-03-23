@@ -43,9 +43,9 @@ public class TestSuperwordFailsUnrolling {
     public static void main(String[] args) {
         Object avx = wb.getVMFlag("UseAVX");
         if (avx != null && ((Long)avx) > 2) {
-            TestFramework.runWithFlags("-XX:UseAVX=2");
+            TestFramework.runWithFlags("-XX:UseAVX=2", "-XX:LoopMaxUnroll=8");
         }
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:LoopMaxUnroll=8");
     }
 
     @Test
