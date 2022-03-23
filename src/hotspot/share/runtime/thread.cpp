@@ -1014,10 +1014,6 @@ JavaThread::JavaThread() :
   _monitor_chunks(nullptr),
 
   _suspend_flags(0),
-  _pending_async_exception(nullptr),
-#ifdef ASSERT
-  _is_unsafe_access_error(false),
-#endif
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
@@ -1585,10 +1581,19 @@ void JavaThread::remove_monitor_chunk(MonitorChunk* chunk) {
   }
 }
 
+void JavaThread::handle_special_runtime_exit_condition() {
+  if (is_obj_deopt_suspend()) {
+    frame_anchor()->make_walkable(this);
+    wait_for_object_deoptimization();
+  }
+  JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
+}
+
 
 // Asynchronous exceptions support
 //
-void JavaThread::check_and_handle_async_exceptions() {
+void JavaThread::handle_async_exception(oop java_throwable) {
+  assert(java_throwable != NULL, "should have an _async_exception to throw");
   assert(!is_at_poll_safepoint(), "should have never called this method");
 
   if (has_last_Java_frame()) {
@@ -1606,111 +1611,80 @@ void JavaThread::check_and_handle_async_exceptions() {
     }
   }
 
-  if (!clear_async_exception_condition()) {
-    if ((_suspend_flags & _async_delivery_disabled) != 0) {
-      log_info(exceptions)("Async exception delivery is disabled");
+  // Only overwrite an already pending exception if it is not a threadDeath.
+  if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
+
+    // We cannot call Exceptions::_throw(...) here because we cannot block
+    set_pending_exception(java_throwable, __FILE__, __LINE__);
+
+    LogTarget(Info, exceptions) lt;
+    if (lt.is_enabled()) {
+      ResourceMark rm;
+      LogStream ls(lt);
+      ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
+        if (has_last_Java_frame()) {
+          frame f = last_frame();
+          ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
+        }
+      ls.print_cr(" of type: %s", java_throwable->klass()->external_name());
     }
+  }
+}
+
+void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
+  // Do not throw asynchronous exceptions against the compiler thread
+  // (the compiler thread should not be a Java thread -- fix in 1.4.2)
+  if (!can_call_java()) {
+    delete aeh;
     return;
   }
 
-  if (_pending_async_exception != NULL) {
-    // Only overwrite an already pending exception if it is not a threadDeath.
-    if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
-
-      // We cannot call Exceptions::_throw(...) here because we cannot block
-      set_pending_exception(_pending_async_exception, __FILE__, __LINE__);
-
-      LogTarget(Info, exceptions) lt;
-      if (lt.is_enabled()) {
-        ResourceMark rm;
-        LogStream ls(lt);
-        ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
-          if (has_last_Java_frame()) {
-            frame f = last_frame();
-           ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
-          }
-        ls.print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
-      }
-    }
-    // Always null out the _pending_async_exception oop here since the async condition was
-    // already cleared above and thus considered handled.
-    _pending_async_exception = NULL;
-  } else {
-    assert(_is_unsafe_access_error, "must be");
-    DEBUG_ONLY(_is_unsafe_access_error = false);
-
-    // We may be at method entry which requires we save the do-not-unlock flag.
-    UnlockFlagSaver fs(this);
-    Exceptions::throw_unsafe_access_internal_error(this, __FILE__, __LINE__, "a fault occurred in an unsafe memory access operation");
-    // We might have blocked in a ThreadBlockInVM wrapper in the call above so make sure we process pending
-    // suspend requests and object reallocation operations if any since we might be going to Java after this.
-    SafepointMechanism::process_if_requested_with_exit_check(this, true /* check asyncs */);
-  }
-}
-
-void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
-
-  if (is_obj_deopt_suspend()) {
-    frame_anchor()->make_walkable(this);
-    wait_for_object_deoptimization();
+  // Don't install a new pending async exception if there is already
+  // a pending ThreadDeath one. Just interrupt thread from potential
+  // wait()/sleep()/park() and return.
+  if (has_async_exception_condition(true /* ThreadDeath_only */)) {
+    java_lang_Thread::set_interrupted(threadObj(), true);
+    this->interrupt();
+    delete aeh;
+    return;
   }
 
-  // We might be here for reasons in addition to the self-suspend request
-  // so check for other async requests.
-  if (check_asyncs) {
-    check_and_handle_async_exceptions();
-  }
+  oop exception = aeh->exception();
+  Handshake::execute(aeh, this);  // Install asynchronous handshake
 
-  JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
-}
-
-class InstallAsyncExceptionClosure : public HandshakeClosure {
-  Handle _throwable; // The Throwable thrown at the target Thread
-public:
-  InstallAsyncExceptionClosure(Handle throwable) : HandshakeClosure("InstallAsyncException"), _throwable(throwable) {}
-
-  void do_thread(Thread* thr) {
-    JavaThread* target = JavaThread::cast(thr);
-    // Note that this now allows multiple ThreadDeath exceptions to be
-    // thrown at a thread.
-    // The target thread has run and has not exited yet.
-    target->send_thread_stop(_throwable());
-  }
-};
-
-void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
-  Handle throwable(Thread::current(), java_throwable);
-  InstallAsyncExceptionClosure vm_stop(throwable);
-  Handshake::execute(&vm_stop, target);
-}
-
-void JavaThread::send_thread_stop(oop java_throwable)  {
   ResourceMark rm;
-  assert(is_handshake_safe_for(Thread::current()),
-         "should be self or handshakee");
-
-  // Do not throw asynchronous exceptions against the compiler thread
-  // (the compiler thread should not be a Java thread -- fix in 1.4.2)
-  if (!can_call_java()) return;
-
-  // Actually throw the Throwable against the target Thread - however
-  // only if there is no thread death exception installed already.
-  if (_pending_async_exception == NULL || !_pending_async_exception->is_a(vmClasses::ThreadDeath_klass())) {
-    // Set async. pending exception in thread.
-    set_pending_async_exception(java_throwable);
-
-    if (log_is_enabled(Info, exceptions)) {
-       ResourceMark rm;
-      log_info(exceptions)("Pending Async. exception installed of type: %s",
-                           InstanceKlass::cast(_pending_async_exception->klass())->external_name());
-    }
-    // for AbortVMOnException flag
-    Exceptions::debug_check_abort(_pending_async_exception->klass()->external_name());
+  if (log_is_enabled(Info, exceptions)) {
+    log_info(exceptions)("Pending Async. exception installed of type: %s",
+                         InstanceKlass::cast(exception->klass())->external_name());
   }
+  // for AbortVMOnException flag
+  Exceptions::debug_check_abort(exception->klass()->external_name());
 
   // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
   java_lang_Thread::set_interrupted(threadObj(), true);
   this->interrupt();
+}
+
+class InstallAsyncExceptionHandshake : public HandshakeClosure {
+  AsyncExceptionHandshake* _aeh;
+public:
+  InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
+  HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
+  void do_thread(Thread* thr) {
+    JavaThread* target = JavaThread::cast(thr);
+    target->install_async_exception(_aeh);
+  }
+};
+
+void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
+  OopHandle e(Universe::vm_global(), java_throwable);
+  InstallAsyncExceptionHandshake iaeh(new AsyncExceptionHandshake(e));
+  Handshake::execute(&iaeh, target);
+}
+
+void JavaThread::send_async_exception(JavaThread* target, AsyncExceptionHandshake* aeh) {
+  InstallAsyncExceptionHandshake iaeh(aeh);
+  Handshake::execute(&iaeh, target);
 }
 
 
@@ -1941,7 +1915,6 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   // around using this function
   f->do_oop((oop*) &_vm_result);
   f->do_oop((oop*) &_exception_oop);
-  f->do_oop((oop*) &_pending_async_exception);
 #if INCLUDE_JVMCI
   f->do_oop((oop*) &_jvmci_reserved_oop0);
 #endif

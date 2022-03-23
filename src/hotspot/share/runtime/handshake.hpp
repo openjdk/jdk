@@ -33,6 +33,7 @@
 #include "utilities/filterQueue.hpp"
 
 class HandshakeOperation;
+class AsyncHandshakeOperation;
 class JavaThread;
 class SuspendThreadHandshake;
 class ThreadSelfSuspensionHandshake;
@@ -51,6 +52,8 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
   virtual bool is_suspend()                        { return false; }
+  virtual bool is_async_exception()                { return false; }
+  virtual bool is_ThreadDeath()                    { return false; }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -104,7 +107,7 @@ class HandshakeState {
   bool can_process_handshake();
 
   bool have_non_self_executable_operation();
-  HandshakeOperation* get_op_for_self(bool allow_suspend);
+  HandshakeOperation* get_op_for_self(bool allow_suspend, bool check_async_exception);
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
 
@@ -124,17 +127,16 @@ class HandshakeState {
 
   void add_operation(HandshakeOperation* op);
 
-  bool has_operation() {
-    return !_queue.is_empty();
-  }
-  bool has_a_non_suspend_operation();
+  bool has_operation() { return !_queue.is_empty(); }
+  bool has_operation(bool allow_suspend, bool check_async_exception);
+  bool has_async_exception_operation(bool ThreadDeath_only);
 
   bool operation_pending(HandshakeOperation* op);
 
   // If the method returns true we need to check for a possible safepoint.
   // This is due to a suspension handshake which put the JavaThread in blocked
   // state so a safepoint may be in-progress.
-  bool process_by_self(bool allow_suspend);
+  bool process_by_self(bool allow_suspend, bool check_async_exception);
 
   enum ProcessResult {
     _no_operation = 0,
@@ -147,6 +149,13 @@ class HandshakeState {
   ProcessResult try_process(HandshakeOperation* match_op);
 
   Thread* active_handshaker() const { return Atomic::load(&_active_handshaker); }
+
+  // Support for asynchronous exceptions
+ private:
+  bool _async_exceptions_blocked;
+
+  bool async_exceptions_blocked() { return _async_exceptions_blocked; }
+  void set_async_exceptions_blocked(bool b) { _async_exceptions_blocked = b; }
 
   // Suspend/resume support
  private:
