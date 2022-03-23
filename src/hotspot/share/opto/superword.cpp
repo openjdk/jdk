@@ -106,27 +106,37 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-  if (!cl->is_valid_counted_loop(T_INT)) return false; // skip malformed counted loop
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    return false; // skip malformed counted loop
+  }
 
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (post_loop_allowed) {
-    if (cl->is_reduction_loop()) return false; // no predication mapping
+    if (cl->is_reduction_loop()) {
+      return false; // no predication mapping
+    }
     Node *limit = cl->limit();
-    if (limit->is_Con()) return false; // non constant limits only
+    if (limit->is_Con()) {
+      return false; // non constant limits only
+    }
     // Now check the limit for expressions we do not handle
     if (limit->is_Add()) {
       Node *in2 = limit->in(2);
       if (in2->is_Con()) {
         int val = in2->get_int();
         // should not try to program these cases
-        if (val < 0) return false;
+        if (val < 0) {
+          return false;
+        }
       }
     }
   }
 
   // skip any loop that has not been assigned max unroll by analysis
   if (do_optimization) {
-    if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) return false;
+    if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) {
+      return false;
+    }
   }
 
   // Check for no control flow in body (other than exit)
@@ -150,9 +160,13 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   }
 
   // Skip any loops already optimized by slp
-  if (cl->is_vectorized_loop()) return false;
+  if (cl->is_vectorized_loop()) {
+    return false;
+  }
 
-  if (cl->is_unroll_only()) return false;
+  if (cl->is_unroll_only()) {
+    return false;
+  }
 
   if (cl->is_main_loop()) {
     // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
