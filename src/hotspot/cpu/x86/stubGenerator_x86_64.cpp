@@ -5679,7 +5679,7 @@ address generate_avx_ghash_processBlocks() {
 
   /* Add mask for 4-block ChaCha20 Block calculations */
   address chacha20_ctradd_avx512() {
-    __ align(CodeEntryAlignment);
+    __ align64();
     StubCodeMark mark(this, "StubRoutines", "chacha20_ctradd_avx512");
     address start = __ pc();
     __ emit_data64(0x0000000000000000, relocInfo::none);
@@ -5693,23 +5693,7 @@ address generate_avx_ghash_processBlocks() {
     return start;
   }
 
-  /* Scatter mask for key stream output on AVX-512 */
-  address chacha20_scmask_avx512() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "chacha20_scmask_avx512");
-    address start = __ pc();
-    __ emit_data64(0x0000000100000000, relocInfo::none);
-    __ emit_data64(0x0000000300000002, relocInfo::none);
-    __ emit_data64(0x0000001100000010, relocInfo::none);
-    __ emit_data64(0x0000001300000012, relocInfo::none);
-    __ emit_data64(0x0000002100000020, relocInfo::none);
-    __ emit_data64(0x0000002300000022, relocInfo::none);
-    __ emit_data64(0x0000003100000030, relocInfo::none);
-    __ emit_data64(0x0000003300000032, relocInfo::none);
-    return start;
-  }
-
-  /* Scatter mask for collating key stream output in AVX-512 */
+  /* The 4-block AVX512-enabled ChaCha20 block function implementation */
   address generate_chacha20Block_avx512() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "chacha20Block");
@@ -5719,25 +5703,36 @@ address generate_avx_ghash_processBlocks() {
     const Register state        = c_rarg0;
     const Register result       = c_rarg1;
     const Register loopCounter  = rcx;
-    const KRegister writeMask = k1;
 
     const XMMRegister zmm_aVec = xmm0;
     const XMMRegister zmm_bVec = xmm1;
     const XMMRegister zmm_cVec = xmm2;
     const XMMRegister zmm_dVec = xmm3;
-    const XMMRegister zmm_scratch = xmm4;
+    const XMMRegister zmm_aState = xmm4;
+    const XMMRegister zmm_bState = xmm5;
+    const XMMRegister zmm_cState = xmm6;
+    const XMMRegister zmm_dState = xmm7;
+    const XMMRegister zmm_addMask = xmm8;
 
     __ enter();
 
-    // Load the initial state in columnar orientation
+    // Load the initial state in columnar orientation.
     // We will broadcast each 128-bit segment of the state array into
-    // all four double-quadword slots on ZMM registers.
-    __ evbroadcasti32x4(zmm_aVec, Address(state, 0), Assembler::AVX_512bit);
-    __ evbroadcasti32x4(zmm_bVec, Address(state, 16), Assembler::AVX_512bit);
-    __ evbroadcasti32x4(zmm_cVec, Address(state, 32), Assembler::AVX_512bit);
-    __ evbroadcasti32x4(zmm_dVec, Address(state, 48), Assembler::AVX_512bit);
-
-    __ vpaddd(zmm_dVec, zmm_dVec, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx512()), Assembler::AVX_512bit, rax);
+    // all four double-quadword slots on ZMM State registers.  They will
+    // be copied into the working ZMM registers and then added back in
+    // at the very end of the block function.
+    // Also pull the add mask from memory into a register for use at the
+    // beginning and end of the block function.
+    __ evbroadcasti32x4(zmm_aState, Address(state, 0), Assembler::AVX_512bit);
+    __ evbroadcasti32x4(zmm_bState, Address(state, 16), Assembler::AVX_512bit);
+    __ evbroadcasti32x4(zmm_cState, Address(state, 32), Assembler::AVX_512bit);
+    __ evbroadcasti32x4(zmm_dState, Address(state, 48), Assembler::AVX_512bit);
+    __ evmovdquq(zmm_addMask, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx512()), Assembler::AVX_512bit, rax);
+    __ evmovdquq(zmm_aVec, zmm_aState, Assembler::AVX_512bit);
+    __ evmovdquq(zmm_bVec, zmm_bState, Assembler::AVX_512bit);
+    __ evmovdquq(zmm_cVec, zmm_cState, Assembler::AVX_512bit);
+    __ evmovdquq(zmm_dVec, zmm_dState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_dVec, zmm_dVec, zmm_addMask, Assembler::AVX_512bit);
 
     __ movl(loopCounter, 10);                       // Set 10 2-round iterations
     __ BIND(L_twoRounds);
@@ -5812,34 +5807,36 @@ address generate_avx_ghash_processBlocks() {
     __ decrement(loopCounter);
     __ jcc(Assembler::notZero, L_twoRounds);
 
-    // Add the initial state to the end register values
-    // We use a scratch register to replicate the 128-bit
-    // state data for the A/B/C/D vectors.  We will also add in
-    // the counter add mask onto zmm3 after adding in the start state.
-    __ evbroadcasti32x4(zmm_scratch, Address(state, 0), Assembler::AVX_512bit);
-    __ vpaddd(zmm_aVec, zmm_aVec, zmm_scratch, Assembler::AVX_512bit);
-    __ evbroadcasti32x4(zmm_scratch, Address(state, 16), Assembler::AVX_512bit);
-    __ vpaddd(zmm_bVec, zmm_bVec, zmm_scratch, Assembler::AVX_512bit);
-    __ evbroadcasti32x4(zmm_scratch, Address(state, 32), Assembler::AVX_512bit);
-    __ vpaddd(zmm_cVec, zmm_cVec, zmm_scratch, Assembler::AVX_512bit);
-    __ evbroadcasti32x4(zmm_scratch, Address(state, 48), Assembler::AVX_512bit);
-    __ vpaddd(zmm_dVec, zmm_dVec, zmm_scratch, Assembler::AVX_512bit);
-    __ vpaddd(zmm_dVec, zmm_dVec, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx512()), Assembler::AVX_512bit, rax);
+    // Add the initial state now held on the a/b/c/dState registers to the final
+    // working register values.  We will also add in the counter add mask onto
+    // zmm3 after adding in the start state.
+    __ vpaddd(zmm_aVec, zmm_aVec, zmm_aState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_bVec, zmm_bVec, zmm_bState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_cVec, zmm_cVec, zmm_cState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_dVec, zmm_dVec, zmm_dState, Assembler::AVX_512bit);
+    __ vpaddd(zmm_dVec, zmm_dVec, zmm_addMask, Assembler::AVX_512bit);
 
     // Write the ZMM state registers out to the key stream buffer
     // Each ZMM is divided into 4 128-bit segments.  Each segment
     // is written to memory at 64-byte displacements from one
     // another.  The result is that all 4 blocks will be in their
     // proper order when serialized.
-    __ evmovdqul(zmm_scratch, ExternalAddress(StubRoutines::x86::chacha20_scattermask_avx512()), Assembler::AVX_512bit, rax);
-    __ kxnorwl(writeMask, writeMask, writeMask);
-    __ evpscatterdd(Address(result, zmm_scratch, Address::times_4), writeMask, zmm_aVec, Assembler::AVX_512bit);
-    __ knotwl(writeMask, writeMask);
-    __ evpscatterdd(Address(result, zmm_scratch, Address::times_4, 16), writeMask, zmm_bVec, Assembler::AVX_512bit);
-    __ knotwl(writeMask, writeMask);
-    __ evpscatterdd(Address(result, zmm_scratch, Address::times_4, 32), writeMask, zmm_cVec, Assembler::AVX_512bit);
-    __ knotwl(writeMask, writeMask);
-    __ evpscatterdd(Address(result, zmm_scratch, Address::times_4, 48), writeMask, zmm_dVec, Assembler::AVX_512bit);
+    __ vextracti32x4(Address(result, 0), zmm_aVec, 0);
+    __ vextracti32x4(Address(result, 64), zmm_aVec, 1);
+    __ vextracti32x4(Address(result, 128), zmm_aVec, 2);
+    __ vextracti32x4(Address(result, 192), zmm_aVec, 3);
+    __ vextracti32x4(Address(result, 16), zmm_bVec, 0);
+    __ vextracti32x4(Address(result, 80), zmm_bVec, 1);
+    __ vextracti32x4(Address(result, 144), zmm_bVec, 2);
+    __ vextracti32x4(Address(result, 208), zmm_bVec, 3);
+    __ vextracti32x4(Address(result, 32), zmm_cVec, 0);
+    __ vextracti32x4(Address(result, 96), zmm_cVec, 1);
+    __ vextracti32x4(Address(result, 160), zmm_cVec, 2);
+    __ vextracti32x4(Address(result, 224), zmm_cVec, 3);
+    __ vextracti32x4(Address(result, 48), zmm_dVec, 0);
+    __ vextracti32x4(Address(result, 112), zmm_dVec, 1);
+    __ vextracti32x4(Address(result, 176), zmm_dVec, 2);
+    __ vextracti32x4(Address(result, 240), zmm_dVec, 3);
 
     // This function will always write 256 bytes into the key stream buffer
     // and that length should be returned through %rax.
@@ -8271,13 +8268,11 @@ address generate_avx_ghash_processBlocks() {
         if (VM_Version::supports_evex()) {
             StubRoutines::x86::_chacha20_counter_addmask_avx512 =
                 chacha20_ctradd_avx512();
-            StubRoutines::x86::_chacha20_scattermask_avx512 =
-                chacha20_scmask_avx512();
             StubRoutines::_chacha20Block = generate_chacha20Block_avx512();
         } else if (VM_Version::supports_avx2()) {
             StubRoutines::x86::_chacha20_counter_addmask_avx2 =
                 generate_vector_custom_i32("chacha20_counter_addmask_avx2",
-                        Assembler::AVX_256bit, 0, 0, 0, 0, 1, 0, 0, 0, 2);
+                        Assembler::AVX_256bit, 0, 0, 0, 0, 1, 0, 0, 0);
             StubRoutines::_chacha20Block = generate_chacha20Block_avx2();
         } else {
             /* Baseline single-block SSE2+AVX version */
