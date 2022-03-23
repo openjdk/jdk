@@ -15,7 +15,8 @@
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation, * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
@@ -26,13 +27,13 @@
 #ifndef CPU_RISCV_DISASSEMBLER_RISCV_HPP
 #define CPU_RISCV_DISASSEMBLER_RISCV_HPP
 
-  static int pd_instruction_alignment() {
-    return 1;
-  }
+static int pd_instruction_alignment() {
+  return 1;
+}
 
-  static const char* pd_cpu_opts() {
-    return "";
-  }
+static const char* pd_cpu_opts() {
+  return "";
+}
 
 // Returns address of n-th instruction preceding addr,
 // NULL if no preceding instruction can be found.
