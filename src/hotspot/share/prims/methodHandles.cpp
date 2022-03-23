@@ -89,6 +89,8 @@ void MethodHandles::generate_adapters() {
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TRACETIME_LOG(Info, startuptime));
+  // The adapter entry is required to be aligned to CodeEntryAlignment.
+  // So we need additional bytes due to alignment.
   int adapter_num = (int)Interpreter::method_handle_invoke_LAST - (int)Interpreter::method_handle_invoke_FIRST + 1;
   int max_aligned_bytes = adapter_num * CodeEntryAlignment;
   _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size + max_aligned_bytes);
