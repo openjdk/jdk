@@ -5544,18 +5544,28 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister ymm_bVec = xmm1;
     const XMMRegister ymm_cVec = xmm2;
     const XMMRegister ymm_dVec = xmm3;
-    const XMMRegister ymm_scratch = xmm4;
+    const XMMRegister ymm_aState = xmm4;
+    const XMMRegister ymm_bState = xmm5;
+    const XMMRegister ymm_cState = xmm6;
+    const XMMRegister ymm_dState = xmm7;
+    const XMMRegister ymm_scratch = xmm8;
 
     __ enter();
 
     // Load the initial state in columnar orientation
     // We will broadcast each 128-bit segment of the state array into
-    // the high and low halves of the destination ymm regsiter.
-    __ vbroadcastf128(ymm_aVec, Address(state, 0), Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_bVec, Address(state, 16), Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_cVec, Address(state, 32), Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_dVec, Address(state, 48), Assembler::AVX_256bit);
-    __ vpaddd(ymm_dVec, ymm_dVec, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
+    // the high and low halves of ymm state registers.  Then apply the add
+    // mask to the dState register.  These will then be copied into the
+    // a/b/c/dVec working registers.
+    __ vbroadcastf128(ymm_aState, Address(state, 0), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_bState, Address(state, 16), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_cState, Address(state, 32), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_dState, Address(state, 48), Assembler::AVX_256bit);
+    __ vpaddd(ymm_dState, ymm_dState, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
+    __ vmovdqu(ymm_aVec, ymm_aState);
+    __ vmovdqu(ymm_bVec, ymm_bState);
+    __ vmovdqu(ymm_cVec, ymm_cState);
+    __ vmovdqu(ymm_dVec, ymm_dState);
 
     __ movl(loopCounter, 10);                       // Set 10 2-round iterations
     __ BIND(L_twoRounds);
@@ -5645,15 +5655,10 @@ address generate_avx_ghash_processBlocks() {
     __ jcc(Assembler::notZero, L_twoRounds);
 
     // Add the original start state back into the current state.
-    __ vbroadcastf128(ymm_scratch, Address(state, 0), Assembler::AVX_256bit);
-    __ vpaddd(ymm_aVec, ymm_aVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_scratch, Address(state, 16), Assembler::AVX_256bit);
-    __ vpaddd(ymm_bVec, ymm_bVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_scratch, Address(state, 32), Assembler::AVX_256bit);
-    __ vpaddd(ymm_cVec, ymm_cVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_scratch, Address(state, 48), Assembler::AVX_256bit);
-    __ vpaddd(ymm_dVec, ymm_dVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vpaddd(ymm_dVec, ymm_dVec, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
+    __ vpaddd(ymm_aVec, ymm_aVec, ymm_aState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_bVec, ymm_bVec, ymm_bState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_cState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_dVec, ymm_dVec, ymm_dState, Assembler::AVX_256bit);
 
     // Write the data to the keystream array
     // Each half of the YMM has to be written 64 bytes apart from
