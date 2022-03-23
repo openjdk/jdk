@@ -68,11 +68,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     byte coder;
 
     /**
-     *  The attribute indicates {@code value} is in UTF16 but may be compressible.
+     *  The attribute indicates {@code value} might be compressible to LATIN1 if it is UTF16-encoded.
      *  An inflated byte array becomes compressible only when those non-latin1 chars are deleted.
-     *  Therefore, set this attribute in all methods that delete chars.
+     *  We simply set this attribute in all methods which may delete chars. Therefore, there are
+     *  false positives. Subclasses and String need to handle it properly.
      */
-    boolean maybeLatin1 = false;
+    boolean maybeLatin1;
 
     /**
      * The count is the number of characters used.
@@ -141,8 +142,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             if (seq instanceof AbstractStringBuilder asb) {
                 initCoder = asb.getCoder();
                 maybeLatin1 |= asb.maybeLatin1;
-            } else if (seq instanceof String) {
-                initCoder = ((String)seq).coder();
+            } else if (seq instanceof String s) {
+                initCoder = s.coder();
             } else {
                 initCoder = LATIN1;
             }
@@ -1005,9 +1006,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         shift(end, newCount - count);
         this.count = newCount;
         putStringAt(start, str);
-        if (end - start > 0) {
-            maybeLatin1 = true;
-        }
+        maybeLatin1 = true;
         return this;
     }
 
