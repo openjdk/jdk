@@ -40,6 +40,18 @@ import java.util.List;
  * VectorMaxConversionTests
  */
 
+/*
+ * @test
+ * @bug 8281544
+ * @summary Test that ZGC and vectorapi with KNL work together.
+ * @requires vm.gc.Z
+ * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run testng/othervm  -XX:-TieredCompilation --add-opens jdk.incubator.vector/jdk.incubator.vector=ALL-UNNAMED
+ *                      -XX:+UnlockDiagnosticVMOptions -XX:+UseKNLSetting -XX:+UseZGC -XX:+IgnoreUnrecognizedVMOptions
+ *                      VectorMaxConversionTests
+ */
+
 @Test
 public class VectorMaxConversionTests extends AbstractVectorConversionTest {
 

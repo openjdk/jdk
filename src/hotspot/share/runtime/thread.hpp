@@ -785,9 +785,10 @@ class JavaThread: public Thread {
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-    _has_async_exception    = 0x00000001U, // there is a pending async exception
-    _trace_flag             = 0x00000004U, // call tracing backend
-    _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
+    _has_async_exception     = 0x00000001U, // there is a pending async exception
+    _async_delivery_disabled = 0x00000002U, // async exception delivery is disabled
+    _trace_flag              = 0x00000004U, // call tracing backend
+    _obj_deopt               = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
   // various suspension related flags - atomically updated
@@ -815,13 +816,21 @@ class JavaThread: public Thread {
   inline bool clear_async_exception_condition();
  public:
   bool has_async_exception_condition() {
-    return (_suspend_flags & _has_async_exception) != 0;
+    return (_suspend_flags & _has_async_exception) != 0 &&
+           (_suspend_flags & _async_delivery_disabled) == 0;
   }
   inline void set_pending_async_exception(oop e);
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
   void send_thread_stop(oop throwable);
   void check_and_handle_async_exceptions();
+
+  class NoAsyncExceptionDeliveryMark : public StackObj {
+    friend JavaThread;
+    JavaThread *_target;
+    inline NoAsyncExceptionDeliveryMark(JavaThread *t);
+    inline ~NoAsyncExceptionDeliveryMark();
+  };
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -1323,14 +1332,15 @@ class JavaThread: public Thread {
   // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
     JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
-    // We can't get here in a thread that has completed its execution and so
-    // "is_terminated", but a thread is also considered terminated if the VM
+    // We can't normally get here in a thread that has completed its
+    // execution and so "is_terminated", except when the call is from
+    // AsyncGetCallTrace, which can be triggered by a signal at any point in
+    // a thread's lifecycle. A thread is also considered terminated if the VM
     // has exited, so we have to check this and block in case this is a daemon
     // thread returning to the VM (the JNI DirectBuffer entry points rely on
     // this).
     if (current->is_terminated()) {
       current->block_if_vm_exited();
-      ShouldNotReachHere();
     }
     return current;
   }

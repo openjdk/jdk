@@ -52,7 +52,7 @@ final class SocketChannelImplInstrumentor {
         int bytesRead = 0;
         long start  = 0;
         try {
-            start = EventHandler.timestamp();;
+            start = EventHandler.timestamp();
             bytesRead = read(dst);
         } finally {
             long duration = EventHandler.timestamp() - start;

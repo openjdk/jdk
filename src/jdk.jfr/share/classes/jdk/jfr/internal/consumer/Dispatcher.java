@@ -85,7 +85,7 @@ final class Dispatcher {
         this.errorActions = c.errorActions.toArray(new Consumer[0]);
         this.metadataActions = c.metadataActions.toArray(new Consumer[0]);
         this.dispatchers = c.eventActions.toArray(new EventDispatcher[0]);
-        this.parserConfiguration = new ParserConfiguration(0, Long.MAX_VALUE, c.reuse, c.ordered, buildFilter(dispatchers));
+        this.parserConfiguration = new ParserConfiguration(0, Long.MAX_VALUE, c.reuse, c.ordered, buildFilter(dispatchers), null);
         this.startTime = c.startTime;
         this.endTime = c.endTime;
         this.startNanos = c.startNanos;

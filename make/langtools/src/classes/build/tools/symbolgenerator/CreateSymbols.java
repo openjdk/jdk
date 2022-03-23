@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ import java.util.Optional;
  * A tool for processing the .sym.txt files.
  *
  * To add historical data for JDK N, N >= 11, do the following:
- *  * cd <open-jdk-checkout>/make/data/symbols
+ *  * cd <open-jdk-checkout>/src/jdk.compiler/share/data/symbols
  *  * <jdk-N>/bin/java --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
  *                     --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
  *                     --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
@@ -164,7 +164,7 @@ import java.util.Optional;
  *                     --add-modules jdk.jdeps \
  *                     ../../../make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java \
  *                     build-description-incremental symbols include.list
- *  * sanity-check the new and updates files in make/data/symbols and commit them
+ *  * sanity-check the new and updates files in src/jdk.compiler/share/data/symbols and commit them
  *
  * The tools allows to:
  *  * convert the .sym.txt into class/sig files for ct.sym
@@ -212,7 +212,8 @@ import java.util.Optional;
  * To generate the .sym.txt files for OpenJDK 7 and 8:
  *     <jdk-7>/bin/java build.tools.symbolgenerator.Probe OpenJDK7.classes
  *     <jdk-8>/bin/java build.tools.symbolgenerator.Probe OpenJDK8.classes
- *     java build.tools.symbolgenerator.CreateSymbols build-description make/data/symbols $TOPDIR make/data/symbols/include.list
+ *     java build.tools.symbolgenerator.CreateSymbols build-description src/jdk.compiler/share/data/symbols
+ *          $TOPDIR src/jdk.compiler/share/data/symbols/include.list
  *                                                    8 OpenJDK8.classes '<none>'
  *                                                    7 OpenJDK7.classes 8
  *

@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;
@@ -5188,8 +5189,8 @@ public class Attr extends JCTree.Visitor {
     }
 
     void attribPackage(PackageSymbol p) {
-        Env<AttrContext> env = typeEnvs.get(p);
-        chk.checkDeprecatedAnnotation(((JCPackageDecl) env.tree).pid.pos(), p);
+        attribWithLint(p,
+                       env -> chk.checkDeprecatedAnnotation(((JCPackageDecl) env.tree).pid.pos(), p));
     }
 
     public void attribModule(DiagnosticPosition pos, ModuleSymbol m) {
@@ -5202,9 +5203,28 @@ public class Attr extends JCTree.Visitor {
     }
 
     void attribModule(ModuleSymbol m) {
-        // Get environment current at the point of module definition.
-        Env<AttrContext> env = enter.typeEnvs.get(m);
-        attribStat(env.tree, env);
+        attribWithLint(m, env -> attribStat(env.tree, env));
+    }
+
+    private void attribWithLint(TypeSymbol sym, Consumer<Env<AttrContext>> attrib) {
+        Env<AttrContext> env = typeEnvs.get(sym);
+
+        Env<AttrContext> lintEnv = env;
+        while (lintEnv.info.lint == null)
+            lintEnv = lintEnv.next;
+
+        Lint lint = lintEnv.info.lint.augment(sym);
+
+        Lint prevLint = chk.setLint(lint);
+        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
+
+        try {
+            deferredLintHandler.flush(env.tree.pos());
+            attrib.accept(env);
+        } finally {
+            log.useSource(prev);
+            chk.setLint(prevLint);
+        }
     }
 
     /** Main method: attribute class definition associated with given class symbol.
