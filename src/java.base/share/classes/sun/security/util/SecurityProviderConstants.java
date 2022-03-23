@@ -134,6 +134,10 @@ public final class SecurityProviderConstants {
     public static final int DEF_EC_KEY_SIZE;
     public static final int DEF_ED_KEY_SIZE;
     public static final int DEF_XEC_KEY_SIZE;
+    // the logic for finding the max allowable value in getDefAESKeySize()
+    // interferes with provider loading logic and may lead to deadlocks if
+    // called inside a static block. So, it is deferred to a later time when
+    // DEF_AES_KEY_SIZE is actually used/needed.
     private static final AtomicInteger DEF_AES_KEY_SIZE;
 
     private static final String KEY_LENGTH_PROP =
