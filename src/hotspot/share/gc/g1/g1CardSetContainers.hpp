@@ -31,7 +31,7 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// A helper class to encode a few card indexes within a CardSetPtr.
+// A helper class to encode a few card indexes within a ContainerPtr.
 //
 // The pointer value (either 32 or 64 bits) is split into two areas:
 //
@@ -65,16 +65,16 @@
 class G1CardSetInlinePtr : public StackObj {
   friend class G1CardSetContainersTest;
 
-  typedef G1CardSet::CardSetPtr CardSetPtr;
+  using ContainerPtr = G1CardSet::ContainerPtr;
 
-  CardSetPtr volatile * _value_addr;
-  CardSetPtr _value;
+  ContainerPtr volatile * _value_addr;
+  ContainerPtr _value;
 
   static const uint SizeFieldLen = 3;
   static const uint SizeFieldPos = 2;
-  static const uint HeaderSize = G1CardSet::CardSetPtrHeaderSize + SizeFieldLen;
+  static const uint HeaderSize = G1CardSet::ContainerPtrHeaderSize + SizeFieldLen;
 
-  static const uint BitsInValue = sizeof(CardSetPtr) * BitsPerByte;
+  static const uint BitsInValue = sizeof(ContainerPtr) * BitsPerByte;
 
   static const uintptr_t SizeFieldMask = (((uint)1 << SizeFieldLen) - 1) << SizeFieldPos;
 
@@ -82,9 +82,9 @@ class G1CardSetInlinePtr : public StackObj {
     return (idx * bits_per_card + HeaderSize);
   }
 
-  static CardSetPtr merge(CardSetPtr orig_value, uint card_in_region, uint idx, uint bits_per_card);
+  static ContainerPtr merge(ContainerPtr orig_value, uint card_in_region, uint idx, uint bits_per_card);
 
-  static uint card_at(CardSetPtr value, uint const idx, uint const bits_per_card) {
+  static uint card_at(ContainerPtr value, uint const idx, uint const bits_per_card) {
     uint8_t card_pos = card_pos_for(idx, bits_per_card);
     uint result = ((uintptr_t)value >> card_pos) & (((uintptr_t)1 << bits_per_card) - 1);
     return result;
@@ -93,14 +93,14 @@ class G1CardSetInlinePtr : public StackObj {
   uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 
 public:
-  G1CardSetInlinePtr() : _value_addr(nullptr), _value((CardSetPtr)G1CardSet::CardSetInlinePtr) { }
+  G1CardSetInlinePtr() : _value_addr(nullptr), _value((ContainerPtr)G1CardSet::ContainerInlinePtr) { }
 
-  G1CardSetInlinePtr(CardSetPtr value) : _value_addr(nullptr), _value(value) {
-    assert(G1CardSet::card_set_type(_value) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
+  G1CardSetInlinePtr(ContainerPtr value) : _value_addr(nullptr), _value(value) {
+    assert(G1CardSet::container_type(_value) == G1CardSet::ContainerInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInlinePtr.", p2i(_value));
   }
 
-  G1CardSetInlinePtr(CardSetPtr volatile* value_addr, CardSetPtr value) : _value_addr(value_addr), _value(value) {
-    assert(G1CardSet::card_set_type(_value) == G1CardSet::CardSetInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInPtr.", p2i(_value));
+  G1CardSetInlinePtr(ContainerPtr volatile* value_addr, ContainerPtr value) : _value_addr(value_addr), _value(value) {
+    assert(G1CardSet::container_type(_value) == G1CardSet::ContainerInlinePtr, "Value " PTR_FORMAT " is not a valid G1CardSetInlinePtr.", p2i(_value));
   }
 
   G1AddCardResult add(uint const card_idx, uint const bits_per_card, uint const max_cards_in_inline_ptr);
@@ -110,13 +110,13 @@ public:
   template <class CardVisitor>
   void iterate(CardVisitor& found, uint const bits_per_card);
 
-  operator CardSetPtr () { return _value; }
+  operator ContainerPtr () { return _value; }
 
   static uint max_cards_in_inline_ptr(uint bits_per_card) {
     return (BitsInValue - HeaderSize) / bits_per_card;
   }
 
-  static uint num_cards_in(CardSetPtr value) {
+  static uint num_cards_in(ContainerPtr value) {
     return ((uintptr_t)value & SizeFieldMask) >> SizeFieldPos;
   }
 };
@@ -139,7 +139,7 @@ public:
 // which requires that we increment the reference counts by 2 starting at _ref_count = 3.
 //
 // All but inline pointers are of this kind. For those, card entries are stored
-// directly in the CardSetPtr of the ConcurrentHashTable node.
+// directly in the ContainerPtr of the ConcurrentHashTable node.
 class G1CardSetContainer {
   uintptr_t _ref_count;
 protected:
@@ -163,7 +163,7 @@ class G1CardSetArray : public G1CardSetContainer {
 public:
   typedef uint16_t EntryDataType;
   typedef uint EntryCountType;
-  using CardSetPtr = G1CardSet::CardSetPtr;
+  using ContainerPtr = G1CardSet::ContainerPtr;
 private:
   EntryCountType _size;
   EntryCountType volatile _num_entries;
@@ -217,7 +217,7 @@ class G1CardSetBitMap : public G1CardSetContainer {
   size_t _num_bits_set;
   BitMap::bm_word_t _bits[1];
 
-  using CardSetPtr = G1CardSet::CardSetPtr;
+  using ContainerPtr = G1CardSet::ContainerPtr;
 
   template<typename Derived>
   static size_t header_size_in_bytes_internal() {
@@ -252,10 +252,10 @@ public:
 class G1CardSetHowl : public G1CardSetContainer {
 public:
   typedef uint EntryCountType;
-  using CardSetPtr = G1CardSet::CardSetPtr;
+  using ContainerPtr = G1CardSet::ContainerPtr;
   EntryCountType volatile _num_entries;
 private:
-  CardSetPtr _buckets[2];
+  ContainerPtr _buckets[2];
   // Do not add class member variables beyond this point
 
   template<typename Derived>
@@ -263,32 +263,32 @@ private:
     return offset_of(Derived, _buckets);
   }
 
-  // Iterates over the given CardSetPtr with at index in this Howl card set,
+  // Iterates over the given ContainerPtr with at index in this Howl card set,
   // applying a CardOrRangeVisitor on it.
   template <class CardOrRangeVisitor>
-  void iterate_cardset(CardSetPtr const card_set, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
+  void iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
 public:
   G1CardSetHowl(EntryCountType card_in_region, G1CardSetConfiguration* config);
 
-  CardSetPtr* get_card_set_addr(EntryCountType index) {
+  ContainerPtr* get_container_addr(EntryCountType index) {
     return &_buckets[index];
   }
 
   bool contains(uint card_idx, G1CardSetConfiguration* config);
 
-  // Iterates over all CardSetPtrs in this Howl card set, applying a CardOrRangeVisitor
+  // Iterates over all ContainerPtrs in this Howl card set, applying a CardOrRangeVisitor
   // on it.
   template <class CardOrRangeVisitor>
   void iterate(CardOrRangeVisitor& found, G1CardSetConfiguration* config);
 
-  // Iterates over all CardSetPtrs in this Howl card set. Calls
+  // Iterates over all ContainerPtrs in this Howl card set. Calls
   //
-  //   void operator ()(CardSetPtr* card_set_addr);
+  //   void operator ()(ContainerPtr* card_set_addr);
   //
   // on all of them.
-  template <class CardSetPtrVisitor>
-  void iterate(CardSetPtrVisitor& found, uint num_card_sets);
+  template <class ContainerPtrVisitor>
+  void iterate(ContainerPtrVisitor& found, uint num_card_sets);
 
   static EntryCountType num_buckets(size_t size_in_bits, size_t num_cards_in_array, size_t max_buckets);
 
@@ -300,7 +300,7 @@ public:
   static size_t header_size_in_bytes() { return header_size_in_bytes_internal<G1CardSetHowl>(); }
 
   static size_t size_in_bytes(size_t num_arrays) {
-    return header_size_in_bytes() + sizeof(CardSetPtr) * num_arrays;
+    return header_size_in_bytes() + sizeof(ContainerPtr) * num_arrays;
   }
 };
 

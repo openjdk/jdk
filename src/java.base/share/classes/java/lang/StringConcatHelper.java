@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,7 +430,7 @@ final class StringConcatHelper {
      * Produce a String from a concatenation of single argument, which we
      * end up using for trivial concatenations like {@code "" + arg}.
      *
-     * This will always create a new Object to comply with JLS 15.18.1:
+     * This will always create a new Object to comply with JLS {@jls 15.18.1}:
      * "The String object is newly created unless the expression is a
      * compile-time constant expression".
      *
