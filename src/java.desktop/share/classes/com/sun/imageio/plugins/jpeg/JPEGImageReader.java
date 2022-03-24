@@ -487,9 +487,9 @@ public class JPEGImageReader extends ImageReader {
     /**
      * Sets the input stream to the start of the requested image.
      * <pre>
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
      * </pre>
      */
