@@ -177,6 +177,7 @@ class x86 {
   static address _vector_short_shuffle_mask;
   static address _vector_long_shuffle_mask;
   static address _vector_iota_indices;
+  static address _vector_popcount_lut;
 #ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
@@ -340,6 +341,9 @@ class x86 {
     return _vector_iota_indices;
   }
 
+  static address vector_popcount_lut() {
+    return _vector_popcount_lut;
+  }
 #ifdef _LP64
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }

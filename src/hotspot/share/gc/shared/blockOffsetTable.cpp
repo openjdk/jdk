@@ -248,14 +248,10 @@ BlockOffsetArray::alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
   single_block(blk_start, blk_end);
 }
 
-// Action_mark - update the BOT for the block [blk_start, blk_end).
-//               Current typical use is for splitting a block.
-// Action_single - udpate the BOT for an allocation.
-// Action_verify - BOT verification.
 void
 BlockOffsetArray::do_block_internal(HeapWord* blk_start,
                                     HeapWord* blk_end,
-                                    Action action, bool reducing) {
+                                    bool reducing) {
   assert(_sp->is_in_reserved(blk_start),
          "reference must be into the space");
   assert(_sp->is_in_reserved(blk_end-1),
@@ -284,33 +280,13 @@ BlockOffsetArray::do_block_internal(HeapWord* blk_start,
     }
     assert(start_index <= end_index, "monotonicity of index_for()");
     assert(boundary <= (HeapWord*)boundary_before_end, "tautology");
-    switch (action) {
-      case Action_mark: {
-        if (init_to_zero()) {
-          _array->set_offset_array(start_index, boundary, blk_start, reducing);
-          break;
-        } // Else fall through to the next case
-      }
-      case Action_single: {
-        _array->set_offset_array(start_index, boundary, blk_start, reducing);
-        // We have finished marking the "offset card". We need to now
-        // mark the subsequent cards that this blk spans.
-        if (start_index < end_index) {
-          HeapWord* rem_st = _array->address_for_index(start_index) + BOTConstants::card_size_in_words();
-          HeapWord* rem_end = _array->address_for_index(end_index) + BOTConstants::card_size_in_words();
-          set_remainder_to_point_to_start(rem_st, rem_end, reducing);
-        }
-        break;
-      }
-      case Action_check: {
-        _array->check_offset_array(start_index, boundary, blk_start);
-        // We have finished checking the "offset card". We need to now
-        // check the subsequent cards that this blk spans.
-        check_all_cards(start_index + 1, end_index);
-        break;
-      }
-      default:
-        ShouldNotReachHere();
+    _array->set_offset_array(start_index, boundary, blk_start, reducing);
+    // We have finished marking the "offset card". We need to now
+    // mark the subsequent cards that this blk spans.
+    if (start_index < end_index) {
+      HeapWord* rem_st = _array->address_for_index(start_index) + BOTConstants::card_size_in_words();
+      HeapWord* rem_end = _array->address_for_index(end_index) + BOTConstants::card_size_in_words();
+      set_remainder_to_point_to_start(rem_st, rem_end, reducing);
     }
   }
 }
@@ -322,7 +298,7 @@ BlockOffsetArray::do_block_internal(HeapWord* blk_start,
 void
 BlockOffsetArray::single_block(HeapWord* blk_start,
                                HeapWord* blk_end) {
-  do_block_internal(blk_start, blk_end, Action_single);
+  do_block_internal(blk_start, blk_end);
 }
 
 void BlockOffsetArray::verify() const {

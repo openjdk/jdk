@@ -446,7 +446,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <code>TransferHandler</code>.
      *
      * @param b the value to set the <code>dragEnabled</code> property to
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *            <code>b</code> is <code>true</code> and
      *            <code>GraphicsEnvironment.isHeadless()</code>
      *            returns <code>true</code>
@@ -658,7 +658,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <li>JFileChooser.ERROR_OPTION if an error occurs or the
      *                  dialog is dismissed
      * </ul>
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #showDialog
@@ -683,7 +683,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <li>JFileChooser.ERROR_OPTION if an error occurs or the
      *                  dialog is dismissed
      * </ul>
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #showDialog
@@ -743,7 +743,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <li>JFileChooser.ERROR_OPTION if an error occurs or the
      *                  dialog is dismissed
      * </ul>
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -800,7 +800,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * @param   parent  the parent component of the dialog;
      *                  can be <code>null</code>
      * @return a new <code>JDialog</code> containing this instance
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
@@ -924,7 +924,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <li>JFileChooser.CUSTOM_DIALOG
      * </ul>
      *
-     * @exception IllegalArgumentException if <code>dialogType</code> is
+     * @throws IllegalArgumentException if <code>dialogType</code> is
      *                          not legal
      *
      * @see #getDialogType
@@ -1311,7 +1311,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <li>JFileChooser.FILES_AND_DIRECTORIES
      * </ul>
      *
-     * @exception IllegalArgumentException  if <code>mode</code> is an
+     * @throws IllegalArgumentException  if <code>mode</code> is an
      *                          illegal file selection mode
      *
      * @see #getFileSelectionMode

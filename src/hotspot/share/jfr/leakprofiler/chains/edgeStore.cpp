@@ -234,7 +234,15 @@ static int leak_context_edge_idx(const ObjectSample* sample) {
 }
 
 bool EdgeStore::has_leak_context(const ObjectSample* sample) const {
-  return leak_context_edge_idx(sample) != 0;
+  const int idx = leak_context_edge_idx(sample);
+  if (idx == 0) {
+    return false;
+  }
+  assert(idx > 0, "invariant");
+  assert(_leak_context_edges != nullptr, "invariant");
+  assert(idx < _leak_context_edges->length(), "invariant");
+  assert(_leak_context_edges->at(idx) != nullptr, "invariant");
+  return true;
 }
 
 const StoredEdge* EdgeStore::get(const ObjectSample* sample) const {
@@ -243,7 +251,10 @@ const StoredEdge* EdgeStore::get(const ObjectSample* sample) const {
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     const int idx = leak_context_edge_idx(sample);
     if (idx > 0) {
-      return _leak_context_edges->at(idx);
+      assert(idx < _leak_context_edges->length(), "invariant");
+      const StoredEdge* const edge =_leak_context_edges->at(idx);
+      assert(edge != nullptr, "invariant");
+      return edge;
     }
   }
   return get(UnifiedOopRef::encode_in_native(sample->object_addr()));

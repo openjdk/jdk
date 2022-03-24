@@ -61,7 +61,7 @@ public class NativeLibrariesTest implements Runnable {
      * Invoke by p.Test to load the same native library from different class loader
      */
     public void run() {
-        load(true); // expect loading of native library succeed
+        loadTestLibrary(); // expect loading of native library succeed
     }
 
     static Path libraryPath() {
@@ -101,18 +101,18 @@ public class NativeLibrariesTest implements Runnable {
         assertTrue(unloadedCount == 0, "Native library unloaded.  Expected: JNI_OnUnload not invoked");
     }
 
-    public void load(boolean succeed) {
+    public void loadTestLibrary() {
         NativeLibrary nl = nativeLibraries.load(libraryPath());
-        if (succeed) {
-            assertTrue(nl != null, "fail to load library");
-        } else {
-            assertTrue(nl == null, "load library should fail");
-        }
+        assertTrue(nl != null, "fail to load " + libraryPath());
     }
 
-    public void load(String pathname) {
+    public void load(String pathname, boolean succeed) {
         NativeLibrary nl = nativeLibraries.load(pathname);
-        assertTrue(nl != null, "fail to load zip library");
+        if (succeed) {
+            assertTrue(nl != null, "fail to load " + pathname);
+        } else {
+            assertTrue(nl == null, "expect to return null for " + pathname);
+        }
     }
 
     /*

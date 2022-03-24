@@ -512,7 +512,7 @@
 
 // Note: There are two ARM ports. They set the following in the makefiles:
 // 1. 32-bit port:   -DARM -DARM32 -DTARGET_ARCH_arm
-// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aaarch64
+// 2. 64-bit port:   -DAARCH64 -D_LP64 -DTARGET_ARCH_aarch64
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
@@ -537,7 +537,39 @@
 #define NOT_AARCH64(code) code
 #endif
 
+#ifdef TARGET_ARCH_aarch64
+#define AARCH64_PORT_ONLY(code) code
+#else
+#define AARCH64_PORT_ONLY(code)
+#endif
+
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
+
+#if defined(RISCV32) || defined(RISCV64)
+#define RISCV
+#define RISCV_ONLY(code) code
+#define NOT_RISCV(code)
+#else
+#undef RISCV
+#define RISCV_ONLY(code)
+#define NOT_RISCV(code) code
+#endif
+
+#ifdef RISCV32
+#define RISCV32_ONLY(code) code
+#define NOT_RISCV32(code)
+#else
+#define RISCV32_ONLY(code)
+#define NOT_RISCV32(code) code
+#endif
+
+#ifdef RISCV64
+#define RISCV64_ONLY(code) code
+#define NOT_RISCV64(code)
+#else
+#define RISCV64_ONLY(code)
+#define NOT_RISCV64(code) code
+#endif
 
 #ifdef VM_LITTLE_ENDIAN
 #define LITTLE_ENDIAN_ONLY(code) code

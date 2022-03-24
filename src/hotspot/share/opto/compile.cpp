@@ -4833,7 +4833,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
 #ifndef PRODUCT
   ResourceMark rm;
   stringStream ss;
-  ss.print_raw(CompilerPhaseTypeHelper::to_name(cpt));
+  ss.print_raw(CompilerPhaseTypeHelper::to_description(cpt));
   if (n != nullptr) {
     ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
   }
