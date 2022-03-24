@@ -3783,17 +3783,19 @@ void ConnectionGraph::print_statistics() {
 void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
   for(int next = 0; next < java_objects_worklist.length(); ++next) {
     JavaObjectNode* ptn = java_objects_worklist.at(next);
-    if(ptn->escape_state() == PointsToNode::NoEscape) {
-      ConnectionGraph::_no_escape_counter++;
-    }
-    else if(ptn->escape_state() == PointsToNode::ArgEscape) {
-      ConnectionGraph::_arg_escape_counter++;
-    }
-    else if(ptn->escape_state() == PointsToNode::GlobalEscape) {
-      ConnectionGraph::_global_escape_counter++;
-    }
-    else {
-      assert(false, "Unexpected Escape State");
+    if (ptn->ideal_node()->is_Allocate()) {
+      if(ptn->escape_state() == PointsToNode::NoEscape) {
+        ConnectionGraph::_no_escape_counter++;
+      }
+      else if(ptn->escape_state() == PointsToNode::ArgEscape) {
+        ConnectionGraph::_arg_escape_counter++;
+      }
+      else if(ptn->escape_state() == PointsToNode::GlobalEscape) {
+        ConnectionGraph::_global_escape_counter++;
+      }
+      else {
+        assert(false, "Unexpected Escape State");
+      }
     }
   }
 }
