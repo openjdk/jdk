@@ -109,21 +109,22 @@ class Http1Request {
         final HttpHeaders uh = userHeaders;
 
         // Filter any headers from systemHeaders that are set in userHeaders
-        systemHeaders = HttpHeaders.of(systemHeaders.map(), (k,v) -> uh.firstValue(k).isEmpty());
+        final HttpHeaders sh = HttpHeaders.of(systemHeaders.map(),
+                (k,v) -> uh.firstValue(k).isEmpty());
 
         // If we're sending this request through a tunnel,
         // then don't send any preemptive proxy-* headers that
         // the authentication filter may have saved in its
         // cache.
-        collectHeaders1(sb, systemHeaders, nocookies);
+        collectHeaders1(sb, sh, nocookies);
 
         // If we're sending this request through a tunnel,
         // don't send any user-supplied proxy-* headers
         // to the target server.
-        collectHeaders1(sb, userHeaders, nocookies);
+        collectHeaders1(sb, uh, nocookies);
 
-        // Gather all 'Cookie:' headers and concatenate their
-        // values in a single line.
+        // Gather all 'Cookie:' headers from the unfiltered system headers,
+        // and the user headers, and concatenate their values in a single line
         collectCookies(sb, systemHeaders, userHeaders);
 
         // terminate headers

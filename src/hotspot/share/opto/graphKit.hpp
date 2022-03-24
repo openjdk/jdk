@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -790,9 +790,6 @@ class GraphKit : public Phase {
   // rounding for strict double precision conformance
   Node* dprecision_rounding(Node* n);
 
-  // rounding for non-strict double stores
-  Node* dstore_rounding(Node* n);
-
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);
   Node* make_runtime_call(int flags,
@@ -802,8 +799,7 @@ class GraphKit : public Phase {
                           Node* parm0 = NULL, Node* parm1 = NULL,
                           Node* parm2 = NULL, Node* parm3 = NULL,
                           Node* parm4 = NULL, Node* parm5 = NULL,
-                          Node* parm6 = NULL, Node* parm7 = NULL,
-                          Node* parm8 = NULL);
+                          Node* parm6 = NULL, Node* parm7 = NULL);
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);

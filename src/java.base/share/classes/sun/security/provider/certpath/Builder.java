@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.cert.*;
 import java.util.*;
@@ -337,7 +336,7 @@ public abstract class Builder {
 
         if (debug != null) {
             debug.println("Builder.targetDistance() merged constraints: "
-                + String.valueOf(constraints));
+                + constraints);
         }
         /* reduce permitted by excluded */
         GeneralSubtrees permitted =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,23 @@
  */
 package compiler.cha;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+
 import static compiler.cha.Utils.*;
 
 public class AbstractRootMethod {
     public static void main(String[] args) {
         run(AbstractClass.class);
         run(AbstractInterface.class);
+
+        // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
+        if (!sun.hotspot.code.Compiler.isC1Enabled()) {
+            run(AbstractClass.TestMH.class, AbstractClass.class);
+            run(AbstractInterface.TestMH.class, AbstractInterface.class);
+        }
+
+        System.out.println("TEST PASSED");
     }
 
     public static class AbstractClass extends ATest<AbstractClass.C> {
@@ -124,7 +135,21 @@ public class AbstractRootMethod {
             call(new G() { public Object m() { return CORRECT; } }); //  Gn <: G.m <: C.m ABSTRACT
             assertCompiled();
         }
+
+        public static class TestMH extends AbstractClass {
+            static final MethodHandle TEST_MH = findVirtualHelper(C.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public Object test(C obj) {
+                try {
+                    return TEST_MH.invokeExact(obj); // invokevirtual C.m()
+                } catch (Throwable e) {
+                    throw new InternalError(e);
+                }
+            }
+        }
     }
+
     public static class AbstractInterface extends ATest<AbstractInterface.C> {
         public AbstractInterface() {
             super(C.class, D.class);
@@ -192,6 +217,19 @@ public class AbstractRootMethod {
             call(new C() { public Object m() { return CORRECT; } }); //  Cn.m <: C <: I.m ABSTRACT
             call(new G() { public Object m() { return CORRECT; } }); //  Gn <: G.m <: C <: I.m ABSTRACT
             assertCompiled();
+        }
+
+        public static class TestMH extends AbstractInterface {
+            static final MethodHandle TEST_MH = findVirtualHelper(C.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public Object test(C obj) {
+                try {
+                    return TEST_MH.invokeExact(obj); // invokevirtual C.m()
+                } catch (Throwable e) {
+                    throw new InternalError(e);
+                }
+            }
         }
     }
 }

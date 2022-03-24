@@ -106,7 +106,7 @@ public class HostIdentifier {
      * by the string.
      */
     private URI canonicalize(String uriString) throws URISyntaxException {
-        if ((uriString == null) || (uriString.compareTo("localhost") == 0)) {
+        if (uriString == null || uriString.equals("localhost")) {
             uriString = "//localhost";
             return new URI(uriString);
         }
@@ -247,7 +247,7 @@ public class HostIdentifier {
         String authority = vmid.getAuthority();
 
         // check for 'file:' VmIdentifiers and handled as a special case.
-        if ((scheme != null) && (scheme.compareTo("file") == 0)) {
+        if ("file".equals(scheme)) {
             try {
                 uri = new URI("file://localhost");
             } catch (URISyntaxException e) { };
@@ -343,7 +343,7 @@ public class HostIdentifier {
         String host = vmid.getHost();
         String authority = vmid.getAuthority();
 
-        if ((scheme != null) && (scheme.compareTo("file") == 0)) {
+        if ("file".equals(scheme)) {
             // don't attempt to resolve a file based VmIdentifier.
             return vmid;
         }

@@ -184,8 +184,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool is_in_reserved(const void* p) const;
 
-  bool is_in_young(oop p);  // reserved part
-  bool is_in_old(oop p);    // reserved part
+  bool is_in_young(const oop p) const;
 
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
@@ -231,7 +230,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void object_iterate(ObjectClosure* cl);
   void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);
-  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num);
 
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
@@ -273,6 +272,11 @@ class ParallelScavengeHeap : public CollectedHeap {
   WorkerThreads& workers() {
     return _workers;
   }
+
+  // Support for loading objects from CDS archive into the heap
+  bool can_load_archived_objects() const { return UseCompressedOops; }
+  HeapWord* allocate_loaded_archive_space(size_t size);
+  void complete_loaded_archive_space(MemRegion archive_space);
 };
 
 // Class that can be used to print information about the

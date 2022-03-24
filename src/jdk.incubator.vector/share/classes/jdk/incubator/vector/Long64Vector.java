@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,6 +365,12 @@ final class Long64Vector extends LongVector {
         return super.testTemplate(Long64Mask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final Long64Mask test(Test op, VectorMask<Long> m) {
+        return super.testTemplate(Long64Mask.class, op, (Long64Mask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -717,9 +723,9 @@ final class Long64Vector extends LongVector {
         @ForceInline
         /*package-private*/
         static Long64Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Long64Mask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Long64Mask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Long64Mask  TRUE_MASK = new Long64Mask(true);
         private static final Long64Mask FALSE_MASK = new Long64Mask(false);

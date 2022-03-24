@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
 
     GraphKit* kit = parse_access.kit();
     if (access.type() == T_DOUBLE) {
-      Node* new_val = kit->dstore_rounding(val.node());
+      Node* new_val = kit->dprecision_rounding(val.node());
       val.set_node(new_val);
     }
 

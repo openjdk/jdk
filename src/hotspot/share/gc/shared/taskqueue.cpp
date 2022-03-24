@@ -34,7 +34,9 @@
 
 #if TASKQUEUE_STATS
 const char * const TaskQueueStats::_names[last_stat_id] = {
-  "qpush", "qpop", "qpop-s", "qattempt", "qsteal", "opush", "omax"
+  "push", "pop", "pop-slow",
+  "st-attempt", "st-empty", "st-ctdd", "st-success", "st-ctdd-max", "st-biasdrop",
+  "ovflw-push", "ovflw-max"
 };
 
 TaskQueueStats & TaskQueueStats::operator +=(const TaskQueueStats & addend)
@@ -86,20 +88,29 @@ void TaskQueueStats::print(outputStream* stream, unsigned int width) const
 // quiescent; they do not hold at arbitrary times.
 void TaskQueueStats::verify() const
 {
-  assert(get(push) == get(pop) + get(steal),
-         "push=" SIZE_FORMAT " pop=" SIZE_FORMAT " steal=" SIZE_FORMAT,
-         get(push), get(pop), get(steal));
+  assert(get(push) == get(pop) + get(steal_success),
+         "push=%zu pop=%zu steal=%zu",
+         get(push), get(pop), get(steal_success));
   assert(get(pop_slow) <= get(pop),
-         "pop_slow=" SIZE_FORMAT " pop=" SIZE_FORMAT,
+         "pop_slow=%zu pop=%zu",
          get(pop_slow), get(pop));
-  assert(get(steal) <= get(steal_attempt),
-         "steal=" SIZE_FORMAT " steal_attempt=" SIZE_FORMAT,
-         get(steal), get(steal_attempt));
+  assert(get(steal_empty) <= get(steal_attempt),
+         "steal_empty=%zu steal_attempt=%zu",
+         get(steal_empty), get(steal_attempt));
+  assert(get(steal_contended) <= get(steal_attempt),
+         "steal_contended=%zu steal_attempt=%zu",
+         get(steal_contended), get(steal_attempt));
+  assert(get(steal_success) <= get(steal_attempt),
+         "steal_success=%zu steal_attempt=%zu",
+         get(steal_success), get(steal_attempt));
+  assert(get(steal_empty) + get(steal_contended) + get(steal_success) == get(steal_attempt),
+         "steal_empty=%zu steal_contended=%zu steal_success=%zu steal_attempt=%zu",
+         get(steal_empty), get(steal_contended), get(steal_success), get(steal_attempt));
   assert(get(overflow) == 0 || get(push) != 0,
-         "overflow=" SIZE_FORMAT " push=" SIZE_FORMAT,
+         "overflow=%zu push=%zu",
          get(overflow), get(push));
   assert(get(overflow_max_len) == 0 || get(overflow) != 0,
-         "overflow_max_len=" SIZE_FORMAT " overflow=" SIZE_FORMAT,
+         "overflow_max_len=%zu overflow=%zu",
          get(overflow_max_len), get(overflow));
 }
 #endif // ASSERT

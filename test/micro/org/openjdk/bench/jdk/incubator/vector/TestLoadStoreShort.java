@@ -26,7 +26,7 @@ package org.openjdk.bench.jdk.incubator.vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
-import jdk.incubator.foreign.CLinker;
+
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -112,15 +112,15 @@ public class TestLoadStoreShort {
     dstBufferNative = ByteBuffer.allocateDirect(size);
 
 
-    implicitScope = ResourceScope.newImplicitScope();
+    implicitScope = ResourceScope.newSharedScope();
     srcSegmentImplicit = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), implicitScope);
     srcBufferSegmentImplicit = srcSegmentImplicit.asByteBuffer();
     dstSegmentImplicit = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), implicitScope);
     dstBufferSegmentImplicit = dstSegmentImplicit.asByteBuffer();
 
 
-    srcAddress = CLinker.allocateMemory(size);
-    dstAddress = CLinker.allocateMemory(size);
+    srcAddress = MemorySegment.allocateNative(size, implicitScope).address();
+    dstAddress = MemorySegment.allocateNative(size, implicitScope).address();
 
     this.longSize = longSize;
 
@@ -128,12 +128,6 @@ public class TestLoadStoreShort {
     b = new short[size];
     c = new short[size];
 
-  }
-
-  @TearDown
-  public void tearDown() {
-    CLinker.freeMemory(srcAddress);
-    CLinker.freeMemory(dstAddress);
   }
 
   @Benchmark
@@ -216,8 +210,8 @@ public class TestLoadStoreShort {
   @Benchmark
   public void bufferSegmentConfined() {
     try (final var scope = ResourceScope.newConfinedScope()) {
-      final var srcBufferSegmentConfined = srcAddress.asSegment(size, scope).asByteBuffer();
-      final var dstBufferSegmentConfined = dstAddress.asSegment(size, scope).asByteBuffer();
+      final var srcBufferSegmentConfined = MemorySegment.ofAddress(srcAddress, size, scope).asByteBuffer();
+      final var dstBufferSegmentConfined = MemorySegment.ofAddress(dstAddress, size, scope).asByteBuffer();
 
       for (int i = 0; i < SPECIES.loopBound(srcArray.length); i += SPECIES.length()) {
         var v = ShortVector.fromByteBuffer(SPECIES, srcBufferSegmentConfined, i, ByteOrder.nativeOrder());

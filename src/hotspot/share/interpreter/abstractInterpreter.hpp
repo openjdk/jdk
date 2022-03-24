@@ -90,6 +90,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_Float_floatToRawIntBits,                          // implementation of java.lang.Float.floatToRawIntBits()
     java_lang_Double_longBitsToDouble,                          // implementation of java.lang.Double.longBitsToDouble()
     java_lang_Double_doubleToRawLongBits,                       // implementation of java.lang.Double.doubleToRawLongBits()
+    java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
     number_of_method_entries,
     invalid = -1
   };

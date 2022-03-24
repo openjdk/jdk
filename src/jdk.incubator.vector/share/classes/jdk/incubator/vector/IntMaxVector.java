@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,6 +370,12 @@ final class IntMaxVector extends IntVector {
         return super.testTemplate(IntMaxMask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final IntMaxMask test(Test op, VectorMask<Integer> m) {
+        return super.testTemplate(IntMaxMask.class, op, (IntMaxMask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -727,9 +733,9 @@ final class IntMaxVector extends IntVector {
         @ForceInline
         /*package-private*/
         static IntMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(IntMaxMask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(IntMaxMask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final IntMaxMask  TRUE_MASK = new IntMaxMask(true);
         private static final IntMaxMask FALSE_MASK = new IntMaxMask(false);

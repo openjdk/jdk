@@ -268,7 +268,14 @@ class DependencyFinder {
             }
             return targets;
         } catch (InterruptedException|ExecutionException e) {
-            throw new Error(e);
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException x) {
+                throw x;
+            } else if (cause instanceof Error x) {
+                throw x;
+            } else {
+                throw new Error(e);
+            }
         }
     }
 

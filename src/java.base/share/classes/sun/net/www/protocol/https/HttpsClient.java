@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -645,7 +645,7 @@ final class HttpsClient extends HttpClient
             // ignore
         }
 
-        if ((cipher != null) && (cipher.indexOf("_anon_") != -1)) {
+        if ((cipher != null) && (cipher.contains("_anon_"))) {
             return;
         } else if ((hostnameVerifier != null) &&
                    (hostnameVerifier.verify(host, session))) {
@@ -661,12 +661,17 @@ final class HttpsClient extends HttpClient
 
     @Override
     protected void putInKeepAliveCache() {
-        if (inCache) {
-            assert false : "Duplicate put to keep alive cache";
-            return;
+        lock();
+        try {
+            if (inCache) {
+                assert false : "Duplicate put to keep alive cache";
+                return;
+            }
+            inCache = true;
+            kac.put(url, sslSocketFactory, this);
+        } finally {
+            unlock();
         }
-        inCache = true;
-        kac.put(url, sslSocketFactory, this);
     }
 
     /*

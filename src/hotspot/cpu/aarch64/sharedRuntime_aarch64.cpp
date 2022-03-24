@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -410,6 +410,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mov(c_rarg0, rmethod);
   __ mov(c_rarg1, lr);
+  __ authenticate_return_address(c_rarg1, rscratch1);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)));
   __ blr(rscratch1);
 
@@ -1642,39 +1643,42 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    // Load (object->mark() | 1) into swap_reg %r0
-    __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    __ orr(swap_reg, rscratch1, 1);
+    if (!UseHeavyMonitors) {
+      // Load (object->mark() | 1) into swap_reg %r0
+      __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ orr(swap_reg, rscratch1, 1);
 
-    // Save (object->mark() | 1) into BasicLock's displaced header
-    __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      // Save (object->mark() | 1) into BasicLock's displaced header
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
 
-    // src -> dest iff dest == r0 else r0 <- dest
-    { Label here;
-      __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      // src -> dest iff dest == r0 else r0 <- dest
+      { Label here;
+        __ cmpxchg_obj_header(r0, lock_reg, obj_reg, rscratch1, lock_done, /*fallthrough*/NULL);
+      }
+
+      // Hmm should this move to the slow path code area???
+
+      // Test if the oopMark is an obvious stack pointer, i.e.,
+      //  1) (mark & 3) == 0, and
+      //  2) sp <= mark < mark + os::pagesize()
+      // These 3 tests can be done by evaluating the following
+      // expression: ((mark - sp) & (3 - os::vm_page_size())),
+      // assuming both stack pointer and pagesize have their
+      // least significant 2 bits clear.
+      // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
+
+      __ sub(swap_reg, sp, swap_reg);
+      __ neg(swap_reg, swap_reg);
+      __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
+
+      // Save the test result, for recursive case, the result is zero
+      __ str(swap_reg, Address(lock_reg, mark_word_offset));
+      __ br(Assembler::NE, slow_path_lock);
+    } else {
+      __ b(slow_path_lock);
     }
 
-    // Hmm should this move to the slow path code area???
-
-    // Test if the oopMark is an obvious stack pointer, i.e.,
-    //  1) (mark & 3) == 0, and
-    //  2) sp <= mark < mark + os::pagesize()
-    // These 3 tests can be done by evaluating the following
-    // expression: ((mark - sp) & (3 - os::vm_page_size())),
-    // assuming both stack pointer and pagesize have their
-    // least significant 2 bits clear.
-    // NOTE: the oopMark is in swap_reg %r0 as the result of cmpxchg
-
-    __ sub(swap_reg, sp, swap_reg);
-    __ neg(swap_reg, swap_reg);
-    __ ands(swap_reg, swap_reg, 3 - os::vm_page_size());
-
-    // Save the test result, for recursive case, the result is zero
-    __ str(swap_reg, Address(lock_reg, mark_word_offset));
-    __ br(Assembler::NE, slow_path_lock);
-
     // Slow path will re-enter here
-
     __ bind(lock_done);
   }
 
@@ -1775,26 +1779,31 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
     Label done;
-    // Simple recursive lock?
 
-    __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-    __ cbz(rscratch1, done);
+    if (!UseHeavyMonitors) {
+      // Simple recursive lock?
+      __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      __ cbz(rscratch1, done);
+    }
 
     // Must save r0 if if it is live now because cmpxchg must use it
     if (ret_type != T_FLOAT && ret_type != T_DOUBLE && ret_type != T_VOID) {
       save_native_result(masm, ret_type, stack_slots);
     }
 
+    if (!UseHeavyMonitors) {
+      // get address of the stack lock
+      __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+      //  get old displaced header
+      __ ldr(old_hdr, Address(r0, 0));
 
-    // get address of the stack lock
-    __ lea(r0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-    //  get old displaced header
-    __ ldr(old_hdr, Address(r0, 0));
-
-    // Atomic swap old header if oop still contains the stack lock
-    Label succeed;
-    __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
-    __ bind(succeed);
+      // Atomic swap old header if oop still contains the stack lock
+      Label succeed;
+      __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, succeed, &slow_path_unlock);
+      __ bind(succeed);
+    } else {
+      __ b(slow_path_unlock);
+    }
 
     // slow path re-enters here
     __ bind(unlock_done);
@@ -2170,8 +2179,8 @@ void SharedRuntime::generate_deopt_blob() {
 
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
-
   __ ldr(r3, Address(rthread, JavaThread::exception_pc_offset()));
+  __ protect_return_address(r3, rscratch1);
   __ str(r3, Address(rfp, wordSize));
   __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
 
@@ -2279,6 +2288,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sub(r2, r2, 2 * wordSize);
   __ add(sp, sp, r2);
   __ ldp(rfp, lr, __ post(sp, 2 * wordSize));
+  __ authenticate_return_address();
   // LR should now be the return address to the caller (3)
 
 #ifdef ASSERT
@@ -2420,6 +2430,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Push self-frame.  We get here with a return address in LR
   // and sp should be 16 byte aligned
   // push rfp and retaddr by hand
+  __ protect_return_address();
   __ stp(rfp, lr, Address(__ pre(sp, -2 * wordSize)));
   // we don't expect an arg reg save area
 #ifndef PRODUCT
@@ -2494,6 +2505,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ sub(r2, r2, 2 * wordSize);
   __ add(sp, sp, r2);
   __ ldp(rfp, lr, __ post(sp, 2 * wordSize));
+  __ authenticate_return_address();
   // LR should now be the return address to the caller (3) frame
 
 #ifdef ASSERT
@@ -2616,6 +2628,11 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   bool cause_return = (poll_type == POLL_AT_RETURN);
   RegisterSaver reg_save(poll_type == POLL_AT_VECTOR_LOOP /* save_vectors */);
 
+  // When the signal occured, the LR was either signed and stored on the stack (in which
+  // case it will be restored from the stack before being used) or unsigned and not stored
+  // on the stack. Stipping ensures we get the right value.
+  __ strip_return_address();
+
   // Save Integer and Float registers.
   map = reg_save.save_live_registers(masm, 0, &frame_size_in_words);
 
@@ -2635,6 +2652,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     // it later to determine if someone changed the return address for
     // us!
     __ ldr(r20, Address(rthread, JavaThread::saved_exception_pc_offset()));
+    __ protect_return_address(r20, rscratch1);
     __ str(r20, Address(rfp, wordSize));
   }
 
@@ -2675,6 +2693,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ ldr(rscratch1, Address(rfp, wordSize));
     __ cmp(r20, rscratch1);
     __ br(Assembler::NE, no_adjust);
+    __ authenticate_return_address(r20, rscratch1);
 
 #ifdef ASSERT
     // Verify the correct encoding of the poll we're about to skip.
@@ -2689,6 +2708,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 #endif
     // Adjust return pc forward to step over the safepoint poll instruction
     __ add(r20, r20, NativeInstruction::instruction_size);
+    __ protect_return_address(r20, rscratch1);
     __ str(r20, Address(rfp, wordSize));
   }
 
@@ -2849,6 +2869,7 @@ void OptoRuntime::generate_exception_blob() {
 
   // push rfp and retaddr by hand
   // Exception pc is 'return address' for stack walker
+  __ protect_return_address();
   __ stp(rfp, lr, Address(__ pre(sp, -2 * wordSize)));
   // there are no callee save registers and we don't expect an
   // arg reg save area
@@ -2902,6 +2923,7 @@ void OptoRuntime::generate_exception_blob() {
   // there are no callee save registers now that adapter frames are gone.
   // and we dont' expect an arg reg save area
   __ ldp(rfp, r3, Address(__ post(sp, 2 * wordSize)));
+  __ authenticate_return_address(r3);
 
   // r0: exception handler
 

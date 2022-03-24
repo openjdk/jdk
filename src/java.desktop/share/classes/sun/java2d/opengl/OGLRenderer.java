@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class OGLRenderer extends BufferedRenderPipe {
         return new Tracer(this);
     }
 
-    private class Tracer extends OGLRenderer {
+    private static class Tracer extends OGLRenderer {
         private OGLRenderer oglr;
         Tracer(OGLRenderer oglr) {
             super(oglr.rq);

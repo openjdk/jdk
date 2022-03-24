@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -337,7 +338,6 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   // Add reference to discovered list
-  assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
   if (discovered_head == NULL) {
@@ -361,7 +361,7 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
   }
 
   log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
-  uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
+  uint worker_id = WorkerThread::worker_id();
   _ref_proc_thread_locals->inc_encountered(type);
 
   if (UseCompressedOops) {

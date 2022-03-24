@@ -141,10 +141,9 @@ class MimeType implements Serializable, Cloneable {
             throw new UnsupportedOperationException();
         }
         public boolean equals(Object o) {
-            return (o != null &&
-                    o instanceof Map.Entry &&
-                    getKey().equals (((Map.Entry) o).getKey()) &&
-                    getValue().equals(((Map.Entry) o).getValue()));
+            return o instanceof Map.Entry<?, ?> entry &&
+                    getKey().equals(entry.getKey()) &&
+                    getValue().equals(entry.getValue());
         }
         public int hashCode() {
             return getKey().hashCode() ^ getValue().hashCode();
@@ -290,9 +289,8 @@ class MimeType implements Serializable, Cloneable {
      *         {@code false} otherwise
      */
     public boolean equals (Object obj) {
-        return(obj != null &&
-               obj instanceof MimeType &&
-               getStringValue().equals(((MimeType) obj).getStringValue()));
+        return obj instanceof MimeType mimeType &&
+                getStringValue().equals(mimeType.getStringValue());
     }
 
     /**

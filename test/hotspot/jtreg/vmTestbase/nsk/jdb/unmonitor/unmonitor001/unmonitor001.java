@@ -172,7 +172,7 @@ public class unmonitor001 extends JdbTest {
     private boolean checkCommands(String[] reply) {
         Paragrep grep;
         String found;
-        Vector v = new Vector();;
+        Vector v = new Vector();
         boolean result = true;
         int count;
 

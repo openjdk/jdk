@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,6 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
 
   DEBUG_ONLY(size_t committed_words_before = c->committed_words();)
 
-  const chunklevel_t orig_level = c->level();
   c->vsnode()->split(target_level, c, &_chunks);
 
   // Splitting should never fail.

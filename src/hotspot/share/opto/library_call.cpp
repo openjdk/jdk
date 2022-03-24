@@ -617,8 +617,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isCompileConstant:
     return inline_isCompileConstant();
 
-  case vmIntrinsics::_hasNegatives:
-    return inline_hasNegatives();
+  case vmIntrinsics::_countPositives:
+    return inline_countPositives();
 
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
@@ -652,8 +652,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(2);
   case vmIntrinsics::_VectorTernaryOp:
     return inline_vector_nary_operation(3);
-  case vmIntrinsics::_VectorBroadcastCoerced:
-    return inline_vector_broadcast_coerced();
+  case vmIntrinsics::_VectorFromBitsCoerced:
+    return inline_vector_frombits_coerced();
   case vmIntrinsics::_VectorShuffleIota:
     return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
@@ -1011,13 +1011,13 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//------------------------------inline_hasNegatives------------------------------
-bool LibraryCallKit::inline_hasNegatives() {
+//------------------------------inline_countPositives------------------------------
+bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
 
-  assert(callee()->signature()->size() == 3, "hasNegatives has 3 parameters");
+  assert(callee()->signature()->size() == 3, "countPositives has 3 parameters");
   // no receiver since it is static method
   Node* ba         = argument(0);
   Node* offset     = argument(1);
@@ -1031,7 +1031,7 @@ bool LibraryCallKit::inline_hasNegatives() {
     return true;
   }
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
-  Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
+  Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
   return true;
 }
@@ -1092,7 +1092,6 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
-  clear_upper_avx();
   return true;
 }
 
@@ -5427,7 +5426,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
         Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
         Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
 
-        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
+        Node* vmask      = _gvn.transform(VectorMaskGenNode::make(ConvI2X(casted_length), elem_bt));
         Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
         Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
         Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
@@ -6795,7 +6794,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* state = load_field_from_object(ghash_object, "state", "[J");
 
   if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) {
-      return false;
+    return false;
   }
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
@@ -6811,38 +6810,22 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   // we need to get the start of the aescrypt_object's expanded key array
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
-
   // similarly, get the start address of the r vector
   Node* cnt_start = array_element_address(counter, intcon(0), T_BYTE);
   Node* state_start = array_element_address(state, intcon(0), T_LONG);
   Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
 
-  ciKlass* klass = ciTypeArrayKlass::make(T_LONG);
-  Node* klass_node = makecon(TypeKlassPtr::make(klass));
-
-  // Does this target support this intrinsic?
-  if (Matcher::htbl_entries == -1) return false;
-
-  Node* subkeyHtbl_48_entries_start;
-  if (Matcher::htbl_entries != 0) {
-    // new array to hold 48 computed htbl entries
-    Node* subkeyHtbl_48_entries = new_array(klass_node, intcon(Matcher::htbl_entries), 0);
-    if (subkeyHtbl_48_entries == NULL) return false;
-    subkeyHtbl_48_entries_start = array_element_address(subkeyHtbl_48_entries, intcon(0), T_LONG);
-  } else {
-    // This target doesn't need the extra-large Htbl.
-    subkeyHtbl_48_entries_start = ConvL2X(intcon(0));
-  }
 
   // Call the stub, passing params
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, subkeyHtbl_48_entries_start, cnt_start);
+                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
   set_result(retvalue);
+
   return true;
 }
 

@@ -31,7 +31,6 @@
  * @run testng/othervm -XX:-TieredCompilation TestHandshake
  */
 
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandles;
@@ -48,6 +47,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 import static org.testng.Assert.*;
 
 public class TestHandshake {
@@ -150,7 +151,7 @@ public class TestHandshake {
         void doAccess() {
             int sum = 0;
             for (int i = 0; i < segment.byteSize(); i++) {
-                sum += MemoryAccess.getByteAtOffset(segment, i);
+                sum += segment.get(JAVA_BYTE, i);
             }
         }
     }
@@ -193,7 +194,7 @@ public class TestHandshake {
             super(id, segment);
             this.copy = MemorySegment.allocateNative(SEGMENT_SIZE, 1, segment.scope());
             copy.copyFrom(segment);
-            MemoryAccess.setByteAtOffset(copy, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
+            copy.set(JAVA_BYTE, ThreadLocalRandom.current().nextInt(SEGMENT_SIZE), (byte)42);
         }
 
         @Override

@@ -28,7 +28,6 @@ package sun.jvmstat.perfdata.monitor.v1_0;
 import sun.jvmstat.monitor.*;
 import sun.jvmstat.perfdata.monitor.*;
 import java.util.*;
-import java.util.regex.*;
 import java.nio.*;
 
 /**
@@ -360,7 +359,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         String cname = "hotspot.gc.collector.0.name";
         StringMonitor collector = (StringMonitor)map.get(cname);
 
-        if (collector.stringValue().compareTo("PSScavenge") == 0) {
+        if (collector.stringValue().equals("PSScavenge")) {
             boolean adaptiveSizePolicy = true;
 
             /*

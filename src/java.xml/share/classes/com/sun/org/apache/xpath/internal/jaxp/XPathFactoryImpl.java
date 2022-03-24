@@ -36,7 +36,7 @@ import jdk.xml.internal.JdkXmlFeatures;
  *
  * @author  Ramesh Mandava
  *
- * @LastModified: May 2021
+ * @LastModified: Nov 2021
  */
 public  class XPathFactoryImpl extends XPathFactory {
 
@@ -310,4 +310,38 @@ public  class XPathFactoryImpl extends XPathFactory {
 
                 xPathVariableResolver = resolver;
         }
+
+    @Override
+    public void setProperty(String name, String value) {
+        // property name cannot be null
+        if (name == null) {
+            String fmsg = XSLMessages.createXPATHMessage(
+                    XPATHErrorResources.ER_PROPERTY_NAME_NULL,
+                    new Object[] {CLASS_NAME,  value} );
+            throw new NullPointerException(fmsg);
+         }
+
+        // property name not recognized
+        String fmsg = XSLMessages.createXPATHMessage(
+                XPATHErrorResources.ER_PROPERTY_UNKNOWN,
+                new Object[] {name, CLASS_NAME, value} );
+        throw new IllegalArgumentException(fmsg);
+    }
+
+    @Override
+    public String getProperty(String name) {
+        // property name cannot be null
+        if (name == null) {
+            String fmsg = XSLMessages.createXPATHMessage(
+                    XPATHErrorResources.ER_GETTING_NULL_PROPERTY,
+                    new Object[] {CLASS_NAME} );
+            throw new NullPointerException(fmsg);
+        }
+
+        // unknown property
+        String fmsg = XSLMessages.createXPATHMessage(
+                XPATHErrorResources.ER_GETTING_UNKNOWN_PROPERTY,
+                new Object[] {name, CLASS_NAME} );
+        throw new IllegalArgumentException(fmsg);
+    }
 }

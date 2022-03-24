@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ void FreeChunkList::verify() const {
   } else {
     assert(_last != NULL, "Sanity");
     int num = 0;
-    bool uncommitted = (_first->committed_words() == 0);
     for (Metachunk* c = _first; c != NULL; c = c->next()) {
       assert(c->is_free(), "Chunks in freelist should be free");
       assert(c->used_words() == 0, "Chunk in freelist should have not used words.");

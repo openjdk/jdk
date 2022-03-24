@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,12 @@
 package java.lang;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.Serial;
+import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -106,7 +111,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  */
  public final class StringBuffer
     extends AbstractStringBuilder
-    implements java.io.Serializable, Comparable<StringBuffer>, CharSequence
+    implements Serializable, Comparable<StringBuffer>, CharSequence
 {
 
     /**
@@ -116,7 +121,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     private transient String toStringCache;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
+    @Serial
     static final long serialVersionUID = 3388685877147921107L;
 
     /**
@@ -725,25 +730,25 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
      *              A flag indicating whether the backing array is shared.
      *              The value is ignored upon deserialization.
      */
-    @java.io.Serial
-    private static final java.io.ObjectStreamField[] serialPersistentFields =
+    @Serial
+    private static final ObjectStreamField[] serialPersistentFields =
     {
-        new java.io.ObjectStreamField("value", char[].class),
-        new java.io.ObjectStreamField("count", Integer.TYPE),
-        new java.io.ObjectStreamField("shared", Boolean.TYPE),
+        new ObjectStreamField("value", char[].class),
+        new ObjectStreamField("count", Integer.TYPE),
+        new ObjectStreamField("shared", Boolean.TYPE),
     };
 
     /**
-     * The {@code writeObject} method is called to write the state of the {@code StringBuffer} to
-     * a stream.
+     * The {@code writeObject} method is called to write the state of the
+     * {@code StringBuffer} to a stream.
      *
      * @param  s the {@code ObjectOutputStream} to which data is written
      * @throws IOException if an I/O error occurs
      */
-    @java.io.Serial
-    private synchronized void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
-        java.io.ObjectOutputStream.PutField fields = s.putFields();
+    @Serial
+    private synchronized void writeObject(ObjectOutputStream s)
+            throws IOException {
+        ObjectOutputStream.PutField fields = s.putFields();
         char[] val = new char[capacity()];
         if (isLatin1()) {
             StringLatin1.getChars(value, 0, count, val, 0);
@@ -757,20 +762,26 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
-     * The {@code readObject} method is called to restore the state of the {@code StringBuffer} from
-     * a stream.
+     * The {@code readObject} method is called to restore the state of the
+     * {@code StringBuffer} from a stream.
      *
      * @param  s the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-    @java.io.Serial
-    private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
-        java.io.ObjectInputStream.GetField fields = s.readFields();
+    @Serial
+    private void readObject(ObjectInputStream s)
+        throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+
         char[] val = (char[])fields.get("value", null);
+        int c = fields.get("count", 0);
+        if (c < 0 || c > val.length) {
+            throw new StreamCorruptedException("count value invalid");
+        }
         initBytes(val, 0, val.length);
-        count = fields.get("count", 0);
+        count = c;
+        // ignore shared field
     }
 
     synchronized void getBytes(byte[] dst, int dstBegin, byte coder) {

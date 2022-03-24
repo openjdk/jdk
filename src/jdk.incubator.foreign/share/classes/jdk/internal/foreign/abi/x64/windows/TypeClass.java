@@ -25,11 +25,9 @@
 package jdk.internal.foreign.abi.x64.windows;
 
 import jdk.incubator.foreign.GroupLayout;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.ValueLayout;
-import jdk.internal.foreign.PlatformLayouts;
-
-import static jdk.internal.foreign.PlatformLayouts.Win64.VARARGS_ATTRIBUTE_NAME;
 
 enum TypeClass {
     STRUCT_REGISTER,
@@ -39,7 +37,7 @@ enum TypeClass {
     FLOAT,
     VARARG_FLOAT;
 
-    private static TypeClass classifyValueType(ValueLayout type) {
+    private static TypeClass classifyValueType(ValueLayout type, boolean isVararg) {
         // No 128 bit integers in the Windows C ABI. There are __m128(i|d) intrinsic types but they act just
         // like a struct when passing as an argument (passed by pointer).
         // https://docs.microsoft.com/en-us/cpp/cpp/m128?view=vs-2019
@@ -49,17 +47,21 @@ enum TypeClass {
         // but must be considered volatile across function calls."
         // https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=vs-2019
 
-        return switch (PlatformLayouts.getKind(type)) {
-            case CHAR, SHORT, INT, LONG, LONG_LONG -> INTEGER;
-            case POINTER -> POINTER;
-            case FLOAT, DOUBLE -> {
-                 if (type.attribute(VARARGS_ATTRIBUTE_NAME)
-                        .map(Boolean.class::cast).orElse(false)) {
-                    yield VARARG_FLOAT;
-                }
-                yield FLOAT;
+        Class<?> carrier = type.carrier();
+        if (carrier == boolean.class || carrier == byte.class || carrier == char.class ||
+                carrier == short.class || carrier == int.class || carrier == long.class) {
+            return INTEGER;
+        } else if (carrier == float.class || carrier == double.class) {
+            if (isVararg) {
+                return VARARG_FLOAT;
+            } else {
+                return FLOAT;
             }
-        };
+        } else if (carrier == MemoryAddress.class) {
+            return POINTER;
+        } else {
+            throw new IllegalStateException("Cannot get here: " + carrier.getName());
+        }
     }
 
     static boolean isRegisterAggregate(MemoryLayout type) {
@@ -77,9 +79,9 @@ enum TypeClass {
         return STRUCT_REFERENCE;
     }
 
-    static TypeClass typeClassFor(MemoryLayout type) {
+    static TypeClass typeClassFor(MemoryLayout type, boolean isVararg) {
         if (type instanceof ValueLayout) {
-            return classifyValueType((ValueLayout) type);
+            return classifyValueType((ValueLayout) type, isVararg);
         } else if (type instanceof GroupLayout) {
             return classifyStructType(type);
         } else {

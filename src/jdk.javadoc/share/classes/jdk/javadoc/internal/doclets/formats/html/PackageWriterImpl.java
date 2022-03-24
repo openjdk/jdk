@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
     public Content getPackageHeader() {
         String packageName = getLocalizedPackageName(packageElement).toString();
         HtmlTree bodyTree = getBody(getWindowTitle(packageName));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.header);
+        HtmlTree div = HtmlTree.DIV(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInPackage, contents.moduleLabel);
@@ -212,8 +211,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
-            HtmlTree deprDiv = new HtmlTree(TagName.DIV);
-            deprDiv.setStyle(HtmlStyle.deprecationBlock);
+            HtmlTree deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
@@ -228,7 +226,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
     @Override
     public Content getSummariesList() {
-        return new HtmlTree(TagName.UL).setStyle(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
     @Override

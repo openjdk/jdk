@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
     protected String authzid;       // authzid or canonicalized authzid
 
     /**
-     * Constucts an instance of DigestMD5Base. Calls super constructor
+     * Constructs an instance of DigestMD5Base. Calls super constructor
      * to parse properties for mechanism.
      *
      * @param props A map of property/value pairs

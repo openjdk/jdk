@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,11 @@ void TemplateInterpreter::initialize_stub() {
   // allocate interpreter
   int code_size = InterpreterCodeSize;
   NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-  _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
+  // 270+ interpreter codelets are generated and each of them is required to be aligned to
+  // CodeEntryAlignment twice. So we need additional size due to alignment.
+  int max_aligned_codelets = 280;
+  int max_aligned_bytes = max_aligned_codelets * CodeEntryAlignment * 2;
+  _code = new StubQueue(new InterpreterCodeletInterface, code_size + max_aligned_bytes, NULL,
                         "Interpreter");
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class MonitoredVmUtil {
         int firstSpace = commandLine.indexOf(' ');
         if (firstSpace > 0) {
             return commandLine.substring(firstSpace + 1);
-        } else if (commandLine.compareTo("Unknown") == 0) {
+        } else if (commandLine.equals("Unknown")) {
             return commandLine;
         } else {
             return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,12 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     public final Short128Mask test(Test op) {
         return super.testTemplate(Short128Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Short128Mask test(Test op, VectorMask<Short> m) {
+        return super.testTemplate(Short128Mask.class, op, (Short128Mask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -741,9 +747,9 @@ final class Short128Vector extends ShortVector {
         @ForceInline
         /*package-private*/
         static Short128Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Short128Mask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Short128Mask.class, short.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Short128Mask  TRUE_MASK = new Short128Mask(true);
         private static final Short128Mask FALSE_MASK = new Short128Mask(false);

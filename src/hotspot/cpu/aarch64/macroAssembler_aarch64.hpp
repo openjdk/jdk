@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define CPU_AARCH64_MACROASSEMBLER_AARCH64_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -467,7 +468,7 @@ public:
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
-  static RegSet call_clobbered_registers();
+  static RegSet call_clobbered_gp_registers();
 
   void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
   void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
@@ -493,17 +494,10 @@ public:
 
   inline void mov(Register dst, address addr)             { mov_immediate64(dst, (uint64_t)addr); }
 
-  inline void mov(Register dst, int imm64)                { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long imm64)               { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, long long imm64)          { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned int imm64)       { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long imm64)      { mov_immediate64(dst, (uint64_t)imm64); }
-  inline void mov(Register dst, unsigned long long imm64) { mov_immediate64(dst, (uint64_t)imm64); }
+  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+  inline void mov(Register dst, T o)                      { mov_immediate64(dst, (uint64_t)o); }
 
-  inline void movw(Register dst, uint32_t imm32)
-  {
-    mov_immediate32(dst, imm32);
-  }
+  inline void movw(Register dst, uint32_t imm32)          { mov_immediate32(dst, imm32); }
 
   void mov(Register dst, RegisterOrConstant src) {
     if (src.is_register())
@@ -606,9 +600,14 @@ public:
   static bool uses_implicit_null_check(void* address);
 
   static address target_addr_for_insn(address insn_addr, unsigned insn);
+  static address target_addr_for_insn_or_null(address insn_addr, unsigned insn);
   static address target_addr_for_insn(address insn_addr) {
     unsigned insn = *(unsigned*)insn_addr;
     return target_addr_for_insn(insn_addr, insn);
+  }
+  static address target_addr_for_insn_or_null(address insn_addr) {
+    unsigned insn = *(unsigned*)insn_addr;
+    return target_addr_for_insn_or_null(insn_addr, insn);
   }
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -689,16 +688,16 @@ public:
   void align(int modulus);
 
   // Stack frame creation/removal
-  void enter()
-  {
-    stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
-    mov(rfp, sp);
-  }
-  void leave()
-  {
-    mov(sp, rfp);
-    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
-  }
+  void enter(bool strip_ret_addr = false);
+  void leave();
+
+  // ROP Protection
+  void protect_return_address();
+  void protect_return_address(Register return_reg, Register temp_reg);
+  void authenticate_return_address(Register return_reg = lr);
+  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void strip_return_address();
+  void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
   // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
   // The pointer will be loaded into the thread register.
@@ -1235,7 +1234,7 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  address has_negatives(Register ary1, Register len, Register result);
+  address count_positives(Register ary1, Register len, Register result);
 
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);
@@ -1255,14 +1254,15 @@ public:
                              FloatRegister vtmp3, Register tmp4);
 
   void char_array_compress(Register src, Register dst, Register len,
-                           FloatRegister tmp1Reg, FloatRegister tmp2Reg,
-                           FloatRegister tmp3Reg, FloatRegister tmp4Reg,
-                           Register result);
+                           Register res,
+                           FloatRegister vtmp0, FloatRegister vtmp1,
+                           FloatRegister vtmp2, FloatRegister vtmp3);
 
   void encode_iso_array(Register src, Register dst,
-                        Register len, Register result,
-                        FloatRegister Vtmp1, FloatRegister Vtmp2,
-                        FloatRegister Vtmp3, FloatRegister Vtmp4);
+                        Register len, Register res, bool ascii,
+                        FloatRegister vtmp0, FloatRegister vtmp1,
+                        FloatRegister vtmp2, FloatRegister vtmp3);
+
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
                 FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,

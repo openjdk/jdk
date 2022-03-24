@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef CPU_ZERO_BYTES_ZERO_HPP
 #define CPU_ZERO_BYTES_ZERO_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 typedef union unaligned {
   u4 u;

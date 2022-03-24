@@ -26,6 +26,55 @@
 
 <Metadata>
 
+  <!-- Internal events are only to be used during development, i.e. temporary time measurements, without the need 
+       to modify .jfc files etc. Code that commits an internal event should NEVER be checked in.
+
+       Example usage:
+
+       #include "jfr/jfrEvents.hpp"
+
+       void foo() {
+         EventDuration event;
+         bar();
+         baz();
+         event.commit();
+       }
+
+       $ make images
+       $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...  
+       ...
+       $ jfr print dump.jfr
+
+       Programmatic access:
+       try (var rf = new RecordingFile(Path.of("dump.jfr)) {
+           while (rf.hasMoreEvents()) {
+               RecordedEvent e = rf.readEvent();
+               System.out.println(e.getName() + " " + e.getDuration()));
+           }
+       };
+  !-->
+
+  <Event name="Duration" category="Java Virtual Machine, Internal" label="Duration" startTime="true" thread="true" stackTrace="false" internal="true">
+  </Event>
+
+  <Event name="Instant" category="Java Virtual Machine, Internal" label="Instant" startTime="false" thread="true" stackTrace="false" internal="true">
+  </Event>
+
+  <Event name="Value" category="Java Virtual Machine, Internal" label="Value" startTime="false" thread="true" stackTrace="false" internal="true">
+    <Field type="ulong" name="value" label="Value"/>
+  </Event>
+
+  <Event name="Text" category="Java Virtual Machine, Internal" label="Text" startTime="false" thread="true" stackTrace="false" internal="true">
+    <Field type="string" name="text" label="Text"/>
+  </Event>
+  
+  <Event name="ZThreadDebug" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" description="Temporary latency measurements used during development and debugging of ZGC" thread="true" internal="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <!-- Ordinary and experimental events !-->
+  
   <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">
     <Field type="Thread" name="thread" label="New Java Thread" />
     <Field type="Thread" name="parentThread" label="Parent Java Thread" />

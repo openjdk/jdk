@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -72,26 +72,34 @@
 /*
  * Class:     sun_security_pkcs11_wrapper_PKCS11
  * Method:    connect
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;)Lsun/security/pkcs11/wrapper/CK_VERSION;
  */
-JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
-    (JNIEnv *env, jobject obj, jstring jPkcs11ModulePath, jstring jGetFunctionList)
-{
+JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
+    (JNIEnv *env, jobject obj, jstring jPkcs11ModulePath,
+    jstring jGetFunctionList) {
+
     void *hModule;
     char *error;
-    CK_C_GetFunctionList C_GetFunctionList=NULL;
+    int i;
+    CK_ULONG ulCount = 0;
+    CK_C_GetInterfaceList C_GetInterfaceList = NULL;
+    CK_INTERFACE_PTR iList = NULL;
+    CK_C_GetInterface C_GetInterface = NULL;
+    CK_INTERFACE_PTR interface = NULL;
+    CK_C_GetFunctionList C_GetFunctionList = NULL;
     CK_RV rv;
-    ModuleData *moduleData;
+    ModuleData *moduleData = NULL;
     jobject globalPKCS11ImplementationReference;
     char *systemErrorMessage;
     char *exceptionMessage;
-    const char *getFunctionListStr;
+    const char *getFunctionListStr = NULL;
 
-    const char *libraryNameStr = (*env)->GetStringUTFChars(env, jPkcs11ModulePath, 0);
+    const char *libraryNameStr = (*env)->GetStringUTFChars(env,
+            jPkcs11ModulePath, 0);
     if (libraryNameStr == NULL) {
-        return;
+        return NULL;
     }
-    TRACE1("DEBUG: connect to PKCS#11 module: %s ... ", libraryNameStr);
+    TRACE1("Connect: connect to PKCS#11 module: %s ... ", libraryNameStr);
 
     /*
      * Load the PKCS #11 DLL
@@ -108,39 +116,92 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
         exceptionMessage = (char *) malloc(sizeof(char) * (strlen(systemErrorMessage) + strlen(libraryNameStr) + 1));
         if (exceptionMessage == NULL) {
             throwOutOfMemoryError(env, 0);
-            (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
-            return;
+            goto cleanup;
         }
         strcpy(exceptionMessage, systemErrorMessage);
         strcat(exceptionMessage, libraryNameStr);
         throwIOException(env, exceptionMessage);
-        (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
         free(exceptionMessage);
-        return;
+        goto cleanup;
     }
-    (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
 
-    /*
-     * Get function pointer to C_GetFunctionList
-     */
-    dlerror(); /* clear any old error message not fetched */
-    // with the old JAR file jGetFunctionList is null, temporarily check for that
-    if (jGetFunctionList != NULL) {
-        getFunctionListStr = (*env)->GetStringUTFChars(env, jGetFunctionList, 0);
-        if (getFunctionListStr == NULL) {
-            return;
+    // clear any old error message not fetched
+    dlerror();
+
+#ifdef DEBUG
+    C_GetInterfaceList = (CK_C_GetInterfaceList) dlsym(hModule,
+            "C_GetInterfaceList");
+    if (C_GetInterfaceList != NULL) {
+        TRACE0("Connect: Found C_GetInterfaceList func\n");
+        rv = (C_GetInterfaceList)(NULL, &ulCount);
+        if (rv == CKR_OK) {
+            TRACE1("Connect: interface list size %ld \n", ulCount);
+            // retrieve available interfaces and report their info
+            iList = (CK_INTERFACE_PTR)
+                malloc(ulCount*sizeof(CK_INTERFACE));
+            rv = C_GetInterfaceList(iList, &ulCount);
+            if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+                TRACE0("Connect: error polling interface list\n");
+                goto cleanup;
+            }
+            for (i=0; i < (int)ulCount; i++) {
+                TRACE4("Connect: name %s, version %d.%d, flags 0x%lX\n",
+                        iList[i].pInterfaceName,
+                        ((CK_VERSION *)iList[i].pFunctionList)->major,
+                        ((CK_VERSION *)iList[i].pFunctionList)->minor,
+                        iList[i].flags);
+            }
+        } else {
+            TRACE0("Connect: error polling interface list size\n");
         }
-        C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule, getFunctionListStr);
-        (*env)->ReleaseStringUTFChars(env, jGetFunctionList, getFunctionListStr);
+    } else {
+        TRACE0("Connect: No C_GetInterfaceList func\n");
     }
-    if (C_GetFunctionList == NULL) {
-        throwIOException(env, "ERROR: C_GetFunctionList == NULL");
-        return;
-    } else if ( (systemErrorMessage = dlerror()) != NULL ){
-        throwIOException(env, systemErrorMessage);
-        return;
+#endif
+
+    if (jGetFunctionList != NULL) {
+        getFunctionListStr = (*env)->GetStringUTFChars(env,
+            jGetFunctionList, 0);
+        if (getFunctionListStr == NULL) {
+            goto cleanup;
+        }
+        C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
+            getFunctionListStr);
+        if ((systemErrorMessage = dlerror()) != NULL){
+            throwIOException(env, systemErrorMessage);
+            goto cleanup;
+        }
+        if (C_GetFunctionList == NULL) {
+            TRACE1("Connect: No %s func\n", getFunctionListStr);
+            throwIOException(env, "ERROR: C_GetFunctionList == NULL");
+            goto cleanup;
+        }
+        TRACE1("Connect: Found %s func\n", getFunctionListStr);
+    } else {
+        // if none specified, then we try 3.0 API first before trying 2.40
+        C_GetInterface = (CK_C_GetInterface) dlsym(hModule, "C_GetInterface");
+        if ((C_GetInterface != NULL) && (dlerror() == NULL)) {
+            TRACE0("Connect: Found C_GetInterface func\n");
+            rv = (C_GetInterface)(NULL, NULL, &interface, 0L);
+            if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+                goto setModuleData;
+            }
+        }
+        C_GetFunctionList = (CK_C_GetFunctionList) dlsym(hModule,
+                "C_GetFunctionList");
+        if ((systemErrorMessage = dlerror()) != NULL){
+            throwIOException(env, systemErrorMessage);
+            goto cleanup;
+        }
+        if (C_GetFunctionList == NULL) {
+            TRACE0("Connect: No C_GetFunctionList func\n");
+            throwIOException(env, "ERROR: C_GetFunctionList == NULL");
+            goto cleanup;
+        }
+        TRACE0("Connect: Found C_GetFunctionList func\n");
     }
 
+setModuleData:
     /*
      * Get function pointers to all PKCS #11 functions
      */
@@ -148,18 +209,55 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_connect
     if (moduleData == NULL) {
         dlclose(hModule);
         throwOutOfMemoryError(env, 0);
-        return;
+        goto cleanup;
     }
     moduleData->hModule = hModule;
     moduleData->applicationMutexHandler = NULL;
-    rv = (C_GetFunctionList)(&(moduleData->ckFunctionListPtr));
+    if (C_GetFunctionList != NULL) {
+        rv = (C_GetFunctionList)(&(moduleData->ckFunctionListPtr));
+        if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+            goto cleanup;
+        }
+    } else if (interface != NULL) {
+        moduleData->ckFunctionListPtr = interface->pFunctionList;
+        if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
+            moduleData->ckFunctionList30Ptr = interface->pFunctionList;
+        }
+    } else {
+        // should never happen
+        throwIOException(env, "ERROR: No function list ptr found");
+        goto cleanup;
+    }
+    if (((CK_VERSION *)moduleData->ckFunctionListPtr)->major == 3) {
+        moduleData->ckFunctionList30Ptr = interface->pFunctionList;
+    } else {
+        moduleData->ckFunctionList30Ptr = NULL;
+    }
+
+    TRACE2("Connect: FunctionListPtr version = %d.%d\n",
+        ((CK_VERSION *)moduleData->ckFunctionListPtr)->major,
+        ((CK_VERSION *)moduleData->ckFunctionListPtr)->minor);
+
     globalPKCS11ImplementationReference = (*env)->NewGlobalRef(env, obj);
     putModuleEntry(env, globalPKCS11ImplementationReference, moduleData);
 
-    TRACE0("FINISHED\n");
-
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+cleanup:
+    if (jPkcs11ModulePath != NULL && libraryNameStr != NULL) {
+        (*env)->ReleaseStringUTFChars(env, jPkcs11ModulePath, libraryNameStr);
+    }
+    if (jGetFunctionList != NULL && getFunctionListStr != NULL) {
+        (*env)->ReleaseStringUTFChars(env, jGetFunctionList,
+        getFunctionListStr);
+    }
+    TRACE0("Connect: FINISHED\n");
+    if (moduleData != NULL) {
+        return ckVersionPtrToJVersion(env,
+                (CK_VERSION *)moduleData->ckFunctionListPtr);
+    } else {
+        return NULL;
+    }
 }
+
 
 /*
  * Class:     sun_security_pkcs11_wrapper_PKCS11

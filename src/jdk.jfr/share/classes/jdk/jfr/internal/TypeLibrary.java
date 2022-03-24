@@ -36,6 +36,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -108,7 +109,7 @@ public final class TypeLibrary {
                 List<Type> jvmTypes;
                 try {
                     jvmTypes = MetadataLoader.createTypes();
-                    Collections.sort(jvmTypes, (a,b) -> Long.compare(a.getId(), b.getId()));
+                    jvmTypes.sort(Comparator.comparingLong(Type::getId));
                 } catch (IOException e) {
                     throw new Error("JFR: Could not read metadata");
                 }
@@ -118,8 +119,19 @@ public final class TypeLibrary {
         }
     }
 
-    public List<Type> getTypes() {
-        return new ArrayList<>(types.values());
+    public Collection<Type> getTypes() {
+        return types.values();
+    }
+
+    // Returned list should be mutable (for in-place sorting)
+    public List<Type> getVisibleTypes() {
+        List<Type> visible = new ArrayList<>(types.size());
+        types.values().forEach(t -> {
+            if (t.isVisible()) {
+                visible.add(t);
+            }
+        });
+        return visible;
     }
 
     public static Type createAnnotationType(Class<? extends Annotation> a) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import sun.security.krb5.internal.ktab.*;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.File;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -61,10 +60,12 @@ public class Ktab {
     int etype = -1;
     char[] password = null;
 
-    boolean forced = false; // true if delete without prompt. Default false
+    boolean fopt = false;   // true if delete without prompt or
+                            // add by contacting KDC. Default false
     boolean append = false; // true if new keys are appended. Default false
     int vDel = -1;          // kvno to delete, -1 all, -2 old. Default -1
     int vAdd = -1;          // kvno to add. Default -1, means auto incremented
+    String salt = null;     // salt to use. Default null, means default salt
 
     /**
      * The main program that can be invoked at command line.
@@ -186,6 +187,12 @@ public class Ktab {
                             error(args[i] + " is not valid after -" + action);
                         }
                         break;
+                    case "-s":   // salt for -a
+                        if (++i >= args.length || args[i].startsWith("-")) {
+                            error("A salt string must be specified after -s");
+                        }
+                        salt = args[i];
+                        break;
                     case "-n":   // kvno for -a
                         if (++i >= args.length || args[i].startsWith("-")) {
                             error("A KVNO must be specified after -n");
@@ -213,8 +220,8 @@ public class Ktab {
                     case "-t":   // list timestamps
                         showTime = true;
                         break;
-                    case "-f":   // force delete, no prompt
-                        forced = true;
+                    case "-f":   // force delete or get salt from KDC
+                        fopt = true;
                         break;
                     case "-append": // -a, new keys append to file
                         append = true;
@@ -258,6 +265,10 @@ public class Ktab {
      * a new key table.
      */
     void addEntry() {
+        if (salt != null && fopt) {
+            System.err.println("-s and -f cannot coexist when adding a keytab entry.");
+            System.exit(-1);
+        }
         PrincipalName pname = null;
         try {
             pname = new PrincipalName(principal);
@@ -283,7 +294,15 @@ public class Ktab {
         }
         try {
             // admin.addEntry(pname, password);
-            table.addEntry(pname, password, vAdd, append);
+            if (fopt) {
+                KrbAsReqBuilder builder = new KrbAsReqBuilder(pname, password);
+                builder.action();
+                table.addEntry(pname, builder.getKeys(true), vAdd, append);
+            } else if (salt != null) {
+                table.addEntry(pname, salt, password, vAdd, append);
+            } else {
+                table.addEntry(pname, password, vAdd, append);
+            }
             Arrays.fill(password, '0');  // clear password
             // admin.save();
             table.save();
@@ -367,7 +386,7 @@ public class Ktab {
         PrincipalName pname = null;
         try {
             pname = new PrincipalName(principal);
-            if (!forced) {
+            if (!fopt) {
                 String answer;
                 BufferedReader cis =
                     new BufferedReader(new InputStreamReader(System.in));
@@ -424,6 +443,7 @@ public class Ktab {
         printHelp();
         System.exit(-1);
     }
+
     /**
      * Prints out the help information.
      */
@@ -434,11 +454,13 @@ public class Ktab {
         System.out.println();
         System.out.println("-l [-e] [-t]\n"
                 + "    list the keytab name and entries. -e with etype, -t with timestamp.");
-        System.out.println("-a <principal name> [<password>] [-n <kvno>] [-append]\n"
+        System.out.println("-a <principal name> [<password>] [-n <kvno>] [-f | -s <salt>] [-append]\n"
                 + "    add new key entries to the keytab for the given principal name with\n"
                 + "    optional <password>. If a <kvno> is specified, new keys' Key Version\n"
                 + "    Numbers equal to the value, otherwise, automatically incrementing\n"
-                + "    the Key Version Numbers. If -append is specified, new keys are\n"
+                + "    the Key Version Numbers. If <salt> is specified, it will be used\n"
+                + "    instead of the default salt. If -f is specified, the KDC will be\n"
+                + "    contacted to fetch the salt. If -append is specified, new keys are\n"
                 + "    appended to the keytab, otherwise, old keys for the\n"
                 + "    same principal are removed.");
         System.out.println("-d <principal name> [-f] [-e <etype>] [<kvno> | all | old]\n"

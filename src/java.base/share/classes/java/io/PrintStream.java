@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public class PrintStream extends FilterOutputStream
     private final boolean autoFlush;
     private boolean trouble = false;
     private Formatter formatter;
+    private final Charset charset;
 
     /**
      * Track both the text- and character-output streams, so that their buffers
@@ -108,7 +109,8 @@ public class PrintStream extends FilterOutputStream
     private PrintStream(boolean autoFlush, OutputStream out) {
         super(out);
         this.autoFlush = autoFlush;
-        this.charOut = new OutputStreamWriter(this);
+        this.charset = out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset();
+        this.charOut = new OutputStreamWriter(this, charset);
         this.textOut = new BufferedWriter(charOut);
     }
 
@@ -124,7 +126,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, without automatic line flushing, with the
      * specified OutputStream. Characters written to the stream are converted
-     * to bytes using the default charset.
+     * to bytes using the default charset, or where {@code out} is a
+     * {@code PrintStream}, the charset used by the print stream.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -139,7 +142,8 @@ public class PrintStream extends FilterOutputStream
     /**
      * Creates a new print stream, with the specified OutputStream and line
      * flushing. Characters written to the stream are converted to bytes using
-     * the default charset.
+     * the default charset, or where {@code out} is a {@code PrintStream},
+     * the charset used by the print stream.
      *
      * @param  out        The output stream to which values and objects will be
      *                    printed
@@ -201,6 +205,7 @@ public class PrintStream extends FilterOutputStream
         this.autoFlush = autoFlush;
         this.charOut = new OutputStreamWriter(this, charset);
         this.textOut = new BufferedWriter(charOut);
+        this.charset = charset;
     }
 
     /**
@@ -459,22 +464,11 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Flushes the stream and checks its error state. The internal error state
-     * is set to {@code true} when the underlying output stream throws an
-     * {@code IOException} other than {@code InterruptedIOException},
-     * and when the {@code setError} method is invoked.  If an operation
-     * on the underlying output stream throws an
-     * {@code InterruptedIOException}, then the {@code PrintStream}
-     * converts the exception back into an interrupt by doing:
-     * <pre>{@code
-     *     Thread.currentThread().interrupt();
-     * }</pre>
-     * or the equivalent.
+     * Flushes the stream if it's not closed and checks its error state.
      *
      * @return {@code true} if and only if this stream has encountered an
-     *         {@code IOException} other than
-     *         {@code InterruptedIOException}, or the
-     *         {@code setError} method has been invoked
+     *         {@code IOException}, or the {@code setError} method has been
+     *         invoked
      */
     public boolean checkError() {
         if (out != null)
@@ -499,7 +493,7 @@ public class PrintStream extends FilterOutputStream
     }
 
     /**
-     * Clears the internal error state of this stream.
+     * Clears the error state of this stream.
      *
      * <p> This method will cause subsequent invocations of {@link
      * #checkError()} to return {@code false} until another write
@@ -1374,4 +1368,12 @@ public class PrintStream extends FilterOutputStream
         return this;
     }
 
+    /**
+     * {@return the charset used in this {@code PrintStream} instance}
+     *
+     * @since 18
+     */
+    public Charset charset() {
+        return charset;
+    }
 }

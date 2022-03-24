@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,12 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     public final FloatMaxMask test(Test op) {
         return super.testTemplate(FloatMaxMask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final FloatMaxMask test(Test op, VectorMask<Float> m) {
+        return super.testTemplate(FloatMaxMask.class, op, (FloatMaxMask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -715,9 +721,9 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         /*package-private*/
         static FloatMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(FloatMaxMask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(FloatMaxMask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final FloatMaxMask  TRUE_MASK = new FloatMaxMask(true);
         private static final FloatMaxMask FALSE_MASK = new FloatMaxMask(false);

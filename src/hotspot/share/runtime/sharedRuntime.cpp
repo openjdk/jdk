@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
       // The deferred StackWatermarkSet::after_unwind check will be performed in
-      // * OptoRuntime::rethrow_C for C2 code
+      // * OptoRuntime::handle_exception_C_helper for C2 code
       // * exception_handler_for_pc_helper via Runtime1::handle_exception_from_callee_id for C1 code
       return nm->exception_begin();
     }
@@ -1946,6 +1946,8 @@ bool SharedRuntime::should_fixup_call_destination(address destination, address e
 // so he no longer calls into the interpreter.
 JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
+
+  AARCH64_PORT_ONLY(assert(pauth_ptr_is_raw(caller_pc), "should be raw"));
 
   address entry_point = moop->from_compiled_entry_no_trampoline();
 

@@ -164,24 +164,18 @@ class CAccessible extends CFRetainedResource implements Accessible {
                         treeNodeCollapsed(ptr);
                     }
 
-                    // At least for now don't handle combo box menu state changes.
-                    // This may change when later fixing issues which currently
-                    // exist for combo boxes, but for now the following is only
-                    // for JPopupMenus, not for combobox menus.
-                    if (parentRole != AccessibleRole.COMBO_BOX) {
-                        if (thisRole == AccessibleRole.POPUP_MENU) {
-                            if ( newValue != null &&
-                                 ((AccessibleState)newValue) == AccessibleState.VISIBLE ) {
-                                    menuOpened(ptr);
-                            } else if ( oldValue != null &&
-                                        ((AccessibleState)oldValue) == AccessibleState.VISIBLE ) {
-                                menuClosed(ptr);
-                            }
-                        } else if (thisRole == AccessibleRole.MENU_ITEM) {
-                            if ( newValue != null &&
-                                 ((AccessibleState)newValue) == AccessibleState.FOCUSED ) {
-                                menuItemSelected(ptr);
-                            }
+                    if (thisRole == AccessibleRole.POPUP_MENU) {
+                        if ( newValue != null &&
+                                ((AccessibleState)newValue) == AccessibleState.VISIBLE ) {
+                            menuOpened(ptr);
+                        } else if ( oldValue != null &&
+                                ((AccessibleState)oldValue) == AccessibleState.VISIBLE ) {
+                            menuClosed(ptr);
+                        }
+                    } else if (thisRole == AccessibleRole.MENU_ITEM) {
+                        if ( newValue != null &&
+                                ((AccessibleState)newValue) == AccessibleState.FOCUSED ) {
+                            menuItemSelected(ptr);
                         }
                     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,6 +370,12 @@ final class Int128Vector extends IntVector {
         return super.testTemplate(Int128Mask.class, op);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public final Int128Mask test(Test op, VectorMask<Integer> m) {
+        return super.testTemplate(Int128Mask.class, op, (Int128Mask) m);  // specialize
+    }
+
     // Specialized comparisons
 
     @Override
@@ -733,9 +739,9 @@ final class Int128Vector extends IntVector {
         @ForceInline
         /*package-private*/
         static Int128Mask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(Int128Mask.class, int.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(Int128Mask.class, int.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final Int128Mask  TRUE_MASK = new Int128Mask(true);
         private static final Int128Mask FALSE_MASK = new Int128Mask(false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,11 +165,6 @@ void JNIHandles::destroy_weak_global(jobject handle) {
 
 void JNIHandles::oops_do(OopClosure* f) {
   global_handles()->oops_do(f);
-}
-
-
-void JNIHandles::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
-  weak_global_handles()->weak_oops_do(is_alive, f);
 }
 
 
@@ -389,10 +384,15 @@ void JNIHandleBlock::release_block(JNIHandleBlock* block, JavaThread* thread) {
       block->_next = freelist;
     }
     block = NULL;
-  }
-  if (block != NULL) {
-    Atomic::dec(&_blocks_allocated);
-    delete block;
+  } else {
+    DEBUG_ONLY(block->set_pop_frame_link(NULL));
+    while (block != NULL) {
+      JNIHandleBlock* next = block->_next;
+      Atomic::dec(&_blocks_allocated);
+      assert(block->pop_frame_link() == NULL, "pop_frame_link should be NULL");
+      delete block;
+      block = next;
+    }
   }
   if (pop_frame_link != NULL) {
     // As a sanity check we release blocks pointed to by the pop_frame_link.

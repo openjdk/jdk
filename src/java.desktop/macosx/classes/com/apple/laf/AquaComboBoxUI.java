@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -598,8 +598,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         final boolean editable = comboBox.isEditable();
 
         final Dimension size;
-        if (!editable && arrowButton != null && arrowButton instanceof AquaComboBoxButton) {
-            final AquaComboBoxButton button = (AquaComboBoxButton)arrowButton;
+        if (!editable && arrowButton instanceof final AquaComboBoxButton button) {
             final Insets buttonInsets = button.getInsets();
             //  Insets insets = comboBox.getInsets();
             final Insets insets = new Insets(0, 5, 0, 25);//comboBox.getInsets();

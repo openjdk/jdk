@@ -302,15 +302,6 @@ public final class JVM {
     public native void setForceInstrumentation(boolean force);
 
     /**
-     * Turn on/off thread sampling.
-     *
-     * @param sampleThreads true if threads should be sampled, false otherwise.
-     *
-     * @throws IllegalStateException if state can't be changed.
-     */
-    public native void setSampleThreads(boolean sampleThreads) throws IllegalStateException;
-
-    /**
      * Turn on/off compressed integers.
      *
      * @param compressed true if compressed integers should be used, false
@@ -473,12 +464,25 @@ public final class JVM {
     public native void flush();
 
     /**
-     * Sets the location of the disk repository, to be used at an emergency
-     * dump.
+     * Sets the location of the disk repository.
      *
      * @param dirText
      */
     public native void setRepositoryLocation(String dirText);
+
+    /**
+     * Sets the path to emergency dump.
+     *
+     * @param dumpPathText
+     */
+    public native void setDumpPath(String dumpPathText);
+
+    /**
+     * Gets the path to emergency dump.
+     *
+     * @return The path to emergency dump.
+     */
+    public native String getDumpPath();
 
    /**
     * Access to VM termination support.

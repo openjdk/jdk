@@ -56,9 +56,6 @@
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
 
-  // No support for 48 extra htbl entries in aes-gcm intrinsic
-  static const int htbl_entries = -1;
-
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
     return false;
@@ -157,5 +154,10 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = false;
+
+  // Returns pre-selection estimated cost of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    return 0;
+  }
 
 #endif // CPU_ARM_MATCHER_ARM_HPP

@@ -38,6 +38,7 @@
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/universe.hpp"
 #include "utilities/align.hpp"
 
@@ -153,34 +154,17 @@ HeapWord* ZCollectedHeap::mem_allocate(size_t size, bool* gc_overhead_limit_was_
 MetaWord* ZCollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                              size_t size,
                                                              Metaspace::MetadataType mdtype) {
-  MetaWord* result;
-
   // Start asynchronous GC
   collect(GCCause::_metadata_GC_threshold);
 
   // Expand and retry allocation
-  result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
+  MetaWord* const result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
   if (result != NULL) {
     return result;
   }
 
-  // Start synchronous GC
-  collect(GCCause::_metadata_GC_clear_soft_refs);
-
-  // Retry allocation
-  result = loader_data->metaspace_non_null()->allocate(size, mdtype);
-  if (result != NULL) {
-    return result;
-  }
-
-  // Expand and retry allocation
-  result = loader_data->metaspace_non_null()->expand_and_allocate(size, mdtype);
-  if (result != NULL) {
-    return result;
-  }
-
-  // Out of memory
-  return NULL;
+  // As a last resort, try a critical allocation, riding on a synchronous full GC
+  return MetaspaceCriticalAllocation::allocate(loader_data, size, mdtype);
 }
 
 void ZCollectedHeap::collect(GCCause::Cause cause) {
@@ -242,7 +226,7 @@ void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
   _heap.object_iterate(cl, true /* visit_weaks */);
 }
 
-ParallelObjectIterator* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
+ParallelObjectIteratorImpl* ZCollectedHeap::parallel_object_iterator(uint nworkers) {
   return _heap.parallel_object_iterator(nworkers, true /* visit_weaks */);
 }
 

@@ -33,8 +33,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -165,9 +163,6 @@ public class CDataTransferer extends DataTransferer {
             // regular string that allows to translate data to target represantation
             // class by base method
             format = CF_STRING;
-        } else if (format == CF_STRING) {
-            String src = new String(bytes, UTF_8);
-            bytes = Normalizer.normalize(src, Form.NFC).getBytes(UTF_8);
         }
 
         return super.translateBytes(bytes, flavor, format, transferable);
