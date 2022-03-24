@@ -484,6 +484,8 @@ void ShenandoahHeap::initialize_heuristics() {
   if (mode()->is_generational()) {
     _young_generation->initialize_heuristics(_gc_mode);
     _old_generation->initialize_heuristics(_gc_mode);
+
+    ShenandoahEvacWaste = ShenandoahGenerationalEvacWaste;
   }
 }
 
@@ -847,6 +849,12 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 
   // Figure out size of new GCLAB, looking back at heuristics. Expand aggressively.
   size_t new_size = ShenandoahThreadLocalData::gclab_size(thread) * 2;
+
+  // Limit growth of GCLABs to ShenandoahMaxEvacLABRatio * the minimum size.  This enables more equitable distribution of
+  // available evacuation buidget between the many threads that are coordinating in the evacuation effort.
+  if (ShenandoahMaxEvacLABRatio > 0) {
+    new_size = MIN2(new_size, PLAB::min_size() * ShenandoahMaxEvacLABRatio);
+  }
   new_size = MIN2(new_size, PLAB::max_size());
   new_size = MAX2(new_size, PLAB::min_size());
 
@@ -897,6 +905,11 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, b
 
   // Figure out size of new PLAB, looking back at heuristics. Expand aggressively.
   size_t new_size = ShenandoahThreadLocalData::plab_size(thread) * 2;
+  // Limit growth of PLABs to ShenandoahMaxEvacLABRatio * the minimum size.  This enables more equitable distribution of
+  // available evacuation buidget between the many threads that are coordinating in the evacuation effort.
+  if (ShenandoahMaxEvacLABRatio > 0) {
+    new_size = MIN2(new_size, PLAB::min_size() * ShenandoahMaxEvacLABRatio);
+  }
   new_size = MIN2(new_size, PLAB::max_size());
   new_size = MAX2(new_size, PLAB::min_size());
 
