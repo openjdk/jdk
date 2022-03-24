@@ -54,6 +54,12 @@
 #define  FT26Dot6ToIntCeil(x) (((int)(x - 1 + (1 << 6))) >> 6)
 #define  IntToFT26Dot6(x) (((FT_Fixed)(x)) << 6)
 
+// Define these manually when building with old Freetype (before 2.5)
+#if !defined(FT_LOAD_COLOR)
+#define FT_LOAD_COLOR ( 1L << 20 )
+#define FT_PIXEL_MODE_BGRA 7
+#endif
+
 typedef struct {
     /* Important note:
          JNI forbids sharing same env between different threads.
