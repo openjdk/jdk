@@ -2206,7 +2206,6 @@ void Compile::Optimize() {
       // Try again if candidates exist and made progress
       // by removing some allocations and/or locks.
     } while (progress);
-
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,

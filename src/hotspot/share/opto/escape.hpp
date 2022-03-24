@@ -636,7 +636,6 @@ public:
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
 
 #ifndef PRODUCT
-  //add static variables and getters and setters here
   static int _no_escape_counter;
   static int _arg_escape_counter;
   static int _global_escape_counter;

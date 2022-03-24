@@ -2402,8 +2402,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     int memBar_After = countMemBar();
     PhaseMacroExpand::_memory_barriers_removed_counter += memBar_Before - memBar_After;
   #endif
-
-  //found number of mem_bar and subtract
 }
 
 //------------------------------expand_macro_nodes----------------------
@@ -2607,12 +2605,18 @@ void PhaseMacroExpand::print_statistics() {
 }
 
 int PhaseMacroExpand::countMemBar() {
-  int cnt = C->macro_count();
+  Unique_Node_List ideal_nodes;
   int total = 0;
-  for (int i=0; i < cnt; i++) {
-    Node *n = C->macro_node(i);
+  ideal_nodes.map(C->live_nodes(), NULL);
+  ideal_nodes.push(C->root());
+  for( uint next = 0; next < ideal_nodes.size(); ++next ) {
+    Node* n = ideal_nodes.at(next);
     if (n->is_MemBar()) {
       total++;
+    }
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* m = n->fast_out(i);
+      ideal_nodes.push(m);
     }
   }
   return total;
