@@ -37,7 +37,11 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * @author jrose
  */
 /*non-public*/
-abstract non-sealed class DelegatingMethodHandle extends MethodHandle {
+abstract sealed class DelegatingMethodHandle extends MethodHandle
+    permits MethodHandleImpl.AsVarargsCollector,
+            MethodHandleImpl.WrappedMember,
+            MethodHandleImpl.IntrinsicMethodHandle,
+            MethodHandleImpl.CountingWrapper {
     protected DelegatingMethodHandle(MethodHandle target) {
         this(target.type(), target);
     }
