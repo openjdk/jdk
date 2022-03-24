@@ -1347,7 +1347,7 @@ public class WeakHashMap<K,V>
      * @throws IllegalArgumentException if the initial capacity is negative.
      * @since 19
      */
-    public static <K, V>  WeakHashMap<K, V> newWeakHashMap(int expectedSize) {
+    public static <K, V> WeakHashMap<K, V> newWeakHashMap(int expectedSize) {
         return new WeakHashMap<>(HashMap.calculateHashMapCapacity(expectedSize));
     }
 
