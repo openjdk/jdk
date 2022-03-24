@@ -140,7 +140,8 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
     boolean isCloseable();
 
     /**
-     * {@return the owner thread associated with this memory session (if any)}
+     * {@return the owner thread associated with this memory session, or {@code null} if this session is shared
+     * across multiple threads}
      */
     Thread ownerThread();
 
@@ -162,7 +163,7 @@ public sealed interface MemorySession extends AutoCloseable, SegmentAllocator pe
     void addCloseAction(Runnable runnable);
 
     /**
-     * Closes this memory session. As a side effect, if this operation completes without exceptions, this session
+     * Closes this memory session. If this operation completes without exceptions, this session
      * will be marked as <em>not alive</em>, the {@linkplain #addCloseAction(Runnable) close actions} associated
      * with this session will be executed, and all the resources associated with this session will be released.
      *

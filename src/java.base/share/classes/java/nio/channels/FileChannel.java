@@ -972,7 +972,7 @@ public abstract class FileChannel
 
     /**
      * Maps a region of this channel's file into a new mapped memory segment,
-     * with a given offset, size and memory session.
+     * with the given offset, size and memory session.
      *
      * <p> If the specified mapping mode is
      * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
