@@ -61,6 +61,26 @@ typedef decode_instructions_printf_callback_ftype printf_callback_t;
 
 #define print(...) (*printf_callback) (printf_stream, __VA_ARGS__)
 
+static void* null_event_callback(void* ignore_stream, const char* ignore_event, void* arg) {
+  return NULL;
+}
+
+/* print all events as XML markup */
+static void* xml_event_callback(void* stream, const char* event, void* arg) {
+  FILE* fp = (FILE*) stream;
+#define NS_PFX "dis:"
+  if (event[0] != '/') {
+    /* issue the tag, with or without a formatted argument */
+    fprintf(fp, "<"NS_PFX);
+    fprintf(fp, event, arg);
+    fprintf(fp, ">");
+  } else {
+    ++event;                    /* skip slash */
+    fprintf(fp, "</"NS_PFX"%s>", event);
+  }
+  return NULL;
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -74,6 +94,21 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                                   int newline /* bool value for nice new line */) {
   csh cs_handle;
 
+  if (printf_callback == NULL) {
+    int (*fprintf_callback)(FILE*, const char*, ...) = &fprintf;
+    FILE* fprintf_stream = stdout;
+    printf_callback = (printf_callback_t) fprintf_callback;
+    if (printf_stream == NULL)
+      printf_stream   = (void*)           fprintf_stream;
+  }
+  if (event_callback == NULL) {
+    if (event_stream == NULL)
+      event_callback = &null_event_callback;
+    else
+      event_callback = &xml_event_callback;
+  }
+
+
   if (cs_open(CAPSTONE_ARCH, CAPSTONE_MODE, &cs_handle) != CS_ERR_OK) {
     print("Could not open cs_handle");
     return NULL;
@@ -86,7 +121,13 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
   size_t count = cs_disasm(cs_handle, buffer, length, (uintptr_t) buffer, 0 , &insn);
   if (count) {
     for (unsigned int j = 0; j < count; j++) {
-      print("  0x%" PRIx64 ":\t%s\t\t%s\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+      (*event_callback)(event_stream, "insn", (void*) insn[j].address);
+      print("%s\t\t%s", insn[j].mnemonic, insn[j].op_str);
+      (*event_callback)(event_stream, "/insn", (void*) (insn[j].address + insn[j].size));
+      if (newline) {
+        /* follow each complete insn by a nice newline */
+        print("\n");
+      }
     }
     cs_free(insn, count);
   }
