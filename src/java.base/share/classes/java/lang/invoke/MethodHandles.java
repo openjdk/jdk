@@ -46,6 +46,7 @@ import sun.security.util.SecurityConstants;
 import java.lang.constant.ConstantDescs;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
@@ -7934,6 +7935,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @return the new memory segment view var handle.
      * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
      * @throws NullPointerException if {@code layout} is {@code null}.
+     * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
      * @since 19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
