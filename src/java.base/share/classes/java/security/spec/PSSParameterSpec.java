@@ -174,11 +174,11 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         PSS encoding
      * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
-     * @deprecated This constructor uses the default values as defined in
-     *         the ASN.1 encoding in PKCS#1 except for the salt length. These
-     *         default values may become obsolete as time progresses.
-     *         Thus, it is recommended to explicitly specify all desired
-     *         parameter values with
+     * @deprecated This constructor uses the default values defined in
+     *         the ASN.1 encoding in the PKCS#1 standard except for the
+     *         salt length. These default values may become obsolete as
+     *         time progresses. Thus, it is recommended to explicitly
+     *         specify all desired parameter values with
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      */
     @Deprecated(since="19")
