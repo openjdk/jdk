@@ -42,7 +42,6 @@
 //        VM_GC_HeapInspection
 //        VM_PopulateDynamicDumpSharedSpace
 //        VM_GenCollectFull
-//        VM_GenCollectFullConcurrent
 //        VM_ParallelGCSystemGC
 //        VM_CollectForAllocation
 //          VM_GenCollectForAllocation
@@ -71,7 +70,6 @@
 //     allocate afterwards;
 //
 //  VM_GenCollectFull
-//  VM_GenCollectFullConcurrent
 //  VM_ParallelGCSystemGC
 //   - these operations preform full collection of heaps of
 //     different kind

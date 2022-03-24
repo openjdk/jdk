@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "cds/filemap.hpp"
 #include "classfile/compactHashtable.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
@@ -59,9 +59,11 @@ public:
 
 class DynamicArchive : AllStatic {
 public:
-  static void prepare_for_dynamic_dumping();
+  static void check_for_dynamic_dump();
+  static bool should_dump_at_vm_exit();
+  static void prepare_for_dump_at_exit();
+  static void dump_for_jcmd(const char* archive_name, TRAPS);
   static void dump(const char* archive_name, TRAPS);
-  static void dump(TRAPS);
   static bool is_mapped() { return FileMapInfo::dynamic_info() != NULL; }
   static bool validate(FileMapInfo* dynamic_info);
 };

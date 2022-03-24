@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,12 +148,11 @@ class VM_Version : public Abstract_VM_Version {
       uint32_t LahfSahf     : 1,
                CmpLegacy    : 1,
                             : 3,
-               lzcnt_intel  : 1,
                lzcnt        : 1,
                sse4a        : 1,
                misalignsse  : 1,
                prefetchw    : 1,
-                            : 22;
+                            : 23;
     } bits;
   };
 
@@ -371,7 +370,7 @@ protected:
 
   static const char* _features_names[];
 
-enum Extended_Family {
+  enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
     // ZX
@@ -640,10 +639,10 @@ enum Extended_Family {
 
     // Intel features.
     if (is_intel()) {
-      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
         result |= CPU_LZCNT;
-      // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
-      if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
+      }
+      if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
         result |= CPU_3DNOW_PREFETCH;
       }
       if (_cpuid_info.sef_cpuid7_ebx.bits.clwb != 0) {
@@ -655,10 +654,10 @@ enum Extended_Family {
 
     // ZX features.
     if (is_zx()) {
-      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
         result |= CPU_LZCNT;
-      // for ZX, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
-      if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
+      }
+      if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
         result |= CPU_3DNOW_PREFETCH;
       }
     }
@@ -911,6 +910,8 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
+  static int avx3_threshold();
+
   static bool is_intel_tsc_synched_at_init()  {
     if (is_intel_family_core()) {
       uint32_t ext_model = extended_cpu_model();
@@ -1043,6 +1044,25 @@ public:
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
 
+  // Old CPUs perform lea on AGU which causes additional latency transfering the
+  // value from/to ALU for other operations
+  static bool supports_fast_2op_lea() {
+    return (is_intel() && supports_avx()) || // Sandy Bridge and above
+           (is_amd()   && supports_avx());   // Jaguar and Bulldozer and above
+  }
+
+  // Pre Icelake Intels suffer inefficiency regarding 3-operand lea, which contains
+  // all of base register, index register and displacement immediate, with 3 latency.
+  // Note that when the address contains no displacement but the base register is
+  // rbp or r13, the machine code must contain a zero displacement immediate,
+  // effectively transform a 2-operand lea into a 3-operand lea. This can be
+  // replaced by add-add or lea-add
+  static bool supports_fast_3op_lea() {
+    return supports_fast_2op_lea() &&
+           ((is_intel() && supports_clwb() && !is_intel_skylake()) || // Icelake and above
+            is_amd());
+  }
+
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();
@@ -1051,6 +1071,45 @@ public:
   // support functions for virtualization detection
  private:
   static void check_virtualizations();
+
+  static const char* cpu_family_description(void);
+  static const char* cpu_model_description(void);
+  static const char* cpu_brand(void);
+  static const char* cpu_brand_string(void);
+
+  static int cpu_type_description(char* const buf, size_t buf_len);
+  static int cpu_detailed_description(char* const buf, size_t buf_len);
+  static int cpu_extended_brand_string(char* const buf, size_t buf_len);
+
+  static bool cpu_is_em64t(void);
+  static bool is_netburst(void);
+
+  // Returns bytes written excluding termninating null byte.
+  static size_t cpu_write_support_string(char* const buf, size_t buf_len);
+  static void resolve_cpu_information_details(void);
+  static int64_t max_qualified_cpu_freq_from_brand_string(void);
+
+ public:
+  // Offsets for cpuid asm stub brand string
+  static ByteSize proc_name_0_offset() { return byte_offset_of(CpuidInfo, proc_name_0); }
+  static ByteSize proc_name_1_offset() { return byte_offset_of(CpuidInfo, proc_name_1); }
+  static ByteSize proc_name_2_offset() { return byte_offset_of(CpuidInfo, proc_name_2); }
+  static ByteSize proc_name_3_offset() { return byte_offset_of(CpuidInfo, proc_name_3); }
+  static ByteSize proc_name_4_offset() { return byte_offset_of(CpuidInfo, proc_name_4); }
+  static ByteSize proc_name_5_offset() { return byte_offset_of(CpuidInfo, proc_name_5); }
+  static ByteSize proc_name_6_offset() { return byte_offset_of(CpuidInfo, proc_name_6); }
+  static ByteSize proc_name_7_offset() { return byte_offset_of(CpuidInfo, proc_name_7); }
+  static ByteSize proc_name_8_offset() { return byte_offset_of(CpuidInfo, proc_name_8); }
+  static ByteSize proc_name_9_offset() { return byte_offset_of(CpuidInfo, proc_name_9); }
+  static ByteSize proc_name_10_offset() { return byte_offset_of(CpuidInfo, proc_name_10); }
+  static ByteSize proc_name_11_offset() { return byte_offset_of(CpuidInfo, proc_name_11); }
+
+  static int64_t maximum_qualified_cpu_frequency(void);
+
+  static bool supports_tscinv_ext(void);
+
+  static void initialize_tsc();
+  static void initialize_cpu_information(void);
 };
 
 #endif // CPU_X86_VM_VERSION_X86_HPP

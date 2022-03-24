@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public final class FileWriteEvent extends AbstractJDKEvent {
     // EventHandler::write(..., String, long)
 
     @Label("Path")
-    @Description("Full path of the file")
+    @Description("Full path of the file, or N/A if a file descriptor was used to create the stream, for example System.out and System.err")
     public String path;
 
     @Label("Bytes Written")

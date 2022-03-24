@@ -183,7 +183,8 @@ public class CompileProperties {
                         log.error("cannot close " + filename, e);
                     }
                 }
-                if ( ok = true && contents != null ) {
+                ok = true;
+                if ( contents != null ) {
                     String tokens[] = (new String(contents)).split("\\s+");
                     if ( tokens.length > 0 ) {
                         ok = parseOptions(tokens);

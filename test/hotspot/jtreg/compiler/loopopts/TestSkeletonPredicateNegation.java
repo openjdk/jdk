@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ public class TestSkeletonPredicateNegation {
     }
 
     public void mainTest (String[] args){
-        long loa11[] = new long[1987];
+        long loa11[] = new long[19];
 
         for (long lo14 : loa11) {
             TestSkeletonPredicateNegation.in0 = -128;
-            for (int i18 = 0; i18 < 52; i18++) {
+            for (int i18 = 0; i18 < 13; i18++) {
                 try {
                     loa11[TestSkeletonPredicateNegation.in0] %= 2275269548L;
                     Math.ceil(1374905370.2785515599);

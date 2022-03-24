@@ -23,29 +23,30 @@
 
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SymbolLookup;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.security.Permission;
 
-import static jdk.incubator.foreign.CLinker.C_POINTER;
+public class ThrowingUpcall extends NativeTestHelper {
 
-public class ThrowingUpcall {
-
-    private static final MethodHandle downcall;
+    private static final MethodHandle downcallVoid;
+    private static final MethodHandle downcallNonVoid;
     public static final MethodHandle MH_throwException;
 
     static {
         System.loadLibrary("TestUpcall");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
-        downcall = CLinker.getInstance().downcallHandle(
+        downcallVoid = CLinker.systemCLinker().downcallHandle(
             lookup.lookup("f0_V__").orElseThrow(),
-            MethodType.methodType(void.class, MemoryAddress.class),
-            FunctionDescriptor.ofVoid(C_POINTER)
+                FunctionDescriptor.ofVoid(C_POINTER)
+        );
+        downcallNonVoid = CLinker.systemCLinker().downcallHandle(
+            lookup.lookup("f10_I_I_").orElseThrow(),
+                FunctionDescriptor.of(C_INT, C_INT, C_POINTER)
         );
 
         try {
@@ -61,18 +62,35 @@ public class ThrowingUpcall {
     }
 
     public static void main(String[] args) throws Throwable {
-        test();
+        if (args[0].equals("void")) {
+            testVoid();
+        } else {
+            testNonVoid();
+        }
     }
 
-    public static void test() throws Throwable {
+    public static void testVoid() throws Throwable {
         MethodHandle handle = MH_throwException;
         MethodHandle invoker = MethodHandles.exactInvoker(MethodType.methodType(void.class));
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemoryAddress stub = CLinker.getInstance().upcallStub(handle, FunctionDescriptor.ofVoid(), scope);
+            NativeSymbol stub = CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), scope);
 
-            downcall.invokeExact(stub); // should call Shutdown.exit(1);
+            downcallVoid.invoke(stub); // should call Shutdown.exit(1);
+        }
+    }
+
+    public static void testNonVoid() throws Throwable {
+        MethodHandle handle = MethodHandles.identity(int.class);
+        handle = MethodHandles.collectArguments(handle, 0, MH_throwException);
+        MethodHandle invoker = MethodHandles.exactInvoker(MethodType.methodType(int.class, int.class));
+        handle = MethodHandles.insertArguments(invoker, 0, handle);
+
+        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+            NativeSymbol stub = CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), scope);
+
+            downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
         }
     }
 

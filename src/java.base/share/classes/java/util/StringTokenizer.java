@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,9 +174,11 @@ public class StringTokenizer implements Enumeration<Object> {
      * <p>
      * If the {@code returnDelims} flag is {@code true}, then
      * the delimiter characters are also returned as tokens. Each
-     * delimiter is returned as a string of length one. If the flag is
-     * {@code false}, the delimiter characters are skipped and only
-     * serve as separators between tokens.
+     * delimiter is returned as a string consisting of a single
+     * <a href="../lang/Character.html#unicode">Unicode code point</a>
+     * of the delimiter (which may be one or two {@code char}s). If the
+     * flag is {@code false}, the delimiter characters are skipped
+     * and only serve as separators between tokens.
      * <p>
      * Note that if {@code delim} is {@code null}, this constructor does
      * not throw an exception. However, trying to invoke other methods on the

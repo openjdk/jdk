@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -895,8 +895,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
              */
             Map<TextAttribute, ?> map = font.getAttributes();
             Object o = map.get(TextAttribute.TRACKING);
-            boolean tracking = o != null && (o instanceof Number) &&
-                (((Number)o).floatValue() != 0f);
+            boolean tracking = (o instanceof Number n) &&
+                (n.floatValue() != 0f);
 
             if (tracking) {
                 noPositionAdjustments = false;

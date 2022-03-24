@@ -150,7 +150,7 @@ public final class SunPKCS11 extends AuthProvider {
         this.config = c;
 
         if (debug != null) {
-            System.out.println("SunPKCS11 loading " + config.getFileName());
+            debug.println("SunPKCS11 loading " + config.getFileName());
         }
 
         String library = config.getLibrary();
@@ -176,7 +176,6 @@ public final class SunPKCS11 extends AuthProvider {
         // switch to using the NSS trust attributes for trusted certs
         // (KeyStore).
         //
-
         if (useSecmod) {
             // note: Config ensures library/slot/slotListIndex not specified
             // in secmod mode.
@@ -328,8 +327,7 @@ public final class SunPKCS11 extends AuthProvider {
             initArgs.flags = CKF_OS_LOCKING_OK;
             PKCS11 tmpPKCS11;
             try {
-                tmpPKCS11 = PKCS11.getInstance(
-                    library, functionList, initArgs,
+                tmpPKCS11 = PKCS11.getInstance(library, functionList, initArgs,
                     config.getOmitInitialize());
             } catch (PKCS11Exception e) {
                 if (debug != null) {
@@ -345,18 +343,18 @@ public final class SunPKCS11 extends AuthProvider {
                 } else {
                     initArgs.flags = 0;
                 }
-                tmpPKCS11 = PKCS11.getInstance(library,
-                    functionList, initArgs, config.getOmitInitialize());
+                tmpPKCS11 = PKCS11.getInstance(library, functionList, initArgs,
+                    config.getOmitInitialize());
             }
             p11 = tmpPKCS11;
 
-            CK_INFO p11Info = p11.C_GetInfo();
-            if (p11Info.cryptokiVersion.major < 2) {
+            if (p11.getVersion().major < 2) {
                 throw new ProviderException("Only PKCS#11 v2.0 and later "
-                + "supported, library version is v" + p11Info.cryptokiVersion);
+                + "supported, library version is v" + p11.getVersion());
             }
             boolean showInfo = config.getShowInfo();
             if (showInfo) {
+                CK_INFO p11Info = p11.C_GetInfo();
                 System.out.println("Information for provider " + getName());
                 System.out.println("Library info:");
                 System.out.println(p11Info);
@@ -1482,12 +1480,10 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // get the pin if necessary
-
         char[] pin = null;
         if ((token.tokenInfo.flags & CKF_PROTECTED_AUTHENTICATION_PATH) == 0) {
 
             // get password
-
             CallbackHandler myHandler = getCallbackHandler(handler);
             if (myHandler == null) {
                 throw new LoginException
@@ -1503,6 +1499,7 @@ public final class SunPKCS11 extends AuthProvider {
             PasswordCallback pcall = new PasswordCallback(form.format(source),
                                                         false);
             Callback[] callbacks = { pcall };
+
             try {
                 myHandler.handle(callbacks);
             } catch (Exception e) {
@@ -1522,13 +1519,12 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         // perform token login
-
         Session session = null;
         try {
             session = token.getOpSession();
-
             // pin is NULL if using CKF_PROTECTED_AUTHENTICATION_PATH
             p11.C_Login(session.id(), CKU_USER, pin);
+
             if (debug != null) {
                 debug.println("login succeeded");
             }

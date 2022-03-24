@@ -152,13 +152,13 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
     __ unsigned_shift_right(xor_shift_res,
                             LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
                             xor_shift_res,
-                            LIR_OprDesc::illegalOpr());
+                            LIR_Opr::illegalOpr());
   } else {
     __ logical_xor(addr, new_val, xor_res);
     __ unsigned_shift_right(xor_res,
                             LIR_OprFact::intConst(HeapRegion::LogOfHRGrainBytes),
                             xor_shift_res,
-                            LIR_OprDesc::illegalOpr());
+                            LIR_Opr::illegalOpr());
   }
 
   if (!new_val->is_register()) {

@@ -49,13 +49,6 @@
   // Used for debugging, return a unique integer for each thread.
   int thread_identifier() const                    { return _thread_id; }
 #endif
-#ifdef ASSERT
-  // We expect no reposition failures so kill vm if we get one
-  //
-  bool valid_reposition_failure() {
-    return false;
-  }
-#endif // ASSERT
 
  private:
   void pd_initialize();

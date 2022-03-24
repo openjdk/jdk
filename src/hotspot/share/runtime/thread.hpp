@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -550,8 +550,8 @@ protected:
   void    set_stack_size(size_t size)  { _stack_size = size; }
   address stack_end()  const           { return stack_base() - stack_size(); }
   void    record_stack_base_and_size();
-  void    register_thread_stack_with_NMT() NOT_NMT_RETURN;
-  void    unregister_thread_stack_with_NMT() NOT_NMT_RETURN;
+  void    register_thread_stack_with_NMT();
+  void    unregister_thread_stack_with_NMT();
 
   int     lgrp_id() const        { return _lgrp_id; }
   void    set_lgrp_id(int value) { _lgrp_id = value; }
@@ -785,9 +785,10 @@ class JavaThread: public Thread {
   enum SuspendFlags {
     // NOTE: avoid using the sign-bit as cc generates different test code
     //       when the sign-bit is used, and sometimes incorrectly - see CR 6398077
-    _has_async_exception    = 0x00000001U, // there is a pending async exception
-    _trace_flag             = 0x00000004U, // call tracing backend
-    _obj_deopt              = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
+    _has_async_exception     = 0x00000001U, // there is a pending async exception
+    _async_delivery_disabled = 0x00000002U, // async exception delivery is disabled
+    _trace_flag              = 0x00000004U, // call tracing backend
+    _obj_deopt               = 0x00000008U  // suspend for object reallocation and relocking for JVMTI agent
   };
 
   // various suspension related flags - atomically updated
@@ -815,13 +816,21 @@ class JavaThread: public Thread {
   inline bool clear_async_exception_condition();
  public:
   bool has_async_exception_condition() {
-    return (_suspend_flags & _has_async_exception) != 0;
+    return (_suspend_flags & _has_async_exception) != 0 &&
+           (_suspend_flags & _async_delivery_disabled) == 0;
   }
   inline void set_pending_async_exception(oop e);
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
   void send_thread_stop(oop throwable);
   void check_and_handle_async_exceptions();
+
+  class NoAsyncExceptionDeliveryMark : public StackObj {
+    friend JavaThread;
+    JavaThread *_target;
+    inline NoAsyncExceptionDeliveryMark(JavaThread *t);
+    inline ~NoAsyncExceptionDeliveryMark();
+  };
 
   // Safepoint support
  public:                                                        // Expose _thread_state for SafeFetchInt()
@@ -1299,6 +1308,12 @@ class JavaThread: public Thread {
   static ByteSize reserved_stack_activation_offset() {
     return byte_offset_of(JavaThread, _stack_overflow_state._reserved_stack_activation);
   }
+  static ByteSize shadow_zone_safe_limit()  {
+    return byte_offset_of(JavaThread, _stack_overflow_state._shadow_zone_safe_limit);
+  }
+  static ByteSize shadow_zone_growth_watermark()  {
+    return byte_offset_of(JavaThread, _stack_overflow_state._shadow_zone_growth_watermark);
+  }
 
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
 
@@ -1312,16 +1327,22 @@ class JavaThread: public Thread {
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
 
+  // Returns the current thread as indicated by the given JNIEnv.
+  // We don't assert it is Thread::current here as that is done at the
+  // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
-    JavaThread *thread_from_jni_env = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
-    // Only return NULL if thread is off the thread list; starting to
-    // exit should not return NULL.
-    if (thread_from_jni_env->is_terminated()) {
-      thread_from_jni_env->block_if_vm_exited();
-      return NULL;
-    } else {
-      return thread_from_jni_env;
+    JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
+    // We can't normally get here in a thread that has completed its
+    // execution and so "is_terminated", except when the call is from
+    // AsyncGetCallTrace, which can be triggered by a signal at any point in
+    // a thread's lifecycle. A thread is also considered terminated if the VM
+    // has exited, so we have to check this and block in case this is a daemon
+    // thread returning to the VM (the JNI DirectBuffer entry points rely on
+    // this).
+    if (current->is_terminated()) {
+      current->block_if_vm_exited();
     }
+    return current;
   }
 
   // JNI critical regions. These can nest.

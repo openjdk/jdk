@@ -182,7 +182,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      *
      * @param offset the starting offset &gt;= 0
      * @param data the element data
-     * @exception BadLocationException for an invalid starting offset
+     * @throws BadLocationException for an invalid starting offset
      */
     protected void insert(int offset, ElementSpec[] data) throws BadLocationException {
         if (data == null || data.length == 0) {
@@ -438,11 +438,11 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
      */
     public void setLogicalStyle(int pos, Style s) {
         Element paragraph = getParagraphElement(pos);
-        if ((paragraph != null) && (paragraph instanceof AbstractElement)) {
+        if (paragraph instanceof AbstractElement abstractElement) {
             try {
                 writeLock();
-                StyleChangeUndoableEdit edit = new StyleChangeUndoableEdit((AbstractElement)paragraph, s);
-                ((AbstractElement)paragraph).setResolveParent(s);
+                StyleChangeUndoableEdit edit = new StyleChangeUndoableEdit(abstractElement, s);
+                abstractElement.setResolveParent(s);
                 int p0 = paragraph.getStartOffset();
                 int p1 = paragraph.getEndOffset();
                 DefaultDocumentEvent e =
@@ -2548,7 +2548,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Redoes a change.
          *
-         * @exception CannotRedoException if the change cannot be redone
+         * @throws CannotRedoException if the change cannot be redone
          */
         public void redo() throws CannotRedoException {
             super.redo();
@@ -2562,7 +2562,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Undoes a change.
          *
-         * @exception CannotUndoException if the change cannot be undone
+         * @throws CannotUndoException if the change cannot be undone
          */
         public void undo() throws CannotUndoException {
             super.undo();
@@ -2604,7 +2604,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Redoes a change.
          *
-         * @exception CannotRedoException if the change cannot be redone
+         * @throws CannotRedoException if the change cannot be redone
          */
         public void redo() throws CannotRedoException {
             super.redo();
@@ -2614,7 +2614,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         /**
          * Undoes a change.
          *
-         * @exception CannotUndoException if the change cannot be undone
+         * @throws CannotUndoException if the change cannot be undone
          */
         public void undo() throws CannotUndoException {
             super.undo();

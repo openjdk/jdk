@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,12 +29,7 @@ import java.io.PrintWriter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Programmatic entry point to start the simpleserver tool.
- *
- * <p><b> This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interface are subject to change or deletion
- * without notice.</b>
+ * Programmatic entry point to start "java -m jdk.httpserver".
  */
 public class Main {
 
@@ -51,15 +48,32 @@ public class Main {
      * or an I/O error occurs, the server is not started and this method invokes
      * System::exit with an appropriate exit code.
      *
+     * <p> If the system property "sun.net.httpserver.maxReqTime" has not been
+     * set by the user, it is set to a value of 5 seconds. This is to prevent
+     * the server from hanging indefinitely, for example in the case of an HTTPS
+     * request.
+     *
      * @param args the command-line options
      * @throws NullPointerException if {@code args} is {@code null}, or if there
      *         are any {@code null} values in the {@code args} array
      */
     public static void main(String... args) {
-        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), args);
-        if (ec != 0)
+        setMaxReqTime();
+
+        int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "java", args);
+        if (ec != 0) {
             System.exit(ec);
-        // otherwise the server has been started successfully and runs in
-        // another non-daemon thread.
+        }  // otherwise, the server has either been started successfully and
+           // runs in another non-daemon thread, or -h or -version have been
+           // passed and the main thread has exited normally.
+    }
+
+    public static final String MAXREQTIME_KEY = "sun.net.httpserver.maxReqTime";
+    public static final String MAXREQTIME_VAL = "5";
+
+    private static void setMaxReqTime() {
+        if (System.getProperty(MAXREQTIME_KEY) == null) {
+            System.setProperty(MAXREQTIME_KEY, MAXREQTIME_VAL);
+        }
     }
 }

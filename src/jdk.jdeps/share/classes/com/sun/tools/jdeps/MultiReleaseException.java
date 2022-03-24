@@ -47,7 +47,7 @@ class MultiReleaseException extends RuntimeException {
      *        The detail message array
      */
     public MultiReleaseException(String key, Object... params) {
-        super();
+        super(JdepsTask.getMessage(key, params));
         this.key = key;
         this.params = params;
     }

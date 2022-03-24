@@ -304,7 +304,7 @@ void C1_MacroAssembler::remove_frame(int framesize) {
 }
 
 
-void C1_MacroAssembler::verified_entry() {
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.  For this action to be legal we
   // must ensure that this first instruction is a B, BL, NOP, BKPT,

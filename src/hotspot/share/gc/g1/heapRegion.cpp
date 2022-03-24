@@ -91,7 +91,7 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   GrainWords = GrainBytes >> LogHeapWordSize;
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
-  CardsPerRegion = GrainBytes >> G1CardTable::card_shift;
+  CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
   LogCardsPerRegion = log2i(CardsPerRegion);
 
@@ -105,10 +105,6 @@ void HeapRegion::handle_evacuation_failure() {
   clear_young_index_in_cset();
   set_old();
   _next_marked_bytes = 0;
-}
-
-void HeapRegion::process_and_drop_evac_failure_objs(ObjectClosure* closure) {
-  _evac_failure_objs.process_and_drop(closure);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -214,8 +210,6 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
-
-  _bot_part.set_object_can_span(true);
 }
 
 void HeapRegion::clear_humongous() {
@@ -223,8 +217,6 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
-
-  _bot_part.set_object_can_span(false);
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
@@ -250,8 +242,7 @@ HeapRegion::HeapRegion(uint hrm_index,
   _prev_marked_bytes(0), _next_marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
-  _node_index(G1NUMA::UnknownNodeIndex),
-  _evac_failure_objs(hrm_index, _bottom)
+  _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
@@ -269,7 +260,6 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
 
   set_top(bottom());
   set_compaction_top(bottom());
-  reset_bot();
 
   hr_clear(false /*clear_space*/);
 }
@@ -313,28 +303,28 @@ void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
 
 // Code roots support
 
-void HeapRegion::add_strong_code_root(nmethod* nm) {
+void HeapRegion::add_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_strong_code_root(nm);
+  hrrs->add_code_root(nm);
 }
 
-void HeapRegion::add_strong_code_root_locked(nmethod* nm) {
+void HeapRegion::add_code_root_locked(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->add_strong_code_root_locked(nm);
+  hrrs->add_code_root_locked(nm);
 }
 
-void HeapRegion::remove_strong_code_root(nmethod* nm) {
+void HeapRegion::remove_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->remove_strong_code_root(nm);
+  hrrs->remove_code_root(nm);
 }
 
-void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {
+void HeapRegion::code_roots_do(CodeBlobClosure* blk) const {
   HeapRegionRemSet* hrrs = rem_set();
-  hrrs->strong_code_roots_do(blk);
+  hrrs->code_roots_do(blk);
 }
 
-class VerifyStrongCodeRootOopClosure: public OopClosure {
+class VerifyCodeRootOopClosure: public OopClosure {
   const HeapRegion* _hr;
   bool _failures;
   bool _has_oops_in_region;
@@ -362,7 +352,7 @@ class VerifyStrongCodeRootOopClosure: public OopClosure {
   }
 
 public:
-  VerifyStrongCodeRootOopClosure(const HeapRegion* hr):
+  VerifyCodeRootOopClosure(const HeapRegion* hr):
     _hr(hr), _failures(false), _has_oops_in_region(false) {}
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -372,11 +362,11 @@ public:
   bool has_oops_in_region() { return _has_oops_in_region; }
 };
 
-class VerifyStrongCodeRootCodeBlobClosure: public CodeBlobClosure {
+class VerifyCodeRootCodeBlobClosure: public CodeBlobClosure {
   const HeapRegion* _hr;
   bool _failures;
 public:
-  VerifyStrongCodeRootCodeBlobClosure(const HeapRegion* hr) :
+  VerifyCodeRootCodeBlobClosure(const HeapRegion* hr) :
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
@@ -384,14 +374,14 @@ public:
     if (nm != NULL) {
       // Verify that the nemthod is live
       if (!nm->is_alive()) {
-        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has dead nmethod " PTR_FORMAT " in its strong code roots",
+        log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has dead nmethod " PTR_FORMAT " in its code roots",
                               p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
         _failures = true;
       } else {
-        VerifyStrongCodeRootOopClosure oop_cl(_hr);
+        VerifyCodeRootOopClosure oop_cl(_hr);
         nm->oops_do(&oop_cl);
         if (!oop_cl.has_oops_in_region()) {
-          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its strong code roots with no pointers into region",
+          log_error(gc, verify)("region [" PTR_FORMAT "," PTR_FORMAT "] has nmethod " PTR_FORMAT " in its code roots with no pointers into region",
                                 p2i(_hr->bottom()), p2i(_hr->end()), p2i(nm));
           _failures = true;
         } else if (oop_cl.failures()) {
@@ -406,47 +396,47 @@ public:
   bool failures()       { return _failures; }
 };
 
-void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const {
+void HeapRegion::verify_code_roots(VerifyOption vo, bool* failures) const {
   if (!G1VerifyHeapRegionCodeRoots) {
     // We're not verifying code roots.
     return;
   }
   if (vo == VerifyOption_G1UseFullMarking) {
     // Marking verification during a full GC is performed after class
-    // unloading, code cache unloading, etc so the strong code roots
+    // unloading, code cache unloading, etc so the code roots
     // attached to each heap region are in an inconsistent state. They won't
-    // be consistent until the strong code roots are rebuilt after the
-    // actual GC. Skip verifying the strong code roots in this particular
+    // be consistent until the code roots are rebuilt after the
+    // actual GC. Skip verifying the code roots in this particular
     // time.
     assert(VerifyDuringGC, "only way to get here");
     return;
   }
 
   HeapRegionRemSet* hrrs = rem_set();
-  size_t strong_code_roots_length = hrrs->strong_code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_list_length();
 
   // if this region is empty then there should be no entries
-  // on its strong code root list
+  // on its code root list
   if (is_empty()) {
-    if (strong_code_roots_length > 0) {
+    if (code_roots_length > 0) {
       log_error(gc, verify)("region " HR_FORMAT " is empty but has " SIZE_FORMAT " code root entries",
-                            HR_FORMAT_PARAMS(this), strong_code_roots_length);
+                            HR_FORMAT_PARAMS(this), code_roots_length);
       *failures = true;
     }
     return;
   }
 
   if (is_continues_humongous()) {
-    if (strong_code_roots_length > 0) {
+    if (code_roots_length > 0) {
       log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has " SIZE_FORMAT " code root entries",
-                            HR_FORMAT_PARAMS(this), strong_code_roots_length);
+                            HR_FORMAT_PARAMS(this), code_roots_length);
       *failures = true;
     }
     return;
   }
 
-  VerifyStrongCodeRootCodeBlobClosure cb_cl(this);
-  strong_code_roots_do(&cb_cl);
+  VerifyCodeRootCodeBlobClosure cb_cl(this);
+  code_roots_do(&cb_cl);
 
   if (cb_cl.failures()) {
     *failures = true;
@@ -489,7 +479,6 @@ protected:
   VerifyOption _vo;
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _ct(g1h->card_table()),
@@ -659,6 +648,8 @@ void HeapRegion::verify(VerifyOption vo,
   VerifyLiveClosure vl_cl(g1h, vo);
   VerifyRemSetClosure vr_cl(g1h, vo);
   bool is_region_humongous = is_humongous();
+  // We cast p to an oop, so region-bottom must be an obj-start.
+  assert(!is_region_humongous || is_starts_humongous(), "invariant");
   size_t object_num = 0;
   while (p < top()) {
     oop obj = cast_to_oop(p);
@@ -737,12 +728,7 @@ void HeapRegion::verify(VerifyOption vo,
     return;
   }
 
-  verify_strong_code_roots(vo, failures);
-}
-
-void HeapRegion::verify() const {
-  bool dummy = false;
-  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
+  verify_code_roots(vo, failures);
 }
 
 void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
@@ -792,7 +778,6 @@ void HeapRegion::clear(bool mangle_space) {
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();
   }
-  reset_bot();
 }
 
 #ifndef PRODUCT
@@ -801,12 +786,8 @@ void HeapRegion::mangle_unused_area() {
 }
 #endif
 
-void HeapRegion::initialize_bot_threshold() {
-  _bot_part.initialize_threshold();
-}
-
-void HeapRegion::alloc_block_in_bot(HeapWord* start, HeapWord* end) {
-  _bot_part.alloc_block(start, end);
+void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
+  _bot_part.update_for_block(start, end);
 }
 
 void HeapRegion::object_iterate(ObjectClosure* blk) {
@@ -822,7 +803,7 @@ void HeapRegion::object_iterate(ObjectClosure* blk) {
 void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap) {
   // Keep the BOT in sync for old generation regions.
   if (is_old()) {
-    update_bot_at(address, word_size);
+    update_bot_for_obj(address, word_size);
   }
   // Fill in the object.
   CollectedHeap::fill_with_object(address, word_size, zap);

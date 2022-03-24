@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,12 @@ final class DoubleMaxVector extends DoubleVector {
     @ForceInline
     public final DoubleMaxMask test(Test op) {
         return super.testTemplate(DoubleMaxMask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final DoubleMaxMask test(Test op, VectorMask<Double> m) {
+        return super.testTemplate(DoubleMaxMask.class, op, (DoubleMaxMask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -715,9 +721,9 @@ final class DoubleMaxVector extends DoubleVector {
         @ForceInline
         /*package-private*/
         static DoubleMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(DoubleMaxMask.class, long.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(DoubleMaxMask.class, long.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final DoubleMaxMask  TRUE_MASK = new DoubleMaxMask(true);
         private static final DoubleMaxMask FALSE_MASK = new DoubleMaxMask(false);

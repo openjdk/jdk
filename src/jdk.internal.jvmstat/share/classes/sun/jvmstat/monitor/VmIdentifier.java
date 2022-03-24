@@ -174,7 +174,7 @@ public class VmIdentifier {
     private void validate() throws URISyntaxException {
         // file:// uri, which is a special case where the lvmid is not required.
         String s = getScheme();
-        if ((s != null) && (s.compareTo("file") == 0)) {
+        if ("file".equals(s)) {
             return;
         }
         if (getLocalVmId() == -1) {

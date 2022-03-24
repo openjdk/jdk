@@ -475,15 +475,15 @@ public class IOUtil {
 
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
-    static Scope.Handle acquireScope(ByteBuffer bb, boolean async) {
+    static Runnable acquireScope(ByteBuffer bb, boolean async) {
         return NIO_ACCESS.acquireScope(bb, async);
     }
 
-    private static void releaseScope(Scope.Handle handle) {
+    private static void releaseScope(Runnable handle) {
         if (handle == null)
             return;
         try {
-            handle.scope().release(handle);
+            handle.run();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -535,11 +535,11 @@ public class IOUtil {
         }
     }
 
-    static record Releaser(Scope.Handle handle) implements Runnable {
+    static record Releaser(Runnable handle) implements Runnable {
         Releaser { Objects.requireNonNull(handle) ; }
         @Override public void run() { releaseScope(handle); }
-        static Runnable of(Scope.Handle handle) { return new Releaser(handle); }
-        static Runnable ofNullable(Scope.Handle handle) {
+        static Runnable of(Runnable handle) { return new Releaser(handle); }
+        static Runnable ofNullable(Runnable handle) {
             if (handle == null)
                 return () -> { };
             return new Releaser(handle);

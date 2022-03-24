@@ -81,8 +81,6 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
 
   if (_info->deoptimize_on_exception()) {
     address a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
-    // May be used by optimizations like LoopInvariantCodeMotion or RangeCheckEliminator.
-    DEBUG_ONLY( __ untested("RangeCheckStub: predicate_failed_trap_id"); )
     //__ load_const_optimized(R0, a);
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(a));
     __ mtctr(R0);

@@ -696,8 +696,7 @@ public class PKIXParameters implements CertPathParameters {
 
         /* start with trusted anchor info */
         if (unmodTrustAnchors != null) {
-            sb.append("  Trust Anchors: " + unmodTrustAnchors.toString()
-                + "\n");
+            sb.append("  Trust Anchors: " + unmodTrustAnchors + "\n");
         }
 
         /* now, append initial state information */
@@ -706,13 +705,13 @@ public class PKIXParameters implements CertPathParameters {
                 sb.append("  Initial Policy OIDs: any\n");
             } else {
                 sb.append("  Initial Policy OIDs: ["
-                    + unmodInitialPolicies.toString() + "]\n");
+                    + unmodInitialPolicies + "]\n");
             }
         }
 
         /* now, append constraints on all certificates in the path */
-        sb.append("  Validity Date: " + String.valueOf(date) + "\n");
-        sb.append("  Signature Provider: " + String.valueOf(sigProvider) + "\n");
+        sb.append("  Validity Date: " + date + "\n");
+        sb.append("  Signature Provider: " + sigProvider + "\n");
         sb.append("  Default Revocation Enabled: " + revocationEnabled + "\n");
         sb.append("  Explicit Policy Required: " + explicitPolicyRequired + "\n");
         sb.append("  Policy Mapping Inhibited: " + policyMappingInhibited + "\n");
@@ -720,14 +719,14 @@ public class PKIXParameters implements CertPathParameters {
         sb.append("  Policy Qualifiers Rejected: " + policyQualifiersRejected + "\n");
 
         /* now, append target cert requirements */
-        sb.append("  Target Cert Constraints: " + String.valueOf(certSelector) + "\n");
+        sb.append("  Target Cert Constraints: " + certSelector + "\n");
 
         /* finally, append miscellaneous parameters */
         if (certPathCheckers != null)
             sb.append("  Certification Path Checkers: ["
-                + certPathCheckers.toString() + "]\n");
+                + certPathCheckers + "]\n");
         if (certStores != null)
-            sb.append("  CertStores: [" + certStores.toString() + "]\n");
+            sb.append("  CertStores: [" + certStores + "]\n");
         sb.append("]");
         return sb.toString();
     }

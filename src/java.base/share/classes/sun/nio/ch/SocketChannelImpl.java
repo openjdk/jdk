@@ -700,11 +700,11 @@ class SocketChannelImpl
     private SocketAddress unixBind(SocketAddress local) throws IOException {
         UnixDomainSockets.checkPermission();
         if (local == null) {
-            return UnixDomainSockets.UNNAMED;
+            return UnixDomainSockets.unnamed();
         } else {
             Path path = UnixDomainSockets.checkAddress(local).getPath();
             if (path.toString().isEmpty()) {
-                return UnixDomainSockets.UNNAMED;
+                return UnixDomainSockets.unnamed();
             } else {
                 // bind to non-empty path
                 UnixDomainSockets.bind(fd, path);

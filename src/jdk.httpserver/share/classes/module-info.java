@@ -24,41 +24,21 @@
  */
 
 /**
- * Defines the JDK-specific HTTP server API.
- * <p>
- * A basic high-level API for building embedded servers. Both HTTP and
- * HTTPS are supported.
- * <p>
- * The main components are:
- * <ul>
- * <li>the {@link com.sun.net.httpserver.HttpExchange} class that describes a
- * request and response pair,</li>
- * <li>the {@link com.sun.net.httpserver.HttpHandler} interface to handle
- * incoming requests, plus the {@link com.sun.net.httpserver.HttpHandlers} class
- * that provides useful handler implementations,</li>
- * <li>the {@link com.sun.net.httpserver.HttpContext} class that maps a URI path
- * to a {@code HttpHandler},</li>
- * <li>the {@link com.sun.net.httpserver.HttpServer} class to listen for
- * connections and dispatch requests to handlers,</li>
- * <li>the {@link com.sun.net.httpserver.Filter} class that allows pre- and post-
- * processing of requests.</li></ul>
- * <p>
- * The {@link com.sun.net.httpserver.SimpleFileServer} class offers a simple
- * HTTP file server (intended for testing, development and debugging purposes
- * only). A default implementation is provided via the <a id="entry-point"></a>
- * main entry point of the {@code jdk.httpserver} module, which can be used on
- * the command line as such:
- * <pre>{@code
- *    Usage: java -m jdk.httpserver [-b bind address] [-p port] [-d directory]
- *                                  [-o none|info|verbose] [-h to show options]
- *    Options:
- *    -b, --bind-address    - Address to bind to. Default: 127.0.0.1 or ::1 (loopback).
- *                            For all interfaces use "-b 0.0.0.0" or "-b ::".
- *    -d, --directory       - Directory to serve. Default: current directory.
- *    -o, --output          - Output format. none|info|verbose. Default: info.
- *    -p, --port            - Port to listen on. Default: 8000.
- *    -h, -?, --help        - Print this help message.
- * }</pre>
+ * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
+ * for running a minimal HTTP server.
+ *
+ * <p>The {@link com.sun.net.httpserver} package defines a high-level API for
+ * building servers that support HTTP and HTTPS. The SimpleFileServer class
+ * implements a simple HTTP-only file server intended for testing, development
+ * and debugging purposes. A default implementation is provided via the
+ * {@code jwebserver} tool and the main entry point of the module, which can
+ * also be invoked with {@code java -m jdk.httpserver}.
+ *
+ * <p>The {@link com.sun.net.httpserver.spi} package specifies a Service Provider
+ * Interface (SPI) for locating HTTP server implementations based on the
+ * {@code com.sun.net.httpserver} API.
+ *
+ * @toolGuide jwebserver
  *
  * @uses com.sun.net.httpserver.spi.HttpServerProvider
  *

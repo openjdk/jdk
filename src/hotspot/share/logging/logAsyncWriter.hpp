@@ -25,10 +25,10 @@
 #define SHARE_LOGGING_LOGASYNCWRITER_HPP
 #include "logging/log.hpp"
 #include "logging/logDecorations.hpp"
-#include "logging/logFileOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
 #include "utilities/linkedlist.hpp"
 
@@ -90,25 +90,28 @@ class LinkedListDeque : private LinkedListImpl<E, ResourceObj::C_HEAP, F> {
   }
 };
 
+// Forward declaration
+class LogFileStreamOutput;
+
 class AsyncLogMessage {
-  LogFileOutput* _output;
+  LogFileStreamOutput* _output;
   const LogDecorations _decorations;
   char* _message;
 
 public:
-  AsyncLogMessage(LogFileOutput* output, const LogDecorations& decorations, char* msg)
+  AsyncLogMessage(LogFileStreamOutput* output, const LogDecorations& decorations, char* msg)
     : _output(output), _decorations(decorations), _message(msg) {}
 
   // placeholder for LinkedListImpl.
   bool equals(const AsyncLogMessage& o) const { return false; }
 
-  LogFileOutput* output() const { return _output; }
+  LogFileStreamOutput* output() const { return _output; }
   const LogDecorations& decorations() const { return _decorations; }
   char* message() const { return _message; }
 };
 
 typedef LinkedListDeque<AsyncLogMessage, mtLogging> AsyncLogBuffer;
-typedef ResourceHashtable<LogFileOutput*,
+typedef ResourceHashtable<LogFileStreamOutput*,
                           uint32_t,
                           17, /*table_size*/
                           ResourceObj::C_HEAP,
@@ -168,8 +171,8 @@ class AsyncLogWriter : public NonJavaThread {
   }
 
  public:
-  void enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg);
-  void enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator);
+  void enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg);
+  void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
   static AsyncLogWriter* instance();
   static void initialize();

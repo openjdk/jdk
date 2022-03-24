@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,10 @@
 # You can regenerate the source files,
 # and you can clean them up.
 # FIXME: Move this script under $REPO/make/gensrc/
-list_mech_gen() {
-    ( # List MG files physically present
-      grep -il 'mechanically generated.*do not edit' $(find * -name \*.java -print)
-      # List MG files currently deleted (via --clean)
-      hg status -nd .
-    ) | egrep '(^|/)(Byte|Short|Int|Long|Float|Double)(Scalar|([0-9Max]+Vector)).*\.java$'
-}
 case $* in
 '')             CLASS_FILTER='*';;
 --generate*)    CLASS_FILTER=${2-'*'};;
---clean)        MG=$(list_mech_gen); set -x; rm -f $MG; exit;;
---revert)       MG=$(list_mech_gen); set -x; hg revert $MG; exit;;
---list)         list_mech_gen; exit;;
---help|*)       echo "Usage: $0 [--generate [file] | --clean | --revert | --list]"; exit 1;;
+--help|*)       echo "Usage: $0 [--generate [file]]"; exit 1;;
 esac
 
 . config.sh

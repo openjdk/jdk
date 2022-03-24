@@ -55,6 +55,7 @@ public class TestPrimitiveArrayCriticalWithBadParam {
 
     private static void runTest() {
         List<String> pbArgs = new ArrayList<>();
+        pbArgs.add("-XX:-CreateCoredumpOnCrash");
         pbArgs.add("-Xcheck:jni");
         pbArgs.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
         pbArgs.add(TestPrimitiveArrayCriticalWithBadParam.class.getName());

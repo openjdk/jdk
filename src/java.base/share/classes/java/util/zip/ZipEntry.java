@@ -153,7 +153,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * be stored into the {@code date and time fields} of the zip file
      * entry and encoded in standard {@code MS-DOS date and time format}.
      * The {@link java.util.TimeZone#getDefault() default TimeZone} is
-     * used to convert the epoch time to the MS-DOS data and time.
+     * used to convert the epoch time to the MS-DOS date and time.
      *
      * @param  time
      *         The last modification time of the entry in milliseconds

@@ -53,6 +53,8 @@ class JfrUpcalls : AllStatic {
                              jint* new_class_data_len,
                              unsigned char** new_class_data,
                              TRAPS);
+
+  static bool unhide_internal_types(TRAPS);
 };
 
 #endif // SHARE_JFR_JNI_JFRUPCALLS_HPP

@@ -377,7 +377,7 @@ void LIRGenerator::CardTableBarrierSet_post_barrier_helper(LIR_Opr addr, LIR_Con
 
   // Use unsigned type T_BOOLEAN here rather than (signed) T_BYTE since signed load
   // byte instruction does not support the addressing mode we need.
-  LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift, 0, T_BOOLEAN);
+  LIR_Address* card_addr = new LIR_Address(tmp, addr, (LIR_Address::Scale) -CardTable::card_shift(), 0, T_BOOLEAN);
   if (UseCondCardMark) {
     LIR_Opr cur_value = new_register(T_INT);
     __ move(card_addr, cur_value);

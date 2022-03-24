@@ -111,9 +111,9 @@ template <class T> void G1ParScanThreadState::write_ref_field_post(T* p, oop obj
   // References to the current collection set are references to objects that failed
   // evacuation. Currently these regions are always relabelled as old without
   // remembered sets, so skip them.
-  assert(dest_attr.is_in_cset() == (obj->is_forwarded() && obj->forwardee() == obj),
-         "Only evac-failed objects must be in the collection set here but " PTR_FORMAT " is not", p2i(obj));
   if (dest_attr.is_in_cset()) {
+    assert(obj->is_forwarded(), "evac-failed but not forwarded: " PTR_FORMAT, p2i(obj));
+    assert(obj->forwardee() == obj, "evac-failed but not self-forwarded: " PTR_FORMAT, p2i(obj));
     return;
   }
   enqueue_card_if_tracked(dest_attr, p, obj);

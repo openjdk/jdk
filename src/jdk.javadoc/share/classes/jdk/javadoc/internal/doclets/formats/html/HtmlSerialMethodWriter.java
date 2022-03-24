@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getSerializableMethodsHeader() {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
-        return ul;
+        return HtmlTree.UL(HtmlStyle.blockList);
     }
 
     /**
@@ -73,9 +71,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      */
     @Override
     public Content getMethodsContentHeader(boolean isLastContent) {
-        HtmlTree li = new HtmlTree(TagName.LI);
-        li.setStyle(HtmlStyle.blockList);
-        return li;
+        return new HtmlTree(TagName.LI);
     }
 
     /**

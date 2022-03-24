@@ -125,18 +125,10 @@ void oopDesc::release_set_klass(HeapWord* mem, Klass* k) {
   }
 }
 
-int oopDesc::klass_gap() const {
-  return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());
-}
-
 void oopDesc::set_klass_gap(HeapWord* mem, int v) {
   if (UseCompressedClassPointers) {
     *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
   }
-}
-
-void oopDesc::set_klass_gap(int v) {
-  set_klass_gap((HeapWord*)this, v);
 }
 
 bool oopDesc::is_a(Klass* k) const {
@@ -203,10 +195,11 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
-bool oopDesc::is_instance()  const { return klass()->is_instance_klass();  }
-bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
-bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
-bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
+bool oopDesc::is_instance()    const { return klass()->is_instance_klass();           }
+bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass(); }
+bool oopDesc::is_array()       const { return klass()->is_array_klass();              }
+bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();           }
+bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();          }
 
 template<typename T>
 T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
@@ -289,12 +282,13 @@ oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order orde
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
+  assert(is_forwarded(), "only decode when actually forwarded");
   return cast_to_oop(mark().decode_pointer());
 }
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
-  assert(!is_forwarded(), "Attempt to read age from forwarded mark");
+  assert(!mark().is_marked(), "Attempt to read age from forwarded mark");
   if (has_displaced_mark()) {
     return displaced_mark().age();
   } else {
@@ -303,7 +297,7 @@ uint oopDesc::age() const {
 }
 
 void oopDesc::incr_age() {
-  assert(!is_forwarded(), "Attempt to increment age of forwarded mark");
+  assert(!mark().is_marked(), "Attempt to increment age of forwarded mark");
   if (has_displaced_mark()) {
     set_displaced_mark(displaced_mark().incr_age());
   } else {

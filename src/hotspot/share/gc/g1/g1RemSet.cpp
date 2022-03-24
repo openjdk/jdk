@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -106,7 +107,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   // within a region to claim. Dependent on the region size as proxy for the heap
   // size, we limit the total number of chunks to limit memory usage and maintenance
   // effort of that table vs. granularity of distributing scanning work.
-  // Testing showed that 8 for 1M/2M region, 16 for 4M/8M regions, 32 for 16/32M regions,
+  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
   // and so on seems to be such a good trade-off.
   static uint get_chunks_per_region(uint log_region_size) {
     // Limit the expected input values to current known possible values of the
@@ -114,7 +115,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
     // values for region size.
     assert(log_region_size >= 20 && log_region_size <= 29,
            "expected value in [20,29], but got %u", log_region_size);
-    return 1u << (log_region_size / 2 - 7);
+    return 1u << (log_region_size / 2 - 4);
   }
 
   uint _scan_chunks_per_region;         // Number of chunks per region.
@@ -774,6 +775,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
   size_t _cards_scanned;
   size_t _blocks_scanned;
   size_t _chunks_claimed;
+  size_t _heap_roots_found;
 
   Tickspan _rem_set_root_scan_time;
   Tickspan _rem_set_trim_partially_time;
@@ -785,7 +787,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   HeapWord* scan_memregion(uint region_idx_for_card, MemRegion mr) {
     HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
-    G1ScanCardClosure card_cl(_g1h, _pss);
+    G1ScanCardClosure card_cl(_g1h, _pss, _heap_roots_found);
 
     HeapWord* const scanned_to = card_region->oops_on_memregion_seq_iterate_careful<true>(mr, &card_cl);
     assert(scanned_to != NULL, "Should be able to scan range");
@@ -807,7 +809,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::LogN_words), top);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::log_card_size_in_words()), top);
     if (_scanned_to >= scan_end) {
       return;
     }
@@ -880,6 +882,7 @@ public:
     _cards_scanned(0),
     _blocks_scanned(0),
     _chunks_claimed(0),
+    _heap_roots_found(0),
     _rem_set_root_scan_time(),
     _rem_set_trim_partially_time(),
     _scanned_to(NULL),
@@ -906,6 +909,7 @@ public:
   size_t cards_scanned() const { return _cards_scanned; }
   size_t blocks_scanned() const { return _blocks_scanned; }
   size_t chunks_claimed() const { return _chunks_claimed; }
+  size_t heap_roots_found() const { return _heap_roots_found; }
 };
 
 void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
@@ -924,6 +928,7 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.cards_scanned(), G1GCPhaseTimes::ScanHRScannedCards);
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.blocks_scanned(), G1GCPhaseTimes::ScanHRScannedBlocks);
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.chunks_claimed(), G1GCPhaseTimes::ScanHRClaimedChunks);
+  p->record_or_add_thread_work_item(scan_phase, worker_id, cl.heap_roots_found(), G1GCPhaseTimes::ScanHRFoundRoots);
 }
 
 // Heap region closure to be applied to all regions in the current collection set
@@ -937,11 +942,12 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
 
   uint _worker_id;
 
+  size_t _opt_roots_scanned;
   size_t _opt_refs_scanned;
   size_t _opt_refs_memory_used;
 
-  Tickspan _strong_code_root_scan_time;
-  Tickspan _strong_code_trim_partially_time;
+  Tickspan _code_root_scan_time;
+  Tickspan _code_trim_partially_time;
 
   Tickspan _rem_set_opt_root_scan_time;
   Tickspan _rem_set_opt_trim_partially_time;
@@ -951,7 +957,7 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
 
     G1OopStarChunkedList* opt_rem_set_list = _pss->oops_into_optional_region(r);
 
-    G1ScanCardClosure scan_cl(G1CollectedHeap::heap(), _pss);
+    G1ScanCardClosure scan_cl(G1CollectedHeap::heap(), _pss, _opt_roots_scanned);
     G1ScanRSForOptionalClosure cl(G1CollectedHeap::heap(), &scan_cl);
     _opt_refs_scanned += opt_rem_set_list->oops_do(&cl, _pss->closures()->strong_oops());
     _opt_refs_memory_used += opt_rem_set_list->used_memory();
@@ -970,10 +976,11 @@ public:
     _scan_phase(scan_phase),
     _code_roots_phase(code_roots_phase),
     _worker_id(worker_id),
+    _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0),
-    _strong_code_root_scan_time(),
-    _strong_code_trim_partially_time(),
+    _code_root_scan_time(),
+    _code_trim_partially_time(),
     _rem_set_opt_root_scan_time(),
     _rem_set_opt_trim_partially_time() { }
 
@@ -990,9 +997,9 @@ public:
     if (_scan_state->claim_collection_set_region(region_idx)) {
       EventGCPhaseParallel event;
 
-      G1EvacPhaseWithTrimTimeTracker timer(_pss, _strong_code_root_scan_time, _strong_code_trim_partially_time);
-      // Scan the strong code root list attached to the current region
-      r->strong_code_roots_do(_pss->closures()->weak_codeblobs());
+      G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
+      // Scan the code root list attached to the current region
+      r->code_roots_do(_pss->closures()->weak_codeblobs());
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
@@ -1000,12 +1007,13 @@ public:
     return false;
   }
 
-  Tickspan strong_code_root_scan_time() const { return _strong_code_root_scan_time;  }
-  Tickspan strong_code_root_trim_partially_time() const { return _strong_code_trim_partially_time; }
+  Tickspan code_root_scan_time() const { return _code_root_scan_time;  }
+  Tickspan code_root_trim_partially_time() const { return _code_trim_partially_time; }
 
   Tickspan rem_set_opt_root_scan_time() const { return _rem_set_opt_root_scan_time; }
   Tickspan rem_set_opt_trim_partially_time() const { return _rem_set_opt_trim_partially_time; }
 
+  size_t opt_roots_scanned() const { return _opt_roots_scanned; }
   size_t opt_refs_scanned() const { return _opt_refs_scanned; }
   size_t opt_refs_memory_used() const { return _opt_refs_memory_used; }
 };
@@ -1023,11 +1031,12 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_root_scan_time().seconds());
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_trim_partially_time().seconds());
 
-  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.strong_code_root_scan_time().seconds());
-  p->add_time_secs(objcopy_phase, worker_id, cl.strong_code_root_trim_partially_time().seconds());
+  p->record_or_add_time_secs(coderoots_phase, worker_id, cl.code_root_scan_time().seconds());
+  p->add_time_secs(objcopy_phase, worker_id, cl.code_root_trim_partially_time().seconds());
 
   // At this time we record some metrics only for the evacuations after the initial one.
   if (scan_phase == G1GCPhaseTimes::OptScanHR) {
+    p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_roots_scanned(), G1GCPhaseTimes::ScanHRFoundRoots);
     p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_refs_scanned(), G1GCPhaseTimes::ScanHRScannedOptRefs);
     p->record_or_add_thread_work_item(scan_phase, worker_id, cl.opt_refs_memory_used(), G1GCPhaseTimes::ScanHRUsedMemory);
   }
@@ -1251,6 +1260,46 @@ class G1MergeHeapRootsTask : public WorkerTask {
     G1MergeCardSetStats stats() const { return _stats; }
   };
 
+  // Closure to clear the prev bitmap for any old region in the collection set.
+  // This is needed to be able to use the bitmap for evacuation failure handling.
+  class G1ClearBitmapClosure : public HeapRegionClosure {
+    G1CollectedHeap* _g1h;
+    void assert_bitmap_clear(HeapRegion* hr, const G1CMBitMap* bitmap) {
+      assert(bitmap->get_next_marked_addr(hr->bottom(), hr->end()) == hr->end(),
+             "Bitmap should have no mark for young regions");
+    }
+  public:
+    G1ClearBitmapClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+
+    bool do_heap_region(HeapRegion* hr) {
+      assert(_g1h->is_in_cset(hr), "Should only be used iterating the collection set");
+      // Young regions should always have cleared bitmaps, so only clear old.
+      if (hr->is_old()) {
+        _g1h->clear_prev_bitmap_for_region(hr);
+      } else {
+        assert(hr->is_young(), "Should only be young and old regions in collection set");
+        assert_bitmap_clear(hr, _g1h->concurrent_mark()->prev_mark_bitmap());
+      }
+      return false;
+    }
+  };
+
+  // Helper to allow two closure to be applied when
+  // iterating through the collection set.
+  class G1CombinedClosure : public HeapRegionClosure {
+    HeapRegionClosure* _closure1;
+    HeapRegionClosure* _closure2;
+  public:
+    G1CombinedClosure(HeapRegionClosure* cl1, HeapRegionClosure* cl2) :
+      _closure1(cl1),
+      _closure2(cl2) { }
+
+    bool do_heap_region(HeapRegion* hr) {
+      return _closure1->do_heap_region(hr) ||
+             _closure2->do_heap_region(hr);
+    }
+  };
+
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
   class G1FlushHumongousCandidateRemSets : public HeapRegionClosure {
@@ -1381,7 +1430,7 @@ public:
   {
     if (initial_evacuation) {
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-      G1BufferNodeList buffers = dcqs.take_all_completed_buffers();
+      BufferNodeList buffers = dcqs.take_all_completed_buffers();
       if (buffers._entry_count != 0) {
         _dirty_card_buffers.prepend(*buffers._head, *buffers._tail);
       }
@@ -1415,12 +1464,15 @@ public:
 
     // Merge remembered sets of current candidates.
     {
-      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, _initial_evacuation /* must_record */);
+      G1GCParPhaseTimesTracker x(p, merge_remset_phase, worker_id, !_initial_evacuation /* allow_multiple_record */);
       G1MergeCardSetStats stats;
       {
-        G1MergeCardSetClosure cl(_scan_state);
-        g1h->collection_set_iterate_increment_from(&cl, &_hr_claimer, worker_id);
-        stats = cl.stats();
+        G1MergeCardSetClosure merge(_scan_state);
+        G1ClearBitmapClosure clear(g1h);
+        G1CombinedClosure combined(&merge, &clear);
+
+        g1h->collection_set_iterate_increment_from(&combined, &_hr_claimer, worker_id);
+        stats = merge.stats();
       }
 
       for (uint i = 0; i < G1GCPhaseTimes::MergeRSContainersSentinel; i++) {
@@ -1666,7 +1718,7 @@ void G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
 
   // Don't use addr_for(card_ptr + 1) which can ask for
   // a card beyond the heap.
-  HeapWord* end = start + G1CardTable::card_size_in_words;
+  HeapWord* end = start + G1CardTable::card_size_in_words();
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
@@ -1906,7 +1958,7 @@ public:
       HeapWord* const top_at_mark_start = hr->prev_top_at_mark_start();
 
       HeapWord* cur = hr->bottom();
-      while (cur < hr->end()) {
+      while (true) {
         // After every iteration (yield point) we need to check whether the region's
         // TARS changed due to e.g. eager reclaim.
         HeapWord* const top_at_rebuild_start = _cm->top_at_rebuild_start(region_idx);

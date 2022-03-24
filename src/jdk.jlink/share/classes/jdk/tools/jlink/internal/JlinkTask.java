@@ -78,7 +78,7 @@ import jdk.internal.module.ModuleResolution;
  * ## Should use jdk.joptsimple some day.
  */
 public class JlinkTask {
-    static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
+    public static final boolean DEBUG = Boolean.getBoolean("jlink.debug");
 
     // jlink API ignores by default. Remove when signing is implemented.
     static final boolean IGNORE_SIGNING_DEFAULT = true;

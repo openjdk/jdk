@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ class VectorMaskCmpNode;
 class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
+class ShiftVNode;
 
 // The type of all node counts and indexes.
 // It must hold at least 16 bits, but must also be fast to load and store.
@@ -711,6 +712,7 @@ public:
         DEFINE_CLASS_ID(VectorMaskCmp, Vector, 0)
         DEFINE_CLASS_ID(VectorUnbox, Vector, 1)
         DEFINE_CLASS_ID(VectorReinterpret, Vector, 2)
+        DEFINE_CLASS_ID(ShiftV, Vector, 3)
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -784,7 +786,8 @@ public:
     Flag_is_expensive                = 1 << 14,
     Flag_is_predicated_vector        = 1 << 15,
     Flag_for_post_loop_opts_igvn     = 1 << 16,
-    _last_flag                       = Flag_for_post_loop_opts_igvn
+    Flag_is_removed_by_peephole      = 1 << 17,
+    _last_flag                       = Flag_is_removed_by_peephole
   };
 
   class PD;
@@ -945,6 +948,7 @@ public:
   DEFINE_CLASS_QUERY(LoadVectorGather)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
+  DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
   #undef DEFINE_CLASS_QUERY
@@ -1081,6 +1085,8 @@ public:
   Node* find_similar(int opc);
 
   // Return the unique control out if only one. Null if none or more than one.
+  Node* unique_ctrl_out_or_null() const;
+  // Return the unique control out. Asserts if none or more than one control out.
   Node* unique_ctrl_out() const;
 
   // Set control or add control as precedence edge
@@ -1147,7 +1153,12 @@ public:
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL, "must be con");
+    guarantee(t != NULL && t->is_con(), "must be con");
+    return t->get_con_as_long(bt);
+  }
+  jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
+    const TypeInteger* t = find_integer_type(bt);
+    if (t == NULL || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;
@@ -1242,14 +1253,15 @@ public:
 #ifdef ASSERT
   void verify_construction();
   bool verify_jvms(const JVMState* jvms) const;
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   Node* _debug_orig;                   // Original version of this, if any.
   Node*  debug_orig() const            { return _debug_orig; }
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
+
+  int  _debug_idx;                     // Unique value assigned to every node.
+  int   debug_idx() const              { return _debug_idx; }
+  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1262,12 +1274,6 @@ public:
   uint        _del_tick;               // Bumped when a deletion happens..
   #endif
 #endif
-public:
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    Unimplemented();
-    return false;
-  }
 };
 
 inline bool not_a_node(const Node* n) {
@@ -1831,5 +1837,40 @@ public:
   virtual void dump_compact_spec(outputStream *st) const;
 #endif
 };
+
+#include "opto/opcodes.hpp"
+
+#define Op_IL(op) \
+  inline int Op_ ## op(BasicType bt) { \
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs"); \
+  if (bt == T_INT) { \
+    return Op_## op ## I; \
+  } \
+  return Op_## op ## L; \
+}
+
+Op_IL(Add)
+Op_IL(Sub)
+Op_IL(Mul)
+Op_IL(URShift)
+Op_IL(LShift)
+Op_IL(Xor)
+Op_IL(Cmp)
+
+inline int Op_Cmp_unsigned(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_CmpU;
+  }
+  return Op_CmpUL;
+}
+
+inline int Op_Cast(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_CastII;
+  }
+  return Op_CastLL;
+}
 
 #endif // SHARE_OPTO_NODE_HPP
