@@ -77,6 +77,7 @@ class Compilation: public StackObj {
   bool               _has_exception_handlers;
   bool               _has_fpu_code;
   bool               _has_unsafe_access;
+  bool               _has_irreducible_loops;
   bool               _would_profile;
   bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
@@ -135,6 +136,7 @@ class Compilation: public StackObj {
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
+  bool has_irreducible_loops() const             { return _has_irreducible_loops; }
   int max_vector_size() const                    { return 0; }
   ciMethod* method() const                       { return _method; }
   int osr_bci() const                            { return _osr_bci; }
@@ -162,6 +164,7 @@ class Compilation: public StackObj {
   void set_has_exception_handlers(bool f)        { _has_exception_handlers = f; }
   void set_has_fpu_code(bool f)                  { _has_fpu_code = f; }
   void set_has_unsafe_access(bool f)             { _has_unsafe_access = f; }
+  void set_has_irreducible_loops(bool f)         { _has_irreducible_loops = f; }
   void set_would_profile(bool f)                 { _would_profile = f; }
   void set_has_access_indexed(bool f)            { _has_access_indexed = f; }
   // Add a set of exception handlers covering the given PC offset

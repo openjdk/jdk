@@ -33,7 +33,7 @@
 #include "runtime/vmOperations.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
-#include "services/mallocTracker.inline.hpp"
+#include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/nmtPreInit.hpp"
@@ -88,10 +88,6 @@ void MemTracker::initialize() {
     NMTPreInit::print_state(&ls);
     ls.cr();
   }
-}
-
-void* MemTracker::malloc_base(void* memblock) {
-  return MallocTracker::get_base(memblock);
 }
 
 void Tracker::record(address addr, size_t size) {

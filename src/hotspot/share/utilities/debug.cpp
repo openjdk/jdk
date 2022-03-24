@@ -478,6 +478,10 @@ extern "C" JNIEXPORT void verify() {
 extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
+  if (p == NULL) {
+    tty->print_cr("NULL");
+    return;
+  }
   if (Universe::heap()->is_in(p)) {
     oop obj = cast_to_oop(p);
     obj->print();

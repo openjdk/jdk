@@ -775,7 +775,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
      * Returns the baseline for the specified tab.
      *
      * @param tab index of tab to get baseline for
-     * @exception IndexOutOfBoundsException if index is out of range
+     * @throws IndexOutOfBoundsException if index is out of range
      *            (index &lt; 0 || index &gt;= tab count)
      * @return baseline or a value &lt; 0 indicating there is no reasonable
      *                  baseline

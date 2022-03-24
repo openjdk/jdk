@@ -634,6 +634,8 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = NULL;
   if (NMTPreInit::handle_malloc(&rc, size)) {
+    // No need to fill with 0 because DumpSharedSpaces doesn't use these
+    // early allocations.
     return rc;
   }
 
@@ -649,22 +651,22 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return NULL;
   }
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-  const size_t nmt_overhead =
-      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
+  const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
-  const size_t outer_size = size + nmt_overhead;
-
-  void* const outer_ptr = (u_char*)::malloc(outer_size);
+  void* const outer_ptr = ::malloc(outer_size);
   if (outer_ptr == NULL) {
     return NULL;
   }
 
-  void* inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack, level);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
-  DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  if (DumpSharedSpaces) {
+    // Need to deterministically fill all the alignment gaps in C++ structures.
+    ::memset(inner_ptr, 0, size);
+  } else {
+    DEBUG_ONLY(::memset(inner_ptr, uninitBlockPad, size);)
+  }
   DEBUG_ONLY(break_if_ptr_caught(inner_ptr);)
-
   return inner_ptr;
 }
 
@@ -696,19 +698,17 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return NULL;
   }
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-  const size_t nmt_overhead =
-      MemTracker::malloc_header_size(level) + MemTracker::malloc_footer_size(level);
-
-  const size_t new_outer_size = size + nmt_overhead;
+  const size_t new_outer_size = size + MemTracker::overhead_per_malloc();
 
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock, level);
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
 
   void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);
+  if (new_outer_ptr == NULL) {
+    return NULL;
+  }
 
-  // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack, level);
+  void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
 
   DEBUG_ONLY(break_if_ptr_caught(new_inner_ptr);)
 
@@ -728,10 +728,9 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
-  const NMT_TrackingLevel level = MemTracker::tracking_level();
-
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
-  void* const old_outer_ptr = MemTracker::record_free(memblock, level);
+  void* const old_outer_ptr = MemTracker::record_free(memblock);
+
   ::free(old_outer_ptr);
 }
 
@@ -1174,34 +1173,34 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
+bool is_pointer_bad(intptr_t* ptr) {
+  return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
+}
+
 // Looks like all platforms can use the same function to check if C
 // stack is walkable beyond current frame.
+// Returns true if this is not the case, i.e. the frame is possibly
+// the first C frame on the stack.
 bool os::is_first_C_frame(frame* fr) {
 
 #ifdef _WINDOWS
   return true; // native stack isn't walkable on windows this way.
 #endif
-
   // Load up sp, fp, sender sp and sender fp, check for reasonable values.
   // Check usp first, because if that's bad the other accessors may fault
   // on some architectures.  Ditto ufp second, etc.
-  uintptr_t fp_align_mask = (uintptr_t)(sizeof(address)-1);
-  // sp on amd can be 32 bit aligned.
-  uintptr_t sp_align_mask = (uintptr_t)(sizeof(int)-1);
 
-  uintptr_t usp    = (uintptr_t)fr->sp();
-  if ((usp & sp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->sp())) return true;
 
   uintptr_t ufp    = (uintptr_t)fr->fp();
-  if ((ufp & fp_align_mask) != 0) return true;
+  if (is_pointer_bad(fr->fp())) return true;
 
   uintptr_t old_sp = (uintptr_t)fr->sender_sp();
-  if ((old_sp & sp_align_mask) != 0) return true;
-  if (old_sp == 0 || old_sp == (uintptr_t)-1) return true;
+  if ((uintptr_t)fr->sender_sp() == (uintptr_t)-1 || is_pointer_bad(fr->sender_sp())) return true;
 
-  uintptr_t old_fp = (uintptr_t)fr->link();
-  if ((old_fp & fp_align_mask) != 0) return true;
-  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp) return true;
+  uintptr_t old_fp = (uintptr_t)fr->link_or_null();
+  if (old_fp == 0 || old_fp == (uintptr_t)-1 || old_fp == ufp ||
+    is_pointer_bad(fr->link_or_null())) return true;
 
   // stack grows downwards; if old_fp is below current fp or if the stack
   // frame is too large, either the stack is corrupted or fp is not saved
@@ -1212,7 +1211,6 @@ bool os::is_first_C_frame(frame* fr) {
 
   return false;
 }
-
 
 // Set up the boot classpath.
 

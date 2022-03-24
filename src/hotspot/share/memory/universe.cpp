@@ -1248,6 +1248,7 @@ bool Universe::release_fullgc_alot_dummy() {
     if (_fullgc_alot_dummy_next >= fullgc_alot_dummy_array->length()) {
       // No more dummies to release, release entire array instead
       _fullgc_alot_dummy_array.release(Universe::vm_global());
+      _fullgc_alot_dummy_array = OopHandle(); // NULL out OopStorage pointer.
       return false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /*
  * @test
- * @bug      8017191 8182765 8200432 8239804 8250766 8262992
+ * @bug      8017191 8182765 8200432 8239804 8250766 8262992 8281944
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
- * @library  ../../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestSeeTag
  */
 
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
+
+import java.io.IOException;
+import java.nio.file.Path;
 
 public class TestSeeTag extends JavadocTester {
 
@@ -109,5 +113,41 @@ public class TestSeeTag extends JavadocTester {
                     </ul>
                     </dd>
                     </dl>""");
+    }
+
+    ToolBox tb = new ToolBox();
+
+    @Test
+    public void testErroneous() throws IOException {
+        Path src = Path.of("erroneous", "src");
+        tb.writeJavaFiles(src, """
+                package erroneous;
+                /**
+                 * Comment.
+                 * @see <a href="
+                 */
+                public class C {
+                    private C() { }
+                }
+                """);
+
+        javadoc("-d", Path.of("erroneous", "api").toString(),
+                "-sourcepath", src.toString(),
+                "--no-platform-links",
+                "erroneous");
+        checkExit(Exit.ERROR);
+
+        checkOutput("erroneous/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="see-list">
+                    <li><span class="invalid-tag">invalid input: '&lt;a href="'</span></li>
+                    </ul>
+                    </dd>
+                    </dl>
+                    """);
+
     }
 }

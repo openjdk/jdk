@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ import jdk.test.lib.process.ProcessTools;
  * Run security tools (including jarsigner and keytool) in a new process.
  * The en_US locale is always used so a test can always match output to
  * English text. {@code /dev/urandom} is used as entropy source so tool will
- * not block because of entropy scarcity. {@code -Jvm-options} is supported
- * as an argument.
+ * not block because of entropy scarcity. An argument can be a normal string,
+ * {@code -Jvm-options}, or {@code $sysProp}.
  */
 public class SecurityTools {
 
@@ -66,6 +66,8 @@ public class SecurityTools {
             } else if (Platform.isWindows() && arg.isEmpty()) {
                 // JDK-6518827: special handling for empty argument on Windows
                 launcher.addToolArg("\"\"");
+            } else if (arg.length() > 1 && arg.charAt(0) == '$') {
+                launcher.addToolArg(System.getProperty(arg.substring(1)));
             } else {
                 launcher.addToolArg(arg);
             }

@@ -163,6 +163,8 @@
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM. (The more cores to use, the more memory you need.) At least 6 GB of free disk space is required.</p>
 <p>If you do not have access to sufficiently powerful hardware, it is also possible to use <a href="#cross-compiling">cross-compiling</a>.</p>
+<h4 id="branch-protection">Branch Protection</h4>
+<p>In order to use Branch Protection features in the VM, <code>--enable-branch-protection</code> must be used. This option requires C++ compiler support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both machines with and without support for branch protection in hardware. Branch Protection is only supported for Linux targets.</p>
 <h3 id="building-on-32-bit-arm">Building on 32-bit arm</h3>
 <p>This is not recommended. Instead, see the section on <a href="#cross-compiling">Cross-compiling</a>.</p>
 <h2 id="operating-system-requirements">Operating System Requirements</h2>
@@ -214,7 +216,7 @@
 <p>Unfortunately, Cygwin can be unreliable in certain circumstances. If you experience build tool crashes or strange issues when building on Windows, please check the Cygwin FAQ on the <a href="https://cygwin.com/faq/faq.html#faq.using.bloda">&quot;BLODA&quot; list</a> and the section on <a href="https://cygwin.com/faq/faq.html#faq.using.fixing-fork-failures">fork() failures</a>.</p>
 <h4 id="windows-subsystem-for-linux-wsl">Windows Subsystem for Linux (WSL)</h4>
 <p>Windows 10 1809 or newer is supported due to a dependency on the wslpath utility and support for environment variable sharing through WSLENV. Version 1803 can work but intermittent build failures have been observed.</p>
-<p>It's possible to build both Windows and Linux binaries from WSL. To build Windows binaries, you must use a Windows boot JDK (located in a Windows-accessible directory). To build Linux binaries, you must use a Linux boot JDK. The default behavior is to build for Windows. To build for Linux, pass <code>--build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu</code> to <code>configure</code>.</p>
+<p>It's possible to build both Windows and Linux binaries from WSL. To build Windows binaries, you must use a Windows boot JDK (located in a Windows-accessible directory). To build Linux binaries, you must use a Linux boot JDK. The default behavior is to build for Windows. To build for Linux, pass <code>--build=x86_64-unknown-linux-gnu --openjdk-target=x86_64-unknown-linux-gnu</code> to <code>configure</code>.</p>
 <p>If building Windows binaries, the source code must be located in a Windows- accessible directory. This is because Windows executables (such as Visual Studio and the boot JDK) must be able to access the source code. Also, the drive where the source is stored must be mounted as case-insensitive by changing either /etc/fstab or /etc/wsl.conf in WSL. Individual directories may be corrected using the fsutil tool in case the source was cloned before changing the mount options.</p>
 <p>Note that while it's possible to build on WSL, testing is still not fully supported.</p>
 <h3 id="macos">macOS</h3>
@@ -271,7 +273,7 @@
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Linux</td>
-<td style="text-align: left;">gcc 10.2.0</td>
+<td style="text-align: left;">gcc 11.2.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">macOS</td>
@@ -286,7 +288,7 @@
 <p>All compilers are expected to be able to compile to the C99 language standard, as some C99 features are used in the source code. Microsoft Visual Studio doesn't fully support C99 so in practice shared code is limited to using C99 features that it does support.</p>
 <h3 id="gcc">gcc</h3>
 <p>The minimum accepted version of gcc is 5.0. Older versions will generate a warning by <code>configure</code> and are unlikely to work.</p>
-<p>The JDK is currently known to be able to compile with at least version 10.2 of gcc.</p>
+<p>The JDK is currently known to be able to compile with at least version 11.2 of gcc.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.5. Older versions will not be accepted by <code>configure</code>.</p>
@@ -568,7 +570,8 @@ x86_64-linux-gnu-to-ppc64le-linux-gnu</code></pre>
 <p>To be able to build, we need a &quot;Build JDK&quot;, which is a JDK built from the current sources (that is, the same as the end result of the entire build process), but able to run on the <em>build</em> system, and not the <em>target</em> system. (In contrast, the Boot JDK should be from an older release, e.g. JDK 8 when building JDK 9.)</p>
 <p>The build process will create a minimal Build JDK for you, as part of building. To speed up the build, you can use <code>--with-build-jdk</code> to <code>configure</code> to point to a pre-built Build JDK. Please note that the build result is unpredictable, and can possibly break in subtle ways, if the Build JDK does not <strong>exactly</strong> match the current sources.</p>
 <h3 id="specifying-the-target-platform">Specifying the Target Platform</h3>
-<p>You <em>must</em> specify the target platform when cross-compiling. Doing so will also automatically turn the build into a cross-compiling mode. The simplest way to do this is to use the <code>--openjdk-target</code> argument, e.g. <code>--openjdk-target=arm-linux-gnueabihf</code>. or <code>--openjdk-target=aarch64-oe-linux</code>. This will automatically set the <code>--build</code>, <code>--host</code> and <code>--target</code> options for autoconf, which can otherwise be confusing. (In autoconf terminology, the &quot;target&quot; is known as &quot;host&quot;, and &quot;target&quot; is used for building a Canadian cross-compiler.)</p>
+<p>You <em>must</em> specify the target platform when cross-compiling. Doing so will also automatically turn the build into a cross-compiling mode. The simplest way to do this is to use the <code>--openjdk-target</code> argument, e.g. <code>--openjdk-target=arm-linux-gnueabihf</code>. or <code>--openjdk-target=aarch64-oe-linux</code>. This will automatically set the <code>--host</code> and <code>--target</code> options for autoconf, which can otherwise be confusing. (In autoconf terminology, the &quot;target&quot; is known as &quot;host&quot;, and &quot;target&quot; is used for building a Canadian cross-compiler.)</p>
+<p>If <code>--build</code> has not been explicitly passed to configure, <code>--openjdk-target</code> will autodetect the build platform and internally set the flag automatically, otherwise the platform that was explicitly passed to <code>--build</code> will be used instead.</p>
 <h3 id="toolchain-considerations">Toolchain Considerations</h3>
 <p>You will need two copies of your toolchain, one which generates output that can run on the target system (the normal, or <em>target</em>, toolchain), and one that generates output that can run on the build system (the <em>build</em> toolchain). Note that cross-compiling is only supported for gcc at the time being. The gcc standard is to prefix cross-compiling toolchains with the target denominator. If you follow this standard, <code>configure</code> is likely to pick up the toolchain correctly.</p>
 <p>The <em>build</em> toolchain will be autodetected just the same way the normal <em>build</em>/<em>target</em> toolchain will be autodetected when not cross-compiling. If this is not what you want, or if the autodetection fails, you can specify a devkit containing the <em>build</em> toolchain using <code>--with-build-devkit</code> to <code>configure</code>, or by giving <code>BUILD_CC</code> and <code>BUILD_CXX</code> arguments.</p>
@@ -887,30 +890,28 @@ spawn failed</code></pre>
 <p>If you need general help or advice about developing for the JDK, you can also contact the Adoption Group. See the section on <a href="#contributing-to-openjdk">Contributing to OpenJDK</a> for more information.</p>
 <h2 id="reproducible-builds">Reproducible Builds</h2>
 <p>Build reproducibility is the property of getting exactly the same bits out when building, every time, independent on who builds the product, or where. This is for many reasons a harder goal than it initially appears, but it is an important goal, for security reasons and others. Please see <a href="https://reproducible-builds.org">Reproducible Builds</a> for more information about the background and reasons for reproducible builds.</p>
-<p>Currently, it is not possible to build OpenJDK fully reproducibly, but getting there is an ongoing effort. There are some things you can do to minimize non-determinism and make a larger part of the build reproducible:</p>
+<p>Currently, it is not possible to build OpenJDK fully reproducibly, but getting there is an ongoing effort.</p>
+<p>An absolute prerequisite for building reproducible is to speficy a fixed build time, since time stamps are embedded in many file formats. This is done by setting the <code>SOURCE_DATE_EPOCH</code> environment variable, which is an <a href="https://reproducible-builds.org/docs/source-date-epoch/">industry standard</a>, that many tools, such as gcc, recognize, and use in place of the current time when generating output.</p>
+<p>To generate reproducible builds, you must set <code>SOURCE_DATE_EPOCH</code> before running <code>configure</code>. The value in <code>SOURCE_DATE_EPOCH</code> will be stored in the configuration, and used by <code>make</code>. Setting <code>SOURCE_DATE_EPOCH</code> before running <code>make</code> will have no effect on the build.</p>
+<p>You must also make sure your build does not rely on <code>configure</code>'s default adhoc version strings. Default adhoc version strings <code>OPT</code> segment include user name and source directory. You can either override just the <code>OPT</code> segment using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you can specify the entire version string using <code>--with-version-string=&lt;your version&gt;</code>.</p>
+<p>This is a typical example of how to build the JDK in a reproducible way:</p>
+<pre><code>export SOURCE_DATE_EPOCH=946684800
+bash configure --with-version-opt=adhoc
+make</code></pre>
+<p>Note that regardless if you specify a source date for <code>configure</code> or not, the JDK build system will set <code>SOURCE_DATE_EPOCH</code> for all build tools when building. If <code>--with-source-date</code> has the value <code>updated</code> (which is the default unless <code>SOURCE_DATE_EPOCH</code> is found by in the environment by <code>configure</code>), the source date value will be determined at build time.</p>
+<p>There are several aspects of reproducible builds that can be individually adjusted by <code>configure</code> arguments. If any of these are given, they will override the value derived from <code>SOURCE_DATE_EPOCH</code>. These arguments are:</p>
 <ul>
-<li>Turn on build system support for reproducible builds</li>
+<li><p><code>--with-source-date</code></p>
+<p>This option controls how the JDK build sets <code>SOURCE_DATE_EPOCH</code> when building. It can be set to a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
+<p>It can also be set to one of the special values <code>current</code>, <code>updated</code> or <code>version</code>. <code>current</code> means that the time of running <code>configure</code> will be used. <code>version</code> will use the nominal release date for the current JDK version. <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>. All choices, except for <code>updated</code>, will set a fixed value for the source date timestamp.</p>
+<p>When <code>SOURCE_DATE_EPOCH</code> is set, the default value for <code>--with-source-date</code> will be the value given by <code>SOURCE_DATE_EPOCH</code>. Otherwise, the default value is <code>updated</code>.</p></li>
+<li><p><code>--with-hotspot-build-time</code></p>
+<p>This option controls the build time string that will be included in the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>). When the source date is fixed (e.g. by setting <code>SOURCE_DATE_EPOCH</code>), the default value for <code>--with-hotspot-build-time</code> will be an ISO 8601 representation of that time stamp. Otherwise the default value will be the current time when building hotspot.</p></li>
+<li><p><code>--with-copyright-year</code></p>
+<p>This option controls the copyright year in some generated text files. When the source date is fixed (e.g. by setting <code>SOURCE_DATE_EPOCH</code>), the default value for <code>--with-copyright-year</code> will be the year of that time stamp. Otherwise the default is the current year at the time of running configure. This can be overridden by <code>--with-copyright-year=&lt;year&gt;</code>.</p></li>
+<li><p><code>--enable-reproducible-build</code></p>
+<p>This option controls some additional behavior needed to make the build reproducible. When the source date is fixed (e.g. by setting <code>SOURCE_DATE_EPOCH</code>), this flag will be turned on by default. Otherwise, the value is determined by heuristics. If it is explicitly turned off, the build might not be reproducible.</p></li>
 </ul>
-<p>Add the flag <code>--enable-reproducible-build</code> to your <code>configure</code> command line. This will turn on support for reproducible builds where it could otherwise be lacking.</p>
-<ul>
-<li>Do not rely on <code>configure</code>'s default adhoc version strings</li>
-</ul>
-<p>Default adhoc version strings OPT segment include user name, source directory and timestamp. You can either override just the OPT segment using <code>--with-version-opt=&lt;any fixed string&gt;</code>, or you can specify the entire version string using <code>--with-version-string=&lt;your version&gt;</code>.</p>
-<ul>
-<li>Specify how the build sets <code>SOURCE_DATE_EPOCH</code></li>
-</ul>
-<p>The JDK build system will set the <code>SOURCE_DATE_EPOCH</code> environment variable during building, depending on the value of the <code>--with-source-date</code> option for <code>configure</code>. The default value is <code>updated</code>, which means that <code>SOURCE_DATE_EPOCH</code> will be set to the current time each time you are running <code>make</code>.</p>
-<p>The <a href="https://reproducible-builds.org/docs/source-date-epoch/"><code>SOURCE_DATE_EPOCH</code> environment variable</a> is an industry standard, that many tools, such as gcc, recognize, and use in place of the current time when generating output.</p>
-<p>For reproducible builds, you need to set this to a fixed value. You can use the special value <code>version</code> which will use the nominal release date for the current JDK version, or a value describing a date, either an epoch based timestamp as an integer, or a valid ISO-8601 date.</p>
-<p><strong>Hint:</strong> If your build environment already sets <code>SOURCE_DATE_EPOCH</code>, you can propagate this using <code>--with-source-date=$SOURCE_DATE_EPOCH</code>.</p>
-<ul>
-<li>Specify a hotspot build time</li>
-</ul>
-<p>Set a fixed hotspot build time. This will be included in the hotspot library (<code>libjvm.so</code> or <code>jvm.dll</code>) and defaults to the current time when building hotspot. Use <code>--with-hotspot-build-time=&lt;any fixed string&gt;</code> for reproducible builds. It's a string so you don't need to format it specifically, so e.g. <code>n/a</code> will do. Another solution is to use the <code>SOURCE_DATE_EPOCH</code> variable, e.g. <code>--with-hotspot-build-time=$(date --date=@$SOURCE_DATE_EPOCH)</code>.</p>
-<ul>
-<li>Copyright year</li>
-</ul>
-<p>The copyright year in some generated text files are normally set to the current year. This can be overridden by <code>--with-copyright-year=&lt;year&gt;</code>. For fully reproducible builds, this needs to be set to a fixed value.</p>
 <h2 id="hints-and-suggestions-for-advanced-users">Hints and Suggestions for Advanced Users</h2>
 <h3 id="bash-completion">Bash Completion</h3>
 <p>The <code>configure</code> and <code>make</code> commands tries to play nice with bash command-line completion (using <code>&lt;tab&gt;</code> or <code>&lt;tab&gt;&lt;tab&gt;</code>). To use this functionality, make sure you enable completion in your <code>~/.bashrc</code> (see instructions for bash in your operating system).</p>

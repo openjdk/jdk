@@ -542,6 +542,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/Enum/ConstantDirectoryOptimalCapacity.java            8282120 generic-all
 
 ############################################################################
 
@@ -738,8 +739,6 @@ javax/swing/plaf/metal/MetalGradient/8163193/ButtonGradientTest.java  8277816 ma
 javax/swing/JInternalFrame/8160248/JInternalFrameDraggingTest.java  8277816 macosx-aarch64
 javax/swing/JInternalFrame/8069348/bug8069348.java 8277816 macosx-aarch64
 java/awt/Robot/HiDPIScreenCapture/ScreenCaptureTest.java  8277816 macosx-aarch64
-java/awt/Robot/HiDPIScreenCapture/ScreenCaptureGtkTest.java 8282270 linux-all
-java/awt/Robot/HiDPIScreenCapture/HiDPIRobotScreenCaptureTest.java 8282270 windows-all
 java/awt/Robot/CheckCommonColors/CheckCommonColors.java 8277816 macosx-aarch64
 java/awt/ColorClass/AlphaColorTest.java 8277816 macosx-aarch64
 java/awt/AlphaComposite/WindowAlphaCompositeTest.java 8277816 macosx-aarch64
@@ -826,8 +825,8 @@ jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 generic-x64
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
+jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
 ############################################################################
 
