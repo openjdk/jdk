@@ -3429,8 +3429,12 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # ... winter time will begin in Palestine from Friday 10-29, 01:00 AM
 # by 60 minutes backwards.
 #
-# From Paul Eggert (2021-10-20):
-# Guess future fall transitions on October's last Friday at 01:00.
+# From Tim Parenti (2021-10-25), per Paul Eggert (2021-10-24):
+# Guess future fall transitions at 01:00 on the Friday preceding October's
+# last Sunday (i.e., Fri>=23), as this is more consistent with recent practice.
+
+# From Heba Hamad (2022-03-10):
+# summer time will begin in Palestine from Sunday 03-27-2022, 00:00 AM.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -3466,9 +3470,10 @@ Rule Palestine	2016	2018	-	Mar	Sat>=24	1:00	1:00	S
 Rule Palestine	2016	2018	-	Oct	Sat>=24	1:00	0	-
 Rule Palestine	2019	only	-	Mar	29	0:00	1:00	S
 Rule Palestine	2019	only	-	Oct	Sat>=24	0:00	0	-
-Rule Palestine	2020	max	-	Mar	Sat>=24	0:00	1:00	S
+Rule Palestine	2020	2021	-	Mar	Sat>=24	0:00	1:00	S
 Rule Palestine	2020	only	-	Oct	24	1:00	0	-
-Rule Palestine	2021	max	-	Oct	lastFri	1:00	0	-
+Rule Palestine	2021	max	-	Oct	Fri>=23	1:00	0	-
+Rule Palestine	2022	max	-	Mar	Sun>=25	0:00	1:00	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
