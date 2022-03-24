@@ -44,7 +44,7 @@ import static javax.lang.model.SourceVersion.*;
  * parameters}, etc., as indicated in the individual method
  * specifications.  A subclass can control the order elements are
  * visited by overriding the <code>visit<i>Xyz</i></code> methods.
- * Note that clients of a scanner may get the desired behavior be
+ * Note that clients of a scanner may get the desired behavior by
  * invoking {@code v.scan(e, p)} rather than {@code v.visit(e, p)} on
  * the root objects of interest.
  *
