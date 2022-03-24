@@ -56,7 +56,7 @@ import java.util.Optional;
  * as it depends on the platform and on the operating system.
  * <p>
  * Finally, clients can load a library and obtain a {@linkplain #libraryLookup(Path, MemorySession) library lookup} which can be used
- * to search symbols in that library. A library lookup is associated with a {@linkplain  MemorySession memory session},
+ * to find symbols in that library. A library lookup is associated with a {@linkplain  MemorySession memory session},
  * and the library it refers to is unloaded when the session is {@linkplain MemorySession#close() closed}.
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
