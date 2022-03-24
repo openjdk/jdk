@@ -259,7 +259,6 @@ public abstract class ShellFolder extends File {
         if (file instanceof ShellFolder) {
             return (ShellFolder)file;
         }
-System.out.println("File " + file + " path " + file.getPath());
         if (!Files.exists(Paths.get(file.getPath()), LinkOption.NOFOLLOW_LINKS)) {
             throw new FileNotFoundException();
         }
