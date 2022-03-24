@@ -113,7 +113,7 @@ class G1SegmentedArrayFreeList {
   static G1SegmentedArraySegment* volatile* next_ptr(G1SegmentedArraySegment& segment) {
     return segment.next_addr();
   }
-  typedef LockFreeStack<G1SegmentedArraySegment, &G1SegmentedArrayFreeList::next_ptr> SegmentStack;
+  using SegmentStack = LockFreeStack<G1SegmentedArraySegment, &G1SegmentedArrayFreeList::next_ptr>;
 
   SegmentStack _list;
 

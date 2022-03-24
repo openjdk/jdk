@@ -104,7 +104,6 @@ G1SegmentedArraySegment* G1SegmentedArray::create_new_segment(G1SegmentedArraySe
     uint num_slots = _alloc_options->next_num_slots(prev_num_slots);
 
     next = G1SegmentedArraySegment::create_segment(slot_size(), num_slots, prev, _alloc_options->mem_flag());
-    // next = new G1SegmentedArraySegment(slot_size(), num_slots, prev);
   } else {
     assert(slot_size() == next->slot_size() ,
            "Mismatch %d != %d", slot_size(), next->slot_size());
