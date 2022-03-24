@@ -763,14 +763,13 @@ void HandshakeState::handle_unsafe_access_error() {
     // object yet. Add a new unsafe access error operation to
     // the end of the queue and try again in the next attempt.
     Handshake::execute(new UnsafeAccessErrorHandshake(), _handshakee);
-    log_error(handshake)("JavaThread " INTPTR_FORMAT " skipping unsafe accesss processing due to suspend.", p2i(_handshakee));
+    log_info(handshake)("JavaThread " INTPTR_FORMAT " skipping unsafe access processing due to suspend.", p2i(_handshakee));
     return;
   }
   // Release the handshake lock before constructing the oop to
   // avoid deadlocks since that can block. This will allow the
-  // JavaThread to execute normally as if it would be outside
-  // a handshake. We will reacquire the handshake lock at return
-  // from ~MutexUnlocker.
+  // JavaThread to execute normally as if it was outside a handshake
+  // We will reacquire the handshake lock at return from ~MutexUnlocker.
   MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
   if (h_exception()->is_a(vmClasses::InternalError_klass())) {

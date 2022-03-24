@@ -976,7 +976,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
       Deoptimization::deoptimize_frame(self, caller_fr.id());
     }
 
-    // If an exception has been installed we must check the top frame wasn't deoptimized.
+    // If an exception has been installed we must verify that the top frame wasn't deoptimized.
     if (self->has_pending_exception() ) {
       RegisterMap map(self, true, false);
       frame caller_fr = stub_fr.sender(&map);

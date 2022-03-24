@@ -1622,18 +1622,17 @@ void JavaThread::handle_async_exception(oop java_throwable) {
       ResourceMark rm;
       LogStream ls(lt);
       ls.print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
-        if (has_last_Java_frame()) {
-          frame f = last_frame();
-          ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
-        }
+      if (has_last_Java_frame()) {
+        frame f = last_frame();
+        ls.print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
+      }
       ls.print_cr(" of type: %s", java_throwable->klass()->external_name());
     }
   }
 }
 
 void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
-  // Do not throw asynchronous exceptions against the compiler thread
-  // (the compiler thread should not be a Java thread -- fix in 1.4.2)
+  // Do not throw asynchronous exceptions against the compiler thread.
   if (!can_call_java()) {
     delete aeh;
     return;
