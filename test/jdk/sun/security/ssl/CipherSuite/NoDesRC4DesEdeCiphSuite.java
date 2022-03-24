@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8208350
- * @summary Disable all DES cipher suites
- * @run main/othervm NoDesRC4CiphSuite
+ * @bug 8208350 8163327
+ * @summary Disable all DES, RC4, and 3DES/DesEde cipher suites
+ * @run main/othervm NoDesRC4DesEdeCiphSuite
  */
 
 /*
@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class NoDesRC4CiphSuite {
+public class NoDesRC4DesEdeCiphSuite {
 
     private static final boolean DEBUG = false;
 
@@ -80,6 +80,18 @@ public class NoDesRC4CiphSuite {
         "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
         "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5"
     };
+    private static final List<Integer> DESEDE_CS_LIST = Arrays.asList(
+        0xC008, 0xC012, 0x0016, 0x0013, 0xC003, 0xC00D, 0x000A
+    );
+    private static final String[] DESEDE_CS_LIST_NAMES = new String[] {
+        "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
+        "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+        "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
+        "SSL_RSA_WITH_3DES_EDE_CBC_SHA"
+    };
 
     private static final ByteBuffer CLIOUTBUF =
             ByteBuffer.wrap("Client Side".getBytes());
@@ -98,6 +110,11 @@ public class NoDesRC4CiphSuite {
         allGood &= testDefaultCase(RC4_CS_LIST);
         allGood &= testEngAddDisabled(RC4_CS_LIST_NAMES, RC4_CS_LIST);
         allGood &= testEngOnlyDisabled(RC4_CS_LIST_NAMES);
+
+        // Disabled 3DES tests
+        allGood &= testDefaultCase(DESEDE_CS_LIST);
+        allGood &= testEngAddDisabled(DESEDE_CS_LIST_NAMES, DESEDE_CS_LIST);
+        allGood &= testEngOnlyDisabled(DESEDE_CS_LIST_NAMES);
 
         if (allGood) {
             System.err.println("All tests passed");

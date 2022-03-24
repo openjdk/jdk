@@ -242,7 +242,6 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   trace_method_handle_interpreter_entry(_masm, iid);
   if (iid == vmIntrinsics::_invokeBasic) {
     generate_method_handle_dispatch(_masm, iid, mh, noreg, not_for_compiler_entry);
-
   } else {
     // Adjust argument list by popping the trailing MemberName argument.
     Register recv = noreg;

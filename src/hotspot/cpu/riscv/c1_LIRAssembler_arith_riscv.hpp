@@ -26,12 +26,12 @@
 #ifndef CPU_RISCV_C1_LIRASSEMBLER_ARITH_RISCV_HPP
 #define CPU_RISCV_C1_LIRASSEMBLER_ARITH_RISCV_HPP
 
-// arith_op sub functions
-void arith_op_single_cpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
-void arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
-void arith_op_single_fpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
-void arith_op_double_fpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
-void arith_op_single_cpu_right_constant(LIR_Code code, LIR_Opr left, LIR_Opr right, Register lreg, Register dreg);
-void arithmetic_idiv(LIR_Op3* op, bool is_irem);
+  // arith_op sub functions
+  void arith_op_single_cpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
+  void arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
+  void arith_op_single_fpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
+  void arith_op_double_fpu(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
+  void arith_op_single_cpu_right_constant(LIR_Code code, LIR_Opr left, LIR_Opr right, Register lreg, Register dreg);
+  void arithmetic_idiv(LIR_Op3* op, bool is_irem);
 
 #endif // CPU_RISCV_C1_LIRASSEMBLER_ARITH_RISCV_HPP

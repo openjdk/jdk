@@ -25,6 +25,7 @@
 
 #ifndef CPU_RISCV_C1_LIRASSEMBLER_ARRAYCOPY_RISCV_HPP
 #define CPU_RISCV_C1_LIRASSEMBLER_ARRAYCOPY_RISCV_HPP
+
   // arraycopy sub functions
   void generic_arraycopy(Register src, Register src_pos, Register length,
                          Register dst, Register dst_pos, CodeStub *stub);
@@ -47,4 +48,5 @@
                             Register dst, Register dst_pos);
   void arraycopy_load_args(Register src, Register src_pos, Register length,
                            Register dst, Register dst_pos);
+
 #endif // CPU_RISCV_C1_LIRASSEMBLER_ARRAYCOPY_RISCV_HPP

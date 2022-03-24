@@ -854,4 +854,5 @@ class SkipIfEqual {
    SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
    ~SkipIfEqual();
 };
+
 #endif // CPU_RISCV_MACROASSEMBLER_RISCV_HPP

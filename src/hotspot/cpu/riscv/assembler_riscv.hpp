@@ -3042,7 +3042,6 @@ public:
   }
 
   virtual ~Assembler() {}
-
 };
 
 #endif // CPU_RISCV_ASSEMBLER_RISCV_HPP

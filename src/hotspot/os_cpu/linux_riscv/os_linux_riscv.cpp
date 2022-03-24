@@ -303,7 +303,6 @@ int os::Linux::get_fpu_control_word(void) {
 void os::Linux::set_fpu_control_word(int fpu_control) {
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

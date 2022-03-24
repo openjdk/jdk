@@ -190,5 +190,4 @@
                          VectorRegister tmp1, VectorRegister tmp2,
                          bool is_double, bool is_min);
 
-
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

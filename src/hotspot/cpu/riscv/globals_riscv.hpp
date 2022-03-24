@@ -95,4 +95,5 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseRVC, false, EXPERIMENTAL, "Use RVC instructions")             \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
           "Use RVV instructions for left/right shift of BigInteger")
+
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP

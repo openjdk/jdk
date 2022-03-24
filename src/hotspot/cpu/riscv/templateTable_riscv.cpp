@@ -452,7 +452,6 @@ void TemplateTable::ldc2_w()
     __ bind(notLong);
     condy_helper(Done);
     __ bind(Done);
-
 }
 
 void TemplateTable::condy_helper(Label& Done)
