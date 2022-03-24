@@ -46,11 +46,11 @@ public final class SecurityProviderConstants {
     private static final Debug debug =
         Debug.getInstance("jca", "ProviderConfig");
 
-    // cache for provider aliases; key is the standard algorithm name
+    // Cache for provider aliases; key is the standard algorithm name
     // value is the associated aliases List
     private static final ConcurrentHashMap<String, List<String>> aliasesMap;
 
-    // utility method for generating aliases list using the supplied
+    // Utility method for generating aliases list using the supplied
     // 'oid' and 'extraAliases', then store into "aliasesMap" cache under the
     // key 'stdName'
     private static List<String> store(String stdName, KnownOIDs oid,
@@ -78,7 +78,7 @@ public final class SecurityProviderConstants {
         return value;
     }
 
-    // returns an aliases List for the specified algorithm name o
+    // Return an aliases List for the specified algorithm name o
     // NOTE: exception is thrown if no aliases nor oid found, so
     // only call this method if aliases are expected
     public static List<String> getAliases(String o) {
@@ -134,7 +134,7 @@ public final class SecurityProviderConstants {
     public static final int DEF_EC_KEY_SIZE;
     public static final int DEF_ED_KEY_SIZE;
     public static final int DEF_XEC_KEY_SIZE;
-    // the logic for finding the max allowable value in getDefAESKeySize()
+    // The logic for finding the max allowable value in getDefAESKeySize()
     // interferes with provider loading logic and may lead to deadlocks if
     // called inside a static block. So, it is deferred to a later time when
     // DEF_AES_KEY_SIZE is actually used/needed.
