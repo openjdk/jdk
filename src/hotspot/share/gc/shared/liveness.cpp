@@ -3,6 +3,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/liveness.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
@@ -175,6 +176,8 @@ bool LivenessEstimatorThread::estimate_liveness() {
 void LivenessEstimatorThread::do_roots() {
   assert(Thread::current()->is_VM_thread(), "Expected to be on safepoint here");
 
+  StrongRootsScope roots_scope(0);
+
   LivenessOopClosure cl(this);
   OopStorageSet::strong_oops_do(&cl);
   Threads::oops_do(&cl, NULL);
@@ -182,8 +185,8 @@ void LivenessEstimatorThread::do_roots() {
   CLDToOopClosure cldt(&cl, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt);
 
-  // TODO: do we need to do anything with the code cache? 
-  // Compare GenCollectedHeap::process_roots with RootSetClosure::process
+  MarkingCodeBlobClosure code_blob_closure(&cl, false);
+  CodeCache::blobs_do(&code_blob_closure);
 }
 
 void LivenessEstimatorThread::do_oop(oop obj) {
