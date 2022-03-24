@@ -36,15 +36,16 @@ import static javax.lang.model.SourceVersion.*;
  * appropriate for source versions {@link SourceVersion#RELEASE_9
  * RELEASE_9} through {@link SourceVersion#RELEASE_14 RELEASE_14}.
  *
- * The <code>visit<i>Xyz</i></code> methods in this
- * class scan their component elements by calling {@link ElementScanner6#scan(Element, Object) scan} on
- * their {@linkplain Element#getEnclosedElements enclosed elements},
- * {@linkplain ExecutableElement#getParameters parameters}, etc., as
- * indicated in the individual method specifications.  A subclass can
- * control the order elements are visited by overriding the
- * <code>visit<i>Xyz</i></code> methods.  Note that clients of a scanner
- * may get the desired behavior be invoking {@code v.scan(e, p)} rather
- * than {@code v.visit(e, p)} on the root objects of interest.
+ * The <code>visit<i>Xyz</i></code> methods in this class scan their
+ * component elements by calling {@link ElementScanner6#scan(Element,
+ * Object) scan} on their {@linkplain Element#getEnclosedElements
+ * enclosed elements}, {@linkplain ExecutableElement#getParameters
+ * parameters}, etc., as indicated in the individual method
+ * specifications.  A subclass can control the order elements are
+ * visited by overriding the <code>visit<i>Xyz</i></code> methods.
+ * Note that clients of a scanner may get the desired behavior be
+ * invoking {@code v.scan(e, p)} rather than {@code v.visit(e, p)} on
+ * the root objects of interest.
  *
  * <p>When a subclass overrides a <code>visit<i>Xyz</i></code> method, the
  * new method can cause the enclosed elements to be scanned in the
