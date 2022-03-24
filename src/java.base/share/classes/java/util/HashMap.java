@@ -2546,7 +2546,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Calculate initial capacity for HashMap based classes, from expected size.
+     * Calculate initial capacity for HashMap based classes, from expected size and default load factor (0.75).
      *
      * @param expectedSize expected size
      * @return initial capacity for HashMap based classes.
@@ -2561,8 +2561,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Creates a new, empty HashMap with an initial table size
-     * accommodating the specified number of elements without the need
-     * to dynamically resize.
+     * accommodating the specified number of elements and default load factor (0.75)
+     * without the need to dynamically resize.
      *
      * @param expectedSize expected size
      * @param <K>          the type of keys maintained by this map

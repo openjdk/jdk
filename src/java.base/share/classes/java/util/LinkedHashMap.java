@@ -790,8 +790,8 @@ public class LinkedHashMap<K,V>
 
     /**
      * Creates a new, empty LinkedHashMap with an initial table size
-     * accommodating the specified number of elements without the need
-     * to dynamically resize.
+     * accommodating the specified number of elements and default load factor (0.75)
+     * without the need to dynamically resize.
      *
      * @param expectedSize expected size
      * @param <K>          the type of keys maintained by this map
