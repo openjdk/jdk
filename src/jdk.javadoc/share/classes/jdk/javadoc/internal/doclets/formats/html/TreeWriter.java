@@ -101,7 +101,7 @@ public class TreeWriter extends AbstractTreeWriter {
      * @throws DocFileIOException if there is a problem generating the overview tree page
      */
     public void generateTreeFile() throws DocFileIOException {
-        HtmlTree body = getTreeHeader();
+        HtmlTree body = getBody();
         Content headContent = contents.hierarchyForAllPackages;
         var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
@@ -158,14 +158,12 @@ public class TreeWriter extends AbstractTreeWriter {
     }
 
     /**
-     * Get the tree header.
-     *
-     * @return a content for the tree header
+     * {@return a new HTML BODY element}
      */
-    protected HtmlTree getTreeHeader() {
+    private HtmlTree getBody() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        bodyContents.setHeader(getHeader(PageMode.TREE));
+        bodyContents.setHeader(getHeader(PageMode.TREE)); // idempotent
         return bodyTree;
     }
 

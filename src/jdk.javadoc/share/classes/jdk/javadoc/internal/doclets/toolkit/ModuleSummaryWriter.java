@@ -49,24 +49,24 @@ public interface ModuleSummaryWriter {
     /**
      * Get the header for the module content.
      *
-     * @return a content for the module content header
+     * @return the module content header
      */
     Content getContentHeader();
 
     /**
      * Get the header for the summary header.
      *
-     * @return a content with the summary header
+     * @return the summary header
      */
     Content getSummariesList();
 
     /**
-     * Get the header for the summary tree.
+     * Wrap the content into summary section.
      *
-     * @param summaryContent the content
-     * @return a content with the summary
+     * @param source the content to wrap into the summary section
+     * @return the summary
      */
-    Content getSummary(Content summaryContent);
+    Content getSummary(Content source);
 
     /**
      * Adds the module description.

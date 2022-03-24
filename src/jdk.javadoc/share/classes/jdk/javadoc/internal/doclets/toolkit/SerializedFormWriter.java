@@ -76,32 +76,26 @@ public interface SerializedFormWriter {
     void addPackageSerialized(Content serializedSummaries, Content packageSerialized);
 
     /**
-     * Get the given package header.
+     * {@return a header for the given package}
      *
      * @param packageElement the package element to write
-     * @return a content for the package header
      */
     Content getPackageHeader(PackageElement packageElement);
 
     /**
-     * Get the serialized class header.
-     *
-     * @return a content for the serialized class header
+     * {@return the serialized class header}
      */
     Content getClassSerializedHeader();
 
     /**
-     * Get the heading for the serializable class.
+     * {@return the heading for the serializable class}
      *
      * @param typeElement the class being processed
-     * @return a content for the class heading
      */
     Content getClassHeader(TypeElement typeElement);
 
     /**
-     * Get the serial UID info header.
-     *
-     * @return a content for the serial uid info header
+     * {@return the serial UID info header}
      */
     Content getSerialUIDInfoHeader();
 
@@ -115,9 +109,7 @@ public interface SerializedFormWriter {
     void addSerialUIDInfo(String header, String serialUID, Content target);
 
     /**
-     * Get the class serialize content header.
-     *
-     * @return a content for the class serialize content header
+     * {@return the serialized class header}
      */
     Content getClassContentHeader();
 
@@ -161,7 +153,7 @@ public interface SerializedFormWriter {
      * Gets the member.
      *
      * @param content the content used to generate the complete member
-     * @return a content for the member
+     * @return the member
      */
     Content getMember(Content content);
 
@@ -171,25 +163,22 @@ public interface SerializedFormWriter {
     interface SerialFieldWriter {
 
         /**
-         * Get the serializable field header.
-         *
-         * @return a serialized fields header content
+         * {@return the serializable field header}
          */
         Content getSerializableFieldsHeader();
 
         /**
-         * Get the field content header.
+         * {@return the field content header}
          *
          * @param isLastContent true if this is the last content to be documented
-         * @return a field header content
          */
         Content getFieldsContentHeader(boolean isLastContent);
 
         /**
-         * Get the fields content.
+         * {@return the fields}
          *
          * @param heading the heading to write.
-         * @param content the content to which the heading will be added
+         * @param content the content to be added
          * @return serializable fields content
          */
         Content getSerializableFields(String heading, Content content);
@@ -254,17 +243,14 @@ public interface SerializedFormWriter {
     interface SerialMethodWriter {
 
         /**
-         * Get the serializable method header.
-         *
-         * @return a serializable methods content
+         * {@return the header for serializable methods section}
          */
         Content getSerializableMethodsHeader();
 
         /**
-         * Get the method content header.
+         * {@return the header for serializable methods content section}
          *
-         * @param isLastContent true if this is the last content to be documented
-         * @return a methods content
+         * @param isLastContent true if the content being documented is the last content
          */
         Content getMethodsContentHeader(boolean isLastContent);
 

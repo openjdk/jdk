@@ -85,7 +85,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     /**
      * Get the serialized form summaries header.
      *
-     * @return the serialized form summary header tree
+     * @return the serialized form summaries header
      */
     @Override
     public Content getSerializedSummariesHeader() {
@@ -102,12 +102,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         return HtmlTree.SECTION(HtmlStyle.serializedPackageContainer);
     }
 
-    /**
-     * Get the given package header.
-     *
-     * @param packageElement the package element to write
-     * @return a content for the package header
-     */
     @Override
     public Content getPackageHeader(PackageElement packageElement) {
         var heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
@@ -117,15 +111,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         return heading;
     }
 
-    /**
-     * Get the serialized class header.
-     *
-     * @return a content for the serialized class header
-     */
     @Override
     public Content getClassSerializedHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
-
     }
 
     /**
@@ -139,12 +127,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 && !utils.hasHiddenTag(typeElement);
     }
 
-    /**
-     * Get the serializable class heading.
-     *
-     * @param typeElement the class being processed
-     * @return a content for the class header
-     */
     @Override
     public Content getClassHeader(TypeElement typeElement) {
         Content classLink = (isVisibleClass(typeElement))
@@ -180,11 +162,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         return section;
     }
 
-    /**
-     * Get the serial UID info header.
-     *
-     * @return a content for the serial uid info header
-     */
     @Override
     public Content getSerialUIDInfoHeader() {
         return HtmlTree.DL(HtmlStyle.nameValue);
@@ -209,15 +186,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         target.add(HtmlTree.DD(serialContent));
     }
 
-    /**
-     * Get the class serialize content header.
-     *
-     * @return a content for the class serialize content header
-     */
     @Override
     public Content getClassContentHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
-
     }
 
     /**

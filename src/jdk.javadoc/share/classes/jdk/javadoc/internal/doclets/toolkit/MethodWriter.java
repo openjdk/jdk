@@ -43,7 +43,7 @@ public interface MethodWriter extends MemberWriter {
      * Get the method details header.
      *
      * @param content the content representing member details
-     * @return the content for the method details header
+     * @return the method details header
      */
     Content getMethodDetailsHeader(Content content);
 
@@ -51,15 +51,15 @@ public interface MethodWriter extends MemberWriter {
      * Get the method documentation header.
      *
      * @param method the method being documented
-     * @return a content for the method documentation header
+     * @return the method documentation header
      */
-    Content getMethodHeaderContent(ExecutableElement method);
+    Content getMethodHeader(ExecutableElement method);
 
     /**
      * Get the signature for the given method.
      *
      * @param method the method being documented
-     * @return a content for the method signature
+     * @return the method signature
      */
     Content getSignature(ExecutableElement method);
 
@@ -101,14 +101,14 @@ public interface MethodWriter extends MemberWriter {
      *
      * @param methodDetailsHeader the content representing method details header
      * @param methodDetails the content representing method details
-     * @return a content for the method details
+     * @return the method details
      */
     Content getMethodDetails(Content methodDetailsHeader, Content methodDetails);
 
     /**
      * Gets the member header.
      *
-     * @return a content for the member header
+     * @return the member header
      */
     Content getMemberHeader();
 }

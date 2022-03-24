@@ -116,7 +116,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * @throws DocFileIOException if there is a problem generating the package use page
      */
     protected void generatePackageUseFile() throws DocFileIOException {
-        HtmlTree body = getPackageUseHeader();
+        HtmlTree body = getBody();
         Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {
             mainContent.add(contents.getContent("doclet.ClassUse_No.usage.of.0", getLocalizedPackageName(packageElement)));
@@ -213,11 +213,9 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Get the header for the package use listing.
-     *
-     * @return a content representing the package use header
+     * {@return the package use HTML BODY element}
      */
-    private HtmlTree getPackageUseHeader() {
+    private HtmlTree getBody() {
         String packageText = resources.getText("doclet.Package");
         String name = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
         String title = resources.getText("doclet.Window_ClassUse_Header", packageText, name);

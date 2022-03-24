@@ -42,7 +42,7 @@ public interface PropertyWriter extends MemberWriter {
      * Get the property details header.
      *
      * @param memberDetails the content representing member details
-     * @return a content for the property details header
+     * @return the property details header
      */
     Content getPropertyDetailsHeader(Content memberDetails);
 
@@ -50,7 +50,7 @@ public interface PropertyWriter extends MemberWriter {
      * Get the property documentation header.
      *
      * @param property the property being documented
-     * @return a content for the property documentation header
+     * @return the property documentation header
      */
     Content getPropertyHeaderContent(ExecutableElement property);
 
@@ -58,7 +58,7 @@ public interface PropertyWriter extends MemberWriter {
      * Get the signature for the given property.
      *
      * @param property the property being documented
-     * @return a content for the property signature
+     * @return the property signature
      */
     Content getSignature(ExecutableElement property);
 
@@ -99,7 +99,7 @@ public interface PropertyWriter extends MemberWriter {
      *
      * @param memberDetailsHeader the content representing member details header
      * @param memberDetails the content representing member details
-     * @return a content for the property details
+     * @return the property details
      */
     Content getPropertyDetails(Content memberDetailsHeader, Content memberDetails);
 }

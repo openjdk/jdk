@@ -100,7 +100,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     @Override
-    public Content getMethodHeaderContent(ExecutableElement method) {
+    public Content getMethodHeader(ExecutableElement method) {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(method)));
@@ -113,12 +113,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .setId(htmlIds.forMember(method));
     }
 
-    /**
-     * Get the signature for the given method.
-     *
-     * @param method the method being documented.
-     * @return a content object for the signature
-     */
     @Override
     public Content getSignature(ExecutableElement method) {
         return new Signatures.MemberSignature(method, this)

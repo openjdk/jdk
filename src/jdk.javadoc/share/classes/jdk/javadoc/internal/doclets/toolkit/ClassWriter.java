@@ -121,10 +121,9 @@ public interface ClassWriter {
     void addNestedClassInfo(Content target);
 
     /**
-     * Get the class information.
+     * {@return the class information}
      *
      * @param classInfo the content containing the class information
-     * @return a content for the class
      */
     Content getClassInfo(Content classInfo);
 
@@ -214,18 +213,16 @@ public interface ClassWriter {
     TypeElement getTypeElement();
 
     /**
-     * Get the member summary.
+     * {@return the member summary}
      *
      * @param memberContent the content used to build the summary
-     * @return a content for the member summary
      */
     Content getMemberSummary(Content memberContent);
 
     /**
-     * Get the member details.
+     * {@return the member details}
      *
-     * @param memberContent the content used to build the details
-     * @return a content for the member details
+     * @param memberContent the content used to generate the member details
      */
     Content getMemberDetails(Content memberContent);
 }

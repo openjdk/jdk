@@ -49,7 +49,7 @@ public interface MemberSummaryWriter {
      * @param typeElement the class the summary belongs to
      * @param content     the content to which the member summary will be added
      *
-     * @return a content for the member summary header
+     * @return the member summary header
      */
     Content getMemberSummaryHeader(TypeElement typeElement, Content content);
 
@@ -58,7 +58,7 @@ public interface MemberSummaryWriter {
      *
      * @param typeElement the class the summary table belongs to
      *
-     * @return a content for the member summary table
+     * @return the summary table
      */
     Content getSummaryTable(TypeElement typeElement);
 
@@ -77,7 +77,7 @@ public interface MemberSummaryWriter {
      *
      * @param typeElement the class the summary belongs to
      *
-     * @return a content containing the inherited summary header
+     * @return the inherited member summary header
      */
     Content getInheritedSummaryHeader(TypeElement typeElement);
 
@@ -97,7 +97,7 @@ public interface MemberSummaryWriter {
     /**
      * Returns the inherited summary links.
      *
-     * @return a content containing the inherited summary links
+     * @return the inherited summary links
      */
     Content getInheritedSummaryLinks();
 
@@ -114,7 +114,7 @@ public interface MemberSummaryWriter {
      *
      * @param memberContent the content representing the member
      *
-     * @return a content for the member
+     * @return the member content
      */
     Content getMember(Content memberContent);
 }

@@ -64,35 +64,16 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         return utils.serializableFields(te);
     }
 
-    /**
-     * Return the header for serializable fields section.
-     *
-     * @return a content for the header
-     */
     @Override
     public Content getSerializableFieldsHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    /**
-     * Return the header for serializable fields content section.
-     *
-     * @param isLastContent true if the content being documented is the last content.
-     * @return a content for the header
-     */
     @Override
     public Content getFieldsContentHeader(boolean isLastContent) {
         return new HtmlTree(TagName.LI).setStyle(HtmlStyle.blockList);
     }
 
-    /**
-     * Add serializable fields.
-     *
-     * @param heading the heading for the section
-     * @param source the content to be added to the serializable fields
-     *        content
-     * @return a content for the serializable fields content
-     */
     @Override
     public Content getSerializableFields(String heading, Content source) {
         var section = HtmlTree.SECTION(HtmlStyle.detail);

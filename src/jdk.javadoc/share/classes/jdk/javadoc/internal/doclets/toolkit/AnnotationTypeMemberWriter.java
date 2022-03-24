@@ -72,15 +72,14 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
      *
      * @param annotationDetailsHeader the content representing annotation type details header
      * @param annotationDetails the content representing annotation type details
-     * @return a content for the annotation type details
+     * @return the annotation type details
      */
     Content getAnnotationDetails(Content annotationDetailsHeader, Content annotationDetails);
 
     /**
-     * Gets the signature for the given member.
+     * {@return the signature for the specified member}
      *
      * @param member the member being documented
-     * @return a content for the annotation type signature
      */
     Content getSignature(Element member);
 
@@ -88,9 +87,9 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
      * Adds the deprecated output for the given member.
      *
      * @param member the member being documented
-     * @param annotationContent the content to which the deprecated information will be added
+     * @param target the content to which the deprecated information will be added
      */
-    void addDeprecated(Element member, Content annotationContent);
+    void addDeprecated(Element member, Content target);
 
     /**
      * Adds the preview output for the given member.

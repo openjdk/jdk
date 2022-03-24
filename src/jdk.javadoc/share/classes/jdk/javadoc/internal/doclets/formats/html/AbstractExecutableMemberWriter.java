@@ -277,23 +277,23 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     }
 
     /**
-     * Get a content containing the exception information for the executable member.
+     * Get the exception information for the executable member.
      *
-     * @param member the member to write exceptions for.
-     * @return the content containing the exceptions information.
+     * @param member the member to get the exception information for
+     * @return the exception information
      */
     protected Content getExceptions(ExecutableElement member) {
         List<? extends TypeMirror> exceptions = utils.asInstantiatedMethodType(typeElement, member).getThrownTypes();
-        Content content = new ContentBuilder();
+        Content result = new ContentBuilder();
         for (TypeMirror t : exceptions) {
-            if (!content.isEmpty()) {
-                content.add(",");
-                content.add(DocletConstants.NL);
+            if (!result.isEmpty()) {
+                result.add(",");
+                result.add(DocletConstants.NL);
             }
             Content link = writer.getLink(new HtmlLinkInfo(configuration, THROWS_TYPE, t));
-            content.add(link);
+            result.add(link);
         }
-        return content;
+        return result;
     }
 
     protected TypeElement implementsMethodInIntfac(ExecutableElement method,

@@ -158,7 +158,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Get the contents list.
      *
      * @param apiSummary the summary list builder
-     * @return a content for the contents list
+     * @return the contents list
      */
     public Content getContentsList(L apiSummary) {
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
@@ -179,9 +179,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     }
 
     /**
-     * Get the header for the API Summary Listing.
-     *
-     * @return a content for the header
+     * {@return the header for the API Summary listing}
      */
     public HtmlTree getHeader() {
         String title = resources.getText(titleKey);
@@ -191,7 +189,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     }
 
     /**
-     * Add summary information to the documentation tree
+     * Add summary information to the documentation
      *
      * @param apiList list of API summary elements
      * @param id the id attribute of the table

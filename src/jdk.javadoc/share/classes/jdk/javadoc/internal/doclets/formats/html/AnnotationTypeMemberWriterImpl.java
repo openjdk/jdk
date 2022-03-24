@@ -158,8 +158,8 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public void addDeprecated(Element member, Content annotationContent) {
-        addDeprecatedInfo(member, annotationContent);
+    public void addDeprecated(Element member, Content target) {
+        addDeprecatedInfo(member, target);
     }
 
     @Override

@@ -176,7 +176,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      *
      * @param member the member being linked to
      *
-     * @return a content representing the link
+     * @return the link
      */
     protected abstract Content getSummaryLink(Element member);
 
@@ -257,14 +257,14 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
     /**
      * Adds the deprecated information for the given member.
      *
-     * @param member  the member being documented.
-     * @param content the content to which the deprecated information will be added.
+     * @param member the member being documented.
+     * @param target the content to which the deprecated information will be added.
      */
-    protected void addDeprecatedInfo(Element member, Content content) {
+    protected void addDeprecatedInfo(Element member, Content target) {
         Content output = (new DeprecatedTaglet()).getAllBlockTagOutput(member,
             writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
-            content.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
+            target.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
         }
     }
 

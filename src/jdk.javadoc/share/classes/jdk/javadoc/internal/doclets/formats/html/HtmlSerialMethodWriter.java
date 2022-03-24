@@ -53,22 +53,11 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         super(writer, typeElement);
     }
 
-    /**
-     * Return the header for serializable methods section.
-     *
-     * @return a content for the header
-     */
     @Override
     public Content getSerializableMethodsHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    /**
-     * Return the header for serializable methods content section.
-     *
-     * @param isLastContent true if the content being documented is the last content.
-     * @return a content for the header
-     */
     @Override
     public Content getMethodsContentHeader(boolean isLastContent) {
         return new HtmlTree(TagName.LI);

@@ -148,10 +148,10 @@ public class AnnotationTypeMemberBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param annotationContent the content to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildSignature(Content annotationContent) {
-        annotationContent.add(writer.getSignature(currentMember));
+    protected void buildSignature(Content target) {
+        target.add(writer.getSignature(currentMember));
     }
 
     /**

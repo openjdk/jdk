@@ -403,9 +403,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     }
 
     /**
-     * Get the header for the class use Listing.
+     * Get the header for the class use listing.
      *
-     * @return a content representing the class use header
+     * @return the class use header
      */
     protected HtmlTree getClassUseHeader() {
         String cltype = resources.getText(switch (typeElement.getKind()) {

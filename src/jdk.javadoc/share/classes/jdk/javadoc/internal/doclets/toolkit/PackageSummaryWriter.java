@@ -54,14 +54,14 @@ public interface PackageSummaryWriter {
     /**
      * Get the header for the package content.
      *
-     * @return a content for the package content header
+     * @return the package content header
      */
     Content getContentHeader();
 
     /**
      * Get the header for the package summary.
      *
-     * @return a content with the package summary header
+     * @return the package summary header
      */
     Content getSummariesList();
 
@@ -127,7 +127,7 @@ public interface PackageSummaryWriter {
     /**
      * Gets the package summary.
      * @param summaryContent the content representing the package summary
-     * @return a content for the package summary
+     * @return the package summary
      */
     Content getPackageSummary(Content summaryContent);
 }

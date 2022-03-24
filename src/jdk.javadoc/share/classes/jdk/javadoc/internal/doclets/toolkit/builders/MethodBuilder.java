@@ -119,7 +119,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
-                Content methodContent = writer.getMethodHeaderContent(currentMethod);
+                Content methodContent = writer.getMethodHeader(currentMethod);
 
                 buildSignature(methodContent);
                 buildDeprecationInfo(methodContent);

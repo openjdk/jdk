@@ -174,9 +174,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Get the document content header
-     *
-     * @return a content the document content header
+     * {@return the document content header}
      */
     public Content getContentHeader() {
         return new ContentBuilder();
@@ -201,9 +199,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Get the member header
-     *
-     * @return a content for the member header
+     * {@return the member header}
      */
     public Content getMemberHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
@@ -249,22 +245,19 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Returns a list to be used for the list of members of a given kind.
-     *
-     * @return a list to be used for the list of members of a given kind
+     * {@return a list to add member items to}
      */
     public Content getMemberList() {
         return HtmlTree.UL(HtmlStyle.memberList);
     }
 
     /**
-     * Returns an item for the list of elements of a given kind
+     * {@return a member item}
      *
-     * @param content content for the item
-     * @return an item for the list of elements of a given kind
+     * @param member the member to represent as an item
      */
-    public Content getMemberListItem(Content content) {
-        return HtmlTree.LI(content);
+    public Content getMemberListItem(Content member) {
+        return HtmlTree.LI(member);
     }
 
     public Content getMemberInherited() {
@@ -286,30 +279,27 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Get the member content
+     * {@return the member content}
      *
      * @param content the content used to generate the complete member
-     * @return a content for the member
      */
     public Content getMember(Content content) {
         return HtmlTree.LI(content);
     }
 
     /**
-     * Get the member summary content
+     * {@return the member summary content}
      *
-     * @param memberContent the content used to generate the member summary tree
-     * @return a content for the member summary
+     * @param memberContent the content used to generate the member summary
      */
     public Content getMemberSummary(Content memberContent) {
         return HtmlTree.SECTION(HtmlStyle.summary, memberContent);
     }
 
     /**
-     * Get the member details content
+     * {@return the member details}
      *
-     * @param content the content used to generate the member details tree
-     * @return a content for the member details
+     * @param content the content used to generate the member details
      */
     public Content getMemberDetailsContent(Content content) {
         return HtmlTree.SECTION(HtmlStyle.details, content);
@@ -320,10 +310,10 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      *
      * @param id the id to be used for the content
      * @param style the style class to be added to the content
-     * @param content the content used to generate the complete member content
+     * @param source the content used to generate the complete member content
      * @return the member content
      */
-    public Content getMember(HtmlId id, HtmlStyle style, Content content) {
-        return HtmlTree.SECTION(style, content).setId(id);
+    public Content getMember(HtmlId id, HtmlStyle style, Content source) {
+        return HtmlTree.SECTION(style, source).setId(id);
     }
 }

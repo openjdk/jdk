@@ -90,7 +90,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     }
 
     /**
-     * Generate a separate tree file for each package.
+     * Generate a separate tree file.
+     *
      * @throws DocFileIOException if there is a problem generating the package tree file
      */
     protected void generatePackageTreeFile() throws DocFileIOException {
@@ -104,7 +105,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 HtmlStyle.title, headContent);
         var div = HtmlTree.DIV(HtmlStyle.header, heading);
         if (configuration.packages.size() > 1) {
-            addLinkToMainTree(div);
+            addLinkToAllPackages(div);
         }
         mainContent.add(div);
         addTree(classtree.baseClasses(), "doclet.Class_Hierarchy", mainContent);
@@ -120,7 +121,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     /**
      * Get the package tree header.
      *
-     * @return a content for the header
+     * @return the package tree header
      */
     protected HtmlTree getPackageTreeHeader() {
         String packageName = packageElement.isUnnamed() ? "" : utils.getPackageName(packageElement);
@@ -141,14 +142,16 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     /**
      * Add a link to the tree for all the packages.
      *
-     * @param div the content to which the link will be added
+     * @param target the content to which the link will be added
      */
-    protected void addLinkToMainTree(Content div) {
+    protected void addLinkToAllPackages(Content target) {
         var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                 contents.packageHierarchies);
-        div.add(span);
+        target.add(span);
         var ul = HtmlTree.UL(HtmlStyle.horizontal);
-        ul.add(getNavLinkMainTree(resources.getText("doclet.All_Packages")));
-        div.add(ul);
+        // TODO the link should be more specific:
+        //  it should point to the "all packages" section of the overview tree
+        ul.add(getNavLinkToOverviewTree(resources.getText("doclet.All_Packages")));
+        target.add(ul);
     }
 }

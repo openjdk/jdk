@@ -221,8 +221,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     /**
      * Get the class inheritance tree for the given class.
      *
-     * @param type the class to print the hierarchy for
-     * @return a content for class inheritance
+     * @param type the class to get the inheritance tree for
+     * @return the class inheritance tree
      */
     private Content getClassInheritanceTreeContent(TypeMirror type) {
         TypeMirror sup;
@@ -242,29 +242,29 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     /**
      * Get the class helper for the given class.
      *
-     * @param type the class to print the helper for
-     * @return a content for class helper
+     * @param type the class to get the helper for
+     * @return the class helper
      */
     private Content getClassHelperContent(TypeMirror type) {
-        Content content = new ContentBuilder();
+        Content result = new ContentBuilder();
         if (utils.typeUtils.isSameType(type, typeElement.asType())) {
             Content typeParameters = getTypeParameterLinks(
                     new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.TREE,
                     typeElement));
             if (configuration.shouldExcludeQualifier(utils.containingPackage(typeElement).toString())) {
-                content.add(utils.asTypeElement(type).getSimpleName());
-                content.add(typeParameters);
+                result.add(utils.asTypeElement(type).getSimpleName());
+                result.add(typeParameters);
             } else {
-                content.add(utils.asTypeElement(type).getQualifiedName());
-                content.add(typeParameters);
+                result.add(utils.asTypeElement(type).getQualifiedName());
+                result.add(typeParameters);
             }
         } else {
             Content link = getLink(new HtmlLinkInfo(configuration,
                     HtmlLinkInfo.Kind.CLASS_TREE_PARENT, type)
                     .label(configuration.getClassName(utils.asTypeElement(type))));
-            content.add(link);
+            result.add(link);
         }
-        return content;
+        return result;
     }
 
     @Override
@@ -423,11 +423,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     /**
-     * Get links to the given classes.
+     * Get the links to the given classes.
      *
-     * @param context the id of the context where the link will be printed
-     * @param list the list of classes
-     * @return a content for the class list
+     * @param context the id of the context where the links will be added
+     * @param list the classes
+     * @return the links
      */
     private Content getClassLinks(HtmlLinkInfo.Kind context, Collection<?> list) {
         Content content = new ContentBuilder();
@@ -462,12 +462,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         return typeElement;
     }
 
-    /**
-     * Get the member details.
-     *
-     * @param content the content used to generate the member details
-     * @return a content for the member details
-     */
+    @Override
     public Content getMemberDetails(Content content) {
         var section = HtmlTree.SECTION(HtmlStyle.details, content);
         // The following id is required by the Navigation bar

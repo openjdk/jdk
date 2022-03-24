@@ -54,7 +54,7 @@ public interface EnumConstantWriter extends MemberWriter {
      *
      * @param enumConstant the enum constant being documented
      * @param enumConstantsDetails the content representing enum constant details
-     * @return a content for the enum constant documentation header
+     * @return the enum constant documentation header
      */
     Content getEnumConstantsHeader(VariableElement enumConstant,
                                    Content enumConstantsDetails);
@@ -63,7 +63,7 @@ public interface EnumConstantWriter extends MemberWriter {
      * Get the signature for the given enum constant.
      *
      * @param enumConstant the enum constant being documented
-     * @return a content for the enum constant signature
+     * @return the enum constant signature
      */
     Content getSignature(VariableElement enumConstant);
 
@@ -102,16 +102,16 @@ public interface EnumConstantWriter extends MemberWriter {
     /**
      * Get the enum constants details.
      *
-     * @param memberDetailsHeader TODO
+     * @param memberDetailsHeader member details header
      * @param content the content representing member details
-     * @return a content for the enum constant details
+     * @return the enum constant details
      */
     Content getEnumConstantsDetails(Content memberDetailsHeader, Content content);
 
     /**
      * Gets the member header.
      *
-     * @return a content for the member header
+     * @return the member header
      */
     Content getMemberHeader();
 }

@@ -115,10 +115,10 @@ public abstract class Content {
      *
      * @param writer the writer
      * @param atNewline whether the writer has just written a newline
-     * @return  whether the writer has just written a newline
+     * @return whether the writer has just written a newline
      * @throws IOException if an error occurs while writing the output
      */
-    public abstract boolean write(Writer writer, boolean atNewline) throws IOException ;
+    public abstract boolean write(Writer writer, boolean atNewline) throws IOException;
 
     /**
      * Returns true if the content is empty.

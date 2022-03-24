@@ -172,11 +172,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         computeModulesData();
     }
 
-    /**
-     * Get the module header.
-     *
-     * @param heading the heading for the section
-     */
     @Override
     public Content getModuleHeader(String heading) {
         HtmlTree body = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
@@ -208,27 +203,16 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 ));
     }
 
-    /**
-     * Get the content header.
-     */
     @Override
     public Content getContentHeader() {
         return new ContentBuilder();
     }
 
-    /**
-     * Get the summary section header.
-     */
     @Override
     public Content getSummariesList() {
         return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
-    /**
-     * Get the summary.
-     *
-     * @param source the content to be added to the summary.
-     */
     @Override
     public Content getSummary(Content source) {
         return HtmlTree.SECTION(HtmlStyle.summary, source);

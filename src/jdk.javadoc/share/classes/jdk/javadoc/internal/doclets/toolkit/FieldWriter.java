@@ -43,7 +43,7 @@ public interface FieldWriter extends MemberWriter {
      * Get the field details header.
      *
      * @param content the content representing member details
-     * @return a content for the field details header
+     * @return the field details header
      */
     Content getFieldDetailsHeader(Content content);
 
@@ -51,7 +51,7 @@ public interface FieldWriter extends MemberWriter {
      * Get the field documentation header.
      *
      * @param field the constructor being documented
-     * @return a content for the field documentation header
+     * @return the field documentation header
      */
     Content getFieldHeaderContent(VariableElement field);
 
@@ -59,7 +59,7 @@ public interface FieldWriter extends MemberWriter {
      * Get the signature for the given field.
      *
      * @param field the field being documented
-     * @return a content for the field signature
+     * @return the field signature
      */
     Content getSignature(VariableElement field);
 
@@ -100,14 +100,14 @@ public interface FieldWriter extends MemberWriter {
      *
      * @param memberDetailsHeaderContent the content representing member details header
      * @param memberContent the content representing member details
-     * @return a content for the field details
+     * @return the field details
      */
     Content getFieldDetails(Content memberDetailsHeaderContent, Content memberContent);
 
     /**
      * Gets the member header.
      *
-     * @return a content for the member header
+     * @return the member header
      */
     Content getMemberHeader();
 }

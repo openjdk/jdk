@@ -485,7 +485,7 @@ public class HtmlDocletWriter {
 
     /**
      * Returns a {@code <header>} element, containing the user "top" text, if any,
-     * amd the main navigation bar.
+     * and the main navigation bar.
      *
      * @param pageMode the pageMode used to configure the navigation bar
      *
@@ -497,7 +497,7 @@ public class HtmlDocletWriter {
 
     /**
      * Returns a {@code <header>} element, containing the user "top" text, if any,
-     * amd the main navigation bar.
+     * and the main navigation bar.
      *
      * @param pageMode the page mode used to configure the navigation bar
      * @param element  the element used to configure the navigation bar
@@ -542,24 +542,24 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get the overview tree link for the main tree.
+     * {@return an "overview tree" link for a navigation bar}
      *
      * @param label the label for the link
-     * @return a content for the link
      */
-    protected Content getNavLinkMainTree(String label) {
-        Content mainTreeContent = links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
+    protected Content getNavLinkToOverviewTree(String label) {
+        Content link = links.createLink(pathToRoot.resolve(DocPaths.OVERVIEW_TREE),
                 Text.of(label));
-        return HtmlTree.LI(mainTreeContent);
+        return HtmlTree.LI(link);
     }
 
     /**
-     * Returns a content object containing the package name. A localized content object is
-     * returned for an unnamed package. Use {@link Utils#getPackageName(PackageElement)} to
-     * get a static string for the unnamed package instead.
+     * {@return a package name}
      *
-     * @param packageElement the package to check
-     * @return package name content
+     * A localized name is returned for an unnamed package.
+     * Use {@link Utils#getPackageName(PackageElement)} to get a static string
+     * for the unnamed package instead.
+     *
+     * @param packageElement the package to get the name for
      */
     public Content getLocalizedPackageName(PackageElement packageElement) {
         return packageElement == null || packageElement.isUnnamed()
@@ -601,11 +601,10 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Return the link to the given package.
+     * {@return the link to the given package}
      *
      * @param packageElement the package to link to.
      * @param label the label for the link.
-     * @return a content for the package link.
      */
     public Content getPackageLink(PackageElement packageElement, Content label) {
         boolean included = packageElement != null && utils.isIncluded(packageElement);
@@ -650,11 +649,10 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get Module link.
+     * {@return a link to module}
      *
      * @param mdle the module being documented
      * @param label tag for the link
-     * @return a content for the module link
      */
     public Content getModuleLink(ModuleElement mdle, Content label) {
         Set<ElementFlag> flags = mdle != null ? utils.elementFlags(mdle)
@@ -783,11 +781,10 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get the class link.
+     * {@return a link to the given class}
      *
      * @param context the id of the context where the link will be added
-     * @param element to link to
-     * @return a content for the link
+     * @param element the class to link to
      */
     public Content getQualifiedClassLink(HtmlLinkInfo.Kind context, Element element) {
         HtmlLinkInfo htmlLinkInfo = new HtmlLinkInfo(configuration, context, (TypeElement)element);
@@ -795,14 +792,14 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Add the class link.
+     * Adds a link to the given class.
      *
      * @param context the id of the context where the link will be added
-     * @param typeElement to link to
-     * @param content the content to which the link will be added
+     * @param typeElement the class to link to
+     * @param target the content to which the link will be added
      */
-    public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content content) {
-        addPreQualifiedClassLink(context, typeElement, null, content);
+    public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Content target) {
+        addPreQualifiedClassLink(context, typeElement, null, target);
     }
 
     /**
@@ -832,19 +829,19 @@ public class HtmlDocletWriter {
      * @param context the id of the context where the link will be added
      * @param typeElement the class to link to
      * @param style optional style for the link
-     * @param content the content to which the link with be added
+     * @param target the content to which the link with be added
      */
     public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context,
-                                         TypeElement typeElement, HtmlStyle style, Content content) {
+                                         TypeElement typeElement, HtmlStyle style, Content target) {
         PackageElement pkg = utils.containingPackage(typeElement);
         if(pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
-            content.add(getEnclosingPackageName(typeElement));
+            target.add(getEnclosingPackageName(typeElement));
         }
         HtmlLinkInfo linkinfo = new HtmlLinkInfo(configuration, context, typeElement)
                 .label(utils.getSimpleName(typeElement))
                 .style(style);
         Content link = getLink(linkinfo);
-        content.add(link);
+        target.add(link);
     }
 
     /**
@@ -881,12 +878,11 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get the link for the given member.
+     * {@return a link to the given member}
      *
      * @param context the id of the context where the link will be added
      * @param element the member being linked to
      * @param label the label for the link
-     * @return a content for the element link
      */
     public Content getDocLink(HtmlLinkInfo.Kind context, Element element, CharSequence label) {
         return getDocLink(context, utils.getEnclosingTypeElement(element), element,
@@ -1293,12 +1289,12 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Get the deprecated phrase as content.
+     * {@return a phrase describing the type of deprecation}
      *
      * @param e the Element for which the inline deprecated comment will be added
-     * @return a content for the deprecated phrase.
      */
     public Content getDeprecatedPhrase(Element e) {
+        // TODO e should be checked to being deprecated
         return (utils.isDeprecatedForRemoval(e))
                 ? contents.deprecatedForRemovalPhrase
                 : contents.deprecatedPhrase;
@@ -1907,35 +1903,33 @@ public class HtmlDocletWriter {
     }
 
     /**
-     * Return a content containing the annotation types for the given element.
+     * {@return the annotation types info for the given element}
      *
      * @param element an Element
      * @param lineBreak if true add new line between each member value
-     * @return the documentation containing the annotation info
      */
     Content getAnnotationInfo(Element element, boolean lineBreak) {
         return getAnnotationInfo(element.getAnnotationMirrors(), lineBreak);
     }
 
     /**
-     * Return a content containing the annotation types for the given element.
+     * {@return the description for the given annotations}
      *
      * @param descList a list of annotation mirrors
      * @param lineBreak if true add new line between each member value
-     * @return the documentation containing the annotation info
      */
     Content getAnnotationInfo(List<? extends AnnotationMirror> descList, boolean lineBreak) {
         List<Content> annotations = getAnnotations(descList, lineBreak);
         String sep = "";
-        ContentBuilder builder = new ContentBuilder();
+        ContentBuilder result = new ContentBuilder();
         for (Content annotation: annotations) {
-            builder.add(sep);
-            builder.add(annotation);
+            result.add(sep);
+            result.add(annotation);
             if (!lineBreak) {
                 sep = " ";
             }
         }
-        return builder;
+        return result;
     }
 
     /**

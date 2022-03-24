@@ -39,26 +39,23 @@ import javax.lang.model.element.ExecutableElement;
 public interface ConstructorWriter extends MemberWriter {
 
     /**
-     * Get the constructor details header.
+     * {@return the constructor details header}
      *
      * @param content the content representing member details
-     * @return a content for the constructor details header
      */
     Content getConstructorDetailsHeader(Content content);
 
     /**
-     * Get the constructor documentation header.
+     * {@return the constructor documentation header}
      *
      * @param constructor the constructor being documented
-     * @return a content for the constructor documentation header
      */
     Content getConstructorHeaderContent(ExecutableElement constructor);
 
     /**
-     * Get the signature for the given constructor.
+     * {@return the signature for the given constructor}
      *
      * @param constructor the constructor being documented
-     * @return a content for the constructor signature
      */
     Content getSignature(ExecutableElement constructor);
 
@@ -95,11 +92,10 @@ public interface ConstructorWriter extends MemberWriter {
     void addTags(ExecutableElement constructor, Content constructorContent);
 
     /**
-     * Get the constructor details.
+     * {@return the constructor details}
      *
      * @param memberDetailsHeader the content representing member details header
      * @param memberDetails the content representing member details
-     * @return a content for the constructor details
      */
     Content getConstructorDetails(Content memberDetailsHeader, Content memberDetails);
 
@@ -111,9 +107,7 @@ public interface ConstructorWriter extends MemberWriter {
     void setFoundNonPubConstructor(boolean foundNonPubConstructor);
 
     /**
-     * Gets the member header.
-     *
-     * @return a content for the member header
+     * @return the member header}
      */
     Content getMemberHeader();
 }
