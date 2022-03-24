@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,28 @@
  * questions.
  */
 
-/*
+ /*
  * @test
- * @bug 8039951
+ * @bug 8039951 8281717
  * @summary com.sun.security.auth.module missing classes on some platforms
  * @run main/othervm AllPlatforms
  */
-
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class AllPlatforms {
+
+    private static final String OS = System.getProperty("os.name").toLowerCase();
+    private static final String UNIX_MODULE = "UnixLoginModule";
+    private static final String NT_MODULE = "NTLoginModule";
+
     public static void main(String[] args) throws Exception {
         login("cross-platform",
-                "UnixLoginModule", "optional",
-                "NTLoginModule", "optional",
-                "SolarisLoginModule", "optional");
-        try {
-            login("windows", "NTLoginModule", "required");
-            login("unix", "UnixLoginModule", "required");
-            login("solaris", "SolarisLoginModule", "required");
-        } catch (Exception e) {
-            e.printStackTrace(System.out);
-            if (e.toString().contains("UnsatisfiedLinkError")) {
-                throw new Exception("This is ugly");
-            }
-        }
+                UNIX_MODULE, "optional",
+                NT_MODULE, "optional");
+        login(OS.replaceAll("[^a-zA-Z0-9]", ""), getPlatformLoginModule(), "required");
     }
 
     static void login(String test, String... conf) throws Exception {
@@ -56,9 +50,10 @@ public class AllPlatforms {
 
         StringBuilder sb = new StringBuilder();
         sb.append("hello {\n");
-        for (int i=0; i<conf.length; i+=2) {
-            sb.append("    com.sun.security.auth.module." + conf[i]
-                    + " " + conf[i+1] + ";\n");
+        for (int i = 0; i < conf.length; i += 2) {
+            sb.append("    com.sun.security.auth.module.")
+                    .append(conf[i]).append(" ")
+                    .append(conf[i + 1]).append(";\n");
         }
         sb.append("};\n");
         Files.write(Paths.get(test), sb.toString().getBytes());
@@ -70,5 +65,28 @@ public class AllPlatforms {
         LoginContext lc = new LoginContext("hello");
         lc.login();
         System.out.println(lc.getSubject());
+        lc.logout();
+    }
+
+    private static String getPlatformLoginModule() {
+        if (isWindows()) {
+            return NT_MODULE;
+        } else if (isUnix()) {
+            return UNIX_MODULE;
+        } else {
+            throw new RuntimeException("Unsupported Platform: " + OS);
+        }
+    }
+
+    private static boolean isWindows() {
+        return OS.contains("win");
+    }
+
+    private static boolean isUnix() {
+        return (OS.contains("mac")
+                || OS.contains("sunos")
+                || OS.contains("nix")
+                || OS.contains("nux")
+                || OS.contains("aix"));
     }
 }
