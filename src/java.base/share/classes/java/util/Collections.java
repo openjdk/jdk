@@ -30,7 +30,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -5799,67 +5798,4 @@ public class Collections {
         @Override
         public Stream<E> parallelStream()   {return q.parallelStream();}
     }
-
-    /**
-     * Calculate initial capacity for HashMap based classes, from expected size.
-     *
-     * @param expectedSize expected size
-     * @return initial capacity for HashMap based classes.
-     * @since 19
-     */
-    private static int calculateHashMapCapacity(int expectedSize) {
-        if (expectedSize >= 1610612736) {
-            return Integer.MAX_VALUE;
-        }
-        return (expectedSize + (expectedSize + 2) / 3);
-    }
-
-    /**
-     * Creates a new, empty HashMap with an initial table size
-     * accommodating the specified number of elements without the need
-     * to dynamically resize.
-     *
-     * @param expectedSize expected size
-     * @param <K>          the type of keys maintained by this map
-     * @param <V>          the type of mapped values
-     * @return the HashMap created.
-     * @throws IllegalArgumentException if the initial capacity is negative.
-     * @since 19
-     */
-    public static <K, V> HashMap<K, V> newHashMap(int expectedSize) {
-        return new HashMap<>(calculateHashMapCapacity(expectedSize));
-    }
-
-    /**
-     * Creates a new, empty LinkedHashMap with an initial table size
-     * accommodating the specified number of elements without the need
-     * to dynamically resize.
-     *
-     * @param expectedSize expected size
-     * @param <K>          the type of keys maintained by this map
-     * @param <V>          the type of mapped values
-     * @return the LinkedHashMap created.
-     * @throws IllegalArgumentException if the initial capacity is negative.
-     * @since 19
-     */
-    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(int expectedSize) {
-        return new LinkedHashMap<>(calculateHashMapCapacity(expectedSize));
-    }
-
-    /**
-     * Creates a new, empty WeakHashMap with an initial table size
-     * accommodating the specified number of elements without the need
-     * to dynamically resize.
-     *
-     * @param expectedSize expected size
-     * @param <K>          the type of keys maintained by this map
-     * @param <V>          the type of mapped values
-     * @return the WeakHashMap created.
-     * @throws IllegalArgumentException if the initial capacity is negative.
-     * @since 19
-     */
-    public static <K, V> WeakHashMap<K, V> newWeakHashMap(int expectedSize) {
-        return new WeakHashMap<>(calculateHashMapCapacity(expectedSize));
-    }
-
 }

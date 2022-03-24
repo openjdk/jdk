@@ -788,5 +788,20 @@ public class LinkedHashMap<K,V>
         public final Map.Entry<K,V> next() { return nextNode(); }
     }
 
+    /**
+     * Creates a new, empty LinkedHashMap with an initial table size
+     * accommodating the specified number of elements without the need
+     * to dynamically resize.
+     *
+     * @param expectedSize expected size
+     * @param <K>          the type of keys maintained by this map
+     * @param <V>          the type of mapped values
+     * @return the LinkedHashMap created.
+     * @throws IllegalArgumentException if the initial capacity is negative.
+     * @since 19
+     */
+    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(int expectedSize) {
+        return new LinkedHashMap<>(HashMap.calculateHashMapCapacity(expectedSize));
+    }
 
 }

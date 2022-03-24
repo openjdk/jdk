@@ -2545,4 +2545,34 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
     }
 
+    /**
+     * Calculate initial capacity for HashMap based classes, from expected size.
+     *
+     * @param expectedSize expected size
+     * @return initial capacity for HashMap based classes.
+     * @since 19
+     */
+    static int calculateHashMapCapacity(int expectedSize) {
+        if (expectedSize >= 1610612736) {
+            return Integer.MAX_VALUE;
+        }
+        return (expectedSize + (expectedSize + 2) / 3);
+    }
+
+    /**
+     * Creates a new, empty HashMap with an initial table size
+     * accommodating the specified number of elements without the need
+     * to dynamically resize.
+     *
+     * @param expectedSize expected size
+     * @param <K>          the type of keys maintained by this map
+     * @param <V>          the type of mapped values
+     * @return the HashMap created.
+     * @throws IllegalArgumentException if the initial capacity is negative.
+     * @since 19
+     */
+    public static <K, V> HashMap<K, V> newHashMap(int expectedSize) {
+        return new HashMap<>(calculateHashMapCapacity(expectedSize));
+    }
+
 }
