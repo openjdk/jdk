@@ -243,7 +243,7 @@ void LivenessEstimatorThread::stop_service() {
 }
 
 void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_bytes) {
-  log_info(gc, estimator)("Summary: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " bytes", count, size_bytes);
+  log_info(gc, estimator)("Summary: " SIZE_FORMAT " objects, total size " SIZE_FORMAT "MB", count, (long)size_bytes / M);
 
   EventLiveSetEstimate evt;
   if (evt.should_commit()) {

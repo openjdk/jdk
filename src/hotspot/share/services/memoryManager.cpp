@@ -284,11 +284,11 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       // Note that for some pools (e.g. G1 old gen) this value is not updated for every gc, only full gc, hence
       // we check last_collection_usage instead of the usage value for *this* gc.
       if (pool->is_heap()) { // TODO: also exclude any 'Eden' pools
-        log_info(gc, estimator)("HeapMemoryAfterGCUse | %s : " SIZE_FORMAT " bytes", pool->name(), pool->get_last_collection_usage().used());
+        log_info(gc, estimator)("HeapMemoryAfterGCUse | %s : " SIZE_FORMAT "MB", pool->name(), pool->get_last_collection_usage().used()/M);
         heapMemoryAfterGCUse += pool->get_last_collection_usage().used();
       }
     }
-    log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT " bytes", heapMemoryAfterGCUse);
+    log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
   }
 
   if (countCollection) {
