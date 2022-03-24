@@ -59,10 +59,13 @@ public class CalculateHashMapCapacityTestJMH {
      * @since 19
      */
     private static int calculateHashMapCapacity2(int expectedSize) {
-        if (expectedSize >= 1610612736) {
+        if (expectedSize >= Integer.MAX_VALUE / 4 * 3 + 3) {
             return Integer.MAX_VALUE;
         }
-        return (expectedSize + (expectedSize + 2) / 3);
+        if (expectedSize > 0) {
+            return (expectedSize + (expectedSize + 2) / 3);
+        }
+        return expectedSize;
     }
 
     /**
@@ -76,7 +79,10 @@ public class CalculateHashMapCapacityTestJMH {
         if (expectedSize >= 805306368) {
             return (1 << 30);
         }
-        return (expectedSize + (expectedSize + 2) / 3);
+        if (expectedSize > 0) {
+            return (expectedSize + (expectedSize + 2) / 3);
+        }
+        return expectedSize;
     }
 
     @Warmup(iterations = 20)
