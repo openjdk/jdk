@@ -115,7 +115,7 @@ public class AddNodeChangeListener {
             clearNode.removeNode();
             userRoot.flush();
             if (userRoot.nodeExists(N2_STR)) {
-                throw new RuntimeException("Unable to clear pre-existing node");
+                throw new RuntimeException("Unable to clear pre-existing node." + (failed ? " Also, the test failed" : ""));
             }
         }
     }
