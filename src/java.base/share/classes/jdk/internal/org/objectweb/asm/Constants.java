@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm;
 
 import java.io.DataInputStream;
@@ -222,15 +223,15 @@ final class Constants {
     }
 
     static boolean isWhitelisted(final String internalName) {
-        if (!internalName.startsWith("jdk/internal/org/objectweb/asm/")) {
+        if (!internalName.startsWith("org/objectweb/asm/")) {
             return false;
         }
         String member = "(Annotation|Class|Field|Method|Module|RecordComponent|Signature)";
         return internalName.contains("Test$")
                 || Pattern.matches(
-                        "jdk/internal/org/objectweb/asm/util/Trace" + member + "Visitor(\\$.*)?", internalName)
+                        "org/objectweb/asm/util/Trace" + member + "Visitor(\\$.*)?", internalName)
                 || Pattern.matches(
-                        "jdk/internal/org/objectweb/asm/util/Check" + member + "Adapter(\\$.*)?", internalName);
+                        "org/objectweb/asm/util/Check" + member + "Adapter(\\$.*)?", internalName);
     }
 
     static void checkIsPreview(final InputStream classInputStream) {

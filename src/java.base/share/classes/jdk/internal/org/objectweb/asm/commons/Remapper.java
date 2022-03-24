@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
@@ -264,6 +265,18 @@ public abstract class Remapper {
       */
     protected SignatureVisitor createSignatureRemapper(final SignatureVisitor signatureVisitor) {
         return new SignatureRemapper(signatureVisitor, this);
+    }
+
+    /**
+      * Maps an annotation attribute name. The default implementation of this method returns the given
+      * name, unchanged. Subclasses can override.
+      *
+      * @param descriptor the descriptor of the annotation class.
+      * @param name the name of the annotation attribute.
+      * @return the new name of the annotation attribute.
+      */
+    public String mapAnnotationAttributeName(final String descriptor, final String name) {
+        return name;
     }
 
     /**

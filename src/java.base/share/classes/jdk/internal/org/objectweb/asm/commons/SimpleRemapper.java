@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.util.Collections;
@@ -80,8 +81,9 @@ public class SimpleRemapper extends Remapper {
       *           name.
       *       <li>for invokedynamic method names, the key is the name and descriptor of the method (in
       *           the form .&lt;name&gt;&lt;descriptor&gt;), and the value is the new method name.
-      *       <li>for field names, the key is the owner and name of the field (in the form
-      *           &lt;owner&gt;.&lt;name&gt;), and the value is the new field name.
+      *       <li>for field and attribute names, the key is the owner and name of the field or
+      *           attribute (in the form &lt;owner&gt;.&lt;name&gt;), and the value is the new field
+      *           name.
       *       <li>for internal names, the key is the old internal name, and the value is the new
       *           internal name.
       *     </ul>
@@ -110,6 +112,12 @@ public class SimpleRemapper extends Remapper {
     @Override
     public String mapInvokeDynamicMethodName(final String name, final String descriptor) {
         String remappedName = map('.' + name + descriptor);
+        return remappedName == null ? name : remappedName;
+    }
+
+    @Override
+    public String mapAnnotationAttributeName(final String descriptor, final String name) {
+        String remappedName = map(descriptor + '.' + name);
         return remappedName == null ? name : remappedName;
     }
 
