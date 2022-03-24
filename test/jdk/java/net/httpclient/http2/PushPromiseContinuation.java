@@ -42,6 +42,7 @@ import jdk.internal.net.http.frame.ContinuationFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
 import org.testng.TestException;
 import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -59,7 +60,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -73,23 +73,27 @@ public class PushPromiseContinuation {
     static volatile HttpHeaders testHeaders;
     static volatile HttpHeadersBuilder testHeadersBuilder;
     static volatile int continuationCount;
+    static final String mainPromiseBody = "Main Promise Body";
+    static final String mainResponseBody = "Main Response Body";
     Http2TestServer server;
     URI uri;
 
     // Set up simple client-side push promise handler
-    ConcurrentMap<HttpRequest, HttpRequest> resultMap = new ConcurrentHashMap<>();
+    ConcurrentMap<HttpRequest, CompletableFuture<HttpResponse<String>>> pushPromiseMap = new ConcurrentHashMap<>();
     HttpResponse.PushPromiseHandler<String> pph = (initial, pushRequest, acceptor) -> {
         HttpResponse.BodyHandler<String> s = HttpResponse.BodyHandlers.ofString(UTF_8);
-        acceptor.apply(s);
-        resultMap.put(initial, pushRequest);
+        pushPromiseMap.put(pushRequest, acceptor.apply(s));
     };
+
+    @BeforeMethod
+    public void beforeMethod() {
+        pushPromiseMap = new ConcurrentHashMap<>();
+    }
 
     @BeforeTest
     public void setup() throws Exception {
-        resultMap = new ConcurrentHashMap<>();
-
         server = new Http2TestServer(false, 0);
-        server.addHandler(new ServerPushHandler("Main Response Body", "/promise"), "/");
+        server.addHandler(new ServerPushHandler(), "/");
 
         // Need to have a custom exchange supplier to manage the server's push
         // promise with continuation flow
@@ -103,7 +107,8 @@ public class PushPromiseContinuation {
 
     @AfterTest
     public void teardown() {
-        resultMap = null;
+        pushPromiseMap = null;
+        server.stop();
     }
 
     /**
@@ -121,10 +126,10 @@ public class PushPromiseContinuation {
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
         CompletableFuture<HttpResponse<String>> cf =
                 client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
-        cf.join();
+        HttpResponse<String> resp = cf.join();
 
         // Verify results
-        verify();
+        verify(resp);
     }
 
     /**
@@ -140,10 +145,10 @@ public class PushPromiseContinuation {
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
         CompletableFuture<HttpResponse<String>> cf =
                 client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
-        cf.join();
+        HttpResponse<String> resp = cf.join();
 
         // Verify results
-        verify();
+        verify(resp);
     }
 
     @Test
@@ -155,22 +160,28 @@ public class PushPromiseContinuation {
         HttpRequest hreq = HttpRequest.newBuilder(uri).version(HttpClient.Version.HTTP_2).GET().build();
         CompletableFuture<HttpResponse<String>> cf =
                 client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
-        cf.join();
+        HttpResponse<String> resp = cf.join();
 
         // Verify results
-        verify();
+        verify(resp);
     }
 
-    private void verify() {
-        if (resultMap.size() > 1) {
+    private void verify(HttpResponse<String> resp) {
+        assertEquals(resp.statusCode(), 200);
+        assertEquals(resp.body(), mainResponseBody);
+        if (pushPromiseMap.size() > 1) {
+            System.err.println(pushPromiseMap.entrySet());
             throw new TestException("Results map size is greater than 1");
         } else {
             // This will only iterate once
-            for (HttpRequest r : resultMap.keySet()) {
-                HttpRequest serverPushReq = resultMap.get(r);
+            for (HttpRequest r : pushPromiseMap.keySet()) {
+                HttpResponse<String> serverPushResp = pushPromiseMap.get(r).join();
                 // Received headers should be the same as the combined PushPromise
                 // frame headers combined with the Continuation frame headers
-                assertEquals(testHeaders, serverPushReq.headers());
+                assertEquals(testHeaders, r.headers());
+                // Check status code and push promise body are as expected
+                assertEquals(serverPushResp.statusCode(), 200);
+                assertEquals(serverPushResp.body(), mainPromiseBody);
             }
         }
     }
@@ -257,17 +268,6 @@ public class PushPromiseContinuation {
 
     static class ServerPushHandler implements Http2Handler {
 
-        private final String mainResponseBody;
-        private final String mainPromiseBody;
-
-        public ServerPushHandler(String mainResponseBody,
-                                 String promise)
-        {
-            Objects.requireNonNull(promise);
-            this.mainResponseBody = mainResponseBody;
-            this.mainPromiseBody = "Main Promise Body";
-        }
-
         public void handle(Http2TestExchange exchange) throws IOException {
             System.err.println("Server: handle " + exchange);
             try (InputStream is = exchange.getRequestBody()) {
@@ -292,9 +292,9 @@ public class PushPromiseContinuation {
         private void pushPromise(Http2TestExchange exchange) throws IOException {
             URI requestURI = exchange.getRequestURI();
             URI uri = requestURI.resolve("/promise");
-            InputStream is = new ByteArrayInputStream("Test_String".getBytes(UTF_8));
+            InputStream is = new ByteArrayInputStream(mainPromiseBody.getBytes(UTF_8));
             Map<String, List<String>> map = new HashMap<>();
-            map.put("x-promise", List.of(mainPromiseBody));
+            map.put("x-promise", List.of("promise-header"));
             HttpHeaders headers = HttpHeaders.of(map, ACCEPT_ALL);
             exchange.serverPush(uri, headers, is);
             System.err.println("Server: Push Promise complete");
