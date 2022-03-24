@@ -2330,6 +2330,11 @@ void FileMapInfo::fixup_mapped_heap_regions() {
            "Null closed_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(closed_heap_regions,
                                                   num_closed_heap_regions);
+    // G1 marking uses the BOT for object chunking during marking in
+    // G1CMObjArrayProcessor::process_slice(); for this reason we need to
+    // initialize the BOT for closed archive regions too.
+    G1CollectedHeap::heap()->populate_archive_regions_bot_part(closed_heap_regions,
+                                                               num_closed_heap_regions);
   }
 
   // do the same for mapped open archive heap regions
@@ -2342,11 +2347,6 @@ void FileMapInfo::fixup_mapped_heap_regions() {
     // fast G1BlockOffsetTablePart::block_start operations for any given address
     // within the open archive regions when trying to find start of an object
     // (e.g. during card table scanning).
-    //
-    // This is only needed for open archive regions but not the closed archive
-    // regions, because objects in closed archive regions never reference objects
-    // outside the closed archive regions and they are immutable. So we never
-    // need their BOT during garbage collection.
     G1CollectedHeap::heap()->populate_archive_regions_bot_part(open_heap_regions,
                                                                num_open_heap_regions);
   }
