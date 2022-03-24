@@ -2548,15 +2548,36 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Calculate initial capacity for HashMap based classes, from expected size and default load factor (0.75).
      *
+     * <p>This function is designed to return equal results than {@code (int)Math.ceil(expectedSize / 0.75)} when expectedSize&gt;=0.
+     * When expectedSize&lt;0, result of this function is meaningless.
+     *
+     * <p>Implementation logic of this function is:
+     *
+     * <p>1. When expectedSize is a small enough positive number,
+     * {@code (expectedSize + (expectedSize + 2) / 3)} always equals to {@code (int)Math.ceil(expectedSize / 0.75)}, as
+     * {@code (int)Math.ceil(expectedSize / 0.75)} equals to {@code (int)Math.ceil(expectedSize + expectedSize / 3.0)},
+     * thus equals to {@code expectedSize + (int)Math.ceil(expectedSize / 3.0)},
+     * thus equals to {@code (expectedSize + (expectedSize + 2) / 3)}.
+     *
+     * <p>2. When expectedSize is a big enough positive number (at least {@code Integer.MAX_VALUE / 4 * 3 + 3}, or say, 1610612736),
+     * {@code (expectedSize + (expectedSize + 2) / 3)} would overflow, in this turn we just return {@code Integer.MAX_VALUE}
+     *
+     * <p>3. When expectedSize is 0, return 0.
+     *
+     * <p>4. User must never let expectedSize be negative.Otherwise, return any number &lt; 0.
+     *
      * @param expectedSize expected size
      * @return initial capacity for HashMap based classes.
      * @since 19
      */
     static int calculateHashMapCapacity(int expectedSize) {
-        if (expectedSize >= 1610612736) {
+        if (expectedSize >= Integer.MAX_VALUE / 4 * 3 + 3) {
             return Integer.MAX_VALUE;
         }
-        return (expectedSize + (expectedSize + 2) / 3);
+        if (expectedSize > 0) {
+            return (expectedSize + (expectedSize + 2) / 3);
+        }
+        return expectedSize;
     }
 
     /**
