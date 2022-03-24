@@ -697,9 +697,14 @@
           " of live objects in the heap. This does not use a barrier "      \
           " so it is an estimate only.")                                    \
                                                                             \
-  product(intx, ConcLivenessEstimateSeconds, 10, EXPERIMENTAL,             \
+  product(intx, ConcLivenessEstimateSeconds, 10, EXPERIMENTAL,              \
           "The number of seconds between the end of producing a liveness"   \
-          " estimate and beginning the next.")
+          " estimate and beginning the next.")                              \
+                                                                            \
+  product(bool, ConcLivenessVerify, false, EXPERIMENTAL,                    \
+          "Compare concurrent liveness estimation with liveness computed"   \
+          " on a safepoint. Concurrent estimation does NOT use barriers,"   \
+          " so some inaccuracy is expected.")
 
   // end of GC_FLAGS
 

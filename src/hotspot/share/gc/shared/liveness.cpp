@@ -16,7 +16,7 @@
 
 class VM_LivenessRootScan : public VM_Operation {
  public:
-  VM_LivenessRootScan(LivenessEstimatorThread* estimator)
+  explicit VM_LivenessRootScan(LivenessEstimatorThread* estimator)
     : _estimator(estimator) {}
 
   virtual VMOp_Type type() const override {
@@ -24,6 +24,15 @@ class VM_LivenessRootScan : public VM_Operation {
   }
 
   virtual void doit() override {
+    if (ConcLivenessVerify) {
+      // Walk the roots
+      _estimator->do_roots();
+      // Directly compute liveness by tracing through the heap on a safepoint.
+      // This will save the results for use later to verify the concurrent scan.
+      _estimator->compute_liveness();
+    }
+
+    // When verify is true, this will walk the roots a second time.
     _estimator->do_roots();
   }
 
@@ -54,6 +63,10 @@ class LivenessOopClosure : public BasicOopIterateClosure {
 LivenessEstimatorThread::LivenessEstimatorThread()
   : ConcurrentGCThread()
   , _lock(Mutex::safepoint - 1, "LivenessEstimator_lock", true)
+  , _all_object_count(0)
+  , _all_object_size_words(0)
+  , _verified_object_count(0)
+  , _verified_object_size_words(0)
 {
   // This initializes the bitmap and reserves the memory, but does not commit it
   initialize_mark_bit_map();
@@ -98,17 +111,32 @@ bool LivenessEstimatorThread::estimation_begin() {
   assert(_mark_stack.is_empty(), "Unexpected oops in mark stack");
   _all_object_count = 0;
   _all_object_size_words = 0;
+  if (ConcLivenessVerify) {
+    _verified_object_count = 0;
+    _verified_object_size_words = 0;
+  }
+
   return commit_bit_map_memory();
 }
 
 void LivenessEstimatorThread::estimation_end(bool completed) {
   uncommit_bit_map_memory();
-  if (completed) {
-    assert(_mark_stack.is_empty(), "Should have empty mark stack if scan completed");
-    size_t _all_object_size_bytes = _all_object_size_words * HeapWordSize;
-    send_live_set_estimate(_all_object_count, _all_object_size_bytes);
-  } else {
+
+  if (!completed) {
     _mark_stack.clear(true);
+  } else {
+    assert(_mark_stack.is_empty(), "Should have empty mark stack if scan completed");
+
+    size_t all_object_size_bytes = _all_object_size_words * HeapWordSize;
+    send_live_set_estimate(_all_object_count, all_object_size_bytes);
+
+    if (ConcLivenessVerify) {
+      long count_difference = long(_verified_object_count) - long(_all_object_count);
+      long size_difference = long(_verified_object_size_words) - long(_all_object_size_words);
+
+      log_info(gc, estimator)("Verified - estimate: " INT64_FORMAT " objects, " INT64_FORMAT " bytes.",
+        count_difference, size_difference * HeapWordSize);
+    }
   }
 }
 
@@ -233,4 +261,21 @@ bool LivenessEstimatorThread::uncommit_bit_map_memory() {
     return false;
   }
   return true;
+}
+
+void LivenessEstimatorThread::compute_liveness() {
+  assert_at_safepoint();
+  assert(ConcLivenessVerify, "Only for verification");
+
+  LivenessOopClosure cl(this);
+  while (!_mark_stack.is_empty()) {
+    oop obj = _mark_stack.pop();
+    obj->oop_iterate(&cl);
+  }
+
+  _verified_object_count = _all_object_count;
+  _verified_object_size_words = _all_object_size_words;
+  _all_object_count = 0;
+  _all_object_size_words = 0;
+  _mark_bit_map.clear();
 }
