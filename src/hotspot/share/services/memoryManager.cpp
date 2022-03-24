@@ -253,17 +253,11 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
 
   if (recordPostGCUsage) {
     int i;
-    size_t heapMemoryAfterGCUse = 0;
 
     // keep the last gc statistics for all memory pools
     for (i = 0; i < MemoryService::num_memory_pools(); i++) {
       MemoryPool* pool = MemoryService::get_memory_pool(i);
       MemoryUsage usage = pool->get_memory_usage();
-
-      if (pool->is_heap()) { // TODO: also exclude any 'Eden' pools
-        log_info(gc, estimator)("HeapMemoryAfterGCUse pool %s, used " SIZE_FORMAT, pool->name(), usage.used());
-        heapMemoryAfterGCUse += usage.used();
-      }
 
       HOTSPOT_MEM_POOL_GC_END(
         (char *) name(), strlen(name()),
@@ -273,8 +267,8 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
 
       _current_gc_stat->set_after_gc_usage(i, usage);
     }
-    log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT, heapMemoryAfterGCUse);
 
+    size_t heapMemoryAfterGCUse = 0;
     // Set last collection usage of the memory pools managed by this collector
     for (i = 0; i < num_memory_pools(); i++) {
       MemoryPool* pool = get_memory_pool(i);
@@ -285,7 +279,16 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
         pool->set_last_collection_usage(usage);
         LowMemoryDetector::detect_after_gc_memory(pool);
       }
+
+      // Mimics the Coral 'HeapMemoryAfterGCUse' metric which queries last_collection_usage.
+      // Note that for some pools (e.g. G1 old gen) this value is not updated for every gc, only full gc, hence
+      // we check last_collection_usage instead of the usage value for *this* gc.
+      if (pool->is_heap()) { // TODO: also exclude any 'Eden' pools
+        log_info(gc, estimator)("HeapMemoryAfterGCUse | %s : " SIZE_FORMAT " bytes", pool->name(), pool->get_last_collection_usage().used());
+        heapMemoryAfterGCUse += pool->get_last_collection_usage().used();
+      }
     }
+    log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT " bytes", heapMemoryAfterGCUse);
   }
 
   if (countCollection) {
