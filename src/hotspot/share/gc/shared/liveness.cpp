@@ -25,6 +25,7 @@ class VM_LivenessRootScan : public VM_Operation {
   }
 
   virtual void doit() override {
+    Ticks start = Ticks::now();
     if (ConcLivenessVerify) {
       // Walk the roots
       _estimator->do_roots();
@@ -35,7 +36,10 @@ class VM_LivenessRootScan : public VM_Operation {
 
     // When verify is true, this will walk the roots a second time.
     _estimator->do_roots();
+    _vm_op_time = Ticks::now() - start;
   }
+
+ Tickspan _vm_op_time;
 
  private:
   LivenessEstimatorThread* _estimator;
@@ -148,7 +152,7 @@ bool LivenessEstimatorThread::estimate_liveness() {
   VM_LivenessRootScan root_scan(this);
   VMThread::execute(&root_scan);
 
-  Tickspan root_scan_time = Ticks::now() - start;
+  Ticks after_vm_op = Ticks::now();
 
   log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
@@ -162,31 +166,43 @@ bool LivenessEstimatorThread::estimate_liveness() {
     }
   }
 
-  Tickspan total_scan_time = Ticks::now() - start;
-  Tickspan non_root_scan_time = total_scan_time - root_scan_time;
+  Tickspan non_root_scan_time = Ticks::now()  - after_vm_op;
+  Tickspan total_time = Ticks::now() - start;
 
   log_info(gc, estimator)("Phase timings:");
-  log_info(gc, estimator)("    Total scan       : %fms", total_scan_time.seconds() * MILLIUNITS);
-  log_info(gc, estimator)("    Root scan (pause): %fms", root_scan_time.seconds() * MILLIUNITS);
-  log_info(gc, estimator)("    Non-root scan    : %fms", non_root_scan_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Total                   : %fms", total_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Root scan (at safepoint): %fms", root_scan._vm_op_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Non-root scan           : %fms", non_root_scan_time.seconds() * MILLIUNITS);
 
   return true;
 }
 
 void LivenessEstimatorThread::do_roots() {
   assert(Thread::current()->is_VM_thread(), "Expected to be on safepoint here");
+  Ticks start = Ticks::now();
 
   StrongRootsScope roots_scope(0);
-
   LivenessOopClosure cl(this);
   OopStorageSet::strong_oops_do(&cl);
+  Ticks a = Ticks::now();
   Threads::oops_do(&cl, NULL);
-
+  Ticks b = Ticks::now();
   CLDToOopClosure cldt(&cl, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt);
+  Ticks c = Ticks::now();
 
   MarkingCodeBlobClosure code_blob_closure(&cl, false);
   CodeCache::blobs_do(&code_blob_closure);
+  Ticks d = Ticks::now();
+
+  Tickspan total_time = Ticks::now() - start;
+
+  log_info(gc, estimator)("Root scan timings:");
+  log_info(gc, estimator)("    Total scan          : %fms", total_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    OopStorageSet       : %fms", (a - start).seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Threads             : %fms", (b - a).seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    ClassLoaderDataGraph: %fms", (c - b).seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    CodeCache           : %fms", (d - c).seconds() * MILLIUNITS);
 }
 
 void LivenessEstimatorThread::do_oop(oop obj) {
