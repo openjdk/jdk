@@ -295,7 +295,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     long byteSize();
 
     /**
-     * Returns a slice of this memory segment, at given offset. The returned segment's base address is the base address
+     * Returns a slice of this memory segment, at the given offset. The returned segment's base address is the base address
      * of this segment plus the given offset; its size is specified by the given argument.
      *
      * @see #asSlice(long)
