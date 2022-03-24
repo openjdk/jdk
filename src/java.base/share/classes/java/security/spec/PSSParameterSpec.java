@@ -107,15 +107,15 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * The PSS parameter set with all default values
-     * @deprecated The default values defined in the ASN.1 encoding in
-     *         PKCS#1 may become obsolete as time progresses. Thus, it is
-     *         recommended to explicitly specify all desired parameter
-     *         values with
+     * @deprecated This field uses the default values defined in the ASN.1
+     *         encoding in PKCS#1 which may become obsolete as time progresses.
+     *         Thus, it is recommended to create a new PSSParameterSpec object
+     *         with the desired parameter values using
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      *
      * @since 1.5
      */
-    @Deprecated(since="19", forRemoval=true)
+    @Deprecated(since="19")
     public static final PSSParameterSpec DEFAULT = new PSSParameterSpec
         ("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, 20, TRAILER_FIELD_BC);
 
@@ -175,13 +175,13 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
      * @deprecated This constructor uses the default values as defined in
-     *         ASN.1 encoding in PKCS#1 except for the salt length. These
+     *         the ASN.1 encoding in PKCS#1 except for the salt length. These
      *         default values may become obsolete as time progresses.
      *         Thus, it is recommended to explicitly specify all desired
      *         parameter values with
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      */
-    @Deprecated(since="19", forRemoval=true)
+    @Deprecated(since="19")
     public PSSParameterSpec(int saltLen) {
         this("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, saltLen, TRAILER_FIELD_BC);
     }

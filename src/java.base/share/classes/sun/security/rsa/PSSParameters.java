@@ -80,8 +80,8 @@ public final class PSSParameters extends AlgorithmParametersSpi {
 
     @Override
     protected void engineInit(byte[] encoded) throws IOException {
-        // first initialize with the ASN.1 DEFAULT defined in PKCS#1 v2.2
-        // since the encoding bytes may not define all fields
+        // first initialize with the ASN.1 DEFAULT values defined in PKCS #1
+        // v2.2 since the encoding bytes may not define all fields
         String mdName = "SHA-1";
         MGF1ParameterSpec mgfSpec = MGF1ParameterSpec.SHA1;
         int saltLength = 20;
