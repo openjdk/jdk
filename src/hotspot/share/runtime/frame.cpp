@@ -1110,7 +1110,7 @@ void frame::verify(const RegisterMap* map) const {
 
 #ifdef ASSERT
 bool frame::verify_return_pc(address x) {
-#ifdef AARCH64
+#ifdef TARGET_ARCH_aarch64
   if (!pauth_ptr_is_raw(x)) {
     return false;
   }

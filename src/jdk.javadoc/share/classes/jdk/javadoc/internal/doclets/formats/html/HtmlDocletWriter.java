@@ -2403,6 +2403,10 @@ public class HtmlDocletWriter {
             if (!utils.isIncluded(enclosed)) {
                 continue;
             }
+            if (utils.isPreviewAPI(enclosed)) {
+                //for class summary, ignore methods that are themselves preview:
+                continue;
+            }
             if (!enclosed.getKind().isClass() && !enclosed.getKind().isInterface()) {
                 PreviewSummary memberAPITypes = utils.declaredUsingPreviewAPIs(enclosed);
                 declaredUsingPreviewFeature.addAll(memberAPITypes.declaredUsingPreviewFeature);

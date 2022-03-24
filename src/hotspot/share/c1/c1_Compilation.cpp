@@ -77,7 +77,6 @@ static int totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
-  JavaThread* _thread;
   CompileLog* _log;
   TimerName _timer;
 
@@ -560,6 +559,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
 , _has_unsafe_access(false)
+, _has_irreducible_loops(false)
 , _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
