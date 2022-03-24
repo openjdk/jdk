@@ -68,12 +68,12 @@ public interface SerializedFormWriter {
     Content getPackageSerializedHeader();
 
     /**
-     * Add the serialized tree per package to the serialized summaries.
+     * Add the serialized package to the serialized summaries.
      *
      * @param serializedSummaries the serialized content to which the package serialized content will be added
      * @param packageSerialized the serialized content per package that needs to be added
      */
-    void addPackageSerializedTree(Content serializedSummaries, Content packageSerialized);
+    void addPackageSerialized(Content serializedSummaries, Content packageSerialized);
 
     /**
      * Get the given package header.

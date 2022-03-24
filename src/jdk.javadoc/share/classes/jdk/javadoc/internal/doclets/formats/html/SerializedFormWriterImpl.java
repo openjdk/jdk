@@ -231,8 +231,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     @Override
-    public void addPackageSerializedTree(Content serializedSummaries,
-                                         Content packageSerialized)
+    public void addPackageSerialized(Content serializedSummaries,
+                                     Content packageSerialized)
     {
         serializedSummaries.add(HtmlTree.LI(packageSerialized));
     }

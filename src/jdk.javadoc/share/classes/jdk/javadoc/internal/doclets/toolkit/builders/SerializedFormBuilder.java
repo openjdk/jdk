@@ -185,7 +185,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         buildPackageHeader(packageSerializedHeader);
         buildClassSerializedForm(packageSerializedHeader);
 
-        writer.addPackageSerializedTree(target, packageSerializedHeader);
+        writer.addPackageSerialized(target, packageSerializedHeader);
     }
 
     /**
