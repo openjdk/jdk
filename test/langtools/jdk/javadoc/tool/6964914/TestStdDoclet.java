@@ -56,11 +56,11 @@ public class TestStdDoclet {
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(javadoc.getPath());
         cmdArgs.addAll(Arrays.asList(
+                "-J-Duser.language=en",
+                "-J-Duser.country=US",
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",
-                "-J-Duser.language=en",
-                "-J-Duser.country=US",
                 new File(testSrc, thisClassName + ".java").getPath()
         ));
         Process p = new ProcessBuilder()
