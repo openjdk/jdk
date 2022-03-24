@@ -949,12 +949,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override
-    public void setBackground(Color color) {
-        int rgb = color.getRGB();
-        execute(ptr->CWrapper.NSWindow.setBackgroundColor(ptr, rgb));
-    }
-
-    @Override
     public void enterFullScreenMode() {
         isFullScreenMode = true;
         execute(CPlatformWindow::nativeEnterFullScreenMode);

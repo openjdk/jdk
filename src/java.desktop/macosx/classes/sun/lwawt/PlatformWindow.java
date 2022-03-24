@@ -139,8 +139,6 @@ public interface PlatformWindow {
 
     public void setOpaque(boolean isOpaque);
 
-    public void setBackground(Color color);
-
     public void enterFullScreenMode();
 
     public void exitFullScreenMode();
