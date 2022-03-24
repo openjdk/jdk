@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @bug 8167108 8266130 8282704
- * @summary Stress test java.lang.Thread.stop() at thread exit.
+ * @bug 8167108 8266130 8282704 8283467
+ * @summary Stress test JVM/TI StopThread() at thread exit.
+ * @requires vm.jvmti
  * @modules java.base/java.lang:open
- * @run main/othervm StopAtExit
+ * @run main/othervm/native -agentlib:StopAtExit StopAtExit
  */
 
 import java.lang.reflect.Method;
@@ -36,9 +37,12 @@ import java.util.concurrent.TimeUnit;
 public class StopAtExit extends Thread {
     private final static int DEF_TIME_MAX = 30;  // default max # secs to test
     private final static String PROG_NAME = "StopAtExit";
+    private final static int JVMTI_ERROR_THREAD_NOT_ALIVE = 15;
 
     public CountDownLatch exitSyncObj = new CountDownLatch(1);
     public CountDownLatch startSyncObj = new CountDownLatch(1);
+
+    native static int stopThread(StopAtExit thr, Throwable exception);
 
     public StopAtExit(ThreadGroup group, Runnable target) {
         super(group, target);
@@ -56,9 +60,9 @@ public class StopAtExit extends Thread {
                 throw new RuntimeException("Unexpected: " + e);
             }
         } catch (ThreadDeath td) {
-            // ignore because we're testing Thread.stop() which throws it
+            // ignore because we're testing JVM/TI StopThread() which throws it
         } catch (NoClassDefFoundError ncdfe) {
-            // ignore because we're testing Thread.stop() which can cause it
+            // ignore because we're testing JVM/TI StopThread() which can cause it
         }
     }
 
@@ -89,19 +93,32 @@ public class StopAtExit extends Thread {
             // the thread is terminated.
             ThreadGroup myTG = new ThreadGroup("myTG-" + count);
             myTG.setDaemon(true);
+            Throwable myException = new ThreadDeath();
+            int retCode;
             StopAtExit thread = new StopAtExit(myTG, null);
             thread.start();
             try {
                 // Wait for the worker thread to get going.
                 thread.startSyncObj.await();
                 // Tell the worker thread to race to the exit and the
-                // Thread.stop() calls will come in during thread exit.
+                // JVM/TI StopThread() calls will come in during thread exit.
                 thread.exitSyncObj.countDown();
                 while (true) {
-                    thread.stop();
+                    retCode = stopThread(thread, myException);
+
+                    if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                        // Done with JVM/TI StopThread() calls since
+                        // thread is not alive.
+                        break;
+                    } else if (retCode != 0) {
+                        throw new RuntimeException("thread " + thread.getName()
+                                                   + ": stopThread() " +
+                                                   "retCode=" + retCode +
+                                                   ": unexpected value.");
+                    }
 
                     if (!thread.isAlive()) {
-                        // Done with Thread.stop() calls since
+                        // Done with JVM/TI StopThread() calls since
                         // thread is not alive.
                         break;
                     }
@@ -109,7 +126,7 @@ public class StopAtExit extends Thread {
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             } catch (NoClassDefFoundError ncdfe) {
-                // Ignore because we're testing Thread.stop() which can
+                // Ignore because we're testing JVM/TI StopThread() which can
                 // cause it. Yes, a NoClassDefFoundError that happens
                 // in a worker thread can subsequently be seen in the
                 // main thread.
@@ -120,9 +137,18 @@ public class StopAtExit extends Thread {
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             }
-            // This stop() call happens after the join() so it should do
-            // nothing, but let's make sure.
-            thread.stop();
+            // This JVM/TI StopThread() happens after the join() so it
+            // should do nothing, but let's make sure.
+            retCode = stopThread(thread, myException);
+
+            if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw new RuntimeException("thread " + thread.getName()
+                                           + ": stopThread() " +
+                                           "retCode=" + retCode +
+                                           ": unexpected value; " +
+                                           "expected JVMTI_ERROR_THREAD_NOT_ALIVE(" +
+                                           JVMTI_ERROR_THREAD_NOT_ALIVE + ").");
+            }
 
             if (myTG.activeCount() != 0) {
                 // If the ThreadGroup still has a count, then the thread
