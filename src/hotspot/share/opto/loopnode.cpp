@@ -3924,11 +3924,21 @@ void IdealLoopTree::dump_head() const {
       tty->print("%d),", cl->limit()->get_int());
     else
       tty->print("int),");
-    int stride_con  = cl->stride_con();
-    if (stride_con > 0) tty->print("+");
-    tty->print("%d", stride_con);
 
-    tty->print(" (%0.f iters) ", cl->profile_trip_cnt());
+    if (cl->stride_is_con()) {
+      int stride_con  = cl->stride_con();
+      if (stride_con > 0) tty->print("+");
+      tty->print("%d", stride_con);
+    } else {
+      tty->print("int");
+    }
+
+    float trip_cnt = cl->profile_trip_cnt();
+    if (trip_cnt >= 0.0 && trip_cnt != (float)max_jint) {
+      tty->print(" (%0.f iters) ", cl->profile_trip_cnt());
+    } else {
+      tty->print(" (COUNT_UNKNOWN) ");
+    }
 
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
