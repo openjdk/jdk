@@ -288,7 +288,11 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
         heapMemoryAfterGCUse += pool->get_last_collection_usage().used();
       }
     }
-    log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
+    if (allMemoryPoolsAffected) {
+      log_info(gc, estimator)("HeapMemoryAfterGCUse [allMemoryPoolsAffected] total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
+    } else {
+      log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
+    }
   }
 
   if (countCollection) {
