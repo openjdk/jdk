@@ -64,17 +64,17 @@ import java.util.Objects;
  *   ...  -- Allows for future expansion --
  * }
  * </pre>
- * <p>Note: the PSSParameterSpec.DEFAULT uses the following:
+ * <p>Note: the {@code PSSParameterSpec.DEFAULT} uses the following:
  *     message digest  -- "SHA-1"
  *     mask generation function (mgf) -- "MGF1"
  *     parameters for mgf -- MGF1ParameterSpec.SHA1
  *     SaltLength   -- 20
  *     TrailerField -- 1
  *
- * <p>Its values are based on the default values in the ASN.1 encoding
- * from PKCS#1 standard and may become obsolete as time progresses.
- * Please do not rely on PSSParameterSpec.DEFAULT unless these values are
- * really what you want to use.
+ * <p>Its values are based on the default values defined in the ASN.1 encoding
+ * from the PKCS#1 standard and may become obsolete as time progresses.
+ * Please do not rely on {@code PSSParameterSpec.DEFAULT} unless these
+ * values are really what you want to use.
  *
  * @see MGF1ParameterSpec
  * @see AlgorithmParameterSpec
@@ -109,8 +109,8 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * The PSS parameter set with all default values
      * @deprecated This field uses the default values defined in the ASN.1
      *         encoding in PKCS#1 which may become obsolete as time progresses.
-     *         Thus, it is recommended to create a new PSSParameterSpec object
-     *         with the desired parameter values using
+     *         Thus, it is recommended to create a new {@code PSSParameterSpec}
+     *         object with the desired parameter values using
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      *
      * @since 1.5
