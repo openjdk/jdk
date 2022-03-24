@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -5814,12 +5815,14 @@ public class Collections {
     }
 
     /**
-     * Create new HashMap from expected size.
+     * Creates a new, empty HashMap with an initial table size
+     * accommodating the specified number of elements without the need
+     * to dynamically resize.
      *
      * @param expectedSize expected size
      * @param <K>          the type of keys maintained by this map
      * @param <V>          the type of mapped values
-     * @return initial capacity for HashMap based classes.
+     * @return the HashMap created.
      * @throws IllegalArgumentException if the initial capacity is negative.
      * @since 19
      */
@@ -5828,12 +5831,14 @@ public class Collections {
     }
 
     /**
-     * Create new LinkedHashMap from expected size.
+     * Creates a new, empty LinkedHashMap with an initial table size
+     * accommodating the specified number of elements without the need
+     * to dynamically resize.
      *
      * @param expectedSize expected size
      * @param <K>          the type of keys maintained by this map
      * @param <V>          the type of mapped values
-     * @return initial capacity for HashMap based classes.
+     * @return the LinkedHashMap created.
      * @throws IllegalArgumentException if the initial capacity is negative.
      * @since 19
      */
@@ -5842,12 +5847,14 @@ public class Collections {
     }
 
     /**
-     * Create new WeakHashMap from expected size.
+     * Creates a new, empty WeakHashMap with an initial table size
+     * accommodating the specified number of elements without the need
+     * to dynamically resize.
      *
      * @param expectedSize expected size
      * @param <K>          the type of keys maintained by this map
      * @param <V>          the type of mapped values
-     * @return initial capacity for HashMap based classes.
+     * @return the WeakHashMap created.
      * @throws IllegalArgumentException if the initial capacity is negative.
      * @since 19
      */
