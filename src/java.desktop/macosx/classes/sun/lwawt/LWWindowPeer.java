@@ -59,6 +59,7 @@ import java.awt.peer.KeyboardFocusManagerPeer;
 import java.awt.peer.WindowPeer;
 import java.util.List;
 
+import java.util.Objects;
 import javax.swing.JComponent;
 
 import sun.awt.AWTAccessor;
@@ -279,6 +280,16 @@ public class LWWindowPeer
 
         platformWindow.dispose();
         super.disposeImpl();
+    }
+
+    @Override
+    public void setBackground(final Color c) {
+        Color oldBg = getBackground();
+        if (Objects.equals(oldBg, c)) {
+            return;
+        }
+        super.setBackground(c);
+        updateOpaque();
     }
 
     @Override
