@@ -31,6 +31,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
@@ -38,10 +39,6 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 public class CalculateHashMapCapacityTestJMH {
-
-    private void consume(int tmp) {
-        // do nothing;
-    }
 
     /**
      * Calculate initial capacity for HashMap based classes, from expected size.
@@ -76,8 +73,8 @@ public class CalculateHashMapCapacityTestJMH {
      * @since 19
      */
     private static int calculateHashMapCapacity3(int expectedSize) {
-        if(expectedSize >= 805306368){
-            return (1<<30);
+        if (expectedSize >= 805306368) {
+            return (1 << 30);
         }
         return (expectedSize + (expectedSize + 2) / 3);
     }
@@ -85,27 +82,27 @@ public class CalculateHashMapCapacityTestJMH {
     @Warmup(iterations = 20)
     @Measurement(iterations = 10)
     @Benchmark
-    public void testCalculateHashMapCapacity1() {
+    public void testCalculateHashMapCapacity1(Blackhole blackhole) {
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
-            consume(calculateHashMapCapacity1(i));
+            blackhole.consume(calculateHashMapCapacity1(i));
         }
     }
 
     @Warmup(iterations = 20)
     @Measurement(iterations = 10)
     @Benchmark
-    public void testCalculateHashMapCapacity2() {
+    public void testCalculateHashMapCapacity2(Blackhole blackhole) {
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
-            consume(calculateHashMapCapacity2(i));
+            blackhole.consume(calculateHashMapCapacity2(i));
         }
     }
 
     @Warmup(iterations = 20)
     @Measurement(iterations = 10)
     @Benchmark
-    public void testCalculateHashMapCapacity3() {
+    public void testCalculateHashMapCapacity3(Blackhole blackhole) {
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
-            consume(calculateHashMapCapacity3(i));
+            blackhole.consume(calculateHashMapCapacity3(i));
         }
     }
 
