@@ -72,7 +72,6 @@ public class TestFarJump {
                 continue;
             }
             int dump = (int)Long.parseLong(match, 16);
-            // little endian dump: the least significant bytes are stored before the more significant bytes
             int encoding = Integer.reverseBytes(dump);
             if (isADRP(encoding)) {
                 return true;

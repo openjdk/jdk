@@ -301,15 +301,15 @@ void CodeCache::initialize_heaps() {
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
   // ---------- high -----------
-  //      Profiled nmethods
-  //         Non-nmethods
   //    Non-profiled nmethods
+  //         Non-nmethods
+  //      Profiled nmethods
   // ---------- low ------------
   ReservedCodeSpace rs = reserve_heap_memory(cache_size);
-  ReservedSpace non_profiled_space  = rs.first_part(non_profiled_size);
-  ReservedSpace rest                = rs.last_part(non_profiled_size);
+  ReservedSpace profiled_space      = rs.first_part(profiled_size);
+  ReservedSpace rest                = rs.last_part(profiled_size);
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
-  ReservedSpace profiled_space      = rest.last_part(non_nmethod_size);
+  ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
 
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);

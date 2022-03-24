@@ -406,7 +406,7 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
-    // the code cache cannot exceed 2Gb.
+    // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
     adrp(tmp, entry, offset);
     add(tmp, tmp, offset);
     if (cbuf) cbuf->set_insts_mark();
@@ -425,7 +425,7 @@ int MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   if (target_needs_far_branch(entry.target())) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
-    // the code cache cannot exceed 2Gb.
+    // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
     adrp(tmp, entry, offset);
     add(tmp, tmp, offset);
     if (cbuf) cbuf->set_insts_mark();

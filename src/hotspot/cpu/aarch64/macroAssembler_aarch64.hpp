@@ -1068,16 +1068,16 @@ public:
 
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
-  // Jumps that can reach anywhere in the code cache.
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Jumps that can reach a nonmethod stub
+  // Check if branches to the the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
 
+  // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
   int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
