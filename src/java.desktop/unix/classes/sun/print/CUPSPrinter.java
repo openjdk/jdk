@@ -494,6 +494,7 @@ public class CUPSPrinter  {
         return domainSocketPathname;
     }
 
+    @SuppressWarnings("removal")
     private static boolean isSandboxedApp() {
         if (PrintServiceLookupProvider.isMac()) {
             return java.security.AccessController
