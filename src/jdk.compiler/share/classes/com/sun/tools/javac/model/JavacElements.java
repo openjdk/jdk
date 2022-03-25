@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -445,8 +445,10 @@ public class JavacElements implements Elements {
 
     @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageElement getPackageOf(Element e) {
-        Symbol sym = cast(Symbol.class, e);
-        return (sym.kind == MDL || sym.owner.kind == MDL) ? null : sym.packge();
+        if (e.getKind() == ElementKind.MODULE)
+            return null;
+        else
+            return cast(Symbol.class, e).packge();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -454,9 +456,7 @@ public class JavacElements implements Elements {
         Symbol sym = cast(Symbol.class, e);
         if (modules.getDefaultModule() == syms.noModule)
             return null;
-        return (sym.kind == MDL) ? ((ModuleElement) e)
-                : (sym.owner.kind == MDL) ? (ModuleElement) sym.owner
-                : sym.packge().modle;
+        return (sym.kind == MDL) ? ((ModuleElement) e) : sym.packge().modle;
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
