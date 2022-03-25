@@ -2799,18 +2799,13 @@ void VM_HeapWalkOperation::doit() {
 
   // the heap walk starts with an initial object or the heap roots
   if (initial_object().is_null()) {
-    // If either collect_stack_roots() or collect_simple_roots()
-    // returns false at this point, then there are no mark bits
-    // to reset.
-    ObjectMarkerController::set_needs_reset(false);    // Calling collect_stack_roots() before collect_simple_roots()
-
     // can result in a big performance boost for an agent that is
     // focused on analyzing references in the thread stacks.
     if (!collect_stack_roots()) return;
 
     if (!collect_simple_roots()) return;
 
-    // no early return so enable heap traversal to reset the mark bits
+    // no early return so enable heap traversal to reset its state, if necessary
     ObjectMarkerController::set_needs_reset(true);
   } else {
     visit_stack()->push(initial_object()());

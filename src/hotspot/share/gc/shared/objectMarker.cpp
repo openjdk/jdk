@@ -74,7 +74,7 @@ public:
 HeaderObjectMarker::HeaderObjectMarker() :
  _saved_oop_stack(new (ResourceObj::C_HEAP, mtGC) GrowableArray<oop>(4000, mtGC)),
  _saved_mark_stack(new (ResourceObj::C_HEAP, mtGC) GrowableArray<markWord>(4000, mtGC)),
- _needs_reset(true) {
+ _needs_reset(false) {
 }
 
 // object marking done, so restore headers
