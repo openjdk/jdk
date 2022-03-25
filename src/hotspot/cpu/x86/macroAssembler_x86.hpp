@@ -699,7 +699,7 @@ public:
 
   void verify_tlab();
 
-  Condition negate_condition(Condition cond);
+  static Condition negate_condition(Condition cond);
 
   // Instructions that use AddressLiteral operands. These instruction can handle 32bit/64bit
   // operands. In general the names are modified to avoid hiding the instruction in Assembler

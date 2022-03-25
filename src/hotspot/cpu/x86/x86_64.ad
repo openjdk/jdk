@@ -6688,7 +6688,7 @@ instruct countTrailingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_encode %{
     __ tzcntl($dst$$Register, $src$$Address);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 instruct countTrailingZerosI_bsf(rRegI dst, rRegI src, rFlagsReg cr) %{
@@ -6732,7 +6732,7 @@ instruct countTrailingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_encode %{
     __ tzcntq($dst$$Register, $src$$Address);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
@@ -7100,13 +7100,14 @@ instruct jumpXtnd(rRegL switch_val, rRegI dest) %{
 // Conditional move
 instruct cmovI_imm_01(rRegI dst, immI_1 src, rFlagsReg cr, cmpOp cop)
 %{
-  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
-  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_int() == 0);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
-  format %{ "setb$cop $dst, $src\t# signed, int" %}
+  format %{ "setbn$cop $dst\t# signed, int" %}
   ins_encode %{
-    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+    Assembler::Condition cond = (Assembler::Condition)($cop$$cmpcode);
+    __ setb(MacroAssembler::negate_condition(cond), $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7125,13 +7126,14 @@ instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
 
 instruct cmovI_imm_01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
 %{
-  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
-  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_int() == 0);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
-  format %{ "setb$cop $dst, $src\t# unsigned, int" %}
+  format %{ "setbn$cop $dst\t# unsigned, int" %}
   ins_encode %{
-    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+    Assembler::Condition cond = (Assembler::Condition)($cop$$cmpcode);
+    __ setb(MacroAssembler::negate_condition(cond), $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7149,13 +7151,14 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
 
 instruct cmovI_imm_01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
-  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
-  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_int() == 0);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
-  format %{ "setb$cop $dst, $src\t# unsigned, int" %}
+  format %{ "setbn$cop $dst\t# unsigned, int" %}
   ins_encode %{
-    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+    Assembler::Condition cond = (Assembler::Condition)($cop$$cmpcode);
+    __ setb(MacroAssembler::negate_condition(cond), $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7298,13 +7301,14 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
 
 instruct cmovL_imm_01(rRegL dst, immL1 src, rFlagsReg cr, cmpOp cop)
 %{
-  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_long() == 0);
-  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
-  format %{ "setb$cop $dst, $src\t# signed, long" %}
+  format %{ "setbn$cop $dst\t# signed, long" %}
   ins_encode %{
-    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+    Assembler::Condition cond = (Assembler::Condition)($cop$$cmpcode);
+    __ setb(MacroAssembler::negate_condition(cond), $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7335,13 +7339,14 @@ instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
 
 instruct cmovL_imm_01U(rRegL dst, immL1 src, rFlagsRegU cr, cmpOpU cop)
 %{
-  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_long() == 0);
-  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
-  format %{ "setb$cop $dst, $src\t# signed, long" %}
+  format %{ "setbn$cop $dst\t# unsigned, long" %}
   ins_encode %{
-    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+    Assembler::Condition cond = (Assembler::Condition)($cop$$cmpcode);
+    __ setb(MacroAssembler::negate_condition(cond), $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7360,13 +7365,14 @@ instruct cmovL_regU(cmpOpU cop, rFlagsRegU cr, rRegL dst, rRegL src)
 
 instruct cmovL_imm_01UCF(rRegL dst, immL1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
-  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_long() == 0);
-  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+  predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
 
   ins_cost(100); // XXX
-  format %{ "setb$cop $dst, $src\t# signed, long" %}
+  format %{ "setbn$cop $dst\t# signed, long" %}
   ins_encode %{
-    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+    Assembler::Condition cond = (Assembler::Condition)($cop$$cmpcode);
+    __ setb(MacroAssembler::negate_condition(cond), $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9070,7 +9076,7 @@ instruct salI_mem_rReg(rRegI dst, memory src, rRegI shift)
   ins_encode %{
     __ shlxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Arithmetic shift right by one
@@ -9173,7 +9179,7 @@ instruct sarI_mem_rReg(rRegI dst, memory src, rRegI shift)
   ins_encode %{
     __ sarxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Logical shift right by one
@@ -9277,7 +9283,7 @@ instruct shrI_mem_rReg(rRegI dst, memory src, rRegI shift)
   ins_encode %{
     __ shrxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Long Shift Instructions
@@ -9655,7 +9661,7 @@ instruct rolI_mem_immI8(rRegI dst, memory src, immI8 shift)
     int shift = 32 - ($shift$$constant & 31);
     __ rorxl($dst$$Register, $src$$Address, shift);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Rotate Left by variable
@@ -9704,7 +9710,7 @@ instruct rorI_mem_immI8(rRegI dst, memory src, immI8 shift)
   ins_encode %{
     __ rorxl($dst$$Register, $src$$Address, $shift$$constant);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Rotate Right by variable
@@ -9754,7 +9760,7 @@ instruct rolL_mem_immI8(rRegL dst, memory src, immI8 shift)
     int shift = 64 - ($shift$$constant & 63);
     __ rorxq($dst$$Register, $src$$Address, shift);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Rotate Left by variable
@@ -9803,7 +9809,7 @@ instruct rorL_mem_immI8(rRegL dst, memory src, immI8 shift)
   ins_encode %{
     __ rorxq($dst$$Register, $src$$Address, $shift$$constant);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Rotate Right by variable
@@ -10672,11 +10678,11 @@ instruct xorL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (Conv2B src));
-  effect(KILL cr);
+  effect(TEMP dst, KILL cr);
 
-  format %{ "testl   $src, $src\t# ci2b\n\t"
-            "setnz   $dst\n\t"
-            "movzbl  $dst, $dst" %}
+  format %{ "xorl    $dst, $dst\t# ci2b"
+            "testl   $src, $src\n\t"
+            "setnz   $dst"%}
   ins_encode %{
     __ xorl($dst$$Register, $dst$$Register);
     __ testl($src$$Register, $src$$Register);
@@ -10689,11 +10695,11 @@ instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
 instruct convP2B(rRegI dst, rRegP src, rFlagsReg cr)
 %{
   match(Set dst (Conv2B src));
-  effect(KILL cr);
+  effect(TEMP dst, KILL cr);
 
-  format %{ "testq   $src, $src\t# cp2b\n\t"
-            "setnz   $dst\n\t"
-            "movzbl  $dst, $dst" %}
+  format %{ "xorl    $dst, $dst\t# ci2b"
+            "testq   $src, $src\n\t"
+            "setnz   $dst"%}
   ins_encode %{
     __ xorl($dst$$Register, $dst$$Register);
     __ testq($src$$Register, $src$$Register);
