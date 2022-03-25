@@ -442,13 +442,12 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     if (class_name == vmSymbols::java_lang_Class()) {
       // mirror
       ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
-    }
-    else if (is_class_loader(class_name, parser)) {
+    } else if (is_class_loader(class_name, parser)) {
       // class loader
       ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
     } else {
       // normal
-      ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_kind_other);
+      ik = new (loader_data, size, THREAD) InstanceKlass(parser);
     }
   } else {
     // reference
@@ -486,8 +485,8 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id) :
-  Klass(id),
+InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind) :
+  Klass(kind),
   _nest_members(NULL),
   _nest_host(NULL),
   _permitted_subclasses(NULL),
@@ -501,7 +500,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   _init_thread(NULL)
 {
   set_vtable_length(parser.vtable_size());
-  set_kind(kind);
   set_access_flags(parser.access_flags());
   if (parser.is_hidden()) set_is_hidden();
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static java.lang.invoke.MethodTypeForm.*;
  * to a class member.
  * @author jrose
  */
-class DirectMethodHandle extends MethodHandle {
+sealed class DirectMethodHandle extends MethodHandle {
     final MemberName member;
     final boolean crackable;
 
@@ -395,7 +395,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass represents invokespecial instructions. */
-    static class Special extends DirectMethodHandle {
+    static final class Special extends DirectMethodHandle {
         private final Class<?> caller;
         private Special(MethodType mtype, LambdaForm form, MemberName member, boolean crackable, Class<?> caller) {
             super(mtype, form, member, crackable);
@@ -425,7 +425,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass represents invokeinterface instructions. */
-    static class Interface extends DirectMethodHandle {
+    static final class Interface extends DirectMethodHandle {
         private final Class<?> refc;
         private Interface(MethodType mtype, LambdaForm form, MemberName member, boolean crackable, Class<?> refc) {
             super(mtype, form, member, crackable);
@@ -458,7 +458,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass handles constructor references. */
-    static class Constructor extends DirectMethodHandle {
+    static final class Constructor extends DirectMethodHandle {
         final MemberName initMethod;
         final Class<?>   instanceClass;
 
@@ -493,7 +493,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass handles non-static field references. */
-    static class Accessor extends DirectMethodHandle {
+    static final class Accessor extends DirectMethodHandle {
         final Class<?> fieldType;
         final int      fieldOffset;
         private Accessor(MethodType mtype, LambdaForm form, MemberName member,
@@ -539,7 +539,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     /** This subclass handles static field references. */
-    static class StaticAccessor extends DirectMethodHandle {
+    static final class StaticAccessor extends DirectMethodHandle {
         private final Class<?> fieldType;
         private final Object   staticBase;
         private final long     staticOffset;

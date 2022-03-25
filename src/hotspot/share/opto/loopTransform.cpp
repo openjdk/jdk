@@ -1954,6 +1954,12 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 }
 
 void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con) {
+  if (init->Opcode() == Op_CastII) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation
+    assert(((CastIINode*)init)->carry_dependency() && loop_head->skip_predicates() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
   // Search for skeleton predicates and update them according to the new stride
   Node* entry = ctrl;
   Node* prev_proj = ctrl;
@@ -4041,10 +4047,17 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  index = new AddPNode(base, base, index);
-  _igvn.register_new_node_with_optimizer(index);
-  Node* from = new AddPNode(base, index, offset);
+  Node* from = new AddPNode(base, base, index);
   _igvn.register_new_node_with_optimizer(from);
+  // For normal array fills, C2 uses two AddP nodes for array element
+  // addressing. But for array fills with Unsafe call, there's only one
+  // AddP node adding an absolute offset, so we do a NULL check here.
+  assert(offset != NULL || C->has_unsafe_access(),
+         "Only array fills with unsafe have no extra offset");
+  if (offset != NULL) {
+    from = new AddPNode(base, from, offset);
+    _igvn.register_new_node_with_optimizer(from);
+  }
   // Compute the number of elements to copy
   Node* len = new SubINode(head->limit(), head->init_trip());
   _igvn.register_new_node_with_optimizer(len);

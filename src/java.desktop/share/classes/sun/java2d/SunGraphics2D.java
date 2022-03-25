@@ -409,7 +409,7 @@ public final class SunGraphics2D
      * drawback of the workaround is that the resulting
      * clip and device origin cannot be "enforced".
      *
-     * @exception IllegalStateException If the Graphics
+     * @throws IllegalStateException If the Graphics
      * to be constrained has a complex transform.
      */
     @Override
