@@ -60,7 +60,7 @@ public:
   void par_iterate(HeapRegionClosure* closure,
                    HeapRegionClaimer* hrclaimer,
                    uint worker_id) const;
-  void initialize_chunks(uint active_workers, const char* task_name);
+  void initialize_chunks(uint active_workers);
   // Iterate through all chunks in regions that failed evacuation during the entire collection.
   void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
                                      uint worker_id) const;

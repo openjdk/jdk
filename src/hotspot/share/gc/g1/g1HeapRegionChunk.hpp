@@ -32,6 +32,7 @@
 class G1CMBitMap;
 class HeapRegion;
 
+// Unit of work for removing self forwards in regions.
 class G1HeapRegionChunk {
   const uint _chunk_size;
   HeapRegion* _region;
@@ -83,7 +84,7 @@ class G1ScanChunksInHeapRegions {
 
 public:
   G1ScanChunksInHeapRegions();
-  void initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers, const char* task_name);
+  void initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers);
 
   void par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure, const uint worker_id);
 };

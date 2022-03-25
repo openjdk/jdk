@@ -54,10 +54,11 @@ bool G1ScanChunksInHeapRegions::claim_chunk(uint chunk_id) {
 void G1ScanChunksInHeapRegions::process_chunk(G1HeapRegionChunkClosure* chunk_closure, uint chunk_id, uint worker_id) {
   G1CollectedHeap* glh = G1CollectedHeap::heap();
   G1GCPhaseTimes* p = glh->phase_times();
+
+  // Prepare and analyze assigned chunk.
   Ticks chunk_prepare_start = Ticks::now();
   uint region_idx = _evac_failure_regions[chunk_id / _chunks_per_region];
-  HeapRegion* r = glh->region_at(region_idx);
-  G1HeapRegionChunk chunk(r, chunk_id % _chunks_per_region, _chunk_size, _bitmap);
+  G1HeapRegionChunk chunk(glh->region_at(region_idx), chunk_id % _chunks_per_region, _chunk_size, _bitmap);
   p->record_or_add_time_secs(G1GCPhaseTimes::PrepareChunks, worker_id, (Ticks::now() - chunk_prepare_start).seconds());
 
   if (chunk.empty()) {
@@ -65,6 +66,8 @@ void G1ScanChunksInHeapRegions::process_chunk(G1HeapRegionChunkClosure* chunk_cl
     return;
   }
   p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, 1, G1GCPhaseTimes::RemoveSelfForwardChunksNum);
+
+  // Process the chunk.
   Ticks start = Ticks::now();
   chunk_closure->do_heap_region_chunk(&chunk);
   p->record_or_add_time_secs(G1GCPhaseTimes::RemoveSelfForwardsInChunks, worker_id, (Ticks::now() - start).seconds());
@@ -74,13 +77,12 @@ G1ScanChunksInHeapRegions::G1ScanChunksInHeapRegions() :
   _bitmap(G1CollectedHeap::heap()->concurrent_mark()->prev_mark_bitmap()),
   _chunks(mtGC) { }
 
-void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers, const char* task_name) {
+void G1ScanChunksInHeapRegions::initialize(const uint* evac_failure_regions, uint evac_failure_regions_length, uint num_workers) {
   _evac_failure_regions = evac_failure_regions;
 
   _chunks_per_region = next_power_of_2(num_workers * G1RemoveSelfForwardPtrsThreadLoadFactor / evac_failure_regions_length);
   _chunk_size = static_cast<uint>(G1HeapRegionSize / _chunks_per_region);
-  log_debug(gc, ergo)("Running %s using %u workers for removing self forwards with %u chunks per region",
-                      task_name, num_workers, _chunk_size);
+  log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region given %u workers", _chunks_per_region, num_workers);
 
   _chunks.resize(_chunks_per_region * evac_failure_regions_length);
 }

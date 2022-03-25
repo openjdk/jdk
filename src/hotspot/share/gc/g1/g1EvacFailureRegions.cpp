@@ -75,10 +75,10 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                                      worker_id);
 }
 
-void G1EvacFailureRegions::initialize_chunks(uint num_workers, const char* task_name) {
+void G1EvacFailureRegions::initialize_chunks(uint num_workers) {
   _chunks_in_regions->initialize(_evac_failure_regions,
                                  Atomic::load(&_evac_failure_regions_cur_length),
-                                 num_workers, task_name);
+                                 num_workers);
 }
 
 void G1EvacFailureRegions::par_iterate_chunks_in_regions(G1HeapRegionChunkClosure* chunk_closure,
@@ -103,15 +103,14 @@ class PrepareEvacFailureRegionTask : public G1AbstractSubTask {
       assert(hr->in_collection_set(), "bad CS");
       assert(_evac_failure_regions->contains(hr->hrm_index()), "precondition");
 
-      hr->clear_index_in_opt_cset();
-
       p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                         worker_id,
                                         1,
                                         G1GCPhaseTimes::RestoreRetainedRegionsNum);
 
-      hr->rem_set()->clean_code_roots(hr);
-      hr->rem_set()->clear_locked(true);
+      HeapRegionRemSet* rem_set = hr->rem_set();
+      rem_set->clean_code_roots(hr);
+      rem_set->clear_locked(true);
     }
 
   public:

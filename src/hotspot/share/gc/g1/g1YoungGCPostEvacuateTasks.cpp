@@ -119,7 +119,7 @@ public:
   }
 
   void initialize_chunks(uint num_workers) {
-    _evac_failure_regions->initialize_chunks(num_workers, _task_name);
+    _evac_failure_regions->initialize_chunks(num_workers);
   }
 };
 

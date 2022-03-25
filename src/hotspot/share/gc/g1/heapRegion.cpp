@@ -274,6 +274,8 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start,
                                                     bool during_conc_mark) {
+  clear_index_in_opt_cset();
+
   // We always recreate the prev marking info and we'll explicitly
   // mark all objects we find to be self-forwarded on the prev
   // bitmap. So all objects need to be below PTAMS.
