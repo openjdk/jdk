@@ -6581,6 +6581,18 @@ instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
+instruct countLeadingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
+  predicate(UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosI (LoadI src)));
+  effect(KILL cr);
+
+  format %{ "lzcntl  $dst, $src\t# count leading zeros (int)" %}
+  ins_encode %{
+    __ lzcntl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct countLeadingZerosI_bsr(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(!UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI src));
@@ -6616,6 +6628,18 @@ instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
     __ lzcntq($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
+  predicate(UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosL (LoadL src)));
+  effect(KILL cr);
+
+  format %{ "lzcntq  $dst, $src\t# count leading zeros (long)" %}
+  ins_encode %{
+    __ lzcntq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 instruct countLeadingZerosL_bsr(rRegI dst, rRegL src, rFlagsReg cr) %{
@@ -6655,6 +6679,18 @@ instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
+instruct countTrailingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
+  predicate(UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosI (LoadI src)));
+  effect(KILL cr);
+
+  format %{ "tzcntl    $dst, $src\t# count trailing zeros (int)" %}
+  ins_encode %{
+    __ tzcntl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct countTrailingZerosI_bsf(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(!UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI src));
@@ -6685,6 +6721,18 @@ instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
     __ tzcntq($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
+  predicate(UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosL (LoadL src)));
+  effect(KILL cr);
+
+  format %{ "tzcntq    $dst, $src\t# count trailing zeros (long)" %}
+  ins_encode %{
+    __ tzcntq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
@@ -7050,6 +7098,19 @@ instruct jumpXtnd(rRegL switch_val, rRegI dest) %{
 %}
 
 // Conditional move
+instruct cmovI_imm01(rRegI dst, immI_1 src, rFlagsReg cr, cmpOp cop)
+%{
+  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+
+  ins_cost(100); // XXX
+  format %{ "setb$cop $dst, $src\t# signed, int" %}
+  ins_encode %{
+    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
 %{
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
@@ -7062,6 +7123,19 @@ instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
   ins_pipe(pipe_cmov_reg);
 %}
 
+instruct cmovI_imm01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
+%{
+  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+
+  ins_cost(100); // XXX
+  format %{ "setb$cop $dst, $src\t# unsigned, int" %}
+  ins_encode %{
+    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
 
@@ -7071,6 +7145,19 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
     __ cmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
+%}
+
+instruct cmovI_imm01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
+%{
+  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
+  match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
+
+  ins_cost(100); // XXX
+  format %{ "setb$cop $dst, $src\t# unsigned, int" %}
+  ins_encode %{
+    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
 instruct cmovI_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
@@ -8898,6 +8985,7 @@ instruct salI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Shift Left by variable
 instruct salI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (LShiftI dst shift));
   effect(KILL cr);
 
@@ -8911,12 +8999,37 @@ instruct salI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 // Shift Left by variable
 instruct salI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (StoreI dst (LShiftI (LoadI dst) shift)));
   effect(KILL cr);
 
   format %{ "sall    $dst, $shift" %}
   ins_encode %{
     __ sall($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct salI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (LShiftI src shift));
+
+  format %{ "shlxl    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shlxl($dst$$Register, $src$$Register, $shift$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct salI_mem_rReg(rRegI dst, memory src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (LShiftI (LoadI src) shift));
+
+  format %{ "shlxl    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shlxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -8976,6 +9089,7 @@ instruct sarI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Arithmetic Shift Right by variable
 instruct sarI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (RShiftI dst shift));
   effect(KILL cr);
   format %{ "sarl    $dst, $shift" %}
@@ -8988,12 +9102,37 @@ instruct sarI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 // Arithmetic Shift Right by variable
 instruct sarI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (StoreI dst (RShiftI (LoadI dst) shift)));
   effect(KILL cr);
 
   format %{ "sarl    $dst, $shift" %}
   ins_encode %{
     __ sarl($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct sarI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (RShiftI src shift));
+
+  format %{ "sarxl    $dst, $src, $shift" %}
+  ins_encode %{
+    __ sarxl($dst$$Register, $src$$Register, $shift$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct sarI_mem_rReg(rRegI dst, memory src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (RShiftI (LoadI src) shift));
+
+  format %{ "sarxl    $dst, $src, $shift" %}
+  ins_encode %{
+    __ sarxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -9053,6 +9192,7 @@ instruct shrI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Logical Shift Right by variable
 instruct shrI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (URShiftI dst shift));
   effect(KILL cr);
 
@@ -9066,12 +9206,37 @@ instruct shrI_rReg_CL(rRegI dst, rcx_RegI shift, rFlagsReg cr)
 // Logical Shift Right by variable
 instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (StoreI dst (URShiftI (LoadI dst) shift)));
   effect(KILL cr);
 
   format %{ "shrl    $dst, $shift" %}
   ins_encode %{
     __ shrl($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct shrI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (URShiftI src shift));
+
+  format %{ "shrxl    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shrxl($dst$$Register, $src$$Register, $shift$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct shrI_mem_rReg(rRegI dst, memory src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (URShiftI (LoadI src) shift));
+
+  format %{ "shrxl    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shrxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -9132,6 +9297,7 @@ instruct salL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Shift Left by variable
 instruct salL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (LShiftL dst shift));
   effect(KILL cr);
 
@@ -9145,12 +9311,37 @@ instruct salL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 // Shift Left by variable
 instruct salL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (StoreL dst (LShiftL (LoadL dst) shift)));
   effect(KILL cr);
 
   format %{ "salq    $dst, $shift" %}
   ins_encode %{
     __ salq($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct salL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (LShiftL src shift));
+
+  format %{ "shlxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shlxq($dst$$Register, $src$$Register, $shift$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct salL_mem_rReg(rRegL dst, memory src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (LShiftL (LoadL src) shift));
+
+  format %{ "shlxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shlxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -9210,6 +9401,7 @@ instruct sarL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Arithmetic Shift Right by variable
 instruct sarL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (RShiftL dst shift));
   effect(KILL cr);
 
@@ -9223,12 +9415,37 @@ instruct sarL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 // Arithmetic Shift Right by variable
 instruct sarL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (StoreL dst (RShiftL (LoadL dst) shift)));
   effect(KILL cr);
 
   format %{ "sarq    $dst, $shift" %}
   ins_encode %{
     __ sarq($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct sarL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (RShiftL src shift));
+
+  format %{ "sarxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ sarxq($dst$$Register, $src$$Register, $shift$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct sarL_mem_rReg(rRegL dst, memory src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (RShiftL (LoadL src) shift));
+
+  format %{ "sarxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ sarxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -9288,6 +9505,7 @@ instruct shrL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 // Logical Shift Right by variable
 instruct shrL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (URShiftL dst shift));
   effect(KILL cr);
 
@@ -9301,12 +9519,37 @@ instruct shrL_rReg_CL(rRegL dst, rcx_RegI shift, rFlagsReg cr)
 // Logical Shift Right by variable
 instruct shrL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 %{
+  predicate(!VM_Version::supports_bmi2());
   match(Set dst (StoreL dst (URShiftL (LoadL dst) shift)));
   effect(KILL cr);
 
   format %{ "shrq    $dst, $shift" %}
   ins_encode %{
     __ shrq($dst$$Address);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct shrL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (URShiftL src shift));
+
+  format %{ "shrxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shrxq($dst$$Register, $src$$Register, $shift$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct shrL_mem_rReg(rRegL dst, memory src, rRegI shift)
+%{
+  predicate(VM_Version::supports_bmi2());
+  match(Set dst (URShiftL (LoadL src) shift));
+
+  format %{ "shrxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ shrxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
@@ -9340,9 +9583,9 @@ instruct i2s(rRegI dst, rRegI src, immI_16 sixteen)
 // ROL/ROR instructions
 
 // Rotate left by constant.
-instruct rolI_imm(rRegI dst, immI8 shift, rFlagsReg cr)
+instruct rolI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
-  predicate(n->bottom_type()->basic_type() == T_INT);
+  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
   format %{ "roll    $dst, $shift" %}
@@ -9350,6 +9593,30 @@ instruct rolI_imm(rRegI dst, immI8 shift, rFlagsReg cr)
     __ roll($dst$$Register, $shift$$constant);
   %}
   ins_pipe(ialu_reg);
+%}
+
+instruct rolI_immI8(rRegI dst, rRegI src, immI8 shift)
+%{
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateLeft src shift));
+  format %{ "rolxl    $dst, $src, $shift" %}
+  ins_encode %{
+    int shift = 32 - ($shift$$constant & 31);
+    __ rorxl($dst$$Register, $src$$Register, shift);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct rolI_mem_immI8(rRegI dst, memory src, immI8 shift)
+%{
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateLeft (LoadI src) shift));
+  format %{ "rolxl    $dst, $src, $shift" %}
+  ins_encode %{
+    int shift = 32 - ($shift$$constant & 31);
+    __ rorxl($dst$$Register, $src$$Address, shift);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 // Rotate Left by variable
@@ -9379,15 +9646,26 @@ instruct rorI_immI8_legacy(rRegI dst, immI8 shift, rFlagsReg cr)
 %}
 
 // Rotate Right by constant.
-instruct rorI_immI8(rRegI dst, immI8 shift)
+instruct rorI_immI8(rRegI dst, rRegI src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
-  match(Set dst (RotateRight dst shift));
-  format %{ "rorxd     $dst, $shift" %}
+  match(Set dst (RotateRight src shift));
+  format %{ "rorxl     $dst, $src, $shift" %}
   ins_encode %{
-    __ rorxd($dst$$Register, $dst$$Register, $shift$$constant);
+    __ rorxl($dst$$Register, $src$$Register, $shift$$constant);
   %}
   ins_pipe(ialu_reg_reg);
+%}
+
+instruct rorI_mem_immI8(rRegI dst, memory src, immI8 shift)
+%{
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
+  match(Set dst (RotateRight (LoadI src) shift));
+  format %{ "rorxl     $dst, $src, $shift" %}
+  ins_encode %{
+    __ rorxl($dst$$Register, $src$$Address, $shift$$constant);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 // Rotate Right by variable
@@ -9403,11 +9681,10 @@ instruct rorI_rReg_Var(rRegI dst, rcx_RegI shift, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-
 // Rotate Left by constant.
-instruct rolL_immI8(rRegL dst, immI8 shift, rFlagsReg cr)
+instruct rolL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
-  predicate(n->bottom_type()->basic_type() == T_LONG);
+  predicate(!VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft dst shift));
   effect(KILL cr);
   format %{ "rolq    $dst, $shift" %}
@@ -9415,6 +9692,30 @@ instruct rolL_immI8(rRegL dst, immI8 shift, rFlagsReg cr)
     __ rolq($dst$$Register, $shift$$constant);
   %}
   ins_pipe(ialu_reg);
+%}
+
+instruct rolL_immI8(rRegL dst, rRegL src, immI8 shift)
+%{
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateLeft src shift));
+  format %{ "rolxq     $dst, $src, $shift" %}
+  ins_encode %{
+    int shift = 64 - ($shift$$constant & 63);
+    __ rorxq($dst$$Register, $src$$Register, shift);
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct rolL_mem_immI8(rRegL dst, memory src, immI8 shift)
+%{
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateLeft (LoadL src) shift));
+  format %{ "rolxq     $dst, $src, $shift" %}
+  ins_encode %{
+    int shift = 64 - ($shift$$constant & 63);
+    __ rorxq($dst$$Register, $src$$Address, shift);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 // Rotate Left by variable
@@ -9430,7 +9731,6 @@ instruct rolL_rReg_Var(rRegL dst, rcx_RegI shift, rFlagsReg cr)
   ins_pipe(ialu_reg_reg);
 %}
 
-
 // Rotate Right by constant.
 instruct rorL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
@@ -9444,17 +9744,27 @@ instruct rorL_immI8_legacy(rRegL dst, immI8 shift, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-
 // Rotate Right by constant
-instruct rorL_immI8(rRegL dst, immI8 shift)
+instruct rorL_immI8(rRegL dst, rRegL src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
-  match(Set dst (RotateRight dst shift));
-  format %{ "rorxq    $dst, $shift" %}
+  match(Set dst (RotateRight src shift));
+  format %{ "rorxq    $dst, $src, $shift" %}
   ins_encode %{
-    __ rorxq($dst$$Register, $dst$$Register, $shift$$constant);
+    __ rorxq($dst$$Register, $src$$Register, $shift$$constant);
   %}
   ins_pipe(ialu_reg_reg);
+%}
+
+instruct rorL_mem_immI8(rRegL dst, memory src, immI8 shift)
+%{
+  predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
+  match(Set dst (RotateRight (LoadL src) shift));
+  format %{ "rorxq    $dst, $src, $shift" %}
+  ins_encode %{
+    __ rorxq($dst$$Register, $src$$Address, $shift$$constant);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 // Rotate Right by variable
@@ -10329,9 +10639,9 @@ instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
             "setnz   $dst\n\t"
             "movzbl  $dst, $dst" %}
   ins_encode %{
+    __ xorl($dst$$Register, $dst$$Register);
     __ testl($src$$Register, $src$$Register);
     __ set_byte_if_not_zero($dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
 %}
@@ -10346,9 +10656,9 @@ instruct convP2B(rRegI dst, rRegP src, rFlagsReg cr)
             "setnz   $dst\n\t"
             "movzbl  $dst, $dst" %}
   ins_encode %{
+    __ xorl($dst$$Register, $dst$$Register);
     __ testq($src$$Register, $src$$Register);
     __ set_byte_if_not_zero($dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
 %}
