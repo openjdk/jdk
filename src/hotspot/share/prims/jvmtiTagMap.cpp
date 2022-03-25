@@ -28,7 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/objectMarker.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -1332,133 +1332,6 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
 }
 
 
-// ObjectMarker is used to support the marking objects when walking the
-// heap.
-//
-// This implementation uses the existing mark bits in an object for
-// marking. Objects that are marked must later have their headers restored.
-// As most objects are unlocked and don't have their identity hash computed
-// we don't have to save their headers. Instead we save the headers that
-// are "interesting". Later when the headers are restored this implementation
-// restores all headers to their initial value and then restores the few
-// objects that had interesting headers.
-//
-// Future work: This implementation currently uses growable arrays to save
-// the oop and header of interesting objects. As an optimization we could
-// use the same technique as the GC and make use of the unused area
-// between top() and end().
-//
-
-// An ObjectClosure used to restore the mark bits of an object
-class RestoreMarksClosure : public ObjectClosure {
- public:
-  void do_object(oop o) {
-    if (o != NULL) {
-      markWord mark = o->mark();
-      if (mark.is_marked()) {
-        o->init_mark();
-      }
-    }
-  }
-};
-
-// ObjectMarker provides the mark and visited functions
-class ObjectMarker : AllStatic {
- private:
-  // saved headers
-  static GrowableArray<oop>* _saved_oop_stack;
-  static GrowableArray<markWord>* _saved_mark_stack;
-  static bool _needs_reset;                  // do we need to reset mark bits?
-
- public:
-  static void init();                       // initialize
-  static void done();                       // clean-up
-
-  static inline void mark(oop o);           // mark an object
-  static inline bool visited(oop o);        // check if object has been visited
-
-  static inline bool needs_reset()            { return _needs_reset; }
-  static inline void set_needs_reset(bool v)  { _needs_reset = v; }
-};
-
-GrowableArray<oop>* ObjectMarker::_saved_oop_stack = NULL;
-GrowableArray<markWord>* ObjectMarker::_saved_mark_stack = NULL;
-bool ObjectMarker::_needs_reset = true;  // need to reset mark bits by default
-
-// initialize ObjectMarker - prepares for object marking
-void ObjectMarker::init() {
-  assert(Thread::current()->is_VM_thread(), "must be VMThread");
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-
-  // prepare heap for iteration
-  Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
-
-  // create stacks for interesting headers
-  _saved_mark_stack = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<markWord>(4000, mtServiceability);
-  _saved_oop_stack = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<oop>(4000, mtServiceability);
-}
-
-// Object marking is done so restore object headers
-void ObjectMarker::done() {
-  // iterate over all objects and restore the mark bits to
-  // their initial value
-  RestoreMarksClosure blk;
-  if (needs_reset()) {
-    Universe::heap()->object_iterate(&blk);
-  } else {
-    // We don't need to reset mark bits on this call, but reset the
-    // flag to the default for the next call.
-    set_needs_reset(true);
-  }
-
-  // now restore the interesting headers
-  for (int i = 0; i < _saved_oop_stack->length(); i++) {
-    oop o = _saved_oop_stack->at(i);
-    markWord mark = _saved_mark_stack->at(i);
-    o->set_mark(mark);
-  }
-
-  // free the stacks
-  delete _saved_oop_stack;
-  delete _saved_mark_stack;
-}
-
-// mark an object
-inline void ObjectMarker::mark(oop o) {
-  assert(Universe::heap()->is_in(o), "sanity check");
-  assert(!o->mark().is_marked(), "should only mark an object once");
-
-  // object's mark word
-  markWord mark = o->mark();
-
-  if (o->mark_must_be_preserved(mark)) {
-    _saved_mark_stack->push(mark);
-    _saved_oop_stack->push(o);
-  }
-
-  // mark the object
-  o->set_mark(markWord::prototype().set_marked());
-}
-
-// return true if object is marked
-inline bool ObjectMarker::visited(oop o) {
-  return o->mark().is_marked();
-}
-
-// Stack allocated class to help ensure that ObjectMarker is used
-// correctly. Constructor initializes ObjectMarker, destructor calls
-// ObjectMarker's done() function to restore object headers.
-class ObjectMarkerController : public StackObj {
- public:
-  ObjectMarkerController() {
-    ObjectMarker::init();
-  }
-  ~ObjectMarkerController() {
-    ObjectMarker::done();
-  }
-};
-
-
 // helper to map a jvmtiHeapReferenceKind to an old style jvmtiHeapRootKind
 // (not performance critical as only used for roots)
 static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
@@ -1600,7 +1473,7 @@ class CallbackInvoker : AllStatic {
   // if the object hasn't been visited then push it onto the visit stack
   // so that it will be visited later
   static inline bool check_for_visit(oop obj) {
-    if (!ObjectMarker::visited(obj)) visit_stack()->push(obj);
+    if (!ObjectMarkerController::is_marked(obj)) visit_stack()->push(obj);
     return true;
   }
 
@@ -2887,8 +2760,8 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
 //
 bool VM_HeapWalkOperation::visit(oop o) {
   // mark object as visited
-  assert(!ObjectMarker::visited(o), "can't visit same object more than once");
-  ObjectMarker::mark(o);
+  assert(!ObjectMarkerController::is_marked(o), "can't visit same object more than once");
+  ObjectMarkerController::mark(o);
 
   // instance
   if (o->is_instance()) {
@@ -2929,9 +2802,8 @@ void VM_HeapWalkOperation::doit() {
     // If either collect_stack_roots() or collect_simple_roots()
     // returns false at this point, then there are no mark bits
     // to reset.
-    ObjectMarker::set_needs_reset(false);
+    ObjectMarkerController::set_needs_reset(false);    // Calling collect_stack_roots() before collect_simple_roots()
 
-    // Calling collect_stack_roots() before collect_simple_roots()
     // can result in a big performance boost for an agent that is
     // focused on analyzing references in the thread stacks.
     if (!collect_stack_roots()) return;
@@ -2939,7 +2811,7 @@ void VM_HeapWalkOperation::doit() {
     if (!collect_simple_roots()) return;
 
     // no early return so enable heap traversal to reset the mark bits
-    ObjectMarker::set_needs_reset(true);
+    ObjectMarkerController::set_needs_reset(true);
   } else {
     visit_stack()->push(initial_object()());
   }
@@ -2951,7 +2823,7 @@ void VM_HeapWalkOperation::doit() {
     // visited or the callback asked to terminate the iteration.
     while (!visit_stack()->is_empty()) {
       oop o = visit_stack()->pop();
-      if (!ObjectMarker::visited(o)) {
+      if (!ObjectMarkerController::is_marked(o)) {
         if (!visit(o)) {
           break;
         }

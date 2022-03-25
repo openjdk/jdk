@@ -54,6 +54,8 @@ class GCTracer;
 class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
+class ObjectMarker;
+class ObjectMarkerController;
 class ReservedHeapSpace;
 class SoftRefPolicy;
 class Thread;
@@ -96,6 +98,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
   friend class MemAllocator;
   friend class ParallelObjectIterator;
+  friend class ObjectMarkerController;
 
  private:
   GCHeapLog* _gc_heap_log;
@@ -426,6 +429,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   void full_gc_dump(GCTimer* timer, bool before);
 
   virtual void initialize_serviceability() = 0;
+
+  virtual ObjectMarker* init_object_marker();
 
  public:
   void pre_full_gc_dump(GCTimer* timer);

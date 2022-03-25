@@ -38,6 +38,7 @@
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memAllocator.hpp"
+#include "gc/shared/objectMarker.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -654,4 +655,8 @@ uint32_t CollectedHeap::hash_oop(oop obj) const {
 void CollectedHeap::update_capacity_and_used_at_gc() {
   _capacity_at_last_gc = capacity();
   _used_at_last_gc     = used();
+}
+
+ObjectMarker* CollectedHeap::init_object_marker() {
+  return new HeaderObjectMarker();
 }
