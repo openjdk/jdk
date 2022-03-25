@@ -93,8 +93,6 @@ package java.security;
  * @see KeyFactory
  * @see KeyRep
  * @see java.security.spec.KeySpec
- * @see Identity
- * @see Signer
  *
  * @author Benjamin Renaud
  * @since 1.1
