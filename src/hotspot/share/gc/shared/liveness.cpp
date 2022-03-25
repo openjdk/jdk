@@ -112,6 +112,15 @@ void LivenessEstimatorThread::run_service() {
       estimation_end(completed);
     }
   }
+
+  if (ConcLivenessVerify) {
+    LogTarget(Info, gc, estimator) lt;
+    LogStream ls(lt);
+    ls.print("Object count accuracy: ");
+    _object_count_error.print_on(&ls);
+    ls.print("Object size accuracy: ");
+    _object_size_error.print_on(&ls);
+  }
 }
 
 bool LivenessEstimatorThread::estimation_begin() {
@@ -147,8 +156,8 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
 }
 
 void LivenessEstimatorThread::verify_estimate() {
-  // _object_count_error.sample(_all_object_count, _verified_object_count);
-  // _object_size_error.sample(_all_object_size_words, _verified_object_size_words);
+  _object_count_error.sample(_all_object_count, _verified_object_count);
+  _object_size_error.sample(_all_object_size_words, _verified_object_size_words);
 
   long count_difference = long(_verified_object_count) - long(_all_object_count);
   long size_difference = long(_verified_object_size_words) - long(_all_object_size_words);
@@ -161,7 +170,7 @@ class HistoClosure : public KlassInfoClosure {
  private:
   KlassInfoHisto* _cih;
  public:
-  HistoClosure(KlassInfoHisto* cih) : _cih(cih) {}
+  explicit HistoClosure(KlassInfoHisto* cih) : _cih(cih) {}
 
   void do_cinfo(KlassInfoEntry* cie) {
     _cih->add(cie);

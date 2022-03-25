@@ -10,6 +10,32 @@
 typedef Stack<oop, mtTracing> EstimatorStack;
 class SuspendibleThreadSetJoiner;
 
+class EstimationErrorTracker {
+ public:
+  EstimationErrorTracker() : _upper_error(0), _lower_error(0) {}
+
+  void sample(size_t estimation, size_t actual) {
+    if (estimation < actual) {
+      size_t diff = actual - estimation;
+      if (diff > _lower_error) {
+        _lower_error = diff;
+      }
+    } else if (estimation > actual) {
+      size_t diff = estimation - actual;
+      if (diff > _upper_error) {
+        _upper_error = diff;
+      }
+    }
+  }
+
+  void print_on(outputStream* st) const {
+    st->print_cr("[-" SIZE_FORMAT ",+" SIZE_FORMAT "]", _lower_error, _upper_error);
+  }
+ private:
+  size_t _upper_error;
+  size_t _lower_error;
+};
+
 class LivenessEstimatorThread : public  ConcurrentGCThread {
   friend class VM_LivenessRootScan;
   friend class LivenessOopClosure;
@@ -57,6 +83,8 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   void verify_estimate();
   size_t _verified_object_count;
   size_t _verified_object_size_words;
+  EstimationErrorTracker _object_count_error;
+  EstimationErrorTracker _object_size_error;
 };
 
 
