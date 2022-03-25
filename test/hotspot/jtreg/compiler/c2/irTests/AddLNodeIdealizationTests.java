@@ -43,7 +43,9 @@ public class AddLNodeIdealizationTests {
                  "test8", "test9", "test10",
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
-                 "test17", "test18"})
+                 "test17", "test18", "test19",
+                 "test20", "test21", "test22",
+                 "test23"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -81,6 +83,11 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ(a*b + b*c        , test16(a, b, c));
         Asserts.assertEQ(a*c + b*c        , test17(a, b, c));
         Asserts.assertEQ(a*b + c*a        , test18(a, b, c));
+        Asserts.assertEQ(b - a            , test19(a, b));
+        Asserts.assertEQ(a - b            , test20(a, b));
+        Asserts.assertEQ(b - a            , test21(a, b));
+        Asserts.assertEQ(a - b            , test22(a, b));
+        Asserts.assertEQ(2021 - a         , test23(a));
     }
 
     @Test
@@ -237,5 +244,45 @@ public class AddLNodeIdealizationTests {
     // Checks a*b + c*a => a*(b+c)
     public long test18(long a, long b, long c) {
         return a*b + c*a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR, IRNode.ADD})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks (~x + y) + 1 => y - x
+    public long test19(long x, long y) {
+        return (~x + y) + 1;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR, IRNode.ADD})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks (x + ~y) + 1 => x - y
+    public long test20(long x, long y) {
+        return (x + ~y) + 1;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR, IRNode.ADD})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks ~x + (y + 1) => y - x
+    public long test21(long x, long y) {
+        return ~x + (y + 1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR, IRNode.ADD})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks (x + 1) + ~y => x - y
+    public long test22(long x, long y) {
+        return (x + 1) + ~y;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD, IRNode.XOR})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks ~x + c => (c - 1) - x
+    public long test23(long x) {
+        return ~x + 2022;
     }
 }

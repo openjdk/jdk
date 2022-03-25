@@ -43,7 +43,9 @@ public class SubINodeIdealizationTests {
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
                  "test16", "test17", "test18",
-                 "test19", "test20", "test21"})
+                 "test19", "test20", "test21",
+                 "test22", "test23", "test24",
+                 "test25"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -81,6 +83,10 @@ public class SubINodeIdealizationTests {
         Asserts.assertEQ(a*b - b*c        , test19(a, b, c));
         Asserts.assertEQ(a*c - b*c        , test20(a, b, c));
         Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
+        Asserts.assertEQ(b - a            , test22(a, b));
+        Asserts.assertEQ(a + 2023         , test23(a));
+        Asserts.assertEQ(a + 1            , test24(a));
+        Asserts.assertEQ(a                , test25(a));
     }
 
     @Test
@@ -248,5 +254,36 @@ public class SubINodeIdealizationTests {
     // Checks a*b-c*a => a*(b-c)
     public int test21(int a, int b, int c) {
         return a*b - c*a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.SUB, "1"})
+    // Checks ~x - ~y => y - x
+    public int test22(int x, int y) {
+        return ~x - ~y; // transformed to y - x
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.XOR})
+    @IR(counts = {IRNode.ADD, "1"})
+    // Checks c - ~x => x + (c + 1)
+    public int test23(int x) {
+        return 2022 - ~x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.XOR})
+    @IR(counts = {IRNode.ADD, "1"})
+    // Checks 0 - ~x => x + 1
+    public int test24(int x) {
+        return 0 - ~x; // transformed to x + 1
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB, IRNode.XOR, IRNode.ADD})
+    // Checks -1 - ~x => x
+    public int test25(int x) {
+        return -1 - ~x;
     }
 }
