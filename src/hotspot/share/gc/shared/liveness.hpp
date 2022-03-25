@@ -75,14 +75,15 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   MarkBitMap _mark_bit_map;
   MemRegion _mark_bit_map_region;
   EstimatorStack _mark_stack;
-  size_t _all_object_count;
-  size_t _all_object_size_words;
+
+  size_t _estimated_object_count;
+  size_t _estimated_object_size_words;
 
   // For verification
   void compute_liveness();
   void verify_estimate();
-  size_t _verified_object_count;
-  size_t _verified_object_size_words;
+  size_t _actual_object_count;
+  size_t _actual_object_size_words;
   EstimationErrorTracker _object_count_error;
   EstimationErrorTracker _object_size_error;
 };

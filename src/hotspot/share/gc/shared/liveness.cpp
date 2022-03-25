@@ -70,10 +70,10 @@ class LivenessOopClosure : public BasicOopIterateClosure {
 LivenessEstimatorThread::LivenessEstimatorThread()
   : ConcurrentGCThread()
   , _lock(Mutex::safepoint - 1, "LivenessEstimator_lock", true)
-  , _all_object_count(0)
-  , _all_object_size_words(0)
-  , _verified_object_count(0)
-  , _verified_object_size_words(0)
+  , _estimated_object_count(0)
+  , _estimated_object_size_words(0)
+  , _actual_object_count(0)
+  , _actual_object_size_words(0)
 {
   // This initializes the bitmap and reserves the memory, but does not commit it
   initialize_mark_bit_map();
@@ -125,11 +125,11 @@ void LivenessEstimatorThread::run_service() {
 
 bool LivenessEstimatorThread::estimation_begin() {
   assert(_mark_stack.is_empty(), "Unexpected oops in mark stack");
-  _all_object_count = 0;
-  _all_object_size_words = 0;
+  _estimated_object_count = 0;
+  _estimated_object_size_words = 0;
   if (ConcLivenessVerify) {
-    _verified_object_count = 0;
-    _verified_object_size_words = 0;
+    _actual_object_count = 0;
+    _actual_object_size_words = 0;
   }
 
   return commit_bit_map_memory();
@@ -143,11 +143,11 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
   } else {
     assert(_mark_stack.is_empty(), "Should have empty mark stack if scan completed");
 
-    size_t all_object_size_bytes = _all_object_size_words * HeapWordSize;
+    size_t all_object_size_bytes = _estimated_object_size_words * HeapWordSize;
     log_info(gc, estimator)("Estimated: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
-      _all_object_count, all_object_size_bytes, byte_size_in_proper_unit(all_object_size_bytes), proper_unit_for_byte_size(all_object_size_bytes));
+                            _estimated_object_count, all_object_size_bytes, byte_size_in_proper_unit(all_object_size_bytes), proper_unit_for_byte_size(all_object_size_bytes));
 
-    send_live_set_estimate<EventLiveSetEstimate>(_all_object_count, all_object_size_bytes);
+    send_live_set_estimate<EventLiveSetEstimate>(_estimated_object_count, all_object_size_bytes);
 
     if (ConcLivenessVerify) {
       verify_estimate();
@@ -156,11 +156,11 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
 }
 
 void LivenessEstimatorThread::verify_estimate() {
-  _object_count_error.sample(_all_object_count, _verified_object_count);
-  _object_size_error.sample(_all_object_size_words, _verified_object_size_words);
+  _object_count_error.sample(_estimated_object_count, _actual_object_count);
+  _object_size_error.sample(_estimated_object_size_words, _actual_object_size_words);
 
-  long count_difference = long(_verified_object_count) - long(_all_object_count);
-  long size_difference = long(_verified_object_size_words) - long(_all_object_size_words);
+  long count_difference = long(_actual_object_count) - long(_estimated_object_count);
+  long size_difference = long(_actual_object_size_words) - long(_estimated_object_size_words);
 
   log_info(gc, estimator)("Verified - estimate: " INT64_FORMAT " objects, " INT64_FORMAT " bytes.",
                       count_difference, size_difference * HeapWordSize);
@@ -235,10 +235,13 @@ void LivenessEstimatorThread::do_roots() {
 
   StrongRootsScope roots_scope(0);
   LivenessOopClosure cl(this);
+
   OopStorageSet::strong_oops_do(&cl);
   Ticks a = Ticks::now();
+
   Threads::oops_do(&cl, NULL);
   Ticks b = Ticks::now();
+
   CLDToOopClosure cldt(&cl, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt);
   Ticks c = Ticks::now();
@@ -264,8 +267,8 @@ void LivenessEstimatorThread::do_oop(oop obj) {
     } else {
       _mark_bit_map.mark(obj);
       _mark_stack.push(obj);
-      _all_object_count++;
-      _all_object_size_words += obj->size();
+      _estimated_object_count++;
+      _estimated_object_size_words += obj->size();
     }
   }
 }
@@ -343,18 +346,18 @@ void LivenessEstimatorThread::compute_liveness() {
     obj->oop_iterate(&cl);
   }
 
-  _verified_object_count = _all_object_count;
-  _verified_object_size_words = _all_object_size_words;
+  _actual_object_count = _estimated_object_count;
+  _actual_object_size_words = _estimated_object_size_words;
 
-  size_t actual_object_size_bytes = _verified_object_size_words * HeapWordSize;
-  send_live_set_estimate<EventLiveSetActual>(_verified_object_count, actual_object_size_bytes);
+  size_t actual_object_size_bytes = _actual_object_size_words * HeapWordSize;
+  send_live_set_estimate<EventLiveSetActual>(_actual_object_count, actual_object_size_bytes);
 
   log_info(gc, estimator)("Actual: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
-                          _verified_object_count, actual_object_size_bytes,
+                          _actual_object_count, actual_object_size_bytes,
                           byte_size_in_proper_unit(actual_object_size_bytes),
                           proper_unit_for_byte_size(actual_object_size_bytes));
 
-  _all_object_count = 0;
-  _all_object_size_words = 0;
+  _estimated_object_count = 0;
+  _estimated_object_size_words = 0;
   _mark_bit_map.clear();
 }
