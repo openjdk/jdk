@@ -116,9 +116,9 @@ void LivenessEstimatorThread::run_service() {
   if (ConcLivenessVerify) {
     LogTarget(Info, gc, estimator) lt;
     LogStream ls(lt);
-    ls.print("Object count accuracy: ");
+    ls.print("Object count accuracy : ");
     _object_count_error.print_on(&ls);
-    ls.print("Object size accuracy: ");
+    ls.print("Object size accuracy  : ");
     _object_size_error.print_on(&ls);
   }
 }
@@ -237,13 +237,18 @@ void LivenessEstimatorThread::do_roots() {
   LivenessOopClosure cl(this);
 
   OopStorageSet::strong_oops_do(&cl);
+  for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::WeakId>()) {
+    storage->oops_do(&cl);
+  }
   Ticks a = Ticks::now();
 
   Threads::oops_do(&cl, NULL);
   Ticks b = Ticks::now();
 
   CLDToOopClosure cldt(&cl, ClassLoaderData::_claim_none);
+  // ClassLoaderDataGraph::cld_do(&cldt);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt);
+
   Ticks c = Ticks::now();
 
   MarkingCodeBlobClosure code_blob_closure(&cl, false);
