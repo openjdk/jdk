@@ -291,7 +291,9 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
     if (allMemoryPoolsAffected) {
       log_info(gc, estimator)("HeapMemoryAfterGCUse [allMemoryPoolsAffected] total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
     } else {
-      log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT "MB", heapMemoryAfterGCUse/M);
+      log_info(gc, estimator)("HeapMemoryAfterGCUse total: " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
+                              heapMemoryAfterGCUse, byte_size_in_proper_unit(heapMemoryAfterGCUse),
+                              proper_unit_for_byte_size(heapMemoryAfterGCUse));
     }
   }
 

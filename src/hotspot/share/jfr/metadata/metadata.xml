@@ -410,6 +410,11 @@
     <Field type="ulong" contentType="bytes" name="size" label="Estimated live-set size" />
   </Event>
 
+  <Event name="LiveSetActual" category="Java Virtual Machine, GC, Detailed" startTime="false" label="Live-set actual">
+    <Field type="ulong" name="objectCount" label="Actual live-set object count" />
+    <Field type="ulong" contentType="bytes" name="size" label="Actual live-set size" />
+  </Event>
+
   <Type name="G1EvacuationStatistics">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="ulong" contentType="bytes" name="allocated" label="Allocated" description="Total memory allocated by PLABs" />

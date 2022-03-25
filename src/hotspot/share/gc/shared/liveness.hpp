@@ -43,6 +43,7 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   bool estimate_liveness();
   void do_roots();
   void do_oop(oop obj);
+  template<typename EventT>
   void send_live_set_estimate(size_t count, size_t size_bytes);
 
   Monitor _lock;

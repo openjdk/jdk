@@ -133,14 +133,25 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
     assert(_mark_stack.is_empty(), "Should have empty mark stack if scan completed");
 
     size_t all_object_size_bytes = _all_object_size_words * HeapWordSize;
-    send_live_set_estimate(_all_object_count, all_object_size_bytes);
+    log_info(gc, estimator)("Estimated: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
+      _all_object_count, all_object_size_bytes, byte_size_in_proper_unit(all_object_size_bytes), proper_unit_for_byte_size(all_object_size_bytes));
+
+    send_live_set_estimate<EventLiveSetEstimate>(_all_object_count, all_object_size_bytes);
 
     if (ConcLivenessVerify) {
+      size_t actual_object_size_bytes = _verified_object_size_words * HeapWordSize;
       long count_difference = long(_verified_object_count) - long(_all_object_count);
-      long size_difference = long(_verified_object_size_words) - long(_all_object_size_words);
+      long size_difference = long(actual_object_size_bytes) - long(all_object_size_bytes);
+
+      send_live_set_estimate<EventLiveSetActual>(_verified_object_count, actual_object_size_bytes);
+
+      log_info(gc, estimator)("Actual: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
+                              _verified_object_count, actual_object_size_bytes,
+                              byte_size_in_proper_unit(actual_object_size_bytes),
+                              proper_unit_for_byte_size(actual_object_size_bytes));
 
       log_info(gc, estimator)("Verified - estimate: " INT64_FORMAT " objects, " INT64_FORMAT " bytes.",
-        count_difference, size_difference * HeapWordSize);
+        count_difference, size_difference);
     }
   }
 }
@@ -242,17 +253,16 @@ void LivenessEstimatorThread::stop_service() {
   log_info(gc, estimator)("Notified estimator thread to wakeup.");
 }
 
+template<typename EventT>
 void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_bytes) {
-  log_info(gc, estimator)("Summary: " SIZE_FORMAT " objects, total size " SIZE_FORMAT "MB", count, (long)size_bytes / M);
-
-  EventLiveSetEstimate evt;
+  EventT evt;
   if (evt.should_commit()) {
-    log_info(gc, estimator)("Sending JFR event");
+    log_info(gc, estimator)("Sending JFR event: %d", evt.id());
     evt.set_objectCount(count);
     evt.set_size(size_bytes);
     evt.commit();
   } else {
-    log_info(gc, estimator)("Skipping JFR event because it's disabled");
+    log_info(gc, estimator)("Skipping JFR event (%d) because it's disabled", evt.id());
   }
 }
 
