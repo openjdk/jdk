@@ -25,10 +25,17 @@
 #ifndef CPU_X86_PEEPHOLE_X86_HPP
 #define CPU_X86_PEEPHOLE_X86_HPP
 
+#include "opto/machnode.hpp"
+#include "opto/regalloc.hpp"
+
+class Peephole {
 public:
   static MachNode* lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
-                                    int& deleted, MachNode* (*new_root)(), int inst0_rule);
+                                    int& deleted, MachNode* (*new_root)(), int inst0_rule,
+                                    GrowableArray<MachNode*>& old_nodes, GrowableArray<MachNode*>& new_nodes);
   static MachNode* lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
-                                    int& deleted, MachNode* (*new_root)(), int inst0_rule);
+                                    int& deleted, MachNode* (*new_root)(), int inst0_rule,
+                                    GrowableArray<MachNode*>& old_nodes, GrowableArray<MachNode*>& new_nodes);
+};
 
 #endif // CPU_X86_PEEPHOLE_X86_HPP

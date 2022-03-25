@@ -13539,7 +13539,7 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addI_rReg);
   peepprocedure (lea_coalesce_reg);
   peepreplace (addI_rReg_rReg_peep());
@@ -13547,7 +13547,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addI_rReg_imm);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13555,7 +13555,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (incI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13563,7 +13563,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (decI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13571,7 +13571,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (salI_rReg_immI2);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI2_peep());
@@ -13579,7 +13579,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addL_rReg);
   peepprocedure (lea_coalesce_reg);
   peepreplace (addL_rReg_rReg_peep());
@@ -13587,7 +13587,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addL_rReg_imm);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
@@ -13595,7 +13595,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (incL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
@@ -13603,7 +13603,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (decL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
@@ -13611,7 +13611,7 @@ peephole
 
 peephole
 %{
-  // peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (salL_rReg_immI2);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immI2_peep());

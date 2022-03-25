@@ -25,13 +25,6 @@
 #ifndef SHARE_OPTO_PEEPHOLE_HPP
 #define SHARE_OPTO_PEEPHOLE_HPP
 
-#include "opto/machnode.hpp"
-#include "opto/regalloc.hpp"
-
-class Peephole {
-
 #include CPU_HEADER(peephole)
-
-};
 
 #endif // SHARE_OPTO_PEEPHOLE_HPP
