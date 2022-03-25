@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
@@ -1178,7 +1179,7 @@ public:
   size_t max_tlab_size() const override;
   size_t unsafe_max_tlab_alloc(Thread* ignored) const override;
 
-  inline bool is_in_young(const oop obj);
+  inline bool is_in_young(const oop obj) const;
 
   // Returns "true" iff the given word_size is "very large".
   static bool is_humongous(size_t word_size) {
@@ -1248,7 +1249,7 @@ public:
   inline bool is_obj_dead_full(const oop obj) const;
 
   // Mark the live object that failed evacuation in the prev bitmap.
-  inline void mark_evac_failure_object(const oop obj, uint worker_id) const;
+  void mark_evac_failure_object(const oop obj, uint worker_id) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 

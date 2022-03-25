@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_HEAPSHARED_HPP
 #define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
@@ -252,17 +253,12 @@ private:
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
-  static unsigned klass_hash(Klass* const& klass) {
-    // Generate deterministic hashcode even if SharedBaseAddress is changed due to ASLR.
-    return primitive_hash<address>(address(klass) - SharedBaseAddress);
-  }
-
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
                                137, // prime number
                                ResourceObj::C_HEAP,
                                mtClassShared,
-                               HeapShared::klass_hash> {
+                               DumpTimeSharedClassTable_hash> {
   public:
     int _count;
   };

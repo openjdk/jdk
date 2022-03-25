@@ -110,7 +110,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
     /**
      * Create a check box menu item with an empty label.
      * The item's state is initially set to "off."
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since   1.1
@@ -125,7 +125,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
 
      * @param     label   a string label for the check box menu item,
      *                or {@code null} for an unlabeled menu item.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -140,7 +140,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @param      state   the initial state of the menu item, where
      *                     {@code true} indicates "on" and
      *                     {@code false} indicates "off."
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since      1.1
@@ -316,7 +316,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      *          <code><em>Foo</em>Listener</code>s on this checkbox menuitem,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

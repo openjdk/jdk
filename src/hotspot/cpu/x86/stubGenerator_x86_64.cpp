@@ -795,6 +795,21 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_popcount_avx_lut(const char *stub_name) {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    __ emit_data64(0x0302020102010100, relocInfo::none);
+    __ emit_data64(0x0403030203020201, relocInfo::none);
+    return start;
+  }
+
   address generate_iota_indices(const char *stub_name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -2833,7 +2848,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
     __ increment(count);               // increment the count toward zero
     __ jcc(Assembler::zero, L_do_card_marks);
 
@@ -7712,6 +7727,11 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
+
+    if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
+      // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
+      StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
+    }
 
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {

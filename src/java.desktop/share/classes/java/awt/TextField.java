@@ -152,7 +152,7 @@ public class TextField extends TextComponent {
 
     /**
      * Constructs a new text field.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -167,7 +167,7 @@ public class TextField extends TextComponent {
      *             string {@code ""} will be displayed.
      *             If {@code text} contains EOL and/or LF characters, then
      *             each will be replaced by space character.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -182,7 +182,7 @@ public class TextField extends TextComponent {
      * @param      columns     the number of columns.  If
      *             {@code columns} is less than {@code 0},
      *             {@code columns} is set to {@code 0}.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -203,7 +203,7 @@ public class TextField extends TextComponent {
      * @param      columns     the number of columns.  If
      *             {@code columns} is less than {@code 0},
      *             {@code columns} is set to {@code 0}.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -369,7 +369,7 @@ public class TextField extends TextComponent {
      * approximate average character width that is platform-dependent.
      * @param      columns   the number of columns.
      * @see        java.awt.TextField#getColumns
-     * @exception  IllegalArgumentException   if the value
+     * @throws  IllegalArgumentException   if the value
      *                 supplied for {@code columns}
      *                 is less than {@code 0}.
      * @since      1.1
@@ -585,7 +585,7 @@ public class TextField extends TextComponent {
      *          <code><em>Foo</em>Listener</code>s on this textfield,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
      *

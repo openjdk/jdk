@@ -39,7 +39,7 @@ VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_macosx="gcc clang"
+VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="xlc"
 VALID_TOOLCHAINS_windows="microsoft"
 
@@ -901,8 +901,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
         UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)
