@@ -7,6 +7,8 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -156,12 +158,25 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
   }
 }
 
+class HistoClosure : public KlassInfoClosure {
+ private:
+  KlassInfoHisto* _cih;
+ public:
+  HistoClosure(KlassInfoHisto* cih) : _cih(cih) {}
+
+  void do_cinfo(KlassInfoEntry* cie) {
+    _cih->add(cie);
+  }
+};
+
 bool LivenessEstimatorThread::estimate_liveness() {
   Ticks start = Ticks::now();
   // Run root scan on a safepoint. Much of this could be done concurrently,
   // but that would also take much longer to implement.
   VM_LivenessRootScan root_scan(this);
   VMThread::execute(&root_scan);
+
+  KlassInfoTable cit(false);
 
   Ticks after_vm_op = Ticks::now();
 
@@ -172,18 +187,36 @@ bool LivenessEstimatorThread::estimate_liveness() {
   while (!_mark_stack.is_empty()) {
     oop obj = _mark_stack.pop();
     obj->oop_iterate(&cl);
+    if (ConcLivenessHisto) {
+      cit.record_instance(obj);
+    }
     if (!check_yield_and_continue(&sst)) {
       return false;
     }
   }
 
-  Tickspan non_root_scan_time = Ticks::now()  - after_vm_op;
-  Tickspan total_time = Ticks::now() - start;
+  Ticks after_scan = Ticks::now();
+
+  if (ConcLivenessHisto) {
+    // Print heap histogram
+    KlassInfoHisto histo(&cit);
+    HistoClosure hc(&histo);
+    cit.iterate(&hc);
+    histo.sort();
+    LogTarget(Info, gc, estimator, classhisto) lt;
+    LogStream ls(lt);
+    histo.print_histo_on(&ls);
+  }
+
+  Ticks finish = Ticks::now();
 
   log_info(gc, estimator)("Phase timings:");
-  log_info(gc, estimator)("    Total                   : %fms", total_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Total                   : %fms", (finish - start).seconds() * MILLIUNITS);
   log_info(gc, estimator)("    Root scan (at safepoint): %fms", root_scan._vm_op_time.seconds() * MILLIUNITS);
-  log_info(gc, estimator)("    Non-root scan           : %fms", non_root_scan_time.seconds() * MILLIUNITS);
+  log_info(gc, estimator)("    Non-root scan           : %fms", (after_scan - after_vm_op).seconds() * MILLIUNITS);
+  if (ConcLivenessHisto) {
+    log_info(gc, estimator)("    Histogram               : %fms", (finish - after_scan).seconds() * MILLIUNITS);
+  }
 
   return true;
 }

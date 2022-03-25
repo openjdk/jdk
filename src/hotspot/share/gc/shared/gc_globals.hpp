@@ -704,7 +704,15 @@
   product(bool, ConcLivenessVerify, false, EXPERIMENTAL,                    \
           "Compare concurrent liveness estimation with liveness computed"   \
           " on a safepoint. Concurrent estimation does NOT use barriers,"   \
-          " so some inaccuracy is expected.")
+          " so some inaccuracy is expected.")                               \
+                                                                            \
+  product(bool, ConcLivenessHisto, false, EXPERIMENTAL,                     \
+          "Print heap histogram after a concurrent liveness check."         \
+          "Requires +UseConcLivenessEstimate.")                             \
+                                                                            \
+  product(intx, HeapHistoTopN, 20, EXPERIMENTAL,                            \
+          "Number of elements to print in a heap histogram, for example"    \
+          " when using +ConcLivenessHisto.")                              
 
   // end of GC_FLAGS
 

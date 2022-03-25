@@ -298,7 +298,7 @@ void KlassInfoHisto::print_elements(outputStream* st) const {
   // simplify the formatting (ILP32 vs LP64) - store the sum in 64-bit
   int64_t total = 0;
   uint64_t totalw = 0;
-  for(int i=0; i < elements()->length(); i++) {
+  for(int i=0; i < elements()->length() && i < HeapHistoTopN; i++) {
     st->print("%4d: ", i+1);
     elements()->at(i)->print_on(st);
     total += elements()->at(i)->count();
