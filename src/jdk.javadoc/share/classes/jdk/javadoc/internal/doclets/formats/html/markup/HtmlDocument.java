@@ -34,7 +34,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
-import jdk.javadoc.internal.doclint.HtmlTag;
 
 /**
  * Class for generating an HTML document for javadoc output.
@@ -51,7 +50,7 @@ public class HtmlDocument {
     /**
      * Constructs an HTML document.
      *
-     * @param html the {@link HtmlTag#HTML HTML} element of the document
+     * @param html the {@link TagName#HTML HTML} element of the document
      */
     public HtmlDocument(Content html) {
         docContent = html;
