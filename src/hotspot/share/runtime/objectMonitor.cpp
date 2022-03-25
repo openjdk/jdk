@@ -232,6 +232,10 @@ OopStorage* ObjectMonitor::_oop_storage = NULL;
 //
 // * See also http://blogs.sun.com/dave
 
+void* ObjectMonitor::operator new (size_t size) throw() {
+  // Prevent libc allocator from accidentally placing OMs into the same cache line
+  return AllocateHeap(align_up(size, OM_CACHE_LINE_SIZE), mtObjectMonitor);
+}
 
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
