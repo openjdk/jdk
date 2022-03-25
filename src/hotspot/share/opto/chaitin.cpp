@@ -205,6 +205,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
 #endif
        )
   , _live(0)
+  , _prev_region_node_limit(0)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
 #ifndef PRODUCT
@@ -489,7 +490,7 @@ void PhaseChaitin::Register_Allocate() {
       Block_List region;
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
-        block->dump();
+//        block->dump();
         if (block->_region == 0) {
           region.push(block);
         }
@@ -502,7 +503,13 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   for (int region = regions.length()-1; region >= 0; region--) {
-    tty->print_cr("XXX region = %d", region);
+    if (UseNewCode3) {
+      tty->print_cr("XXX region = %d", region);
+      for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
+        Block* block = _cfg.get_block(i);
+        block->dump();
+      }
+    }
     Block_List all_blocks = _cfg._blocks;
     Block_List blocks = region == 1 ? regions.at(regions.length() - 1 - region) : all_blocks;
     // After aggressive coalesce, attempt a first cut at coloring.
@@ -522,7 +529,7 @@ void PhaseChaitin::Register_Allocate() {
 
     // Build physical interference graph
     uint must_spill = 0;
-    must_spill = build_ifg_physical(&live_arena, blocks, region);
+    must_spill = build_ifg_physical(&live_arena, all_blocks, region);
 
     // If we have a guaranteed spill, might as well spill now
     if (must_spill) {
@@ -559,7 +566,7 @@ void PhaseChaitin::Register_Allocate() {
         _live = &live;
         compute_min_regions(all_blocks);
       }
-      build_ifg_physical(&live_arena, blocks, region);
+      build_ifg_physical(&live_arena, all_blocks, region);
       _ifg->SquareUp();
       _ifg->Compute_Effective_Degree();
       // Only do conservative coalescing if requested
@@ -584,7 +591,8 @@ void PhaseChaitin::Register_Allocate() {
 #endif
     }
 
-    if (regions.length() > 1) {
+    if (UseNewCode3 && regions.length() > 1) {
+      tty->print_cr("XXX IFG:");
       for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
         LRG &lrg = lrgs(i);
         tty->print("%d: ", i); lrg.dump();
@@ -605,20 +613,25 @@ void PhaseChaitin::Register_Allocate() {
     // Return whether or not something spills.
     uint spills = Select(region);
 
-    if (regions.length() > 1) {
-      for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
-        LRG &lrg = lrgs(i);
-        if (lrg._region == region) {
-          tty->print("%d: ", i); lrg.dump();
-        }
-      }
-    }
+//    if (regions.length() > 1) {
+//      for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
+//        LRG &lrg = lrgs(i);
+//        if (lrg._region == region) {
+//          tty->print("%d: ", i); lrg.dump();
+//        }
+//      }
+//    }
 
 
     // If we spill, split and recycle the entire thing
     while (spills) {
       if (_trip_cnt++ > 24) {
         DEBUG_ONLY(dump_for_spill_split_recycle();)
+        for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
+          Block* block = _cfg.get_block(i);
+          block->dump();
+        }
+
         if (_trip_cnt > 27) {
           C->record_method_not_compilable("failed spill-split-recycle sanity check");
           return;
@@ -653,9 +666,20 @@ void PhaseChaitin::Register_Allocate() {
         _live = &live;
         compute_min_regions(all_blocks);
       }
-      must_spill = build_ifg_physical(&live_arena, blocks, region);
+      must_spill = build_ifg_physical(&live_arena, all_blocks, region);
       _ifg->SquareUp();
       _ifg->Compute_Effective_Degree();
+
+//      if (regions.length() > 1) {
+//        tty->print_cr("XXX IFG:");
+//        for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
+//          LRG &lrg = lrgs(i);
+//          tty->print("%d: ", i); lrg.dump();
+//          if (_ifg->neighbor_cnt(i) > 0) {
+//            _ifg->neighbors(i)->dump();
+//          }
+//        }
+//      }
 
       // Only do conservative coalescing if requested
       if (OptoCoalesce) {
@@ -666,6 +690,17 @@ void PhaseChaitin::Register_Allocate() {
         coalesce.coalesce_driver(all_blocks, region);
       }
       _lrg_map.compress_uf_map_for_nodes();
+
+      if (UseNewCode3 && regions.length() > 1) {
+        tty->print_cr("XXX IFG:");
+        for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
+          LRG &lrg = lrgs(i);
+          tty->print("%d: ", i); lrg.dump();
+          if (_ifg->neighbor_cnt(i) > 0) {
+            _ifg->neighbors(i)->dump();
+          }
+        }
+      }
 #ifdef ASSERT
       verify(&live_arena, true);
 #endif
@@ -679,6 +714,45 @@ void PhaseChaitin::Register_Allocate() {
       // Return whether or not something spills.
       spills = Select(region);
     }
+    _prev_region_node_limit = C->unique();
+    if (regions.length() > 1) {
+      _was_up_in_prev_region.clear();
+      if (UseNewCode3) {
+        tty->print_cr("XXXXX after region = %d", region);
+      }
+      for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
+        Block* block = _cfg.get_block(i);
+        if (UseNewCode3) {
+          block->dump_head(NULL);
+        }
+        for (uint i = 0; i < block->number_of_nodes(); i++) {
+          Node* n = block->get_node(i);
+          LRG &lrg = lrgs(_lrg_map.live_range_id(n));
+          if (lrg.alive()) {
+            if (lrg.mask().is_UP()) {
+              _was_up_in_prev_region.set(n->_idx);
+            }
+            if (UseNewCode3) {
+              OptoReg::Name reg = lrg.reg();
+              if ((int) reg < 0) {
+                tty->print("<OptoReg::%d>", (int) reg);
+              } else if (OptoReg::is_reg(reg)) {
+                tty->print("%s ", Matcher::regName[reg]);
+              } else {
+                tty->print("%s + #%d", OptoReg::regname(OptoReg::c_frame_pointer),
+                           reg2offset(reg));
+              }
+            }
+          }
+          if (UseNewCode3)
+            n->dump();
+        }
+      }
+      if (UseNewCode3) {
+        tty->print("\n");
+      }
+    }
+
 //    if (region == 1) {
 //      for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
 ////        if (lrgs(i)._region == 1) {
@@ -958,6 +1032,10 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
         const RegMask &rm = n->out_RegMask();
         if (block->_region >= region || n->ideal_reg() == Op_RegFlags || n->ideal_reg() == MachProjNode::fat_proj) {
           lrg.AND( rm );
+//          if (_was_up_in_prev_region.test(n->_idx) && block->_region > region && n->ideal_reg() != Op_RegFlags && n->ideal_reg() != MachProjNode::fat_proj) {
+//            const RegMask* rm = C->matcher()->idealreg2regmask[n->ideal_reg()];
+//            lrg.AND(*rm);
+//          }
         } else {
           lrg.AND(C->matcher()->idealreg2spillmask[n->ideal_reg()]);
         }
@@ -1760,6 +1838,10 @@ uint PhaseChaitin::Select(uint region) {
         // its chunk, a new chunk of color may be tried, in which case
         // examination of neighbors is started again, at retry_next_chunk.)
         LRG &nlrg = lrgs(neighbor);
+        if (!(nlrg._region >= region)) {
+          lrg->dump();
+          nlrg.dump();
+        }
         assert(nlrg._region >= region, "");
         OptoReg::Name nreg = nlrg.reg();
         // Only subtract masks in the same chunk

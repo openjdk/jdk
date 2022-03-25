@@ -512,6 +512,8 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   if (lrgs(lr1)._maxfreq < lrgs(lr2)._maxfreq)
     lrgs(lr1)._maxfreq = lrgs(lr2)._maxfreq;
 
+  lrgs(lr1)._region = MAX2(lrgs(lr1)._region, lrgs(lr2)._region);
+
   // Copy original value instead.  Intermediate copies go dead, and
   // the dst_copy becomes useless.
   int didx = dst_copy->is_Copy();

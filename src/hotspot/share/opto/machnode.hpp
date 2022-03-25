@@ -580,7 +580,9 @@ public:
     InputToRematerialization,          // When rematerializing a node we stretch the inputs live ranges, and they might be
                                        // stretched beyond a new definition point, therefore we split out new copies instead
     CallUse,                           // Spill use at a call
-    Bound                              // An lrg marked as spill that is bound and needs to be spilled at a use
+    Bound,                             // An lrg marked as spill that is bound and needs to be spilled at a use
+    RegionEntry,
+    RegionExit,
   };
 private:
   const RegMask *_in;           // RegMask for input
@@ -638,6 +640,10 @@ public:
         return "CallUseSpillCopy";
       case Bound:
         return "BoundSpillCopy";
+      case RegionEntry:
+        return "RegionEntry";
+      case RegionExit:
+        return "RegionExit";
       default:
         assert(false, "Must have valid spill type");
         return "MachSpillCopy";

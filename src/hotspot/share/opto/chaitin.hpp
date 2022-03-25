@@ -432,6 +432,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   PhaseIFG *_ifg;               // Interference graph (for original chunk)
   VectorSet _spilled_once;      // Nodes that have been spilled
   VectorSet _spilled_twice;     // Nodes that have been spilled twice
+  VectorSet _was_up_in_prev_region;
+  uint _prev_region_node_limit;
 
   // Combine the Live Range Indices for these 2 Nodes into a single live
   // range.  Future requests for any Node in either live range will
