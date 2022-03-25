@@ -3466,10 +3466,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     String language = System.getProperty("user.language", "en");
                     String country  = System.getProperty("user.country","");
                     String variant  = System.getProperty("user.variant","");
-                    return Locale.forLanguageTag(
-                            (language.isEmpty() ? "und" : language) +
-                            (country.isEmpty() ? "" : "-" + country) +
-                            (variant.isEmpty() ? "" : "-x-lvariant-" + variant));
+                    return Locale.of(language, country, variant);
                 }
             });
         }

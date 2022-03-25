@@ -240,22 +240,20 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>Using {@link Builder} you can construct a {@code Locale} object
  * that conforms to BCP 47 syntax.
  *
- * <h4>Factory Method</h4>
+ * <h4>Factory Methods</h4>
  *
  * <p>The method {@link #forLanguageTag} obtains a {@code Locale}
- * object for a well-formed BCP 47 language tag.
+ * object for a well-formed BCP 47 language tag. The method
+ * {@link #of(String...)} obtains a {@code Locale} object from
+ * given fields ({@code language}, {@code country}, {@code variant},
+ * and/or {@code script} defined above.
  *
  * <h4>Locale Constants</h4>
  *
  * <p>The {@code Locale} class provides a number of convenient constants
  * that you can use to obtain {@code Locale} objects for commonly used
- * locales. For example, the following obtains a {@code Locale} object
- * for the United States:
- * <blockquote>
- * <pre>
- *     Locale.US
- * </pre>
- * </blockquote>
+ * locales. For example, {@code Locale.US} is the {@code Locale} object
+ * for the United States.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
@@ -800,6 +798,32 @@ public final class Locale implements Cloneable, Serializable {
     @Deprecated(since="19")
     public Locale(String language) {
         this(language, "", "");
+    }
+
+    /**
+     * Returns a {@code Locale} obtained from the given
+     * fields. Fields can take up to 4 arguments in the following order;
+     * {@code Locale.of(}<a href="#def_language">language</a>,
+     * <a href="#def_region">country</a>,
+     * <a href="#def_variant">variant</a>,
+     * <a href="#def_script">script</a>{@code )}.
+     * Each field can be an empty String, but cannot be {@code null}.
+     * If {@code fields} holds more than 4 arguments, the rest are ignored. If
+     * no arguments are given, {@link #ROOT} is returned.
+     *
+     * @param fields language, country, variant, and/or script, cannot be {@code null}.
+     * @return the {@code Locale} instance requested
+     * @throws    NullPointerException if any field argument is {@code null}.
+     * @since 19
+     */
+    public static Locale of(String... fields) {
+        return switch (fields.length) {
+            case 0 -> ROOT;
+            case 1 -> getInstance(fields[0], "", "", "", null);
+            case 2 -> getInstance(fields[0], "", fields[1], "", null);
+            case 3 -> getInstance(fields[0], "", fields[1], fields[2], null);
+            default -> getInstance(fields[0], fields[3], fields[1], fields[2], null);
+        };
     }
 
     /**
@@ -2508,7 +2532,7 @@ public final class Locale implements Cloneable, Serializable {
      * from values configured by the setters.  Unlike the {@code Locale}
      * constructors, the {@code Builder} checks if a value configured by a
      * setter satisfies the syntax requirements defined by the {@code Locale}
-     * class.  A {@code Locale} object obtained by a {@code Builder} is
+     * class.  A {@code Locale} object obtained from a {@code Builder} is
      * well-formed and can be transformed to a well-formed IETF BCP 47 language tag
      * without losing information.
      *
@@ -2523,7 +2547,7 @@ public final class Locale implements Cloneable, Serializable {
      * transformed to a BCP 47 language tag.
      *
      * <p>The following example shows how to obtain a {@code Locale} object
-     * with the {@code Builder}.
+     * using a {@code Builder}.
      * <blockquote>
      * <pre>
      *     Locale aLocale = new Builder().setLanguage("sr").setScript("Latn").setRegion("RS").build();
@@ -2656,7 +2680,7 @@ public final class Locale implements Cloneable, Serializable {
          * <p>The typical region value is a two-letter ISO 3166 code or a
          * three-digit UN M.49 area code.
          *
-         * <p>The country value in the {@code Locale} obtained by the
+         * <p>The country value in the {@code Locale} obtained from a
          * {@code Builder} is always normalized to upper case.
          *
          * @param region the region

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 import java.util.Locale;
 import java.util.TimeZone;
+import java.text.DateFormatSymbols;
 
 public class Bug4848242 {
 
@@ -43,7 +44,7 @@ public class Bug4848242 {
 
     static void getTzInfo(String langName, String locName)
     {
-        Locale tzLocale = Locale.forLanguageTag(langName + "-" + locName);
+        Locale tzLocale = new Locale(langName, locName);
         TimeZone euroTz = TimeZone.getTimeZone("MET");
 
         System.out.println("Locale is " + langName + "_" + locName);

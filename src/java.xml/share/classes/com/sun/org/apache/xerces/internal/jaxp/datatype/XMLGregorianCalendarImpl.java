@@ -2425,17 +2425,12 @@ public class XMLGregorianCalendarImpl
         if (lang != null) {
             if (country != null) {
                 if (variant != null) {
-                    locale = Locale.forLanguageTag(
-                        (lang.isEmpty() ? "und" : lang) +
-                        (country.isEmpty() ? "" : "-" + country) +
-                        (variant.isEmpty() ? "" : "-x-lvariant-" + variant));
+                    locale = Locale.of(lang, country, variant);
                 } else {
-                    locale = Locale.forLanguageTag(
-                        (lang.isEmpty() ? "und" : lang) +
-                        (country.isEmpty() ? "" : "-" + country));
+                    locale = Locale.of(lang, country);
                 }
             } else {
-                locale = Locale.forLanguageTag(lang.isEmpty() ? "und" : lang);
+                locale = Locale.of(lang);
             }
         }
         if (locale == null) {

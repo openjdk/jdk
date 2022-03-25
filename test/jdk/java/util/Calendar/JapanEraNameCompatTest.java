@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,10 @@ public class JapanEraNameCompatTest {
             { KOREAN,   KoreanName, "R" },
             { CHINA,    CJName,     "R" },
             { TAIWAN,   CJName,     "R" }, // fallback to zh
-            { Locale.forLanguageTag("ar"), ArabicName, ArabicName },
-            { Locale.forLanguageTag("th"), ThaiName, "R" },
+            { new Locale("ar"), ArabicName, ArabicName },
+            { new Locale("th"), ThaiName, "R" },
             // hi_IN fallback to root
-            { Locale.forLanguageTag("hi-IN"), EngName, "R" }
+            { new Locale("hi", "IN"), EngName, "R" }
         };
     }
 
@@ -91,20 +91,20 @@ public class JapanEraNameCompatTest {
             { KOREAN, KoreanName, KoreanName },
             { CHINA, CJName, CJName },
             { TAIWAN, CJName, CJName },
-            { Locale.forLanguageTag("ar"), ArabicName, ArabicName },
-            { Locale.forLanguageTag("th"), ThaiName, ThaiName },
-            { Locale.forLanguageTag("hi-IN"), HindiName, HindiName },
-            { Locale.forLanguageTag("ru"), RussianName, RussianName },
-            { Locale.forLanguageTag("sr"), SerbianName, SerbianName },
+            { new Locale("ar"), ArabicName, ArabicName },
+            { new Locale("th"), ThaiName, ThaiName },
+            { new Locale("hi", "IN"), HindiName, HindiName },
+            { new Locale("ru"), RussianName, RussianName },
+            { new Locale("sr"), SerbianName, SerbianName },
             { Locale.forLanguageTag("sr-Latn"), SerbLatinName, SerbLatinName },
-            { Locale.forLanguageTag("hr"), EngName, EngName },
-            { Locale.forLanguageTag("in"), EngName, EngName },
-            { Locale.forLanguageTag("lt"), EngName, EngName },
-            { Locale.forLanguageTag("nl"), EngName, EngName },
-            { Locale.forLanguageTag("no"), EngName, "R" },
-            { Locale.forLanguageTag("sv"), EngName, EngName },
+            { new Locale("hr"), EngName, EngName },
+            { new Locale("in"), EngName, EngName },
+            { new Locale("lt"), EngName, EngName },
+            { new Locale("nl"), EngName, EngName },
+            { new Locale("no"), EngName, "R" },
+            { new Locale("sv"), EngName, EngName },
             // el fallback to root
-            { Locale.forLanguageTag("el"), EngName, EngName }
+            { new Locale("el"), EngName, EngName }
         };
     }
 

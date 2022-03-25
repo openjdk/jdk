@@ -369,10 +369,7 @@ public final class LocaleServiceProviderPool {
                         "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
 
                 // Fallback - script field will be lost.
-                lookupLocale = Locale.forLanguageTag(
-                        (locale.getLanguage().isEmpty() ? "und" : locale.getLanguage()) +
-                        (locale.getCountry().isEmpty() ? "" : "-" + locale.getCountry()) +
-                        (locale.getVariant().isEmpty() ? "" : "-x-lvariant-" + locale.getVariant()));
+                lookupLocale = Locale.of(locale.getLanguage(), locale.getCountry(), locale.getVariant());
             }
         }
         return lookupLocale;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,31 +141,32 @@ public class DefaultControlTest {
 
     private static void testGetCandidateLocales() {
         Map<Locale, Locale[]> candidateData = new HashMap<Locale, Locale[]>();
-        candidateData.put(Locale.forLanguageTag("ja-JP-x-lvariant-YOK"), new Locale[] {
-                              Locale.forLanguageTag("ja-JP-x-lvariant-YOK"),
-                              Locale.forLanguageTag("ja-JP"),
-                              Locale.forLanguageTag("ja"),
+        candidateData.put(new Locale("ja", "JP", "YOK"), new Locale[] {
+                              new Locale("ja", "JP", "YOK"),
+                              new Locale("ja", "JP"),
+                              new Locale("ja"),
                               Locale.ROOT });
-        candidateData.put(Locale.forLanguageTag("ja-JP"), new Locale[] {
-                              Locale.forLanguageTag("ja-JP"),
-                              Locale.forLanguageTag("ja"),
+        candidateData.put(new Locale("ja", "JP"), new Locale[] {
+                              new Locale("ja", "JP"),
+                              new Locale("ja"),
                               Locale.ROOT });
-        candidateData.put(Locale.forLanguageTag("ja"), new Locale[] {
-                              Locale.forLanguageTag("ja"),
+        candidateData.put(new Locale("ja"), new Locale[] {
+                              new Locale("ja"),
                               Locale.ROOT });
-        candidateData.put(Locale.forLanguageTag("ja-x-lvariant-YOK"), new Locale[] {
-                              Locale.forLanguageTag("ja-x-lvariant-YOK"),
-                              Locale.forLanguageTag("ja"),
+
+        candidateData.put(new Locale("ja", "", "YOK"), new Locale[] {
+                              new Locale("ja", "", "YOK"),
+                              new Locale("ja"),
                               Locale.ROOT });
-        candidateData.put(Locale.forLanguageTag("und-JP-x-lvariant-YOK"), new Locale[] {
-                              Locale.forLanguageTag("und-JP-x-lvariant-YOK"),
-                              Locale.forLanguageTag("und-JP"),
+        candidateData.put(new Locale("", "JP", "YOK"), new Locale[] {
+                              new Locale("", "JP", "YOK"),
+                              new Locale("", "JP"),
                               Locale.ROOT });
-        candidateData.put(Locale.forLanguageTag("und-x-lvariant-YOK"), new Locale[] {
-                              Locale.forLanguageTag("und-x-lvariant-YOK"),
+        candidateData.put(new Locale("", "", "YOK"), new Locale[] {
+                              new Locale("", "", "YOK"),
                               Locale.ROOT });
-        candidateData.put(Locale.forLanguageTag("und-JP"), new Locale[] {
-                              Locale.forLanguageTag("und-JP"),
+        candidateData.put(new Locale("", "JP"), new Locale[] {
+                              new Locale("", "JP"),
                               Locale.ROOT });
         candidateData.put(Locale.ROOT, new Locale[] {
                               Locale.ROOT });
@@ -353,20 +354,20 @@ public class DefaultControlTest {
     private static void testToBundleName() {
         final String name = "J2SE";
         Map<Locale, String> bundleNames = new HashMap<Locale, String>();
-        bundleNames.put(Locale.forLanguageTag("ja-JP-x-lvariant-YOK"),
-                        name + "_ja_JP_YOK");
-        bundleNames.put(Locale.forLanguageTag("ja-JP"),
-                        name + "_ja_JP");
-        bundleNames.put(Locale.forLanguageTag("ja"),
-                        name + "_ja");
-        bundleNames.put(Locale.forLanguageTag("ja-x-lvariant-YOK"),
-                        name + "_ja__YOK");
-        bundleNames.put(Locale.forLanguageTag("und-JP-x-lvariant-YOK"),
-                        name + "__JP_YOK");
-        bundleNames.put(Locale.forLanguageTag("und-x-lvariant-YOK"),
-                        name + "___YOK");
-        bundleNames.put(Locale.forLanguageTag("und-JP"),
-                        name + "__JP");
+        bundleNames.put(new Locale("ja", "JP", "YOK"),
+                        name + "_" + "ja" + "_" + "JP" + "_" + "YOK");
+        bundleNames.put(new Locale("ja", "JP"),
+                        name + "_" + "ja" + "_" + "JP");
+        bundleNames.put(new Locale("ja"),
+                        name + "_" + "ja");
+        bundleNames.put(new Locale("ja", "", "YOK"),
+                        name + "_" + "ja" + "_" + "" + "_" + "YOK");
+        bundleNames.put(new Locale("", "JP", "YOK"),
+                        name + "_" + "" + "_" + "JP" + "_" + "YOK");
+        bundleNames.put(new Locale("", "", "YOK"),
+                        name + "_" + "" + "_" + "" + "_" + "YOK");
+        bundleNames.put(new Locale("", "JP"),
+                        name + "_" + "" + "_" + "JP");
         bundleNames.put(Locale.ROOT,
                         name);
 

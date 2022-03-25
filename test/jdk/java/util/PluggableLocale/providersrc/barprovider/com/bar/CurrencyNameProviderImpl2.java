@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.util.spi.*;
 import com.foobar.Utils;
 
 public class CurrencyNameProviderImpl2 extends CurrencyNameProvider {
-    static Locale[] avail = {Locale.forLanguageTag("ja-JP-x-lvariant-tokyo"),
-                             Locale.forLanguageTag("ja-JP-x-lvariant-osaka"), };
+    static Locale[] avail = {new Locale("ja", "JP", "tokyo"),
+                             new Locale("ja", "JP", "osaka"), };
     public Locale[] getAvailableLocales() {
         return avail;
     }

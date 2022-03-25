@@ -74,7 +74,7 @@ import java.util.stream.Collectors;
  *
  * <blockquote><pre>
  * NumberFormat fmt = NumberFormat.getCompactNumberInstance(
- *                             Locale.forLanguageTag("hi-IN"), NumberFormat.Style.SHORT);
+ *                             new Locale("hi", "IN"), NumberFormat.Style.SHORT);
  * String result = fmt.format(1000);
  * </pre></blockquote>
  *

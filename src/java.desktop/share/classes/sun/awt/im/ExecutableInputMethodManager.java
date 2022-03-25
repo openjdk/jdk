@@ -375,10 +375,7 @@ class ExecutableInputMethodManager extends InputMethodManager
                     variant = localeString.substring(postIndex + 1);
                 }
             }
-            Locale locale = Locale.forLanguageTag(
-                    (language.isEmpty() ? "und" : language) +
-                    (country.isEmpty() ? "" : "-" + country) +
-                    (variant.isEmpty() ? "" : "-x-lvariant-" + variant));
+            Locale locale = Locale.of(language, country, variant);
             locator = locator.deriveLocator(locale);
         }
 
@@ -553,8 +550,8 @@ class ExecutableInputMethodManager extends InputMethodManager
         if (preferredLocale.equals(Locale.KOREA)) {
             preferredLocale = Locale.KOREAN;
         }
-        if (preferredLocale.equals(Locale.forLanguageTag("th-TH"))) {
-            preferredLocale = Locale.forLanguageTag("th");
+        if (preferredLocale.equals(Locale.of("th", "TH"))) {
+            preferredLocale = Locale.of("th");
         }
 
         // obtain node
@@ -626,10 +623,10 @@ class ExecutableInputMethodManager extends InputMethodManager
                 advertised = Locale.KOREAN;
             }
         } else if (locale.getLanguage().equals("th")) {
-            if (locator.isLocaleAvailable(Locale.forLanguageTag("th-TH"))) {
-                advertised = Locale.forLanguageTag("th-TH");
-            } else if (locator.isLocaleAvailable(Locale.forLanguageTag("th"))) {
-                advertised = Locale.forLanguageTag("th");
+            if (locator.isLocaleAvailable(Locale.of("th", "TH"))) {
+                advertised = Locale.of("th", "TH");
+            } else if (locator.isLocaleAvailable(Locale.of("th"))) {
+                advertised = Locale.of("th");
             }
         }
 

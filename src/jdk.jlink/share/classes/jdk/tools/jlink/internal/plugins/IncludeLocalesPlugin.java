@@ -141,9 +141,9 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
     private static final String jaJPJPTag = "ja-JP-JP";
     private static final String noNONYTag = "no-NO-NY";
     private static final String thTHTHTag = "th-TH-TH";
-    private static final Locale jaJPJP = Locale.forLanguageTag("ja-JP-x-lvariant-JP");
-    private static final Locale noNONY = Locale.forLanguageTag("no-NO-x-lvariant-NY");
-    private static final Locale thTHTH = Locale.forLanguageTag("th-TH-x-lvariant-TH");
+    private static final Locale jaJPJP = Locale.of("ja", "JP", "JP");
+    private static final Locale noNONY = Locale.of("no", "NO", "NY");
+    private static final Locale thTHTH = Locale.of("th", "TH", "TH");
 
     public IncludeLocalesPlugin() {
         super("include-locales");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,26 +69,26 @@ public class InternationalBAT {
     // http://webwork.eng/j2se/1.4/docs/guide/intl/locale.doc.html#util-text
 
     private static Locale[] requiredLocales = {
-        Locale.forLanguageTag("ar-SA"),
-        Locale.forLanguageTag("zh-CN"),
-        Locale.forLanguageTag("zh-TW"),
-        Locale.forLanguageTag("nl-NL"),
-        Locale.forLanguageTag("en-AU"),
-        Locale.forLanguageTag("en-CA"),
-        Locale.forLanguageTag("en-GB"),
-        Locale.forLanguageTag("en-US"),
-        Locale.forLanguageTag("fr-CA"),
-        Locale.forLanguageTag("fr-FR"),
-        Locale.forLanguageTag("de-DE"),
-        Locale.forLanguageTag("iw-IL"),
-        Locale.forLanguageTag("hi-IN"),
-        Locale.forLanguageTag("it-IT"),
-        Locale.forLanguageTag("ja-JP"),
-        Locale.forLanguageTag("ko-KR"),
-        Locale.forLanguageTag("pt-BR"),
-        Locale.forLanguageTag("es-ES"),
-        Locale.forLanguageTag("sv-SE"),
-        Locale.forLanguageTag("th-TH"),
+        new Locale("ar", "SA"),
+        new Locale("zh", "CN"),
+        new Locale("zh", "TW"),
+        new Locale("nl", "NL"),
+        new Locale("en", "AU"),
+        new Locale("en", "CA"),
+        new Locale("en", "GB"),
+        new Locale("en", "US"),
+        new Locale("fr", "CA"),
+        new Locale("fr", "FR"),
+        new Locale("de", "DE"),
+        new Locale("iw", "IL"),
+        new Locale("hi", "IN"),
+        new Locale("it", "IT"),
+        new Locale("ja", "JP"),
+        new Locale("ko", "KR"),
+        new Locale("pt", "BR"),
+        new Locale("es", "ES"),
+        new Locale("sv", "SE"),
+        new Locale("th", "TH"),
     };
 
     // Date strings for May 10, 2001, for the required locales
@@ -181,26 +181,26 @@ public class InternationalBAT {
     // one sample locale each for the required encodings
 
     private static Locale[] sampleLocales = {
-        Locale.forLanguageTag("ar-SA"),
-        Locale.forLanguageTag("zh-CN"),
-        Locale.forLanguageTag("zh-TW"),
-        Locale.forLanguageTag("iw-IL"),
-        Locale.forLanguageTag("ja-JP"),
-        Locale.forLanguageTag("ko-KR"),
-        Locale.forLanguageTag("it-IT"),
-        Locale.forLanguageTag("th-TH"),
-        Locale.forLanguageTag("ar-SA"),
-        Locale.forLanguageTag("zh-CN"),
-        Locale.forLanguageTag("zh-CN"),
-        Locale.forLanguageTag("zh-CN"),
-        Locale.forLanguageTag("zh-TW"),
-        Locale.forLanguageTag("iw-IL"),
-        Locale.forLanguageTag("ja-JP"),
-        Locale.forLanguageTag("ja-JP"),
-        Locale.forLanguageTag("ko-KR"),
-        Locale.forLanguageTag("it-IT"),
-        Locale.forLanguageTag("it-IT"),
-        Locale.forLanguageTag("th-TH"),
+        new Locale("ar", "SA"),
+        new Locale("zh", "CN"),
+        new Locale("zh", "TW"),
+        new Locale("iw", "IL"),
+        new Locale("ja", "JP"),
+        new Locale("ko", "KR"),
+        new Locale("it", "IT"),
+        new Locale("th", "TH"),
+        new Locale("ar", "SA"),
+        new Locale("zh", "CN"),
+        new Locale("zh", "CN"),
+        new Locale("zh", "CN"),
+        new Locale("zh", "TW"),
+        new Locale("iw", "IL"),
+        new Locale("ja", "JP"),
+        new Locale("ja", "JP"),
+        new Locale("ko", "KR"),
+        new Locale("it", "IT"),
+        new Locale("it", "IT"),
+        new Locale("th", "TH"),
     };
 
     // expected conversion results for the date strings of the sample locales

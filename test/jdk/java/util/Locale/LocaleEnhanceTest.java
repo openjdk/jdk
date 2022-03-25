@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import java.util.Set;
  * @compile LocaleEnhanceTest.java
  * @run main/othervm -Djava.locale.providers=JRE,SPI -esa LocaleEnhanceTest
  */
-@SuppressWarnings("deprecation") // intentional for testing compatibility between constructors and the factory method.
 public class LocaleEnhanceTest extends IntlTest {
 
     public static void main(String[] args) throws Exception {

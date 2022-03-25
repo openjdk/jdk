@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,9 +140,9 @@ public class CurrencyNameProviderTest extends ProviderTest {
     final String YEN_IN_OSAKA = "100,000\u5186\u3084\u3002";
     final String YEN_IN_KYOTO = "100,000\u5186\u3069\u3059\u3002";
     final String YEN_IN_TOKYO= "100,000JPY-tokyo";
-    final Locale OSAKA = Locale.forLanguageTag("ja-JP-x-lvariant-osaka");
-    final Locale KYOTO = Locale.forLanguageTag("ja-JP-x-lvariant-kyoto");
-    final Locale TOKYO = Locale.forLanguageTag("ja-JP-x-lvariant-tokyo");
+    final Locale OSAKA = new Locale("ja", "JP", "osaka");
+    final Locale KYOTO = new Locale("ja", "JP", "kyoto");
+    final Locale TOKYO = new Locale("ja", "JP", "tokyo");
     Integer i = new Integer(100000);
     String formatted;
     DecimalFormat df;

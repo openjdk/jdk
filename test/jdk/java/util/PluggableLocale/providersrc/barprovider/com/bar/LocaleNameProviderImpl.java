@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ import com.foobar.Utils;
 public class LocaleNameProviderImpl extends LocaleNameProvider {
     static Locale[] avail = {Locale.JAPANESE,
                              Locale.JAPAN,
-                             Locale.forLanguageTag("ja-JP-x-lvariant-osaka"),
-                             Locale.forLanguageTag("ja-JP-x-lvariant-kyoto"),
-                             Locale.forLanguageTag("xx"),
-                             Locale.forLanguageTag("yy-YY-x-lvariant-YYYY")};
+                             new Locale("ja", "JP", "osaka"),
+                             new Locale("ja", "JP", "kyoto"),
+                             new Locale("xx"),
+                             new Locale("yy", "YY", "YYYY")};
     static List<Locale> availList = Arrays.asList(avail);
     public Locale[] getAvailableLocales() {
         return avail;
