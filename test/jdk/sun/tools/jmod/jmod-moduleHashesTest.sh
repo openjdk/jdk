@@ -34,6 +34,7 @@
 setup
 
 NUM_MODULES=64
+DATE=$(date +%Y-%m-%dT%H:%M:%SZ)
 
 mkdir -p src/ma
 echo "module ma {}" > src/ma/module-info.java
@@ -51,17 +52,17 @@ mkdir jmods-second
 for i in $(seq $NUM_MODULES); do
     mb_name=m${i}b
 
-    ${JMOD} create -class-path ${TESTCLASSES}/classes/$mb_name --date="2021-01-06T14:36:00+02:00" \
+    ${JMOD} create -class-path ${TESTCLASSES}/classes/$mb_name --date=$DATE \
         jmods-first/$mb_name.jmod
 
-    ${JMOD} create -class-path ${TESTCLASSES}/classes/$mb_name --date="2021-01-06T14:36:00+02:00" \
+    ${JMOD} create -class-path ${TESTCLASSES}/classes/$mb_name --date=$DATE \
         jmods-second/$mb_name.jmod
 done
 
-${JMOD} create -class-path ${TESTCLASSES}/classes/ma --date="2021-01-06T14:36:00+02:00" \
+${JMOD} create -class-path ${TESTCLASSES}/classes/ma --date=$DATE \
     --module-path jmods-first --hash-modules ".*" jmods-first/ma.jmod
 
-${JMOD} create -class-path ${TESTCLASSES}/classes/ma --date="2021-01-06T14:36:00+02:00" \
+${JMOD} create -class-path ${TESTCLASSES}/classes/ma --date=$DATE \
     --module-path jmods-second --hash-modules ".*" jmods-second/ma.jmod
 
 $golden_diff jmods-first/ma.jmod jmods-second/ma.jmod
