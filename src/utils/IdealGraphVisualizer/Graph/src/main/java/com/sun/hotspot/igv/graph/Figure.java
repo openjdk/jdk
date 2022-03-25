@@ -58,7 +58,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     private int heightCash = -1;
     private int widthCash = -1;
     private InputBlock block;
-    private FontMetrics metrics;
+    private final FontMetrics metrics;
 
     public int getHeight() {
         if (heightCash == -1) {
