@@ -7098,7 +7098,7 @@ instruct jumpXtnd(rRegL switch_val, rRegI dest) %{
 %}
 
 // Conditional move
-instruct cmovI_imm01(rRegI dst, immI_1 src, rFlagsReg cr, cmpOp cop)
+instruct cmovI_imm_01(rRegI dst, immI_1 src, rFlagsReg cr, cmpOp cop)
 %{
   predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
@@ -7123,7 +7123,7 @@ instruct cmovI_reg(rRegI dst, rRegI src, rFlagsReg cr, cmpOp cop)
   ins_pipe(pipe_cmov_reg);
 %}
 
-instruct cmovI_imm01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
+instruct cmovI_imm_01U(rRegI dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
 %{
   predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
@@ -7147,7 +7147,7 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
   ins_pipe(pipe_cmov_reg);
 %}
 
-instruct cmovI_imm01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
+instruct cmovI_imm_01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
   predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_int() == 0);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
@@ -7296,6 +7296,19 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
 //  ins_pipe( pipe_cmov_mem );
 //%}
 
+instruct cmovL_imm_01(rRegL dst, immL_1 src, rFlagsReg cr, cmpOp cop)
+%{
+  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_long() == 0);
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+
+  ins_cost(100); // XXX
+  format %{ "setb$cop $dst, $src\t# signed, long" %}
+  ins_encode %{
+    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovL_reg(cmpOp cop, rFlagsReg cr, rRegL dst, rRegL src)
 %{
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
@@ -7320,6 +7333,19 @@ instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
   ins_pipe(pipe_cmov_mem);  // XXX
 %}
 
+instruct cmovL_imm_01U(rRegL dst, immL_1 src, rFlagsRegU cr, cmpOpU cop)
+%{
+  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_long() == 0);
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+
+  ins_cost(100); // XXX
+  format %{ "setb$cop $dst, $src\t# signed, long" %}
+  ins_encode %{
+    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 instruct cmovL_regU(cmpOpU cop, rFlagsRegU cr, rRegL dst, rRegL src)
 %{
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
@@ -7330,6 +7356,19 @@ instruct cmovL_regU(cmpOpU cop, rFlagsRegU cr, rRegL dst, rRegL src)
     __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_cmov_reg); // XXX
+%}
+
+instruct cmovL_imm_01UCF(rRegL dst, immL_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
+%{
+  predicate(n->in(2)->in(1)->is_Con() && n->in(2)->in(1)->get_long() == 0);
+  match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
+
+  ins_cost(100); // XXX
+  format %{ "setb$cop $dst, $src\t# signed, long" %}
+  ins_encode %{
+    __ setb((Assembler::Condition)($cop$$cmpcode), $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
 instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
