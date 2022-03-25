@@ -24,6 +24,7 @@
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -34,10 +35,18 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.HttpURLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.util.Map.entry;
 
 /*
  * @test
@@ -46,21 +55,18 @@ import java.util.List;
  *          The impl maintains a cache for auth info,
  *          the testcases run in a separate JVM to avoid cache hits
  * @modules jdk.httpserver
- * @run main/othervm DigestAuth bad
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth good
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth only_nonce
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=SHA-1 DigestAuth sha1-good
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth sha1-bad
- * @run main/othervm DigestAuth sha256
- * @run main/othervm DigestAuth sha512
- * @run main/othervm DigestAuth sha256-userhash
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth sha256
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_header
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_nonce
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_qop
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth invalid_alg
- * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth validate_server
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth validate_server_no_qop
+ */
+
+/*
+ * The sha512-256-userhash case must be run manually. It needs to run with sudo as the
+ * test must bind to port 80. You also need a modified JDK where
+ * sun.net.www.protocol.http.DigestAuthentication.getCnonce
+ * returns the hardcoded cnonce value below (normally it is chosen at random)
+ *  "NTg6RKcb9boFIAS3KrFK9BGeh+iDa/sm6jUMp2wds69v"
+ * It can be run from the command line directly as follows:
+ * sudo java -Djdk.net.hosts.file=hosts DigestAuth sha512-256-userhash port80
+ * assuming you are running in the test source directory
  */
 public class DigestAuth {
 
@@ -137,23 +143,75 @@ public class DigestAuth {
             + "nc=00000001, "
             + "qop=auth";
 
+    // These two must be run manually with a modified JDK
+    // that generates the exact cnonce given below.
+    static final String SHA_512_256_FIRST = "Digest "
+            + "realm=\"api@example.org\", "
+            + "qop=\"auth\", "
+            + "algorithm=SHA-512-256, "
+            + "nonce=\"5TsQWLVdgBdmrQ0XsxbDODV+57QdFR34I9HAbC/RVvkK\", "
+            + "opaque=\"HRPCssKJSGjCrkzDg8OhwpzCiGPChXYjwrI2QmXDnsOS\", "
+            + "charset=UTF-8, "
+            + "userhash=true ";
+
+    // Below taken from corrected version of RFC 7616
+    static final Map<String,String> SHA_512_256_EXPECTED =
+        Map.ofEntries(
+            entry("username", "793263caabb707a56211940d90411ea4a575adeccb"
+                                + "7e360aeb624ed06ece9b0b"),
+            entry("realm", "api@example.org"),
+            entry("uri", "/doe.json"),
+            entry("algorithm", "SHA-512-256"),
+            entry("nonce", "5TsQWLVdgBdmrQ0XsxbDODV+57QdFR34I9HAbC/RVvkK"),
+            entry("nc", "00000001"),
+            entry("cnonce", "NTg6RKcb9boFIAS3KrFK9BGeh+iDa/sm6jUMp2wds69v"),
+            entry("qop", "auth"),
+            entry("response", "3798d4131c277846293534c3edc11bd8a5e4cdcbff78"
+                                + "b05db9d95eeb1cec68a5"),
+            entry("opaque", "HRPCssKJSGjCrkzDg8OhwpzCiGPChXYjwrI2QmXDnsOS"),
+            entry("userhash", "true"));
+
     public static void main(String[] args) throws Exception {
+        Logger l1 = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
+        Logger l2 = Logger.getLogger("com.sun.net.httpserver");
+        ConsoleHandler h1 = new ConsoleHandler();
+        ConsoleHandler h2 = new ConsoleHandler();
+        l1.setLevel(Level.ALL);
+        l2.setLevel(Level.ALL);
+        h1.setLevel(Level.ALL);
+        h2.setLevel(Level.ALL);
+        l1.addHandler(h1);
+        l2.addHandler(h2);
         if (args.length == 0) {
             throw new RuntimeException("No testcase specified");
         }
         String testcase = args[0];
+        System.out.println("Running test: " + testcase);
+        boolean usePort80 = args.length > 1 && args[1].equals("port80");
 
         // start a local HTTP server
-        try (LocalHttpServer server = LocalHttpServer.startServer()) {
+        try (LocalHttpServer server = LocalHttpServer.startServer(usePort80)) {
 
             // set authenticator
             AuthenticatorImpl auth = new AuthenticatorImpl();
-            Authenticator.setDefault(auth);
 
             String url = String.format("http://%s/test/", server.getAuthority());
 
             boolean success = true;
             switch (testcase) {
+                case "sha512-256-userhash":
+                    auth = new AuthenticatorImpl("J\u00e4s\u00f8n Doe", "Secret, or not?");
+                    // file based name service must be used so domain
+                    // below resolves to localhost
+                    if (usePort80) {
+                        url = "http://api.example.org/doe.json";
+                    } else {
+                        url = "http://api.example.org:" + server.getPort() + "/doe.json";
+                    }
+                    server.setWWWAuthHeader(SHA_512_256_FIRST);
+                    server.setExpectedRequestParams(SHA_512_256_EXPECTED);
+                    success = testAuth(url, auth, EXPECT_DIGEST);
+                    break;
                 case "bad":
                     // server returns a good WWW-Authenticate header with MD5
                     // but MD5 is disallowed by default
@@ -319,7 +377,7 @@ public class DigestAuth {
         try {
             System.out.printf("Connect to %s, expected auth scheme is '%s'%n",
                     url, expectedScheme);
-            load(url);
+            load(url, auth);
 
             if (expectedScheme == null) {
                 System.out.println("Unexpected successful connection");
@@ -344,8 +402,9 @@ public class DigestAuth {
         return true;
     }
 
-    static void load(String url) throws IOException {
-        URLConnection conn = new URL(url).openConnection();
+    static void load(String url, Authenticator auth) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection)(new URL(url).openConnection());
+        conn.setAuthenticator(auth);
         conn.setUseCaches(false);
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(conn.getInputStream()))) {
@@ -383,14 +442,24 @@ public class DigestAuth {
         private String lastRequestedScheme;
         private String lastRequestedPrompt;
 
+        private final String user, pass;
+
+        AuthenticatorImpl() {
+            this("Mufasa", "Circle Of Life");
+        }
+
+        AuthenticatorImpl(String user, String pass) {
+            this.user = user;
+            this.pass = pass;
+        }
+
         @Override
         public PasswordAuthentication getPasswordAuthentication() {
             lastRequestedScheme = getRequestingScheme();
             lastRequestedPrompt = getRequestingPrompt();
             System.out.println("AuthenticatorImpl: requested "
                     + lastRequestedScheme);
-            return new PasswordAuthentication("Mufasa",
-                    "Circle Of Life".toCharArray());
+            return new PasswordAuthentication(user, pass.toCharArray());
         }
     }
 
@@ -403,6 +472,7 @@ public class DigestAuth {
         private volatile String lastRequestedNonce;
         private volatile String lastRequestedUser;
         private volatile String lastRequestedUserhash;
+        private volatile Map<String,String> expectedParams;
 
         private LocalHttpServer(HttpServer server) {
             this.server = server;
@@ -420,6 +490,10 @@ public class DigestAuth {
 
         void setWWWAuthHeader(String wwwAuthHeader) {
             this.wwwAuthHeader = wwwAuthHeader;
+        }
+
+        void setExpectedRequestParams(Map<String,String> params) {
+            this.expectedParams = params;
         }
 
         void setAuthInfoHeader(String authInfoHeader) {
@@ -443,10 +517,24 @@ public class DigestAuth {
             }
         }
 
-        static LocalHttpServer startServer() throws IOException {
+        void checkExpectedParams(String header) {
+            if (expectedParams == null)
+                return;
+            expectedParams.forEach((name, value) -> {
+                String rxValue = findParameter(header, name);
+                if (!rxValue.equalsIgnoreCase(value)) {
+                    throw new RuntimeException("value mismatch "
+                        + "name = " + name + " (" + rxValue + "/"
+                        + value + ")");
+                }
+            });
+        }
+
+        static LocalHttpServer startServer(boolean usePort80) throws IOException {
+            int port = usePort80 ? 80 : 0;
             InetAddress loopback = InetAddress.getLoopbackAddress();
             HttpServer httpServer = HttpServer.create(
-                    new InetSocketAddress(loopback, 0), 0);
+                    new InetSocketAddress(loopback, port), 0);
             LocalHttpServer localHttpServer = new LocalHttpServer(httpServer);
             localHttpServer.start();
 
@@ -455,6 +543,7 @@ public class DigestAuth {
 
         void start() {
             server.createContext("/test", this);
+            server.createContext("/", this);
             server.start();
             System.out.println("HttpServer: started on port " + getAuthority());
         }
@@ -489,6 +578,7 @@ public class DigestAuth {
                         t.getResponseHeaders().add("Authentication-Info",
                                 authInfoHeader);
                     }
+                    checkExpectedParams(header);
                     lastRequestedNonce = findParameter(header, "nonce");
                     lastRequestedUser = findParameter(header, "username");
                     lastRequestedUserhash = findParameter(header, "userhash");

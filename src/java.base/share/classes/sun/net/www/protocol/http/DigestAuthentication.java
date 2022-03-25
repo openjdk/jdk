@@ -52,6 +52,7 @@ import java.util.function.BiConsumer;
 
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
+import sun.nio.cs.ISO_8859_1;
 import sun.security.util.KnownOIDs;
 import sun.util.logging.PlatformLogger;
 
@@ -99,7 +100,8 @@ class DigestAuthentication extends AuthenticationInfo {
     private static final String enabledAlgPropName =
         propPrefix + "reEnabledAlgorithms";
 
-    private static final Set<String> disabledAlgorithms;
+    // Set of disabled message digest algorithms
+    private static final Set<String> disabledDigests;
 
     // true if http.auth.digest.quoteParameters Net property is true
     private static final boolean delimCompatFlag;
@@ -130,7 +132,7 @@ class DigestAuthentication extends AuthenticationInfo {
         );
         // remove any algorithms from disabled set that were opted-in by user
         processPropValue(netprops, algs, (set, elem) -> set.remove(elem));
-        disabledAlgorithms = Set.copyOf(algs);
+        disabledDigests = Set.copyOf(algs);
     }
 
     // Authentication parameters defined in RFC2617.
@@ -148,6 +150,8 @@ class DigestAuthentication extends AuthenticationInfo {
         private String cnonce;
         private String nonce;
         private String algorithm;
+        // Normally same as algorithm, but excludes the -SESS suffix if present
+        private String digestName;
         private String charset;
         private int NCcount=0;
 
@@ -157,7 +161,7 @@ class DigestAuthentication extends AuthenticationInfo {
         // meaning the username doesn't appear in the clear
         private boolean userhash;
 
-        // The H(A1) string used for MD5-sess
+        // The H(A1) string used for XXX-sess
         private String  cachedHA1;
 
         // Force the HA1 value to be recalculated because the nonce has changed
@@ -177,6 +181,7 @@ class DigestAuthentication extends AuthenticationInfo {
             serverQop = false;
             opaque = null;
             algorithm = null;
+            digestName = null;
             cachedHA1 = null;
             nonce = null;
             charset = null;
@@ -275,7 +280,13 @@ class DigestAuthentication extends AuthenticationInfo {
         }
 
         synchronized String getAlgorithm () { return algorithm;}
+        synchronized String getDigestName () {
+            return digestName;
+        }
         synchronized void setAlgorithm (String s) { algorithm=s;}
+        synchronized void setDigestName (String s) {
+            this.digestName = s;
+        }
     }
 
     Parameters params;
@@ -427,19 +438,9 @@ class DigestAuthentication extends AuthenticationInfo {
             authMethod = Character.toUpperCase(authMethod.charAt(0))
                         + authMethod.substring(1).toLowerCase();
         }
-        String algorithm = p.findValue("algorithm");
-        if (algorithm == null || algorithm.isEmpty()) {
-            algorithm = "MD5";  // The default, accoriding to rfc2069
-        } else if (algorithm.equalsIgnoreCase("SHA-512-256")) {
-            algorithm = "SHA-512/256";
-        }
-        var oid = KnownOIDs.findMatch(algorithm);
-        if (oid == null) {
-            log("unknown algorithm: " + algorithm);
+
+        if (!setAlgorithmNames(p, params))
             return false;
-        }
-        algorithm = oid.stdName();
-        params.setAlgorithm (algorithm);
 
         // If authQop is true, then the server is doing RFC2617 and
         // has offered qop=auth. We do not support any other modes
@@ -458,6 +459,38 @@ class DigestAuthentication extends AuthenticationInfo {
         }
     }
 
+    // Algorithm name is stored in two separate fields (of Paramaeters)
+    // This allows for variations in digest algorithm name (aliases)
+    // and also allow for the -sess variant defined in HTTP Digest protocol
+    // returns false if algorithm not supported
+    private static boolean setAlgorithmNames(HeaderParser p, Parameters params) {
+        String algorithm = p.findValue("algorithm");
+        String digestName = algorithm;
+        if (algorithm == null || algorithm.isEmpty()) {
+            algorithm = "MD5";  // The default, accoriding to rfc2069
+            digestName = "MD5";
+        } else {
+            algorithm = algorithm.toUpperCase(Locale.ROOT);
+            digestName = algorithm;
+        }
+        if (algorithm.endsWith("-SESS")) {
+            digestName = algorithm.substring(0, algorithm.length() - 5);
+            algorithm = digestName + "-sess"; // suffix lower case
+        }
+        if (digestName.equals("SHA-512-256")) {
+            digestName = "SHA-512/256";
+        }
+        var oid = KnownOIDs.findMatch(digestName);
+        if (oid == null) {
+            log("unknown algorithm: " + algorithm);
+            return false;
+        }
+        digestName = oid.stdName();
+        params.setAlgorithm (algorithm);
+        params.setDigestName (digestName);
+        return true;
+    }
+
     /* Calculate the Authorization header field given the request URI
      * and based on the authorization information in params
      */
@@ -469,8 +502,9 @@ class DigestAuthentication extends AuthenticationInfo {
         String cnonce = params.getCnonce ();
         String nonce = params.getNonce ();
         String algorithm = params.getAlgorithm ();
+        String digest = params.getDigestName ();
         try {
-            validateAlgorithm(algorithm);
+            validateDigest(digest);
         } catch (IOException e) {
             return null;
         }
@@ -487,15 +521,12 @@ class DigestAuthentication extends AuthenticationInfo {
                 ncstring = zeroPad [len] + ncstring;
         }
 
-        boolean session = algorithm.endsWith ("-SESS");
-        if (session) {
-            algorithm = algorithm.substring(0, algorithm.length() - 5);
-        }
+        boolean session = algorithm.endsWith ("-sess");
 
         try {
             response = computeDigest(true, pw.getUserName(),passwd,realm,
                                         method, uri, nonce, cnonce, ncstring,
-                                        algorithm, session, charset);
+                                        digest, session, charset);
         } catch (CharacterCodingException | NoSuchAlgorithmException ex) {
             log(ex.getMessage());
             return null;
@@ -522,7 +553,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String userhashField = "";
         try {
             if (userhash) {
-                user = computeUserhash(algorithm, user, realm, charset);
+                user = computeUserhash(digest, user, realm, charset);
                 userhashField = ", userhash=true";
             }
         } catch (CharacterCodingException | NoSuchAlgorithmException ex) {
@@ -562,15 +593,15 @@ class DigestAuthentication extends AuthenticationInfo {
         }
     }
 
-    private void validateAlgorithm(String algorithm) throws IOException {
+    private void validateDigest(String name) throws IOException {
         if (getAuthType() == AuthCacheValue.Type.Server &&
                 getProtocolScheme().equals("https")) {
             // HTTPS server authentication can use any algorithm
             return;
         }
-        if (disabledAlgorithms.contains(algorithm)) {
+        if (disabledDigests.contains(name)) {
             String msg = "Rejecting digest authentication with insecure algorithm: "
-                + algorithm;
+                + name;
             log(msg + " This constraint may be relaxed by setting " +
                      "the \"http.auth.digest.reEnabledAlgorithms\" system property.");
             throw new IOException(msg);
@@ -586,8 +617,9 @@ class DigestAuthentication extends AuthenticationInfo {
         String cnonce = params.cnonce;
         String nonce = params.getNonce ();
         String algorithm = params.getAlgorithm ();
+        String digest = params.getDigestName ();
         Charset charset = params.getCharset();
-        validateAlgorithm(algorithm);
+        validateDigest(digest);
         int  nccount = params.getNCCount ();
         String ncstring=null;
 
@@ -608,7 +640,7 @@ class DigestAuthentication extends AuthenticationInfo {
         }
         try {
             String expected = computeDigest(false, username,passwd,realm, method, uri,
-                                           nonce, cnonce, ncstring, algorithm,
+                                           nonce, cnonce, ncstring, digest,
                                            session, charset);
             HeaderParser p = new HeaderParser (header);
             String rspauth = p.findValue ("rspauth");
@@ -631,11 +663,11 @@ class DigestAuthentication extends AuthenticationInfo {
         }
     }
 
-    private String computeUserhash(String algorithm, String user,
+    private String computeUserhash(String digest, String user,
                                    String realm, Charset charset)
         throws NoSuchAlgorithmException, CharacterCodingException
     {
-        MessageDigest md = MessageDigest.getInstance(algorithm);
+        MessageDigest md = MessageDigest.getInstance(digest);
         String s = user + ":" + realm;
         return encode(s, null, md, charset);
     }
@@ -673,7 +705,7 @@ class DigestAuthentication extends AuthenticationInfo {
         } else {
             A2 = ":" + requestURI;
         }
-        String HashA2 = encode(A2, null, md, charset);
+        String HashA2 = encode(A2, null, md, ISO_8859_1.INSTANCE);
         String combo, finalHash;
 
         if (params.authQop()) { /* RRC2617 when qop=auth */
@@ -685,7 +717,7 @@ class DigestAuthentication extends AuthenticationInfo {
                        nonceString + ":" +
                        HashA2;
         }
-        finalHash = encode(combo, null, md, charset);
+        finalHash = encode(combo, null, md, ISO_8859_1.INSTANCE);
         return finalHash;
     }
 

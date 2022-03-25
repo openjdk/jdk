@@ -809,7 +809,7 @@ public class HTTPTestServer extends HTTPTest {
             throws IOException {
             he.getResponseHeaders().add(getAuthenticate(),
                  "Digest realm=\"" + auth.getRealm() + "\","
-                 + "\r\n    qop=\"auth\", " + "algorithm=\"" + algorithm + ", "
+                 + "\r\n    qop=\"auth\", " + "algorithm=\"" + algorithm + "\", "
                  + "\r\n    nonce=\"" + ns +"\"");
             System.out.println(type + ": Requesting Digest Authentication "
                  + he.getResponseHeaders().getFirst(getAuthenticate()));
