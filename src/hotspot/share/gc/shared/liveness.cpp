@@ -184,25 +184,32 @@ bool LivenessEstimatorThread::estimate_liveness() {
   VM_LivenessRootScan root_scan(this);
   VMThread::execute(&root_scan);
 
+  SuspendibleThreadSetJoiner sst;
+  if (!check_yield_and_continue(&sst)) {
+    return false;
+  }
+
   KlassInfoTable cit(false);
 
   Ticks after_vm_op = Ticks::now();
 
   log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
+  Heap_lock->lock();
   LivenessOopClosure cl(this);
-  SuspendibleThreadSetJoiner sst;
   while (!_mark_stack.is_empty()) {
+    if (!check_yield_and_continue(&sst)) {
+      Heap_lock->unlock();
+      return false;
+    }
+
     oop obj = _mark_stack.pop();
     obj->oop_iterate(&cl);
     if (ConcLivenessHisto) {
       cit.record_instance(obj);
     }
-    if (!check_yield_and_continue(&sst)) {
-      return false;
-    }
   }
-
+  Heap_lock->unlock();
   Ticks after_scan = Ticks::now();
 
   if (ConcLivenessHisto) {
@@ -282,14 +289,20 @@ bool LivenessEstimatorThread::check_yield_and_continue(SuspendibleThreadSetJoine
   if (sst->should_yield()) {
     // Shenandoah may not update this count, but other collectors seem to.
     unsigned int collections = Universe::heap()->total_collections();
-
+    log_info(gc,estimator)("Total collections before safepoint: " UINT32_FORMAT, collections);
     // This blocks the caller until the vm operation has executed.
     SuspendibleThreadSet::yield();
 
     if (collections != Universe::heap()->total_collections()) {
       // Heap has been collected, pointer in the mark queues may be invalid.
+      log_info(gc,estimator)("Total collections after safepoint: " UINT32_FORMAT, Universe::heap()->total_collections());
       return false;
     }
+  }
+
+  if (Universe::heap()->is_gc_active()) {
+    log_info(gc,estimator)("GC is running.");
+    return false;
   }
 
   return !should_terminate();
