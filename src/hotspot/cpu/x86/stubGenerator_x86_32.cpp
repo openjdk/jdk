@@ -3304,6 +3304,9 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_cVec = xmm2;
     const XMMRegister xmm_dVec = xmm3;
     const XMMRegister xmm_scratch = xmm4;
+    const XMMRegister xmm_bState = xmm5;
+    const XMMRegister xmm_cState = xmm6;
+    const XMMRegister xmm_dState = xmm7;
 
     __ enter();
 
@@ -3313,10 +3316,18 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(result, res_param);
 
     // Load the initial state in columnar orientation
-    __ movdqu(xmm_aVec, Address(state, 0));         // Bytes 0 - 15 -> aVec
-    __ movdqu(xmm_bVec, Address(state, 16));        // Bytes 16 - 31 -> bVec
-    __ movdqu(xmm_cVec, Address(state, 32));        // Bytes 32 - 47 -> cVec
-    __ movdqu(xmm_dVec, Address(state, 48));        // Bytes 48 - 63 -> dVec
+    // We will move each 128-bit segment of the state array into
+    // the starting b/c/dState registers.
+    // Because 32-bit mode only allows access to 8 SIMD registers, we
+    // do not store the first 128-bits of starting state in a register in
+    // order to dedicate one register for scratch space for bit rotations.
+    __ movdqu(xmm_bState, Address(state, 16));        // Bytes 16 - 31 -> bState
+    __ movdqu(xmm_cState, Address(state, 32));        // Bytes 32 - 47 -> cState
+    __ movdqu(xmm_dState, Address(state, 48));        // Bytes 48 - 63 -> dState
+    __ movdqu(xmm_aVec, Address(state, 0));           // Bytes 0 - 15 -> aVec
+    __ movdqu(xmm_bVec, xmm_bState);
+    __ movdqu(xmm_cVec, xmm_cState);
+    __ movdqu(xmm_dVec, xmm_dState);
 
     __ movl(loopCounter, 10);                       // Set 10 2-round iterations
     __ BIND(L_twoRounds);
@@ -3416,9 +3427,9 @@ class StubGenerator: public StubCodeGenerator {
     // represented by the a/b/c/dVec xmm registers.  Then write that
     // out to the result address.
     __ paddd(xmm_aVec, Address(state, 0));
-    __ paddd(xmm_bVec, Address(state, 16));
-    __ paddd(xmm_cVec, Address(state, 32));
-    __ paddd(xmm_dVec, Address(state, 48));
+    __ paddd(xmm_bVec, xmm_bState);
+    __ paddd(xmm_cVec, xmm_cState);
+    __ paddd(xmm_dVec, xmm_dState);
 
     // Now write the final state back to the result
     __ movdqu(Address(result, 0), xmm_aVec);
@@ -3452,7 +3463,10 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister ymm_bVec = xmm1;
     const XMMRegister ymm_cVec = xmm2;
     const XMMRegister ymm_dVec = xmm3;
-    const XMMRegister ymm_scratch = xmm4;
+    const XMMRegister ymm_scratch = xmm4;  // Also acts as ymm_aState
+    const XMMRegister ymm_bState = xmm5;
+    const XMMRegister ymm_cState = xmm6;
+    const XMMRegister ymm_dState = xmm7;
 
     __ enter();
 
@@ -3463,12 +3477,19 @@ class StubGenerator: public StubCodeGenerator {
 
     // Load the initial state in columnar orientation
     // We will broadcast each 128-bit segment of the state array into
-    // the high and low halves of the destination ymm regsiter.
+    // the high and low halves of the destination starting b/c/dState
+    // registers, as well as adding the addMask into the dState.
+    // Because 32-bit mode only allows access to 8 SIMD registers, the
+    // starting state register for the first 128-bits of state will have
+    // to do double-duty as a scratch register.
+    __ vbroadcastf128(ymm_bState, Address(state, 16), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_cState, Address(state, 32), Assembler::AVX_256bit);
+    __ vbroadcastf128(ymm_dState, Address(state, 48), Assembler::AVX_256bit);
+    __ vpaddd(ymm_dState, ymm_dState, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
     __ vbroadcastf128(ymm_aVec, Address(state, 0), Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_bVec, Address(state, 16), Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_cVec, Address(state, 32), Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_dVec, Address(state, 48), Assembler::AVX_256bit);
-    __ vpaddd(ymm_dVec, ymm_dVec, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
+    __ vmovdqu(ymm_bVec, ymm_bState);
+    __ vmovdqu(ymm_cVec, ymm_cState);
+    __ vmovdqu(ymm_dVec, ymm_dState);
 
     __ movl(loopCounter, 10);                       // Set 10 2-round iterations
     __ BIND(L_twoRounds);
@@ -3557,16 +3578,14 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(loopCounter);
     __ jcc(Assembler::notZero, L_twoRounds);
 
-    // Add the original start state back into the current state.
+    // Add the original start state back into the current state.  Because there
+    // is no separate register to hold the broadcasted first 128-bits of start state
+    // we have to broadcast it into our scratch register and add it in from there.
     __ vbroadcastf128(ymm_scratch, Address(state, 0), Assembler::AVX_256bit);
     __ vpaddd(ymm_aVec, ymm_aVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_scratch, Address(state, 16), Assembler::AVX_256bit);
-    __ vpaddd(ymm_bVec, ymm_bVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_scratch, Address(state, 32), Assembler::AVX_256bit);
-    __ vpaddd(ymm_cVec, ymm_cVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vbroadcastf128(ymm_scratch, Address(state, 48), Assembler::AVX_256bit);
-    __ vpaddd(ymm_dVec, ymm_dVec, ymm_scratch, Assembler::AVX_256bit);
-    __ vpaddd(ymm_dVec, ymm_dVec, ExternalAddress(StubRoutines::x86::chacha20_counter_addmask_avx2()), Assembler::AVX_256bit, rax);
+    __ vpaddd(ymm_bVec, ymm_bVec, ymm_bState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_cVec, ymm_cVec, ymm_cState, Assembler::AVX_256bit);
+    __ vpaddd(ymm_dVec, ymm_dVec, ymm_dState, Assembler::AVX_256bit);
 
     // Write the data to the keystream array
     // Each half of the YMM has to be written 64 bytes apart from

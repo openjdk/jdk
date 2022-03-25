@@ -5400,15 +5400,28 @@ address generate_avx_ghash_processBlocks() {
     const XMMRegister xmm_bVec = xmm1;
     const XMMRegister xmm_cVec = xmm2;
     const XMMRegister xmm_dVec = xmm3;
-    const XMMRegister xmm_scratch = xmm4;
+    const XMMRegister xmm_aState = xmm4;
+    const XMMRegister xmm_bState = xmm5;
+    const XMMRegister xmm_cState = xmm6;
+    const XMMRegister xmm_dState = xmm7;
+    const XMMRegister xmm_scratch = xmm8;
 
     __ enter();
 
-    // Load the initial state in columnar orientation
-    __ movdqu(xmm_aVec, Address(state, 0));         // Bytes 0 - 15 -> aVec
-    __ movdqu(xmm_bVec, Address(state, 16));        // Bytes 16 - 31 -> bVec
-    __ movdqu(xmm_cVec, Address(state, 32));        // Bytes 32 - 47 -> cVec
-    __ movdqu(xmm_dVec, Address(state, 48));        // Bytes 48 - 63 -> dVec
+    // Load the initial state in columnar orientation.
+    // For the starting state, hold it on two sets of
+    // for XMM registers, the second group of 4 is the
+    // working state.  the a/b/c/dState registers will
+    // be added back to the working state at the end of
+    // the block function.
+    __ movdqu(xmm_aState, Address(state, 0));         // Bytes 0 - 15 -> aVec
+    __ movdqu(xmm_bState, Address(state, 16));        // Bytes 16 - 31 -> bVec
+    __ movdqu(xmm_cState, Address(state, 32));        // Bytes 32 - 47 -> cVec
+    __ movdqu(xmm_dState, Address(state, 48));        // Bytes 48 - 63 -> dVec
+    __ movdqu(xmm_aVec, xmm_aState);
+    __ movdqu(xmm_bVec, xmm_bState);
+    __ movdqu(xmm_cVec, xmm_cState);
+    __ movdqu(xmm_dVec, xmm_dState);
 
     __ movl(loopCounter, 10);                       // Set 10 2-round iterations
     __ BIND(L_twoRounds);
@@ -5505,12 +5518,11 @@ address generate_avx_ghash_processBlocks() {
 
     // Once the counter reaches zero, we fall out of the loop
     // and need to add the initial state back into the current state
-    // represented by the a/b/c/dVec xmm registers.  Then write that
-    // out to the result address.
-    __ paddd(xmm_aVec, Address(state, 0));
-    __ paddd(xmm_bVec, Address(state, 16));
-    __ paddd(xmm_cVec, Address(state, 32));
-    __ paddd(xmm_dVec, Address(state, 48));
+    // represented by the a/b/c/dVec xmm registers.
+    __ paddd(xmm_aVec, xmm_aState);
+    __ paddd(xmm_bVec, xmm_bState);
+    __ paddd(xmm_cVec, xmm_cState);
+    __ paddd(xmm_dVec, xmm_dState);
 
     // Now write the final state back to the result
     __ movdqu(Address(result, 0), xmm_aVec);
