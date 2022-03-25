@@ -507,6 +507,11 @@ public final class ZoneOffset
         return ZoneRules.of(this);
     }
 
+    @Override
+    /* package-private */ ZoneOffset getOffset(long epochSecond) {
+        return this;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Checks if the specified field is supported.

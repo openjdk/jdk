@@ -584,6 +584,8 @@ public abstract sealed class ZoneId implements Serializable permits ZoneOffset, 
         return this;
     }
 
+    /* package-private */ abstract ZoneOffset getOffset(long epochSecond);
+
     //-----------------------------------------------------------------------
     /**
      * Checks if this time-zone ID is equal to another time-zone ID.
