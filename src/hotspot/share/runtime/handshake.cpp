@@ -448,7 +448,7 @@ bool HandshakeState::operation_pending(HandshakeOperation* op) {
 }
 
 // Filters
-static bool non_self_queue_filter(HandshakeOperation* op) {
+static bool non_self_executable_filter(HandshakeOperation* op) {
   return !op->is_async();
 }
 static bool no_async_exception_filter(HandshakeOperation* op) {
@@ -495,13 +495,13 @@ bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
 bool HandshakeState::have_non_self_executable_operation() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.contains(non_self_queue_filter);
+  return _queue.contains(non_self_executable_filter);
 }
 
 HandshakeOperation* HandshakeState::get_op() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.peek(non_self_queue_filter);
+  return _queue.peek(non_self_executable_filter);
 };
 
 void HandshakeState::remove_op(HandshakeOperation* op) {
@@ -768,7 +768,7 @@ void HandshakeState::handle_unsafe_access_error() {
   }
   // Release the handshake lock before constructing the oop to
   // avoid deadlocks since that can block. This will allow the
-  // JavaThread to execute normally as if it was outside a handshake
+  // JavaThread to execute normally as if it was outside a handshake.
   // We will reacquire the handshake lock at return from ~MutexUnlocker.
   MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
