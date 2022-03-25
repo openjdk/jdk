@@ -67,7 +67,7 @@ public class GetYearBench {
 
     private static final long[] INSTANT_MILLIS = createInstants();
 
-    private static final int[] YEARS = new int[INSTANTS.length];
+    private static final int[] YEARS = new int[INSTANT_MILLIS.length];
 
     private static long[] createInstants() {
         // Various instants during the same day
@@ -86,7 +86,7 @@ public class GetYearBench {
     }
 
     @Benchmark
-    public int[] getYearFromMillis() {
+    public int[] getYearFromMillisZoneOffset() {
         for (int i = 0; i < YEARS.length; i++) {
             YEARS[i] = Instant.ofEpochMilli(INSTANT_MILLIS[i]).atZone(ZoneOffset.UTC).getYear();
         }
@@ -94,7 +94,7 @@ public class GetYearBench {
     }
 
     @Benchmark
-    public int[] getYearFromMillisZoneIdUTC() {
+    public int[] getYearFromMillisZoneRegionUTC() {
         for (int i = 0; i < YEARS.length; i++) {
             YEARS[i] = Instant.ofEpochMilli(INSTANT_MILLIS[i]).atZone(UTC.toZoneId()).getYear();
         }
@@ -102,7 +102,7 @@ public class GetYearBench {
     }
 
     @Benchmark
-    public int[] getYearFromMillisZoneIdLondon() {
+    public int[] getYearFromMillisZoneRegion() {
         for (int i = 0; i < YEARS.length; i++) {
             YEARS[i] = Instant.ofEpochMilli(INSTANT_MILLIS[i]).atZone(LONDON.toZoneId()).getYear();
         }
