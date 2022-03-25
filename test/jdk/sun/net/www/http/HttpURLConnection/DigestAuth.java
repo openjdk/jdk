@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static java.util.Map.entry;
 
@@ -55,6 +54,20 @@ import static java.util.Map.entry;
  *          The impl maintains a cache for auth info,
  *          the testcases run in a separate JVM to avoid cache hits
  * @modules jdk.httpserver
+ * @run main/othervm DigestAuth bad
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth good
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth only_nonce
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=SHA-1 DigestAuth sha1-good
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth sha1-bad
+ * @run main/othervm DigestAuth sha256
+ * @run main/othervm DigestAuth sha512
+ * @run main/othervm DigestAuth sha256-userhash
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth sha256
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_header
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_nonce
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth no_qop
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth invalid_alg
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth validate_server
  * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 DigestAuth validate_server_no_qop
  */
 
@@ -172,16 +185,6 @@ public class DigestAuth {
             entry("userhash", "true"));
 
     public static void main(String[] args) throws Exception {
-        Logger l1 = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
-        Logger l2 = Logger.getLogger("com.sun.net.httpserver");
-        ConsoleHandler h1 = new ConsoleHandler();
-        ConsoleHandler h2 = new ConsoleHandler();
-        l1.setLevel(Level.ALL);
-        l2.setLevel(Level.ALL);
-        h1.setLevel(Level.ALL);
-        h2.setLevel(Level.ALL);
-        l1.addHandler(h1);
-        l2.addHandler(h2);
         if (args.length == 0) {
             throw new RuntimeException("No testcase specified");
         }
