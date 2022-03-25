@@ -1029,7 +1029,6 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       break;
 
     case Bytecodes::_arraylength:
-      // The return type of arraylength is wrong in the bytecodes table (T_VOID).
       stack->pop(1);
       stack->push(bci, T_INT);
       break;

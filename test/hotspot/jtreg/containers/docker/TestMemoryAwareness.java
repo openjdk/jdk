@@ -50,7 +50,7 @@ public class TestMemoryAwareness {
         }
 
         Common.prepareWhiteBox();
-        DockerTestUtils.buildJdkDockerImage(imageName, "Dockerfile-BasicTest", "jdk-docker");
+        DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
             testMemoryLimit("100m", "104857600");

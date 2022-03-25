@@ -581,8 +581,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
 
     /**
      * Get the output shape of the pipeline.  If the pipeline is the head,
-     * then it's output shape corresponds to the shape of the source.
-     * Otherwise, it's output shape corresponds to the output shape of the
+     * then its output shape corresponds to the shape of the source.
+     * Otherwise, its output shape corresponds to the output shape of the
      * associated operation.
      *
      * @return the output shape

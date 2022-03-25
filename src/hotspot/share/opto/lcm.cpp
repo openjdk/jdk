@@ -203,7 +203,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
-    case Op_HasNegatives:
+    case Op_CountPositives:
       // Not a legit memory op for implicit null check regardless of
       // embedded loads
       continue;
@@ -518,7 +518,7 @@ Node* PhaseCFG::select(
   uint score   = 0; // Bigger is better
   int idx = -1;     // Index in worklist
   int cand_cnt = 0; // Candidate count
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   for( uint i=0; i<cnt; i++ ) { // Inspect entire worklist
     // Order in worklist is used to break ties.
@@ -702,8 +702,9 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         case Op_StoreP:
         case Op_StoreN:
         case Op_StoreVector:
-        case Op_StoreVectorScatter:
         case Op_StoreVectorMasked:
+        case Op_StoreVectorScatter:
+        case Op_StoreVectorScatterMasked:
         case Op_StoreNKlass:
           for (uint k = 1; k < m->req(); k++) {
             Node *in = m->in(k);
@@ -948,7 +949,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     return true;
   }
 
-  bool block_size_threshold_ok = (block->number_of_nodes() > 10) ? true : false;
+  bool block_size_threshold_ok = (recalc_pressure_nodes != NULL) && (block->number_of_nodes() > 10);
 
   // We track the uses of local definitions as input dependences so that
   // we know when a given instruction is avialable to be scheduled.

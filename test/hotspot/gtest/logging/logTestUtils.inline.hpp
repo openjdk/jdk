@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #define LOG_TEST_STRING_LITERAL "a (hopefully) unique log message for testing"
 
 static const char* invalid_selection_substr[] = {
-  "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",," ",+",
+  "=", "+", " ", "+=", "+=*", "*+", " +", "**", "++", ".", ",", ",,", ",+",
   " *", "all+", "all*", "+all", "+all=Warning", "==Info", "=InfoWarning",
   "BadTag+", "logging++", "logging*+", ",=", "gc+gc+"
 };
@@ -138,8 +138,8 @@ static inline char* read_line(FILE* fp) {
 
 static bool file_contains_substrings_in_order(const char* filename, const char* substrs[]) {
   AsyncLogWriter::flush();
-  FILE* fp = fopen(filename, "r");
-  assert(fp != NULL, "error opening file %s: %s", filename, strerror(errno));
+  FILE* fp = os::fopen(filename, "r");
+  assert(fp != NULL, "error opening file %s: %s", filename, os::strerror(errno));
 
   size_t idx = 0;
   while (substrs[idx] != NULL) {

@@ -332,7 +332,7 @@ void JvmtiRawMonitor::raw_enter(Thread* self) {
     for (;;) {
       ExitOnSuspend eos(this);
       {
-        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos, true /* allow_suspend */);
         simple_enter(jt);
       }
       if (!eos.monitor_exited()) {
@@ -384,7 +384,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
     for (;;) {
       ExitOnSuspend eos(this);
       {
-        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos);
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivmp(jt, eos, true /* allow_suspend */);
         simple_enter(jt);
       }
       if (!eos.monitor_exited()) {

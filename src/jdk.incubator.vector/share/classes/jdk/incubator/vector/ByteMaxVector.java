@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,8 +236,8 @@ final class ByteMaxVector extends ByteVector {
 
     @ForceInline
     final @Override
-    byte rOp(byte v, FBinOp f) {
-        return super.rOpTemplate(v, f);  // specialize
+    byte rOp(byte v, VectorMask<Byte> m, FBinOp f) {
+        return super.rOpTemplate(v, m, f);  // specialize
     }
 
     @Override
@@ -275,8 +275,20 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
+    public ByteMaxVector lanewise(Unary op, VectorMask<Byte> m) {
+        return (ByteMaxVector) super.lanewiseTemplate(op, ByteMaxMask.class, (ByteMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public ByteMaxVector lanewise(Binary op, Vector<Byte> v) {
         return (ByteMaxVector) super.lanewiseTemplate(op, v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector lanewise(Binary op, Vector<Byte> v, VectorMask<Byte> m) {
+        return (ByteMaxVector) super.lanewiseTemplate(op, ByteMaxMask.class, v, (ByteMaxMask) m);  // specialize
     }
 
     /*package-private*/
@@ -288,11 +300,26 @@ final class ByteMaxVector extends ByteVector {
 
     /*package-private*/
     @Override
+    @ForceInline ByteMaxVector
+    lanewiseShift(VectorOperators.Binary op, int e, VectorMask<Byte> m) {
+        return (ByteMaxVector) super.lanewiseShiftTemplate(op, ByteMaxMask.class, e, (ByteMaxMask) m);  // specialize
+    }
+
+    /*package-private*/
+    @Override
     @ForceInline
     public final
     ByteMaxVector
-    lanewise(VectorOperators.Ternary op, Vector<Byte> v1, Vector<Byte> v2) {
+    lanewise(Ternary op, Vector<Byte> v1, Vector<Byte> v2) {
         return (ByteMaxVector) super.lanewiseTemplate(op, v1, v2);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final
+    ByteMaxVector
+    lanewise(Ternary op, Vector<Byte> v1, Vector<Byte> v2, VectorMask<Byte> m) {
+        return (ByteMaxVector) super.lanewiseTemplate(op, ByteMaxMask.class, v1, v2, (ByteMaxMask) m);  // specialize
     }
 
     @Override
@@ -314,7 +341,7 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     public final byte reduceLanes(VectorOperators.Associative op,
                                     VectorMask<Byte> m) {
-        return super.reduceLanesTemplate(op, m);  // specialized
+        return super.reduceLanesTemplate(op, ByteMaxMask.class, (ByteMaxMask) m);  // specialized
     }
 
     @Override
@@ -327,7 +354,7 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     public final long reduceLanesToLong(VectorOperators.Associative op,
                                         VectorMask<Byte> m) {
-        return (long) super.reduceLanesTemplate(op, m);  // specialized
+        return (long) super.reduceLanesTemplate(op, ByteMaxMask.class, (ByteMaxMask) m);  // specialized
     }
 
     @ForceInline
@@ -341,6 +368,12 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     public final ByteMaxMask test(Test op) {
         return super.testTemplate(ByteMaxMask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final ByteMaxMask test(Test op, VectorMask<Byte> m) {
+        return super.testTemplate(ByteMaxMask.class, op, (ByteMaxMask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -362,6 +395,13 @@ final class ByteMaxVector extends ByteVector {
     public final ByteMaxMask compare(Comparison op, long s) {
         return super.compareTemplate(ByteMaxMask.class, op, s);  // specialize
     }
+
+    @Override
+    @ForceInline
+    public final ByteMaxMask compare(Comparison op, Vector<Byte> v, VectorMask<Byte> m) {
+        return super.compareTemplate(ByteMaxMask.class, op, v, (ByteMaxMask) m);
+    }
+
 
     @Override
     @ForceInline
@@ -419,6 +459,7 @@ final class ByteMaxVector extends ByteVector {
                                   VectorMask<Byte> m) {
         return (ByteMaxVector)
             super.rearrangeTemplate(ByteMaxShuffle.class,
+                                    ByteMaxMask.class,
                                     (ByteMaxShuffle) shuffle,
                                     (ByteMaxMask) m);  // specialize
     }
@@ -582,16 +623,12 @@ final class ByteMaxVector extends ByteVector {
             AbstractSpecies<E> species = (AbstractSpecies<E>) dsp;
             if (length() != species.laneCount())
                 throw new IllegalArgumentException("VectorMask length and species length differ");
-            if (VSIZE == species.vectorBitSize()) {
-                Class<?> dtype = species.elementType();
-                Class<?> dmtype = species.maskType();
-                return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), ETYPE, VLENGTH,
-                    dmtype, dtype, VLENGTH,
-                    this, species,
-                    ByteMaxMask::defaultMaskCast);
-            }
-            return this.defaultMaskCast(species);
+
+            return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                this.getClass(), ETYPE, VLENGTH,
+                species.maskType(), species.elementType(), VLENGTH,
+                this, species,
+                (m, s) -> s.maskFactory(m.toArray()).check(s));
         }
 
         @Override
@@ -617,9 +654,9 @@ final class ByteMaxVector extends ByteVector {
         public ByteMaxMask and(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             ByteMaxMask m = (ByteMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, ByteMaxMask.class, byte.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a & b));
+            return VectorSupport.binaryOp(VECTOR_OP_AND, ByteMaxMask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
 
         @Override
@@ -627,9 +664,9 @@ final class ByteMaxVector extends ByteVector {
         public ByteMaxMask or(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             ByteMaxMask m = (ByteMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, ByteMaxMask.class, byte.class, VLENGTH,
-                                             this, m,
-                                             (m1, m2) -> m1.bOp(m2, (i, a, b) -> a | b));
+            return VectorSupport.binaryOp(VECTOR_OP_OR, ByteMaxMask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
         @ForceInline
@@ -637,9 +674,9 @@ final class ByteMaxVector extends ByteVector {
         ByteMaxMask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             ByteMaxMask m = (ByteMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, ByteMaxMask.class, byte.class, VLENGTH,
-                                          this, m,
-                                          (m1, m2) -> m1.bOp(m2, (i, a, b) -> a ^ b));
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, ByteMaxMask.class, null, byte.class, VLENGTH,
+                                          this, m, null,
+                                          (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
 
         // Mask Query operations
@@ -647,22 +684,32 @@ final class ByteMaxVector extends ByteVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ByteMaxMask.class, byte.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(((ByteMaxMask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ByteMaxMask.class, byte.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(((ByteMaxMask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ByteMaxMask.class, byte.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(((ByteMaxMask)m).getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> lastTrueHelper(m.getBits()));
+        }
+
+        @Override
+        @ForceInline
+        public long toLong() {
+            if (length() > Long.SIZE) {
+                throw new UnsupportedOperationException("too many lanes for one long");
+            }
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, ByteMaxMask.class, byte.class, VLENGTH, this,
+                                                      (m) -> toLongHelper(m.getBits()));
         }
 
         // Reductions
@@ -686,9 +733,9 @@ final class ByteMaxVector extends ByteVector {
         @ForceInline
         /*package-private*/
         static ByteMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(ByteMaxMask.class, byte.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(ByteMaxMask.class, byte.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ByteMaxMask  TRUE_MASK = new ByteMaxMask(true);
         private static final ByteMaxMask FALSE_MASK = new ByteMaxMask(false);
@@ -773,12 +820,27 @@ final class ByteMaxVector extends ByteVector {
         return super.fromArray0Template(a, offset);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        return super.fromArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
+    }
+
+
 
     @ForceInline
     @Override
     final
     ByteVector fromBooleanArray0(boolean[] a, int offset) {
         return super.fromBooleanArray0Template(a, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
+        return super.fromBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
     }
 
     @ForceInline
@@ -791,8 +853,22 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        return super.fromByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
     ByteVector fromByteBuffer0(ByteBuffer bb, int offset) {
         return super.fromByteBuffer0Template(bb, offset);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
+        return super.fromByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m);  // specialize
     }
 
     @ForceInline
@@ -805,9 +881,39 @@ final class ByteMaxVector extends ByteVector {
     @ForceInline
     @Override
     final
+    void intoArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        super.intoArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);
+    }
+
+
+    @ForceInline
+    @Override
+    final
+    void intoBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
+        super.intoBooleanArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);
+    }
+
+    @ForceInline
+    @Override
+    final
     void intoByteArray0(byte[] a, int offset) {
         super.intoByteArray0Template(a, offset);  // specialize
     }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
+        super.intoByteArray0Template(ByteMaxMask.class, a, offset, (ByteMaxMask) m);  // specialize
+    }
+
+    @ForceInline
+    @Override
+    final
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
+        super.intoByteBuffer0Template(ByteMaxMask.class, bb, offset, (ByteMaxMask) m);
+    }
+
 
     // End of specialized low-level memory operations.
 

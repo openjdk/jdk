@@ -29,6 +29,7 @@
 
 public class BadEnvp {
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws Exception {
         Runtime r = Runtime.getRuntime();
         java.io.File dir = new java.io.File(".");

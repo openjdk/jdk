@@ -9,7 +9,10 @@
  */
 
 /** . */
-public class EmptySinceTest {
-    /** @since */
+public class EmptySinceTest { /** . */ EmptySinceTest() { }
+    /**
+     * .
+     * @since
+     */
     void emptySince() { }
 }

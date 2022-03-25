@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class TestProcessor extends JavacTestingAbstractProcessor {
    public boolean process(Set<? extends TypeElement> annotations,
                   RoundEnvironment roundEnv) {
         if (++round == 1) {
-            messager.printMessage(ERROR, "Deliberate Error");
+            messager.printError("Deliberate Error");
             Trees trees = Trees.instance(processingEnv);
             TreePath elPath = trees.getPath(roundEnv.getRootElements().iterator().next());
             trees.printMessage(ERROR, "Deliberate Error on Trees",

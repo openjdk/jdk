@@ -317,8 +317,8 @@ final class WPathGraphics extends PathGraphics {
     private static boolean isXP() {
         String osVersion = System.getProperty("os.version");
         if (osVersion != null) {
-            Float version = Float.valueOf(osVersion);
-            return (version.floatValue() >= 5.1f);
+            float version = Float.parseFloat(osVersion);
+            return version >= 5.1f;
         } else {
             return false;
         }

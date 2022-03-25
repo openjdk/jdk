@@ -29,6 +29,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
@@ -1745,7 +1746,7 @@ void PerfMemory::create_memory_region(size_t size) {
       if (PrintMiscellaneous && Verbose) {
         warning("Reverting to non-shared PerfMemory region.\n");
       }
-      PerfDisableSharedMem = true;
+      FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }
   }
@@ -1833,7 +1834,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
     return;
   }
 
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
     Tracker tkr(Tracker::release);
     remove_file_mapping(addr);

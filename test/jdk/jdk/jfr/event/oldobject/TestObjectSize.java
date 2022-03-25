@@ -68,30 +68,33 @@ public class TestObjectSize {
 
         final Random rand = new Random(1L);
 
-        long sizeLeak1, sizeLeak2, sizeLeak3;
+        long sizeLeak1 = -1;
+        long sizeLeak2 = -1;
+        long sizeLeak3 = -1;
 
         do {
-            sizeLeak1 = -1;
-            sizeLeak2 = -1;
-            sizeLeak3 = -1;
-
             try (Recording recording = new Recording()) {
                 leak.clear();
                 recording.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
                 recording.start();
 
                 for (int i = 0; i < 1000; i++) {
-                    switch (rand.nextInt(3)) {
-                    case 0: leak.add(new Leak1()); break;
-                    case 1: leak.add(new Leak2()); break;
-                    case 2: leak.add(new Leak3()); break;
+                    if (sizeLeak1 == -1) {
+                        leak.add(new Leak1());
+                        continue;
+                    }
+                    if (sizeLeak2 == -1) {
+                        leak.add(new Leak2());
+                        continue;
+                    }
+                    if (sizeLeak3 == -1) {
+                        leak.add(new Leak3());
                     }
                 }
 
                 recording.stop();
 
                 List<RecordedEvent> events = Events.fromRecording(recording);
-                Events.hasEvents(events);
                 for (RecordedEvent e : events) {
                     RecordedObject object = e.getValue("object");
                     RecordedClass type = object.getValue("type");
@@ -100,13 +103,13 @@ public class TestObjectSize {
                     if (objectSize <= 0) {
                         throw new Exception("Object size for " + type.getName() + " is lower or equal to 0");
                     }
-                    if (type.getName().equals(Leak1.class.getName())) {
+                    if (type.getName().equals(Leak1.class.getName()) && sizeLeak1 == -1) {
                         sizeLeak1 = objectSize;
                     }
-                    if (type.getName().equals(Leak2.class.getName())) {
+                    if (type.getName().equals(Leak2.class.getName()) && sizeLeak2 == -1) {
                         sizeLeak2 = objectSize;
                     }
-                    if (type.getName().equals(Leak3.class.getName())) {
+                    if (type.getName().equals(Leak3.class.getName()) && sizeLeak3 == -1) {
                         sizeLeak3 = objectSize;
                     }
                 }

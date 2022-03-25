@@ -99,9 +99,26 @@ else ifeq ($(call isTargetOs, aix), true)
 
 else ifeq ($(call isTargetOs, windows), true)
   DUMP_SYMBOLS_CMD := $(DUMPBIN) -symbols *.obj
+
+  # The following lines create a list of vftable symbols to be filtered out of
+  # the mapfile. Removing this line causes the linker to complain about too many
+  # (> 64K) symbols, so the _guess_ is that this line is here to keep down the
+  # number of exported symbols below that limit.
+  #
+  # Some usages of C++ lambdas require the vftable symbol of classes that use
+  # the lambda type as a template parameter. The usage of those classes won't
+  # link if their vftable symbols are removed. That's why there's an exception
+  # for vftable symbols containing the string 'lambda'.
+  #
+  # A very simple example of a lambda usage that fails if the lambda vftable
+  # symbols are missing in the mapfile:
+  #
+  # #include <functional>
+  # std::function<void()> f = [](){}
+
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
-        if ($$7 ~ /??_7.*@@6B@/ && $$7 !~ /type_info/) print $$7; \
+        if ($$7 ~ /??_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print $$7; \
       }'
 
 else

@@ -93,6 +93,7 @@ public class DeduplicationTest {
                         Arrays.asList(
                                 "-d",
                                 ".",
+                                "-g:none",
                                 "-XDdebug.dumpLambdaToMethodDeduplication",
                                 "-XDdebug.dumpLambdaToMethodStats"),
                         null,

@@ -863,7 +863,7 @@ ifeq ($(call isTargetOs, linux), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
 else
-  BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c libTestJNI.c \
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 
@@ -871,7 +871,7 @@ BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(call isTargetOs, windows), true)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-    BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c
+    BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
 else
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread

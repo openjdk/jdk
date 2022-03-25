@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,10 +114,11 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   if( !t->singleton() ) return NULL;
 
   // No intervening control, like a simple Call
-  Node *r = iff->in(0);
-  if( !r->is_Region() ) return NULL;
-  if (r->is_Loop()) return NULL;
-  if( phi->region() != r ) return NULL;
+  Node* r = iff->in(0);
+  if (!r->is_Region() || r->is_Loop() || phi->region() != r || r->as_Region()->is_copy()) {
+    return NULL;
+  }
+
   // No other users of the cmp/bool
   if (b->outcnt() != 1 || cmp->outcnt() != 1) {
     //tty->print_cr("many users of cmp/bool");
@@ -243,13 +244,23 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     }
     Node* proj = PhaseIdealLoop::find_predicate(r->in(ii));
     if (proj != NULL) {
+      // Bail out if splitting through a region with a predicate input (could
+      // also be a loop header before loop opts creates a LoopNode for it).
       return NULL;
     }
   }
 
   // If all the defs of the phi are the same constant, we already have the desired end state.
   // Skip the split that would create empty phi and region nodes.
-  if((r->req() - req_c) == 1) {
+  if ((r->req() - req_c) == 1) {
+    return NULL;
+  }
+
+  // At this point we know that we can apply the split if optimization. If the region is still on the worklist,
+  // we should wait until it is processed. The region might be removed which makes this optimization redundant.
+  // This also avoids the creation of dead data loops when rewiring data nodes below when a region is dying.
+  if (igvn->_worklist.member(r)) {
+    igvn->_worklist.push(iff); // retry split if later again
     return NULL;
   }
 
@@ -728,7 +739,7 @@ bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
 // Do this If and the dominating If share a region?
 bool IfNode::has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail) {
   ProjNode* otherproj = proj->other_if_proj();
-  Node* otherproj_ctrl_use = otherproj->unique_ctrl_out();
+  Node* otherproj_ctrl_use = otherproj->unique_ctrl_out_or_null();
   RegionNode* region = (otherproj_ctrl_use != NULL && otherproj_ctrl_use->is_Region()) ? otherproj_ctrl_use->as_Region() : NULL;
   success = NULL;
   fail = NULL;
@@ -1710,6 +1721,16 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
        // will cause this node to be reprocessed once the dead branch is killed.
        in(0)->outcnt() == 1))) {
     // IfNode control
+    if (in(0)->is_BaseCountedLoopEnd()) {
+      // CountedLoopEndNode may be eliminated by if subsuming, replace CountedLoopNode with LoopNode to
+      // avoid mismatching between CountedLoopNode and CountedLoopEndNode in the following optimization.
+      Node* head = unique_ctrl_out_or_null();
+      if (head != NULL && head->is_BaseCountedLoop() && head->in(LoopNode::LoopBackControl) == this) {
+        Node* new_head = new LoopNode(head->in(LoopNode::EntryControl), this);
+        phase->is_IterGVN()->register_new_node_with_optimizer(new_head);
+        phase->is_IterGVN()->replace_node(head, new_head);
+      }
+    }
     return in(0)->in(0);
   }
   // no progress

@@ -26,6 +26,7 @@
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
+#include "gc/serial/serialStringDedup.inline.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
@@ -142,7 +143,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   : Generation(rs, initial_size),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false)
+    _should_allocate_from_space(false),
+    _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
                 (HeapWord*)_virtual_space.high());
@@ -286,7 +288,6 @@ void DefNewGeneration::swap_spaces() {
 }
 
 bool DefNewGeneration::expand(size_t bytes) {
-  MutexLocker x(ExpandHeap_lock);
   HeapWord* prev_high = (HeapWord*) _virtual_space.high();
   bool success = _virtual_space.expand_by(bytes);
   if (success && ZapUnusedHeapArea) {
@@ -601,6 +602,8 @@ void DefNewGeneration::collect(bool   full,
   // Verify that the usage of keep_alive didn't copy any objects.
   assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
+  _string_dedup_requests.flush();
+
   if (!_promotion_failed) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
@@ -665,9 +668,21 @@ void DefNewGeneration::init_assuming_no_promotion_failure() {
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {
-  RemoveForwardedPointerClosure rspc;
-  eden()->object_iterate(&rspc);
-  from()->object_iterate(&rspc);
+  assert(_promotion_failed, "precondition");
+
+  // Will enter Full GC soon due to failed promotion. Must reset the mark word
+  // of objs in young-gen so that no objs are marked (forwarded) when Full GC
+  // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
+  struct ResetForwardedMarkWord : ObjectClosure {
+    void do_object(oop obj) override {
+      if (obj->is_forwarded()) {
+        obj->init_mark();
+      }
+    }
+  } cl;
+  eden()->object_iterate(&cl);
+  from()->object_iterate(&cl);
+
   restore_preserved_marks();
 }
 
@@ -676,7 +691,7 @@ void DefNewGeneration::restore_preserved_marks() {
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  log_debug(gc, promotion)("Promotion failure size = %d) ", old->size());
+  log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
@@ -705,6 +720,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
     obj = cast_to_oop(to()->allocate(s));
   }
 
+  bool new_obj_is_tenured = false;
   // Otherwise try allocating obj tenured
   if (obj == NULL) {
     obj = _old_gen->promote(old, s);
@@ -712,6 +728,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
       handle_promotion_failure(old);
       return old;
     }
+    new_obj_is_tenured = true;
   } else {
     // Prefetch beyond obj
     const intx interval = PrefetchCopyIntervalInBytes;
@@ -728,6 +745,11 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   // Done, insert forward pointer to obj in this header
   old->forward_to(obj);
 
+  if (SerialStringDedup::is_candidate_from_evacuation(obj, new_obj_is_tenured)) {
+    // Record old; request adds a new weak reference, which reference
+    // processing expects to refer to a from-space object.
+    _string_dedup_requests.add(old);
+  }
   return obj;
 }
 
@@ -866,11 +888,6 @@ void DefNewGeneration::record_spaces_top() {
   to()->set_top_for_allocations();
   from()->set_top_for_allocations();
 }
-
-void DefNewGeneration::ref_processor_init() {
-  Generation::ref_processor_init();
-}
-
 
 void DefNewGeneration::update_counters() {
   if (UsePerfData) {

@@ -94,7 +94,7 @@ public final class ImagePluginConfiguration {
         }
 
         List<Plugin> orderedPlugins = new ArrayList<>();
-        plugins.entrySet().stream().forEach((entry) -> {
+        plugins.entrySet().forEach((entry) -> {
             orderedPlugins.addAll(entry.getValue());
         });
         Plugin lastSorter = null;

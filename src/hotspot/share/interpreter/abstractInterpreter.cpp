@@ -134,6 +134,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
       case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
       case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
+#ifdef AMD64
+      case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
+#endif
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
@@ -145,14 +148,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dexp:              return java_lang_math_exp;
       case vmIntrinsics::_fmaD:              return java_lang_math_fmaD;
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
+      case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
+      case vmIntrinsics::_dsqrt_strict:      return native;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
-      case vmIntrinsics::_dsqrt:
-        // _dsqrt will be selected for both Math::sqrt and StrictMath::sqrt, but the latter
-        // is native. Keep treating it like a native method in the interpreter
-        assert(m->name() == vmSymbols::sqrt_name() &&
-               (m->klass_name() == vmSymbols::java_lang_Math() ||
-                m->klass_name() == vmSymbols::java_lang_StrictMath()), "must be");
-        return m->is_native() ? native : java_lang_math_sqrt;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for

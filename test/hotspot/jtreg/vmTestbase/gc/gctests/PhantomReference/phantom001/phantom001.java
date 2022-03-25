@@ -94,7 +94,7 @@ public class phantom001 extends ThreadedGCTest implements GarbageProducerAware, 
     }
 
     // The class implements the logic of the testcase
-    class Test implements Runnable {
+    class Test implements Runnable, OOMStress {
 
         int iteration;
         private volatile boolean finalized;

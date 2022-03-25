@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Location;
 import com.sun.jdi.VirtualMachine;
-import com.sun.tools.jdi.JDWP.Method.VariableTable;
-import com.sun.tools.jdi.JDWP.Method.VariableTableWithGeneric;
 
 /**
  * Represents methods with method bodies.
@@ -50,7 +48,7 @@ public class ConcreteMethodImpl extends MethodImpl {
     /*
      * A subset of the line number info that is softly cached
      */
-    static private class SoftLocationXRefs {
+    private static class SoftLocationXRefs {
         final String stratumID;                        // The stratum of this information
         final Map<Integer, List<Location>> lineMapper; // Maps line number to location(s)
         final List<Location> lineLocations;            // List of locations ordered by code index
@@ -220,9 +218,7 @@ public class ConcreteMethodImpl extends MethodImpl {
         List<LocalVariable> variables = getVariables();
 
         List<LocalVariable> retList = new ArrayList<>(2);
-        Iterator<LocalVariable> iter = variables.iterator();
-        while(iter.hasNext()) {
-            LocalVariable variable = iter.next();
+        for (LocalVariable variable : variables) {
             if (variable.name().equals(name)) {
                 retList.add(variable);
             }
@@ -234,9 +230,7 @@ public class ConcreteMethodImpl extends MethodImpl {
         List<LocalVariable> variables = getVariables();
 
         List<LocalVariable> retList = new ArrayList<>(variables.size());
-        Iterator<LocalVariable> iter = variables.iterator();
-        while(iter.hasNext()) {
-            LocalVariable variable = iter.next();
+        for (LocalVariable variable : variables) {
             if (variable.isArgument()) {
                 retList.add(variable);
             }
@@ -289,9 +283,8 @@ public class ConcreteMethodImpl extends MethodImpl {
         int highestLine = -1;
         SDE.LineStratum lastLineStratum = null;
         SDE.Stratum baseStratum = declaringType.stratum(SDE.BASE_STRATUM_NAME);
-        Iterator<Location> it = getBaseLocations().lineLocations.iterator();
-        while(it.hasNext()) {
-            LocationImpl loc = (LocationImpl)it.next();
+        for (Location lineLocation : getBaseLocations().lineLocations) {
+            LocationImpl loc = (LocationImpl)lineLocation;
             int baseLineNumber = loc.lineNumber(baseStratum);
             SDE.LineStratum lineStratum =
                   stratum.lineStratum(declaringType, baseLineNumber);

@@ -34,7 +34,8 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/verifyOption.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shared/workerUtils.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/numberSeq.hpp"
@@ -325,8 +326,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // ensure, that no task starts doing work before all data
   // structures (local and global) have been re-initialized. When they
   // exit it, they are free to start working again.
-  WorkGangBarrierSync     _first_overflow_barrier_sync;
-  WorkGangBarrierSync     _second_overflow_barrier_sync;
+  WorkerThreadsBarrierSync     _first_overflow_barrier_sync;
+  WorkerThreadsBarrierSync     _second_overflow_barrier_sync;
 
   // This is set by any task, when an overflow on the global data
   // structures is detected
@@ -354,7 +355,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
-  WorkGang* _concurrent_workers;
+  WorkerThreads* _concurrent_workers;
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
@@ -374,10 +375,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
   void clear_statistics(HeapRegion* r);
-
-  // Resets the global marking data structures, as well as the
-  // task local ones; should be called during concurrent start.
-  void reset();
 
   // Resets all the marking data structures. Called when we have to restart
   // marking or when marking completes (via set_non_marking_state below).
@@ -444,9 +441,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
 
-  // Clear the given bitmap in parallel using the given WorkGang. If may_yield is
+  // Clear the next marking bitmap in parallel using the given WorkerThreads. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
-  void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
+  void clear_next_bitmap(WorkerThreads* workers, bool may_yield);
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
@@ -499,6 +496,11 @@ public:
   void concurrent_cycle_abort();
   void concurrent_cycle_end();
 
+  // Notifies marking threads to abort. This is a best-effort notification. Does not
+  // guarantee or update any state after the call. Root region scan must not be
+  // running.
+  void abort_marking_threads();
+
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;
   }
@@ -526,6 +528,10 @@ public:
   // Calculates the number of concurrent GC threads to be used in the marking phase.
   uint calc_active_marking_workers();
 
+  // Resets the global marking data structures, as well as the
+  // task local ones; should be called during concurrent start.
+  void reset();
+
   // Moves all per-task cached data into global state.
   void flush_all_task_caches();
   // Prepare internal data structures for the next mark cycle. This includes clearing
@@ -534,7 +540,7 @@ public:
   void cleanup_for_next_mark();
 
   // Clear the next marking bitmap during safepoint.
-  void clear_next_bitmap(WorkGang* workers);
+  void clear_next_bitmap(WorkerThreads* workers);
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
@@ -562,7 +568,7 @@ public:
   void cleanup();
   // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
   // this carefully.
-  inline void mark_in_prev_bitmap(oop p);
+  inline void par_mark_in_prev_bitmap(oop p);
 
   // Clears marks for all objects in the given range, for the prev or
   // next bitmaps.  Caution: the previous bitmap is usually
@@ -841,8 +847,8 @@ class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
-  // Accumulator for strong code roots memory size
-  size_t _total_strong_code_roots_bytes;
+  // Accumulator for code roots memory size
+  size_t _total_code_roots_bytes;
 
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
@@ -855,5 +861,4 @@ public:
   virtual bool do_heap_region(HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };
-
 #endif // SHARE_GC_G1_G1CONCURRENTMARK_HPP

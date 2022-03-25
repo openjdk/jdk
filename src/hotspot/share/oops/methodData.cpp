@@ -637,8 +637,10 @@ bool ParametersTypeData::profiling_enabled() {
 }
 
 void ParametersTypeData::print_data_on(outputStream* st, const char* extra) const {
-  st->print("parameter types"); // FIXME extra ignored?
+  print_shared(st, "ParametersTypeData", extra);
+  tab(st);
   _parameters.print_data_on(st);
+  st->cr();
 }
 
 void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) const {
@@ -1206,7 +1208,8 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 // Initialize the MethodData* corresponding to a given method.
 MethodData::MethodData(const methodHandle& method)
   : _method(method()),
-    _extra_data_lock(Mutex::leaf, "MDO extra data lock"),
+    // Holds Compile_lock
+    _extra_data_lock(Mutex::safepoint-2, "MDOExtraData_lock"),
     _compiler_counters(),
     _parameters_type_data_di(parameters_uninitialized) {
   initialize();
@@ -1583,18 +1586,6 @@ bool MethodData::profile_unsafe(const methodHandle& m, int bci) {
   return false;
 }
 
-bool MethodData::profile_memory_access(const methodHandle& m, int bci) {
-  Bytecode_invoke inv(m , bci);
-  if (inv.is_invokestatic()) {
-    if (inv.klass() == vmSymbols::jdk_incubator_foreign_MemoryAccess()) {
-      if (inv.name()->starts_with("get") || inv.name()->starts_with("set")) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 int MethodData::profile_arguments_flag() {
   return TypeProfileLevel % 10;
 }
@@ -1621,10 +1612,6 @@ bool MethodData::profile_arguments_for_invoke(const methodHandle& m, int bci) {
   }
 
   if (profile_unsafe(m, bci)) {
-    return true;
-  }
-
-  if (profile_memory_access(m, bci)) {
     return true;
   }
 

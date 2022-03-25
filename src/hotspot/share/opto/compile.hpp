@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,41 @@ class CloneMap {
   bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
 };
 
+class Options {
+  friend class Compile;
+  friend class VMStructs;
+ private:
+  const bool _subsume_loads;         // Load can be matched as part of a larger op.
+  const bool _do_escape_analysis;    // Do escape analysis.
+  const bool _do_iterative_escape_analysis;  // Do iterative escape analysis.
+  const bool _eliminate_boxing;      // Do boxing elimination.
+  const bool _do_locks_coarsening;   // Do locks coarsening
+  const bool _install_code;          // Install the code that was compiled
+ public:
+  Options(bool subsume_loads, bool do_escape_analysis,
+          bool do_iterative_escape_analysis,
+          bool eliminate_boxing, bool do_locks_coarsening,
+          bool install_code) :
+          _subsume_loads(subsume_loads),
+          _do_escape_analysis(do_escape_analysis),
+          _do_iterative_escape_analysis(do_iterative_escape_analysis),
+          _eliminate_boxing(eliminate_boxing),
+          _do_locks_coarsening(do_locks_coarsening),
+          _install_code(install_code) {
+  }
+
+  static Options for_runtime_stub() {
+    return Options(
+       /* subsume_loads = */ true,
+       /* do_escape_analysis = */ false,
+       /* do_iterative_escape_analysis = */ false,
+       /* eliminate_boxing = */ false,
+       /* do_lock_coarsening = */ false,
+       /* install_code = */ true
+    );
+  }
+};
+
 //------------------------------Compile----------------------------------------
 // This class defines a top-level Compiler invocation.
 
@@ -246,11 +281,7 @@ class Compile : public Phase {
  private:
   // Fixed parameters to this compilation.
   const int             _compile_id;
-  const bool            _subsume_loads;         // Load can be matched as part of a larger op.
-  const bool            _do_escape_analysis;    // Do escape analysis.
-  const bool            _install_code;          // Install the code that was compiled
-  const bool            _eliminate_boxing;      // Do boxing elimination.
-  const bool            _do_locks_coarsening;   // Do locks coarsening
+  const Options         _options;               // Compilation options
   ciMethod*             _method;                // The method being compiled.
   int                   _entry_bci;             // entry bci for osr methods.
   const TypeFunc*       _tf;                    // My kind of signature
@@ -296,7 +327,6 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
   bool                  _trace_opto_output;
-  bool                  _print_ideal;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
@@ -323,7 +353,7 @@ class Compile : public Phase {
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
-  IdealGraphPrinter*    _printer;
+  IdealGraphPrinter*    _igv_printer;
   static IdealGraphPrinter* _debug_file_printer;
   static IdealGraphPrinter* _debug_network_printer;
 #endif
@@ -458,7 +488,7 @@ class Compile : public Phase {
   }
 
 #ifndef PRODUCT
-  IdealGraphPrinter* printer() { return _printer; }
+  IdealGraphPrinter* igv_printer() { return _igv_printer; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -504,16 +534,17 @@ class Compile : public Phase {
   // Does this compilation allow instructions to subsume loads?  User
   // instructions that subsume a load may result in an unschedulable
   // instruction sequence.
-  bool              subsume_loads() const       { return _subsume_loads; }
+  bool              subsume_loads() const       { return _options._subsume_loads; }
   /** Do escape analysis. */
-  bool              do_escape_analysis() const  { return _do_escape_analysis; }
+  bool              do_escape_analysis() const  { return _options._do_escape_analysis; }
+  bool              do_iterative_escape_analysis() const  { return _options._do_iterative_escape_analysis; }
   /** Do boxing elimination. */
-  bool              eliminate_boxing() const    { return _eliminate_boxing; }
+  bool              eliminate_boxing() const    { return _options._eliminate_boxing; }
   /** Do aggressive boxing elimination. */
-  bool              aggressive_unboxing() const { return _eliminate_boxing && AggressiveUnboxing; }
-  bool              should_install_code() const { return _install_code; }
+  bool              aggressive_unboxing() const { return _options._eliminate_boxing && AggressiveUnboxing; }
+  bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
-  bool              do_locks_coarsening() const { return _do_locks_coarsening; }
+  bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }
@@ -604,7 +635,8 @@ class Compile : public Phase {
 #ifndef PRODUCT
   uint          next_igv_idx()                  { return _igv_idx++; }
   bool          trace_opto_output() const       { return _trace_opto_output; }
-  bool          print_ideal() const             { return _print_ideal; }
+  void          print_ideal_ir(const char* phase_name);
+  bool          should_print_ideal() const      { return _directive->PrintIdealOption; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
   int _in_dump_cnt;  // Required for dumping ir nodes.
@@ -618,36 +650,12 @@ class Compile : public Phase {
 
   Ticks _latest_stage_start_counter;
 
-  void begin_method(int level = 1) {
-#ifndef PRODUCT
-    if (_method != NULL && should_print(level)) {
-      _printer->begin_method();
-    }
-#endif
-    C->_latest_stage_start_counter.stamp();
-  }
+  void begin_method();
+  void end_method();
+  bool should_print_igv(int level);
+  bool should_print_phase(CompilerPhaseType cpt);
 
-  bool should_print(int level = 1) {
-#ifndef PRODUCT
-    if (PrintIdealGraphLevel < 0) { // disabled by the user
-      return false;
-    }
-
-    bool need = directive()->IGVPrintLevelOption >= level;
-    if (need && !_printer) {
-      _printer = IdealGraphPrinter::printer();
-      assert(_printer != NULL, "_printer is NULL when we need it!");
-      _printer->set_compile(this);
-    }
-    return need;
-#else
-    return false;
-#endif
-  }
-
-  void print_method(CompilerPhaseType cpt, const char *name, int level = 1);
-  void print_method(CompilerPhaseType cpt, int level = 1, int idx = 0);
-  void print_method(CompilerPhaseType cpt, Node* n, int level = 3);
+  void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
@@ -655,8 +663,6 @@ class Compile : public Phase {
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
-
-  void end_method(int level = 1);
 
   int           macro_count()             const { return _macro_nodes.length(); }
   int           predicate_count()         const { return _predicate_opaqs.length(); }
@@ -1034,9 +1040,7 @@ class Compile : public Phase {
   // replacement, entry_bci indicates the bytecode for which to compile a
   // continuation.
   Compile(ciEnv* ci_env, ciMethod* target,
-          int entry_bci, bool subsume_loads, bool do_escape_analysis,
-          bool eliminate_boxing, bool do_locks_coarsening,
-          bool install_code, DirectiveSet* directive);
+          int entry_bci, Options options, DirectiveSet* directive);
 
   // Second major entry point.  From the TypeFunc signature, generate code
   // to pass arguments from the Java calling convention to the C calling

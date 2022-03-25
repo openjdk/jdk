@@ -158,7 +158,7 @@ public final class IncludeLocalesPlugin extends AbstractPlugin implements Resour
                 if (resource != null &&
                     resource.type().equals(ResourcePoolEntry.Type.CLASS_OR_RESOURCE)) {
                     byte[] bytes = resource.contentBytes();
-                    ClassReader cr = new ClassReader(bytes);
+                    ClassReader cr = newClassReader(path, bytes);
                     if (Arrays.stream(cr.getInterfaces())
                         .anyMatch(i -> i.contains(METAINFONAME)) &&
                         stripUnsupportedLocales(bytes, cr)) {

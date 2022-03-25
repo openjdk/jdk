@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,14 +56,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -137,7 +135,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
      * is the SelectorManager thread. If the current thread is not
      * the selector manager thread the given task is executed inline.
      */
-    final static class DelegatingExecutor implements Executor {
+    static final class DelegatingExecutor implements Executor {
         private final BooleanSupplier isInSelectorThread;
         private final Executor delegate;
         DelegatingExecutor(BooleanSupplier isInSelectorThread, Executor delegate) {
@@ -438,7 +436,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return pendingOperationCount.get();
     }
 
-    final static class HttpClientTracker implements Tracker {
+    static final class HttpClientTracker implements Tracker {
         final AtomicLong httpCount;
         final AtomicLong http2Count;
         final AtomicLong websocketCount;
@@ -575,9 +573,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 throw ce;
             } else if (throwable instanceof SSLHandshakeException) {
                 // special case for SSLHandshakeException
-                SSLHandshakeException he = new SSLHandshakeException(msg);
-                he.initCause(throwable);
-                throw he;
+                throw new SSLHandshakeException(msg, throwable);
             } else if (throwable instanceof SSLException) {
                 // any other SSLException is wrapped in a plain
                 // SSLException
@@ -672,7 +668,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     // Main loop for this client's selector
-    private final static class SelectorManager extends Thread {
+    private static final class SelectorManager extends Thread {
 
         // For testing purposes we have an internal System property that
         // can control the frequency at which the selector manager will wake
@@ -1009,7 +1005,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         private final SelectableChannel chan;
         private final Selector selector;
         private final Set<AsyncEvent> pending;
-        private final static Logger debug =
+        private static final Logger debug =
                 Utils.getDebugLogger("SelectorAttachment"::toString, Utils.DEBUG);
         private int interestOps;
 
@@ -1206,7 +1202,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         filters.addFilter(f);
     }
 
-    final LinkedList<HeaderFilter> filterChain() {
+    final List<HeaderFilter> filterChain() {
         return filters.getFilterChain();
     }
 

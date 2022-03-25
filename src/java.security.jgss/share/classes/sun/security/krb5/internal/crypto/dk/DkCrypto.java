@@ -36,7 +36,6 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 import sun.security.util.HexDumpEncoder;
@@ -44,7 +43,8 @@ import sun.security.krb5.Confounder;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import sun.security.krb5.KrbCryptoException;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Implements Derive Key cryptography functionality as defined in RFC 3961.

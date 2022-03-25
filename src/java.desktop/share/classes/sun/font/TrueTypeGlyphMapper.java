@@ -30,15 +30,6 @@ import java.util.Locale;
 
 public class TrueTypeGlyphMapper extends CharToGlyphMapper {
 
-    static final char REVERSE_SOLIDUS = 0x005c; // the backslash char.
-    static final char JA_YEN = 0x00a5;
-
-    /* if running on Solaris and default Locale is ja_JP then
-     * we map need to remap reverse solidus (backslash) to Yen as
-     * apparently expected there.
-     */
-    static final boolean isJAlocale = Locale.JAPAN.equals(Locale.getDefault());
-
     TrueTypeFont font;
     CMap cmap;
     int numGlyphs;
@@ -123,14 +114,6 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
          * are gone.
          */
         cmap = CMap.theNullCmap;
-    }
-
-    private char remapJAChar(char unicode) {
-        return (unicode == REVERSE_SOLIDUS) ? JA_YEN : unicode;
-    }
-
-    private int remapJAIntChar(int unicode) {
-        return (unicode == REVERSE_SOLIDUS) ? JA_YEN : unicode;
     }
 
     public int charToGlyph(char unicode) {

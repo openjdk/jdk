@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,7 +390,7 @@ public class Main {
                     }
                     try {
                         //This is the hack code because named package class has
-                        //difficulty in accessing unamed package class. This
+                        //difficulty in accessing unnamed package class. This
                         //should be removed ater JDK-8003358 is finished.
                         port = (int) Class.forName("TestLibrary")
                                 .getMethod("getUnusedRandomPort")

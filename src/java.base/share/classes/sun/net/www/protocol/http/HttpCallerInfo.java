@@ -29,6 +29,7 @@ import java.net.Authenticator;
 import java.net.Authenticator.RequestorType;
 import java.net.InetAddress;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 /**
  * Used in HTTP/Negotiate, to feed HTTP request info into JGSS as a HttpCaller,
@@ -51,6 +52,9 @@ public final class HttpCallerInfo {
     public final InetAddress addr;
     public final RequestorType authType;
     public final Authenticator authenticator;
+    // Used to obtain server cert for SPNEGO CBT.
+    // May be null in which case CBT is not set
+    public final X509Certificate serverCert;
 
     /**
      * Create a schemed object based on an un-schemed one.
@@ -65,13 +69,19 @@ public final class HttpCallerInfo {
         this.authType = old.authType;
         this.scheme = scheme;
         this.authenticator =  old.authenticator;
+        this.serverCert =  old.serverCert;
     }
 
     /**
      * Constructor an un-schemed object for site access.
      */
     public HttpCallerInfo(URL url, Authenticator a) {
+        this(url, null, a);
+    }
+
+    public HttpCallerInfo(URL url, X509Certificate serverCert, Authenticator a) {
         this.url= url;
+        this.serverCert= serverCert;
         prompt = "";
         host = url.getHost();
 
@@ -100,9 +110,14 @@ public final class HttpCallerInfo {
      * Constructor an un-schemed object for proxy access.
      */
     public HttpCallerInfo(URL url, String host, int port, Authenticator a) {
+        this(url, host, port, null, a);
+    }
+
+    public HttpCallerInfo(URL url, String host, int port, X509Certificate serverCert, Authenticator a) {
         this.url= url;
         this.host = host;
         this.port = port;
+        this.serverCert = serverCert;
         prompt = "";
         addr = null;
         protocol = url.getProtocol();

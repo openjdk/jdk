@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@ import javax.lang.model.util.*;
  * source of information is Java source code, then the elements will be
  * returned in source code order.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see DeclaredType
  * @since 1.6
  */
@@ -108,6 +105,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @jls 8.8.9 Default Constructor
      * @jls 8.9.3 Enum Members
+     * @jls 8.10.3 Record Members
      */
     @Override
     List<? extends Element> getEnclosedElements();

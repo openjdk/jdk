@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -783,17 +783,21 @@ final class CompilerToVM {
 
     /**
      * Reads the current value of a static field. If {@code expectedType} is non-null, then the
-     * object is exptected to be a subtype of {@code expectedType} and extra sanity checking is
+     * object is expected to be a subtype of {@code expectedType} and extra sanity checking is
      * performed on the offset and kind of the read being performed.
+     *
+     * @throws IllegalArgumentException if any of the sanity checks fail
      */
-    native JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, boolean isVolatile, JavaKind kind);
+    native JavaConstant readFieldValue(HotSpotResolvedObjectTypeImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, JavaKind kind);
 
     /**
      * Reads the current value of an instance field. If {@code expectedType} is non-null, then the
-     * object is exptected to be a subtype of {@code expectedType} and extra sanity checking is
+     * object is expected to be a subtype of {@code expectedType} and extra sanity checking is
      * performed on the offset and kind of the read being performed.
+     *
+     * @throws IllegalArgumentException if any of the sanity checks fail
      */
-    native JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, boolean isVolatile, JavaKind kind);
+    native JavaConstant readFieldValue(HotSpotObjectConstantImpl object, HotSpotResolvedObjectTypeImpl expectedType, long offset, JavaKind kind);
 
     /**
      * @see ResolvedJavaType#isInstance(JavaConstant)
@@ -845,7 +849,7 @@ final class CompilerToVM {
     /**
      * @see HotSpotJVMCIRuntime#translate(Object)
      */
-    native long translate(Object obj);
+    native long translate(Object obj, boolean callPostTranslation);
 
     /**
      * @see HotSpotJVMCIRuntime#unhand(Class, long)
@@ -947,6 +951,26 @@ final class CompilerToVM {
      * @see JFR.Ticks#now
      */
     native long ticksNow();
+
+    /**
+     * @see HotSpotJVMCIRuntime#setThreadLocalObject(int, Object)
+     */
+    native void setThreadLocalObject(int id, Object value);
+
+    /**
+     * @see HotSpotJVMCIRuntime#getThreadLocalObject(int)
+     */
+    native Object getThreadLocalObject(int id);
+
+    /**
+     * @see HotSpotJVMCIRuntime#setThreadLocalLong(int, long)
+     */
+    native void setThreadLocalLong(int id, long value);
+
+    /**
+     * @see HotSpotJVMCIRuntime#getThreadLocalLong(int)
+     */
+    native long getThreadLocalLong(int id);
 
     /**
      * Adds phases in HotSpot JFR.

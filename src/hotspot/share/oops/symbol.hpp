@@ -45,8 +45,8 @@
 // saved in persistent storage.  This does not include the pointer
 // in the SymbolTable bucket (the _literal field in HashtableEntry)
 // that points to the Symbol.  All other stores of a Symbol*
-// to a field of a persistent variable (e.g., the _name filed in
-// fieldDescriptor or _ptr in a CPSlot) is reference counted.
+// to a field of a persistent variable (e.g., the _name field in
+// fieldDescriptor or symbol in a constant pool) is reference counted.
 //
 // 1) The lookup of a "name" in the SymbolTable either creates a Symbol F for
 // "name" and returns a pointer to F or finds a pre-existing Symbol F for
@@ -155,7 +155,7 @@ class Symbol : public MetaspaceObj {
   // Returns the largest size symbol we can safely hold.
   static int max_length() { return max_symbol_length; }
   unsigned identity_hash() const {
-    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogBytesPerWord + 3));
+    unsigned addr_bits = (unsigned)((uintptr_t)this >> LogBytesPerWord);
     return ((unsigned)extract_hash(_hash_and_refcount) & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }

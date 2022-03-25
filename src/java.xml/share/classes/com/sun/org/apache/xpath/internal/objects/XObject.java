@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -54,6 +54,7 @@ public class XObject extends Expression implements Serializable, Cloneable
    * The java object which this object wraps.
    *  @serial
    */
+  @SuppressWarnings("serial") // Type of field is not Serializable
   protected Object m_obj;  // This may be NULL!!!
 
   /**

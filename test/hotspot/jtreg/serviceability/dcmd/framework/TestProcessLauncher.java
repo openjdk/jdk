@@ -50,7 +50,7 @@ public class TestProcessLauncher {
     }
 
     public TestProcessLauncher(String className) {
-        this(className, new ArgumentHandler(new String[0]));
+        this(className, new ArgumentHandler(new String[] {"-transport.address=dynamic"}));
     }
 
     public Process launch() {

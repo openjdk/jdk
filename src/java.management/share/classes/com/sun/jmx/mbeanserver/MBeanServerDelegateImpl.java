@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ final class MBeanServerDelegateImpl
     extends MBeanServerDelegate
     implements DynamicMBean, MBeanRegistration {
 
-    final private static String[] attributeNames = new String[] {
+    private static final String[] attributeNames = new String[] {
         "MBeanServerId",
         "SpecificationName",
         "SpecificationVersion",
@@ -106,22 +106,22 @@ final class MBeanServerDelegateImpl
                           null,getNotificationInfo());
     }
 
-    final public ObjectName preRegister (MBeanServer server, ObjectName name)
+    public final ObjectName preRegister (MBeanServer server, ObjectName name)
         throws java.lang.Exception {
         if (name == null) return DELEGATE_NAME;
         else return name;
     }
 
-    final public void postRegister (Boolean registrationDone) {
+    public final void postRegister (Boolean registrationDone) {
     }
 
-    final public void preDeregister()
+    public final void preDeregister()
         throws java.lang.Exception {
         throw new IllegalArgumentException(
                  "The MBeanServerDelegate MBean cannot be unregistered");
     }
 
-    final public void postDeregister() {
+    public final void postDeregister() {
     }
 
     /**

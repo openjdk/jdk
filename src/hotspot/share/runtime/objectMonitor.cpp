@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,19 +233,6 @@ OopStorage* ObjectMonitor::_oop_storage = NULL;
 // * See also http://blogs.sun.com/dave
 
 
-void* ObjectMonitor::operator new (size_t size) throw() {
-  return AllocateHeap(size, mtInternal);
-}
-void* ObjectMonitor::operator new[] (size_t size) throw() {
-  return operator new (size);
-}
-void ObjectMonitor::operator delete(void* p) {
-  FreeHeap(p);
-}
-void ObjectMonitor::operator delete[] (void *p) {
-  operator delete(p);
-}
-
 // Check that object() and set_object() are called from the right context:
 static void check_object_context() {
 #ifdef ASSERT
@@ -430,7 +417,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     for (;;) {
       ExitOnSuspend eos(this);
       {
-        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos);
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
         EnterI(current);
         current->set_current_pending_monitor(NULL);
         // We can go to a safepoint at the end of this block. If we
@@ -975,7 +962,7 @@ void ObjectMonitor::ReenterI(JavaThread* current, ObjectWaiter* currentNode) {
 
       {
         ClearSuccOnSuspend csos(this);
-        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos);
+        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
         current->_ParkEvent->park();
       }
     }
@@ -1536,7 +1523,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
     {
       ClearSuccOnSuspend csos(this);
-      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos);
+      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (node._notified == 0) {

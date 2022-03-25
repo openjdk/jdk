@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,15 @@
 
 package com.sun.imageio.plugins.bmp;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
-import org.w3c.dom.Node;
-import com.sun.imageio.plugins.common.I18N;
+import javax.imageio.metadata.IIOMetadataNode;
 
+import com.sun.imageio.plugins.common.I18N;
 import com.sun.imageio.plugins.common.ImageUtil;
+import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class BMPMetadata extends IIOMetadata implements BMPConstants {
     public static final String nativeMetadataFormatName =
@@ -114,11 +110,7 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
     }
 
     private String toISO8859(byte[] data) {
-        try {
-            return new String(data, "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return new String(data, ISO_8859_1);
     }
 
     private Node getNativeTree() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "jvm_io.h"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsProtectionDomain.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/classListParser.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
@@ -64,6 +65,7 @@
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -75,6 +77,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/resourceHash.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #endif
@@ -114,7 +117,7 @@ bool MetaspaceShared::_use_full_module_graph = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The ca0/ca1 and oa0/oa1 regions are populated inside HeapShared::archive_java_heap_objects.
+// The ca0/ca1 and oa0/oa1 regions are populated inside HeapShared::archive_objects.
 // Their layout is independent of the rw/ro regions.
 
 static DumpRegion _symbol_region("symbols");
@@ -148,16 +151,43 @@ static bool shared_base_valid(char* shared_base) {
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
+  static const int INITIAL_TABLE_SIZE = 1987;
+  static const int MAX_TABLE_SIZE = 61333;
+
   fileStream *_stream;
+  ResizeableResourceHashtable<InstanceKlass*, bool,
+                              ResourceObj::C_HEAP, mtClassShared> _dumped_classes;
+
+  void dump(InstanceKlass* ik) {
+    bool created;
+    _dumped_classes.put_if_absent(ik, &created);
+    if (!created) {
+      return;
+    }
+    if (_dumped_classes.maybe_grow(MAX_TABLE_SIZE)) {
+      log_info(cds, hashtables)("Expanded _dumped_classes table to %d", _dumped_classes.table_size());
+    }
+    if (ik->java_super()) {
+      dump(ik->java_super());
+    }
+    Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+    int len = interfaces->length();
+    for (int i = 0; i < len; i++) {
+      dump(interfaces->at(i));
+    }
+    ClassListWriter::write_to_stream(ik, _stream);
+  }
+
 public:
-  DumpClassListCLDClosure(fileStream* f) : CLDClosure() { _stream = f; }
+  DumpClassListCLDClosure(fileStream* f)
+  : CLDClosure(), _dumped_classes(INITIAL_TABLE_SIZE) {
+    _stream = f;
+  }
+
   void do_cld(ClassLoaderData* cld) {
     for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
       if (klass->is_instance_klass()) {
-        InstanceKlass* ik = InstanceKlass::cast(klass);
-        if (ik->is_shareable()) {
-          _stream->print_cr("%s", ik->name()->as_C_string());
-        }
+        dump(InstanceKlass::cast(klass));
       }
     }
   }
@@ -167,6 +197,7 @@ void MetaspaceShared::dump_loaded_classes(const char* file_name, TRAPS) {
   fileStream stream(file_name, "w");
   if (stream.is_open()) {
     MutexLocker lock(ClassLoaderDataGraph_lock);
+    MutexLocker lock2(ClassListFile_lock, Mutex::_no_safepoint_check_flag);
     DumpClassListCLDClosure collect_classes(&stream);
     ClassLoaderDataGraph::loaded_cld_do(&collect_classes);
   } else {
@@ -337,6 +368,11 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(Symbol));
 
+  // Need to do this first, as subsequent steps may call virtual functions
+  // in archived Metadata objects.
+  CppVtables::serialize(soc);
+  soc->do_tag(--tag);
+
   // Dump/restore miscellaneous metadata.
   JavaClasses::serialize_offsets(soc);
   Universe::serialize(soc);
@@ -349,16 +385,13 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   // Dump/restore the symbol/string/subgraph_info tables
   SymbolTable::serialize_shared_table_header(soc);
   StringTable::serialize_shared_table_header(soc);
-  HeapShared::serialize_subgraph_info_table_header(soc);
+  HeapShared::serialize(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
 
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
   SystemDictionaryShared::serialize_vm_classes(soc);
-  soc->do_tag(--tag);
-
-  CppVtables::serialize(soc);
   soc->do_tag(--tag);
 
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
@@ -392,7 +425,7 @@ static void rewrite_nofast_bytecode(const methodHandle& method) {
 void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread* thread, InstanceKlass* ik) {
   for (int i = 0; i < ik->methods()->length(); i++) {
     methodHandle m(thread, ik->methods()->at(i));
-    if (ik->can_be_verified_at_dumptime()) {
+    if (ik->can_be_verified_at_dumptime() && ik->is_linked()) {
       rewrite_nofast_bytecode(m);
     }
     Fingerprinter fp(m);
@@ -403,15 +436,15 @@ void MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread
 
 class VM_PopulateDumpSharedSpace : public VM_GC_Operation {
 private:
-  GrowableArray<MemRegion> *_closed_archive_heap_regions;
-  GrowableArray<MemRegion> *_open_archive_heap_regions;
+  GrowableArray<MemRegion> *_closed_heap_regions;
+  GrowableArray<MemRegion> *_open_heap_regions;
 
-  GrowableArray<ArchiveHeapOopmapInfo> *_closed_archive_heap_oopmaps;
-  GrowableArray<ArchiveHeapOopmapInfo> *_open_archive_heap_oopmaps;
+  GrowableArray<ArchiveHeapOopmapInfo> *_closed_heap_oopmaps;
+  GrowableArray<ArchiveHeapOopmapInfo> *_open_heap_oopmaps;
 
   void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_archive_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
+  void dump_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_heap_oopmaps(GrowableArray<MemRegion>* regions,
                                  GrowableArray<ArchiveHeapOopmapInfo>* oopmaps);
   void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
@@ -423,10 +456,10 @@ public:
 
   VM_PopulateDumpSharedSpace() :
     VM_GC_Operation(0 /* total collections, ignored */, GCCause::_archive_time_gc),
-    _closed_archive_heap_regions(NULL),
-    _open_archive_heap_regions(NULL),
-    _closed_archive_heap_oopmaps(NULL),
-    _open_archive_heap_oopmaps(NULL) {}
+    _closed_heap_regions(NULL),
+    _open_heap_regions(NULL),
+    _closed_heap_oopmaps(NULL),
+    _open_heap_oopmaps(NULL) {}
 
   bool skip_operation() const { return false; }
 
@@ -472,7 +505,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   MetaspaceShared::serialize(&wc);
 
   // Write the bitmaps for patching the archive heap regions
-  dump_archive_heap_oopmaps();
+  dump_heap_oopmaps();
 
   return start;
 }
@@ -524,16 +557,18 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_to_requested();
 
   // Write the archive file
-  FileMapInfo* mapinfo = new FileMapInfo(true);
+  const char* static_archive = Arguments::GetSharedArchivePath();
+  assert(static_archive != nullptr, "SharedArchiveFile not set?");
+  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
   mapinfo->set_serialized_data(serialized_data);
   mapinfo->set_cloned_vtables(cloned_vtables);
   mapinfo->open_for_write();
   builder.write_archive(mapinfo,
-                        _closed_archive_heap_regions,
-                        _open_archive_heap_regions,
-                        _closed_archive_heap_oopmaps,
-                        _open_archive_heap_oopmaps);
+                        _closed_heap_regions,
+                        _open_heap_regions,
+                        _closed_heap_oopmaps,
+                        _open_heap_oopmaps);
 
   if (PrintSystemDictionaryAtExit) {
     SystemDictionary::print();
@@ -552,29 +587,45 @@ void VM_PopulateDumpSharedSpace::doit() {
 
 class CollectCLDClosure : public CLDClosure {
   GrowableArray<ClassLoaderData*> _loaded_cld;
+  GrowableArray<OopHandle> _loaded_cld_handles; // keep the CLDs alive
+  Thread* _current_thread;
 public:
-  CollectCLDClosure() {}
+  CollectCLDClosure(Thread* thread) : _current_thread(thread) {}
   ~CollectCLDClosure() {
-    for (int i = 0; i < _loaded_cld.length(); i++) {
-      ClassLoaderData* cld = _loaded_cld.at(i);
-      cld->dec_keep_alive();
+    for (int i = 0; i < _loaded_cld_handles.length(); i++) {
+      _loaded_cld_handles.at(i).release(Universe::vm_global());
     }
   }
   void do_cld(ClassLoaderData* cld) {
-    if (!cld->is_unloading()) {
-      cld->inc_keep_alive();
-      _loaded_cld.append(cld);
-    }
+    assert(cld->is_alive(), "must be");
+    _loaded_cld.append(cld);
+    _loaded_cld_handles.append(OopHandle(Universe::vm_global(), cld->holder()));
   }
 
   int nof_cld() const                { return _loaded_cld.length(); }
   ClassLoaderData* cld_at(int index) { return _loaded_cld.at(index); }
 };
 
-bool MetaspaceShared::linking_required(InstanceKlass* ik) {
-  // For static CDS dump, do not link old classes.
-  // For dynamic CDS dump, only link classes loaded by the builtin class loaders.
-  return DumpSharedSpaces ? ik->can_be_verified_at_dumptime() : !ik->is_shared_unregistered_class();
+// Check if we can eagerly link this class at dump time, so we can avoid the
+// runtime linking overhead (especially verification)
+bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
+  if (!ik->can_be_verified_at_dumptime()) {
+    // For old classes, try to leave them in the unlinked state, so
+    // we can still store them in the archive. They must be
+    // linked/verified at runtime.
+    return false;
+  }
+  if (DynamicDumpSharedSpaces && ik->is_shared_unregistered_class()) {
+    // Linking of unregistered classes at this stage may cause more
+    // classes to be resolved, resulting in calls to ClassLoader.loadClass()
+    // that may not be expected by custom class loaders.
+    //
+    // It's OK to do this for the built-in loaders as we know they can
+    // tolerate this. (Note that unregistered classes are loaded by the NULL
+    // loader during DumpSharedSpaces).
+    return false;
+  }
+  return true;
 }
 
 bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
@@ -592,12 +643,13 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
-void MetaspaceShared::link_shared_classes(TRAPS) {
-  // Collect all loaded ClassLoaderData.
-  ResourceMark rm;
+void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
+  if (!jcmd_request) {
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+  }
 
-  LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  CollectCLDClosure collect_cld;
+  // Collect all loaded ClassLoaderData.
+  CollectCLDClosure collect_cld(THREAD);
   {
     // ClassLoaderDataGraph::loaded_cld_do requires ClassLoaderDataGraph_lock.
     // We cannot link the classes while holding this lock (or else we may run into deadlock).
@@ -614,7 +666,7 @@ void MetaspaceShared::link_shared_classes(TRAPS) {
       for (Klass* klass = cld->klasses(); klass != NULL; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
           InstanceKlass* ik = InstanceKlass::cast(klass);
-          if (linking_required(ik)) {
+          if (may_be_eagerly_linked(ik)) {
             has_linked |= link_class_for_cds(ik, CHECK);
           }
         }
@@ -657,6 +709,30 @@ void MetaspaceShared::preload_and_dump() {
     ShouldNotReachHere();
   }
 }
+
+#if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
+void MetaspaceShared::adjust_heap_sizes_for_dumping() {
+  if (!DumpSharedSpaces || UseCompressedOops) {
+    return;
+  }
+  // CDS heap dumping requires all string oops to have an offset
+  // from the heap bottom that can be encoded in 32-bit.
+  julong max_heap_size = (julong)(4 * G);
+
+  if (MinHeapSize > max_heap_size) {
+    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MinHeapSize/M);
+    FLAG_SET_ERGO(MinHeapSize, max_heap_size);
+  }
+  if (InitialHeapSize > max_heap_size) {
+    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", InitialHeapSize/M);
+    FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
+  }
+  if (MaxHeapSize > max_heap_size) {
+    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MaxHeapSize/M);
+    FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
+  }
+}
+#endif // INCLUDE_CDS_JAVA_HEAP && _LP64
 
 void MetaspaceShared::preload_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
@@ -726,7 +802,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
   // fails verification, all other interfaces that were not specified in the classlist but
   // are implemented by K are not verified.
-  link_shared_classes(CHECK);
+  link_shared_classes(false/*not from jcmd*/, CHECK);
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -781,13 +857,12 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if(!HeapShared::is_heap_object_archiving_allowed()) {
+  if(!HeapShared::can_write()) {
     log_info(cds)(
-      "Archived java heap is not supported as UseG1GC, "
-      "UseCompressedOops and UseCompressedClassPointers are required."
-      "Current settings: UseG1GC=%s, UseCompressedOops=%s, UseCompressedClassPointers=%s.",
-      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedOops),
-      BOOL_TO_STR(UseCompressedClassPointers));
+      "Archived java heap is not supported as UseG1GC "
+      "and UseCompressedClassPointers are required."
+      "Current settings: UseG1GC=%s, UseCompressedClassPointers=%s.",
+      BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
     return;
   }
   // Find all the interned strings that should be dumped.
@@ -809,27 +884,26 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
   }
 
   // The closed and open archive heap space has maximum two regions.
-  // See FileMapInfo::write_archive_heap_regions() for details.
-  _closed_archive_heap_regions = new GrowableArray<MemRegion>(2);
-  _open_archive_heap_regions = new GrowableArray<MemRegion>(2);
-  HeapShared::archive_java_heap_objects(_closed_archive_heap_regions,
-                                        _open_archive_heap_regions);
+  // See FileMapInfo::write_heap_regions() for details.
+  _closed_heap_regions = new GrowableArray<MemRegion>(2);
+  _open_heap_regions = new GrowableArray<MemRegion>(2);
+  HeapShared::archive_objects(_closed_heap_regions, _open_heap_regions);
   ArchiveBuilder::OtherROAllocMark mark;
   HeapShared::write_subgraph_info_table();
 }
 
-void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps() {
-  if (HeapShared::is_heap_object_archiving_allowed()) {
-    _closed_archive_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
-    dump_archive_heap_oopmaps(_closed_archive_heap_regions, _closed_archive_heap_oopmaps);
+void VM_PopulateDumpSharedSpace::dump_heap_oopmaps() {
+  if (HeapShared::can_write()) {
+    _closed_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
+    dump_heap_oopmaps(_closed_heap_regions, _closed_heap_oopmaps);
 
-    _open_archive_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
-    dump_archive_heap_oopmaps(_open_archive_heap_regions, _open_archive_heap_oopmaps);
+    _open_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
+    dump_heap_oopmaps(_open_heap_regions, _open_heap_oopmaps);
   }
 }
 
-void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
-                                                           GrowableArray<ArchiveHeapOopmapInfo>* oopmaps) {
+void VM_PopulateDumpSharedSpace::dump_heap_oopmaps(GrowableArray<MemRegion>* regions,
+                                                   GrowableArray<ArchiveHeapOopmapInfo>* oopmaps) {
   for (int i=0; i<regions->length(); i++) {
     ResourceBitMap oopmap = HeapShared::calculate_oopmap(regions->at(i));
     size_t size_in_bits = oopmap.size();
@@ -900,12 +974,20 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
+      // turn AutoCreateSharedArchive off if successfully mapped
+      AutoCreateSharedArchive = false;
     } else {
       FileMapInfo::set_shared_path_table(static_mapinfo);
     }
   } else {
     set_shared_metaspace_range(NULL, NULL, NULL);
+    if (DynamicDumpSharedSpaces) {
+      warning("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info.");
+    }
     UseSharedSpaces = false;
+    // The base archive cannot be mapped. We cannot dump the dynamic shared archive.
+    AutoCreateSharedArchive = false;
+    DynamicDumpSharedSpaces = false;
     FileMapInfo::fail_continue("Unable to map shared spaces");
     if (PrintSharedArchiveAndExit) {
       vm_exit_during_initialization("Unable to use shared archive.");
@@ -921,7 +1003,9 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 }
 
 FileMapInfo* MetaspaceShared::open_static_archive() {
-  FileMapInfo* mapinfo = new FileMapInfo(true);
+  const char* static_archive = Arguments::GetSharedArchivePath();
+  assert(static_archive != nullptr, "SharedArchivePath is NULL");
+  FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     return NULL;
@@ -933,11 +1017,12 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (DynamicDumpSharedSpaces) {
     return NULL;
   }
-  if (Arguments::GetSharedDynamicArchivePath() == NULL) {
+  const char* dynamic_archive = Arguments::GetSharedDynamicArchivePath();
+  if (dynamic_archive == nullptr) {
     return NULL;
   }
 
-  FileMapInfo* mapinfo = new FileMapInfo(false);
+  FileMapInfo* mapinfo = new FileMapInfo(dynamic_archive, false);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
     return NULL;
@@ -1091,7 +1176,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
           // map_heap_regions() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
-          static_mapinfo->map_heap_regions();
+          static_mapinfo->map_or_load_heap_regions();
         }
       });
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
@@ -1375,7 +1460,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *static_mapinfo = FileMapInfo::current_info();
 
   // Verify various attributes of the archive, plus initialize the
-  // shared string/symbol tables
+  // shared string/symbol tables.
   char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array);
@@ -1384,7 +1469,10 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Initialize the run-time symbol table.
   SymbolTable::create_table();
 
-  static_mapinfo->patch_archived_heap_embedded_pointers();
+  // Finish up archived heap initialization. These must be
+  // done after ReadClosure.
+  static_mapinfo->patch_heap_embedded_pointers();
+  HeapShared::finish_initialization();
 
   // Close the mapinfo file
   static_mapinfo->close();
@@ -1467,8 +1555,15 @@ bool MetaspaceShared::use_full_module_graph() {
     return true;
   }
 #endif
-  bool result = _use_optimized_module_handling && _use_full_module_graph &&
-    (UseSharedSpaces || DumpSharedSpaces) && HeapShared::is_heap_object_archiving_allowed();
+  bool result = _use_optimized_module_handling && _use_full_module_graph;
+  if (DumpSharedSpaces) {
+    result &= HeapShared::can_write();
+  } else if (UseSharedSpaces) {
+    result &= HeapShared::can_use();
+  } else {
+    result = false;
+  }
+
   if (result && UseSharedSpaces) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),

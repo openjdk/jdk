@@ -40,6 +40,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,10 +49,10 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import static java.net.http.HttpClient.Builder.NO_PROXY;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.*;
 
 public class FilterTest {
@@ -79,6 +81,9 @@ public class FilterTest {
 
         expectThrows(NPE, () -> Filter.afterHandler("Some description", null));
         expectThrows(NPE, () -> Filter.afterHandler(null, HttpExchange::getResponseCode));
+
+        expectThrows(NPE, () -> Filter.adaptRequest("Some description", null));
+        expectThrows(NPE, () -> Filter.adaptRequest(null, r -> r.with("Foo", List.of("Bar"))));
     }
 
     @Test
@@ -90,6 +95,9 @@ public class FilterTest {
 
         var afterFilter = Filter.afterHandler(desc, HttpExchange::getResponseCode);
         assertEquals(desc, afterFilter.description());
+
+        var adaptFilter = Filter.adaptRequest(desc, r -> r.with("Foo", List.of("Bar")));
+        assertEquals(desc, adaptFilter.description());
     }
 
     @DataProvider
@@ -305,6 +313,64 @@ public class FilterTest {
         }
     }
 
+    @Test
+    public void testInspectRequest() throws Exception {
+        var handler = new EchoHandler();
+        var inspectedURI = new AtomicReference<URI>();
+        var filter = Filter.adaptRequest("Inspect request URI",
+                r -> {inspectedURI.set(r.getRequestURI()); return r;});
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        server.createContext("/", handler).getFilters().add(filter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "foo/bar")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(inspectedURI.get(), URI.create("/foo/bar"));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private static HttpExchange originalExchange;
+
+    /**
+     * Confirms that adaptRequest changes only the expected request state and
+     * all other exchange state remains unchanged.
+     */
+    @Test
+    public void testAdaptRequest() throws Exception {
+        var handler = new CompareStateAndEchoHandler();
+        var captureFilter = Filter.beforeHandler("capture exchange", e -> {
+            e.setAttribute("foo", "bar");
+            originalExchange = e;
+        });
+        var adaptFilter = Filter.adaptRequest("Add x-foo request header", r -> {
+            // Confirm request state is unchanged
+            assertEquals(r.getRequestHeaders(), originalExchange.getRequestHeaders());
+            assertEquals(r.getRequestURI(), originalExchange.getRequestURI());
+            assertEquals(r.getRequestMethod(), originalExchange.getRequestMethod());
+            return r.with("x-foo", List.of("bar"));
+        });
+        var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
+        var context = server.createContext("/", handler);
+        context.getFilters().add(captureFilter);
+        context.getFilters().add(adaptFilter);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "")).build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), "bar");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    // --- infra ---
+
     static URI uri(HttpServer server, String path) {
         return URI.create("http://localhost:%s/%s".formatted(server.getAddress().getPort(), path));
     }
@@ -319,6 +385,42 @@ public class FilterTest {
                  OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
                 var resp = "hello world".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, resp.length);
+                os.write(resp);
+            }
+        }
+    }
+
+    /**
+     * A handler that compares the adapted exchange with the original exchange,
+     * before discarding the request and returning the test request header value.
+     */
+    static class CompareStateAndEchoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            assertEquals(exchange.getLocalAddress(), originalExchange.getLocalAddress());
+            assertEquals(exchange.getRemoteAddress(), originalExchange.getRemoteAddress());
+            assertEquals(exchange.getProtocol(), originalExchange.getProtocol());
+            assertEquals(exchange.getPrincipal(), originalExchange.getPrincipal());
+            assertEquals(exchange.getHttpContext(), originalExchange.getHttpContext());
+            assertEquals(exchange.getRequestMethod(), originalExchange.getRequestMethod());
+            assertEquals(exchange.getRequestURI(), originalExchange.getRequestURI());
+            assertEquals(exchange.getRequestBody(), originalExchange.getRequestBody());
+            assertEquals(exchange.getResponseHeaders(), originalExchange.getResponseHeaders());
+            assertEquals(exchange.getResponseCode(), originalExchange.getResponseCode());
+            assertEquals(exchange.getResponseBody(), originalExchange.getResponseBody());
+            assertEquals(exchange.getAttribute("foo"), originalExchange.getAttribute("foo"));
+            assertFalse(exchange.getRequestHeaders().equals(originalExchange.getRequestHeaders()));
+
+            exchange.setAttribute("foo", "barbar");
+            assertEquals(exchange.getAttribute("foo"), originalExchange.getAttribute("foo"));
+
+            try (InputStream is = exchange.getRequestBody();
+                 OutputStream os = exchange.getResponseBody()) {
+                is.readAllBytes();
+                var resp = exchange.getRequestHeaders().get("x-foo")
+                        .get(0)
+                        .getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, resp.length);
                 os.write(resp);
             }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1295,7 +1295,7 @@ public:
   };
 };
 
- bool is_CAS(int opcode, bool maybe_volatile);
+  bool is_CAS(int opcode, bool maybe_volatile);
 
   // predicates controlling emit of ldr<x>/ldar<x> and associated dmb
 
@@ -1310,6 +1310,9 @@ public:
 
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
+
+  // Assert that the given node is not a variable shift.
+  bool assert_not_var_shift(const Node* n);
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
@@ -1725,6 +1728,12 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
+// Assert that the given node is not a variable shift.
+bool assert_not_var_shift(const Node* n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
+  return true;
+}
+
 #define __ _masm.
 
 // advance declarations for helper functions to convert register
@@ -1853,6 +1862,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->output()->need_stack_bang(framesize))
     st->print("# stack bang size=%d\n\t", framesize);
 
+  if (VM_Version::use_rop_protection()) {
+    st->print("ldr zr, [lr]\n\t");
+    st->print("pacia  lr, rfp\n\t");
+  }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
     st->print("stp  rfp, lr, [sp, #%d]", framesize - 2 * wordSize);
@@ -1902,7 +1915,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  if (C->max_vector_size() >= 16) {
+  if (C->max_vector_size() > 0) {
     __ reinitialize_ptrue();
   }
 
@@ -1960,6 +1973,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("add  sp, sp, rscratch1\n\t");
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
+  }
+  if (VM_Version::use_rop_protection()) {
+    st->print("autia lr, rfp\n\t");
+    st->print("ldr zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {
@@ -2059,7 +2076,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->isa_vectmask()) {
     assert((src_lo&1)==0 && src_lo+1==src_hi &&
            (dst_lo&1)==0 && dst_lo+1==dst_hi,
            "expected aligned-adjacent pairs");
@@ -2074,7 +2091,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
-  if (bottom_type()->isa_vect() != NULL) {
+  if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
     uint ireg = ideal_reg();
     if (ireg == Op_VecA && cbuf) {
       C2_MacroAssembler _masm(cbuf);
@@ -2161,7 +2178,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         }
       } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
-          if (cbuf) {
+        if (is64) {
             __ fmovd(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
         } else {
@@ -2180,10 +2197,29 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       } else if (dst_lo_rc == rc_float) { // stack --> fpr load
         __ unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                    is64 ? __ D : __ S, src_offset);
+      } else if (dst_lo_rc == rc_predicate) {
+        __ unspill_sve_predicate(as_PRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo),
+                                 Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
       } else {                    // stack --> stack copy
         assert(dst_lo_rc == rc_stack, "spill to bad register class");
-        __ unspill(rscratch1, is64, src_offset);
-        __ spill(rscratch1, is64, dst_offset);
+        if (ideal_reg() == Op_RegVectMask) {
+          __ spill_copy_sve_predicate_stack_to_stack(src_offset, dst_offset,
+                                                     Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
+        } else {
+          __ unspill(rscratch1, is64, src_offset);
+          __ spill(rscratch1, is64, dst_offset);
+        }
+      }
+      break;
+    case rc_predicate:
+      if (dst_lo_rc == rc_predicate) {
+        __ sve_mov(as_PRegister(Matcher::_regEncode[dst_lo]), as_PRegister(Matcher::_regEncode[src_lo]));
+      } else if (dst_lo_rc == rc_stack) {
+        __ spill_sve_predicate(as_PRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo),
+                               Matcher::scalable_vector_reg_size(T_BYTE) >> 3);
+      } else {
+        assert(false, "bad src and dst rc_class combination.");
+        ShouldNotReachHere();
       }
       break;
     default:
@@ -2204,7 +2240,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() != NULL) {
+    if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
       int vsize = 0;
       switch (ideal_reg()) {
       case Op_VecD:
@@ -2221,6 +2257,10 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         ShouldNotReachHere();
       }
       st->print("\t# vector spill size = %d", vsize);
+    } else if (ideal_reg() == Op_RegVectMask) {
+      assert(Matcher::supports_scalable_vector(), "bad register type for spill");
+      int vsize = Matcher::scalable_predicate_reg_slots() * 32;
+      st->print("\t# predicate spill size = %d", vsize);
     } else {
       st->print("\t# spill size = %d", is64 ? 64 : 32);
     }
@@ -2373,10 +2413,24 @@ const bool Matcher::match_rule_supported(int opcode) {
 
   bool ret_value = true;
   switch (opcode) {
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
     case Op_CacheWB:
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       if (!VM_Version::supports_data_cache_line_flush()) {
+        ret_value = false;
+      }
+      break;
+    case Op_LoadVectorMasked:
+    case Op_StoreVectorMasked:
+    case Op_LoadVectorGatherMasked:
+    case Op_StoreVectorScatterMasked:
+    case Op_MaskAll:
+    case Op_AndVMask:
+    case Op_OrVMask:
+    case Op_XorVMask:
+      if (UseSVE == 0) {
         ret_value = false;
       }
       break;
@@ -2388,7 +2442,7 @@ const bool Matcher::match_rule_supported(int opcode) {
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
+  if (!match_rule_supported(opcode)) {
     return false;
   }
   int bit_size = vlen * type2aelembytes(bt) * 8;
@@ -2396,14 +2450,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     return false;
   }
   if (UseSVE > 0) {
-    return op_sve_supported(opcode);
+    return op_sve_supported(opcode, vlen, bt);
   } else { // NEON
     // Special cases
     switch (opcode) {
     case Op_VectorMaskCmp:
-    // We don't have VectorReinterpret with bit_size less than 64 support for
-    // now, even for byte type. To be refined with fully VectorCast support.
-    case Op_VectorReinterpret:
       if (vlen < 2 || bit_size < 64) {
         return false;
       }
@@ -2421,35 +2472,30 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
-    // Some types of VectorCast are not implemented for now.
-    case Op_VectorCastI2X:
-      if (bt == T_BYTE) {
-        return false;
-      }
-      break;
-    case Op_VectorCastS2X:
-      if (vlen < 4 || bit_size < 64) {
-        return false;
-      }
-      break;
-    case Op_VectorCastF2X:
-    case Op_VectorCastD2X:
-      if (bt == T_INT || bt == T_SHORT || bt == T_BYTE || bt == T_LONG) {
-        return false;
-      }
-      break;
+    case Op_LoadVectorGather:
+    case Op_StoreVectorScatter:
+      return false;
     default:
       break;
     }
   }
-  return true; // Per default match rules are supported.
+  return vector_size_supported(bt, vlen);
+}
+
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  // Only SVE supports masked operations.
+  if (UseSVE == 0) {
+    return false;
+  }
+  return match_rule_supported(opcode) &&
+         masked_op_sve_supported(opcode, vlen, bt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_PR_REG_mask;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return new TypeVectMask(elemTy, length);
 }
 
@@ -2488,24 +2534,20 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 const int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
+
 const int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
-  if ((UseSVE > 0) && (MaxVectorSize >= 16)) {
-    // Currently vector length less than SVE vector register size is not supported.
-    return max_size;
-  } else { // NEON
-    // Limit the vector size to 8 bytes
-    int size = 8 / type2aelembytes(bt);
-    if (bt == T_BYTE) {
-      // To support vector api shuffle/rearrange.
-      size = 4;
-    } else if (bt == T_BOOLEAN) {
-      // To support vector api load/store mask.
-      size = 2;
-    }
-    if (size < 2) size = 2;
-    return MIN2(size,max_size);
+  // Limit the min vector size to 8 bytes.
+  int size = 8 / type2aelembytes(bt);
+  if (bt == T_BYTE) {
+    // To support vector api shuffle/rearrange.
+    size = 4;
+  } else if (bt == T_BOOLEAN) {
+    // To support vector api load/store mask.
+    size = 2;
   }
+  if (size < 2) size = 2;
+  return MIN2(size, max_size);
 }
 
 // Actual max scalable vector register length.
@@ -2515,7 +2557,7 @@ const int Matcher::scalable_vector_reg_size(const BasicType bt) {
 
 // Vector ideal reg.
 const uint Matcher::vector_ideal_reg(int len) {
-  if (UseSVE > 0 && 16 <= len && len <= 256) {
+  if (UseSVE > 0 && 2 <= len && len <= 256) {
     return Op_VecA;
   }
   switch(len) {
@@ -2642,6 +2684,13 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
+    if (u->is_LoadStore()) {
+      // On AArch64, LoadStoreNodes (i.e. compare and swap
+      // instructions) only take register indirect as an operand, so
+      // any attempt to use an AddPNode as an input to a LoadStoreNode
+      // must fail.
+      return false;
+    }
     if (u->is_Mem()) {
       int opsize = u->as_Mem()->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
@@ -2653,12 +2702,56 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
+bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
+  if (UseSVE == 0 || !VectorNode::is_invariant_vector(replicate_node)){
+    return false;
+  }
+  Node* imm_node = replicate_node->in(1);
+  if (!imm_node->is_Con()) {
+    return false;
+  }
+
+  const Type* t = imm_node->bottom_type();
+  if (!(t->isa_int() || t->isa_long())) {
+    return false;
+  }
+
+  switch (binary_node->Opcode()) {
+  case Op_AndV:
+  case Op_OrV:
+  case Op_XorV: {
+    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(binary_node));
+    uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
+    return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
+  }
+  case Op_AddVB:
+    return (imm_node->get_int() <= 255 && imm_node->get_int() >= -255);
+  case Op_AddVS:
+  case Op_AddVI:
+    return Assembler::operand_valid_for_sve_add_sub_immediate((int64_t)imm_node->get_int());
+  case Op_AddVL:
+    return Assembler::operand_valid_for_sve_add_sub_immediate(imm_node->get_long());
+  default:
+    return false;
+  }
+}
+
+bool is_vector_arith_imm_pattern(Node* n, Node* m) {
+  if (n != NULL && m != NULL) {
+    return can_combine_with_imm(n, m);
+  }
+  return false;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
-  if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
-    mstack.push(m, Visit);           // m = ShiftCntV
+  // ShiftV src (ShiftCntV con)
+  // Binary src (Replicate con)
+  if (is_vshift_con_pattern(n, m) || is_vector_arith_imm_pattern(n, m)) {
+    mstack.push(m, Visit);
     return true;
   }
+
   return false;
 }
 
@@ -3125,8 +3218,18 @@ encode %{
                  rscratch1, stlrb);
   %}
 
+  enc_class aarch64_enc_stlrb0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrb);
+  %}
+
   enc_class aarch64_enc_stlrh(iRegI src, memory mem) %{
     MOV_VOLATILE(as_Register($src$$reg), $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrh);
+  %}
+
+  enc_class aarch64_enc_stlrh0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlrh);
   %}
 
@@ -3135,6 +3238,10 @@ encode %{
                  rscratch1, stlrw);
   %}
 
+  enc_class aarch64_enc_stlrw0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlrw);
+  %}
 
   enc_class aarch64_enc_ldarsbw(iRegI dst, memory mem) %{
     Register dst_reg = as_Register($dst$$reg);
@@ -3222,6 +3329,11 @@ encode %{
       src_reg = rscratch2;
     }
     MOV_VOLATILE(src_reg, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
+                 rscratch1, stlr);
+  %}
+
+  enc_class aarch64_enc_stlr0(memory mem) %{
+    MOV_VOLATILE(zr, $mem$$base, $mem$$index, $mem$$scale, $mem$$disp,
                  rscratch1, stlr);
   %}
 
@@ -3713,7 +3825,7 @@ encode %{
     }
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
-    if (Compile::current()->max_vector_size() >= 16 && uncommon_trap_request() == 0) {
+    if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3725,7 +3837,7 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (Compile::current()->max_vector_size() >= 16) {
+    } else if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3763,7 +3875,7 @@ encode %{
       __ bind(retaddr);
       __ add(sp, sp, 2 * wordSize);
     }
-    if (Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3776,7 +3888,7 @@ encode %{
   enc_class aarch64_enc_ret() %{
     C2_MacroAssembler _masm(&cbuf);
 #ifdef ASSERT
-    if (Compile::current()->max_vector_size() >= 16) {
+    if (Compile::current()->max_vector_size() > 0) {
       __ verify_ptrue();
     }
 #endif
@@ -3824,37 +3936,40 @@ encode %{
     // Check for existing monitor
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Set tmp to be (markWord of object | UNLOCK_VALUE).
-    __ orr(tmp, disp_hdr, markWord::unlocked_value);
+    if (!UseHeavyMonitors) {
+      // Set tmp to be (markWord of object | UNLOCK_VALUE).
+      __ orr(tmp, disp_hdr, markWord::unlocked_value);
 
-    // Initialize the box. (Must happen before we update the object mark!)
-    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+      // Initialize the box. (Must happen before we update the object mark!)
+      __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // Compare object markWord with an unlocked value (tmp) and if
-    // equal exchange the stack address of our box with object markWord.
-    // On failure disp_hdr contains the possibly locked markWord.
-    __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, disp_hdr);
-    __ br(Assembler::EQ, cont);
+      // Compare object markWord with an unlocked value (tmp) and if
+      // equal exchange the stack address of our box with object markWord.
+      // On failure disp_hdr contains the possibly locked markWord.
+      __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
+                 /*release*/ true, /*weak*/ false, disp_hdr);
+      __ br(Assembler::EQ, cont);
 
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label cont
+      // If the compare-and-exchange succeeded, then we found an unlocked
+      // object, will have now locked it will continue at label cont
 
-    __ bind(cas_failed);
-    // We did not see an unlocked object so try the fast recursive case.
+      __ bind(cas_failed);
+      // We did not see an unlocked object so try the fast recursive case.
 
-    // Check if the owner is self by comparing the value in the
-    // markWord of object (disp_hdr) with the stack pointer.
-    __ mov(rscratch1, sp);
-    __ sub(disp_hdr, disp_hdr, rscratch1);
-    __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-    // If condition is true we are cont and hence we can store 0 as the
-    // displaced header in the box, which indicates that it is a recursive lock.
-    __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-    __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
+      // Check if the owner is self by comparing the value in the
+      // markWord of object (disp_hdr) with the stack pointer.
+      __ mov(rscratch1, sp);
+      __ sub(disp_hdr, disp_hdr, rscratch1);
+      __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+      // If condition is true we are cont and hence we can store 0 as the
+      // displaced header in the box, which indicates that it is a recursive lock.
+      __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
+      __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    } else {
+      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    }
     __ b(cont);
 
     // Handle existing monitor.
@@ -3866,7 +3981,7 @@ encode %{
     // Try to CAS m->owner from NULL to current thread.
     __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, noreg); // Sets flags for result
+               /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
 
     // Store a non-null value into the box to avoid looking like a re-entrant
     // lock. The fast-path monitor unlock code checks for
@@ -3874,6 +3989,15 @@ encode %{
     // relevant bit set, and also matches ObjectSynchronizer::enter.
     __ mov(tmp, (address)markWord::unused_mark().value());
     __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+    __ br(Assembler::EQ, cont); // CAS success means locking succeeded
+
+    __ cmp(rscratch1, rthread);
+    __ br(Assembler::NE, cont); // Check for recursive locking
+
+    // Recursive lock case
+    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1);
+    // flag == EQ still from the cmp above, checking if this is a reentrant lock
 
     __ bind(cont);
     // flag == EQ indicates success
@@ -3891,23 +4015,29 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    // Find the lock address and load the displaced header from the stack.
-    __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    if (!UseHeavyMonitors) {
+      // Find the lock address and load the displaced header from the stack.
+      __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
-    // If the displaced header is 0, we have a recursive unlock.
-    __ cmp(disp_hdr, zr);
-    __ br(Assembler::EQ, cont);
+      // If the displaced header is 0, we have a recursive unlock.
+      __ cmp(disp_hdr, zr);
+      __ br(Assembler::EQ, cont);
+    }
 
     // Handle existing monitor.
     __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
     __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
 
-    // Check if it is still a light weight lock, this is is true if we
-    // see the stack address of the basicLock in the markWord of the
-    // object.
+    if (!UseHeavyMonitors) {
+      // Check if it is still a light weight lock, this is is true if we
+      // see the stack address of the basicLock in the markWord of the
+      // object.
 
-    __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-               /*release*/ true, /*weak*/ false, tmp);
+      __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
+                 /*release*/ true, /*weak*/ false, tmp);
+    } else {
+      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
+    }
     __ b(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
@@ -3916,13 +4046,18 @@ encode %{
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-    __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
-    __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if there are 0 recursions
-    __ cmp(rscratch1, zr); // Sets flags for result
-    __ br(Assembler::NE, cont);
 
+    Label notRecursive;
+    __ cbz(disp_hdr, notRecursive);
+
+    // Recursive lock
+    __ sub(disp_hdr, disp_hdr, 1u);
+    __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ cmp(disp_hdr, disp_hdr); // Sets flags for result
+    __ b(cont);
+
+    __ bind(notRecursive);
     __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
     __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
@@ -4142,6 +4277,16 @@ operand immI_M1()
 operand immIExt()
 %{
   predicate(0 <= n->get_int() && (n->get_int() <= 4));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_gt_1()
+%{
+  predicate(n->get_int() > 1);
   match(ConI);
 
   op_cost(0);
@@ -4565,6 +4710,17 @@ operand immL8_shift8()
   interface(CONST_INTER);
 %}
 
+// 8 bit integer valid for vector add sub immediate
+operand immBAddSubV()
+%{
+  predicate(n->get_int() <= 255 && n->get_int() >= -255);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // 32 bit integer valid for add sub immediate
 operand immIAddSub()
 %{
@@ -4575,8 +4731,39 @@ operand immIAddSub()
   interface(CONST_INTER);
 %}
 
+// 32 bit integer valid for vector add sub immediate
+operand immIAddSubV()
+%{
+  predicate(Assembler::operand_valid_for_sve_add_sub_immediate((int64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // 32 bit unsigned integer valid for logical immediate
-// TODO -- check this is right when e.g the mask is 0x80000000
+
+operand immBLog()
+%{
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerByte, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immSLog()
+%{
+  predicate(Assembler::operand_valid_for_sve_logical_immediate(BitsPerShort, (uint64_t)n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immILog()
 %{
   predicate(Assembler::operand_valid_for_logical_immediate(/*is32*/true, (uint64_t)n->get_int()));
@@ -4649,6 +4836,17 @@ operand immLAddSub()
 %{
   predicate(Assembler::operand_valid_for_add_sub_immediate(n->get_long()));
   match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 64 bit integer valid for addv subv immediate
+operand immLAddSubV()
+%{
+  predicate(Assembler::operand_valid_for_sve_add_sub_immediate(n->get_long()));
+  match(ConL);
+
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -5507,6 +5705,7 @@ operand pReg()
 %{
   constraint(ALLOC_IN_RC(pr_reg));
   match(RegVectMask);
+  match(pRegGov);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -8112,6 +8311,18 @@ instruct storeB_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmB0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreB mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrb  zr, $mem\t# byte" %}
+
+  ins_encode(aarch64_enc_stlrb0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Char/Short
 instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
 %{
@@ -8121,6 +8332,18 @@ instruct storeC_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   format %{ "stlrh  $src, $mem\t# short" %}
 
   ins_encode(aarch64_enc_stlrh(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmC0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreC mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrh  zr, $mem\t# short" %}
+
+  ins_encode(aarch64_enc_stlrh0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8139,6 +8362,18 @@ instruct storeI_volatile(iRegIorL2I src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmI0_volatile(immI0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem(StoreI mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Long (64 bit signed)
 instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
 %{
@@ -8148,6 +8383,18 @@ instruct storeL_volatile(iRegL src, /* sync_memory*/indirect mem)
   format %{ "stlr  $src, $mem\t# int" %}
 
   ins_encode(aarch64_enc_stlr(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmL0_volatile(immL0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreL mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# int" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8165,6 +8412,18 @@ instruct storeP_volatile(iRegP src, /* sync_memory*/indirect mem)
   ins_pipe(pipe_class_memory);
 %}
 
+instruct storeimmP0_volatile(immP0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreP mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlr  zr, $mem\t# ptr" %}
+
+  ins_encode(aarch64_enc_stlr0(mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
 // Store Compressed Pointer
 instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
 %{
@@ -8174,6 +8433,18 @@ instruct storeN_volatile(iRegN src, /* sync_memory*/indirect mem)
   format %{ "stlrw  $src, $mem\t# compressed ptr" %}
 
   ins_encode(aarch64_enc_stlrw(src, mem));
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct storeimmN0_volatile(immN0 zero, /* sync_memory*/indirect mem)
+%{
+  match(Set mem (StoreN mem zero));
+
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  zr, $mem\t# compressed ptr" %}
+
+  ins_encode(aarch64_enc_stlrw0(mem));
 
   ins_pipe(pipe_class_memory);
 %}
@@ -8378,10 +8649,10 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
     __ movw($src$$Register, $src$$Register); // ensure top 32 bits 0
-    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8403,7 +8674,7 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8421,10 +8692,10 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
             "addv   $tmp, $tmp\t# vector (8B)\n\t"
             "mov    $dst, $tmp\t# vector (1D)" %}
   ins_encode %{
-    __ mov($tmp$$FloatRegister, __ T1D, 0, $src$$Register);
+    __ mov($tmp$$FloatRegister, __ D, 0, $src$$Register);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8446,7 +8717,7 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
     __ cnt($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
     __ addv($tmp$$FloatRegister, __ T8B, $tmp$$FloatRegister);
-    __ mov($dst$$Register, $tmp$$FloatRegister, __ T1D, 0);
+    __ mov($dst$$Register, $tmp$$FloatRegister, __ D, 0);
   %}
 
   ins_pipe(pipe_class_default);
@@ -8551,6 +8822,7 @@ instruct membar_release() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(VOLATILE_REF_COST);
 
   format %{ "MEMBAR-store-store" %}
@@ -8845,6 +9117,17 @@ instruct castVVX(vecX dst)
 %}
 
 instruct castVV(vReg dst)
+%{
+  match(Set dst (CastVV dst));
+
+  size(0);
+  format %{ "# castVV of $dst" %}
+  ins_encode(/* empty encoding */);
+  ins_cost(0);
+  ins_pipe(pipe_class_empty);
+%}
+
+instruct castVVMask(pRegGov dst)
 %{
   match(Set dst (CastVV dst));
 
@@ -10877,7 +11160,6 @@ instruct msubI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3)
 
 instruct mnegI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI0 zero) %{
   match(Set dst (MulI (SubI zero src1) src2));
-  match(Set dst (MulI src1 (SubI zero src2)));
 
   ins_cost(INSN_COST * 3);
   format %{ "mneg  $dst, $src1, $src2" %}
@@ -10929,7 +11211,6 @@ instruct msubL(iRegLNoSp dst, iRegL src1, iRegL src2, iRegL src3) %{
 
 instruct mnegL(iRegLNoSp dst, iRegL src1, iRegL src2, immL0 zero) %{
   match(Set dst (MulL (SubL zero src1) src2));
-  match(Set dst (MulL src1 (SubL zero src2)));
 
   ins_cost(INSN_COST * 5);
   format %{ "mneg  $dst, $src1, $src2" %}
@@ -10979,7 +11260,6 @@ instruct smsubL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegLNoSp src3)
 
 instruct smnegL(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2, immL0 zero) %{
   match(Set dst (MulL (SubL zero (ConvI2L src1)) (ConvI2L src2)));
-  match(Set dst (MulL (ConvI2L src1) (SubL zero (ConvI2L src2))));
 
   ins_cost(INSN_COST * 3);
   format %{ "smnegl  $dst, $src1, $src2" %}
@@ -14339,6 +14619,18 @@ instruct signumF_reg(vRegF dst, vRegF src, vRegF zero, vRegF one) %{
   ins_pipe(fp_uop_d);
 %}
 
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(INSN_COST);
+
+  format %{ "onspinwait" %}
+
+  ins_encode %{
+    __ spin_wait();
+  %}
+  ins_pipe(pipe_class_empty);
+%}
+
 // ============================================================================
 // Logical Instructions
 
@@ -14983,12 +15275,12 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_pipe(pipe_class_memory);
 %}
 
-instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, Universe dummy, rFlagsReg cr)
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe dummy, rFlagsReg cr)
 %{
   predicate((uint64_t)n->in(2)->get_long()
             < (uint64_t)(BlockZeroingLowLimit >> LogBytesPerWord));
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL base);
+  effect(TEMP temp, USE_KILL base, KILL cr);
 
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}
@@ -16788,13 +17080,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
+instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
 %{
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(USE_KILL ary1, USE_KILL len, KILL cr);
-  format %{ "has negatives byte[] $ary1,$len -> $result" %}
+  format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
-    address tpc = __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
     if (tpc == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
@@ -16810,16 +17102,17 @@ instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                          iRegI_R0 result, rFlagsReg cr)
 %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
+         USE_KILL src, USE_KILL dst, USE len, KILL cr);
 
-  format %{ "String Compress $src,$dst -> $result    // KILL R1, R2, R3, R4" %}
+  format %{ "String Compress $src,$dst,$len -> $result  // KILL $src,$dst" %}
   ins_encode %{
     __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
+                           $result$$Register,
                            $tmp1$$FloatRegister, $tmp2$$FloatRegister,
-                           $tmp3$$FloatRegister, $tmp4$$FloatRegister,
-                           $result$$Register);
+                           $tmp3$$FloatRegister, $tmp4$$FloatRegister);
   %}
-  ins_pipe( pipe_slow );
+  ins_pipe(pipe_slow);
 %}
 
 // fast byte[] to char[] inflation
@@ -16844,21 +17137,43 @@ instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                          vRegD_V0 Vtmp1, vRegD_V1 Vtmp2,
-                          vRegD_V2 Vtmp3, vRegD_V3 Vtmp4,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1,
+                          vRegD_V2 vtmp2, vRegD_V3 vtmp3,
                           iRegI_R0 result, rFlagsReg cr)
 %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
-  effect(USE_KILL src, USE_KILL dst, USE_KILL len,
-         KILL Vtmp1, KILL Vtmp2, KILL Vtmp3, KILL Vtmp4, KILL cr);
+  effect(USE_KILL src, USE_KILL dst, USE len,
+         KILL vtmp0, KILL vtmp1, KILL vtmp2, KILL vtmp3, KILL cr);
 
-  format %{ "Encode array $src,$dst,$len -> $result" %}
+  format %{ "Encode ISO array $src,$dst,$len -> $result" %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
-         $result$$Register, $Vtmp1$$FloatRegister,  $Vtmp2$$FloatRegister,
-         $Vtmp3$$FloatRegister,  $Vtmp4$$FloatRegister);
+                        $result$$Register, false,
+                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
   %}
-  ins_pipe( pipe_class_memory );
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct encode_ascii_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+                            vRegD_V0 vtmp0, vRegD_V1 vtmp1,
+                            vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                            iRegI_R0 result, rFlagsReg cr)
+%{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(USE_KILL src, USE_KILL dst, USE len,
+         KILL vtmp0, KILL vtmp1, KILL vtmp2, KILL vtmp3, KILL cr);
+
+  format %{ "Encode ASCII array $src,$dst,$len -> $result" %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $result$$Register, true,
+                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_memory);
 %}
 
 // ============================================================================

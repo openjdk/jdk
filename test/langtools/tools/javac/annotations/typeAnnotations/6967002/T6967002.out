@@ -1,2 +1,2 @@
-T6967002.java:10:22: compiler.err.expected: ')'
+T6967002.java:10:22: compiler.err.expected2: ')', ','
 1 error

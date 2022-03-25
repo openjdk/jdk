@@ -244,12 +244,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             c.execute(ptr -> nativeRevalidateNSWindowShadow(ptr));
         }},
         new Property<CPlatformWindow>(WINDOW_DOCUMENT_FILE) { public void applyProperty(final CPlatformWindow c, final Object value) {
-            if (value == null || !(value instanceof java.io.File)) {
+            if (!(value instanceof java.io.File file)) {
                 c.execute(ptr->nativeSetNSWindowRepresentedFilename(ptr, null));
                 return;
             }
 
-            final String filename = ((java.io.File)value).getAbsolutePath();
+            final String filename = file.getAbsolutePath();
             c.execute(ptr->nativeSetNSWindowRepresentedFilename(ptr, filename));
         }},
         new Property<CPlatformWindow>(WINDOW_FULL_CONTENT) {
@@ -363,7 +363,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         });
         setPtr(ref.get());
-
+        if (peer != null) { // Not applicable to CWarningWindow
+            peer.setTextured(IS(TEXTURED, styleBits));
+        }
         if (target instanceof javax.swing.RootPaneContainer) {
             final javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
             if (rootpane != null) rootpane.addPropertyChangeListener("ancestor", new PropertyChangeListener() {
@@ -529,8 +531,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 styleBits = SET(styleBits, IS_MODAL, true);
             }
         }
-
-        peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
     }
@@ -928,6 +928,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override
     public void setOpaque(boolean isOpaque) {
+        contentView.setWindowLayerOpaque(isOpaque);
         execute(ptr -> CWrapper.NSWindow.setOpaque(ptr, isOpaque));
         boolean isTextured = (peer == null) ? false : peer.isTextured();
         if (!isTextured) {

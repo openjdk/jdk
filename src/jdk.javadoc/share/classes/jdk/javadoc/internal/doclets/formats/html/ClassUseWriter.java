@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
@@ -178,7 +176,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<PackageElement, List<Element>> map = new HashMap<>();
         List<? extends Element> elements = (List<? extends Element>) classMap.get(typeElement);
         if (elements != null) {
-            Collections.sort(elements, comparators.makeClassUseComparator());
+            elements.sort(comparators.makeClassUseComparator());
             for (Element e : elements) {
                 PackageElement pkg = utils.containingPackage(e);
                 pkgSet.add(pkg);
@@ -298,8 +296,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param contentTree the content tree to which the class elements will be added
      */
     protected void addClassList(Content contentTree) {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
+        HtmlTree ul = HtmlTree.UL(HtmlStyle.blockList);
         for (PackageElement pkg : pkgSet) {
             HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.detail)
                     .setId(htmlIds.forPackage(pkg));

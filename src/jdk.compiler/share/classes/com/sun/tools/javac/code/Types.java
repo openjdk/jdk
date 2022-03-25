@@ -1664,7 +1664,7 @@ public class Types {
                 && s.hasTag(CLASS) && s.tsym.kind.matches(Kinds.KindSelector.TYP)
                 && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
-                    false :
+                    true :
                     !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
         }
         return result;
@@ -4896,7 +4896,7 @@ public class Types {
      * type itself) of the operation implemented by this visitor; use
      * Void if a second argument is not needed.
      */
-    public static abstract class DefaultTypeVisitor<R,S> implements Type.Visitor<R,S> {
+    public abstract static class DefaultTypeVisitor<R,S> implements Type.Visitor<R,S> {
         public final R visit(Type t, S s)               { return t.accept(this, s); }
         public R visitClassType(ClassType t, S s)       { return visitType(t, s); }
         public R visitWildcardType(WildcardType t, S s) { return visitType(t, s); }
@@ -4923,7 +4923,7 @@ public class Types {
      * symbol itself) of the operation implemented by this visitor; use
      * Void if a second argument is not needed.
      */
-    public static abstract class DefaultSymbolVisitor<R,S> implements Symbol.Visitor<R,S> {
+    public abstract static class DefaultSymbolVisitor<R,S> implements Symbol.Visitor<R,S> {
         public final R visit(Symbol s, S arg)                   { return s.accept(this, arg); }
         public R visitClassSymbol(ClassSymbol s, S arg)         { return visitSymbol(s, arg); }
         public R visitMethodSymbol(MethodSymbol s, S arg)       { return visitSymbol(s, arg); }
@@ -4946,7 +4946,7 @@ public class Types {
      * type itself) of the operation implemented by this visitor; use
      * Void if a second argument is not needed.
      */
-    public static abstract class SimpleVisitor<R,S> extends DefaultTypeVisitor<R,S> {
+    public abstract static class SimpleVisitor<R,S> extends DefaultTypeVisitor<R,S> {
         @Override
         public R visitCapturedType(CapturedType t, S s) {
             return visitTypeVar(t, s);
@@ -4966,7 +4966,7 @@ public class Types {
      * form Type&nbsp;&times;&nbsp;Type&nbsp;&rarr;&nbsp;Boolean.
      * <!-- In plain text: Type x Type -> Boolean -->
      */
-    public static abstract class TypeRelation extends SimpleVisitor<Boolean,Type> {}
+    public abstract static class TypeRelation extends SimpleVisitor<Boolean,Type> {}
 
     /**
      * A convenience visitor for implementing operations that only
@@ -4976,7 +4976,7 @@ public class Types {
      * @param <R> the return type of the operation implemented by this
      * visitor; use Void if no return type is needed.
      */
-    public static abstract class UnaryVisitor<R> extends SimpleVisitor<R,Void> {
+    public abstract static class UnaryVisitor<R> extends SimpleVisitor<R,Void> {
         public final R visit(Type t) { return t.accept(this, null); }
     }
 
@@ -5041,7 +5041,7 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="Signature Generation">
 
-    public static abstract class SignatureGenerator {
+    public abstract static class SignatureGenerator {
 
         public static class InvalidSignatureException extends RuntimeException {
             private static final long serialVersionUID = 0;

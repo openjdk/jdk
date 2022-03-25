@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 /**
  * An extension to the base lexical analyzer (JavaTokenizer) that
  * captures and processes the contents of doc comments. It does
- * so by stripping the leading whitespace and comment starts from
+ * so by stripping the leading whitespace and comment stars from
  * each line of the Javadoc comment.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -89,7 +89,7 @@ public class JavadocTokenizer extends JavaTokenizer {
      */
     protected static class JavadocComment extends BasicComment {
         /**
-         * Pattern used to detect a well formed @deprecated tag in a JaavDoc
+         * Pattern used to detect a well formed @deprecated tag in a Javadoc
          * comment.
          */
         private static final Pattern DEPRECATED_PATTERN =

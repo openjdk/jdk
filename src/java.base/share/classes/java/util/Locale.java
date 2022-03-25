@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1126,8 +1126,9 @@ public final class Locale implements Cloneable, Serializable {
      * The returned array represents the union of locales supported
      * by the Java runtime environment and by installed
      * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
-     * implementations.  It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * implementations. At a minimum, the returned array must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
      *
      * @return An array of installed locales.
      */
@@ -2002,7 +2003,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns a name for the locale that is appropriate for display
      * to the user.  This will be the values returned by
-     * getDisplayLanguage(), getDisplayScript(),getDisplayCountry()
+     * getDisplayLanguage(), getDisplayScript(), getDisplayCountry(),
      * getDisplayVariant(), and optional <a href="./Locale.html#def_locale_extension">
      * Unicode extensions</a> assembled into a single string. The non-empty
      * values are used in order, with the second and subsequent names in

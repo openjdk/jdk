@@ -76,7 +76,6 @@ import jdk.internal.misc.Unsafe;
  * @author  Frank Yellin
  * @since   1.0
  */
-@SuppressWarnings("exports")
 @RandomGeneratorProperties(
         name = "Random",
         i = 48, j = 0, k = 0,

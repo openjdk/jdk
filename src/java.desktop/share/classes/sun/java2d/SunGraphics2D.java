@@ -409,7 +409,7 @@ public final class SunGraphics2D
      * drawback of the workaround is that the resulting
      * clip and device origin cannot be "enforced".
      *
-     * @exception IllegalStateException If the Graphics
+     * @throws IllegalStateException If the Graphics
      * to be constrained has a complex transform.
      */
     @Override
@@ -2838,22 +2838,22 @@ public final class SunGraphics2D
                 WritableRaster wRaster = null;
                 if (raster instanceof WritableRaster) {
                     wRaster = (WritableRaster)raster;
+
+                    // Translate wRaster to start at (0, 0) and to contain
+                    // only the relevent portion of the tile
+                    wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
+                                                          tileRect.width,
+                                                          tileRect.height,
+                                                          0, 0,
+                                                          null);
                 } else {
                     // Create a WritableRaster in the same coordinate system
-                    // as the original raster.
+                    // as the original raster, except origin which is (0,0).
                     wRaster =
                         Raster.createWritableRaster(raster.getSampleModel(),
                                                     raster.getDataBuffer(),
                                                     null);
                 }
-
-                // Translate wRaster to start at (0, 0) and to contain
-                // only the relevent portion of the tile
-                wRaster = wRaster.createWritableChild(tileRect.x, tileRect.y,
-                                                      tileRect.width,
-                                                      tileRect.height,
-                                                      0, 0,
-                                                      null);
 
                 // Wrap wRaster in a BufferedImage
                 BufferedImage bufImg =
@@ -3656,7 +3656,7 @@ public final class SunGraphics2D
      * enough to know that if our override is empty then it should not
      * mark us as finalizeable.
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     public void finalize() {
         // DO NOT REMOVE THIS METHOD
     }

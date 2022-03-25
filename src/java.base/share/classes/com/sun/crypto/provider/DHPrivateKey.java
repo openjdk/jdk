@@ -291,10 +291,8 @@ final class DHPrivateKey implements PrivateKey,
             DerInputStream in = new DerInputStream(this.key);
             this.x = in.getBigInteger();
         } catch (IOException e) {
-            InvalidKeyException ike = new InvalidKeyException(
-                "Error parsing key encoding: " + e.getMessage());
-            ike.initCause(e);
-            throw ike;
+            throw new InvalidKeyException(
+                "Error parsing key encoding: " + e.getMessage(), e);
         }
     }
 

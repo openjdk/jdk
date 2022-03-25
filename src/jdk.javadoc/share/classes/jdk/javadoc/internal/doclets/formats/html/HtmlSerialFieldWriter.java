@@ -71,9 +71,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public Content getSerializableFieldsHeader() {
-        HtmlTree ul = new HtmlTree(TagName.UL);
-        ul.setStyle(HtmlStyle.blockList);
-        return ul;
+        return HtmlTree.UL(HtmlStyle.blockList);
     }
 
     /**
@@ -84,9 +82,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     @Override
     public Content getFieldsContentHeader(boolean isLastContent) {
-        HtmlTree li = new HtmlTree(TagName.LI);
-        li.setStyle(HtmlStyle.blockList);
-        return li;
+        return new HtmlTree(TagName.LI).setStyle(HtmlStyle.blockList);
     }
 
     /**

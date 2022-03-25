@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "asm/register.hpp"
 #include "atomic_aarch64.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -1320,10 +1321,10 @@ class StubGenerator: public StubCodeGenerator {
   void clobber_registers() {
 #ifdef ASSERT
     RegSet clobbered
-      = MacroAssembler::call_clobbered_registers() - rscratch1;
+      = MacroAssembler::call_clobbered_gp_registers() - rscratch1;
     __ mov(rscratch1, (uint64_t)0xdeadbeef);
     __ orr(rscratch1, rscratch1, rscratch1, Assembler::LSL, 32);
-    for (RegSetIterator<> it = clobbered.begin(); *it != noreg; ++it) {
+    for (RegSetIterator<Register> it = clobbered.begin(); *it != noreg; ++it) {
       __ mov(*it, rscratch1);
     }
 #endif
@@ -2560,8 +2561,6 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
 
-    Label L_doLast;
-
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
@@ -2572,75 +2571,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    __ ld1(v0, __ T16B, from); // get 16 bytes of input
-
-    __ ld1(v1, v2, v3, v4, __ T16B, __ post(key, 64));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-    __ rev32(v3, __ T16B, v3);
-    __ rev32(v4, __ T16B, v4);
-    __ aese(v0, v1);
-    __ aesmc(v0, v0);
-    __ aese(v0, v2);
-    __ aesmc(v0, v0);
-    __ aese(v0, v3);
-    __ aesmc(v0, v0);
-    __ aese(v0, v4);
-    __ aesmc(v0, v0);
-
-    __ ld1(v1, v2, v3, v4, __ T16B, __ post(key, 64));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-    __ rev32(v3, __ T16B, v3);
-    __ rev32(v4, __ T16B, v4);
-    __ aese(v0, v1);
-    __ aesmc(v0, v0);
-    __ aese(v0, v2);
-    __ aesmc(v0, v0);
-    __ aese(v0, v3);
-    __ aesmc(v0, v0);
-    __ aese(v0, v4);
-    __ aesmc(v0, v0);
-
-    __ ld1(v1, v2, __ T16B, __ post(key, 32));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-
-    __ cmpw(keylen, 44);
-    __ br(Assembler::EQ, L_doLast);
-
-    __ aese(v0, v1);
-    __ aesmc(v0, v0);
-    __ aese(v0, v2);
-    __ aesmc(v0, v0);
-
-    __ ld1(v1, v2, __ T16B, __ post(key, 32));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-
-    __ cmpw(keylen, 52);
-    __ br(Assembler::EQ, L_doLast);
-
-    __ aese(v0, v1);
-    __ aesmc(v0, v0);
-    __ aese(v0, v2);
-    __ aesmc(v0, v0);
-
-    __ ld1(v1, v2, __ T16B, __ post(key, 32));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-
-    __ BIND(L_doLast);
-
-    __ aese(v0, v1);
-    __ aesmc(v0, v0);
-    __ aese(v0, v2);
-
-    __ ld1(v1, __ T16B, key);
-    __ rev32(v1, __ T16B, v1);
-    __ eor(v0, __ T16B, v0, v1);
-
-    __ st1(v0, __ T16B, to);
+    __ aesenc_loadkeys(key, keylen);
+    __ aesecb_encrypt(from, to, keylen);
 
     __ mov(r0, 0);
 
@@ -2673,76 +2605,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
-    __ ld1(v0, __ T16B, from); // get 16 bytes of input
-
-    __ ld1(v5, __ T16B, __ post(key, 16));
-    __ rev32(v5, __ T16B, v5);
-
-    __ ld1(v1, v2, v3, v4, __ T16B, __ post(key, 64));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-    __ rev32(v3, __ T16B, v3);
-    __ rev32(v4, __ T16B, v4);
-    __ aesd(v0, v1);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v2);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v3);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v4);
-    __ aesimc(v0, v0);
-
-    __ ld1(v1, v2, v3, v4, __ T16B, __ post(key, 64));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-    __ rev32(v3, __ T16B, v3);
-    __ rev32(v4, __ T16B, v4);
-    __ aesd(v0, v1);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v2);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v3);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v4);
-    __ aesimc(v0, v0);
-
-    __ ld1(v1, v2, __ T16B, __ post(key, 32));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-
-    __ cmpw(keylen, 44);
-    __ br(Assembler::EQ, L_doLast);
-
-    __ aesd(v0, v1);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v2);
-    __ aesimc(v0, v0);
-
-    __ ld1(v1, v2, __ T16B, __ post(key, 32));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-
-    __ cmpw(keylen, 52);
-    __ br(Assembler::EQ, L_doLast);
-
-    __ aesd(v0, v1);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v2);
-    __ aesimc(v0, v0);
-
-    __ ld1(v1, v2, __ T16B, __ post(key, 32));
-    __ rev32(v1, __ T16B, v1);
-    __ rev32(v2, __ T16B, v2);
-
-    __ BIND(L_doLast);
-
-    __ aesd(v0, v1);
-    __ aesimc(v0, v0);
-    __ aesd(v0, v2);
-
-    __ eor(v0, __ T16B, v0, v5);
-
-    __ st1(v0, __ T16B, to);
+    __ aesecb_decrypt(from, to, key, keylen);
 
     __ mov(r0, 0);
 
@@ -2960,6 +2823,574 @@ class StubGenerator: public StubCodeGenerator {
 
       __ leave();
       __ ret(lr);
+
+    return start;
+  }
+
+  // CTR AES crypt.
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - counter vector byte array address
+  //   c_rarg4   - input length
+  //   c_rarg5   - saved encryptedCounter start
+  //   c_rarg6   - saved used length
+  //
+  // Output:
+  //   r0       - input length
+  //
+  address generate_counterMode_AESCrypt() {
+    const Register in = c_rarg0;
+    const Register out = c_rarg1;
+    const Register key = c_rarg2;
+    const Register counter = c_rarg3;
+    const Register saved_len = c_rarg4, len = r10;
+    const Register saved_encrypted_ctr = c_rarg5;
+    const Register used_ptr = c_rarg6, used = r12;
+
+    const Register offset = r7;
+    const Register keylen = r11;
+
+    const unsigned char block_size = 16;
+    const int bulk_width = 4;
+    // NB: bulk_width can be 4 or 8. 8 gives slightly faster
+    // performance with larger data sizes, but it also means that the
+    // fast path isn't used until you have at least 8 blocks, and up
+    // to 127 bytes of data will be executed on the slow path. For
+    // that reason, and also so as not to blow away too much icache, 4
+    // blocks seems like a sensible compromise.
+
+    // Algorithm:
+    //
+    //    if (len == 0) {
+    //        goto DONE;
+    //    }
+    //    int result = len;
+    //    do {
+    //        if (used >= blockSize) {
+    //            if (len >= bulk_width * blockSize) {
+    //                CTR_large_block();
+    //                if (len == 0)
+    //                    goto DONE;
+    //            }
+    //            for (;;) {
+    //                16ByteVector v0 = counter;
+    //                embeddedCipher.encryptBlock(v0, 0, encryptedCounter, 0);
+    //                used = 0;
+    //                if (len < blockSize)
+    //                    break;    /* goto NEXT */
+    //                16ByteVector v1 = load16Bytes(in, offset);
+    //                v1 = v1 ^ encryptedCounter;
+    //                store16Bytes(out, offset);
+    //                used = blockSize;
+    //                offset += blockSize;
+    //                len -= blockSize;
+    //                if (len == 0)
+    //                    goto DONE;
+    //            }
+    //        }
+    //      NEXT:
+    //        out[outOff++] = (byte)(in[inOff++] ^ encryptedCounter[used++]);
+    //        len--;
+    //    } while (len != 0);
+    //  DONE:
+    //    return result;
+    //
+    // CTR_large_block()
+    //    Wide bulk encryption of whole blocks.
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "counterMode_AESCrypt");
+    const address start = __ pc();
+    __ enter();
+
+    Label DONE, CTR_large_block, large_block_return;
+    __ ldrw(used, Address(used_ptr));
+    __ cbzw(saved_len, DONE);
+
+    __ mov(len, saved_len);
+    __ mov(offset, 0);
+
+    // Compute #rounds for AES based on the length of the key array
+    __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ aesenc_loadkeys(key, keylen);
+
+    {
+      Label L_CTR_loop, NEXT;
+
+      __ bind(L_CTR_loop);
+
+      __ cmp(used, block_size);
+      __ br(__ LO, NEXT);
+
+      // Maybe we have a lot of data
+      __ subsw(rscratch1, len, bulk_width * block_size);
+      __ br(__ HS, CTR_large_block);
+      __ BIND(large_block_return);
+      __ cbzw(len, DONE);
+
+      // Setup the counter
+      __ movi(v4, __ T4S, 0);
+      __ movi(v5, __ T4S, 1);
+      __ ins(v4, __ S, v5, 3, 3); // v4 contains { 0, 0, 0, 1 }
+
+      __ ld1(v0, __ T16B, counter); // Load the counter into v0
+      __ rev32(v16, __ T16B, v0);
+      __ addv(v16, __ T4S, v16, v4);
+      __ rev32(v16, __ T16B, v16);
+      __ st1(v16, __ T16B, counter); // Save the incremented counter back
+
+      {
+        // We have fewer than bulk_width blocks of data left. Encrypt
+        // them one by one until there is less than a full block
+        // remaining, being careful to save both the encrypted counter
+        // and the counter.
+
+        Label inner_loop;
+        __ bind(inner_loop);
+        // Counter to encrypt is in v0
+        __ aesecb_encrypt(noreg, noreg, keylen);
+        __ st1(v0, __ T16B, saved_encrypted_ctr);
+
+        // Do we have a remaining full block?
+
+        __ mov(used, 0);
+        __ cmp(len, block_size);
+        __ br(__ LO, NEXT);
+
+        // Yes, we have a full block
+        __ ldrq(v1, Address(in, offset));
+        __ eor(v1, __ T16B, v1, v0);
+        __ strq(v1, Address(out, offset));
+        __ mov(used, block_size);
+        __ add(offset, offset, block_size);
+
+        __ subw(len, len, block_size);
+        __ cbzw(len, DONE);
+
+        // Increment the counter, store it back
+        __ orr(v0, __ T16B, v16, v16);
+        __ rev32(v16, __ T16B, v16);
+        __ addv(v16, __ T4S, v16, v4);
+        __ rev32(v16, __ T16B, v16);
+        __ st1(v16, __ T16B, counter); // Save the incremented counter back
+
+        __ b(inner_loop);
+      }
+
+      __ BIND(NEXT);
+
+      // Encrypt a single byte, and loop.
+      // We expect this to be a rare event.
+      __ ldrb(rscratch1, Address(in, offset));
+      __ ldrb(rscratch2, Address(saved_encrypted_ctr, used));
+      __ eor(rscratch1, rscratch1, rscratch2);
+      __ strb(rscratch1, Address(out, offset));
+      __ add(offset, offset, 1);
+      __ add(used, used, 1);
+      __ subw(len, len,1);
+      __ cbnzw(len, L_CTR_loop);
+    }
+
+    __ bind(DONE);
+    __ strw(used, Address(used_ptr));
+    __ mov(r0, saved_len);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    // Bulk encryption
+
+    __ BIND (CTR_large_block);
+    assert(bulk_width == 4 || bulk_width == 8, "must be");
+
+    if (bulk_width == 8) {
+      __ sub(sp, sp, 4 * 16);
+      __ st1(v12, v13, v14, v15, __ T16B, Address(sp));
+    }
+    __ sub(sp, sp, 4 * 16);
+    __ st1(v8, v9, v10, v11, __ T16B, Address(sp));
+    RegSet saved_regs = (RegSet::of(in, out, offset)
+                         + RegSet::of(saved_encrypted_ctr, used_ptr, len));
+    __ push(saved_regs, sp);
+    __ andr(len, len, -16 * bulk_width);  // 8/4 encryptions, 16 bytes per encryption
+    __ add(in, in, offset);
+    __ add(out, out, offset);
+
+    // Keys should already be loaded into the correct registers
+
+    __ ld1(v0, __ T16B, counter); // v0 contains the first counter
+    __ rev32(v16, __ T16B, v0); // v16 contains byte-reversed counter
+
+    // AES/CTR loop
+    {
+      Label L_CTR_loop;
+      __ BIND(L_CTR_loop);
+
+      // Setup the counters
+      __ movi(v8, __ T4S, 0);
+      __ movi(v9, __ T4S, 1);
+      __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
+
+      for (FloatRegister f = v0; f < v0 + bulk_width; f++) {
+        __ rev32(f, __ T16B, v16);
+        __ addv(v16, __ T4S, v16, v8);
+      }
+
+      __ ld1(v8, v9, v10, v11, __ T16B, __ post(in, 4 * 16));
+
+      // Encrypt the counters
+      __ aesecb_encrypt(noreg, noreg, keylen, v0, bulk_width);
+
+      if (bulk_width == 8) {
+        __ ld1(v12, v13, v14, v15, __ T16B, __ post(in, 4 * 16));
+      }
+
+      // XOR the encrypted counters with the inputs
+      for (int i = 0; i < bulk_width; i++) {
+        __ eor(v0 + i, __ T16B, v0 + i, v8 + i);
+      }
+
+      // Write the encrypted data
+      __ st1(v0, v1, v2, v3, __ T16B, __ post(out, 4 * 16));
+      if (bulk_width == 8) {
+        __ st1(v4, v5, v6, v7, __ T16B, __ post(out, 4 * 16));
+      }
+
+      __ subw(len, len, 16 * bulk_width);
+      __ cbnzw(len, L_CTR_loop);
+    }
+
+    // Save the counter back where it goes
+    __ rev32(v16, __ T16B, v16);
+    __ st1(v16, __ T16B, counter);
+
+    __ pop(saved_regs, sp);
+
+    __ ld1(v8, v9, v10, v11, __ T16B, __ post(sp, 4 * 16));
+    if (bulk_width == 8) {
+      __ ld1(v12, v13, v14, v15, __ T16B, __ post(sp, 4 * 16));
+    }
+
+    __ andr(rscratch1, len, -16 * bulk_width);
+    __ sub(len, len, rscratch1);
+    __ add(offset, offset, rscratch1);
+    __ mov(used, 16);
+    __ strw(used, Address(used_ptr));
+    __ b(large_block_return);
+
+    return start;
+  }
+
+  // Vector AES Galois Counter Mode implementation. Parameters:
+  //
+  // in = c_rarg0
+  // len = c_rarg1
+  // ct = c_rarg2 - ciphertext that ghash will read (in for encrypt, out for decrypt)
+  // out = c_rarg3
+  // key = c_rarg4
+  // state = c_rarg5 - GHASH.state
+  // subkeyHtbl = c_rarg6 - powers of H
+  // counter = c_rarg7 - 16 bytes of CTR
+  // return - number of processed bytes
+  address generate_galoisCounterMode_AESCrypt() {
+    address ghash_polynomial = __ pc();
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    __ align(CodeEntryAlignment);
+     StubCodeMark mark(this, "StubRoutines", "galoisCounterMode_AESCrypt");
+    address start = __ pc();
+    __ enter();
+
+    const Register in = c_rarg0;
+    const Register len = c_rarg1;
+    const Register ct = c_rarg2;
+    const Register out = c_rarg3;
+    // and updated with the incremented counter in the end
+
+    const Register key = c_rarg4;
+    const Register state = c_rarg5;
+
+    const Register subkeyHtbl = c_rarg6;
+
+    const Register counter = c_rarg7;
+
+    const Register keylen = r10;
+    // Save state before entering routine
+    __ sub(sp, sp, 4 * 16);
+    __ st1(v12, v13, v14, v15, __ T16B, Address(sp));
+    __ sub(sp, sp, 4 * 16);
+    __ st1(v8, v9, v10, v11, __ T16B, Address(sp));
+
+    // __ andr(len, len, -512);
+    __ andr(len, len, -16 * 8);  // 8 encryptions, 16 bytes per encryption
+    __ str(len, __ pre(sp, -2 * wordSize));
+
+    Label DONE;
+    __ cbz(len, DONE);
+
+    // Compute #rounds for AES based on the length of the key array
+    __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ aesenc_loadkeys(key, keylen);
+    __ ld1(v0, __ T16B, counter); // v0 contains the first counter
+    __ rev32(v16, __ T16B, v0); // v16 contains byte-reversed counter
+
+    // AES/CTR loop
+    {
+      Label L_CTR_loop;
+      __ BIND(L_CTR_loop);
+
+      // Setup the counters
+      __ movi(v8, __ T4S, 0);
+      __ movi(v9, __ T4S, 1);
+      __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
+      for (FloatRegister f = v0; f < v8; f++) {
+        __ rev32(f, __ T16B, v16);
+        __ addv(v16, __ T4S, v16, v8);
+      }
+
+      __ ld1(v8, v9, v10, v11, __ T16B, __ post(in, 4 * 16));
+
+      // Encrypt the counters
+      __ aesecb_encrypt(noreg, noreg, keylen, v0, /*unrolls*/8);
+
+      __ ld1(v12, v13, v14, v15, __ T16B, __ post(in, 4 * 16));
+
+      // XOR the encrypted counters with the inputs
+      for (int i = 0; i < 8; i++) {
+        __ eor(v0 + i, __ T16B, v0 + i, v8 + i);
+      }
+      __ st1(v0, v1, v2, v3, __ T16B, __ post(out, 4 * 16));
+      __ st1(v4, v5, v6, v7, __ T16B, __ post(out, 4 * 16));
+
+      __ subw(len, len, 16 * 8);
+      __ cbnzw(len, L_CTR_loop);
+    }
+
+    __ rev32(v16, __ T16B, v16);
+    __ st1(v16, __ T16B, counter);
+
+    __ ldr(len, Address(sp));
+    __ lsr(len, len, exact_log2(16));  // We want the count of blocks
+
+    // GHASH/CTR loop
+    __ ghash_processBlocks_wide(ghash_polynomial, state, subkeyHtbl, ct,
+                                len, /*unrolls*/4);
+
+#ifdef ASSERT
+    { Label L;
+      __ cmp(len, (unsigned char)0);
+      __ br(Assembler::EQ, L);
+      __ stop("stubGenerator: abort");
+      __ bind(L);
+  }
+#endif
+
+  __ bind(DONE);
+    // Return the number of bytes processed
+    __ ldr(r0, __ post(sp, 2 * wordSize));
+
+    __ ld1(v8, v9, v10, v11, __ T16B, __ post(sp, 4 * 16));
+    __ ld1(v12, v13, v14, v15, __ T16B, __ post(sp, 4 * 16));
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+     return start;
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - int[]   SHA.state
+  //   c_rarg2   - int     offset
+  //   c_rarg3   - int     limit
+  //
+  address generate_md5_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf       = c_rarg0;
+    Register state     = c_rarg1;
+    Register ofs       = c_rarg2;
+    Register limit     = c_rarg3;
+    Register a         = r4;
+    Register b         = r5;
+    Register c         = r6;
+    Register d         = r7;
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    Label keys;
+    Label md5_loop;
+
+    __ BIND(md5_loop);
+
+    // Save hash values for addition after rounds
+    __ ldrw(a, Address(state,  0));
+    __ ldrw(b, Address(state,  4));
+    __ ldrw(c, Address(state,  8));
+    __ ldrw(d, Address(state, 12));
+
+#define FF(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch3, r3, r4);                  \
+    __ movw(rscratch2, t);                       \
+    __ andw(rscratch3, rscratch3, r2);           \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch3, r4);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define GG(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch2, r2, r3);                  \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ andw(rscratch3, rscratch2, r4);           \
+    __ movw(rscratch2, t);                       \
+    __ eorw(rscratch3, rscratch3, r3);           \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define HH(r1, r2, r3, r4, k, s, t)              \
+    __ eorw(rscratch3, r3, r4);                  \
+    __ movw(rscratch2, t);                       \
+    __ addw(rscratch4, r1, rscratch2);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch3, r2);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+#define II(r1, r2, r3, r4, k, s, t)              \
+    __ movw(rscratch3, t);                       \
+    __ ornw(rscratch2, r2, r4);                  \
+    __ addw(rscratch4, r1, rscratch3);           \
+    __ ldrw(rscratch1, Address(buf, k*4));       \
+    __ eorw(rscratch3, rscratch2, r3);           \
+    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch3, rscratch3, rscratch4);    \
+    __ rorw(rscratch2, rscratch3, 32 - s);       \
+    __ addw(r1, rscratch2, r2);
+
+    // Round 1
+    FF(a, b, c, d,  0,  7, 0xd76aa478)
+    FF(d, a, b, c,  1, 12, 0xe8c7b756)
+    FF(c, d, a, b,  2, 17, 0x242070db)
+    FF(b, c, d, a,  3, 22, 0xc1bdceee)
+    FF(a, b, c, d,  4,  7, 0xf57c0faf)
+    FF(d, a, b, c,  5, 12, 0x4787c62a)
+    FF(c, d, a, b,  6, 17, 0xa8304613)
+    FF(b, c, d, a,  7, 22, 0xfd469501)
+    FF(a, b, c, d,  8,  7, 0x698098d8)
+    FF(d, a, b, c,  9, 12, 0x8b44f7af)
+    FF(c, d, a, b, 10, 17, 0xffff5bb1)
+    FF(b, c, d, a, 11, 22, 0x895cd7be)
+    FF(a, b, c, d, 12,  7, 0x6b901122)
+    FF(d, a, b, c, 13, 12, 0xfd987193)
+    FF(c, d, a, b, 14, 17, 0xa679438e)
+    FF(b, c, d, a, 15, 22, 0x49b40821)
+
+    // Round 2
+    GG(a, b, c, d,  1,  5, 0xf61e2562)
+    GG(d, a, b, c,  6,  9, 0xc040b340)
+    GG(c, d, a, b, 11, 14, 0x265e5a51)
+    GG(b, c, d, a,  0, 20, 0xe9b6c7aa)
+    GG(a, b, c, d,  5,  5, 0xd62f105d)
+    GG(d, a, b, c, 10,  9, 0x02441453)
+    GG(c, d, a, b, 15, 14, 0xd8a1e681)
+    GG(b, c, d, a,  4, 20, 0xe7d3fbc8)
+    GG(a, b, c, d,  9,  5, 0x21e1cde6)
+    GG(d, a, b, c, 14,  9, 0xc33707d6)
+    GG(c, d, a, b,  3, 14, 0xf4d50d87)
+    GG(b, c, d, a,  8, 20, 0x455a14ed)
+    GG(a, b, c, d, 13,  5, 0xa9e3e905)
+    GG(d, a, b, c,  2,  9, 0xfcefa3f8)
+    GG(c, d, a, b,  7, 14, 0x676f02d9)
+    GG(b, c, d, a, 12, 20, 0x8d2a4c8a)
+
+    // Round 3
+    HH(a, b, c, d,  5,  4, 0xfffa3942)
+    HH(d, a, b, c,  8, 11, 0x8771f681)
+    HH(c, d, a, b, 11, 16, 0x6d9d6122)
+    HH(b, c, d, a, 14, 23, 0xfde5380c)
+    HH(a, b, c, d,  1,  4, 0xa4beea44)
+    HH(d, a, b, c,  4, 11, 0x4bdecfa9)
+    HH(c, d, a, b,  7, 16, 0xf6bb4b60)
+    HH(b, c, d, a, 10, 23, 0xbebfbc70)
+    HH(a, b, c, d, 13,  4, 0x289b7ec6)
+    HH(d, a, b, c,  0, 11, 0xeaa127fa)
+    HH(c, d, a, b,  3, 16, 0xd4ef3085)
+    HH(b, c, d, a,  6, 23, 0x04881d05)
+    HH(a, b, c, d,  9,  4, 0xd9d4d039)
+    HH(d, a, b, c, 12, 11, 0xe6db99e5)
+    HH(c, d, a, b, 15, 16, 0x1fa27cf8)
+    HH(b, c, d, a,  2, 23, 0xc4ac5665)
+
+    // Round 4
+    II(a, b, c, d,  0,  6, 0xf4292244)
+    II(d, a, b, c,  7, 10, 0x432aff97)
+    II(c, d, a, b, 14, 15, 0xab9423a7)
+    II(b, c, d, a,  5, 21, 0xfc93a039)
+    II(a, b, c, d, 12,  6, 0x655b59c3)
+    II(d, a, b, c,  3, 10, 0x8f0ccc92)
+    II(c, d, a, b, 10, 15, 0xffeff47d)
+    II(b, c, d, a,  1, 21, 0x85845dd1)
+    II(a, b, c, d,  8,  6, 0x6fa87e4f)
+    II(d, a, b, c, 15, 10, 0xfe2ce6e0)
+    II(c, d, a, b,  6, 15, 0xa3014314)
+    II(b, c, d, a, 13, 21, 0x4e0811a1)
+    II(a, b, c, d,  4,  6, 0xf7537e82)
+    II(d, a, b, c, 11, 10, 0xbd3af235)
+    II(c, d, a, b,  2, 15, 0x2ad7d2bb)
+    II(b, c, d, a,  9, 21, 0xeb86d391)
+
+#undef FF
+#undef GG
+#undef HH
+#undef II
+
+    // write hash values back in the correct order
+    __ ldrw(rscratch1, Address(state,  0));
+    __ addw(rscratch1, rscratch1, a);
+    __ strw(rscratch1, Address(state,  0));
+
+    __ ldrw(rscratch2, Address(state,  4));
+    __ addw(rscratch2, rscratch2, b);
+    __ strw(rscratch2, Address(state,  4));
+
+    __ ldrw(rscratch3, Address(state,  8));
+    __ addw(rscratch3, rscratch3, c);
+    __ strw(rscratch3, Address(state,  8));
+
+    __ ldrw(rscratch4, Address(state, 12));
+    __ addw(rscratch4, rscratch4, d);
+    __ strw(rscratch4, Address(state, 12));
+
+    if (multi_block) {
+      __ add(buf, buf, 64);
+      __ add(ofs, ofs, 64);
+      __ cmp(ofs, limit);
+      __ br(Assembler::LE, md5_loop);
+      __ mov(c_rarg0, ofs); // return ofs
+    }
+
+    __ ret(lr);
 
     return start;
   }
@@ -4227,70 +4658,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,
-                      FloatRegister a, FloatRegister b, FloatRegister a1_xor_a0,
-                      FloatRegister tmp1, FloatRegister tmp2, FloatRegister tmp3, FloatRegister tmp4) {
-    // Karatsuba multiplication performs a 128*128 -> 256-bit
-    // multiplication in three 128-bit multiplications and a few
-    // additions.
-    //
-    // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
-    // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
-    //
-    // Inputs:
-    //
-    // A0 in a.d[0]     (subkey)
-    // A1 in a.d[1]
-    // (A1+A0) in a1_xor_a0.d[0]
-    //
-    // B0 in b.d[0]     (state)
-    // B1 in b.d[1]
-
-    __ ext(tmp1, __ T16B, b, b, 0x08);
-    __ pmull2(result_hi, __ T1Q, b, a, __ T2D);  // A1*B1
-    __ eor(tmp1, __ T16B, tmp1, b);            // (B1+B0)
-    __ pmull(result_lo,  __ T1Q, b, a, __ T1D);  // A0*B0
-    __ pmull(tmp2, __ T1Q, tmp1, a1_xor_a0, __ T1D); // (A1+A0)(B1+B0)
-
-    __ ext(tmp4, __ T16B, result_lo, result_hi, 0x08);
-    __ eor(tmp3, __ T16B, result_hi, result_lo); // A1*B1+A0*B0
-    __ eor(tmp2, __ T16B, tmp2, tmp4);
-    __ eor(tmp2, __ T16B, tmp2, tmp3);
-
-    // Register pair <result_hi:result_lo> holds the result of carry-less multiplication
-    __ ins(result_hi, __ D, tmp2, 0, 1);
-    __ ins(result_lo, __ D, tmp2, 1, 0);
-  }
-
-  void ghash_reduce(FloatRegister result, FloatRegister lo, FloatRegister hi,
-                    FloatRegister p, FloatRegister z, FloatRegister t1) {
-    const FloatRegister t0 = result;
-
-    // The GCM field polynomial f is z^128 + p(z), where p =
-    // z^7+z^2+z+1.
-    //
-    //    z^128 === -p(z)  (mod (z^128 + p(z)))
-    //
-    // so, given that the product we're reducing is
-    //    a == lo + hi * z^128
-    // substituting,
-    //      === lo - hi * p(z)  (mod (z^128 + p(z)))
-    //
-    // we reduce by multiplying hi by p(z) and subtracting the result
-    // from (i.e. XORing it with) lo.  Because p has no nonzero high
-    // bits we can do this with two 64-bit multiplications, lo*p and
-    // hi*p.
-
-    __ pmull2(t0, __ T1Q, hi, p, __ T2D);
-    __ ext(t1, __ T16B, t0, z, 8);
-    __ eor(hi, __ T16B, hi, t1);
-    __ ext(t1, __ T16B, z, t0, 8);
-    __ eor(lo, __ T16B, lo, t1);
-    __ pmull(t0, __ T1Q, hi, p, __ T1D);
-    __ eor(result, __ T16B, lo, t0);
-  }
-
-  address generate_has_negatives(address &has_negatives_long) {
+  address generate_count_positives(address &count_positives_long) {
     const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
@@ -4299,13 +4667,15 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    StubCodeMark mark(this, "StubRoutines", "has_negatives");
+    StubCodeMark mark(this, "StubRoutines", "count_positives");
 
     address entry = __ pc();
 
     __ enter();
+    // precondition: a copy of len is already in result
+    // __ mov(result, len);
 
-  Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16, DONE,
+  Label RET_ADJUST, RET_ADJUST_16, RET_ADJUST_LONG, RET_NO_POP, RET_LEN, ALIGNED, LOOP16, CHECK_16,
         LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
 
   __ cmp(len, (u1)15);
@@ -4319,25 +4689,26 @@ class StubGenerator: public StubCodeGenerator {
   __ sub(rscratch1, zr, len, __ LSL, 3);  // LSL 3 is to get bits from bytes.
   __ lsrv(rscratch2, rscratch2, rscratch1);
   __ tst(rscratch2, UPPER_BIT_MASK);
-  __ cset(result, Assembler::NE);
+  __ csel(result, zr, result, Assembler::NE);
   __ leave();
   __ ret(lr);
   __ bind(LEN_OVER_8);
   __ ldp(rscratch1, rscratch2, Address(ary1, -16));
   __ sub(len, len, 8); // no data dep., then sub can be executed while loading
   __ tst(rscratch2, UPPER_BIT_MASK);
-  __ br(Assembler::NE, RET_TRUE_NO_POP);
+  __ br(Assembler::NE, RET_NO_POP);
   __ sub(rscratch2, zr, len, __ LSL, 3); // LSL 3 is to get bits from bytes
   __ lsrv(rscratch1, rscratch1, rscratch2);
   __ tst(rscratch1, UPPER_BIT_MASK);
-  __ cset(result, Assembler::NE);
+  __ bind(RET_NO_POP);
+  __ csel(result, zr, result, Assembler::NE);
   __ leave();
   __ ret(lr);
 
   Register tmp1 = r3, tmp2 = r4, tmp3 = r5, tmp4 = r6, tmp5 = r7, tmp6 = r10;
   const RegSet spilled_regs = RegSet::range(tmp1, tmp5) + tmp6;
 
-  has_negatives_long = __ pc(); // 2nd entry point
+  count_positives_long = __ pc(); // 2nd entry point
 
   __ enter();
 
@@ -4349,10 +4720,10 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(tmp5, 16);
     __ sub(rscratch1, tmp5, rscratch2); // amount of bytes until aligned address
     __ add(ary1, ary1, rscratch1);
-    __ sub(len, len, rscratch1);
     __ orr(tmp6, tmp6, tmp1);
     __ tst(tmp6, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
+    __ sub(len, len, rscratch1);
 
   __ bind(ALIGNED);
     __ cmp(len, large_loop_size);
@@ -4367,7 +4738,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, 16);
     __ orr(tmp6, tmp6, tmp1);
     __ tst(tmp6, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_16);
     __ cmp(len, large_loop_size);
     __ br(Assembler::LT, CHECK_16);
 
@@ -4399,7 +4770,7 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(rscratch1, rscratch1, tmp6);
     __ orr(tmp2, tmp2, rscratch1);
     __ tst(tmp2, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_LONG);
     __ cmp(len, large_loop_size);
     __ br(Assembler::GE, LARGE_LOOP);
 
@@ -4412,7 +4783,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, 16);
     __ orr(tmp2, tmp2, tmp3);
     __ tst(tmp2, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST_16);
     __ cmp(len, (u1)16);
     __ br(Assembler::GE, LOOP16); // 16-byte load loop end
 
@@ -4420,37 +4791,38 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(len, (u1)8);
     __ br(Assembler::LE, POST_LOOP16_LOAD_TAIL);
     __ ldr(tmp3, Address(__ post(ary1, 8)));
-    __ sub(len, len, 8);
     __ tst(tmp3, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
+    __ sub(len, len, 8);
 
   __ bind(POST_LOOP16_LOAD_TAIL);
-    __ cbz(len, RET_FALSE); // Can't shift left by 64 when len==0
+    __ cbz(len, RET_LEN); // Can't shift left by 64 when len==0
     __ ldr(tmp1, Address(ary1));
     __ mov(tmp2, 64);
     __ sub(tmp4, tmp2, len, __ LSL, 3);
     __ lslv(tmp1, tmp1, tmp4);
     __ tst(tmp1, UPPER_BIT_MASK);
-    __ br(Assembler::NE, RET_TRUE);
+    __ br(Assembler::NE, RET_ADJUST);
     // Fallthrough
 
-  __ bind(RET_FALSE);
+  __ bind(RET_LEN);
     __ pop(spilled_regs, sp);
     __ leave();
-    __ mov(result, zr);
     __ ret(lr);
 
-  __ bind(RET_TRUE);
+    // difference result - len is the count of guaranteed to be
+    // positive bytes
+
+  __ bind(RET_ADJUST_LONG);
+    __ add(len, len, (u1)(large_loop_size - 16));
+  __ bind(RET_ADJUST_16);
+    __ add(len, len, 16);
+  __ bind(RET_ADJUST);
     __ pop(spilled_regs, sp);
-  __ bind(RET_TRUE_NO_POP);
     __ leave();
-    __ mov(result, 1);
+    __ sub(result, result, len);
     __ ret(lr);
 
-  __ bind(DONE);
-    __ pop(spilled_regs, sp);
-    __ leave();
-    __ ret(lr);
     return entry;
   }
 
@@ -4656,18 +5028,6 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-  // code for comparing 16 bytes of strings with same encoding
-  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
-    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, tmp1 = r10, tmp2 = r11;
-    __ ldr(rscratch1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, tmp1, tmp2);
-    __ ldr(cnt1, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF1);
-    __ ldr(tmp1, Address(__ post(str1, 8)));
-    __ eor(rscratch2, rscratch1, cnt1);
-    __ ldr(tmp2, Address(__ post(str2, 8)));
-    __ cbnz(rscratch2, DIFF2);
-  }
 
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
@@ -4874,97 +5234,108 @@ class StubGenerator: public StubCodeGenerator {
         : "compare_long_string_same_encoding UU");
     address entry = __ pc();
     Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
-        tmp1 = r10, tmp2 = r11;
-    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, DIFF2, TAIL,
-        LENGTH_DIFF, DIFF, LAST_CHECK_AND_LENGTH_DIFF,
-        DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
+        tmp1 = r10, tmp2 = r11, tmp1h = rscratch1, tmp2h = rscratch2;
+
+    Label LARGE_LOOP_PREFETCH, LOOP_COMPARE16, DIFF, LESS16, LESS8, CAL_DIFFERENCE, LENGTH_DIFF;
+
     // exit from large loop when less than 64 bytes left to read or we're about
     // to prefetch memory behind array border
     int largeLoopExitCondition = MAX2(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
-    // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
-    // update cnt2 counter with already loaded 8 bytes
+
+    // before jumping to stub, pre-load 8 bytes already, so do comparison directly
+    __ eor(rscratch2, tmp1, tmp2);
+    __ cbnz(rscratch2, CAL_DIFFERENCE);
+
     __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
     // update pointers, because of previous read
     __ add(str1, str1, wordSize);
     __ add(str2, str2, wordSize);
     if (SoftwarePrefetchHintDistance >= 0) {
+      __ align(OptoLoopAlignment);
       __ bind(LARGE_LOOP_PREFETCH);
         __ prfm(Address(str1, SoftwarePrefetchHintDistance));
         __ prfm(Address(str2, SoftwarePrefetchHintDistance));
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        compare_string_16_bytes_same(DIFF, DIFF2);
+
+        for (int i = 0; i < 4; i++) {
+          __ ldp(tmp1, tmp1h, Address(str1, i * 16));
+          __ ldp(tmp2, tmp2h, Address(str2, i * 16));
+          __ cmp(tmp1, tmp2);
+          __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+          __ br(Assembler::NE, DIFF);
+        }
         __ sub(cnt2, cnt2, isLL ? 64 : 32);
-        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ add(str1, str1, 64);
+        __ add(str2, str2, 64);
         __ subs(rscratch2, cnt2, largeLoopExitCondition);
-        compare_string_16_bytes_same(DIFF, DIFF2);
-        __ br(__ GT, LARGE_LOOP_PREFETCH);
-        __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
+        __ br(Assembler::GE, LARGE_LOOP_PREFETCH);
+        __ cbz(cnt2, LENGTH_DIFF); // no more chars left?
     }
-    // less than 16 bytes left?
-    __ subs(cnt2, cnt2, isLL ? 16 : 8);
-    __ br(__ LT, TAIL);
+
+    __ subs(rscratch1, cnt2, isLL ? 16 : 8);
+    __ br(Assembler::LE, LESS16);
     __ align(OptoLoopAlignment);
-    __ bind(SMALL_LOOP);
-      compare_string_16_bytes_same(DIFF, DIFF2);
-      __ subs(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ GE, SMALL_LOOP);
-    __ bind(TAIL);
-      __ adds(cnt2, cnt2, isLL ? 16 : 8);
-      __ br(__ EQ, LAST_CHECK_AND_LENGTH_DIFF);
+    __ bind(LOOP_COMPARE16);
+      __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
+      __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
+      __ cmp(tmp1, tmp2);
+      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+      __ br(Assembler::NE, DIFF);
+      __ sub(cnt2, cnt2, isLL ? 16 : 8);
+      __ subs(rscratch2, cnt2, isLL ? 16 : 8);
+      __ br(Assembler::LT, LESS16);
+
+      __ ldp(tmp1, tmp1h, Address(__ post(str1, 16)));
+      __ ldp(tmp2, tmp2h, Address(__ post(str2, 16)));
+      __ cmp(tmp1, tmp2);
+      __ ccmp(tmp1h, tmp2h, 0, Assembler::EQ);
+      __ br(Assembler::NE, DIFF);
+      __ sub(cnt2, cnt2, isLL ? 16 : 8);
+      __ subs(rscratch2, cnt2, isLL ? 16 : 8);
+      __ br(Assembler::GE, LOOP_COMPARE16);
+      __ cbz(cnt2, LENGTH_DIFF);
+
+    __ bind(LESS16);
+      // each 8 compare
       __ subs(cnt2, cnt2, isLL ? 8 : 4);
-      __ br(__ LE, CHECK_LAST);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
+      __ br(Assembler::LE, LESS8);
       __ ldr(tmp1, Address(__ post(str1, 8)));
       __ ldr(tmp2, Address(__ post(str2, 8)));
-      __ sub(cnt2, cnt2, isLL ? 8 : 4);
-    __ bind(CHECK_LAST);
-      if (!isLL) {
-        __ add(cnt2, cnt2, cnt2); // now in bytes
-      }
       __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
-      __ ldr(rscratch1, Address(str1, cnt2));
-      __ ldr(cnt1, Address(str2, cnt2));
-      __ eor(rscratch2, rscratch1, cnt1);
-      __ cbz(rscratch2, LENGTH_DIFF);
-      // Find the first different characters in the longwords and
-      // compute their difference.
-    __ bind(DIFF2);
-      __ rev(rscratch2, rscratch2);
-      __ clz(rscratch2, rscratch2);
-      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
-      __ lsrv(rscratch1, rscratch1, rscratch2);
-      if (isLL) {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxtbw(rscratch1, rscratch1);
-        __ uxtbw(cnt1, cnt1);
-      } else {
-        __ lsrv(cnt1, cnt1, rscratch2);
-        __ uxthw(rscratch1, rscratch1);
-        __ uxthw(cnt1, cnt1);
+      __ cbnz(rscratch2, CAL_DIFFERENCE);
+      __ sub(cnt2, cnt2, isLL ? 8 : 4);
+
+    __ bind(LESS8); // directly load last 8 bytes
+      if (!isLL) {
+        __ add(cnt2, cnt2, cnt2);
       }
-      __ subw(result, rscratch1, cnt1);
-      __ b(LENGTH_DIFF);
+      __ ldr(tmp1, Address(str1, cnt2));
+      __ ldr(tmp2, Address(str2, cnt2));
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbz(rscratch2, LENGTH_DIFF);
+      __ b(CAL_DIFFERENCE);
+
     __ bind(DIFF);
+      __ cmp(tmp1, tmp2);
+      __ csel(tmp1, tmp1, tmp1h, Assembler::NE);
+      __ csel(tmp2, tmp2, tmp2h, Assembler::NE);
+      // reuse rscratch2 register for the result of eor instruction
+      __ eor(rscratch2, tmp1, tmp2);
+
+    __ bind(CAL_DIFFERENCE);
       __ rev(rscratch2, rscratch2);
       __ clz(rscratch2, rscratch2);
       __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
       __ lsrv(tmp1, tmp1, rscratch2);
+      __ lsrv(tmp2, tmp2, rscratch2);
       if (isLL) {
-        __ lsrv(tmp2, tmp2, rscratch2);
         __ uxtbw(tmp1, tmp1);
         __ uxtbw(tmp2, tmp2);
       } else {
-        __ lsrv(tmp2, tmp2, rscratch2);
         __ uxthw(tmp1, tmp1);
         __ uxthw(tmp2, tmp2);
       }
       __ subw(result, tmp1, tmp2);
-      __ b(LENGTH_DIFF);
-    __ bind(LAST_CHECK_AND_LENGTH_DIFF);
-      __ eor(rscratch2, tmp1, tmp2);
-      __ cbnz(rscratch2, DIFF);
+
     __ bind(LENGTH_DIFF);
       __ ret(lr);
     return entry;
@@ -5387,6 +5758,8 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vzr = v30;
     __ eor(vzr, __ T16B, vzr, vzr); // zero register
 
+    __ ldrq(v24, p);    // The field polynomial
+
     __ ldrq(v0, Address(state));
     __ ldrq(v1, Address(subkeyH));
 
@@ -5395,10 +5768,8 @@ class StubGenerator: public StubCodeGenerator {
     __ rev64(v1, __ T16B, v1);
     __ rbit(v1, __ T16B, v1);
 
-    __ ldrq(v26, p);
-
-    __ ext(v16, __ T16B, v1, v1, 0x08); // long-swap subkeyH into v1
-    __ eor(v16, __ T16B, v16, v1);      // xor subkeyH into subkeyL (Karatsuba: (A1+A0))
+    __ ext(v4, __ T16B, v1, v1, 0x08); // long-swap subkeyH into v1
+    __ eor(v4, __ T16B, v4, v1);       // xor subkeyH into subkeyL (Karatsuba: (A1+A0))
 
     {
       Label L_ghash_loop;
@@ -5410,21 +5781,70 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(v2, __ T16B, v0, v2);   // bit-swapped data ^ bit-swapped state
 
       // Multiply state in v2 by subkey in v1
-      ghash_multiply(/*result_lo*/v5, /*result_hi*/v7,
-                     /*a*/v1, /*b*/v2, /*a1_xor_a0*/v16,
-                     /*temps*/v6, v20, v18, v21);
+      __ ghash_multiply(/*result_lo*/v5, /*result_hi*/v7,
+                        /*a*/v1, /*b*/v2, /*a1_xor_a0*/v4,
+                        /*temps*/v6, v3, /*reuse/clobber b*/v2);
       // Reduce v7:v5 by the field polynomial
-      ghash_reduce(v0, v5, v7, v26, vzr, v20);
+      __ ghash_reduce(/*result*/v0, /*lo*/v5, /*hi*/v7, /*p*/v24, vzr, /*temp*/v3);
 
       __ sub(blocks, blocks, 1);
       __ cbnz(blocks, L_ghash_loop);
     }
 
     // The bit-reversed result is at this point in v0
-    __ rev64(v1, __ T16B, v0);
-    __ rbit(v1, __ T16B, v1);
+    __ rev64(v0, __ T16B, v0);
+    __ rbit(v0, __ T16B, v0);
 
-    __ st1(v1, __ T16B, state);
+    __ st1(v0, __ T16B, state);
+    __ ret(lr);
+
+    return start;
+  }
+
+  address generate_ghash_processBlocks_wide() {
+    address small = generate_ghash_processBlocks();
+
+    StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks_wide");
+    __ align(wordSize * 2);
+    address p = __ pc();
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    __ align(CodeEntryAlignment);
+    address start = __ pc();
+
+    Register state   = c_rarg0;
+    Register subkeyH = c_rarg1;
+    Register data    = c_rarg2;
+    Register blocks  = c_rarg3;
+
+    const int unroll = 4;
+
+    __ cmp(blocks, (unsigned char)(unroll * 2));
+    __ br(__ LT, small);
+
+    if (unroll > 1) {
+    // Save state before entering routine
+      __ sub(sp, sp, 4 * 16);
+      __ st1(v12, v13, v14, v15, __ T16B, Address(sp));
+      __ sub(sp, sp, 4 * 16);
+      __ st1(v8, v9, v10, v11, __ T16B, Address(sp));
+    }
+
+    __ ghash_processBlocks_wide(p, state, subkeyH, data, blocks, unroll);
+
+    if (unroll > 1) {
+      // And restore state
+      __ ld1(v8, v9, v10, v11, __ T16B, __ post(sp, 4 * 16));
+      __ ld1(v12, v13, v14, v15, __ T16B, __ post(sp, 4 * 16));
+    }
+
+    __ cmp(blocks, (unsigned char)0);
+    __ br(__ GT, small);
+
     __ ret(lr);
 
     return start;
@@ -5876,6 +6296,18 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for spin waits.
+  address generate_spin_wait() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "spin_wait");
+    address start = __ pc();
+
+    __ spin_wait();
+    __ ret(lr);
+
+    return start;
+  }
+
 #ifdef LINUX
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
@@ -5978,10 +6410,16 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_ldaddal_entry(Assembler::operand_size size) {
+  void gen_ldadd_entry(Assembler::operand_size size, atomic_memory_order order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ ldaddal(size, incr, prev, addr);
-    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    // If not relaxed, then default to conservative.  Relaxed is the only
+    // case we use enough to be worth specializing.
+    if (order == memory_order_relaxed) {
+      __ ldadd(size, incr, prev, addr);
+    } else {
+      __ ldaddal(size, incr, prev, addr);
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
     if (size == Assembler::xword) {
       __ mov(r0, prev);
     } else {
@@ -6011,12 +6449,21 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "atomic entry points");
     address first_entry = __ pc();
 
-    // All memory_order_conservative
+    // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldaddal_entry(Assembler::word);
+    gen_ldadd_entry(Assembler::word, memory_order_conservative);
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldaddal_entry(Assembler::xword);
+    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
 
+    // ADD, memory_order_relaxed
+    AtomicStubMark mark_fetch_add_4_relaxed
+      (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
+    AtomicStubMark mark_fetch_add_8_relaxed
+      (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
     gen_swpal_entry(Assembler::word);
     AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
@@ -6183,7 +6630,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Register allocation
 
-      RegSetIterator<> regs = (RegSet::range(r0, r26) - r18_tls).begin();
+      RegSetIterator<Register> regs = (RegSet::range(r0, r26) - r18_tls).begin();
       Pa_base = *regs;       // Argument registers
       if (squaring)
         Pb_base = Pa_base;
@@ -7077,8 +7524,8 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
-    // has negatives stub for large arrays.
-    StubRoutines::aarch64::_has_negatives = generate_has_negatives(StubRoutines::aarch64::_has_negatives_long);
+    // countPositives stub for large arrays.
+    StubRoutines::aarch64::_count_positives = generate_count_positives(StubRoutines::aarch64::_count_positives_long);
 
     // array equals stub for large arrays.
     if (!UseSimpleArrayEquals) {
@@ -7129,11 +7576,6 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif // COMPILER2
 
-    // generate GHASH intrinsics code
-    if (UseGHASHIntrinsics) {
-      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
-    }
-
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -7148,8 +7590,20 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt();
+    }
+    if (UseGHASHIntrinsics) {
+      // StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks_wide();
+    }
+    if (UseAESIntrinsics && UseGHASHIntrinsics) {
+      StubRoutines::_galoisCounterMode_AESCrypt = generate_galoisCounterMode_AESCrypt();
     }
 
+    if (UseMD5Intrinsics) {
+      StubRoutines::_md5_implCompress      = generate_md5_implCompress(false,    "md5_implCompress");
+      StubRoutines::_md5_implCompressMB    = generate_md5_implCompress(true,     "md5_implCompressMB");
+    }
     if (UseSHA1Intrinsics) {
       StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false,   "sha1_implCompress");
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true,    "sha1_implCompressMB");
@@ -7171,6 +7625,8 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
+    StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
 #ifdef LINUX
 
@@ -7213,6 +7669,8 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
 
 DEFAULT_ATOMIC_OP(fetch_add, 4, )
 DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
+DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
 DEFAULT_ATOMIC_OP(xchg, 4, )
 DEFAULT_ATOMIC_OP(xchg, 8, )
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )

@@ -639,11 +639,8 @@ JNI_ENTRY(jint, jni_PushLocalFrame(JNIEnv *env, jint capacity))
     HOTSPOT_JNI_PUSHLOCALFRAME_RETURN((uint32_t)JNI_ERR);
     return JNI_ERR;
   }
-  JNIHandleBlock* old_handles = thread->active_handles();
-  JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);
-  assert(new_handles != NULL, "should not be NULL");
-  new_handles->set_pop_frame_link(old_handles);
-  thread->set_active_handles(new_handles);
+
+  thread->push_jni_handle_block();
   jint ret = JNI_OK;
   HOTSPOT_JNI_PUSHLOCALFRAME_RETURN(ret);
   return ret;
@@ -3658,7 +3655,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 #endif
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
-    ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
+    ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
     MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
   } else {
     // If create_vm exits because of a pending exception, exit with that
@@ -3878,11 +3875,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   *(JNIEnv**)penv = thread->jni_environment();
 
   // Now leaving the VM, so change thread_state. This is normally automatically taken care
-  // of in the JVM_ENTRY. But in this situation we have to do it manually. Notice, that by
-  // using ThreadStateTransition::transition, we do a callback to the safepoint code if
-  // needed.
-
-  ThreadStateTransition::transition(thread, _thread_in_vm, _thread_in_native);
+  // of in the JVM_ENTRY. But in this situation we have to do it manually.
+  ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
   MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
 
   // Perform any platform dependent FPU setup

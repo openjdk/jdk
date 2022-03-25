@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ import org.ietf.jgss.GSSManager;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
 import java.util.Base64;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 
 /**
  * Basic JGSS/krb5 test with 3 parties: client, server, backend server. Each
@@ -375,9 +377,9 @@ public class HttpNegotiateServer {
 
         Subject subject = context.getSubject();
 
-        final PrivilegedExceptionAction<Object> test_action
-                = new PrivilegedExceptionAction<Object>() {
-            public Object run() throws Exception {
+        final Callable<Object> test_action
+                = new Callable<Object>() {
+            public Object call() throws Exception {
                 testConnect();
                 return null;
             }
@@ -387,10 +389,10 @@ public class HttpNegotiateServer {
                 "with the the logged in subject.");
 
         try {
-            Subject.doAs(subject, test_action);
+            Subject.callAs(subject, test_action);
             System.err.println("\n\nConnection succeed when executing " +
                     "with the the logged in subject.");
-        } catch (PrivilegedActionException e) {
+        } catch (CompletionException e) {
             System.err.println("\n\nFailure unexpected when executing " +
                     "with the the logged in subject.");
             e.printStackTrace();
@@ -466,9 +468,9 @@ public class HttpNegotiateServer {
             krb5.login();
             krb5.commit();
             m = GSSManager.getInstance();
-            cred = Subject.doAs(s, new PrivilegedExceptionAction<GSSCredential>() {
+            cred = Subject.callAs(s, new Callable<GSSCredential>() {
                 @Override
-                public GSSCredential run() throws Exception {
+                public GSSCredential call() throws Exception {
                     System.err.println("Creating GSSCredential");
                     return m.createCredential(
                             null,
@@ -494,12 +496,7 @@ public class HttpNegotiateServer {
                 if (auth == null) {                 // First request
                     Headers map = exch.getResponseHeaders();
                     map.set (reqHdr, scheme);        // Challenge!
-                    c = Subject.doAs(s, new PrivilegedExceptionAction<GSSContext>() {
-                        @Override
-                        public GSSContext run() throws Exception {
-                            return m.createContext(cred);
-                        }
-                    });
+                    c = Subject.callAs(s, () -> m.createContext(cred));
                     exch.getHttpContext().getAttributes().put("GSSContext", c);
                     return new com.sun.net.httpserver.Authenticator.Retry(err);
                 } else {                            // Later requests

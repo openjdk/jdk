@@ -38,7 +38,6 @@ import sun.util.logging.PlatformLogger;
 /**
  * A collection of utility methods.
  */
-@SuppressWarnings("removal")
 public final class FontUtilities {
 
     public static boolean isLinux;
@@ -56,7 +55,11 @@ public final class FontUtilities {
 
     // This static initializer block figures out the OS constants.
     static {
+        initStatic();
+    }
 
+    @SuppressWarnings("removal")
+    private static void initStatic() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
             @Override
@@ -410,10 +413,9 @@ public final class FontUtilities {
         FontManager fm = FontManagerFactory.getInstance();
         Font2D dialog = fm.findFont2D("dialog", font.getStyle(), FontManager.NO_FALLBACK);
         // Should never be null, but MACOSX fonts are not CompositeFonts
-        if (dialog == null || !(dialog instanceof CompositeFont)) {
+        if (!(dialog instanceof CompositeFont dialog2D)) {
             return fuir;
         }
-        CompositeFont dialog2D = (CompositeFont)dialog;
         PhysicalFont physicalFont = (PhysicalFont)font2D;
         ConcurrentHashMap<PhysicalFont, CompositeFont> compMap = compMapRef.get();
         if (compMap == null) { // Its been collected.

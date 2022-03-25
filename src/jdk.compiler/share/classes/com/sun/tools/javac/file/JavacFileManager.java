@@ -82,6 +82,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 
 import static javax.tools.StandardLocation.*;
@@ -281,13 +282,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     private static void printAscii(String format, Object... args) {
-        String message;
-        try {
-            final String ascii = "US-ASCII";
-            message = new String(String.format(null, format, args).getBytes(ascii), ascii);
-        } catch (java.io.UnsupportedEncodingException ex) {
-            throw new AssertionError(ex);
-        }
+        String message = new String(
+                String.format(null, format, args).getBytes(US_ASCII), US_ASCII);
         System.out.println(message);
     }
 

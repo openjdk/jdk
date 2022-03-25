@@ -41,3 +41,11 @@ static void* c_malloc(JNIEnv* env, size_t size) {
         env->FatalError("Unexpected JNI Exception. TEST FAIL.");\
     }\
 }
+
+// Checks return code for JNI calls that don't raise exceptions
+// and generate fatal error
+#define CHECK(jniCall) do { \
+  if ((jniCall) != 0) { \
+    env->FatalError("Error invoking JNI method: " #jniCall); \
+  } \
+} while (0)

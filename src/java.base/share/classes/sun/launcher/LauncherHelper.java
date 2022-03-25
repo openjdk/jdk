@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,6 @@ package sun.launcher;
  *
  */
 
-/**
- * A utility package for the java(1), javaw(1) launchers.
- * The following are helper methods that the native launcher uses
- * to perform checks etc. using JNI, see src/share/bin/java.c
- */
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -88,7 +83,11 @@ import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
 
-
+/**
+ * A utility package for the java(1), javaw(1) launchers.
+ * The following are helper methods that the native launcher uses
+ * to perform checks etc. using JNI, see src/share/bin/java.c
+ */
 public final class LauncherHelper {
 
     // No instantiation
@@ -154,8 +153,8 @@ public final class LauncherHelper {
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
         initOutput(printToStderr);
-        String opts[] = optionFlag.split(":");
-        String optStr = (opts.length > 1 && opts[1] != null)
+        String[] opts = optionFlag.split(":");
+        String optStr = opts.length > 1
                 ? opts[1].trim()
                 : "all";
         switch (optStr) {
@@ -405,12 +404,23 @@ public final class LauncherHelper {
         limit = c.getMemoryAndSwapLimit();
         ostream.println(formatLimitString(limit, INDENT + "Memory & Swap Limit: ", longRetvalNotSupported));
 
+        limit = c.getPidsMax();
+        ostream.println(formatLimitString(limit, INDENT + "Maximum Processes Limit: ",
+                                          longRetvalNotSupported, false));
         ostream.println("");
     }
 
     private static String formatLimitString(long limit, String prefix, long unavailable) {
+        return formatLimitString(limit, prefix, unavailable, true);
+    }
+
+    private static String formatLimitString(long limit, String prefix, long unavailable, boolean scale) {
         if (limit >= 0) {
-            return prefix + SizePrefix.scaleValue(limit);
+            if (scale) {
+                return prefix + SizePrefix.scaleValue(limit);
+            } else {
+                return prefix + limit;
+            }
         } else if (limit == unavailable) {
             return prefix + "N/A";
         } else {

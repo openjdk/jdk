@@ -287,10 +287,10 @@ void ConstantPool::archive_resolved_references() {
       }
     }
 
-    oop archived = HeapShared::archive_heap_object(rr);
+    oop archived = HeapShared::archive_object(rr);
     // If the resolved references array is not archived (too large),
     // the 'archived' object is NULL. No need to explicitly check
-    // the return value of archive_heap_object here. At runtime, the
+    // the return value of archive_object() here. At runtime, the
     // resolved references will be created using the normal process
     // when there is no archived value.
     _cache->set_archived_references(archived);
@@ -347,7 +347,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   if (vmClasses::Object_klass_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
-    if (HeapShared::open_archive_heap_region_mapped() &&
+    if (HeapShared::is_fully_available() &&
         _cache->archived_references() != NULL) {
       oop archived = _cache->archived_references();
       // Create handle for the archived resolved reference array object
@@ -370,6 +370,12 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
 }
 
 void ConstantPool::remove_unshareable_info() {
+  // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
+  // The _on_stack flag is used to prevent ConstantPools from deallocation during
+  // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
+  // we always set _on_stack to true to avoid having to change _flags during runtime.
+  _flags |= (_on_stack | _is_shared);
+
   if (!_pool_holder->is_linked() && !_pool_holder->verified_at_dump_time()) {
     return;
   }
@@ -382,11 +388,6 @@ void ConstantPool::remove_unshareable_info() {
     resolved_references() != NULL ? resolved_references()->length() : 0);
   set_resolved_references(OopHandle());
 
-  // Shared ConstantPools are in the RO region, so the _flags cannot be modified.
-  // The _on_stack flag is used to prevent ConstantPools from deallocation during
-  // class redefinition. Since shared ConstantPools cannot be deallocated anyway,
-  // we always set _on_stack to true to avoid having to change _flags during runtime.
-  _flags |= (_on_stack | _is_shared);
   int num_klasses = 0;
   for (int index = 1; index < length(); index++) { // Index 0 is unused
     if (tag_at(index).is_unresolved_klass_in_error()) {
@@ -884,11 +885,9 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
 
 constantTag ConstantPool::constant_tag_at(int which) {
   constantTag tag = tag_at(which);
-  if (tag.is_dynamic_constant() ||
-      tag.is_dynamic_constant_in_error()) {
+  if (tag.is_dynamic_constant()) {
     BasicType bt = basic_type_for_constant_at(which);
-    // dynamic constant could return an array, treat as object
-    return constantTag::ofBasicType(is_reference_type(bt) ? T_OBJECT : bt);
+    return constantTag(constantTag::type2tag(bt));
   }
   return tag;
 }
@@ -975,7 +974,6 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   switch (tag.value()) {
 
   case JVM_CONSTANT_UnresolvedClass:
-  case JVM_CONSTANT_UnresolvedClassInError:
   case JVM_CONSTANT_Class:
     {
       assert(cache_index == _no_index_sentinel, "should not have been set");
@@ -1043,14 +1041,6 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     result_oop = string_at_impl(this_cp, index, cache_index, CHECK_NULL);
     break;
 
-  case JVM_CONSTANT_DynamicInError:
-  case JVM_CONSTANT_MethodHandleInError:
-  case JVM_CONSTANT_MethodTypeInError:
-    {
-      throw_resolution_error(this_cp, index, CHECK_NULL);
-      break;
-    }
-
   case JVM_CONSTANT_MethodHandle:
     {
       int ref_kind                 = this_cp->method_handle_ref_kind_at(index);
@@ -1064,11 +1054,14 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
 
-      Klass* callee = klass_at_impl(this_cp, callee_index, CHECK_NULL);
+      Klass* callee = klass_at_impl(this_cp, callee_index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
+      }
 
       // Check constant pool method consistency
       if ((callee->is_interface() && m_tag.is_method()) ||
-          ((!callee->is_interface() && m_tag.is_interface_method()))) {
+          (!callee->is_interface() && m_tag.is_interface_method())) {
         ResourceMark rm(THREAD);
         stringStream ss;
         ss.print("Inconsistent constant pool data in classfile for class %s. "
@@ -1080,17 +1073,18 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                  index,
                  callee->is_interface() ? "CONSTANT_MethodRef" : "CONSTANT_InterfaceMethodRef",
                  callee->is_interface() ? "CONSTANT_InterfaceMethodRef" : "CONSTANT_MethodRef");
-        THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+        Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), "%s", ss.as_string());
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
 
       Klass* klass = this_cp->pool_holder();
       Handle value = SystemDictionary::link_method_handle_constant(klass, ref_kind,
                                                                    callee, name, signature,
                                                                    THREAD);
-      result_oop = value();
       if (HAS_PENDING_EXCEPTION) {
         save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
+      result_oop = value();
       break;
     }
 
@@ -1135,10 +1129,15 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     result_oop = java_lang_boxing_object::create(T_DOUBLE, &prim_value, CHECK_NULL);
     break;
 
+  case JVM_CONSTANT_UnresolvedClassInError:
+  case JVM_CONSTANT_DynamicInError:
+  case JVM_CONSTANT_MethodHandleInError:
+  case JVM_CONSTANT_MethodTypeInError:
+    throw_resolution_error(this_cp, index, CHECK_NULL);
+    break;
+
   default:
-    DEBUG_ONLY( tty->print_cr("*** %p: tag at CP[%d/%d] = %d",
-                              this_cp(), index, cache_index, tag.value()));
-    assert(false, "unexpected constant tag");
+    fatal("unexpected constant tag at CP %p[%d/%d] = %d", this_cp(), index, cache_index, tag.value());
     break;
   }
 
@@ -1177,16 +1176,15 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
                                                     objArrayHandle info, int pos,
                                                     bool must_resolve, Handle if_not_available,
                                                     TRAPS) {
-  int argc;
   int limit = pos + end_arg - start_arg;
   // checks: index in range [0..this_cp->length),
-  // tag at index, start..end in range [0..argc],
+  // tag at index, start..end in range [0..this_cp->bootstrap_argument_count],
   // info array non-null, pos..limit in [0..info.length]
   if ((0 >= index    || index >= this_cp->length())  ||
       !(this_cp->tag_at(index).is_invoke_dynamic()    ||
         this_cp->tag_at(index).is_dynamic_constant()) ||
       (0 > start_arg || start_arg > end_arg) ||
-      (end_arg > (argc = this_cp->bootstrap_argument_count_at(index))) ||
+      (end_arg > this_cp->bootstrap_argument_count_at(index)) ||
       (0 > pos       || pos > limit)         ||
       (info.is_null() || limit > info->length())) {
     // An index or something else went wrong; throw an error.
@@ -2390,11 +2388,11 @@ void ConstantPool::verify_on(outputStream* st) {
     if (tag.is_klass() || tag.is_unresolved_klass()) {
       guarantee(klass_name_at(i)->refcount() != 0, "should have nonzero reference count");
     } else if (tag.is_symbol()) {
-      CPSlot entry = slot_at(i);
-      guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+      Symbol* entry = symbol_at(i);
+      guarantee(entry->refcount() != 0, "should have nonzero reference count");
     } else if (tag.is_string()) {
-      CPSlot entry = slot_at(i);
-      guarantee(entry.get_symbol()->refcount() != 0, "should have nonzero reference count");
+      Symbol* entry = unresolved_string_at(i);
+      guarantee(entry->refcount() != 0, "should have nonzero reference count");
     }
   }
   if (pool_holder() != NULL) {

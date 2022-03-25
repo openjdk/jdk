@@ -27,7 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -577,7 +577,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
                                   bool clear_space,
                                   bool mangle_space,
                                   bool setup_pages,
-                                  WorkGang* pretouch_gang) {
+                                  WorkerThreads* pretouch_workers) {
   assert(clear_space, "Reallocation will destroy data!");
   assert(lgrp_spaces()->length() > 0, "There should be at least one space");
 

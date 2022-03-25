@@ -28,7 +28,6 @@ package com.sun.tools.javac.platform;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -71,6 +70,8 @@ import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.StringUtils;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /** PlatformProvider for JDK N.
  *
@@ -262,7 +263,6 @@ public class JDKPlatformProvider implements PlatformProvider {
                     boolean hasModules =
                             Feature.MODULES.allowedInSource(Source.lookup(sourceVersion));
                     Path systemModules = root.resolve(ctSymVersion).resolve("system-modules");
-                    Charset utf8 = Charset.forName("UTF-8");
 
                     if (!hasModules) {
                         List<Path> paths = new ArrayList<>();
@@ -288,7 +288,7 @@ public class JDKPlatformProvider implements PlatformProvider {
                                 FileSystems.getFileSystem(URI.create("jrt:/"))
                                            .getPath("modules");
                         try (Stream<String> lines =
-                                Files.lines(systemModules, utf8)) {
+                                Files.lines(systemModules, UTF_8)) {
                             lines.map(line -> jrtModules.resolve(line))
                                  .filter(mod -> Files.exists(mod))
                                  .forEach(mod -> setModule(fm, mod));

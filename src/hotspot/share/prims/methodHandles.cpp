@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,11 @@ void MethodHandles::generate_adapters() {
 
   ResourceMark rm;
   TraceTime timer("MethodHandles adapters generation", TRACETIME_LOG(Info, startuptime));
-  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
+  // The adapter entry is required to be aligned to CodeEntryAlignment.
+  // So we need additional bytes due to alignment.
+  int adapter_num = (int)Interpreter::method_handle_invoke_LAST - (int)Interpreter::method_handle_invoke_FIRST + 1;
+  int max_aligned_bytes = adapter_num * CodeEntryAlignment;
+  _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size + max_aligned_bytes);
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
@@ -158,7 +162,7 @@ int MethodHandles::ref_kind_to_flags(int ref_kind) {
 Handle MethodHandles::resolve_MemberName_type(Handle mname, Klass* caller, TRAPS) {
   Handle empty;
   Handle type(THREAD, java_lang_invoke_MemberName::type(mname()));
-  if (!java_lang_String::is_instance_inlined(type())) {
+  if (!java_lang_String::is_instance(type())) {
     return type; // already resolved
   }
   Symbol* signature = java_lang_String::as_symbol_or_null(type());
@@ -536,7 +540,7 @@ Symbol* MethodHandles::lookup_signature(oop type_str, bool intern_if_not_found, 
     return java_lang_invoke_MethodType::as_signature(type_str, intern_if_not_found);
   } else if (java_lang_Class::is_instance(type_str)) {
     return java_lang_Class::as_signature(type_str, false);
-  } else if (java_lang_String::is_instance_inlined(type_str)) {
+  } else if (java_lang_String::is_instance(type_str)) {
     if (intern_if_not_found) {
       return java_lang_String::as_symbol(type_str);
     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.lang.Integer#toString(int)
      */
     public static String toString(short s) {
-        return Integer.toString((int)s, 10);
+        return Integer.toString(s);
     }
 
     /**
@@ -441,8 +441,9 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @return  a string representation of the value of this object in
      *          base&nbsp;10.
      */
+    @Override
     public String toString() {
-        return Integer.toString((int)value);
+        return Integer.toString(value);
     }
 
     /**

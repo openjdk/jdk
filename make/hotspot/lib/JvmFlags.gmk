@@ -74,8 +74,8 @@ ifeq ($(DEBUG_LEVEL), release)
   endif
 else ifeq ($(DEBUG_LEVEL), fastdebug)
   JVM_CFLAGS_DEBUGLEVEL := -DASSERT
-  ifeq ($(call isTargetOs, windows aix), false)
-    # NOTE: Old build did not define CHECK_UNHANDLED_OOPS on Windows and AIX.
+  ifeq ($(call isTargetOs, aix), false)
+    # NOTE: Old build did not define CHECK_UNHANDLED_OOPS on AIX.
     JVM_CFLAGS_DEBUGLEVEL += -DCHECK_UNHANDLED_OOPS
   endif
 else ifeq ($(DEBUG_LEVEL), slowdebug)

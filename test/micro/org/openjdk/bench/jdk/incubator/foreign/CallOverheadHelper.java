@@ -22,12 +22,11 @@
  */
 package org.openjdk.bench.jdk.incubator.foreign;
 
-import jdk.incubator.foreign.Addressable;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeSymbol;
 import jdk.incubator.foreign.ResourceScope;
 import jdk.incubator.foreign.SegmentAllocator;
 import jdk.incubator.foreign.SymbolLookup;
@@ -36,57 +35,58 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
 import static java.lang.invoke.MethodHandles.insertArguments;
-import static jdk.incubator.foreign.CLinker.C_DOUBLE;
-import static jdk.incubator.foreign.CLinker.C_INT;
-import static jdk.incubator.foreign.CLinker.C_LONG_LONG;
-import static jdk.incubator.foreign.CLinker.C_POINTER;
 
-public class CallOverheadHelper {
+public class CallOverheadHelper extends CLayouts {
 
-    static final CLinker abi = CLinker.getInstance();
+    static final CLinker abi = CLinker.systemCLinker();
 
     static final MethodHandle func;
     static final MethodHandle func_v;
-    static Addressable func_addr;
+    static NativeSymbol func_addr;
     static final MethodHandle identity;
     static final MethodHandle identity_v;
-    static Addressable identity_addr;
+    static NativeSymbol identity_addr;
     static final MethodHandle identity_struct;
     static final MethodHandle identity_struct_v;
-    static Addressable identity_struct_addr;
+    static NativeSymbol identity_struct_addr;
+    static final MethodHandle identity_struct_3;
+    static final MethodHandle identity_struct_3_v;
+    static NativeSymbol identity_struct_3_addr;
     static final MethodHandle identity_memory_address;
     static final MethodHandle identity_memory_address_v;
-    static Addressable identity_memory_address_addr;
+    static NativeSymbol identity_memory_address_addr;
+    static final MethodHandle identity_memory_address_3;
+    static final MethodHandle identity_memory_address_3_v;
+    static NativeSymbol identity_memory_address_3_addr;
     static final MethodHandle args1;
     static final MethodHandle args1_v;
-    static Addressable args1_addr;
+    static NativeSymbol args1_addr;
     static final MethodHandle args2;
     static final MethodHandle args2_v;
-    static Addressable args2_addr;
+    static NativeSymbol args2_addr;
     static final MethodHandle args3;
     static final MethodHandle args3_v;
-    static Addressable args3_addr;
+    static NativeSymbol args3_addr;
     static final MethodHandle args4;
     static final MethodHandle args4_v;
-    static Addressable args4_addr;
+    static NativeSymbol args4_addr;
     static final MethodHandle args5;
     static final MethodHandle args5_v;
-    static Addressable args5_addr;
+    static NativeSymbol args5_addr;
     static final MethodHandle args10;
     static final MethodHandle args10_v;
-    static Addressable args10_addr;
-    static final MethodHandle func_trivial;
-    static final MethodHandle func_trivial_v;
-    static final MethodHandle identity_trivial;
-    static final MethodHandle identity_trivial_v;
+    static NativeSymbol args10_addr;
 
     static final MemoryLayout POINT_LAYOUT = MemoryLayout.structLayout(
-            C_LONG_LONG, C_LONG_LONG
+            C_INT, C_INT
     );
+
+    static final MemorySegment sharedPoint = MemorySegment.allocateNative(POINT_LAYOUT, ResourceScope.newSharedScope());
+    static final MemorySegment confinedPoint = MemorySegment.allocateNative(POINT_LAYOUT, ResourceScope.newConfinedScope());
 
     static final MemorySegment point = MemorySegment.allocateNative(POINT_LAYOUT, ResourceScope.newImplicitScope());
 
-    static final SegmentAllocator recycling_allocator = SegmentAllocator.ofSegment(MemorySegment.allocateNative(POINT_LAYOUT, ResourceScope.newImplicitScope()));
+    static final SegmentAllocator recycling_allocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(POINT_LAYOUT, ResourceScope.newImplicitScope()));
 
     static {
         System.loadLibrary("CallOverheadJNI");
@@ -97,66 +97,62 @@ public class CallOverheadHelper {
             func_addr = lookup.lookup("func").orElseThrow();
             MethodType mt = MethodType.methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
-            func_v = abi.downcallHandle(mt, fd);
+            func_v = abi.downcallHandle(fd);
             func = insertArguments(func_v, 0, func_addr);
-            func_trivial_v = abi.downcallHandle(mt, fd.withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
-            func_trivial = insertArguments(func_trivial_v, 0, func_addr);
         }
         {
             identity_addr = lookup.lookup("identity").orElseThrow();
-            MethodType mt = MethodType.methodType(int.class, int.class);
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
-            identity_v = abi.downcallHandle(mt, fd);
+            identity_v = abi.downcallHandle(fd);
             identity = insertArguments(identity_v, 0, identity_addr);
-            identity_trivial_v = abi.downcallHandle(mt, fd.withAttribute(FunctionDescriptor.TRIVIAL_ATTRIBUTE_NAME, true));
-            identity_trivial = insertArguments(identity_trivial_v, 0, identity_addr);
         }
         identity_struct_addr = lookup.lookup("identity_struct").orElseThrow();
         identity_struct_v = abi.downcallHandle(
-                MethodType.methodType(MemorySegment.class, MemorySegment.class),
                 FunctionDescriptor.of(POINT_LAYOUT, POINT_LAYOUT));
         identity_struct = insertArguments(identity_struct_v, 0, identity_struct_addr);
 
+        identity_struct_3_addr = lookup.lookup("identity_struct_3").orElseThrow();
+        identity_struct_3_v = abi.downcallHandle(
+                FunctionDescriptor.of(POINT_LAYOUT, POINT_LAYOUT, POINT_LAYOUT, POINT_LAYOUT));
+        identity_struct_3 = insertArguments(identity_struct_3_v, 0, identity_struct_3_addr);
+
         identity_memory_address_addr = lookup.lookup("identity_memory_address").orElseThrow();
         identity_memory_address_v = abi.downcallHandle(
-                MethodType.methodType(MemoryAddress.class, MemoryAddress.class),
                 FunctionDescriptor.of(C_POINTER, C_POINTER));
         identity_memory_address = insertArguments(identity_memory_address_v, 0, identity_memory_address_addr);
 
+        identity_memory_address_3_addr = lookup.lookup("identity_memory_address_3").orElseThrow();
+        identity_memory_address_3_v = abi.downcallHandle(
+                FunctionDescriptor.of(C_POINTER, C_POINTER, C_POINTER, C_POINTER));
+        identity_memory_address_3 = insertArguments(identity_memory_address_3_v, 0, identity_memory_address_3_addr);
+
         args1_addr = lookup.lookup("args1").orElseThrow();
         args1_v = abi.downcallHandle(
-                MethodType.methodType(void.class, long.class),
                 FunctionDescriptor.ofVoid(C_LONG_LONG));
         args1 = insertArguments(args1_v, 0, args1_addr);
 
         args2_addr = lookup.lookup("args2").orElseThrow();
         args2_v = abi.downcallHandle(
-                MethodType.methodType(void.class, long.class, double.class),
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE));
         args2 = insertArguments(args2_v, 0, args2_addr);
 
         args3_addr = lookup.lookup("args3").orElseThrow();
         args3_v = abi.downcallHandle(
-                MethodType.methodType(void.class, long.class, double.class, long.class),
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG));
         args3 = insertArguments(args3_v, 0, args3_addr);
 
         args4_addr = lookup.lookup("args4").orElseThrow();
         args4_v = abi.downcallHandle(
-                MethodType.methodType(void.class, long.class, double.class, long.class, double.class),
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE));
         args4 = insertArguments(args4_v, 0, args4_addr);
 
         args5_addr = lookup.lookup("args5").orElseThrow();
         args5_v = abi.downcallHandle(
-                MethodType.methodType(void.class, long.class, double.class, long.class, double.class, long.class),
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG));
         args5 = insertArguments(args5_v, 0, args5_addr);
 
         args10_addr = lookup.lookup("args10").orElseThrow();
         args10_v = abi.downcallHandle(
-                MethodType.methodType(void.class, long.class, double.class, long.class, double.class, long.class,
-                                                  double.class, long.class, double.class, long.class, double.class),
                 FunctionDescriptor.ofVoid(C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG,
                                           C_DOUBLE, C_LONG_LONG, C_DOUBLE, C_LONG_LONG, C_DOUBLE));
         args10 = insertArguments(args10_v, 0, args10_addr);

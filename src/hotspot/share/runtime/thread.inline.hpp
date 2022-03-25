@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -122,17 +122,35 @@ inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
 
+inline bool JavaThread::clear_async_exception_condition() {
+  bool ret = has_async_exception_condition();
+  if (ret) {
+    clear_suspend_flag(_has_async_exception);
+  }
+  return ret;
+}
+
 inline void JavaThread::set_pending_async_exception(oop e) {
   _pending_async_exception = e;
-  set_async_exception_condition(_async_exception);
-  // Set _suspend_flags too so we save a comparison in the transition from native to Java
-  // in the native wrappers. It will be cleared in check_and_handle_async_exceptions()
-  // when we actually install the exception.
   set_suspend_flag(_has_async_exception);
 }
 
+inline void JavaThread::set_pending_unsafe_access_error() {
+  set_suspend_flag(_has_async_exception);
+  DEBUG_ONLY(_is_unsafe_access_error = true);
+}
+
+
+inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
+  assert((_target->_suspend_flags & _async_delivery_disabled) == 0, "Nesting is not supported");
+  _target->set_suspend_flag(_async_delivery_disabled);
+}
+inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark() {
+  _target->clear_suspend_flag(_async_delivery_disabled);
+}
+
 inline JavaThreadState JavaThread::thread_state() const    {
-#if defined(PPC64) || defined (AARCH64)
+#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);

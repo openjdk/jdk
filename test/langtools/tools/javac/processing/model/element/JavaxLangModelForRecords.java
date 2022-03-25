@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementScanner14;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.*;
 
 import toolbox.JavacTask;
@@ -136,10 +135,10 @@ public class JavaxLangModelForRecords extends TestRunner {
 
             for (TypeElement clazz : ElementFilter.typesIn(roundEnv.getRootElements())) {
                 for (VariableElement field : ElementFilter.fieldsIn(clazz.getEnclosedElements())) {
-                    messager.printMessage(Kind.NOTE, "field: " + field.getSimpleName());
+                    messager.printNote("field: " + field.getSimpleName());
                 }
                 for (RecordComponentElement rc : ElementFilter.recordComponentsIn(clazz.getEnclosedElements())) {
-                    messager.printMessage(Kind.NOTE, "record component: " + rc.getSimpleName());
+                    messager.printNote("record component: " + rc.getSimpleName());
                 }
             }
 

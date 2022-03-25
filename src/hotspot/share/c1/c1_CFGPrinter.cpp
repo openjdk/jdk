@@ -231,9 +231,7 @@ void CFGPrinterOutput::print_LIR(BlockBegin* block) {
 
 void CFGPrinterOutput::print_block(BlockBegin* block) {
   print_begin("block");
-
   print("name \"B%d\"", block->block_id());
-
   print("from_bci %d", block->bci());
   print("to_bci %d", (block->end() == NULL ? -1 : block->end()->printable_bci()));
 
@@ -246,9 +244,13 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   output()->cr();
 
   output()->indent();
-  output()->print("successors ");
-  for (i = 0; i < block->number_of_sux(); i++) {
-    output()->print("\"B%d\" ", block->sux_at(i)->block_id());
+  if (block->end() != NULL) {
+    output()->print("successors ");
+    for (i = 0; i < block->number_of_sux(); i++) {
+      output()->print("\"B%d\" ", block->sux_at(i)->block_id());
+    }
+  } else {
+    output()->print("(block has no end, cannot print successors)");
   }
   output()->cr();
 

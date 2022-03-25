@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,10 +231,6 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 
     VMReg r = OptoReg::as_VMReg(OptoReg::Name(reg), framesize, max_inarg_slot);
 
-    if (false && r->is_reg() && !r->is_concrete()) {
-      continue;
-    }
-
     // See if dead (no reaching def).
     Node *def = _defs[reg];     // Get reaching def
     assert( def, "since live better have reaching def" );
@@ -312,14 +308,10 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
           set_live_bit(live,breg);
           // Already missed our turn?
           if( breg < reg ) {
-            if (b->is_stack() || b->is_concrete() || true ) {
-              omap->set_oop( b);
-            }
+            omap->set_oop(b);
           }
         }
-        if (b->is_stack() || b->is_concrete() || true ) {
-          omap->set_derived_oop( r, b);
-        }
+        omap->set_derived_oop(r, b);
       }
 
     } else if( t->isa_narrowoop() ) {
@@ -347,9 +339,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
       assert( dup_check[_callees[reg]]==0, "trying to callee save same reg twice" );
       debug_only( dup_check[_callees[reg]]=1; )
       VMReg callee = OptoReg::as_VMReg(OptoReg::Name(_callees[reg]));
-      if ( callee->is_concrete() || true ) {
-        omap->set_callee_saved( r, callee);
-      }
+      omap->set_callee_saved(r, callee);
 
     } else {
       // Other - some reaching non-oop value

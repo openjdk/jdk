@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 
 #include "gc/parallel/psParallelCompact.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "memory/allocation.hpp"
@@ -88,12 +89,20 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   oop _last_query_obj;
   size_t _last_query_ret;
 
+  StringDedup::Requests _string_dedup_requests;
+
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
   static OopTaskQueueSet* oop_task_queues()  { return _oop_task_queues; }
 
   static void initialize(ParMarkBitMap* mbm);
 
+  void publish_and_drain_oop_tasks();
+  // Try to publish all contents from the objArray task queue overflow stack to
+  // the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise returns false and the task is invalid.
+  bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
@@ -125,6 +134,10 @@ class ParCompactionManager : public CHeapObj<mtGC> {
     _last_query_ret = 0;
   }
 
+  void flush_string_dedup_requests() {
+    _string_dedup_requests.flush();
+  }
+
   // Bitmap query support, cache last query and result
   HeapWord* last_query_begin() { return _last_query_beg; }
   oop last_query_object() { return _last_query_obj; }
@@ -136,9 +149,13 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   static void reset_all_bitmap_query_caches();
 
+  static void flush_all_string_dedup_requests();
+
   RegionTaskQueue* region_stack()                { return &_region_stack; }
 
-  static ParCompactionManager* get_vmthread_cm() { return _manager_array[ParallelGCThreads]; }
+  // Get the compaction manager when doing evacuation work from the VM thread.
+  // Simply use the first compaction manager here.
+  static ParCompactionManager* get_vmthread_cm() { return _manager_array[0]; }
 
   ParCompactionManager();
 

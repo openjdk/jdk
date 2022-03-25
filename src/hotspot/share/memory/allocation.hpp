@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,7 @@ class AllocatedObj {
   f(mtServiceability, "Serviceability")                                              \
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
+  f(mtObjectMonitor,  "Object Monitors")                                             \
   f(mtNone,           "Unknown")                                                     \
   //end
 
@@ -170,15 +171,7 @@ MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
 // Make an int version of the sentinel end value.
 constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
-#if INCLUDE_NMT
-
 extern bool NMT_track_callsite;
-
-#else
-
-const bool NMT_track_callsite = false;
-
-#endif // INCLUDE_NMT
 
 class NativeCallStack;
 
@@ -408,7 +401,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   void initialize_allocation_info();
  public:
   allocation_type get_allocation_type() const;
-  bool allocated_on_stack()    const { return get_allocation_type() == STACK_OR_EMBEDDED; }
+  bool allocated_on_stack_or_embedded() const { return get_allocation_type() == STACK_OR_EMBEDDED; }
   bool allocated_on_res_area() const { return get_allocation_type() == RESOURCE_AREA; }
   bool allocated_on_C_heap()   const { return get_allocation_type() == C_HEAP; }
   bool allocated_on_arena()    const { return get_allocation_type() == ARENA; }
@@ -421,15 +414,13 @@ protected:
 
  public:
   void* operator new(size_t size, allocation_type type, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw();
+  void* operator new [](size_t size, allocation_type type, MEMFLAGS flags) throw() = delete;
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant,
       allocation_type type, MEMFLAGS flags) throw();
   void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-      allocation_type type, MEMFLAGS flags) throw();
-
+      allocation_type type, MEMFLAGS flags) throw() = delete;
   void* operator new(size_t size, Arena *arena) throw();
-
-  void* operator new [](size_t size, Arena *arena) throw();
+  void* operator new [](size_t size, Arena *arena) throw() = delete;
 
   void* operator new(size_t size) throw() {
       address res = (address)resource_allocate_bytes(size);
@@ -443,20 +434,10 @@ protected:
       return res;
   }
 
-  void* operator new [](size_t size) throw() {
-      address res = (address)resource_allocate_bytes(size);
-      DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() {
-      address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-      DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
-      return res;
-  }
-
+  void* operator new [](size_t size) throw() = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
   void  operator delete(void* p);
-  void  operator delete [](void* p);
+  void  operator delete [](void* p) = delete;
 };
 
 // One of the following macros must be used when allocating an array

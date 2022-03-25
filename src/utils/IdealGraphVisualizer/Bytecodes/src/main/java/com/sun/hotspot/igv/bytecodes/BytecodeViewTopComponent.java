@@ -188,7 +188,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
 
     }
 
-    final static class ResolvableHelper implements Serializable {
+    static final class ResolvableHelper implements Serializable {
 
         private static final long serialVersionUID = 1L;
 

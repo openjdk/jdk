@@ -6448,6 +6448,7 @@ CurrencyNames//rsd=Serbian Dinar
 CurrencyNames//scr=Seychellois Rupee
 CurrencyNames//sdd=Sudanese Dinar (1992-2007)
 CurrencyNames//sit=Slovenian Tolar
+CurrencyNames//sle=Sierra Leonean Leone
 CurrencyNames//sll=Sierra Leonean Leone
 CurrencyNames//srd=Surinamese Dollar
 CurrencyNames//srg=Surinamese Guilder
@@ -8319,7 +8320,8 @@ CurrencyNames//azn=Azerbaijan Manat
 # bug #8193552
 CurrencyNames//mru=Mauritanian Ouguiya
 
-# bug #8208746
+# bug #8208746, #8274658
+CurrencyNames//ved=Venezuelan Bol\u00edvar Soberano
 CurrencyNames//ves=Venezuelan Bol\u00edvar Soberano
 
 # bug #8206879

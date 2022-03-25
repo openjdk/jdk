@@ -32,10 +32,11 @@ import com.sun.tools.attach.spi.AttachProvider;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
  * Linux implementation of HotSpotVirtualMachine
@@ -138,10 +139,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // protocol version
-    private final static String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "1";
 
     // known errors
-    private final static int ATTACH_ERROR_BADVERSION = 101;
+    private static final int ATTACH_ERROR_BADVERSION = 101;
 
     /**
      * Execute the given command in the target VM.
@@ -236,7 +237,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     /*
      * InputStream for the socket connection to get target VM
      */
-    private class SocketInputStream extends InputStream {
+    private static class SocketInputStream extends InputStream {
         int s = -1;
 
         public SocketInputStream(int s) {
@@ -315,12 +316,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
      */
     private void writeString(int fd, String s) throws IOException {
         if (s.length() > 0) {
-            byte b[];
-            try {
-                b = s.getBytes("UTF-8");
-            } catch (java.io.UnsupportedEncodingException x) {
-                throw new InternalError(x);
-            }
+            byte[] b = s.getBytes(UTF_8);
             VirtualMachineImpl.write(fd, b, 0, b.length);
         }
         byte b[] = new byte[1];
@@ -343,7 +339,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         Path statusPath = Paths.get(statusFile);
 
         try {
-            for (String line : Files.readAllLines(statusPath, StandardCharsets.UTF_8)) {
+            for (String line : Files.readAllLines(statusPath)) {
                 String[] parts = line.split(":");
                 if (parts.length == 2 && parts[0].trim().equals("NSpid")) {
                     parts = parts[1].trim().split("\\s+");

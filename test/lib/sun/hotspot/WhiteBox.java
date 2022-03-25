@@ -32,8 +32,9 @@ import java.util.function.Function;
 import java.security.BasicPermission;
 import java.util.Objects;
 
-import sun.hotspot.parser.DiagnosticCommand;
+import jdk.test.whitebox.parser.DiagnosticCommand;
 
+@Deprecated
 public class WhiteBox {
   @SuppressWarnings("serial")
   public static class WhiteBoxPermission extends BasicPermission {
@@ -58,7 +59,7 @@ public class WhiteBox {
     @SuppressWarnings("removal")
     SecurityManager sm = System.getSecurityManager();
     if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
+      throw new SecurityException("can't use old whitebox with SecurityManager, please switch to jdk.test.whitebox.WhiteBox");
     }
     return instance;
   }
@@ -225,7 +226,6 @@ public class WhiteBox {
   public native void NMTReleaseMemory(long addr, long size);
   public native long NMTMallocWithPseudoStack(long size, int index);
   public native long NMTMallocWithPseudoStackAndType(long size, int index, int type);
-  public native boolean NMTChangeTrackingLevel();
   public native int NMTGetHashSize();
   public native long NMTNewArena(long initSize);
   public native void NMTFreeArena(long arena);
@@ -317,6 +317,36 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getMethodCompilationLevel0(method, isOsr);
   }
+  public         int     getMethodDecompileCount(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodDecompileCount0(method);
+  }
+  private native int     getMethodDecompileCount0(Executable method);
+  // Get the total trap count of a method. If the trap count for a specific reason
+  // did overflow, this includes the overflow trap count of the method.
+  public         int     getMethodTrapCount(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodTrapCount0(method, null);
+  }
+  // Get the trap count of a method for a specific reason. If the trap count for
+  // that reason did overflow, this includes the overflow trap count of the method.
+  public         int     getMethodTrapCount(Executable method, String reason) {
+    Objects.requireNonNull(method);
+    return getMethodTrapCount0(method, reason);
+  }
+  private native int     getMethodTrapCount0(Executable method, String reason);
+  // Get the total deopt count.
+  public         int     getDeoptCount() {
+    return getDeoptCount0(null, null);
+  }
+  // Get the deopt count for a specific reason and a specific action. If either
+  // one of 'reason' or 'action' is null, the method returns the sum of all
+  // deoptimizations with the specific 'action' or 'reason' respectively.
+  // If both arguments are null, the method returns the total deopt count.
+  public         int     getDeoptCount(String reason, String action) {
+    return getDeoptCount0(reason, action);
+  }
+  private native int     getDeoptCount0(String reason, String action);
   private native boolean testSetDontInlineMethod0(Executable method, boolean value);
   public         boolean testSetDontInlineMethod(Executable method, boolean value) {
     Objects.requireNonNull(method);
@@ -559,13 +589,21 @@ public class WhiteBox {
   public native void AddModuleExportsToAllUnnamed(Object module, String pkg);
   public native void AddModuleExportsToAll(Object module, String pkg);
 
-  public native int getOffsetForName0(String name);
-  public int getOffsetForName(String name) throws Exception {
-    int offset = getOffsetForName0(name);
+  public native int getCDSOffsetForName0(String name);
+  public int getCDSOffsetForName(String name) throws Exception {
+    int offset = getCDSOffsetForName0(name);
     if (offset == -1) {
       throw new RuntimeException(name + " not found");
     }
     return offset;
+  }
+  public native int getCDSConstantForName0(String name);
+  public int getCDSConstantForName(String name) throws Exception {
+    int constant = getCDSConstantForName0(name);
+    if (constant == -1) {
+      throw new RuntimeException(name + " not found");
+    }
+    return constant;
   }
   public native Boolean getMethodBooleanOption(Executable method, String name);
   public native Long    getMethodIntxOption(Executable method, String name);
@@ -586,15 +624,19 @@ public class WhiteBox {
   }
 
   // Sharing & archiving
+  public native int     getCDSGenericHeaderMinVersion();
+  public native int     getCurrentCDSVersion();
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
   public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
-  public native boolean areSharedStringsIgnored();
+  public native boolean areSharedStringsMapped();
+  public native boolean isSharedInternedString(String s);
   public native boolean isCDSIncluded();
   public native boolean isJFRIncluded();
-  public native boolean isJavaHeapArchiveSupported();
+  public native boolean isDTraceIncluded();
+  public native boolean canWriteJavaHeapArchive();
   public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
@@ -607,6 +649,8 @@ public class WhiteBox {
   public native int handshakeWalkStack(Thread t, boolean all_threads);
   public native boolean handshakeReadMonitors(Thread t);
   public native void asyncHandshakeWalkStack(Thread t);
+
+  public native void lockAndBlock(boolean suspender);
 
   // Returns true on linux if library has the noexecstack flag set.
   public native boolean checkLibSpecifiesNoexecstack(String libfilename);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,28 @@ abstract class DomainKeyStore extends KeyStoreSpi {
         return date;
     }
 
+    @Override
+    public Set<KeyStore.Entry.Attribute> engineGetAttributes(String alias) {
+
+        AbstractMap.SimpleEntry<String, Collection<KeyStore>> pair =
+                getKeystoresForReading(alias);
+        Set<KeyStore.Entry.Attribute> result = Collections.emptySet();
+
+        try {
+            String entryAlias = pair.getKey();
+            for (KeyStore keystore : pair.getValue()) {
+                result = keystore.getAttributes(entryAlias);
+                if (result != null) {
+                    break;
+                }
+            }
+        } catch (KeyStoreException e) {
+            throw new IllegalStateException(e);
+        }
+
+        return result;
+    }
+
     /**
      * Assigns the given private key to the given alias, protecting
      * it with the given password as defined in PKCS8.
@@ -397,20 +419,22 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                     if (aliases.hasMoreElements()) {
                         return true;
                     } else {
-                        if (iterator.hasNext()) {
+                        while (iterator.hasNext()) {
                             keystoresEntry = iterator.next();
                             prefix = keystoresEntry.getKey() +
-                                entryNameSeparator;
+                                    entryNameSeparator;
                             aliases = keystoresEntry.getValue().aliases();
-                        } else {
-                            return false;
+                            if (aliases.hasMoreElements()) {
+                                return true;
+                            } else {
+                                continue;
+                            }
                         }
+                        return false;
                     }
                 } catch (KeyStoreException e) {
                     return false;
                 }
-
-                return aliases.hasMoreElements();
             }
 
             public String nextElement() {

@@ -1497,7 +1497,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         save_live_registers(sasm, 1);
 
         __ NOT_LP64(push(rax)) LP64_ONLY(mov(c_rarg0, rax));
-        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc)));
+        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc))));
         NOT_LP64(__ pop(rax));
 
         restore_live_registers(sasm);

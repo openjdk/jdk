@@ -138,7 +138,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     CardTable::CardValue* base = ci_card_table_address();
     assert(base != NULL, "unexpected byte_map_base");
     cardtable_start_address = base;
-    cardtable_shift = CardTable::card_shift;
+    cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
     cardtable_start_address = 0;
@@ -286,7 +286,9 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceHashtable<jlong, JVMCIObject> longs;
-  ResourceHashtable<const char*, JVMCIObject, &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
+  ResourceHashtable<const char*, JVMCIObject,
+                    256, ResourceObj::RESOURCE_AREA, mtInternal,
+                    &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 
   jvalue prim;
   prim.z = true;  JVMCIObject boxedTrue =  JVMCIENV->create_box(T_BOOLEAN, &prim, JVMCI_CHECK_NULL);

@@ -26,10 +26,10 @@
 package jdk.internal.foreign.abi.aarch64;
 
 import jdk.incubator.foreign.GroupLayout;
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemoryLayout;
 import jdk.incubator.foreign.SequenceLayout;
 import jdk.incubator.foreign.ValueLayout;
-import jdk.internal.foreign.PlatformLayouts;
 
 public enum TypeClass {
     STRUCT_REGISTER,
@@ -42,11 +42,17 @@ public enum TypeClass {
     private static final int MAX_AGGREGATE_REGS_SIZE = 2;
 
     private static TypeClass classifyValueType(ValueLayout type) {
-        return switch (PlatformLayouts.getKind(type)) {
-            case CHAR, SHORT, INT, LONG, LONG_LONG -> INTEGER;
-            case POINTER -> POINTER;
-            case FLOAT, DOUBLE -> FLOAT;
-        };
+        Class<?> carrier = type.carrier();
+        if (carrier == boolean.class || carrier == byte.class || carrier == char.class ||
+                carrier == short.class || carrier == int.class || carrier == long.class) {
+            return INTEGER;
+        } else if (carrier == float.class || carrier == double.class) {
+            return FLOAT;
+        } else if (carrier == MemoryAddress.class) {
+            return POINTER;
+        } else {
+            throw new IllegalStateException("Cannot get here: " + carrier.getName());
+        }
     }
 
     static boolean isRegisterAggregate(MemoryLayout type) {

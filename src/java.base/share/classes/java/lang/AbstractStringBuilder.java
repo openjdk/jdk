@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,8 @@ import static java.lang.String.checkOffset;
  * @author      Ulf Zibis
  * @since       1.5
  */
-abstract class AbstractStringBuilder implements Appendable, CharSequence {
+abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
+    permits StringBuilder, StringBuffer {
     /**
      * The value is used for character storage.
      */
@@ -232,20 +233,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * The maximum size of array to allocate (unless necessary).
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    /**
      * Returns a capacity at least as large as the given minimum capacity.
      * Returns the current capacity increased by the current length + 2 if
      * that suffices.
      * Will not return a capacity greater than
-     * {@code (MAX_ARRAY_SIZE >> coder)} unless the given minimum capacity
-     * is greater than that.
+     * {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
+     * unless the given minimum capacity is greater than that.
      *
      * @param  minCapacity the desired minimum capacity
      * @throws OutOfMemoryError if minCapacity is less than zero or
@@ -353,7 +346,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (isLatin1()) {
             return (char)(value[index] & 0xff);
         }
-        return StringUTF16.charAt(value, index);
+        return StringUTF16.getChar(value, index);
     }
 
     /**
@@ -438,9 +431,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * {@code beginIndex} is larger than {@code endIndex}.
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        if (beginIndex < 0 || endIndex > count || beginIndex > endIndex) {
-            throw new IndexOutOfBoundsException();
-        }
+        Preconditions.checkFromToIndex(beginIndex, endIndex, length(), null);
         if (isLatin1()) {
             return endIndex - beginIndex;
         }
@@ -458,7 +449,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param codePointOffset the offset in code points
      * @return the index within this sequence
      * @throws    IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of this sequence,
+     *   is negative or larger than the length of this sequence,
      *   or if {@code codePointOffset} is positive and the subsequence
      *   starting with {@code index} has fewer than
      *   {@code codePointOffset} code points,
@@ -603,9 +594,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
         int len = asb.length();
         ensureCapacityInternal(count + len);
-        if (getCoder() != asb.getCoder()) {
-            inflate();
-        }
+        inflateIfNeededFor(asb);
         asb.getBytes(value, count, coder);
         count += len;
         return this;
@@ -1712,15 +1701,26 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         }
     }
 
-    private void putStringAt(int index, String str, int off, int end) {
-        if (getCoder() != str.coder()) {
+    private void inflateIfNeededFor(String input) {
+        if (COMPACT_STRINGS && (coder != input.coder())) {
             inflate();
         }
+    }
+
+    private void inflateIfNeededFor(AbstractStringBuilder input) {
+        if (COMPACT_STRINGS && (coder != input.getCoder())) {
+            inflate();
+        }
+    }
+
+    private void putStringAt(int index, String str, int off, int end) {
+        inflateIfNeededFor(str);
         str.getBytes(value, off, index, coder, end - off);
     }
 
     private void putStringAt(int index, String str) {
-        putStringAt(index, str, 0, str.length());
+        inflateIfNeededFor(str);
+        str.getBytes(value, index, coder);
     }
 
     private final void appendChars(char[] s, int off, int end) {

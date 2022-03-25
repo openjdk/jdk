@@ -40,14 +40,14 @@ import java.util.*;
 
 abstract class AbstractPoller implements Runnable {
 
-    // list of requests pending to the poller thread
-    private final LinkedList<Request> requestList;
+    // requests pending to the poller thread
+    private final ArrayDeque<Request> requests;
 
     // set to true when shutdown
     private boolean shutdown;
 
     protected AbstractPoller() {
-        this.requestList = new LinkedList<>();
+        this.requests = new ArrayDeque<>();
         this.shutdown = false;
     }
 
@@ -216,11 +216,11 @@ abstract class AbstractPoller implements Runnable {
     private Object invoke(RequestType type, Object... params) throws IOException {
         // submit request
         Request req = new Request(type, params);
-        synchronized (requestList) {
+        synchronized (requests) {
             if (shutdown) {
                 throw new ClosedWatchServiceException();
             }
-            requestList.add(req);
+            requests.add(req);
 
             // wakeup thread
             wakeup();
@@ -243,9 +243,9 @@ abstract class AbstractPoller implements Runnable {
      */
     @SuppressWarnings("unchecked")
     boolean processRequests() {
-        synchronized (requestList) {
+        synchronized (requests) {
             Request req;
-            while ((req = requestList.poll()) != null) {
+            while ((req = requests.poll()) != null) {
                 // if in process of shutdown then reject request
                 if (shutdown) {
                     req.release(new ClosedWatchServiceException());

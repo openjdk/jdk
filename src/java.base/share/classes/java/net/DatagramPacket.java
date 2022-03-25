@@ -80,7 +80,7 @@ class DatagramPacket {
      *
      * @since   1.2
      */
-    public DatagramPacket(byte buf[], int offset, int length) {
+    public DatagramPacket(byte[] buf, int offset, int length) {
         setData(buf, offset, length);
     }
 
@@ -98,7 +98,7 @@ class DatagramPacket {
      *          or if the length is greater than the length of the
      *          packet's given buffer.
      */
-    public DatagramPacket(byte buf[], int length) {
+    public DatagramPacket(byte[] buf, int length) {
         this (buf, 0, length);
     }
 
@@ -124,7 +124,7 @@ class DatagramPacket {
      *
      * @since   1.2
      */
-    public DatagramPacket(byte buf[], int offset, int length,
+    public DatagramPacket(byte[] buf, int offset, int length,
                           InetAddress address, int port) {
         setData(buf, offset, length);
         setAddress(address);
@@ -152,7 +152,7 @@ class DatagramPacket {
      *
      * @since   1.4
      */
-    public DatagramPacket(byte buf[], int offset, int length, SocketAddress address) {
+    public DatagramPacket(byte[] buf, int offset, int length, SocketAddress address) {
         setData(buf, offset, length);
         setSocketAddress(address);
     }
@@ -174,7 +174,7 @@ class DatagramPacket {
      *
      * @see     java.net.InetAddress
      */
-    public DatagramPacket(byte buf[], int length,
+    public DatagramPacket(byte[] buf, int length,
                           InetAddress address, int port) {
         this(buf, 0, length, address, port);
     }
@@ -198,7 +198,7 @@ class DatagramPacket {
      *
      * @since   1.4
      */
-    public DatagramPacket(byte buf[], int length, SocketAddress address) {
+    public DatagramPacket(byte[] buf, int length, SocketAddress address) {
         this(buf, 0, length, address);
     }
 

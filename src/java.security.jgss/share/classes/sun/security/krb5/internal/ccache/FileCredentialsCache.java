@@ -567,12 +567,11 @@ public class FileCredentialsCache extends CredentialsCache
 
     private static String exec(String c) {
         StringTokenizer st = new StringTokenizer(c);
-        Vector<String> v = new Vector<>();
+        ArrayList<String> v = new ArrayList<>();
         while (st.hasMoreTokens()) {
-            v.addElement(st.nextToken());
+            v.add(st.nextToken());
         }
-        final String[] command = new String[v.size()];
-        v.copyInto(command);
+        final String[] command = v.toArray(new String[0]);
         try {
 
             @SuppressWarnings("removal")

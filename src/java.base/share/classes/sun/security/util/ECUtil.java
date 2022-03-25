@@ -33,6 +33,7 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
+import java.util.Objects;
 
 public final class ECUtil {
 
@@ -308,6 +309,42 @@ public final class ECUtil {
         } catch (Exception e) {
             throw new SignatureException("Invalid encoding for signature", e);
         }
+    }
+
+    /**
+     * Check an ECPrivateKey to make sure the scalar value is within the
+     * range of the order [1, n-1].
+     *
+     * @param prv the private key to be checked.
+     *
+     * @return the private key that was evaluated.
+     *
+     * @throws InvalidKeyException if the key's scalar value is not within
+     *      the range 1 <= x < n where n is the order of the generator.
+     */
+    public static ECPrivateKey checkPrivateKey(ECPrivateKey prv)
+            throws InvalidKeyException {
+        // The private key itself cannot be null, but if the private
+        // key doesn't divulge the parameters or more importantly the S value
+        // (possibly because it lives on a provider that prevents release
+        // of those values, e.g. HSM), then we cannot perform the check and
+        // will allow the operation to proceed.
+        Objects.requireNonNull(prv, "Private key must be non-null");
+        ECParameterSpec spec = prv.getParams();
+        if (spec != null) {
+            BigInteger order = spec.getOrder();
+            BigInteger sVal = prv.getS();
+
+            if (order != null && sVal != null) {
+                if (sVal.compareTo(BigInteger.ZERO) <= 0 ||
+                        sVal.compareTo(order) >= 0) {
+                    throw new InvalidKeyException("The private key must be " +
+                            "within the range [1, n - 1]");
+                }
+            }
+        }
+
+        return prv;
     }
 
     private ECUtil() {}

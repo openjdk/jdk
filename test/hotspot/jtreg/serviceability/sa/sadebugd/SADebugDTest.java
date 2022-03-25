@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8163805 8224252 8196751
+ * @bug 8163805 8224252 8196751 8279351
  * @summary Checks that the jshdb debugd utility successfully starts
  *          and tries to attach to a running process
  * @requires vm.hasSA
@@ -71,6 +71,16 @@ public class SADebugDTest {
         }
     }
 
+    private static boolean checkOutput(final String line, final boolean useRmiPort, final int rmiPort) {
+        if (!useRmiPort && line.contains(GOLDEN)) {
+            testResult = true;
+        } else if (useRmiPort && line.contains(RMI_CONNECTOR_IS_BOUND + rmiPort)) {
+            testResult = true;
+        } else if (line.contains(ADDRESS_ALREADY_IN_USE)) {
+            portInUse = true;
+        }
+        return (line.contains(GOLDEN) || portInUse);
+    }
 
     private static void testWithPid(final boolean useRmiPort, final boolean useRegistryPort, final boolean useHostName) throws Exception {
         LingeredApp app = null;
@@ -95,9 +105,8 @@ public class SADebugDTest {
                     jhsdbLauncher.addToolArg(Integer.toString(registryPort));
                 }
 
-                int rmiPort = -1;
+                final int rmiPort = useRmiPort ? Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT, registryPort) : -1;
                 if (useRmiPort) {
-                    rmiPort = Utils.findUnreservedFreePort(REGISTRY_DEFAULT_PORT, registryPort);
                     jhsdbLauncher.addToolArg("--rmiport");
                     jhsdbLauncher.addToolArg(Integer.toString(rmiPort));
                 }
@@ -107,28 +116,16 @@ public class SADebugDTest {
                 }
                 ProcessBuilder pb = SATestUtils.createProcessBuilder(jhsdbLauncher);
 
-                final int finalRmiPort = rmiPort;
-
                 // The startProcess will block until the 'golden' string appears in either process' stdout or stderr
                 // In case of timeout startProcess kills the debugd process
-                Process debugd = startProcess("debugd", pb, null,
-                        l -> {
-                            if (!useRmiPort && l.contains(GOLDEN)) {
-                                testResult = true;
-                            } else if (useRmiPort && l.contains(RMI_CONNECTOR_IS_BOUND + finalRmiPort)) {
-                                testResult = true;
-                            } else if (l.contains(ADDRESS_ALREADY_IN_USE)) {
-                                portInUse = true;
-                            }
-                            return (l.contains(GOLDEN) || portInUse);
-                        }, 20, TimeUnit.SECONDS);
+                Process debugd = startProcess("debugd", pb, null, l -> checkOutput(l, useRmiPort, rmiPort), 20, TimeUnit.SECONDS);
 
                 // If we are here, this means we have received the golden line and the test has passed
                 // The debugd remains running, we have to kill it
                 debugd.destroy();
                 debugd.waitFor();
 
-                if (!testResult) {
+                if (!testResult && !portInUse) {
                     throw new RuntimeException("Expected message \"" +
                             RMI_CONNECTOR_IS_BOUND + rmiPort + "\" is not found in the output.");
                 }

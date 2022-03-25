@@ -25,18 +25,23 @@
 
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
 
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.PROPERTIES;
 
 /**
  * Builds documentation for a property.
@@ -179,7 +184,25 @@ public class PropertyBuilder extends AbstractMemberBuilder {
      * @param propertyDocTree the content tree to which the documentation will be added
      */
     protected void buildTagInfo(Content propertyDocTree) {
-        writer.addTags(currentProperty, propertyDocTree);
+        CommentUtils cmtUtils = configuration.cmtUtils;
+        DocCommentTree dct = utils.getDocCommentTree(currentProperty);
+        var fullBody = dct.getFullBody();
+        ArrayList<DocTree> blockTags = dct.getBlockTags().stream()
+                .filter(t -> t.getKind() != DocTree.Kind.RETURN)
+                .collect(Collectors.toCollection(ArrayList::new));
+        String sig = "#" + currentProperty.getSimpleName() + "()";
+        blockTags.add(cmtUtils.makeSeeTree(sig, currentProperty));
+        // The property method is used as a proxy for the property
+        // (which does not have an explicit element of its own.)
+        // Temporarily override the doc comment for the property method
+        // by removing the `@return` tag, which should not be displayed for
+        // the property.
+        CommentUtils.DocCommentInfo prev = cmtUtils.setDocCommentTree(currentProperty, fullBody, blockTags);
+        try {
+            writer.addTags(currentProperty, propertyDocTree);
+        } finally {
+            cmtUtils.setDocCommentInfo(currentProperty, prev);
+        }
     }
 
     /**

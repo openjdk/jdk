@@ -73,12 +73,12 @@ public class TestEagerReclaimHumongousRegionsLog {
 
         // This gives an array of lines containing eager reclaim of humongous regions
         // log messages contents after the ":" in the following order for every GC:
-        //   Humongous Regions: f->g
         //   Region Register: a.ams
         //   Eagerly Reclaim Humonguous Objects b.cms
         //   Humongous Total: Min: 1, Avg:  1.0, Max: 1, Diff: 0, Sum: c, Workers: 1
         //   Humongous Candidate: Min: 1, Avg:  1.0, Max: 1, Diff: 0, Sum: d, Workers: 1
         //   Humongous Reclaimed: Min: 1, Avg:  1.0, Max: 1, Diff: 0, Sum: e, Workers: 1
+        //   Humongous Regions: f->g
 
         String[] lines = Arrays.stream(output.getStdout().split("\\R"))
                          .filter(s -> (s.contains("Humongous") || s.contains("Region Register"))).map(s -> s.substring(s.indexOf(LogSeparator) + LogSeparator.length()))
@@ -87,12 +87,12 @@ public class TestEagerReclaimHumongousRegionsLog {
         Asserts.assertTrue(lines.length % 6 == 0, "There seems to be an unexpected amount of log messages (total: " + lines.length + ") per GC");
 
         for (int i = 0; i < lines.length; i += 6) {
-            int total = Integer.parseInt(getSumValue(lines[i + 3]));
-            int candidate = Integer.parseInt(getSumValue(lines[i + 4]));
-            int reclaimed = Integer.parseInt(getSumValue(lines[i + 5]));
+            int total = Integer.parseInt(getSumValue(lines[i + 2]));
+            int candidate = Integer.parseInt(getSumValue(lines[i + 3]));
+            int reclaimed = Integer.parseInt(getSumValue(lines[i + 4]));
 
-            int before = Integer.parseInt(lines[i].substring(0, 1));
-            int after = Integer.parseInt(lines[i].substring(3, 4));
+            int before = Integer.parseInt(lines[i + 5].substring(0, 1));
+            int after = Integer.parseInt(lines[i + 5].substring(3, 4));
             System.out.println("total " + total + " candidate " + candidate + " reclaimed " + reclaimed + " before " + before + " after " + after);
 
             Asserts.assertEQ(total, candidate, "Not all humonguous objects are candidates");

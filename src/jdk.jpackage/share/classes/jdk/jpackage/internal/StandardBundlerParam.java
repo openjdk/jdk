@@ -311,6 +311,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             true : Boolean.valueOf(s)
             );
 
+    static final StandardBundlerParam<Boolean> SHORTCUT_HINT  =
+            new StandardBundlerParam<>(
+                    "shortcut-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
+    static final StandardBundlerParam<Boolean> MENU_HINT  =
+            new StandardBundlerParam<>(
+                    "menu-hint", // not directly related to a CLI option
+                    Boolean.class,
+                    params -> true,  // defaults to true
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                            true : Boolean.valueOf(s)
+            );
+
     static final StandardBundlerParam<Path> RESOURCE_DIR =
             new StandardBundlerParam<>(
                     Arguments.CLIOptions.RESOURCE_DIR.getId(),
@@ -384,6 +402,24 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     Path.class,
                     ICON::fetchFrom,
                     (s, p) -> Path.of(s)
+            );
+
+    @SuppressWarnings("unchecked")
+    static final BundlerParamInfo<List<String>> DMG_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.DMG_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p -> Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
+            );
+
+    @SuppressWarnings("unchecked")
+    static final StandardBundlerParam<List<String>> APP_CONTENT =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.APP_CONTENT.getId(),
+                    (Class<List<String>>) (Object)List.class,
+                    p->Collections.emptyList(),
+                    (s, p) -> Arrays.asList(s.split(","))
             );
 
     @SuppressWarnings("unchecked")
@@ -466,6 +502,16 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     p -> new LinkedHashSet<String>(),
                     (s, p) -> new LinkedHashSet<>(Arrays.asList(s.split(",")))
             );
+
+    static final StandardBundlerParam<Boolean> SIGN_BUNDLE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.MAC_SIGN.getId(),
+                    Boolean.class,
+                    params -> false,
+                    (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
+
 
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||

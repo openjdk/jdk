@@ -32,6 +32,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
@@ -43,7 +44,7 @@
 
 inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   assert(_manager_array != NULL, "access of NULL manager_array");
-  assert(index <= ParallelGCThreads, "out of range manager_array access");
+  assert(index < ParallelGCThreads, "out of range manager_array access");
   return &_manager_array[index];
 }
 
@@ -218,13 +219,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
           HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
           if(lab_base != NULL) {
-#ifdef ASSERT
-            // Delay the initialization of the promotion lab (plab).
-            // This exposes uninitialized plabs to card table processing.
-            if (GCWorkerDelayMillis > 0) {
-              os::naked_sleep(GCWorkerDelayMillis);
-            }
-#endif
             _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
             // Try the old lab allocation again.
             new_obj = cast_to_oop(_old_lab.allocate(new_obj_size));
@@ -266,11 +260,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
       assert(young_space()->contains(new_obj), "Attempt to push non-promoted obj");
     }
 
-    log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
-                                    new_obj_is_tenured ? "copying" : "tenuring",
-                                    new_obj->klass()->internal_name(),
-                                    p2i((void *)o), p2i((void *)new_obj), new_obj->size());
-
     // Do the size comparison first with new_obj_size, which we
     // already have. Hopefully, only a few objects are larger than
     // _min_array_size_for_chunking, and most of them will be arrays.
@@ -284,6 +273,12 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     } else {
       // we'll just push its contents
       push_contents(new_obj);
+
+      if (StringDedup::is_enabled() &&
+          java_lang_String::is_instance(new_obj) &&
+          psStringDedup::is_candidate_from_evacuation(new_obj, new_obj_is_tenured)) {
+        _string_dedup_requests.add(o);
+      }
     }
     return new_obj;
   } else {
@@ -295,39 +290,28 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     assert(o->is_forwarded(), "Object must be forwarded if the cas failed.");
     assert(o->forwardee() == forwardee, "invariant");
 
-    // Try to deallocate the space.  If it was directly allocated we cannot
-    // deallocate it, so we have to test.  If the deallocation fails,
-    // overwrite with a filler object.
     if (new_obj_is_tenured) {
-      if (!_old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size)) {
-        CollectedHeap::fill_with_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
-      }
-    } else if (!_young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size)) {
-      CollectedHeap::fill_with_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+      _old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+    } else {
+      _young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
     }
     return forwardee;
   }
 }
 
 // Attempt to "claim" oop at p via CAS, push the new obj if successful
-// This version tests the oop* to make sure it is within the heap before
-// attempting marking.
 template <bool promote_immediately, class T>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
+  assert(ParallelScavengeHeap::heap()->is_in_reserved(p), "precondition");
   assert(should_scavenge(p, true), "revisiting object?");
 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   oop new_obj = copy_to_survivor_space<promote_immediately>(o);
   RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
-  // We cannot mark without test, as some code passes us pointers
-  // that are outside the heap. These pointers are either from roots
-  // or from metadata.
-  if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
-      ParallelScavengeHeap::heap()->is_in_reserved(p)) {
-    if (PSScavenge::is_obj_in_young(new_obj)) {
-      PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
-    }
+  if (!PSScavenge::is_obj_in_young((HeapWord*)p) &&
+       PSScavenge::is_obj_in_young(new_obj)) {
+    PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
   }
 }
 

@@ -51,7 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  */
 public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBuilder> {
 
-    private final static String TERMINALLY_DEPRECATED_KEY = "doclet.Terminally_Deprecated_Elements";
+    private static final String TERMINALLY_DEPRECATED_KEY = "doclet.Terminally_Deprecated_Elements";
 
     /**
      * Constructor.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,157 +21,111 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
    @bug 6302514
-   @run main/manual=yesno PageDialogTest
+   @run main/manual PageDialogTest
    @summary A toolkit modal dialog should not be blocked by Page/Print dialog.
 */
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
 
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.PrinterJob;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class PageDialogTest {
 
-    public static void main(String[] args) {
-        String[] instructions =
-        {
-            "The test shows a Toolkit modal dialog. ",
-            "Click the 'Open' button. It opens a page dialog.",
-            "The test fails if the page dialog blocks the toolkit",
-            "modal dialog, otherwise it passes."
-        };
+    public static Frame frame;
+    public static Dialog dialog;
+    public static volatile boolean testResult;
+    public static final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-        Sysout.createDialog( );
-        Sysout.printInstructions( instructions );
+    public static void createUI() {
+        frame = new Frame("Test 6302514");
+        String instructions =
+                "1. Click on the 'Show Dialog' button to show a 'Toolkit Modal Dialog' \n" +
+                "2. Click on the 'Open PageDialog' button to show 'Page Dialog'.\n" +
+                "3. The test fails if the page dialog blocks the toolkit\n"+
+                " else test pass.\n" +
+                "4. Close Page dialog and 'Toolkit modal dialog'\n" +
+                "5. Click appropriate button to mark the test case pass or fail.\n" ;
 
-        Dialog td = new Dialog((Frame) null, "Toolkit modal dialog",
-                               Dialog.ModalityType.TOOLKIT_MODAL);
-        td.setLayout(new FlowLayout());
-        td.add(new Button("Dummy"));
-        Button tdb = new Button("Open");
-        tdb.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                PrinterJob.getPrinterJob().pageDialog(new PageFormat());
+        TextArea instructionsTextArea = new TextArea( instructions, 8,
+                50, TextArea.SCROLLBARS_NONE );
+        instructionsTextArea.setEditable(false);
+        frame.add(BorderLayout.NORTH, instructionsTextArea);
+
+        Panel buttonPanel = new Panel(new FlowLayout());
+        Button passButton = new Button("pass");
+        passButton.setActionCommand("pass");
+        passButton.addActionListener(e -> {
+            testResult = true;
+            countDownLatch.countDown();
+            dialog.dispose();
+            frame.dispose();
+        });
+
+        Button failButton = new Button("fail");
+        failButton.addActionListener(e->{
+            testResult = false;
+            countDownLatch.countDown();
+            dialog.dispose();
+            frame.dispose();
+        });
+
+        Button showDialog = new Button("Show Dialog");
+        showDialog.addActionListener(e->{
+            createToolkitModalDialog();
+        });
+
+        buttonPanel.add(showDialog);
+        buttonPanel.add(passButton);
+        buttonPanel.add(failButton);
+        frame.add(BorderLayout.SOUTH, buttonPanel);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public static void createToolkitModalDialog() {
+        dialog = new Dialog((Frame) null, "Toolkit modal dialog",
+                Dialog.ModalityType.TOOLKIT_MODAL);
+        dialog.setLayout(new FlowLayout());
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                super.windowClosing(e);
+                dialog.dispose();
             }
         });
-        td.add(tdb);
-        td.setSize(250, 150);
-        td.setVisible(true);
+
+        Button openPageDialogButton = new Button("Open PageDialog");
+        openPageDialogButton.addActionListener(e->{
+            PrinterJob.getPrinterJob().pageDialog(new PageFormat());
+        });
+        dialog.add(openPageDialogButton);
+        dialog.setSize(250, 150);
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+
+    public static void main(String []args) throws InterruptedException {
+        createUI();
+        if ( !countDownLatch.await(5, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Timeout : user did not perform any " +
+                    "action on the UI.");
+        }
+        if ( !testResult) {
+            throw new RuntimeException("Test failed");
+        }
     }
 }
 
-class Sysout {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

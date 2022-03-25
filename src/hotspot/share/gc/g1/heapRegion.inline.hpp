@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/g1/g1SegmentedArray.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -78,42 +79,8 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* HeapRegion::allocate(size_t min_word_size,
-                                      size_t desired_word_size,
-                                      size_t* actual_size) {
-  HeapWord* res = allocate_impl(min_word_size, desired_word_size, actual_size);
-  if (res != NULL) {
-    _bot_part.alloc_block(res, *actual_size);
-  }
-  return res;
-}
-
-inline HeapWord* HeapRegion::allocate(size_t word_size) {
-  size_t temp;
-  return allocate(word_size, word_size, &temp);
-}
-
-inline HeapWord* HeapRegion::par_allocate(size_t word_size) {
-  size_t temp;
-  return par_allocate(word_size, word_size, &temp);
-}
-
-// Because of the requirement of keeping "_offsets" up to date with the
-// allocations, we sequentialize these with a lock.  Therefore, best if
-// this is used for larger LAB allocations only.
-inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
-                                          size_t desired_word_size,
-                                          size_t* actual_size) {
-  MutexLocker x(&_par_alloc_lock);
-  return allocate(min_word_size, desired_word_size, actual_size);
-}
-
 inline HeapWord* HeapRegion::block_start(const void* p) {
   return _bot_part.block_start(p);
-}
-
-inline HeapWord* HeapRegion::block_start_const(const void* p) const {
-  return _bot_part.block_start_const(p);
 }
 
 inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {
@@ -136,12 +103,8 @@ inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* c
 }
 
 inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  if (!this->is_in(p)) {
-    assert(is_continues_humongous(), "This case can only happen for humongous regions");
-    return (p == humongous_start_region()->bottom());
-  }
+  assert(p >= bottom() && p < top(), "precondition");
+  assert(!is_continues_humongous(), "p must point to block-start");
   // When class unloading is enabled it is not safe to only consider top() to conclude if the
   // given pointer is a valid object. The situation can occur both for class unloading in a
   // Full GC and during a concurrent cycle.
@@ -150,9 +113,9 @@ inline bool HeapRegion::block_is_obj(const HeapWord* p) const {
   // During a concurrent cycle class unloading is done after marking is complete and objects
   // for the unloaded classes will be stale until the regions are collected.
   if (ClassUnloading) {
-    return !g1h->is_obj_dead(cast_to_oop(p), this);
+    return !G1CollectedHeap::heap()->is_obj_dead(cast_to_oop(p), this);
   }
-  return p < top();
+  return true;
 }
 
 inline size_t HeapRegion::block_size_using_bitmap(const HeapWord* addr, const G1CMBitMap* const prev_bitmap) const {
@@ -178,9 +141,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, const G1CMBitMap* const prev_
 }
 
 inline size_t HeapRegion::block_size(const HeapWord *addr) const {
-  if (addr == top()) {
-    return pointer_delta(end(), addr);
-  }
+  assert(addr < top(), "precondition");
 
   if (block_is_obj(addr)) {
     return cast_to_oop(addr)->size();
@@ -222,10 +183,6 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 }
 
 inline void HeapRegion::reset_after_full_gc_common() {
-  if (is_empty()) {
-    reset_bot();
-  }
-
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
     mangle_unused_area();
@@ -253,23 +210,34 @@ inline void HeapRegion::apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarke
   assert(next_addr == limit, "Should stop the scan at the limit.");
 }
 
-inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t min_word_size,
-                                                         size_t desired_word_size,
-                                                         size_t* actual_word_size) {
-  assert(is_young(), "we can only skip BOT updates on young regions");
+inline HeapWord* HeapRegion::par_allocate(size_t min_word_size,
+                                          size_t desired_word_size,
+                                          size_t* actual_word_size) {
   return par_allocate_impl(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t word_size) {
+inline HeapWord* HeapRegion::allocate(size_t word_size) {
   size_t temp;
-  return allocate_no_bot_updates(word_size, word_size, &temp);
+  return allocate(word_size, word_size, &temp);
 }
 
-inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t min_word_size,
-                                                     size_t desired_word_size,
-                                                     size_t* actual_word_size) {
-  assert(is_young(), "we can only skip BOT updates on young regions");
+inline HeapWord* HeapRegion::allocate(size_t min_word_size,
+                                      size_t desired_word_size,
+                                      size_t* actual_word_size) {
   return allocate_impl(min_word_size, desired_word_size, actual_word_size);
+}
+
+inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
+  assert(is_old(), "should only do BOT updates for old regions");
+
+  HeapWord* obj_end = obj_start + obj_size;
+
+  assert(is_in(obj_start), "obj_start must be in this region: " HR_FORMAT
+         " obj_start " PTR_FORMAT " obj_end " PTR_FORMAT,
+         HR_FORMAT_PARAMS(this),
+         p2i(obj_start), p2i(obj_end));
+
+  _bot_part.update_for_block(obj_start, obj_end);
 }
 
 inline void HeapRegion::note_start_of_marking() {
@@ -329,7 +297,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
     // If obj is not an objArray and mr contains the start of the
     // obj, then this could be an imprecise mark, and we need to
     // process the entire object.
-    int size = obj->oop_iterate_size(cl);
+    size_t size = obj->oop_iterate_size(cl);
     // We have scanned to the end of the object, but since there can be no objects
     // after this humongous object in the region, we can return the end of the
     // region if it is greater.
@@ -359,19 +327,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   HeapWord* const end = mr.end();
 
   // Find the obj that extends onto mr.start().
-  // Update BOT as needed while finding start of (possibly dead)
-  // object containing the start of the region.
   HeapWord* cur = block_start(start);
-
-#ifdef ASSERT
-  {
-    assert(cur <= start,
-           "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
-    HeapWord* next = cur + block_size(cur);
-    assert(start < next,
-           "start: " PTR_FORMAT ", next: " PTR_FORMAT, p2i(start), p2i(next));
-  }
-#endif
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {

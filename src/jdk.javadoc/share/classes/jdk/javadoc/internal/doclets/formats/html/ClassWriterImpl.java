@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public Content getHeader(String header) {
         HtmlTree bodyTree = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
-        HtmlTree div = new HtmlTree(TagName.DIV);
-        div.setStyle(HtmlStyle.header);
+        HtmlTree div = HtmlTree.DIV(HtmlStyle.header);
         if (configuration.showModules) {
             ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
             Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInType, contents.moduleLabel);
@@ -254,7 +253,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     private Content getTreeForClassHelper(TypeMirror type) {
         Content content = new ContentBuilder();
-        if (type.equals(typeElement.asType())) {
+        if (utils.typeUtils.isSameType(type, typeElement.asType())) {
             Content typeParameters = getTypeParameterLinks(
                     new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.TREE,
                     typeElement));
@@ -381,10 +380,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 dl.add(HtmlTree.DT(utils.isInterface(e)
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
-                Content dd = new HtmlTree(TagName.DD);
-                dd.add(getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS, e)));
-                dl.add(dd);
+                dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.CLASS, List.of(e))));
                 classInfoTree.add(dl);
                 return null;
             }
@@ -404,7 +400,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     public boolean isFunctionalInterface() {
-        List<? extends AnnotationMirror> annotationMirrors = ((Element) typeElement).getAnnotationMirrors();
+        List<? extends AnnotationMirror> annotationMirrors = typeElement.getAnnotationMirrors();
         for (AnnotationMirror anno : annotationMirrors) {
             if (utils.isFunctionalInterface(anno)) {
                 return true;

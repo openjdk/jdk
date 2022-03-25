@@ -96,6 +96,7 @@
 // For additional information on string deduplication, please see JEP 192,
 // http://openjdk.java.net/jeps/192
 
+#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -195,7 +196,7 @@ public:
 // Each marking thread should have it's own Requests object.  When marking
 // is completed the Requests object must be flushed (either explicitly or by
 // the destructor).
-class StringDedup::Requests {
+class StringDedup::Requests : public CHeapObj<mtGC> {
   StorageUse* _storage_for_requests;
   oop** _buffer;
   size_t _index;

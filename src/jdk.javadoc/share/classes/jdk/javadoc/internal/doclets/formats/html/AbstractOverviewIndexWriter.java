@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,8 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      */
     protected void addOverviewHeader(Content main) {
         addConfigurationTitle(main);
-        if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            addOverviewComment(main);
-        }
+        addOverviewComment(main);
+        addOverviewTags(main);
     }
 
     /**
@@ -81,6 +80,17 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     protected void addOverviewComment(Content htmltree) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
             addInlineComment(configuration.overviewElement, htmltree);
+        }
+    }
+
+    /**
+     * Adds the block tags provided in the file specified by the "-overview" option.
+     *
+     * @param htmlTree the content tree to which the tags will be added
+     */
+    protected void addOverviewTags(Content htmlTree) {
+        if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
+            addTagsInfo(configuration.overviewElement, htmlTree);
         }
     }
 

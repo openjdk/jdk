@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,8 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   jlong)                                 \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
-  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              intptr_t*)                             \
-  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              intptr_t*)                             \
+  nonstatic_field(JavaThread,                  _jvmci_reserved0,                              jlong)                                 \
+  nonstatic_field(JavaThread,                  _jvmci_reserved1,                              jlong)                                 \
   nonstatic_field(JavaThread,                  _jvmci_reserved_oop0,                          oop)                                   \
   nonstatic_field(JavaThread,                  _should_post_on_exceptions_flag,               int)                                   \
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
@@ -308,15 +308,20 @@
   static_field(StubRoutines,                _electronicCodeBook_encryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _electronicCodeBook_decryptAESCrypt,              address)                               \
   static_field(StubRoutines,                _counterMode_AESCrypt,                            address)                               \
+  static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                      address)                               \
   static_field(StubRoutines,                _base64_encodeBlock,                              address)                               \
   static_field(StubRoutines,                _base64_decodeBlock,                              address)                               \
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
+  static_field(StubRoutines,                _md5_implCompress,                                address)                               \
+  static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompressMB,                           address)                               \
   static_field(StubRoutines,                _sha512_implCompress,                             address)                               \
   static_field(StubRoutines,                _sha512_implCompressMB,                           address)                               \
+  static_field(StubRoutines,                _sha3_implCompress,                               address)                               \
+  static_field(StubRoutines,                _sha3_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
   static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
   static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \
@@ -557,8 +562,8 @@
   declare_constant(Deoptimization::Reason_not_compiled_exception_handler) \
   declare_constant(Deoptimization::Reason_unresolved)                     \
   declare_constant(Deoptimization::Reason_jsr_mismatch)                   \
-  declare_constant(Deoptimization::Reason_LIMIT)                          \
-  declare_constant(Deoptimization::_support_large_access_byte_array_virtualization)               \
+  declare_constant(Deoptimization::Reason_TRAP_HISTORY_LENGTH)            \
+  declare_constant(Deoptimization::_support_large_access_byte_array_virtualization) \
                                                                           \
   declare_constant(FieldInfo::access_flags_offset)                        \
   declare_constant(FieldInfo::name_index_offset)                          \
@@ -737,6 +742,9 @@
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
   static_field(VM_Version, _zva_length, int)                            \
+  static_field(StubRoutines::aarch64, _count_positives, address)        \
+  static_field(StubRoutines::aarch64, _count_positives_long, address)   \
+  static_field(VM_Version, _rop_protection, bool)                       \
   volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
 #define DECLARE_INT_CPU_FEATURE_CONSTANT(id, name, bit) GENERATE_VM_INT_CONSTANT_ENTRY(VM_Version::CPU_##id)

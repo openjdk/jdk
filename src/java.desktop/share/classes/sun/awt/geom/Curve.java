@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -731,12 +731,12 @@ public abstract class Curve {
 
     public static int orderof(double x1, double x2) {
         if (x1 < x2) {
-            return -1;
-        }
-        if (x1 > x2) {
-            return 1;
-        }
-        return 0;
+             return -1;
+         }
+         if (x1 > x2) {
+             return 1;
+         }
+         return 0;
     }
 
     public static long signeddiffbits(double y1, double y2) {

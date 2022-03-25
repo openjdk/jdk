@@ -88,6 +88,16 @@ class MacroAssembler: public Assembler {
   // nop padding
   void align(int modulus, int max = 252, int rem = 0);
 
+  // Align prefix opcode to make sure it's not on the last word of a
+  // 64-byte block.
+  //
+  // Note: do not call align_prefix() in a .ad file (e.g. ppc.ad).  Instead
+  // add ins_alignment(2) to the instruct definition and implement the
+  // compute_padding() method of the instruct node to use
+  // compute_prefix_padding().  See loadConI32Node::compute_padding() in
+  // ppc.ad for an example.
+  void align_prefix();
+
   //
   // Constants, loading constants, TOC support
   //

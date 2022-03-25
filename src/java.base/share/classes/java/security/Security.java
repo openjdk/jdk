@@ -91,8 +91,7 @@ public final class Security {
         if (propFile.exists()) {
             InputStream is = null;
             try {
-                FileInputStream fis = new FileInputStream(propFile);
-                is = new BufferedInputStream(fis);
+                is = new FileInputStream(propFile);
                 props.load(is);
                 loadedProps = true;
 
@@ -140,7 +139,7 @@ public final class Security {
             // now load the user-specified file so its values
             // will win if they conflict with the earlier values
             if (extraPropFile != null) {
-                BufferedInputStream bis = null;
+                InputStream is = null;
                 try {
                     URL propURL;
 
@@ -152,8 +151,8 @@ public final class Security {
                     } else {
                         propURL = new URL(extraPropFile);
                     }
-                    bis = new BufferedInputStream(propURL.openStream());
-                    props.load(bis);
+                    is = propURL.openStream();
+                    props.load(is);
                     loadedProps = true;
 
                     if (sdebug != null) {
@@ -172,9 +171,9 @@ public final class Security {
                         e.printStackTrace();
                     }
                 } finally {
-                    if (bis != null) {
+                    if (is != null) {
                         try {
-                            bis.close();
+                            is.close();
                         } catch (IOException ioe) {
                             if (sdebug != null) {
                                 sdebug.println("unable to close input stream");
@@ -622,8 +621,7 @@ public final class Security {
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        for (Iterator<String> ite = keySet.iterator(); ite.hasNext(); ) {
-            String key = ite.next();
+        for (String key : keySet) {
             String value = filter.get(key);
 
             LinkedHashSet<Provider> newCandidates = getAllQualifyingCandidates(key, value,
@@ -653,14 +651,7 @@ public final class Security {
         if (candidates == null || candidates.isEmpty())
             return null;
 
-        Object[] candidatesArray = candidates.toArray();
-        Provider[] result = new Provider[candidatesArray.length];
-
-        for (int i = 0; i < result.length; i++) {
-            result[i] = (Provider)candidatesArray[i];
-        }
-
-        return result;
+        return candidates.toArray(new Provider[0]);
     }
 
     // Map containing cached Spi Class objects of the specified type
@@ -816,7 +807,7 @@ public final class Security {
      * setProperty() was either "package.access" or
      * "package.definition", we need to signal to the SecurityManager
      * class that the value has just changed, and that it should
-     * invalidate it's local cache values.
+     * invalidate its local cache values.
      */
     private static void invalidateSMCache(String key) {
 

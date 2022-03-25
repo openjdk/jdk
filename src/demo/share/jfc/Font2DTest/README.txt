@@ -4,34 +4,16 @@ Font2DTest
 To run Font2DTest:
 
 % java -jar Font2DTest.jar
-    or 
-% appletviewer Font2DTest.html
 
-These instructions assume that the 1.7 versions of the java
-and appletviewer commands are in your path.  If they aren't,
-then you should either specify the complete path to the commands
+These instructions assume that the java command is in your path.
+If they aren't, then you should either specify the complete path to the commands
 or update your PATH environment variable as described in the
 installation instructions for the Java(TM) SE Development Kit.
-
-To view Font2DTest within a web browser with Java Plugin,
-load Font2DTest.html.
 
 If you wish to modify any of the source code, you may want to extract
 the contents of the Font2DTest.jar file by executing this command:
 
 % jar -xvf Font2DTest.jar
-
-NOTE:
-
-When Font2DTest is ran as an applet, the browser plugin/viewer needs
-following permissions given in order to run properly:
-
-AWTPermission     "showWindowWithoutWarningBanner"
-RuntimePermission "queuePrintJob"
-
-The program will run without these properties set,
-but some of its features will be limited.
-To enable all features, please add these permissions.
 
 -----------------------------------------------------------------------
 Introduction
@@ -129,23 +111,3 @@ that are within the selected range. Third option, "Print all text..."
 is similar, and it will print all lines of text that user has put in.
 
 ====================================================================
-
-Known Problems:
-
-- When a PostScript font is used, the characters may extend beyond the
-enclosing grid or zoom rectangle. This is due to the problem with
-FontMetrics.getMaxAscent() and getMaxDescent() functions; the functions
-do not always return the right values for PostScript fonts.
-
-- There are still some bugs around the error handling.
-Most of these problems will usually get fixed when some parameters
-are changed, or the screen is refreshed.
-
-- Many fonts on Solaris fails to retrieve outlines properly,
-and as the result, they do not align within the grid properly.
-These are mainly F3 and fonts that was returned by X server.
-
-- When showWindowWithoutWarningBanner AWTPermission is not given,
-the "zoom" window will look really bad because of the
-Applet warning label tacked at the bottom of the zoom window.
-To remove this, follow the "NOTE:" instruction at the top.
