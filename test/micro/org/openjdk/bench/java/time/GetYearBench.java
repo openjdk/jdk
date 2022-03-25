@@ -110,4 +110,12 @@ public class GetYearBench {
         }
         return YEARS;
     }
+
+    @Benchmark
+    public int[] getYearFromMillisZoneRegionNormalized() {
+        for (int i = 0; i < YEARS.length; i++) {
+            YEARS[i] = Instant.ofEpochMilli(INSTANT_MILLIS[i]).atZone(UTC.toZoneId().normalized()).getYear();
+        }
+        return YEARS;
+    }
 }
