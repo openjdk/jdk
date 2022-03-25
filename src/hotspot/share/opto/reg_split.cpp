@@ -720,7 +720,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
           // initialize the Reaches entry for this LRG
           Reachblock[slidx] = phi;
 
-          _was_up_in_prev_region.set(phi->_idx);
+          if (was_up_in_prev_region == 1) {
+            _was_up_in_prev_region.set(phi->_idx);
+          }
 
           // add node to block & node_to_block mapping
           insert_proj(b, insidx++, phi, maxlrg++);
@@ -807,8 +809,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
           }
         }
         if (crosses_region) {
-          if (lrgs(defidx)._region > region) {
-            assert(_was_up_in_prev_region.test(def->_idx) && defup, "");
+          if (lrgs(defidx)._region > region && _was_up_in_prev_region.test(def->_idx) != defup) {
 
             Node* spill = get_spillcopy_wide(MachSpillCopyNode::RegionExit, def, NULL, 0);
             if (!spill) return -1;        // Bailed out
@@ -1146,7 +1147,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
               // SPLIT - NO DEF - NO CISC SPILL
               assert(lrgs(lidxs.at(slidx))._region >= region, "");
               assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
-              assert(b->_region == region, "");
+              assert(b->_region <= region, "");
               int delta = split_USE(MachSpillCopyNode::Bound, def,b,n,inpidx,maxlrg,dup,false, splits,slidx);
               // If it wasn't split bail
               if (delta < 0) {
@@ -1291,7 +1292,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                   if (b->_region != region) {
                     tty->print_cr("XXX %d %d %s %d", lrgs(slidx)._min_region, region, lrgs(slidx).alive() ? "alive" : "", _cfg.get_block_for_node(def)->_region);
                   }
-                  assert(b->_region == region, "");
+                  assert(b->_region <= region, "");
                   int delta = split_USE(MachSpillCopyNode::MemToReg, def,b,n,inpidx,maxlrg,true,false, splits,slidx);
                   // If it wasn't split bail
                   if (delta < 0) {
@@ -1346,7 +1347,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
           // Do a split at the def site.
           assert(lrgs(lidxs.at(slidx))._region >= region, "");
           assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
-          assert(b->_region == region, "");
+          assert(b->_region <= region, "");
           maxlrg = split_DEF( n, b, insidx, maxlrg, Reachblock, debug_defs, splits, slidx );
           // If it wasn't split bail
           if (!maxlrg) {
@@ -1454,8 +1455,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
         for (uint i = 0; i < b->_num_succs; ++i) {
           if (b->_succs[i]->_region > b->_region && b->_succs[i]->_region > region) {
-            if (lrgs(defidx)._region > region && !defup) {
-              assert(_was_up_in_prev_region.test(def->_idx), "");
+            if (lrgs(defidx)._region > region && (defup != _was_up_in_prev_region.test(def->_idx))) {
 //              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
 
               Node* spill = get_spillcopy_wide(MachSpillCopyNode::RegionEntry, def, NULL, 0);
@@ -1539,7 +1539,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         }
         assert(lrgs(lidxs.at(slidx))._region >= region, "");
         assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
-        assert(pred->_region == region, "");
+        assert(pred->_region <= region, "");
         def = split_Rematerialize(def, pred, insert, maxlrg, splits, slidx, lrg2reach, Reachblock, false);
         if (!def) {
           return 0;    // Bail out

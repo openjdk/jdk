@@ -634,6 +634,7 @@ void PhaseChaitin::Register_Allocate() {
 
         if (_trip_cnt > 27) {
           C->record_method_not_compilable("failed spill-split-recycle sanity check");
+          ShouldNotReachHere();
           return;
         }
       }
