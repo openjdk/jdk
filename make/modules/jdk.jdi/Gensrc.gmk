@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,11 @@
 include GensrcCommonJdk.gmk
 
 ################################################################################
-# Translate the Java debugger wire protocol (jdwp.spec) file into a JDWP.java file
-# and a JDWPCommands.h C-header file.
+# Translate the Java debugger wire protocol (jdwp.spec) file into a front-end
+# Java implementation (JDWP.java), a back-end C header file (JDWPCommands.h) and
+# an HTML documentation file (jdwp-protocol.html).
 
-JDWP_SPEC_FILE := $(TOPDIR)/make/data/jdwp/jdwp.spec
+JDWP_SPEC_FILE := $(TOPDIR)/src/java.se/share/data/jdwp/jdwp.spec
 HEADER_FILE := $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 JAVA_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java
 HTML_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html

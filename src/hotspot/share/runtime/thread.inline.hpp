@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -124,7 +124,9 @@ inline void JavaThread::clear_obj_deopt_flag() {
 
 inline bool JavaThread::clear_async_exception_condition() {
   bool ret = has_async_exception_condition();
-  clear_suspend_flag(_has_async_exception);
+  if (ret) {
+    clear_suspend_flag(_has_async_exception);
+  }
   return ret;
 }
 
@@ -138,8 +140,17 @@ inline void JavaThread::set_pending_unsafe_access_error() {
   DEBUG_ONLY(_is_unsafe_access_error = true);
 }
 
+
+inline JavaThread::NoAsyncExceptionDeliveryMark::NoAsyncExceptionDeliveryMark(JavaThread *t) : _target(t) {
+  assert((_target->_suspend_flags & _async_delivery_disabled) == 0, "Nesting is not supported");
+  _target->set_suspend_flag(_async_delivery_disabled);
+}
+inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark() {
+  _target->clear_suspend_flag(_async_delivery_disabled);
+}
+
 inline JavaThreadState JavaThread::thread_state() const    {
-#if defined(PPC64) || defined (AARCH64)
+#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
   // Use membars when accessing volatile _thread_state. See
   // Threads::create_vm() for size checks.
   return (JavaThreadState) Atomic::load_acquire((volatile jint*)&_thread_state);

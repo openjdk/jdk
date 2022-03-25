@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_cla
 TOOL_CHARACTERNAME = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.CharacterName
 
-TOOL_DTDBUILDER = $(JAVA_SMALL) -Ddtd_home=$(TOPDIR)/make/data/dtdbuilder \
+TOOL_DTDBUILDER = $(JAVA_SMALL) -Ddtd_home=$(TOPDIR)/src/java.desktop/share/data/dtdbuilder \
     -Djava.awt.headless=true \
     -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.dtdbuilder.DTDBuilder
 
