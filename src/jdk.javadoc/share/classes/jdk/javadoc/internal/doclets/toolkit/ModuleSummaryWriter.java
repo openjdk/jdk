@@ -72,7 +72,7 @@ public interface ModuleSummaryWriter {
      * Adds the module description.
      *
      * @param moduleContent the content to which the module description
-     *                       will be added
+     *                      will be added
      */
     void addModuleDescription(Content moduleContent);
 
@@ -80,7 +80,7 @@ public interface ModuleSummaryWriter {
      * Adds the module signature.
      *
      * @param moduleContent the content to which the module signature
-     *                       will be added
+     *                      will be added
      */
     void addModuleSignature(Content moduleContent);
 

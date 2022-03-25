@@ -249,7 +249,7 @@ public class SourceToHTMLConverter {
     /**
      * Returns a link to the stylesheet file.
      *
-     * @param head an HtmlTree to which the stylesheet links will be added
+     * @param head the content to which the stylesheet links will be added
      */
     public void addStyleSheetProperties(Content head) {
         String filename = options.stylesheetFile();

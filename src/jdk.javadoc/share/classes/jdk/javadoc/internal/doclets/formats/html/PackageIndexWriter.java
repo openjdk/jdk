@@ -82,7 +82,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
     /**
      * Adds the packages list to the documentation tree.
      *
-     * @param target the documentation to which the packages list will be added
+     * @param target the content to which the packages list will be added
      */
     @Override
     protected void addIndex(Content target) {

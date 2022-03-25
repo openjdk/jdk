@@ -123,7 +123,7 @@ public interface ClassWriter {
     /**
      * {@return the class information}
      *
-     * @param classInfo the content containing the class information
+     * @param classInfo the class information
      */
     Content getClassInfo(Content classInfo);
 

@@ -905,7 +905,7 @@ public class HtmlTree extends Content {
      */
     public static HtmlTree TITLE(String body) {
         return new HtmlTree(TagName.TITLE)
-            .add(body);
+                .add(body);
     }
 
     /**
@@ -928,13 +928,13 @@ public class HtmlTree extends Content {
      * @return the element
      */
     public static HtmlTree UL(HtmlStyle style, Content first, Content... more) {
-        var htmlTree = new HtmlTree(TagName.UL)
+        var ul = new HtmlTree(TagName.UL)
                 .setStyle(style);
-        htmlTree.add(first);
+        ul.add(first);
         for (Content c : more) {
-            htmlTree.add(c);
+            ul.add(c);
         }
-        return htmlTree;
+        return ul;
     }
 
     /**

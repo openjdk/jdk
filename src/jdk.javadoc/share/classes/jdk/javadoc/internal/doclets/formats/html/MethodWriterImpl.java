@@ -339,7 +339,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * Get the return type for the given method.
      *
      * @param method the method being documented.
-     * @return content containing the return type
+     * @return the return type
      */
     protected Content getReturnType(ExecutableElement method) {
         TypeMirror type = utils.getReturnType(typeElement, method);

@@ -102,7 +102,7 @@ public class Script  {
      * Returns a "live" view of the script as a {@code Content} object.
      * Any later modifications to the script will be reflected in the
      * object that is returned.
-     * @return the script, as a {@code Content} object.
+     * @return the script
      */
     public Content asContent() {
         ScriptContent scriptContent = new ScriptContent(sb);

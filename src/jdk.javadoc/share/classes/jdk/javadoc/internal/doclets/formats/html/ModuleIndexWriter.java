@@ -80,7 +80,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
     /**
      * Adds the list of modules.
      *
-     * @param target the documentation to which the modules list will be added
+     * @param target the content to which the modules list will be added
      */
     @Override
     protected void addIndex(Content target) {

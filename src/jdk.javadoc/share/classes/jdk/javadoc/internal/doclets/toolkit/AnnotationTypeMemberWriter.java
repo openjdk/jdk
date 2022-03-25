@@ -119,7 +119,7 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
      * Adds the default value documentation if the member has one.
      *
      * @param member the member being documented
-     * @param annotationContent content to which the default value will be added
+     * @param annotationContent the content to which the default value will be added
      */
     void addDefaultValueInfo(Element member, Content annotationContent);
 }

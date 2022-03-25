@@ -100,14 +100,6 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                 member, content, null, false);
     }
 
-    /**
-     * Add the summary link for the member.
-     *
-     * @param context the id of the context where the link will be printed
-     * @param te the type element being linked to
-     * @param member the member being linked to
-     * @param target the content to which the link will be added
-     */
     @Override
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement te, Element member,
                                   Content target) {
@@ -118,13 +110,6 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         target.add(code);
     }
 
-    /**
-     * Add the inherited summary link for the member.
-     *
-     * @param te the type element that we should link to
-     * @param member the member being linked to
-     * @param target the content to which the link will be added
-     */
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content target) {
         target.add(writer.getDocLink(MEMBER, te, member, name(member)));
@@ -221,22 +206,22 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      *
      * @param member the member to write parameters for.
      * @param includeAnnotations true if annotation information needs to be added.
-     * @return the content containing the parameter information
+     * @return the parameter information
      */
     protected Content getParameters(ExecutableElement member, boolean includeAnnotations) {
-        Content paramContent = new ContentBuilder();
-        paramContent.add("(");
+        Content result = new ContentBuilder();
+        result.add("(");
         String sep = "";
         List<? extends VariableElement> parameters = member.getParameters();
         TypeMirror rcvrType = member.getReceiverType();
         if (includeAnnotations && rcvrType != null && isAnnotatedReceiver(rcvrType)) {
-            addReceiver(member, rcvrType, paramContent);
+            addReceiver(member, rcvrType, result);
             sep = "," + DocletConstants.NL + " ";
         }
         int paramstart;
         ExecutableType instMeth = utils.asInstantiatedMethodType(typeElement, member);
         for (paramstart = 0; paramstart < parameters.size(); paramstart++) {
-            paramContent.add(sep);
+            result.add(sep);
             VariableElement param = parameters.get(paramstart);
             TypeMirror paramType = instMeth.getParameterTypes().get(paramstart);
 
@@ -244,36 +229,36 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                 if (includeAnnotations) {
                     Content annotationInfo = writer.getAnnotationInfo(param, false);
                     if (!annotationInfo.isEmpty()) {
-                        paramContent.add(annotationInfo)
+                        result.add(annotationInfo)
                                 .add(DocletConstants.NL)
                                 .add(" ");
                     }
                 }
                 addParam(param, paramType,
-                    (paramstart == parameters.size() - 1) && member.isVarArgs(), paramContent);
+                    (paramstart == parameters.size() - 1) && member.isVarArgs(), result);
                 break;
             }
         }
 
         for (int i = paramstart + 1; i < parameters.size(); i++) {
-            paramContent.add(",");
-            paramContent.add(DocletConstants.NL);
-            paramContent.add(" ");
+            result.add(",");
+            result.add(DocletConstants.NL);
+            result.add(" ");
 
             if (includeAnnotations) {
                 Content annotationInfo = writer.getAnnotationInfo(parameters.get(i), false);
                 if (!annotationInfo.isEmpty()) {
-                    paramContent.add(annotationInfo)
+                    result.add(annotationInfo)
                             .add(DocletConstants.NL)
                             .add(" ");
                 }
             }
             addParam(parameters.get(i), instMeth.getParameterTypes().get(i),
                     (i == parameters.size() - 1) && member.isVarArgs(),
-                    paramContent);
+                    result);
         }
-        paramContent.add(")");
-        return paramContent;
+        result.add(")");
+        return result;
     }
 
     /**

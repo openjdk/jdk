@@ -319,7 +319,7 @@ public class HtmlDocletWriter {
      * Adds the tags information.
      *
      * @param e the Element for which the tags will be generated
-     * @param content the documentation to which the tags will be added
+     * @param content the content to which the tags will be added
      */
     protected void addTagsInfo(Element e, Content content) {
         if (options.noComment()) {
@@ -1316,7 +1316,7 @@ public class HtmlDocletWriter {
      * Adds the summary content.
      *
      * @param element the Element for which the summary will be generated
-     * @param target the documentation to which the summary will be added
+     * @param target the content to which the summary will be added
      */
     public void addSummaryComment(Element element, Content target) {
         addSummaryComment(element, utils.getFirstSentenceTrees(element), target);
@@ -1327,7 +1327,7 @@ public class HtmlDocletWriter {
      *
      * @param element the Element for which the summary will be generated
      * @param firstSentenceTags the first sentence tags for the doc
-     * @param target the documentation to which the summary will be added
+     * @param target the content to which the summary will be added
      */
     public void addPreviewComment(Element element, List<? extends DocTree> firstSentenceTags, Content target) {
         addCommentTags(element, firstSentenceTags, false, true, true, target);
@@ -1338,7 +1338,7 @@ public class HtmlDocletWriter {
      *
      * @param element the Element for which the summary will be generated
      * @param firstSentenceTags the first sentence tags for the doc
-     * @param target the documentation to which the summary will be added
+     * @param target the content to which the summary will be added
      */
     public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content target) {
         addCommentTags(element, firstSentenceTags, false, true, true, target);
@@ -1354,7 +1354,7 @@ public class HtmlDocletWriter {
      * Adds the full-body content of the given element.
      *
      * @param element the element for which the content will be added
-     * @param target the documentation to which the content will be added
+     * @param target the content to which the content will be added
      */
     public void addInlineComment(Element element, Content target) {
         addCommentTags(element, utils.getFullBody(element), false, false, false, target);
@@ -1368,7 +1368,7 @@ public class HtmlDocletWriter {
      * @param depr true if it is deprecated
      * @param first true if the first sentence tags should be added
      * @param inSummary true if the comment tags are added into the summary section
-     * @param target the documentation to which the comment tags will be added
+     * @param target the content to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
             boolean first, boolean inSummary, Content target) {

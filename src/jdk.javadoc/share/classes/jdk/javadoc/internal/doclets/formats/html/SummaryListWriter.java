@@ -237,7 +237,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add summary text for the given element.
      *
      * @param e the element for which the summary text should be added
-     * @param desc the target to which the text should be added
+     * @param desc the content to which the text should be added
      */
     protected void addComments(Element e, Content desc) {
     }
@@ -262,7 +262,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add an extra optional section to the content.
      *
      * @param list the element list
-     * @param target the target content to which the section should be added
+     * @param target the content to which the section should be added
      */
     protected void addExtraSection(L list, Content target) {
     }
@@ -271,7 +271,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add an extra optional index link.
      *
      * @param list the element list
-     * @param target the target content to which the link should be added
+     * @param target the content to which the link should be added
      */
     protected void addExtraIndexLink(L list, Content target) {
     }

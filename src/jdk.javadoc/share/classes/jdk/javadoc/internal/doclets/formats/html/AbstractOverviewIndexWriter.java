@@ -62,7 +62,7 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * summary at the top of the page and generate a link to the description,
      * which is added at the end of this page.
      *
-     * @param target the documentation to which the overview header will be added
+     * @param target the content to which the overview header will be added
      */
     protected void addOverviewHeader(Content target) {
         addConfigurationTitle(target);
@@ -74,8 +74,7 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * Adds the overview comment as provided in the file specified by the
      * "-overview" option on the command line.
      *
-     * @param content the documentation to which the overview comment will
-     *                 be added
+     * @param content the content to which the overview comment will be added
      */
     protected void addOverviewComment(Content content) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
@@ -120,14 +119,14 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the index to the documentation.
      *
-     * @param target the document to which the packages/modules list will be added
+     * @param target the content to which the packages/modules list will be added
      */
     protected abstract void addIndex(Content target);
 
     /**
      * Adds the doctitle to the documentation, if it is specified on the command line.
      *
-     * @param target the document to which the title will be added
+     * @param target the content to which the title will be added
      */
     protected void addConfigurationTitle(Content target) {
         String doctitle = configuration.getOptions().docTitle();

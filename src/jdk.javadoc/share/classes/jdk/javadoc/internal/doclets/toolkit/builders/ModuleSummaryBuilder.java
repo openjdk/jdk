@@ -176,7 +176,7 @@ public class ModuleSummaryBuilder extends AbstractBuilder {
      * Builds the description for this module.
      *
      * @param moduleContent the content to which the module description will
-     *                       be added
+     *                      be added
      */
     protected void buildModuleDescription(Content moduleContent) {
         if (!options.noComment()) {

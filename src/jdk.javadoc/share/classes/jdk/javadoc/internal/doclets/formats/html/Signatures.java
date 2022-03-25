@@ -379,7 +379,7 @@ public class Signatures {
         /**
          * Set the type parameters for an executable member.
          *
-         * @param typeParameters the content containing the type parameters to add.
+         * @param typeParameters the type parameters to add.
          * @return this instance
          */
         MemberSignature setTypeParameters(Content typeParameters) {
@@ -390,7 +390,7 @@ public class Signatures {
         /**
          * Set the return type for an executable member.
          *
-         * @param returnType the content containing the return type to add.
+         * @param returnType the return type to add.
          * @return this instance
          */
         MemberSignature setReturnType(Content returnType) {
@@ -412,7 +412,7 @@ public class Signatures {
         /**
          * Set the parameter information of an executable member.
          *
-         * @param content the content containing the parameter information.
+         * @param content the parameter information.
          * @return this instance
          */
         MemberSignature setParameters(Content content) {
@@ -423,7 +423,7 @@ public class Signatures {
         /**
          * Set the exception information of an executable member.
          *
-         * @param content the content containing the exception information
+         * @param content the exception information
          * @return this instance
          */
         MemberSignature setExceptions(Content content) {
@@ -434,7 +434,7 @@ public class Signatures {
         /**
          * Set the annotation information of a member.
          *
-         * @param content the content containing the exception information
+         * @param content the exception information
          * @return this instance
          */
         MemberSignature setAnnotations(Content content) {

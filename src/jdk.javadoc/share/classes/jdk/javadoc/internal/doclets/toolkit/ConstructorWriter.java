@@ -63,7 +63,7 @@ public interface ConstructorWriter extends MemberWriter {
      * Add the deprecated output for the given constructor.
      *
      * @param constructor the constructor being documented
-     * @param constructorContent content to which the deprecated information will be added
+     * @param constructorContent the content to which the deprecated information will be added
      */
     void addDeprecated(ExecutableElement constructor, Content constructorContent);
 

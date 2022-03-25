@@ -254,7 +254,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      *
      * @param writer the summary writer to write the output.
      * @param kind the kind of  members to summarize.
-     * @param summaryTreeList list of contents to which the documentation will be added
+     * @param summaryTreeList the list of contents to which the documentation will be added
      */
     private void buildSummary(MemberSummaryWriter writer,
             VisibleMemberTable.Kind kind, LinkedList<Content> summaryTreeList) {
@@ -288,7 +288,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      *
      * @param writer the writer for this member summary.
      * @param kind the kind of members to document.
-     * @param targets list of contents to which the documentation will be added
+     * @param targets the list of contents to which the documentation will be added
      */
     private void buildInheritedSummary(MemberSummaryWriter writer,
             VisibleMemberTable.Kind kind, LinkedList<Content> targets) {
