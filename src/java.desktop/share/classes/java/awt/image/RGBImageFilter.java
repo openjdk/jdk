@@ -146,7 +146,7 @@ public abstract class RGBImageFilter extends ImageFilter {
      * a color table entry is being filtered rather than an actual
      * pixel value.
      * @param icm the IndexColorModel object to be filtered
-     * @exception NullPointerException if {@code icm} is null
+     * @throws NullPointerException if {@code icm} is null
      * @return a new IndexColorModel representing the filtered colors
      */
     public IndexColorModel filterIndexColorModel(IndexColorModel icm) {

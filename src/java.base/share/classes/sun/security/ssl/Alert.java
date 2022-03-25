@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,22 +122,15 @@ enum Alert {
             reason = (cause != null) ? cause.getMessage() : "";
         }
 
-        SSLException ssle;
         if (cause instanceof IOException) {
-            ssle = new SSLException(reason);
+            return new SSLException(reason, cause);
         } else if ((this == UNEXPECTED_MESSAGE)) {
-            ssle = new SSLProtocolException(reason);
+            return new SSLProtocolException(reason, cause);
         } else if (handshakeOnly) {
-            ssle = new SSLHandshakeException(reason);
+            return new SSLHandshakeException(reason, cause);
         } else {
-            ssle = new SSLException(reason);
+            return new SSLException(reason, cause);
         }
-
-        if (cause != null) {
-            ssle.initCause(cause);
-        }
-
-        return ssle;
     }
 
     /**

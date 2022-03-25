@@ -10273,14 +10273,13 @@ instruct string_inflate_const(Universe dummy, iRegP src, iRegP dst, iRegI tmp, i
 %}
 
 // StringCoding.java intrinsics
-instruct has_negatives(rarg5RegP ary1, iRegI len, iRegI result, roddRegI oddReg, revenRegI evenReg, iRegI tmp, flagsReg cr) %{
-  match(Set result (HasNegatives ary1 len));
-  effect(TEMP_DEF result, USE_KILL ary1, TEMP oddReg, TEMP evenReg, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+instruct count_positives(iRegP ary1, iRegI len, iRegI result, iRegI tmp, flagsReg cr) %{
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "has negatives byte[] $ary1($len) -> $result" %}
+  format %{ "count positives byte[] $ary1($len) -> $result" %}
   ins_encode %{
-    __ has_negatives($result$$Register, $ary1$$Register, $len$$Register,
-                     $oddReg$$Register, $evenReg$$Register, $tmp$$Register);
+    __ count_positives($result$$Register, $ary1$$Register, $len$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}

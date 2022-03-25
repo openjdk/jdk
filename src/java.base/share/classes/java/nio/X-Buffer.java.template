@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,9 +264,19 @@ import jdk.internal.util.ArraysSupport;
  * @since 1.4
  */
 
-public abstract class $Type$Buffer
+public abstract sealed class $Type$Buffer
     extends Buffer
     implements Comparable<$Type$Buffer>{#if[char]?, Appendable, CharSequence, Readable}
+    permits
+#if[byte]
+    Heap$Type$Buffer, MappedByteBuffer
+#else[byte]
+#if[char]
+    StringCharBuffer,
+#end[char]
+    Heap$Type$Buffer, Direct$Type$BufferS, Direct$Type$BufferU,
+    ByteBufferAs$Type$BufferB, ByteBufferAs$Type$BufferL
+#end[byte]
 {
     // Cached array base offset
     private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset($type$[].class);
