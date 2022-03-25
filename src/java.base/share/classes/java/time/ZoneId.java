@@ -584,7 +584,7 @@ public abstract sealed class ZoneId implements Serializable permits ZoneOffset, 
         return this;
     }
 
-    /* package-private */ abstract ZoneOffset getOffset(long epochSecond);
+    /* package-private */ abstract ZoneOffset getOffset(long epochSecond, int nanoOfSecond);
 
     //-----------------------------------------------------------------------
     /**

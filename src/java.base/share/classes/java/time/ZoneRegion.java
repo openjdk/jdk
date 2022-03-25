@@ -179,8 +179,8 @@ final class ZoneRegion extends ZoneId implements Serializable {
     }
 
     @Override
-    /* package-private */ ZoneOffset getOffset(long epochSecond) {
-        return getRules().getOffset(Instant.ofEpochSecond(epochSecond));
+    /* package-private */ ZoneOffset getOffset(long epochSecond, int nanoOfSecond) {
+        return getRules().getOffset(Instant.ofEpochSecond(epochSecond, nanoOfSecond));
     }
 
     //-----------------------------------------------------------------------

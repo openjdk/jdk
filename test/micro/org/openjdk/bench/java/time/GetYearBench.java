@@ -50,8 +50,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 /**
- * Tests the JITs ability to remove allocations from expressions
- * like {@code Instant.ofEpochMilli(value).atZone(ZoneOffset.UTC).getYear()}
+ * Examine ability to perform escape analysis on expressions
+ * such as {@code Instant.ofEpochMilli(value).atZone(ZoneOffset.UTC).getYear()}
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -61,21 +61,22 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Benchmark)
 public class GetYearBench {
 
-    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+    private TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    private static final TimeZone LONDON = TimeZone.getTimeZone("Europe/London");
+    private TimeZone LONDON = TimeZone.getTimeZone("Europe/London");
 
-    private static final long[] INSTANT_MILLIS = createInstants();
+    private long[] INSTANT_MILLIS;
 
-    private static final int[] YEARS = new int[INSTANT_MILLIS.length];
+    private int[] YEARS;
 
-    private static long[] createInstants() {
+    @Setup
+    public void createInstants() {
         // Various instants during the same day
         final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365*50)); // 2020-01-01
         final Instant hiInstant = loInstant.plus(Duration.ofDays(1));
         final long maxOffsetNanos = Duration.between(loInstant, hiInstant).toNanos();
         final Random random = new Random(0);
-        return IntStream
+        INSTANT_MILLIS = IntStream
                 .range(0, 1_000)
                 .mapToObj(ignored -> {
                     final long offsetNanos = (long) Math.floor(random.nextDouble() * maxOffsetNanos);
@@ -83,6 +84,7 @@ public class GetYearBench {
                 })
                 .mapToLong(instant -> instant.toEpochMilli())
                 .toArray();
+        YEARS = new int[INSTANT_MILLIS.length];
     }
 
     @Benchmark

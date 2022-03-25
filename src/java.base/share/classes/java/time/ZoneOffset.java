@@ -508,7 +508,7 @@ public final class ZoneOffset
     }
 
     @Override
-    /* package-private */ ZoneOffset getOffset(long epochSecond) {
+    /* package-private */ ZoneOffset getOffset(long epochSecond, int nanoOfSecond) {
         return this;
     }
 
