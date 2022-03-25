@@ -12,7 +12,6 @@ class SuspendibleThreadSetJoiner;
 
 class LivenessEstimatorThread : public  ConcurrentGCThread {
   friend class VM_LivenessRootScan;
-  friend class VM_LivenessVerifier;
   friend class LivenessOopClosure;
 
 
@@ -55,6 +54,7 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
 
   // For verification
   void compute_liveness();
+  void verify_estimate();
   size_t _verified_object_count;
   size_t _verified_object_size_words;
 };

@@ -141,21 +141,20 @@ void LivenessEstimatorThread::estimation_end(bool completed) {
     send_live_set_estimate<EventLiveSetEstimate>(_all_object_count, all_object_size_bytes);
 
     if (ConcLivenessVerify) {
-      size_t actual_object_size_bytes = _verified_object_size_words * HeapWordSize;
-      long count_difference = long(_verified_object_count) - long(_all_object_count);
-      long size_difference = long(actual_object_size_bytes) - long(all_object_size_bytes);
-
-      send_live_set_estimate<EventLiveSetActual>(_verified_object_count, actual_object_size_bytes);
-
-      log_info(gc, estimator)("Actual: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
-                              _verified_object_count, actual_object_size_bytes,
-                              byte_size_in_proper_unit(actual_object_size_bytes),
-                              proper_unit_for_byte_size(actual_object_size_bytes));
-
-      log_info(gc, estimator)("Verified - estimate: " INT64_FORMAT " objects, " INT64_FORMAT " bytes.",
-        count_difference, size_difference);
+      verify_estimate();
     }
   }
+}
+
+void LivenessEstimatorThread::verify_estimate() {
+  // _object_count_error.sample(_all_object_count, _verified_object_count);
+  // _object_size_error.sample(_all_object_size_words, _verified_object_size_words);
+
+  long count_difference = long(_verified_object_count) - long(_all_object_count);
+  long size_difference = long(_verified_object_size_words) - long(_all_object_size_words);
+
+  log_info(gc, estimator)("Verified - estimate: " INT64_FORMAT " objects, " INT64_FORMAT " bytes.",
+                      count_difference, size_difference * HeapWordSize);
 }
 
 class HistoClosure : public KlassInfoClosure {
@@ -337,6 +336,15 @@ void LivenessEstimatorThread::compute_liveness() {
 
   _verified_object_count = _all_object_count;
   _verified_object_size_words = _all_object_size_words;
+
+  size_t actual_object_size_bytes = _verified_object_size_words * HeapWordSize;
+  send_live_set_estimate<EventLiveSetActual>(_verified_object_count, actual_object_size_bytes);
+
+  log_info(gc, estimator)("Actual: " SIZE_FORMAT " objects, total size " SIZE_FORMAT " (" SIZE_FORMAT "%s)",
+                          _verified_object_count, actual_object_size_bytes,
+                          byte_size_in_proper_unit(actual_object_size_bytes),
+                          proper_unit_for_byte_size(actual_object_size_bytes));
+
   _all_object_count = 0;
   _all_object_size_words = 0;
   _mark_bit_map.clear();
