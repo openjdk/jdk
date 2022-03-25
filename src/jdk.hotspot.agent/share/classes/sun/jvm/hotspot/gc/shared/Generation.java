@@ -38,10 +38,7 @@ import sun.jvm.hotspot.utilities.Observer;
     <ul>
     <li> Generation
       <ul>
-      <li> CardGeneration
-        <ul>
-        <li> TenuredGeneration
-        </ul>
+      <li> TenuredGeneration
       <li> DefNewGeneration
       </ul>
     </ul>
