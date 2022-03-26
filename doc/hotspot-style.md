@@ -985,6 +985,30 @@ References from C++23
 
 [p1102r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html
 
+### Inheriting constructors
+
+Do not use _inheriting constructors_
+([n2540](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm)).
+
+C++11 provides simple syntax allowing a class to inherit the constructors of a
+base class.  Unfortunately there are a number of problems with the original
+specification, and C++17 contains significant revisions ([p0136r1] opens with
+a list of 8 Core Issues).  Since HotSpot doesn't support use of C++17, use of
+inherited constructors could run into those problems. Such uses might also
+change behavior in a future HotSpot update to use C++17 or later, potentially
+in subtle ways that could lead to hard to diagnose problems.  Because of this,
+HotSpot code must not use inherited constructors.
+
+Note that gcc7 provides the `-fnew-inheriting-ctors` option to use the
+[p0136r1] semantics.  This is enabled by default when using C++17 or later.
+It is also enabled by default for `fabi-version=11` (introduced by gcc7) or
+higher when using C++11/14, as the change is considered a Defect Report that
+applies to those versions.  Earlier versions of gcc don't have that option,
+and other supported compilers may not have anything similar.
+
+[p0136r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html
+  "p0136r1"
+
 ### Additional Permitted Features
 
 * `constexpr`
