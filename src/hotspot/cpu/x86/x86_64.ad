@@ -9075,7 +9075,7 @@ instruct salI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 
 instruct salI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (LShiftI (LoadI src) shift));
 
   format %{ "shlxl    $dst, $src, $shift" %}
@@ -9178,7 +9178,7 @@ instruct sarI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 
 instruct sarI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (RShiftI (LoadI src) shift));
 
   format %{ "sarxl    $dst, $src, $shift" %}
@@ -9282,7 +9282,7 @@ instruct shrI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 
 instruct shrI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (URShiftI (LoadI src) shift));
 
   format %{ "shrxl    $dst, $src, $shift" %}
@@ -9387,7 +9387,7 @@ instruct salL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 
 instruct salL_mem_rReg(rRegL dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (LShiftL (LoadL src) shift));
 
   format %{ "shlxq    $dst, $src, $shift" %}
@@ -9491,7 +9491,7 @@ instruct sarL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 
 instruct sarL_mem_rReg(rRegL dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (RShiftL (LoadL src) shift));
 
   format %{ "sarxq    $dst, $src, $shift" %}
@@ -9595,7 +9595,7 @@ instruct shrL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 
 instruct shrL_mem_rReg(rRegL dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (URShiftL (LoadL src) shift));
 
   format %{ "shrxq    $dst, $src, $shift" %}
