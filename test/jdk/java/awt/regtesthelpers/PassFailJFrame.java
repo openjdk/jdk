@@ -51,13 +51,14 @@ public class PassFailJFrame extends JFrame {
      * result is seen then the user click on the 'Pass' button else click
      * on the 'Fail' button and the reason for the failure should be
      * specified in the JDailog JTextArea.
-     * @param title title of the Frame.
-     * @param instructions specified instruction that user should follow.
-     * @param maxRowLength number of visible rows of the JTextArea where the
-     *                     instruction is show.
+     *
+     * @param title           title of the Frame.
+     * @param instructions    specified instruction that user should follow.
+     * @param maxRowLength    number of visible rows of the JTextArea where the
+     *                        instruction is show.
      * @param maxStringLength number of columns of the instructional JTextArea
-     * @param timeoutMinutes timeout of the test where time is specified in
-     *                       minutes.
+     * @param timeoutMinutes  timeout of the test where time is specified in
+     *                        minutes.
      * @throws HeadlessException
      * @throws InterruptedException
      * @throws InvocationTargetException
@@ -90,7 +91,7 @@ public class PassFailJFrame extends JFrame {
 
             add(buttonsPanel, BorderLayout.SOUTH);
             pack();
-	    setLocation(10,10);
+            setLocation(10, 10);
             setVisible(true);
         });
     }
@@ -100,6 +101,7 @@ public class PassFailJFrame extends JFrame {
      * If user does not select pass or fail button then the test waits for
      * the specified timeoutMinutes period and the test gets timeout.
      * This method should not be invoke with in EDT.
+     *
      * @throws InterruptedException
      * @throws InvocationTargetException
      */
