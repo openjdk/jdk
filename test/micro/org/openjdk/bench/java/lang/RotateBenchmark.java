@@ -31,7 +31,6 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
-@Fork(jvmArgsAppend = {"-XX:CompileCommand=print,*RotateBenchmark.*"})
 public class RotateBenchmark {
 
   @Param({"1024"})
