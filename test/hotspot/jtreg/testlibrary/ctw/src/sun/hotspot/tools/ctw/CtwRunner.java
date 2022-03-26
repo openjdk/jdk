@@ -93,7 +93,7 @@ public class CtwRunner {
         errors = new ArrayList<>();
 
         if (start.endsWith("%") && stop.endsWith("%")) {
-            int startPercentage = Integer.parseInt(start.substring(0, start.length() - 1));;
+            int startPercentage = Integer.parseInt(start.substring(0, start.length() - 1));
             int stopPercentage = Integer.parseInt(stop.substring(0, stop.length() - 1));
             if (startPercentage < 0 || startPercentage > 100 ||
                 stopPercentage < 0 || stopPercentage > 100) {

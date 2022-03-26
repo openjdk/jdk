@@ -77,7 +77,6 @@ static int totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
-  JavaThread* _thread;
   CompileLog* _log;
   TimerName _timer;
 

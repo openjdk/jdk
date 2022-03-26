@@ -181,7 +181,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"with.algparams.disabled", "%1$s using %2$s (disabled)"},
         {"key.bit", "%d-bit key"},
         {"key.bit.weak", "%d-bit key (weak)"},
+        {"key.bit.eccurve.weak", "%1$d-bit %2$s key (weak)"},
         {"key.bit.disabled", "%d-bit key (disabled)"},
+        {"key.bit.eccurve.disabled", "%1$d-bit %2$s key (disabled)"},
         {"unknown.size", "unknown size"},
         {"extra.attributes.detected", "POSIX file permission and/or symlink attributes detected. These attributes are ignored when signing and are not protected by the signature."},
 

@@ -296,7 +296,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
-  bool inline_hasNegatives();
+  bool inline_countPositives();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
