@@ -9063,7 +9063,8 @@ instruct salI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct salI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  // This is to match that of the memory variance
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (LShiftI src shift));
 
   format %{ "shlxl    $dst, $src, $shift" %}
@@ -9166,7 +9167,8 @@ instruct sarI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct sarI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  // This is to match that of the memory variance
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (RShiftI src shift));
 
   format %{ "sarxl    $dst, $src, $shift" %}
@@ -9270,7 +9272,8 @@ instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct shrI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  // This is to match that of the memory variance
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (URShiftI src shift));
 
   format %{ "shrxl    $dst, $src, $shift" %}
@@ -9375,7 +9378,8 @@ instruct salL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct salL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  // This is to match that of the memory variance
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (LShiftL src shift));
 
   format %{ "shlxq    $dst, $src, $shift" %}
@@ -9479,7 +9483,8 @@ instruct sarL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct sarL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  // This is to match that of the memory variance
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (RShiftL src shift));
 
   format %{ "sarxq    $dst, $src, $shift" %}
@@ -9583,7 +9588,8 @@ instruct shrL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct shrL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2());
+  // This is to match that of the memory variance
+  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
   match(Set dst (URShiftL src shift));
 
   format %{ "shrxq    $dst, $src, $shift" %}
