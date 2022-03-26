@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #define CPU_X86_REGISTER_X86_HPP
 
 #include "asm/register.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -135,7 +137,7 @@ inline XMMRegister as_XMMRegister(int encoding) {
 }
 
 
-// The implementation of XMM registers for the IA32 architecture
+// The implementation of XMM registers.
 class XMMRegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
@@ -201,11 +203,7 @@ CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm30,    (30));
 CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm31,    (31));
 #endif // AMD64
 
-// Only used by the 32bit stubGenerator. These can't be described by vmreg and hence
-// can't be described in oopMaps and therefore can't be used by the compilers (at least
-// were deopt might wan't to see them).
-
-// Use XMMRegister as shortcut
+// Use KRegister as shortcut
 class KRegisterImpl;
 typedef KRegisterImpl* KRegister;
 
@@ -213,7 +211,7 @@ inline KRegister as_KRegister(int encoding) {
   return (KRegister)(intptr_t)encoding;
 }
 
-// The implementation of XMM registers for the IA32 architecture
+// The implementation of AVX-3 (AVX-512) opmask registers.
 class KRegisterImpl : public AbstractRegisterImpl {
 public:
   enum {
@@ -275,5 +273,34 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_kpr;
 
 };
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_Register(exact_log2(first)) : noreg;
+}
+
+template <>
+inline Register AbstractRegSet<Register>::last() {
+  if (_bitset == 0) { return noreg; }
+  uint32_t last = 31 - count_leading_zeros(_bitset);
+  return as_Register(last);
+}
+
+template <>
+inline XMMRegister AbstractRegSet<XMMRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_XMMRegister(exact_log2(first)) : xnoreg;
+}
+
+template <>
+inline XMMRegister AbstractRegSet<XMMRegister>::last() {
+  if (_bitset == 0) { return xnoreg; }
+  uint32_t last = 31 - count_leading_zeros(_bitset);
+  return as_XMMRegister(last);
+}
+
+typedef AbstractRegSet<Register> RegSet;
+typedef AbstractRegSet<XMMRegister> XMMRegSet;
 
 #endif // CPU_X86_REGISTER_X86_HPP

@@ -411,7 +411,7 @@ public class TestSearch extends JavadocTester {
                     <link rel="stylesheet" type="text/css" href="script-dir/jquery-ui.min.css" title="Style">
                     """,
                 """
-                    <script type="text/javascript" src="script-dir/jquery-3.5.1.min.js"></script>
+                    <script type="text/javascript" src="script-dir/jquery-3.6.0.min.js"></script>
                     """,
                 """
                     <script type="text/javascript" src="script-dir/jquery-ui.min.js"></script>""",
@@ -684,7 +684,7 @@ public class TestSearch extends JavadocTester {
         checkFiles(expectedOutput,
                 "search.js",
                 "jquery-ui.overrides.css",
-                "script-dir/jquery-3.5.1.min.js",
+                "script-dir/jquery-3.6.0.min.js",
                 "script-dir/jquery-ui.min.js",
                 "script-dir/jquery-ui.min.css",
                 "script-dir/jquery-ui.structure.min.css",

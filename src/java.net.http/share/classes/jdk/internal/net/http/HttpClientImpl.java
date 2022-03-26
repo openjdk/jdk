@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,9 +573,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 throw ce;
             } else if (throwable instanceof SSLHandshakeException) {
                 // special case for SSLHandshakeException
-                SSLHandshakeException he = new SSLHandshakeException(msg);
-                he.initCause(throwable);
-                throw he;
+                throw new SSLHandshakeException(msg, throwable);
             } else if (throwable instanceof SSLException) {
                 // any other SSLException is wrapped in a plain
                 // SSLException

@@ -87,7 +87,6 @@ void InstanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   oop next = java_lang_ref_Reference::next(obj);
   if (next != NULL) {
     guarantee(oopDesc::is_oop(next), "next field should be an oop");
-    guarantee(next->is_instance(), "next field should be an instance");
-    guarantee(InstanceKlass::cast(next->klass())->is_reference_instance_klass(), "next field verify failed");
+    guarantee(next->is_instanceRef(), "next field verify failed");
   }
 }

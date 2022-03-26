@@ -1972,19 +1972,18 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 #endif
 }
 
-// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
-void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
-                                                        int increment, Address mask,
-                                                        Register scratch, bool preloaded,
-                                                        Condition cond, Label* where) {
-  if (!preloaded) {
-    movl(scratch, counter_addr);
-  }
-  incrementl(scratch, increment);
+// Jump if ((*counter_addr += increment) & mask) == 0
+void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr, Address mask,
+                                                        Register scratch, Label* where) {
+  // This update is actually not atomic and can lose a number of updates
+  // under heavy contention, but the alternative of using the (contended)
+  // atomic update here penalizes profiling paths too much.
+  movl(scratch, counter_addr);
+  incrementl(scratch, InvocationCounter::count_increment);
   movl(counter_addr, scratch);
   andl(scratch, mask);
   if (where != NULL) {
-    jcc(cond, *where);
+    jcc(Assembler::zero, *where);
   }
 }
 
