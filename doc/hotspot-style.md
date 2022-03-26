@@ -1067,6 +1067,9 @@ and other supported compilers may not have anything similar.
 ([n2930](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html))
 ([range-for](https://en.cppreference.com/w/cpp/language/range-for))
 
+* Unrestricted Unions
+([n2544](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf))
+
 ### Excluded Features
 
 * New string and character literals
