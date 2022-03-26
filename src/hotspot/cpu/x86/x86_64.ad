@@ -9008,7 +9008,7 @@ instruct salI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salI_rReg_imm(rRegI dst, immI shift, rFlagsReg cr)
+instruct salI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (LShiftI dst shift));
   effect(KILL cr);
@@ -9021,7 +9021,7 @@ instruct salI_rReg_imm(rRegI dst, immI shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salI_mem_imm(memory dst, immI shift, rFlagsReg cr)
+instruct salI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (LShiftI (LoadI dst) shift)));
   effect(KILL cr);
@@ -9113,7 +9113,7 @@ instruct sarI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by 8-bit immediate
-instruct sarI_rReg_imm(rRegI dst, immI shift, rFlagsReg cr)
+instruct sarI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (RShiftI dst shift));
   effect(KILL cr);
@@ -9126,7 +9126,7 @@ instruct sarI_rReg_imm(rRegI dst, immI shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by 8-bit immediate
-instruct sarI_mem_imm(memory dst, immI shift, rFlagsReg cr)
+instruct sarI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (RShiftI (LoadI dst) shift)));
   effect(KILL cr);
@@ -9217,7 +9217,7 @@ instruct shrI_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by 8-bit immediate
-instruct shrI_rReg_imm(rRegI dst, immI shift, rFlagsReg cr)
+instruct shrI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (URShiftI dst shift));
   effect(KILL cr);
@@ -9230,7 +9230,7 @@ instruct shrI_rReg_imm(rRegI dst, immI shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by 8-bit immediate
-instruct shrI_mem_imm(memory dst, immI shift, rFlagsReg cr)
+instruct shrI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreI dst (URShiftI (LoadI dst) shift)));
   effect(KILL cr);
@@ -9323,7 +9323,7 @@ instruct salL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
+instruct salL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (LShiftL dst shift));
   effect(KILL cr);
@@ -9336,7 +9336,7 @@ instruct salL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
 %}
 
 // Shift Left by 8-bit immediate
-instruct salL_mem_imm(memory dst, immI shift, rFlagsReg cr)
+instruct salL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreL dst (LShiftL (LoadL dst) shift)));
   effect(KILL cr);
@@ -9533,7 +9533,7 @@ instruct shrL_mem_1(memory dst, immI_1 shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by 8-bit immediate
-instruct shrL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
+instruct shrL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (URShiftL dst shift));
   effect(KILL cr);
@@ -9546,7 +9546,7 @@ instruct shrL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
 %}
 
 // Logical Shift Right by 8-bit immediate
-instruct shrL_mem_imm(memory dst, immI shift, rFlagsReg cr)
+instruct shrL_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
   match(Set dst (StoreL dst (URShiftL (LoadL dst) shift)));
   effect(KILL cr);
