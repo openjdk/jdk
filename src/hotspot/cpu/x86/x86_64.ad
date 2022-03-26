@@ -9394,7 +9394,7 @@ instruct salL_mem_rReg(rRegL dst, memory src, rRegI shift)
   ins_encode %{
     __ shlxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Arithmetic shift right by one
@@ -9498,7 +9498,7 @@ instruct sarL_mem_rReg(rRegL dst, memory src, rRegI shift)
   ins_encode %{
     __ sarxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Logical shift right by one
@@ -9602,7 +9602,7 @@ instruct shrL_mem_rReg(rRegL dst, memory src, rRegI shift)
   ins_encode %{
     __ shrxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 // Logical Shift Right by 24, followed by Arithmetic Shift Left by 24.
