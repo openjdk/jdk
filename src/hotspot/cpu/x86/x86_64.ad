@@ -6590,7 +6590,7 @@ instruct countLeadingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_encode %{
     __ lzcntl($dst$$Register, $src$$Address);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 instruct countLeadingZerosI_bsr(rRegI dst, rRegI src, rFlagsReg cr) %{
@@ -6639,7 +6639,7 @@ instruct countLeadingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
   ins_encode %{
     __ lzcntq($dst$$Register, $src$$Address);
   %}
-  ins_pipe(ialu_mem_reg);
+  ins_pipe(ialu_reg_mem);
 %}
 
 instruct countLeadingZerosL_bsr(rRegI dst, rRegL src, rFlagsReg cr) %{
