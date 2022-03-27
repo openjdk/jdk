@@ -40,6 +40,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/countbitsnode.hpp"
+#include "opto/comparenode.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
@@ -629,6 +630,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isUpperCase:
   case vmIntrinsics::_isWhitespace:
     return inline_character_compare(intrinsic_id());
+
+  case vmIntrinsics::_compare_i:
+  case vmIntrinsics::_compare_l:
+  case vmIntrinsics::_compareUnsigned_i:
+  case vmIntrinsics::_compareUnsigned_l:
+    return inline_number_compare(intrinsic_id());
 
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:
@@ -2145,6 +2152,22 @@ Node* LibraryCallKit::make_unsafe_address(Node*& base, Node* offset, BasicType t
     return basic_plus_adr(base, offset);
   }
 }
+
+//--------------------------inline_number_compare-----------------------------
+// inline int Integer.compare(int, int)
+bool LibraryCallKit::inline_number_compare(vmIntrinsics::ID id) {
+  Node* n = NULL;
+  switch (id) {
+  case vmIntrinsics::_compare_i:           n = new CompareSignedINode(argument(0), argument(1));  break;
+  case vmIntrinsics::_compare_l:           n = new CompareSignedLNode(argument(0), argument(2));  break;
+  case vmIntrinsics::_compareUnsigned_i:   n = new CompareUnsignedINode(argument(0), argument(1));  break;
+  case vmIntrinsics::_compareUnsigned_l:   n = new CompareUnsignedLNode(argument(0), argument(2));  break;
+  default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
 
 //--------------------------inline_number_methods-----------------------------
 // inline int     Integer.numberOfLeadingZeros(int)

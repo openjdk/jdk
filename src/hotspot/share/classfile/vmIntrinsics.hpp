@@ -127,6 +127,7 @@ class methodHandle;
   do_signature(float3_float_signature,    "(FFF)F")                                                                     \
   do_signature(int2_int_signature,        "(II)I")                                                                      \
   do_signature(long2_long_signature,      "(JJ)J")                                                                      \
+  do_signature(long2_int_signature,       "(JJ)I")                                                                      \
                                                                                                                         \
   /* here are the math names, all together: */                                                                          \
   do_name(abs_name,"abs")       do_name(sin_name,"sin")         do_name(cos_name,"cos")                                 \
@@ -231,6 +232,11 @@ class methodHandle;
   do_intrinsic(_reverseBytes_s,           java_lang_Short,        reverseBytes_name,        short_short_signature, F_S) \
     /*  (symbol reverseBytes_name defined above) */                                                                     \
                                                                                                                         \
+  do_intrinsic(_compare_i,                java_lang_Integer,      compare_name,            int2_int_signature,   F_S)   \
+  do_intrinsic(_compare_l,                java_lang_Long,         compare_name,            long2_int_signature,   F_S)  \
+  do_intrinsic(_compareUnsigned_i,        java_lang_Integer,      compare_unsigned_name,   int2_int_signature,   F_S)   \
+   do_name(     compare_unsigned_name,                             "compareUnsigned")                                   \
+  do_intrinsic(_compareUnsigned_l,        java_lang_Long,         compare_unsigned_name,   long2_int_signature,   F_S)  \
   do_intrinsic(_identityHashCode,         java_lang_System,       identityHashCode_name, object_int_signature,   F_SN)  \
    do_name(     identityHashCode_name,                           "identityHashCode")                                    \
   do_intrinsic(_currentTimeMillis,        java_lang_System,       currentTimeMillis_name, void_long_signature,   F_SN)  \
@@ -986,7 +992,7 @@ class methodHandle;
                                    "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                            \
    do_name(vector_blend_name, "blend")                                                                                                         \
                                                                                                                                                \
-  do_intrinsic(_VectorCompare, jdk_internal_vm_vector_VectorSupport, vector_compare_name, vector_compare_sig, F_S)                             \
+  do_intrinsic(_VectorCompare, jdk_internal_vm_vector_VectorSupport, compare_name, vector_compare_sig, F_S)                             \
    do_signature(vector_compare_sig, "(I"                                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
                                      "Ljava/lang/Class;Ljava/lang/Class;"                                                                      \
@@ -996,7 +1002,7 @@ class methodHandle;
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorCompareOp;)"                                                 \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorMask;")                                                      \
-   do_name(vector_compare_name, "compare")                                                                                                     \
+   do_name(compare_name, "compare")                                                                                                     \
                                                                                                                                                \
   do_intrinsic(_VectorRearrange, jdk_internal_vm_vector_VectorSupport, vector_rearrange_name, vector_rearrange_sig, F_S)                       \
    do_signature(vector_rearrange_sig, "(Ljava/lang/Class;"                                                                                     \

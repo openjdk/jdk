@@ -1483,6 +1483,7 @@ public final class Integer extends Number
      *         a value greater than {@code 0} if {@code x > y}
      * @since 1.7
      */
+    @IntrinsicCandidate
     public static int compare(int x, int y) {
         return (x < y) ? -1 : ((x == y) ? 0 : 1);
     }
@@ -1499,6 +1500,7 @@ public final class Integer extends Number
      *         unsigned values
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int compareUnsigned(int x, int y) {
         return compare(x + MIN_VALUE, y + MIN_VALUE);
     }

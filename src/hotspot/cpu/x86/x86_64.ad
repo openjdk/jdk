@@ -12100,6 +12100,112 @@ instruct overflowMulL_rReg_imm(rFlagsReg cr, rRegL op1, immL32 op2, rRegL tmp)
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
+//----------Intrinsics for Compare function------------------------------------
+
+instruct compareSignedI_rReg(rRegI dst, rRegI op1, rRegI op2, rRegI tmp, rFlagsReg cr)
+%{
+  match(Set dst (CompareSignedI op1 op2));
+  effect(KILL cr, TEMP tmp);
+
+  format %{ "cmpsignedl    $op1, $op2 # CompareSignedI" %}
+  ins_encode %{
+    Register op1 = $op1$$Register;
+    Register op2 = $op2$$Register;
+    Register dest = $dst$$Register;
+    Register tmp = $tmp$$Register;
+
+    Label done;
+    __ movl(tmp, -1);
+    __ cmpl(op1, op2);
+    __ jccb(Assembler::less, done);
+	  __ movl(tmp, 1);
+    __ jccb(Assembler::greater, done);
+	  __ movl(tmp, 0);
+    __ bind(done);
+    __ movl(dest, tmp);
+
+  %}
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+instruct compareSignedL_rReg(rRegI dst, rRegL op1, rRegL op2, rRegI tmp, rFlagsReg cr)
+%{
+  match(Set dst (CompareSignedL op1 op2));
+  effect(KILL cr, TEMP tmp);
+
+  format %{ "cmpsignedq    $op1, $op2 # CompareSignedL" %}
+  ins_encode %{
+    Register op1 = $op1$$Register;
+    Register op2 = $op2$$Register;
+    Register dest = $dst$$Register;
+    Register tmp = $tmp$$Register;
+
+    Label done;
+    __ movl(tmp, -1);
+    __ cmpq(op1, op2);
+    __ jccb(Assembler::less, done);
+	  __ movl(tmp, 1);
+    __ jccb(Assembler::greater, done);
+	  __ movl(tmp, 0);
+    __ bind(done);
+    __ movl(dest, tmp);
+
+  %}
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+
+instruct compareUnsignedI_rReg(rRegI dst, rRegI op1, rRegI op2, rRegI tmp, rFlagsReg cr)
+%{
+  match(Set dst (CompareUnsignedI op1 op2));
+  effect(KILL cr, TEMP tmp);
+
+  format %{ "cmpunsignedl    $op1, $op2 # CompareUnsignedI" %}
+  ins_encode %{
+    Register op1 = $op1$$Register;
+    Register op2 = $op2$$Register;
+    Register dest = $dst$$Register;
+    Register tmp = $tmp$$Register;
+
+    Label done;
+    __ movl(tmp, -1);
+    __ cmpl(op1, op2);
+    __ jccb(Assembler::below, done);
+	  __ movl(tmp, 1);
+    __ jccb(Assembler::above, done);
+	  __ movl(tmp, 0);
+    __ bind(done);
+    __ movl(dest, tmp);
+
+  %}
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+instruct compareUnsignedL_rReg(rRegI dst, rRegL op1, rRegL op2, rRegI tmp, rFlagsReg cr)
+%{
+  match(Set dst (CompareUnsignedL op1 op2));
+  effect(KILL cr, TEMP tmp);
+
+  format %{ "cmpunsignedq    $op1, $op2 # CompareUnsignedL" %}
+  ins_encode %{
+    Register op1 = $op1$$Register;
+    Register op2 = $op2$$Register;
+    Register dest = $dst$$Register;
+    Register tmp = $tmp$$Register;
+
+    Label done;
+    __ movl(tmp, -1);
+    __ cmpq(op1, op2);
+    __ jccb(Assembler::below, done);
+	  __ movl(tmp, 1);
+    __ jccb(Assembler::above, done);
+	  __ movl(tmp, 0);
+    __ bind(done);
+    __ movl(dest, tmp);
+
+  %}
+  ins_pipe(ialu_cr_reg_reg);
+%}
 
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions

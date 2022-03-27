@@ -140,6 +140,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/comparenode.hpp"
 #endif // COMPILER2
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
@@ -1708,6 +1709,10 @@
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \
   declare_c2_type(CmpD3Node, CmpDNode)                                    \
+  declare_c2_type(CompareSignedINode, CompareNode)                        \
+  declare_c2_type(CompareSignedLNode, CompareNode)                        \
+  declare_c2_type(CompareUnsignedINode, CompareNode)                      \
+  declare_c2_type(CompareUnsignedLNode, CompareNode)                      \
   declare_c2_type(BoolNode, Node)                                         \
   declare_c2_type(AbsNode, Node)                                          \
   declare_c2_type(AbsINode, AbsNode)                                      \

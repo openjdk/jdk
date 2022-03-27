@@ -31,6 +31,7 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/countbitsnode.hpp"
+#include "opto/comparenode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
