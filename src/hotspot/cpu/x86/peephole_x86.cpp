@@ -27,42 +27,81 @@
 #include "precompiled.hpp"
 #include "opto/peephole.hpp"
 
-// This function transform the shape
+// This function transforms the shapes
 // mov d, s1; add d, s2 into
-// lea d, [s1 + s2] and
+// lea d, [s1 + s2]     and
 // mov d, s1; shl d, s2 into
-// lea d, [s1 << s2] with s2 = 1, 2, 3
+// lea d, [s1 << s2]    with s2 = 1, 2, 3
 bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
                          MachNode* (*new_root)(), uint inst0_rule, bool imm) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 
-  // Go up the block to find inst1, if some node between writes src1 then coalescing will
-  // fail
-  bool matches = false;
+  // Go up the block to find a matching MachSpillCopyNode
   MachNode* inst1 = nullptr;
-  for (int i = block_index - 1; i >= 0; i--) {
-    Node* curr = block->get_node(i);
-    if (curr->is_MachSpillCopy()) {
+  int inst1_index = -1;
+  OptoReg::Name dst = ra_->get_reg_first(inst0);
+  OptoReg::Name src1 = OptoReg::Bad;
 
+  for (int pos = block_index - 1; pos >= 0; pos--) {
+    Node* curr = block->get_node(pos);
+
+    if (curr->is_MachSpillCopy()) {
+      OptoReg::Name out = ra_->get_reg_first(curr);
+      OptoReg::Name in = ra_->get_reg_first(curr->in(1));
+      if (out == dst && OptoReg::is_reg(in) && OptoReg::as_VMReg(in)->is_Register()) {
+        inst1 = curr->as_Mach();
+        inst1_index = pos;
+        src1 = in;
+        break;
+      }
     }
   }
-  
-  if (matches) {
-    MachNode* root = new_root();
-    ra_->add_reference(root, inst0);
-    ra_->set_oop(root, ra_->is_oop(inst0));
-    ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
-    root->add_req(inst0->in(0));
-    root->add_req(inst1->in(1));
-    if (!imm) { root->add_req(inst0->in(2)); } // No input for constant after matching
-    root->_opnds[0] = inst0->_opnds[0]->clone();
-    root->_opnds[1] = inst0->_opnds[1]->clone();
-    root->_opnds[2] = inst0->_opnds[2]->clone();
-    return true;
-  } else {
+  if (inst1 == nullptr) {
     return false;
   }
+
+  for (int pos = inst1_index + 1; pos < block_index; pos++) {
+    Node* curr = block->get_node(pos);
+    OptoReg::Name out = ra_->get_reg_first(curr);
+    if (out == dst || out == src1) {
+      return false;
+    }
+    for (uint i = 0; i < curr->req(); i++) {
+      if (curr->in(i) == nullptr) {
+        continue;
+      }
+      OptoReg::Name in = ra_->get_reg_first(curr->in(i));
+      if (in == dst || in == src1) {
+        return false;
+      }
+    }
+  }
+
+  if (!imm) {
+    Register rsrc1 = OptoReg::as_VMReg(src1)->as_Register();
+    Register rsrc2 = OptoReg::as_VMReg(ra_->get_reg_first(inst0->in(2)))->as_Register();
+    if ((rsrc1 == rbp || rsrc1 == r13) && (rsrc2 == rbp || rsrc2 == r13)) {
+      return false;
+    }
+  }
+
+  MachNode* root = new_root();
+  ra_->add_reference(root, inst0);
+  ra_->set_oop(root, ra_->is_oop(inst0));
+  ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
+  root->add_req(inst0->in(0));
+  root->add_req(inst1->in(1));
+  if (!imm) { root->add_req(inst0->in(2)); } // No input for constant after matching
+  root->_opnds[0] = inst0->_opnds[0]->clone();
+  root->_opnds[1] = inst0->_opnds[1]->clone();
+  root->_opnds[2] = inst0->_opnds[2]->clone();
+  inst0->set_removed();
+  inst1->set_removed();
+  block->remove_node(block_index);
+  block->remove_node(inst1_index);
+  block->insert_node(root, block_index - 1);
+  return true;
 }
 
 bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,

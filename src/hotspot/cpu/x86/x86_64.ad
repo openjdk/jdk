@@ -13348,10 +13348,10 @@ instruct tlsLoadP(r15_RegP dst) %{
 // // reside in the architecture dependent peephole file, the method has the
 // // signature of MachNode* (Block*, int, PhaseRegAlloc*, (MachNode*)(*)(), int...)
 // // with the arguments being the basic block, the current node index inside the
-// // block, the register allocator, the function upon invoked return a new node
+// // block, the register allocator, the functions upon invoked return a new node
 // // defined in peepreplace, and the rules of the nodes appearing in the
-// // corresponding peepmatch, the function return a new node if successful, else
-// // return nullptr
+// // corresponding peepmatch, the function return true if successful, else
+// // return false
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name

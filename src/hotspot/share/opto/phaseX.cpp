@@ -2037,7 +2037,8 @@ void PhasePeephole::do_transform() {
     Block* block = _cfg.get_block(block_number);
     bool block_not_printed = true;
 
-    for (bool progress = false; !progress; progress = false) {
+    for (bool progress = true; progress;) {
+      progress = false;
       // block->end_idx() not valid after PhaseRegAlloc
       uint end_index = block->number_of_nodes();
       for( uint instruction_index = 1; instruction_index < end_index; ++instruction_index ) {
