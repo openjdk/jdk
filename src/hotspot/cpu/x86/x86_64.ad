@@ -13373,7 +13373,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 // ---------CURRENT LIMITATIONS----------------------------------------------
 //
-// Only one replacement instruction
+// Only transformations inside a basic block (do we need more for peephole)
 //
 // ---------EXAMPLE----------------------------------------------------------
 //
@@ -13394,11 +13394,11 @@ instruct tlsLoadP(r15_RegP dst) %{
 //   match(Set dst (AddI dst src));
 // %}
 //
-//
 // 1. Simple replacement
 // - Only match adjacent instructions in same basic block
 // - Only equality constraints
 // - Only constraints between operands, not (0.dest_reg == RAX_enc)
+// - Only one replacement instruction
 //
 // // Change (inc mov) to lea
 // peephole %{
@@ -13419,25 +13419,26 @@ instruct tlsLoadP(r15_RegP dst) %{
 // - More flexible constraints
 // - More flexible transformations
 // - May utilise architecture-dependent API more effectively
+// - Currently only one replacement instruction due to adlc parsing capabilities
 //
 // // Change (inc mov) to lea
 // peephole %{
 //   // lea should only be emitted when beneficial
 //   peeppredicate( VM_Version::supports_fast_2op_lea() );
-//   // increment preceeded by register-register move
+//   // the rule numbers of these nodes inside are passed into the function below
 //   peepmatch ( incI_rReg movI );
 //   // the method that takes the responsibility of transformation
 //   peepprocedure ( inc_mov_to_lea );
-//   // the replacement is a leaI_rReg_immI
+//   // the replacement is a leaI_rReg_immI, a lambda upon invoked creating this
+//   // node is passed into the function above
 //   peepreplace ( leaI_rReg_immI() );
 // %}
 
 // These instructions is not matched by the matcher but used by the peephole
-instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
+instruct leaI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2)
 %{
   match(Set dst (AddI src1 src2));
   ins_cost(10000);
-  effect(KILL cr);
   format %{ "leal    $dst, [$src1 + $src2]" %}
   ins_encode %{
     Register dst = $dst$$Register;
@@ -13482,11 +13483,10 @@ instruct leaI_rReg_immI2_peep(rRegI dst, rRegI src, immI2 shift)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
+instruct leaL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2)
 %{
   match(Set dst (AddL src1 src2));
   ins_cost(10000);
-  effect(KILL cr);
   format %{ "leaq    $dst, [$src1 + $src2]" %}
   ins_encode %{
     Register dst = $dst$$Register;
@@ -13536,7 +13536,7 @@ peephole
   peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addI_rReg);
   peepprocedure (lea_coalesce_reg);
-  peepreplace (addI_rReg_rReg_peep());
+  peepreplace (leaI_rReg_rReg_peep());
 %}
 
 peephole
@@ -13576,7 +13576,7 @@ peephole
   peeppredicate(VM_Version::supports_fast_2op_lea());
   peepmatch (addL_rReg);
   peepprocedure (lea_coalesce_reg);
-  peepreplace (addL_rReg_rReg_peep());
+  peepreplace (leaL_rReg_rReg_peep());
 %}
 
 peephole
