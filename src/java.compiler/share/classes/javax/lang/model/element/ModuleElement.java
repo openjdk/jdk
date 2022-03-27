@@ -37,7 +37,7 @@ import javax.lang.model.type.TypeMirror;
  * executable output backing construct or may be created from implicit
  * information. The explicit source code construct of a module is
  * typically a {@code module-info.java} file (JLS {@jls
- * 7.7}). Implicit information is used to model {@link #isUnnamed
+ * 7.7}). Implicit information is used to model {@linkplain #isUnnamed
  * unnamed modules}.
  *
  * @see javax.lang.model.util.Elements#getModuleOf
