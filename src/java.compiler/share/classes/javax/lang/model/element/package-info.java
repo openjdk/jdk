@@ -86,7 +86,7 @@
  * code is not syntactically well-formed or has some other
  * irrecoverable error that could not be removed by the generation of
  * new classes or interfaces, a model may or may not be provided as a
- * quality of implementation issue.  If a program is syntactically
+ * quality of implementation issue.  If a program for a class or interface is syntactically
  * valid but erroneous in some other fashion, any returned model must
  * have no less information than if all the method bodies in the
  * program were replaced by {@code "throw new RuntimeException();"}.
