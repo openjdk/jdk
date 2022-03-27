@@ -25,6 +25,8 @@
 #ifndef SHARE_OPTO_PEEPHOLE_HPP
 #define SHARE_OPTO_PEEPHOLE_HPP
 
+#include "utilities/macros.hpp"
+
 #include CPU_HEADER(peephole)
 
 #endif // SHARE_OPTO_PEEPHOLE_HPP
