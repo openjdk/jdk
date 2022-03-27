@@ -32,6 +32,14 @@ import javax.lang.model.type.TypeMirror;
  * Represents a module program element.  Provides access to
  * information about the module, its directives, and its members.
  *
+ * @apiNote
+ * The represented module may have an explicit source code or
+ * executable output backing construct or may be created from implicit
+ * importation. The explicit source code construct of a module is
+ * typically a {@code module-info.java} file (JLS {@jls
+ * 7.7}). Implicit information is used to module {@link #isUnnamed
+ * unnamed modules}.
+ *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
  * @jls 7.7 Module Declarations

@@ -32,6 +32,15 @@ import javax.lang.model.type.TypeMirror;
  * Represents a package program element.  Provides access to information
  * about the package and its members.
  *
+ * @apiNote
+ * The represented package may have an explicit source code or
+ * executable output backing construct or may be created from implicit
+ * importation. The explicit source code construct of a package is
+ * typically a {@code package-info.java} file (JLS {@jls
+ * 7.4.1}). Implicit information is used to module {@link #isUnnamed
+ * unnamed packages} as well as named packages without explicit
+ * declarations.
+ *
  * @see javax.lang.model.util.Elements#getPackageOf
  * @since 1.6
  */
