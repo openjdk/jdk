@@ -21,10 +21,11 @@
  * questions.
  *
  */
+#include "precompiled.hpp"
 
 #ifdef COMPILER2
+#ifdef _LP64
 
-#include "precompiled.hpp"
 #include "opto/peephole.hpp"
 
 // This function transforms the shapes
@@ -114,4 +115,5 @@ bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra
   return lea_coalesce_helper(block, block_index, ra_, new_root, inst0_rule, true);
 }
 
+#endif // _LP64
 #endif // COMPILER2

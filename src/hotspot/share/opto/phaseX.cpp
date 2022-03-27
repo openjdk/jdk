@@ -2062,12 +2062,12 @@ void PhasePeephole::do_transform() {
                 block_not_printed = false;
               }
               // Print the peephole number
-              tty->print_cr("peephole number: %d\n", result);
+              tty->print_cr("peephole number: %d", result);
             }
+            inc_peepholes();
 #endif
             // Set progress, start again
             progress = true;
-            NOT_PRODUCT( inc_peepholes(); )
             break;
           }
         }
