@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2037,17 +2037,16 @@ void PhasePeephole::do_transform() {
     Block* block = _cfg.get_block(block_number);
     bool block_not_printed = true;
 
-    // and each instruction within a block
-    uint end_index = block->number_of_nodes();
-    for (bool changed = false; !changed; changed = false) {
+    for (bool progress = false; !progress; progress = false) {
       // block->end_idx() not valid after PhaseRegAlloc
+      uint end_index = block->number_of_nodes();
       for( uint instruction_index = 1; instruction_index < end_index; ++instruction_index ) {
         Node     *n = block->get_node(instruction_index);
         if( n->is_Mach() ) {
           MachNode *m = n->as_Mach();
           // check for peephole opportunities
-          MachNode *m2 = m->peephole(block, instruction_index, _regalloc);
-          if( m2 != NULL ) {
+          int result = m->peephole(block, instruction_index, _regalloc);
+          if( result != -1 ) {
 #ifndef PRODUCT
             if( PrintOptoPeephole ) {
               // Print method, first time only
@@ -2061,43 +2060,14 @@ void PhasePeephole::do_transform() {
                 block->dump();
                 block_not_printed = false;
               }
-              // Print instructions being deleted
-              for( int i = 0; i < block->number_of_nodes(); i++ ) {
-                Node* node = block->get_node(i);
-                if (!node->is_Mach()) {
-                  continue;
-                }
-                MachNode* mnode = node->as_Mach();
-                if (mnode->get_removed()) {
-                  mnode->as_Mach()->format(_regalloc); tty->cr();
-                }
-              }
-              tty->print_cr("replaced with");
-              // Print new instruction
-              m2->format(_regalloc);
-              tty->print("\n\n");
+              // Print the peephole number
+              tty->print_cr("peephole number: %d\n", result);
             }
 #endif
-            // Remove old nodes from basic block and update instruction_index
-            // (old nodes still exist and may have edges pointing to them
-            //  as register allocation info is stored in the allocator using
-            //  the node index to live range mappings.)
-            int delete_count = 0;
-            for(int i = block->number_of_nodes() - 1; i >= 0; i--) {
-              Node* node = block->get_node(i);
-              if (!node->is_Mach()) {
-                continue;
-              }
-              MachNode* mnode = node->as_Mach();
-              if (mnode->get_removed()) {
-                block->remove_node(i);
-                
-              }
-            }
-            // install new node after safe_instruction_index
-            block->insert_node(m2, safe_instruction_index + 1);
-            end_index = block->number_of_nodes() - 1; // Recompute new block size
+            // Set progress, start again
+            progress = true;
             NOT_PRODUCT( inc_peepholes(); )
+            break;
           }
         }
       }

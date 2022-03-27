@@ -1267,7 +1267,8 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
 // }
 
 // Construct the new sub-tree
-static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch, PeepConstraint *pconstraint, PeepReplace *preplace, int max_position ) {
+static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_number, PeepMatch *pmatch,
+                                  PeepConstraint *pconstraint, PeepReplace *preplace, int max_position ) {
   fprintf(fp, "      // IF instructions and constraints matched\n");
   fprintf(fp, "      if( matches ) {\n");
   fprintf(fp, "        // generate the new sub-tree\n");
@@ -1342,12 +1343,16 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
     assert( false, "ShouldNotReachHere();");
   }
 
+  // Mark the node as removed because peephole does not remove nodes from the graph
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        inst%d->set_removed();\n", i);
   }
-  // Return the new sub-tree
-  fprintf(fp, "        deleted = %d;\n", max_position+1 /*zero to one based*/);
-  fprintf(fp, "        return root;  // return new root;\n");
+  for (int i = 0; i <= max_position; i++) {
+    fprintf(fp, "        block->remove_node(block_index - %d);\n", i);
+  }
+  fprintf(fp, "        block->insert_node(root, block_index - %d);\n", max_position);
+  // Return the peephole index
+  fprintf(fp, "        return %d;  // return the peephole index;\n", peephole_number);
   fprintf(fp, "      }\n");
 }
 
@@ -1355,7 +1360,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
 // Define the Peephole method for an instruction node
 void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Generate Peephole function header
-  fprintf(fp, "MachNode *%sNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {\n", node->_ident);
+  fprintf(fp, "int %sNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_) {\n", node->_ident);
   fprintf(fp, "  bool  matches = true;\n");
 
   // Identify the maximum instruction position,
@@ -1415,7 +1420,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       check_peepconstraints( fp, _globalNames, pmatch, pconstraint );
 
       // Construct the new sub-tree
-      generate_peepreplace( fp, _globalNames, pmatch, pconstraint, preplace, max_position );
+      generate_peepreplace( fp, _globalNames, peephole_number, pmatch, pconstraint, preplace, max_position );
 
       // End of scope for this peephole's constraints
       fprintf(fp, "    }\n");
@@ -1426,7 +1431,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
 
       // Call the precedure
-      fprintf(fp, "    MachNode* replacement = Peephole::%s(block, block_index, ra_, deleted, replacing", pprocedure->name());
+      fprintf(fp, "    bool replacement = Peephole::%s(block, block_index, ra_, replacing", pprocedure->name());
 
       int         parent        = -1;
       int         inst_position = 0;
@@ -1441,8 +1446,8 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       fprintf(fp, ");\n");
 
       // If substitution succeeded, return the new node
-      fprintf(fp, "    if (replacement != nullptr) {\n");
-      fprintf(fp, "      return replacement;\n");
+      fprintf(fp, "    if (replacement) {\n");
+      fprintf(fp, "      return %d;\n", peephole_number);
       fprintf(fp, "    }\n");
     }
 
@@ -1451,7 +1456,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
     fprintf(fp, "\n");
   }
 
-  fprintf(fp, "  return NULL;  // No peephole rules matched\n");
+  fprintf(fp, "  return -1;  // No peephole rules matched\n");
   fprintf(fp, "}\n");
   fprintf(fp, "\n");
 }

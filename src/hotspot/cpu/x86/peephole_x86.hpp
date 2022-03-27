@@ -30,12 +30,10 @@
 
 class Peephole {
 public:
-  static MachNode* lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
-                                    int& deleted, MachNode* (*new_root)(), int inst0_rule,
-                                    GrowableArray<MachNode*>& old_nodes, GrowableArray<MachNode*>& new_nodes);
-  static MachNode* lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
-                                    int& deleted, MachNode* (*new_root)(), int inst0_rule,
-                                    GrowableArray<MachNode*>& old_nodes, GrowableArray<MachNode*>& new_nodes);
+  static bool lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
+                               MachNode* (*new_root)(), uint inst0_rule);
+  static bool lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
+                               MachNode* (*new_root)(), uint inst0_rule);
 };
 
 #endif // CPU_X86_PEEPHOLE_X86_HPP

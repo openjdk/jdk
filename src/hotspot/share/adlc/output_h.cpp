@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1703,7 +1703,7 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // If there is an explicit peephole rule, build it
     if ( instr->peepholes() != NULL ) {
-      fprintf(fp,"  virtual MachNode      *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);\n");
+      fprintf(fp,"  virtual int            peephole(Block *block, int block_index, PhaseRegAlloc *ra_) override;\n");
     }
 
     // Output the declaration for number of relocation entries

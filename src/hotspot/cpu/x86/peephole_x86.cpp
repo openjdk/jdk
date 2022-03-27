@@ -32,17 +32,20 @@
 // lea d, [s1 + s2] and
 // mov d, s1; shl d, s2 into
 // lea d, [s1 << s2] with s2 = 1, 2, 3
-MachNode* lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_, int& deleted,
-                              MachNode* (*new_root)(), int inst0_rule,
-                              GrowableArray<MachNode*> old_nodes, GrowableArray<MachNode*>& new_nodes, bool imm) {
+bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
+                         MachNode* (*new_root)(), uint inst0_rule, bool imm) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 
   // Go up the block to find inst1, if some node between writes src1 then coalescing will
   // fail
   bool matches = false;
+  MachNode* inst1 = nullptr;
   for (int i = block_index - 1; i >= 0; i--) {
-    Node* curr = block->
+    Node* curr = block->get_node(i);
+    if (curr->is_MachSpillCopy()) {
+
+    }
   }
   
   if (matches) {
@@ -56,22 +59,20 @@ MachNode* lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
     root->_opnds[0] = inst0->_opnds[0]->clone();
     root->_opnds[1] = inst0->_opnds[1]->clone();
     root->_opnds[2] = inst0->_opnds[2]->clone();
-    return root;
+    return true;
   } else {
-    return nullptr;
+    return false;
   }
 }
 
-MachNode* Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
-                                     int& deleted, MachNode* (*new_root)(), int inst0_rule,
-                                     GrowableArray<MachNode*>& old_nodes, GrowableArray<MachNode*>& new_nodes) {
-  return lea_coalesce_helper(block, block_index, ra_, deleted, new_root, inst0_rule, old_nodes, new_nodes, false);
+bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
+                                MachNode* (*new_root)(), uint inst0_rule) {
+  return lea_coalesce_helper(block, block_index, ra_, new_root, inst0_rule, false);
 }
 
-MachNode* Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
-                                     int& deleted, MachNode* (*new_root)(), int inst0_rule,
-                                     GrowableArray<MachNode*>& old_nodes, GrowableArray<MachNode*>& new_nodes) {
-  return lea_coalesce_helper(block, block_index, ra_, deleted, new_root, inst0_rule, old_nodes, new_nodes, true);
+bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
+                                MachNode* (*new_root)(), uint inst0_rule) {
+  return lea_coalesce_helper(block, block_index, ra_, new_root, inst0_rule, true);
 }
 
 #endif // COMPILER2

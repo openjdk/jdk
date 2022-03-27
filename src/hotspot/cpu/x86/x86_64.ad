@@ -13436,9 +13436,9 @@ instruct tlsLoadP(r15_RegP dst) %{
 instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 %{
   match(Set dst (AddI src1 src2));
-  ins_cost(110);
+  ins_cost(10000);
   effect(KILL cr);
-  format %{ "peephole-addl    $dst, $src1, $src2\t# int" %}
+  format %{ "leal    $dst, [$src1 + $src2]" %}
   ins_encode %{
     Register dst = $dst$$Register;
     Register src1 = $src1$$Register;
@@ -13446,12 +13446,9 @@ instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
     assert(dst != src1 && dst != src2, "");
     if (src1 != rbp && src1 != r13) {
       __ leal(dst, Address(src1, src2, Address::times_1));
-    } else if (src2 != rbp && src2 != r13) {
-      __ leal(dst, Address(src2, src1, Address::times_1));
     } else {
-      // {src1, src2} == {rbp, r13}, just give up
-      __ movl(dst, src1);
-      __ addl(dst, src2);
+      assert(src2 != rbp && src2 != r13, "");
+      __ leal(dst, Address(src2, src1, Address::times_1));
     }
   %}
   ins_pipe(ialu_reg_reg);
@@ -13460,8 +13457,8 @@ instruct addI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2, rFlagsReg cr)
 instruct leaI_rReg_immI_peep(rRegI dst, rRegI src1, immI src2)
 %{
   match(Set dst (AddI src1 src2));
-  ins_cost(110);
-  format %{ "leal    $dst, [$src1 + $src2]\t# int" %}
+  ins_cost(10000);
+  format %{ "leal    $dst, [$src1 + $src2]" %}
   ins_encode %{
     __ leal($dst$$Register, Address($src1$$Register, $src2$$constant));
   %}
@@ -13471,8 +13468,8 @@ instruct leaI_rReg_immI_peep(rRegI dst, rRegI src1, immI src2)
 instruct leaI_rReg_immI2_peep(rRegI dst, rRegI src, immI2 shift)
 %{
   match(Set dst (LShiftI src shift));
-  ins_cost(110);
-  format %{ "leal    $dst, [$src << $shift]\t# int" %}
+  ins_cost(10000);
+  format %{ "leal    $dst, [$src << $shift]" %}
   ins_encode %{
     Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
     Register src = $src$$Register;
@@ -13488,9 +13485,9 @@ instruct leaI_rReg_immI2_peep(rRegI dst, rRegI src, immI2 shift)
 instruct addL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 %{
   match(Set dst (AddL src1 src2));
-  ins_cost(110);
+  ins_cost(10000);
   effect(KILL cr);
-  format %{ "peephole-addq    $dst, $src1, $src2\t# long" %}
+  format %{ "leaq    $dst, [$src1 + $src2]" %}
   ins_encode %{
     Register dst = $dst$$Register;
     Register src1 = $src1$$Register;
@@ -13498,12 +13495,9 @@ instruct addL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
     assert(dst != src1 && dst != src2, "");
     if (src1 != rbp && src1 != r13) {
       __ leaq(dst, Address(src1, src2, Address::times_1));
-    } else if (src2 != rbp && src2 != r13) {
-      __ leaq(dst, Address(src2, src1, Address::times_1));
     } else {
-      // {src1, src2} == {rbp, r13}, just give up
-      __ movq(dst, src1);
-      __ addq(dst, src2);
+      assert(src2 != rbp && src2 != r13, "");
+      __ leaq(dst, Address(src2, src1, Address::times_1));
     }
   %}
   ins_pipe(ialu_reg_reg);
@@ -13512,8 +13506,8 @@ instruct addL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2, rFlagsReg cr)
 instruct leaL_rReg_immL32_peep(rRegL dst, rRegL src1, immL32 src2)
 %{
   match(Set dst (AddL src1 src2));
-  ins_cost(110);
-  format %{ "leaq    $dst, [$src1 + $src2]\t# long" %}
+  ins_cost(10000);
+  format %{ "leaq    $dst, [$src1 + $src2]" %}
   ins_encode %{
     __ leaq($dst$$Register, Address($src1$$Register, $src2$$constant));
   %}
@@ -13523,8 +13517,8 @@ instruct leaL_rReg_immL32_peep(rRegL dst, rRegL src1, immL32 src2)
 instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
 %{
   match(Set dst (LShiftL src shift));
-  ins_cost(110);
-  format %{ "leaq    $dst, [$src << $shift]\t# long" %}
+  ins_cost(10000);
+  format %{ "leaq    $dst, [$src << $shift]" %}
   ins_encode %{
     Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
     Register src = $src$$Register;
