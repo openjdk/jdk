@@ -889,7 +889,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.gridColor", white, // grid line color
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
-            "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(deriveContrastFocusRing(selectionBackground), 2),
+            "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(
+                    deriveContrastFocusRing(selectionBackground), 2),
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1124,32 +1125,31 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns a prominent and visible Cell Focus Ring color by
-     * manipulating hue, saturation and setting the brightness
-     * to 100% for a given selection background color.
+     * Returns a lighter Cell Focus Ring color by changing saturation
+     * and setting the brightness to 100% for a given selection
+     * background color.
      *
-     * If selectedBackgroundColor is equal to white or black, the
-     * returned focus ring color is Gray. If the selectedBackgroundColor
-     * is any shade of Gray then, the returned focus ring color is
-     * White/Black depending on the rgb values. For all other values
-     * of rgb, a more prominent and visible color is returned. Hue
-     * and saturation are obtained depending on the current hue and
-     * saturation values of selectionBackgroundColor. The brightness
-     * of new color (for focus ring) is always set to 100% to ensure
-     * that the brightest shade for the obtained hue and saturation
-     * offset values is returned.
+     * If selectedBackgroundColor is equal to white/black/grey, the
+     * returned focus ring color is Light Gray. For all other colors,
+     * a lighter color of selectionBackgroundColor is returned. A new
+     * Focus Ring color (in the latter case) is obtained by adjusting
+     * the saturation levels and setting the brightness to 100% of the
+     * corresponding selectedBackgroundColor.
      *
      * @param selectedBackgroundColor - the {@code Color} object
      * @return the {@code Color} object corresponding to new HSB values
      */
     private Color deriveContrastFocusRing(Color selectedBackgroundColor) {
 
-        //define constants
-        float hueFactor = 0.0278f; //approx. 10 degree offset to the original hue
-        float hueMaxValue = 1; //corresponds to 360 deg.
-        float saturationThreshold = 0.5f;
+        // define constants
         float satLowerValue = 0.30f;
         float satUpperValue = 1.0f;
+
+        // used to compare with saturation value of selectedBackgroundColor and
+        // set it to either lower or upper saturation value
+        float saturationThreshold = 0.5f;
+
+        // brightness always set to 100%
         float brightnessValue = 1.0f;
 
         float[] hsbValues = new float[3];
@@ -1158,42 +1158,24 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         int greenValue = selectedBackgroundColor.getGreen();
         int blueValue = selectedBackgroundColor.getBlue();
 
-        if (selectedBackgroundColor.equals(Color.WHITE) ||
-                selectedBackgroundColor.equals(Color.BLACK)) {
-            return Color.GRAY;
+        // if selectionBackground color white/black/gray
+        if ((redValue == greenValue && redValue == blueValue)) {
+            return Color.LIGHT_GRAY;
         }
 
-        //if background is any shade of grey (red == green == blue)
-        if (redValue == greenValue && redValue == blueValue) {
-
-            //towards white
-            if (redValue >= 128) {
-                return Color.BLACK;
-            }
-            //towards black
-            else {
-                return Color.WHITE;
-            }
-        }
-
-        //if background color other than white, black or grey compute a
-        // brighter color using HSB components
+        // if selectionBackground color NOT white/black/gray
         Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
-
-        //hue adjustment - present value increased by hueFactor
-        hsbValues[0] = (hsbValues[0] + hueFactor) >= hueMaxValue ?
-                (hsbValues[0] + hueFactor) - hueMaxValue : hsbValues[0] + hueFactor;
 
         //saturation adjustment - saturation set to either lower or
         // upper saturation value based on current saturation level
         hsbValues[1] = hsbValues[1] >= saturationThreshold ?
-                satLowerValue : satUpperValue;
+                    satLowerValue : satUpperValue;
 
         //brightness adjustment - brightness set to 100%, always return the
-        //brightest color for the obtained hue and saturation values
+        //brightest color for the new color
         hsbValues[2] = brightnessValue;
 
-        //create and return Color corresponding to new hsbValues
+        //create and return color corresponding to new hsbValues
         return Color.getHSBColor(hsbValues[0], hsbValues[1], hsbValues[2]);
     }
 }

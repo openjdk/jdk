@@ -86,28 +86,12 @@ public class JTableFocusRingTest {
             int greenValue = selectionBackground.getGreen();
             int blueValue = selectionBackground.getBlue();
 
-            if ((selectionBackground.equals(Color.BLACK) || selectionBackground.equals(Color.WHITE))
-                    && brighterFocusRingColor.equals(Color.GRAY)) {
-                System.out.println("Condition-Background Color: WHITE/BLACK, " +
-                        "Focus Ring Color: GRAY");
+            // Selected Background color: WHITE/BLACK/GRAY
+            if (redValue == greenValue && redValue == blueValue && brighterFocusRingColor.equals(Color.LIGHT_GRAY)) {
+                System.out.println("Condition-Background Color: WHITE/BLACK/GRAY, " +
+                        "Focus Ring Color: LIGHT GRAY");
                 System.out.println("Test case passed");
                 return;
-            }
-            if (redValue == greenValue && redValue == blueValue) {
-                //towards white
-                if (redValue >= 128 && brighterFocusRingColor.equals(Color.BLACK)) {
-                    System.out.println("Condition-Background Color: Shade of GRAY " +
-                            "(Red==Green==Blue) and towards white, Focus Ring Color: BLACK");
-                    System.out.println("Test case passed");
-                    return;
-                }
-                //towards black
-                if (redValue < 128 && brighterFocusRingColor.equals(Color.WHITE)) {
-                    System.out.println("Condition-Background Color: Shade of GRAY " +
-                            "(Red==Green==Blue) and towards black, Focus Ring Color: WHITE");
-                    System.out.println("Test case passed");
-                    return;
-                }
             }
             selectionBackground.getRGBColorComponents(bckRGB);
             originalFocusRingColor.getRGBColorComponents(originalFocusRingRGB);
