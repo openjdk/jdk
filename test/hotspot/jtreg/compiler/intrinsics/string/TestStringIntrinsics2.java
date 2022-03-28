@@ -46,7 +46,7 @@
 /*
  * @test id=LargeHeap
  * @bug 8254790
- * @requires vm.bits == "64" & os.maxMemory > 5G
+ * @requires vm.bits == "64" & os.maxMemory > 8G
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
@@ -54,7 +54,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm
- *        -mx5G
+ *        -mx8G
  *        -Xbootclasspath/a:.
  *        -Xmixed
  *        -XX:+UnlockDiagnosticVMOptions
