@@ -2808,8 +2808,26 @@ Zone Europe/Kaliningrad	 1:22:00 -	LMT	1893 Apr
 # says he remembers that Samara opted out of the 1992-01-19 exception
 # 2 days before the switch.
 #
+# From Alois Treindl (2022-02-15):
+# the Russian wikipedia page
+# https://ru.wikipedia.org/wiki/Московское_время#Перемещение_границы_применения_московского_времени_на_восток
+# contains the sentence (in Google translation) "In the autumn of
+# 1981, Arkhangelsk, Vologda, Yaroslavl, Ivanovo, Vladimir, Ryazan,
+# Lipetsk, Voronezh, Rostov-on-Don, Krasnodar and regions to the east
+# of those named (about 30 in total) parted ways with Moscow time.
+# However, the convenience of common time with Moscow turned out to be
+# decisive - in 1982, these regions again switched to Moscow time."
+# Shanks International atlas has similar information, and also the
+# Russian book Zaitsev A., Kutalev D. A new astrologer's reference
+# book. Coordinates of cities and time corrections, - The World of
+# Urania, 2012 (Russian: Зайцев А., Куталёв Д., Новый справочник
+# астролога. Координаты городов и временные поправки).
+# To me it seems that an extra zone is needed, which starts with LMT
+# util 1919, later follows Moscow since 1930, but deviates from it
+# between 1 October 1981 until 1 April 1982.
 #
-# From Paul Eggert (2016-03-18):
+#
+# From Paul Eggert (2022-02-15):
 # Given the above, we appear to be missing some Zone entries for the
 # chaotic early 1980s in Russia.  It's not clear what these entries
 # should be.  For now, sweep this under the rug and just document the
@@ -2856,7 +2874,7 @@ Zone Europe/Simferopol	 2:16:24 -	LMT	1880
 			 1:00	C-Eur	CE%sT	1944 Apr 13
 			 3:00	Russia	MSK/MSD	1990
 			 3:00	-	MSK	1990 Jul  1  2:00
-			 2:00	-	EET	1992
+			 2:00	-	EET	1992 Mar 20
 # Central Crimea used Moscow time 1994/1997.
 #
 # From Paul Eggert (2006-03-22):
@@ -2866,7 +2884,7 @@ Zone Europe/Simferopol	 2:16:24 -	LMT	1880
 # sometime between the 1994 DST switches.  Shanks & Pottenger simply say
 # 1994-09-25 03:00, but that can't be right.  For now, guess it
 # changed in May.
-			 2:00	E-Eur	EE%sT	1994 May
+			 2:00	C-Eur	EE%sT	1994 May
 # From IATA SSIM (1994/1997), which also says that Kerch is still like Kiev.
 			 3:00	E-Eur	MSK/MSD	1996 Mar 31  0:00s
 			 3:00	1:00	MSD	1996 Oct 27  3:00s
@@ -4033,6 +4051,27 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
 # Ukraine
 #
+# From Alois Triendl (2014-03-01):
+# REGULATION A N O V A on March 20, 1992 N 139 ...  means that from
+# 1992 on, Ukraine had DST with begin time at 02:00 am, on last Sunday
+# in March, and end time 03:00 am, last Sunday in September....
+# CABINET OF MINISTERS OF UKRAINE RESOLUTION on May 13, 1996 N 509
+# "On the order of computation time on the territory of Ukraine" ....
+# As this cabinet decision is from May 1996, it seems likely that the
+# transition in March 1996, which predates it, was still at 2:00 am
+# and not at 3:00 as would have been under EU rules.
+# This is why I have set the change to EU rules into May 1996,
+# so that the change in March is stil covered by the Ukraine rule.
+# The next change in October 1996 happened under EU rules....
+# TZ database holds three other zones for Ukraine.... I have not yet
+# worked out the consequences for these three zones, as we (me and my
+# US colleague David Cochrane) are still trying to get more
+# information upon these local deviations from Kiev rules.
+#
+# From Paul Eggert (2022-02-08):
+# For now, assume that Ukraine's other three zones followed the same rules,
+# except that Crimea switched to Moscow time in 1994 as described elsewhere.
+
 # From Igor Karpov, who works for the Ukrainian Ministry of Justice,
 # via Garrett Wollman (2003-01-27):
 # BTW, I've found the official document on this matter. It's government
@@ -4122,7 +4161,7 @@ Zone Europe/Kiev	2:02:04 -	LMT	1880
 			1:00	C-Eur	CE%sT	1943 Nov  6
 			3:00	Russia	MSK/MSD	1990 Jul  1  2:00
 			2:00	1:00	EEST	1991 Sep 29  3:00
-			2:00	E-Eur	EE%sT	1995
+			2:00	C-Eur	EE%sT	1996 May 13
 			2:00	EU	EE%sT
 # Transcarpathia used CET 1990/1991.
 # "Uzhhorod" is the transliteration of the Rusyn/Ukrainian pronunciation, but
@@ -4135,8 +4174,8 @@ Zone Europe/Uzhgorod	1:29:12 -	LMT	1890 Oct
 			3:00	Russia	MSK/MSD	1990
 			3:00	-	MSK	1990 Jul  1  2:00
 			1:00	-	CET	1991 Mar 31  3:00
-			2:00	-	EET	1992
-			2:00	E-Eur	EE%sT	1995
+			2:00	-	EET	1992 Mar 20
+			2:00	C-Eur	EE%sT	1996 May 13
 			2:00	EU	EE%sT
 # Zaporozh'ye and eastern Lugansk oblasts observed DST 1990/1991.
 # "Zaporizhia" is the transliteration of the Ukrainian name, but
@@ -4149,7 +4188,8 @@ Zone Europe/Zaporozhye	2:20:40 -	LMT	1880
 			3:00	-	MSK	1941 Aug 25
 			1:00	C-Eur	CE%sT	1943 Oct 25
 			3:00	Russia	MSK/MSD	1991 Mar 31  2:00
-			2:00	E-Eur	EE%sT	1995
+			2:00	E-Eur	EE%sT	1992 Mar 20
+			2:00	C-Eur	EE%sT	1996 May 13
 			2:00	EU	EE%sT
 
 # Vatican City

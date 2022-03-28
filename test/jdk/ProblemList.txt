@@ -759,6 +759,8 @@ javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 
 # jdk_time
 
+java/time/test/java/time/TestZoneOffset.java                    8283716 generic-all
+
 
 ############################################################################
 

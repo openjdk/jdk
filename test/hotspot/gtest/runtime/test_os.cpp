@@ -868,7 +868,7 @@ TEST_VM(os, iso8601_time) {
 }
 
 TEST_VM(os, is_first_C_frame) {
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(ZERO)
   frame invalid_frame;
   EXPECT_TRUE(os::is_first_C_frame(&invalid_frame)); // the frame has zeroes for all values
 
