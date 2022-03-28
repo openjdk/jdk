@@ -1611,7 +1611,7 @@ void JavaThread::handle_async_exception(oop java_throwable) {
     }
   }
 
-  // Only overwrite an already pending exception if it is not a threadDeath.
+  // Only overwrite an already pending exception if it is not a ThreadDeath.
   if (!has_pending_exception() || !pending_exception()->is_a(vmClasses::ThreadDeath_klass())) {
 
     // We cannot call Exceptions::_throw(...) here because we cannot block
@@ -1668,7 +1668,7 @@ class InstallAsyncExceptionHandshake : public HandshakeClosure {
   AsyncExceptionHandshake* _aeh;
 public:
   InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
-  HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
+    HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
     target->install_async_exception(_aeh);

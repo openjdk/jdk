@@ -974,6 +974,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     if (self->has_async_exception_condition()) {
       Deoptimization::deoptimize_frame(self, caller_fr.id());
+      log_info(exceptions)("deferred async exception at compiled safepoint");
     }
 
     // If an exception has been installed we must verify that the top frame wasn't deoptimized.
