@@ -804,7 +804,7 @@ class Http2Connection  {
                         handlePushContinuation(stream, cf);
                     } catch (UncheckedIOException e) {
                         debug.log("Error handling Push Promise with Continuation: " + e.getMessage(), e);
-                        protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                        protocolError(ErrorFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
                 } else {
@@ -817,7 +817,7 @@ class Http2Connection  {
                     try {
                         handlePushPromise(stream, pp);
                     } catch (UncheckedIOException e) {
-                        protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                        protocolError(ErrorFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
                 } else if (frame instanceof HeaderFrame hf) {
@@ -826,7 +826,7 @@ class Http2Connection  {
                         decodeHeaders(hf, stream.rspHeadersConsumer());
                     } catch (UncheckedIOException e) {
                         debug.log("Error decoding headers: " + e.getMessage(), e);
-                        protocolError(ResetFrame.PROTOCOL_ERROR, e.getMessage());
+                        protocolError(ErrorFrame.PROTOCOL_ERROR, e.getMessage());
                         return;
                     }
                     stream.incoming(frame);
