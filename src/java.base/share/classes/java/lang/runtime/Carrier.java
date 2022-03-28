@@ -132,6 +132,23 @@ public final class Carrier {
             Type.getDescriptor(Object.class);
 
     /**
+     * Cache mapping {@link MethodType} to previously defined
+     * {@link Carrier Carriers}.
+     */
+    private static ConcurrentHashMap<MethodType, Carrier>
+            methodTypeCache = new ConcurrentHashMap<>();
+
+    /**
+     * Constructor {@link MethodHandle}.
+     */
+    private final MethodHandle constructor;
+
+    /**
+     * List of component {@link MethodHandle MethodHandles}
+     */
+    private final List<MethodHandle> components;
+
+    /**
      * Given a constructor {@link MethodHandle} recast and reorder arguments to
      * match shape.
      *
@@ -237,50 +254,6 @@ public final class Carrier {
         }
 
         return List.of(reorder);
-    }
-
-    /**
-     * Given components array and index, recast and reorder that component to
-     * match shape.
-     *
-     * @param carrierShape  carrier reshape
-     * @param components    carrier components
-     * @param i             index of component to reshape
-     *
-     * @return component reshaped
-     */
-    private static MethodHandle reshapeComponent(CarrierShape carrierShape,
-                                                 MethodHandle[] components, int i) {
-        Class<?>[] ptypes = carrierShape.ptypes();
-        CarrierCounts componentCounts = CarrierCounts.tally(ptypes, i);
-        Class<?> ptype = ptypes[i];
-        int index;
-        MethodHandle filter = null;
-
-        if (!ptype.isPrimitive()) {
-            index = carrierShape.objectOffset() + componentCounts.objectCount();
-        } else if (ptype == double.class) {
-            index = carrierShape.longOffset() + componentCounts.longCount();
-            filter = LONG_TO_DOUBLE;
-        } else if (ptype == float.class) {
-            index = carrierShape.intOffset() + componentCounts.intCount();
-            filter = INT_TO_FLOAT;
-        } else if (ptype == long.class) {
-            index = carrierShape.longOffset() + componentCounts.longCount();
-        } else {
-            index = carrierShape.intOffset() + componentCounts.intCount();
-        }
-
-        MethodHandle component = components[index];
-
-        if (filter != null) {
-            component = MethodHandles.filterReturnValue(component, filter);
-        }
-
-        component = MethodHandles.explicitCastArguments(component,
-                methodType(ptype, Object.class));
-
-        return component;
     }
 
     /**
@@ -478,7 +451,7 @@ public final class Carrier {
                 constructor = MethodHandles.collectArguments(put, 0, constructor);
             }
 
-            return reshapeConstructor(carrierShape, constructor);
+            return constructor;
         }
 
         /**
@@ -516,31 +489,20 @@ public final class Carrier {
         }
 
         /**
-         * Return an array of carrier component accessors, aligning with types in
-         * {@code ptypes}.
+         * Permute a raw constructor and component accessor
+         * {@link MethodHandle MethodHandles} to match the order and types of
+         * the parameter types.
          *
          * @param carrierShape  carrier object shape
          *
-         * @return list of carrier accessors
+         * @return {@link Carrier} instance
          */
-        private static List<MethodHandle> components(CarrierShape carrierShape) {
+        private static Carrier carrier(CarrierShape carrierShape) {
+            MethodHandle constructor = constructor(carrierShape);
             MethodHandle[] components = createComponents(carrierShape);
 
-            return reshapeComponents(carrierShape, components);
-        }
-
-        /**
-         * Return a carrier accessor for component {@code i}.
-         *
-         * @param carrierShape  carrier object shape
-         * @param i             index of parameter to get
-         *
-         * @return carrier component {@code i} accessor {@link MethodHandle}
-         */
-        private static MethodHandle component(CarrierShape carrierShape, int i) {
-            MethodHandle[] components = createComponents(carrierShape);
-
-            return reshapeComponent(carrierShape, components, i);
+            return new Carrier(reshapeConstructor(carrierShape, constructor),
+                               reshapeComponents(carrierShape, components));
         }
     }
 
@@ -829,52 +791,21 @@ public final class Carrier {
         }
 
         /**
-         * Permute a raw constructor {@link MethodHandle} to match the order and
-         * types of the parameter types.
+         * Permute a raw constructor and component accessor
+         * {@link MethodHandle MethodHandles} to match the order and types of
+         * the parameter types.
          *
          * @param carrierShape  carrier object shape
          *
-         * @return {@link MethodHandle} constructor matching parameter types
+         * @return {@link Carrier} instance
          */
-        private static MethodHandle constructor(CarrierShape carrierShape) {
+        private static Carrier carrier(CarrierShape carrierShape) {
             CarrierClass carrierClass = findCarrierClass(carrierShape);
             MethodHandle constructor = carrierClass.constructor();
-
-            return reshapeConstructor(carrierShape, constructor);
-        }
-
-        /**
-         * Permute raw component accessors to match order and types of the parameter
-         * types.
-         *
-         * @param carrierShape  carrier object shape
-         *
-         * @return list of components matching parameter types
-         */
-        private static List<MethodHandle> components(CarrierShape carrierShape) {
-            CarrierClass carrierClass = findCarrierClass(carrierShape);
             MethodHandle[] components = carrierClass.components();
 
-            return reshapeComponents(carrierShape, components);
-        }
-
-        /**
-         * Returns a carrier component accessor {@link MethodHandle} for the
-         * component {@code i}.
-         *
-         * @param carrierShape  shape of the carrier object
-         * @param i             index to the component
-         *
-         * @return carrier component accessor {@link MethodHandle}
-         *
-         * @throws IllegalArgumentException if number of component slots exceeds
-         *         maximum
-         */
-        private static MethodHandle component(CarrierShape carrierShape, int i) {
-            CarrierClass carrierClass = findCarrierClass(carrierShape);
-            MethodHandle[] components = carrierClass.components;
-
-            return reshapeComponent(carrierShape, components, i);
+            return new Carrier(reshapeConstructor(carrierShape, constructor),
+                               reshapeComponents(carrierShape, components));
         }
     }
 
@@ -908,6 +839,15 @@ public final class Carrier {
      * Constructor
      */
     private Carrier() {
+        throw new AssertionError("private constructor");
+    }
+
+    /**
+     * Constructor
+     */
+    private Carrier(MethodHandle constructor, List<MethodHandle> components) {
+        this.constructor = constructor;
+        this.components = components;
     }
 
     /**
@@ -1070,87 +1010,90 @@ public final class Carrier {
         private int objectOffset() {
             return longCount() + intCount();
         }
+
+        /**
+         * {@return true if primitive components present}
+         */
+        private boolean hasPrimitives() {
+            return longCount() != 0 ||  intCount() != 0;
+        }
     }
 
     /**
-     * Return a constructor {@link MethodHandle} for a carrier with components
-     * aligning with the parameter types of the supplied
-     * {@link MethodType methodType}.
+     * Factory method to return {@link Carrier} that matches the shape
+     * of the supplied {@link MethodType}.
      *
      * @param methodType  {@link MethodType} providing types for the carrier's
      *                    components
      *
-     * @return carrier constructor {@link MethodHandle}
+     * @return {@link Carrier} instance
      *
-     * @throws NullPointerException is any argument is null
+     * @throws NullPointerException is methodType is null
      * @throws IllegalArgumentException if number of component slots exceeds maximum
      */
-    public static MethodHandle constructor(MethodType methodType) {
-        Objects.requireNonNull(methodType);
-        CarrierShape carrierShape = new CarrierShape(methodType);
+    public static Carrier of(MethodType methodType) {
+        Objects.requireNonNull(methodType, "methodType must be not be null");
+        MethodType constructorMT = methodType.changeReturnType(Object.class);
+        CarrierShape carrierShape = new CarrierShape(constructorMT);
         int slotCount = carrierShape.slotCount();
 
         if (MAX_COMPONENTS < slotCount) {
             throw new IllegalArgumentException("Exceeds maximum number of component slots");
-        } else  if (slotCount <= MAX_OBJECT_COMPONENTS) {
-            return CarrierObjectFactory.constructor(carrierShape);
-        } else {
-            return CarrierArrayFactory.constructor(carrierShape);
         }
+
+        return methodTypeCache.computeIfAbsent(constructorMT, (mt) -> {
+            if (slotCount <= MAX_OBJECT_COMPONENTS && carrierShape.hasPrimitives()) {
+                return CarrierObjectFactory.carrier(carrierShape);
+            } else {
+                return CarrierArrayFactory.carrier(carrierShape);
+            }
+        });
     }
 
     /**
-     * Return component accessor {@link MethodHandle MethodHandles} for all the
-     * carrier's components.
+     * Factory method to return {@link Carrier} that matches the shape
+     * of the supplied parameter types.
      *
-     * @param methodType  {@link MethodType} providing types for the carrier's
-     *                    components
+     * @param ptypes   types of the carrier's components
      *
-     * @return immutable list of component accessors {@link MethodHandle MethodHandles}
+     * @return {@link Carrier} instance
      *
-     * @throws NullPointerException is any argument is null
+     * @throws NullPointerException is ptypes is null
      * @throws IllegalArgumentException if number of component slots exceeds maximum
      */
-    public static List<MethodHandle> components(MethodType methodType) {
-        Objects.requireNonNull(methodType);
-        CarrierShape carrierShape =  new CarrierShape(methodType);
-        int slotCount = carrierShape.slotCount();
-
-        if (MAX_COMPONENTS < slotCount) {
-            throw new IllegalArgumentException("Exceeds maximum number of component slots");
-        } else  if (slotCount <= MAX_OBJECT_COMPONENTS) {
-            return CarrierObjectFactory.components(carrierShape);
-        } else {
-            return CarrierArrayFactory.components(carrierShape);
-        }
+    public static Carrier of(Class<?>... ptypes) {
+        Objects.requireNonNull(ptypes, "ptypes must be not be null");
+        return of(methodType(Object.class, ptypes));
     }
 
     /**
-     * Return a component accessor {@link MethodHandle} for component {@code i}.
-     *
-     * @param methodType  {@link MethodType} providing types for the carrier's
-     *                    components
-     * @param i           component index
-     *
-     * @return a component accessor {@link MethodHandle} for component {@code i}
-     *
-     * @throws NullPointerException is any argument is null
-     * @throws IllegalArgumentException if number of component slots exceeds maximum
-     *                                  or if {@code i} is out of bounds
+     * {@return the constructor {@link MethodHandle} for the carrier.}
      */
-    public static MethodHandle component(MethodType methodType, int i) {
-        Objects.requireNonNull(methodType);
-        CarrierShape carrierShape = new CarrierShape(methodType);
-        int slotCount = carrierShape.slotCount();
+    public MethodHandle constructor() {
+        return constructor;
+    }
 
-        if (i < 0 || i >= carrierShape.count()) {
-            throw new IllegalArgumentException("i is out of bounds for parameter types");
-        } else if (MAX_COMPONENTS < slotCount) {
-            throw new IllegalArgumentException("Exceeds maximum number of component slots");
-        } else  if (slotCount <= MAX_OBJECT_COMPONENTS) {
-            return CarrierObjectFactory.component(carrierShape, i);
-        } else {
-            return CarrierArrayFactory.component(carrierShape, i);
+    /**
+     * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
+     * for all the carrier's components.}
+     */
+    public List<MethodHandle> components() {
+        return components;
+    }
+
+    /**
+     * {@return a component accessor {@link MethodHandle} for component {@code i}.}
+     *
+     * @param i  component index
+     *
+     * @throws IllegalArgumentException if {@code i} is out of bounds
+     */
+    public MethodHandle component(int i) {
+        if (i < 0 || components.size() <= i) {
+            throw new IllegalArgumentException("i is out of bounds " + i +
+                    " of " + components.size());
         }
+
+        return components.get(i);
     }
 }

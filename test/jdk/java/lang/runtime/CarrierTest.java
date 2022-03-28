@@ -40,6 +40,7 @@ public class CarrierTest {
         primitivesTest();
         primitivesTestInArrayCarrier();
         limitsTest();
+        cacheTest();
     }
 
     static void assertTrue(boolean test, String message) {
@@ -56,12 +57,13 @@ public class CarrierTest {
                         char.class, int.class, long.class,
                         float.class, double.class,
                         boolean.class, String.class);
-        MethodHandle constructor = Carrier.constructor(methodType);
+        Carrier carrier = Carrier.of(methodType);
+        MethodHandle constructor = carrier.constructor();
         Object object = (Object)constructor.invokeExact((byte)0xFF, (short)0xFFFF,
                 'C', 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFL,
                 1.0f / 3.0f, 1.0 / 3.0,
                 true, "abcde");
-        MethodHandle[] components = Carrier.components(methodType).toArray(new MethodHandle[0]);
+        MethodHandle[] components = carrier.components().toArray(new MethodHandle[0]);
 
         assertTrue((byte)components[0].invokeExact(object) == (byte)0xFF,
                 "primitive byte test failure");
@@ -82,7 +84,7 @@ public class CarrierTest {
         assertTrue("abcde".equals((String)components[8].invokeExact(object)),
                 "primitive String test failure");
 
-        MethodHandle component = Carrier.component(methodType, 8);
+        MethodHandle component = carrier.component(8);
         assertTrue("abcde".equals((String)component.invokeExact(object)),
                 "primitive String test failure");
     }
@@ -101,7 +103,8 @@ public class CarrierTest {
                         Object.class, Object.class,Object.class,Object.class,
                         Object.class, Object.class,Object.class,Object.class
                         );
-        MethodHandle constructor = Carrier.constructor(methodType);
+        Carrier carrier = Carrier.of(methodType);
+        MethodHandle constructor = carrier.constructor();
         Object object = (Object)constructor.invokeExact((byte)0xFF, (short)0xFFFF,
                 'C', 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFL,
                 1.0f / 3.0f, 1.0 / 3.0,
@@ -114,7 +117,7 @@ public class CarrierTest {
                 (Object)null, (Object)null, (Object)null, (Object)null,
                 (Object)null, (Object)null, (Object)null, (Object)null
                 );
-        MethodHandle[] components = Carrier.components(methodType).toArray(new MethodHandle[0]);
+        MethodHandle[] components = carrier.components().toArray(new MethodHandle[0]);
         assertTrue((byte)components[0].invokeExact(object) == (byte)0xFF,
                 "primitive in array byte test failure");
         assertTrue((short)components[1].invokeExact(object) == (short)0xFFFF,
@@ -143,7 +146,8 @@ public class CarrierTest {
             Class<?>[] ptypes = new Class<?>[MAX_COMPONENTS + 1];
             Arrays.fill(ptypes, Object.class);
             MethodType methodType = MethodType.methodType(Object.class, ptypes);
-            MethodHandle constructor = Carrier.constructor(methodType);
+            Carrier carrier = Carrier.of(methodType);
+            MethodHandle constructor = carrier.constructor();
         } catch (IllegalArgumentException ex) {
             passed = true;
         }
@@ -157,13 +161,31 @@ public class CarrierTest {
             Class<?>[] ptypes = new Class<?>[MAX_COMPONENTS / 2 + 1];
             Arrays.fill(ptypes, long.class);
             MethodType methodType = MethodType.methodType(Object.class, ptypes);
-            MethodHandle constructor = Carrier.constructor(methodType);
+            Carrier carrier = Carrier.of(methodType);
+            MethodHandle constructor = carrier.constructor();
         } catch (IllegalArgumentException ex) {
             passed = true;
         }
 
         if (!passed) {
             throw new RuntimeException("failed to report too many components ");
+        }
+    }
+
+    static void cacheTest() {
+        Class<?>[] ptypes = new Class<?>[] {
+                byte.class, short.class,
+                char.class, int.class, long.class,
+                float.class, double.class,
+                boolean.class, String.class
+        };
+        MethodType methodType =
+                MethodType.methodType(Object.class, ptypes);
+        Carrier carrier1 = Carrier.of(ptypes);
+        Carrier carrier2 = Carrier.of(methodType);
+
+        if (carrier1 != carrier2) {
+            throw new RuntimeException("carrier cache not matching correctly");
         }
     }
 }
