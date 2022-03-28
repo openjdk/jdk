@@ -195,11 +195,9 @@ bool LivenessEstimatorThread::estimate_liveness() {
 
   log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
-  Heap_lock->lock();
   LivenessOopClosure cl(this);
   while (!_mark_stack.is_empty()) {
     if (!check_yield_and_continue(&sst)) {
-      Heap_lock->unlock();
       return false;
     }
 
@@ -209,7 +207,6 @@ bool LivenessEstimatorThread::estimate_liveness() {
       cit.record_instance(obj);
     }
   }
-  Heap_lock->unlock();
   Ticks after_scan = Ticks::now();
 
   if (ConcLivenessHisto) {
