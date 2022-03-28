@@ -52,7 +52,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * carrier <em>shape</em>, that is, a {@linkplain MethodType method type} whose parameter
  * types describe the types of the carrier component values.
  *
- * @implNote The strategy for storing components is deliberately left ambiguous
+ * @implNote The strategy for storing components is deliberately left unspecified
  * so that future improvements will not be hampered by backward compatibility
  * issues.
  *
@@ -68,7 +68,7 @@ public final class Carrier {
      * Maximum number of components in a carrier (based on the maximum
      * number of args to a constructor.)
      */
-    private static final int MAX_COMPONENTS = 255 - /* this */ 1;
+    public static final int MAX_COMPONENTS = 255 - /* this */ 1;
 
     /**
      * Maximum number of components in a CarrierClass.
@@ -1020,11 +1020,12 @@ public final class Carrier {
     }
 
     /**
-     * Factory method to return {@link Carrier} that matches the shape
-     * of the supplied {@link MethodType}.
+     * Factory method to return a {@link Carrier} instance that matches the shape
+     * of the supplied {@link MethodType}. The return type of the {@link MethodType}
+     * is ignored. The carrier constructor will be of type {@link Object}.
      *
-     * @param methodType  {@link MethodType} providing types for the carrier's
-     *                    components
+     * @param methodType  {@link MethodType} whose parameter types supply the
+     *                    the shape of the carrier's components
      *
      * @return {@link Carrier} instance
      *
@@ -1051,10 +1052,11 @@ public final class Carrier {
     }
 
     /**
-     * Factory method to return {@link Carrier} that matches the shape
+     * Factory method to return  a {@link Carrier} instance that matches the shape
      * of the supplied parameter types.
      *
-     * @param ptypes   types of the carrier's components
+     * @param ptypes   parameter types that supply the shape of the carrier's
+     *                 components
      *
      * @return {@link Carrier} instance
      *
