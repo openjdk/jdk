@@ -30,7 +30,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.*;
 
-import sun.security.util.SecurityProviderConstants;;
+import sun.security.util.SecurityProviderConstants;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
