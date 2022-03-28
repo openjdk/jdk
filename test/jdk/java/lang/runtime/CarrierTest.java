@@ -58,6 +58,8 @@ public class CarrierTest {
                         float.class, double.class,
                         boolean.class, String.class);
         Carrier carrier = Carrier.of(methodType);
+        Class<?> carrierClass = carrier.carrierClass();
+        assertTrue(!carrierClass.isArray(), "carrier should be instance");
         MethodHandle constructor = carrier.constructor();
         Object object = (Object)constructor.invokeExact((byte)0xFF, (short)0xFFFF,
                 'C', 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFL,
@@ -104,6 +106,8 @@ public class CarrierTest {
                         Object.class, Object.class,Object.class,Object.class
                         );
         Carrier carrier = Carrier.of(methodType);
+        Class<?> carrierClass = carrier.carrierClass();
+        assertTrue(carrierClass.isArray(), "carrier should be array");
         MethodHandle constructor = carrier.constructor();
         Object object = (Object)constructor.invokeExact((byte)0xFF, (short)0xFFFF,
                 'C', 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFFL,

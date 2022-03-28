@@ -139,6 +139,11 @@ public final class Carrier {
             methodTypeCache = new ConcurrentHashMap<>();
 
     /**
+     * Class of the underly carrier.
+     */
+    private final Class<?> carrierClass;
+
+    /**
      * Constructor {@link MethodHandle}.
      */
     private final MethodHandle constructor;
@@ -501,7 +506,8 @@ public final class Carrier {
             MethodHandle constructor = constructor(carrierShape);
             MethodHandle[] components = createComponents(carrierShape);
 
-            return new Carrier(reshapeConstructor(carrierShape, constructor),
+            return new Carrier(Object[].class,
+                               reshapeConstructor(carrierShape, constructor),
                                reshapeComponents(carrierShape, components));
         }
     }
@@ -804,7 +810,8 @@ public final class Carrier {
             MethodHandle constructor = carrierClass.constructor();
             MethodHandle[] components = carrierClass.components();
 
-            return new Carrier(reshapeConstructor(carrierShape, constructor),
+            return new Carrier(constructor.type().returnType(),
+                               reshapeConstructor(carrierShape, constructor),
                                reshapeComponents(carrierShape, components));
         }
     }
@@ -845,7 +852,9 @@ public final class Carrier {
     /**
      * Constructor
      */
-    private Carrier(MethodHandle constructor, List<MethodHandle> components) {
+    private Carrier(Class<?> carrierClass,
+                    MethodHandle constructor, List<MethodHandle> components) {
+        this.carrierClass = carrierClass;
         this.constructor = constructor;
         this.components = components;
     }
@@ -1022,7 +1031,7 @@ public final class Carrier {
     /**
      * Factory method to return a {@link Carrier} instance that matches the shape
      * of the supplied {@link MethodType}. The return type of the {@link MethodType}
-     * is ignored. The carrier constructor will be of type {@link Object}.
+     * is ignored.
      *
      * @param methodType  {@link MethodType} whose parameter types supply the
      *                    the shape of the carrier's components
@@ -1069,7 +1078,15 @@ public final class Carrier {
     }
 
     /**
-     * {@return the constructor {@link MethodHandle} for the carrier.}
+     * {@return the underlying carrier class.}
+     */
+    public Class<?> carrierClass() {
+        return carrierClass;
+    }
+
+    /**
+     * {@return the constructor {@link MethodHandle} for the carrier . The
+     * carrier constructor will have a return type of {@link Object}.}
      */
     public MethodHandle constructor() {
         return constructor;
@@ -1077,14 +1094,16 @@ public final class Carrier {
 
     /**
      * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
-     * for all the carrier's components.}
+     * for all the carrier's components. The receiver type of the accessors
+     * will be {@link Object}.}
      */
     public List<MethodHandle> components() {
         return components;
     }
 
     /**
-     * {@return a component accessor {@link MethodHandle} for component {@code i}.}
+     * {@return a component accessor {@link MethodHandle} for component {@code i}.
+     * The receiver type of the accessor will be {@link Object}.}
      *
      * @param i  component index
      *
