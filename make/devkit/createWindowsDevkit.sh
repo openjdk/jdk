@@ -71,7 +71,6 @@ fi
 
 # Work around the insanely named ProgramFiles(x86) env variable
 PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
-PROGRAMFILES="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^PROGRAMFILES=//p' | tr -d '\r')")"
 
 case $VS_VERSION in
     2019)
