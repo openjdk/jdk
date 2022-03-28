@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,31 @@
  * @test
  * @bug 8029204
  * @summary Tests GlyphVector is printed in the correct location
- * @run main/manual=yesno PrintGlyphVectorTest
+ * @run main/manual PrintGlyphVectorTest
  */
 
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.font.*;
-import java.awt.geom.*;
-import java.awt.print.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class PrintGlyphVectorTest extends Component implements Printable {
 
@@ -46,9 +62,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         FontRenderContext frc = g2d.getFontRenderContext();
         GlyphVector v = font.createGlyphVector(frc, testString);
 
-
-        float x = 50f,
-              y = 50f;
+        float x = 50f, y = 50f;
 
         g2d.drawGlyphVector(v, x, y);
         Rectangle2D r = v.getVisualBounds();
@@ -69,16 +83,13 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         r = v.getVisualBounds();
         r.setRect(r.getX()+x, r.getY()+y, r.getWidth(), r.getHeight());
         g2d.draw(r);
-
-
-
     }
 
-     public void paint(Graphics g) {
-       g.setColor(Color.white);
-       g.fillRect(0,0,getSize().width, getSize().height);
-       drawGVs(g);
-     }
+    public void paint(Graphics g) {
+        g.setColor(Color.white);
+        g.fillRect(0,0,getSize().width, getSize().height);
+        drawGVs(g);
+    }
 
     public Dimension getPreferredSize() {
         return new Dimension(600,200);
@@ -100,51 +111,102 @@ public class PrintGlyphVectorTest extends Component implements Printable {
 
     public static void main(String arg[]) throws Exception {
 
-       Frame f = new Frame();
-       PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
-       f.add("Center", pvt);
-       f.add("South", new PrintInstructions());
-       f.pack();
-       f.show();
+        Frame f = new Frame();
+        PrintInstructions printInstructions = new PrintInstructions(f);
+        PrintGlyphVectorTest pvt = new PrintGlyphVectorTest();
+        f.add("Center", pvt);
+        f.add("South", printInstructions);
+        f.setLocationRelativeTo(null);
+        f.pack();
+        f.setVisible(true);
 
-
+        printInstructions.awaitAndCheck();
     }
 }
 
-class PrintInstructions extends Panel implements ActionListener {
+class PrintInstructions extends Panel {
 
-   static final String INSTRUCTIONS =
-       "You must have a printer installed for this test.\n" +
-       "Press the PRINT button below and OK the print dialog\n" +
-       "Retrieve the output and compare the printed and on-screen text\n" +
-       " to confirm that in both cases the text is aligned and the boxes\n" +
-       "are around the text, not offset from the text.";
+    private final static CountDownLatch countDownLatch = new CountDownLatch(1);
+    private Frame frame;
+    private volatile boolean failed = false;
+    private volatile String testFailedReason;
+    static final String INSTRUCTIONS =
+            "You must have a printer installed for this test.\n" +
+                    "Press the PRINT button below and OK the print dialog\n" +
+                    "Retrieve the output and compare the printed and on-screen text\n" +
+                    " to confirm that in both cases the text is aligned and the boxes\n" +
+                    "are around the text, not offset from the text.";
 
-  PrintInstructions() {
+    PrintInstructions(Frame frame) {
+        this.frame = frame;
+        setLayout(new BorderLayout());
+        TextArea t = new TextArea(INSTRUCTIONS, 8, 80);
+        add(t, BorderLayout.CENTER);
 
-     setLayout(new GridLayout(2,1));
-     TextArea t = new TextArea(INSTRUCTIONS, 8, 80);
-     add(t);
-     Button b = new Button("PRINT");
-     b.setFont(new Font("Dialog", Font.BOLD, 30));
-     b.addActionListener(this);
-     add(b);
-  }
+        Panel buttonPanel = new Panel();
+        Button printButton = new Button("PRINT");
+        printButton.addActionListener((ae) -> showPrintDialog());
 
-  public void actionPerformed(ActionEvent e) {
-       PrinterJob pj = PrinterJob.getPrinterJob();
-       if (pj == null ||
-           pj.getPrintService() == null ||
-           !pj.printDialog()) {
-           return;
-       }
+        Button passButton = new Button("Pass");
+        passButton.addActionListener((ae) -> countDownLatch.countDown());
 
-       pj.setPrintable(new PrintGlyphVectorTest());
-       try {
-           pj.print();
-       } catch (PrinterException ex) {
-           System.err.println(ex);
-       }
-  }
+        Button failButton = new Button("Fail");
+        failButton.addActionListener((ae) -> getFailureReason());
 
+        buttonPanel.add(printButton);
+        buttonPanel.add(passButton);
+        buttonPanel.add(failButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void showPrintDialog() {
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        if (pj == null ||
+                pj.getPrintService() == null ||
+                !pj.printDialog()) {
+            return;
+        }
+
+        pj.setPrintable(new PrintGlyphVectorTest());
+        try {
+            pj.print();
+        } catch (PrinterException ex) {
+            System.err.println(ex);
+        }
+    }
+
+    public void awaitAndCheck() throws InterruptedException {
+        boolean timeoutHappened = !countDownLatch.await(5,
+                TimeUnit.MINUTES);
+
+        if (timeoutHappened) {
+            throw new RuntimeException("Test timed out!");
+        }
+        if (failed) {
+            throw new RuntimeException("Test failed! : " + testFailedReason);
+        }
+    }
+
+    private void getFailureReason() {
+        final Dialog dialog = new Dialog(this.frame);
+        dialog.setTitle("Failure reason");
+
+        Panel panel = new Panel(new BorderLayout());
+        TextArea textArea = new TextArea(5, 40);
+
+        Button okButton = new Button("Ok");
+        okButton.addActionListener((ae) -> {
+            testFailedReason = textArea.getText();
+            dialog.dispose();
+            failed = true;
+            countDownLatch.countDown();
+        });
+
+        panel.add(textArea, BorderLayout.CENTER);
+        panel.add(okButton, BorderLayout.SOUTH);
+        dialog.add(panel);
+        dialog.setLocationRelativeTo(null);
+        dialog.pack();
+        dialog.setVisible(true);
+    }
 }
