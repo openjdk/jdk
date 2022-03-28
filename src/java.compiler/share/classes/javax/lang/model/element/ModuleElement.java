@@ -39,7 +39,9 @@ import javax.lang.model.type.TypeMirror;
  * created from implicit information. The explicit source code
  * construct for a module is typically a {@code module-info.java} file
  * (JLS {@jls 7.7}). Implicit information is used to model {@linkplain
- * #isUnnamed unnamed modules}.
+ * #isUnnamed unnamed modules} and {@linkplain
+ * javax.lang.model.util.Elements#isAutomaticModule(ModuleElement)
+ * automatic modules} (JLS {@jls 7.7.1}).
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
