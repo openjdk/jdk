@@ -1088,7 +1088,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 
   __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
   __ cmp(sp, rscratch1);
-  __ br(Assembler::GT, L_done);
+  __ br(Assembler::HI, L_done);
 
   for (int p = 1; p <= n_shadow_pages; p++) {
     __ sub(rscratch2, sp, p*page_size);
@@ -1099,7 +1099,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Otherwise, the next time around the check above would pass the safe limit.
   __ ldr(rscratch1, Address(rthread, JavaThread::shadow_zone_safe_limit()));
   __ cmp(sp, rscratch1);
-  __ br(Assembler::LE, L_done);
+  __ br(Assembler::LS, L_done);
   __ mov(rscratch1, sp);
   __ str(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
 
