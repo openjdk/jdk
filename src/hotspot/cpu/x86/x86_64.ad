@@ -13444,7 +13444,7 @@ instruct leaI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2)
     Register dst = $dst$$Register;
     Register src1 = $src1$$Register;
     Register src2 = $src2$$Register;
-    assert(dst != src1 && dst != src2, "");
+    assert(dst != src1 && dst != src2, "%s = %s + %s", dst->name(), src1->name(), src2->name());
     if (src1 != rbp && src1 != r13) {
       __ leal(dst, Address(src1, src2, Address::times_1));
     } else {

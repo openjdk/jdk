@@ -1335,6 +1335,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
         }
         fprintf(fp, "        root->_opnds[%d] = inst%d->_opnds[%d]->clone();\n",
                 opnds_index, inst_num, inst_op_num );
+        fprintf(fp, "        inst0->replace_by(root);\n");
       }
       ++opnds_index;
     }

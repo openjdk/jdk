@@ -22,6 +22,9 @@
  *
  */
 #include "precompiled.hpp"
+
+#ifdef COMPILER2
+
 #include "opto/peephole.hpp"
 
 #ifdef _LP64
@@ -35,12 +38,12 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 
-  // Go up the block to find a matching MachSpillCopyNode
+  OptoReg::Name dst = ra_->get_reg_first(inst0);
   MachNode* inst1 = nullptr;
   int inst1_index = -1;
-  OptoReg::Name dst = ra_->get_reg_first(inst0);
   OptoReg::Name src1 = OptoReg::Bad;
 
+  // Go up the block to find a matching MachSpillCopyNode
   for (int pos = block_index - 1; pos >= 0; pos--) {
     Node* curr = block->get_node(pos);
 
@@ -59,13 +62,15 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
     return false;
   }
 
+  // If some nodes between inst0 and inst1 read from dst or write to dst or src1
+  // then the coalescing fails
   for (int pos = inst1_index + 1; pos < block_index; pos++) {
     Node* curr = block->get_node(pos);
     OptoReg::Name out = ra_->get_reg_first(curr);
     if (out == dst || out == src1) {
       return false;
     }
-    for (uint i = 0; i < curr->req(); i++) {
+    for (uint i = 0; i < curr->len(); i++) {
       if (curr->in(i) == nullptr) {
         continue;
       }
@@ -76,6 +81,7 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
     }
   }
 
+  // See VM_Version::supports_fast_3op_lea()
   if (!imm) {
     Register rsrc1 = OptoReg::as_VMReg(src1)->as_Register();
     Register rsrc2 = OptoReg::as_VMReg(ra_->get_reg_first(inst0->in(2)))->as_Register();
@@ -85,15 +91,23 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   }
 
   MachNode* root = new_root();
+  // Assign register for the newly allocated node
   ra_->add_reference(root, inst0);
   ra_->set_oop(root, ra_->is_oop(inst0));
   ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
+
+  // Set input for the node
   root->add_req(inst0->in(0));
   root->add_req(inst1->in(1));
   if (!imm) { root->add_req(inst0->in(2)); } // No input for constant after matching
+  inst0->replace_by(root);
+
+  // Initialize the operand array
   root->_opnds[0] = inst0->_opnds[0]->clone();
   root->_opnds[1] = inst0->_opnds[1]->clone();
   root->_opnds[2] = inst0->_opnds[2]->clone();
+
+  // Modify the block
   inst0->set_removed();
   inst1->set_removed();
   block->remove_node(block_index);
@@ -112,3 +126,5 @@ bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra
   return lea_coalesce_helper(block, block_index, ra_, new_root, inst0_rule, true);
 }
 #endif // _LP64
+
+#endif // COMPILER2
