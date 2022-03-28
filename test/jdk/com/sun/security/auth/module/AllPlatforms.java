@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test
  * @bug 8039951
  * @summary com.sun.security.auth.module missing classes on some platforms
