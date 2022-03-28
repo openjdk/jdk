@@ -894,6 +894,7 @@ static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
 
 static bool set_fp_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
   if (*value == '\0' || isspace(*value)) {
+    // strtod allows leading whitespace, but our flag format does not.
     return false;
   }
   char* end;
@@ -1057,10 +1058,7 @@ bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
   const char* name = arg;
   while (true) {
     c = *arg;
-    if (('a' <= c && c <= 'z' ) ||
-        ('A' <= c && c <= 'Z' ) ||
-        ('0' <= c && c <= '9' ) ||
-        ('_' == c)) {
+    if (isalnum(c) || (c == '_')) {
       ++arg;
     } else {
       break;
