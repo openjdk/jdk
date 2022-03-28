@@ -808,12 +808,13 @@ public final class Locale implements Cloneable, Serializable {
      * <a href="#def_variant">variant</a>,
      * <a href="#def_script">script</a>{@code )}.
      * Each field can be an empty String, but cannot be {@code null}.
-     * If {@code fields} holds more than 4 arguments, the rest are ignored. If
-     * no arguments are given, {@link #ROOT} is returned.
+     * If {@code fields} holds more than 4 arguments, {@code IllegalArgumentException}
+     * is thrown. If no arguments are given, {@link #ROOT} is returned.
      *
      * @param fields language, country, variant, and/or script, cannot be {@code null}.
      * @return the {@code Locale} instance requested
-     * @throws    NullPointerException if any field argument is {@code null}.
+     * @throws NullPointerException if any {@code fields} argument is {@code null}.
+     * @throws IllegalArgumentException if {@code fields} holds more than 4 arguments.
      * @since 19
      */
     public static Locale of(String... fields) {
@@ -822,7 +823,8 @@ public final class Locale implements Cloneable, Serializable {
             case 1 -> getInstance(fields[0], "", "", "", null);
             case 2 -> getInstance(fields[0], "", fields[1], "", null);
             case 3 -> getInstance(fields[0], "", fields[1], fields[2], null);
-            default -> getInstance(fields[0], fields[3], fields[1], fields[2], null);
+            case 4 -> getInstance(fields[0], fields[3], fields[1], fields[2], null);
+            default -> throw new IllegalArgumentException("The number of arguments exceeds 4.");
         };
     }
 
