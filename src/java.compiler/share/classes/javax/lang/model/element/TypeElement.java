@@ -54,19 +54,23 @@ import javax.lang.model.util.*;
  * returned in source code order.
  *
  * @apiNote
- * The represented class or interface may have an explicit {@linkplain
+ * The represented class or interface may have an explicit backing
+ * construct (either {@linkplain
  * javax.annotation.processing.Filer#createSourceFile(CharSequence,
  * Element...) source code} or {@linkplain
  * javax.annotation.processing.Filer#createClassFile(CharSequence,
- * Element...) executable output} backing construct. Multiple classes
- * and interfaces can share the same {@linkplain
+ * Element...) executable output}). Multiple classes and interfaces
+ * can share the same {@linkplain
  * javax.lang.model.util.Elements#getFileObjectOf(Element) backing
  * construct}. For example, multiple classes and interface can be
  * declared in the same source file, including, but are not limited
- * to, a {@linkplain NestingKind#TOP_LEVEL top-level} class or
- * interface and auxiliary classes and interfaces or a top-level class
- * or interface and {@linkplain NestingKind#isNested() nested classes}
- * within it.
+ * to:
+ * <ul>
+ * <li> a {@linkplain NestingKind#TOP_LEVEL top-level} class or
+ * interface and auxiliary classes and interfaces
+ * <li>a top-level class or interface and {@linkplain
+ * NestingKind#isNested() nested class and interfaces} within it
+ * </ul>
  *
  * @see DeclaredType
  * @since 1.6

@@ -33,13 +33,13 @@ import javax.lang.model.type.TypeMirror;
  * information about the module, its directives, and its members.
  *
  * @apiNote
- * The represented module may have an explicit source code or
- * executable output {@linkplain
+ * The represented module may have an explicit {@linkplain
  * javax.lang.model.util.Elements#getFileObjectOf(Element) backing
- * construct} or may be created from implicit information. The
- * explicit source code construct for a module is typically a {@code
- * module-info.java} file (JLS {@jls 7.7}). Implicit information is
- * used to model {@linkplain #isUnnamed unnamed modules}.
+ * construct} (either source code or executable output) or may be
+ * created from implicit information. The explicit source code
+ * construct for a module is typically a {@code module-info.java} file
+ * (JLS {@jls 7.7}). Implicit information is used to model {@linkplain
+ * #isUnnamed unnamed modules}.
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
