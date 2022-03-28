@@ -108,9 +108,14 @@ RuntimeStub* ProgrammableInvoker::make_native_invoker(BasicType* signature,
                                   g.framesize(),
                                   g.oop_maps(), false);
 
-  if (TraceNativeInvokers) {
-    stub->print_on(tty);
+#ifdef ASSERT
+  LogTarget(Trace, panama) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    stub->print_on(ls);
   }
+#endif
 
   return stub;
 }
