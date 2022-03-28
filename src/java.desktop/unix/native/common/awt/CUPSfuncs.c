@@ -240,7 +240,6 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
     if (nameArray == NULL) {
         j2d_cupsFreeDests(num_dests, dests);
         DPRINTF("CUPSfuncs::bad alloc new array\n", "")
-        (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         return NULL;
     }
