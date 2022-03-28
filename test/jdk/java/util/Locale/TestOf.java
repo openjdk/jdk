@@ -81,5 +81,6 @@ public class TestOf {
     @Test
     public void test_IAE() {
         assertThrows(IllegalArgumentException.class, () -> Locale.of("en", "", "", "", ""));
+        assertThrows(IllegalArgumentException.class, () -> Locale.of(new String[5]));
     }
 }

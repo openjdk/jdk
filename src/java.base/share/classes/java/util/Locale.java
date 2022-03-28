@@ -811,6 +811,9 @@ public final class Locale implements Cloneable, Serializable {
      * If {@code fields} holds more than 4 arguments, {@code IllegalArgumentException}
      * is thrown. If no arguments are given, {@link #ROOT} is returned.
      *
+     * @apiNote This method also accepts a single {@code String} array as an argument.
+     * Each field must be the array element in the above order. The length of the array
+     * must not exceed 4, otherwise an {@code IllegalArgumentException} is thrown.
      * @param fields language, country, variant, and/or script, cannot be {@code null}.
      * @return the {@code Locale} instance requested
      * @throws NullPointerException if any {@code fields} argument is {@code null}.
