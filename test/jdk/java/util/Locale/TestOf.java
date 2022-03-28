@@ -23,10 +23,14 @@
 /**
  * @test
  * @bug 8282819
- * @summary tests for Locale.of() method
+ * @summary Unit tests for Locale.of() method. Those tests check the equality
+ *      of obtained objects with ones that are gotten from other means with both
+ *      well-formed and ill-formed arguments. Also checks the possible exceptions
+ *      for error cases.
  * @run testng TestOf
  */
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 import java.util.Locale;
 
@@ -69,13 +73,13 @@ public class TestOf {
         assertEquals(Locale.of(args), expected);
     }
 
-    @Test (dataProvider = "data_nullArgs", expectedExceptions = NullPointerException.class)
+    @Test (dataProvider = "data_nullArgs")
     public void test_nullArgs(String... args) {
-        Locale.of(args);
+        assertThrows(NullPointerException.class, () -> Locale.of(args));
     }
 
-    @Test (expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test_IAE() {
-        Locale.of("en", "", "", "", "");
+        assertThrows(IllegalArgumentException.class, () -> Locale.of("en", "", "", "", ""));
     }
 }
