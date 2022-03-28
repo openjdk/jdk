@@ -113,7 +113,7 @@ RuntimeStub* ProgrammableInvoker::make_native_invoker(BasicType* signature,
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
-    stub->print_on(ls);
+    stub->print_on(&ls);
   }
 #endif
 
