@@ -469,6 +469,9 @@ class CAccessibility implements PropertyChangeListener {
     public static Accessible accessibilityHitTest(final Container parent, final float hitPointX, final float hitPointY) {
         return invokeAndWait(new Callable<Accessible>() {
             public Accessible call() throws Exception {
+                if (parent == null || !parent.isVisible()) {
+                    return null;
+                }
                 final Point p = parent.getLocationOnScreen();
 
                 // Make it into local coords
