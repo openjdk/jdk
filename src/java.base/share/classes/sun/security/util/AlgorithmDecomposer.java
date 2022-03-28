@@ -109,11 +109,9 @@ public class AlgorithmDecomposer {
         }
 
         for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
-            if (elements.contains(e.getValue()) &&
-                    !elements.contains(e.getKey())) {
+            if (elements.contains(e.getValue())) {
                 elements.add(e.getKey());
-            } else if (elements.contains(e.getKey()) &&
-                    !elements.contains(e.getValue())) {
+            } else if (elements.contains(e.getKey())) {
                 elements.add(e.getValue());
             }
         }
@@ -156,11 +154,8 @@ public class AlgorithmDecomposer {
         }
 
         for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
-            if (elements.contains(e.getKey())) {
-                if (!elements.contains(e.getValue())) {
-                    elements.add(e.getValue());
-                }
-                elements.remove(e.getKey());
+            if (elements.remove(e.getKey())) {
+                elements.add(e.getValue());
             }
         }
 
