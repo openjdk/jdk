@@ -127,10 +127,15 @@ public class InflaterInputStream extends FilterInputStream {
      * Reads uncompressed data into an array of bytes. If {@code len} is not
      * zero, the method will block until some input can be decompressed; otherwise,
      * no bytes are read and {@code 0} is returned.
+     *
+     * Unlike the {@link InputStream#read(byte[],int,int) overridden method}
+     * of {@code InputStream}, this method might write more bytes than the returned
+     * number of inflated bytes into the buffer {@code b}.
+     *
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
-     * @return the actual number of bytes read, or -1 if the end of the
+     * @return the actual number of bytes inflated into {@code b}, or -1 if the end of the
      *         compressed input is reached or a preset dictionary is needed
      * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
