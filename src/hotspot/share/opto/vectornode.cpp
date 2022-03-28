@@ -1589,8 +1589,11 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 // Generate other vector nodes to implement the masked/non-masked vector negation.
-Node* VectorNode::degenerate_vector_integral_negate(Node* n, int vlen, BasicType bt, PhaseGVN* phase, bool is_predicated) {
-  const TypeVect* vt = TypeVect::make(bt, vlen);
+Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) {
+  const TypeVect* vt = vect_type();
+  BasicType bt = vt->element_basic_type();
+  uint vlen = length();
+
   // Transformation for predicated NegVI/L
   if (is_predicated) {
       // (NegVI/L src m) ==> (AddVI/L (XorV src (ReplicateI/L -1) m) (ReplicateI/L 1) m)
@@ -1607,13 +1610,13 @@ Node* VectorNode::degenerate_vector_integral_negate(Node* n, int vlen, BasicType
         add_opc = Op_AddI;
       }
       const_minus_one = phase->transform(VectorNode::scalar2vector(const_minus_one, vlen, Type::get_const_basic_type(bt)));
-      Node* xorv = VectorNode::make(Op_XorV, n->in(1), const_minus_one, vt);
-      xorv->add_req(n->in(2));
+      Node* xorv = VectorNode::make(Op_XorV, in(1), const_minus_one, vt);
+      xorv->add_req(in(2));
       xorv->add_flag(Node::Flag_is_predicated_vector);
       phase->transform(xorv);
       const_one = phase->transform(VectorNode::scalar2vector(const_one, vlen, Type::get_const_basic_type(bt)));
       Node* addv = VectorNode::make(VectorNode::opcode(add_opc, bt), xorv, const_one, vt);
-      addv->add_req(n->in(2));
+      addv->add_req(in(2));
       addv->add_flag(Node::Flag_is_predicated_vector);
       return addv;
   }
@@ -1629,7 +1632,7 @@ Node* VectorNode::degenerate_vector_integral_negate(Node* n, int vlen, BasicType
     sub_opc = Op_SubI;
   }
   const_zero = phase->transform(VectorNode::scalar2vector(const_zero, vlen, Type::get_const_basic_type(bt)));
-  return VectorNode::make(VectorNode::opcode(sub_opc, bt), const_zero, n->in(1), vt);
+  return VectorNode::make(VectorNode::opcode(sub_opc, bt), const_zero, in(1), vt);
 }
 
 Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1639,10 +1642,10 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (is_vector_integral_negate(opc)) {
     if (is_predicated_vector()) {
       if (!Matcher::match_rule_supported_vector_masked(opc, vlen, bt)) {
-        return degenerate_vector_integral_negate(this, vlen, bt, phase, true);
+        return degenerate_integral_negate(phase, true);
       }
     } else if (!Matcher::match_rule_supported_vector(opc, vlen, bt)) {
-      return degenerate_vector_integral_negate(this, vlen, bt, phase, false);
+      return degenerate_integral_negate(phase, false);
     }
   }
   return NULL;

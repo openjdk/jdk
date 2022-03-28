@@ -103,7 +103,6 @@ class VectorNode : public TypeNode {
   static bool is_vector_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
-  static Node* degenerate_vector_integral_negate(Node* n, int vlen, BasicType bt, PhaseGVN* phase, bool is_predicated);
 
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
@@ -484,6 +483,9 @@ class NegVNode : public VectorNode {
   NegVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const = 0;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+ private:
+  Node* degenerate_integral_negate(PhaseGVN* phase, bool is_predicated);
 };
 
 //------------------------------NegVINode--------------------------------------
