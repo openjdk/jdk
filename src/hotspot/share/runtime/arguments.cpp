@@ -125,19 +125,13 @@ char* Arguments::_ext_dirs = NULL;
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
 
-bool PathString::set_value(const char *value) {
+void PathString::set_value(const char *value) {
   if (_value != NULL) {
     FreeHeap(_value);
   }
   _value = AllocateHeap(strlen(value)+1, mtArguments);
   assert(_value != NULL, "Unable to allocate space for new path value");
-  if (_value != NULL) {
-    strcpy(_value, value);
-  } else {
-    // not able to allocate
-    return false;
-  }
-  return true;
+  strcpy(_value, value);
 }
 
 void PathString::append_value(const char *value) {

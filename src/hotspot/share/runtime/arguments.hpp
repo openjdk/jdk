@@ -66,7 +66,7 @@ class PathString : public CHeapObj<mtArguments> {
  public:
   char* value() const { return _value; }
 
-  bool set_value(const char *value);
+  void set_value(const char *value);
   void append_value(const char *value);
 
   PathString(const char* value);
@@ -122,7 +122,8 @@ class SystemProperty : public PathString {
   // set_value and append_value methods are called directly.
   bool set_writeable_value(const char *value) {
     if (writeable()) {
-      return set_value(value);
+      set_value(value);
+      return true;
     }
     return false;
   }
