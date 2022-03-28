@@ -463,11 +463,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             configDisplayMode(screen, peer, dm.getWidth(), dm.getHeight(),
                 dm.getBitDepth(), dm.getRefreshRate());
-            // configDisplayMode() changes the screen resolution (and potentially DPI) immediately,
-            // so we need to update the DPI scales here as well,
-            // otherwise getDefaultConfiguration().getBounds() will return incorrect results until
-            // WM_DISPLAYCHANGE or WM_DPICHANGED is received, which happens to be too late for our purposes
-            initScaleFactors();
             // resize the fullscreen window to the dimensions of the new
             // display mode
             Rectangle screenBounds = getDefaultConfiguration().getBounds();
