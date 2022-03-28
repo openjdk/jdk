@@ -22,7 +22,6 @@
  */
 
 import java.awt.BorderLayout;
-import java.awt.Frame;
 import java.awt.HeadlessException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
@@ -33,7 +32,9 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
+
+import static javax.swing.SwingUtilities.invokeAndWait;
+import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 public class PassFailJFrame extends JFrame {
     private final CountDownLatch latch = new CountDownLatch(1);
@@ -72,7 +73,7 @@ public class PassFailJFrame extends JFrame {
         this.maxStringLength = maxStringLength;
         this.timeoutMinutes = timeoutMinutes;
 
-        SwingUtilities.invokeAndWait(() -> {
+        invokeAndWait(() -> {
             setLayout(new BorderLayout());
             instructionsText = new JTextArea(instructions, maxRowLength, maxStringLength);
             instructionsText.setEditable(false);
@@ -100,7 +101,6 @@ public class PassFailJFrame extends JFrame {
      * Wait for the user decision i,e user selects pass or fail button.
      * If user does not select pass or fail button then the test waits for
      * the specified timeoutMinutes period and the test gets timeout.
-     * This method should not be invoke with in EDT.
      *
      * @throws InterruptedException
      * @throws InvocationTargetException
@@ -108,8 +108,9 @@ public class PassFailJFrame extends JFrame {
     public void awaitAndCheck() throws InterruptedException, InvocationTargetException {
         boolean timeoutHappened = !latch.await(this.timeoutMinutes,
                 TimeUnit.MINUTES);
-
-        SwingUtilities.invokeAndWait(() -> dispose());
+        if (isEventDispatchThread()) {
+            dispose();
+        } else invokeAndWait(() -> dispose());
 
         if (timeoutHappened) {
             throw new RuntimeException("Test timed out!");
@@ -117,15 +118,6 @@ public class PassFailJFrame extends JFrame {
         if (failed) {
             throw new RuntimeException("Test failed! : " + testFailedReason);
         }
-    }
-
-    public void tearDown() throws InterruptedException, InvocationTargetException {
-        SwingUtilities.invokeAndWait(() -> {
-            for (Frame f : JFrame.getFrames()) {
-                System.out.println(f.getTitle() + " is getting disposed");
-                f.dispose();
-            }
-        });
     }
 
     public void getFailureReason() {
