@@ -53,6 +53,21 @@ import javax.lang.model.util.*;
  * source of information is Java source code, then the elements will be
  * returned in source code order.
  *
+ * @apiNote
+ * The represented class or interface may have an explicit {@linkplain
+ * javax.annotation.processing.Filer#createSourceFile(CharSequence,
+ * Element...) source code} or {@linkplain
+ * javax.annotation.processing.Filer#createClassFile(CharSequence,
+ * Element...) executable output} backing construct. Multiple classes
+ * and interfaces can share the same {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) backing
+ * construct}. For example, multiple classes and interface can be
+ * declared in the same source file, including, but are not limited
+ * to, a {@linkplain NestingKind#TOP_LEVEL top-level} class or
+ * interface and auxiliary classes and interfaces or a top-level class
+ * or interface and {@linkplain NestingKind#isNested() nested classes}
+ * within it.
+ *
  * @see DeclaredType
  * @since 1.6
  */
