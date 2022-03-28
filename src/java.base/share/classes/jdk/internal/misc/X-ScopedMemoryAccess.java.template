@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -424,14 +424,14 @@ public class ScopedMemoryAccess {
     <V extends VectorSupport.Vector<E>, E, S extends VectorSupport.VectorSpecies<E>,
      M extends VectorSupport.VectorMask<E>>
     V loadFromByteBufferMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
-                               int length, ByteBuffer bb, int offset, M m, S s,
+                               int length, ByteBuffer bb, int offset, M m, S s, boolean usePred,
                                VectorSupport.LoadVectorMaskedOperation<ByteBuffer, V, S, M> defaultImpl) {
         try {
             return loadFromByteBufferMaskedScoped(
                     BufferAccess.scope(bb),
                     vmClass, maskClass, e, length,
                     bb, offset, m,
-                    s,
+                    s, usePred,
                     defaultImpl);
         } catch (ScopedMemoryAccess.Scope.ScopedAccessError ex) {
             throw new IllegalStateException("This segment is already closed");
@@ -446,15 +446,21 @@ public class ScopedMemoryAccess {
     V loadFromByteBufferMaskedScoped(ScopedMemoryAccess.Scope scope, Class<? extends V> vmClass,
                                      Class<M> maskClass, Class<E> e, int length,
                                      ByteBuffer bb, int offset, M m,
-                                     S s,
+                                     S s, boolean usePred,
                                      VectorSupport.LoadVectorMaskedOperation<ByteBuffer, V, S, M> defaultImpl) {
         try {
             if (scope != null) {
                 scope.checkValidState();
             }
 
+            if (usePred) {
+                return VectorSupport.loadMasked(vmClass, maskClass, e, length,
+                        BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset), m, /* usePred */ 1,
+                        bb, offset, s,
+                        defaultImpl);
+            }
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                    BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset), m,
+                    BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset), m, /* usePred */ 0,
                     bb, offset, s,
                     defaultImpl);
         } finally {

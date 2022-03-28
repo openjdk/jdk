@@ -814,8 +814,8 @@ final class Double128Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m) {
-        return super.fromArray0Template(Double128Mask.class, a, offset, (Double128Mask) m);  // specialize
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m, boolean usePred) {
+        return super.fromArray0Template(Double128Mask.class, a, offset, (Double128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -837,8 +837,8 @@ final class Double128Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m) {
-        return super.fromByteArray0Template(Double128Mask.class, a, offset, (Double128Mask) m);  // specialize
+    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m, boolean usePred) {
+        return super.fromByteArray0Template(Double128Mask.class, a, offset, (Double128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -851,8 +851,8 @@ final class Double128Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
-        return super.fromByteBuffer0Template(Double128Mask.class, bb, offset, (Double128Mask) m);  // specialize
+    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Double128Mask.class, bb, offset, (Double128Mask) m, usePred);  // specialize
     }
 
     @ForceInline

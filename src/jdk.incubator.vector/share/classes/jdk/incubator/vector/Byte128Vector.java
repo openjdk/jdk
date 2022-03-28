@@ -853,8 +853,8 @@ final class Byte128Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        return super.fromArray0Template(Byte128Mask.class, a, offset, (Byte128Mask) m);  // specialize
+    ByteVector fromArray0(byte[] a, int offset, VectorMask<Byte> m, boolean usePred) {
+        return super.fromArray0Template(Byte128Mask.class, a, offset, (Byte128Mask) m, usePred);  // specialize
     }
 
 
@@ -869,8 +869,8 @@ final class Byte128Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m) {
-        return super.fromBooleanArray0Template(Byte128Mask.class, a, offset, (Byte128Mask) m);  // specialize
+    ByteVector fromBooleanArray0(boolean[] a, int offset, VectorMask<Byte> m, boolean usePred) {
+        return super.fromBooleanArray0Template(Byte128Mask.class, a, offset, (Byte128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -883,8 +883,8 @@ final class Byte128Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        return super.fromByteArray0Template(Byte128Mask.class, a, offset, (Byte128Mask) m);  // specialize
+    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m, boolean usePred) {
+        return super.fromByteArray0Template(Byte128Mask.class, a, offset, (Byte128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -897,8 +897,8 @@ final class Byte128Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
-        return super.fromByteBuffer0Template(Byte128Mask.class, bb, offset, (Byte128Mask) m);  // specialize
+    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Byte128Mask.class, bb, offset, (Byte128Mask) m, usePred);  // specialize
     }
 
     @ForceInline

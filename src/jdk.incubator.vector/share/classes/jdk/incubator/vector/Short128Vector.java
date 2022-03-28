@@ -837,8 +837,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m) {
-        return super.fromArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, boolean usePred) {
+        return super.fromArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, usePred);  // specialize
     }
 
 
@@ -852,8 +852,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        return super.fromCharArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, boolean usePred) {
+        return super.fromCharArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, usePred);  // specialize
     }
 
 
@@ -867,8 +867,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        return super.fromByteArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
+    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean usePred) {
+        return super.fromByteArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -881,8 +881,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        return super.fromByteBuffer0Template(Short128Mask.class, bb, offset, (Short128Mask) m);  // specialize
+    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Short128Mask.class, bb, offset, (Short128Mask) m, usePred);  // specialize
     }
 
     @ForceInline

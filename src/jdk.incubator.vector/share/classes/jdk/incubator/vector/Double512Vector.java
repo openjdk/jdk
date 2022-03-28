@@ -826,8 +826,8 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m) {
-        return super.fromArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
+    DoubleVector fromArray0(double[] a, int offset, VectorMask<Double> m, boolean usePred) {
+        return super.fromArray0Template(Double512Mask.class, a, offset, (Double512Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -849,8 +849,8 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m) {
-        return super.fromByteArray0Template(Double512Mask.class, a, offset, (Double512Mask) m);  // specialize
+    DoubleVector fromByteArray0(byte[] a, int offset, VectorMask<Double> m, boolean usePred) {
+        return super.fromByteArray0Template(Double512Mask.class, a, offset, (Double512Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -863,8 +863,8 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     @Override
     final
-    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m) {
-        return super.fromByteBuffer0Template(Double512Mask.class, bb, offset, (Double512Mask) m);  // specialize
+    DoubleVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Double> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Double512Mask.class, bb, offset, (Double512Mask) m, usePred);  // specialize
     }
 
     @ForceInline

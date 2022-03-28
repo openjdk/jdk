@@ -815,8 +815,8 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m) {
-        return super.fromArray0Template(Long128Mask.class, a, offset, (Long128Mask) m);  // specialize
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, boolean usePred) {
+        return super.fromArray0Template(Long128Mask.class, a, offset, (Long128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -838,8 +838,8 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m) {
-        return super.fromByteArray0Template(Long128Mask.class, a, offset, (Long128Mask) m);  // specialize
+    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m, boolean usePred) {
+        return super.fromByteArray0Template(Long128Mask.class, a, offset, (Long128Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -852,8 +852,8 @@ final class Long128Vector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m) {
-        return super.fromByteBuffer0Template(Long128Mask.class, bb, offset, (Long128Mask) m);  // specialize
+    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Long128Mask.class, bb, offset, (Long128Mask) m, usePred);  // specialize
     }
 
     @ForceInline

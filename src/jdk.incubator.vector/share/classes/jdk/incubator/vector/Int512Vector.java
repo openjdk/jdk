@@ -853,8 +853,8 @@ final class Int512Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m) {
-        return super.fromArray0Template(Int512Mask.class, a, offset, (Int512Mask) m);  // specialize
+    IntVector fromArray0(int[] a, int offset, VectorMask<Integer> m, boolean usePred) {
+        return super.fromArray0Template(Int512Mask.class, a, offset, (Int512Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -876,8 +876,8 @@ final class Int512Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        return super.fromByteArray0Template(Int512Mask.class, a, offset, (Int512Mask) m);  // specialize
+    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m, boolean usePred) {
+        return super.fromByteArray0Template(Int512Mask.class, a, offset, (Int512Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -890,8 +890,8 @@ final class Int512Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        return super.fromByteBuffer0Template(Int512Mask.class, bb, offset, (Int512Mask) m);  // specialize
+    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Int512Mask.class, bb, offset, (Int512Mask) m, usePred);  // specialize
     }
 
     @ForceInline

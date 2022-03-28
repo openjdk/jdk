@@ -2858,14 +2858,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                        VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteArray0(a, offset, m).maybeSwap(bo);
+            return vsp.dummyVector().fromByteArray0(a, offset, m, /* usePred */ false).maybeSwap(bo);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 2, a.length);
-        ByteBuffer wb = wrapper(a, bo);
-        return vsp.ldOp(wb, offset, (AbstractMask<Short>)m,
-                   (wb_, o, i)  -> wb_.getShort(o + i * 2));
+        return vsp.dummyVector().fromByteArray0(a, offset, m, /* usePred */ true).maybeSwap(bo);
     }
 
     /**
@@ -2920,12 +2917,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                    VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromArray0(a, offset, m);
+            return vsp.dummyVector().fromArray0(a, offset, m, /* usePred */ false);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.vOp(m, i -> a[offset + i]);
+        return vsp.dummyVector().fromArray0(a, offset, m, /* usePred */ true);
     }
 
     /**
@@ -3069,12 +3065,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                        VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (a.length - species.length())) {
-            return vsp.dummyVector().fromCharArray0(a, offset, m);
+            return vsp.dummyVector().fromCharArray0(a, offset, m, /* usePred */ false);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.vOp(m, i -> (short) a[offset + i]);
+        return vsp.dummyVector().fromCharArray0(a, offset, m, /* usePred */ true);
     }
 
     /**
@@ -3254,14 +3249,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                         VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
         if (offset >= 0 && offset <= (bb.limit() - species.vectorByteSize())) {
-            return vsp.dummyVector().fromByteBuffer0(bb, offset, m).maybeSwap(bo);
+            return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* usePred */ false).maybeSwap(bo);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 2, bb.limit());
-        ByteBuffer wb = wrapper(bb, bo);
-        return vsp.ldOp(wb, offset, (AbstractMask<Short>)m,
-                   (wb_, o, i)  -> wb_.getShort(o + i * 2));
+        return vsp.dummyVector().fromByteBuffer0(bb, offset, m, /* usePred */ true).maybeSwap(bo);
     }
 
     // Memory store operations
@@ -3667,19 +3659,35 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     abstract
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m);
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, boolean usePred);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromArray0Template(Class<M> maskClass, short[] a, int offset, M m) {
-        m.check(species());
-        ShortSpecies vsp = vspecies();
-        return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m,
-            a, offset, vsp,
+    ShortVector fromArray0Template(Class<M> maskClass, short[] a, int offset, M m, boolean usePred) {
+        return fromArrayMaskedTemplate(maskClass, a, arrayAddress(a, offset),
+            offset, m, usePred,
             (arr, off, s, vm) -> s.ldOp(arr, off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
+    }
+
+    @ForceInline
+    final
+    <C, M extends VectorMask<Short>>
+    ShortVector fromArrayMaskedTemplate(Class<M> maskClass, C base, long offset, int index, M m, boolean usePred,
+                        VectorSupport.LoadVectorMaskedOperation<C, ShortVector, ShortSpecies, M> defaultImpl) {
+        m.check(species());
+        ShortSpecies vsp = vspecies();
+        if (usePred) {
+            return VectorSupport.loadMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                base, offset, m, /* usePred */ 1,
+                base, index, vsp, defaultImpl);
+        } else {
+            return VectorSupport.loadMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                base, offset, m, /* usePred */ 0,
+                base, index, vsp, defaultImpl);
+        }
     }
 
 
@@ -3700,19 +3708,16 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     /*package-private*/
     abstract
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m);
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, boolean usePred);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m) {
-        m.check(species());
-        ShortSpecies vsp = vspecies();
-        return VectorSupport.loadMasked(
-                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                a, charArrayAddress(a, offset), m,
-                a, offset, vsp,
-                (arr, off, s, vm) -> s.ldOp(arr, off, vm,
-                                            (arr_, off_, i) -> (short) arr_[off_ + i]));
+    ShortVector fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m, boolean usePred) {
+        return fromArrayMaskedTemplate(
+            maskClass, a, charArrayAddress(a, offset),
+            offset, m, usePred,
+            (arr, off, s, vm) -> s.ldOp(arr, off, vm,
+                                        (arr_, off_, i) -> (short) arr_[off_ + i]));
     }
 
 
@@ -3735,17 +3740,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     abstract
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m);
+    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean usePred);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m) {
-        ShortSpecies vsp = vspecies();
-        m.check(vsp);
-        return VectorSupport.loadMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, byteArrayAddress(a, offset), m,
-            a, offset, vsp,
+    ShortVector fromByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, boolean usePred) {
+        return fromArrayMaskedTemplate(
+            maskClass, a, byteArrayAddress(a, offset),
+            offset, m, usePred,
             (arr, off, s, vm) -> {
                 ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
                 return s.ldOp(wb, off, vm,
@@ -3770,16 +3772,16 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     abstract
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m);
+    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean usePred);
     @ForceInline
     final
     <M extends VectorMask<Short>>
-    ShortVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m) {
+    ShortVector fromByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, boolean usePred) {
         ShortSpecies vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromByteBufferMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                bb, offset, m, vsp,
+                bb, offset, m, vsp, usePred,
                 (buf, off, s, vm) -> {
                     ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
                     return s.ldOp(wb, off, vm,

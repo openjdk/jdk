@@ -826,8 +826,8 @@ final class Float256Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    FloatVector fromArray0(float[] a, int offset, VectorMask<Float> m) {
-        return super.fromArray0Template(Float256Mask.class, a, offset, (Float256Mask) m);  // specialize
+    FloatVector fromArray0(float[] a, int offset, VectorMask<Float> m, boolean usePred) {
+        return super.fromArray0Template(Float256Mask.class, a, offset, (Float256Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -849,8 +849,8 @@ final class Float256Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        return super.fromByteArray0Template(Float256Mask.class, a, offset, (Float256Mask) m);  // specialize
+    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m, boolean usePred) {
+        return super.fromByteArray0Template(Float256Mask.class, a, offset, (Float256Mask) m, usePred);  // specialize
     }
 
     @ForceInline
@@ -863,8 +863,8 @@ final class Float256Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        return super.fromByteBuffer0Template(Float256Mask.class, bb, offset, (Float256Mask) m);  // specialize
+    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m, boolean usePred) {
+        return super.fromByteBuffer0Template(Float256Mask.class, bb, offset, (Float256Mask) m, usePred);  // specialize
     }
 
     @ForceInline
