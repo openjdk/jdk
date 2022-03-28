@@ -240,7 +240,6 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
     if (nameArray == NULL) {
         j2d_cupsFreeDests(num_dests, dests);
         DPRINTF("CUPSfuncs::bad alloc new array\n", "")
-        JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         return NULL;
     }
 
@@ -256,7 +255,6 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
                 j2d_cupsFreeDests(num_dests, dests);
                 (*env)->DeleteLocalRef(env, nameArray);
                 DPRINTF("CUPSfuncs::bad alloc new string ->name\n", "")
-                JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, nameArray, i, utf_str);
