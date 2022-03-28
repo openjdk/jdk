@@ -758,7 +758,7 @@ void PSScavenge::initialize() {
                            ParallelGCThreads,          // mt processing degree
                            ParallelGCThreads,          // mt discovery degree
                            false,                      // concurrent_discovery
-                           NULL);                      // header provides liveness info
+                           &_is_alive_closure);        // header provides liveness info
 
   // Cache the cardtable
   _card_table = heap->card_table();
