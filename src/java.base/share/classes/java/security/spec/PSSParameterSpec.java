@@ -28,11 +28,11 @@ package java.security.spec;
 import java.util.Objects;
 
 /**
- * This class specifies a parameter spec for RSASSA-PSS signature scheme,
+ * This class specifies a parameter spec for the RSASSA-PSS signature scheme,
  * as defined in the
  * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard.
  *
- * <p>Its ASN.1 definition in the PKCS#1 standard is described below:
+ * <p>Its ASN.1 definition in the PKCS #1 standard is described below:
  * <pre>
  * RSASSA-PSS-params ::= SEQUENCE {
  *   hashAlgorithm      [0] HashAlgorithm      DEFAULT sha1,
@@ -88,7 +88,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     private final int trailerField;
 
     /**
-     * The {@code TrailerFieldBC} constant as defined in PKCS#1
+     * The {@code TrailerFieldBC} constant as defined in the PKCS #1 standard.
      *
      * @since 11
      */
@@ -96,10 +96,13 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
 
     /**
      * The PSS parameter set with all default values
-     * @deprecated This field uses the default values defined in the ASN.1
-     *         encoding in PKCS#1 which may become obsolete as time progresses.
-     *         Thus, it is recommended to create a new {@code PSSParameterSpec}
-     *         with the desired parameter values using
+     * @deprecated This field uses the default values defined in the PKCS #1
+     *         standard. Some of these defaults are no longer recommended due
+     *         to advances in cryptanalysis -- see the
+     *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
+     *         standard for more details. Thus, it is recommended to create
+     *         a new {@code PSSParameterSpec} with the desired parameter values
+     *         using
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      *
      * @since 1.5
@@ -126,7 +129,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * @param mgfSpec      the parameters for the mask generation function.
      *         If null is specified, null will be returned by
      *         getMGFParameters().
-     * @param saltLen      the length of salt
+     * @param saltLen      the length of salt in bytes
      * @param trailerField the value of the trailer field
      * @throws    NullPointerException if {@code mdName}, or {@code mgfName}
      *         is null
@@ -157,17 +160,18 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     /**
      * Creates a new {@code PSSParameterSpec}
      * using the specified salt length and other default values as
-     * defined in PKCS#1.
+     * defined in the PKCS #1 standard.
      *
-     * @param saltLen the length of salt in bytes to be used in PKCS#1
-     *         PSS encoding
+     * @param saltLen the length of salt in bytes
      * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
      * @deprecated This constructor uses the default values defined in
-     *         the ASN.1 encoding in PKCS#1 except for the salt length.
-     *         These default values may become obsolete as time progresses.
-     *         Thus, it is recommended to explicitly specify all desired
-     *         parameter values with
+     *         the PKCS #1 standard except for the salt length. Some of these
+     *         defaults are no longer recommended due to advances in
+     *         cryptanalysis -- see the
+     *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
+     *         standard for more details. Thus, it is recommended to explicitly
+     *         specify all desired parameter values with
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
      */
     @Deprecated(since="19")
