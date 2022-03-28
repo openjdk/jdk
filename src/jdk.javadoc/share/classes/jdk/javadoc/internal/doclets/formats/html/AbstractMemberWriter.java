@@ -187,7 +187,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param type   the type to add
      * @param target the content to which the modifiers and type will be added
      */
-    protected void addModifierAndType(Element member, TypeMirror type,
+    protected void addModifiersAndType(Element member, TypeMirror type,
             Content target) {
         var code = new HtmlTree(TagName.CODE);
         addModifiers(member, code);

@@ -247,7 +247,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     protected void addSummaryType(Element member, Content content) {
-        addModifierAndType(member, getType(member), content);
+        addModifiersAndType(member, getType(member), content);
     }
 
     @Override

@@ -68,7 +68,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
     private final TableHeader constantsTableHeader;
 
     /**
-     * The HTML node for constant values summary currently being written.
+     * The HTML tree for constant values summary currently being written.
      */
     private HtmlTree summarySection;
 

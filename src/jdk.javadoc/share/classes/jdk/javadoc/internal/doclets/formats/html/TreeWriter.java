@@ -163,7 +163,7 @@ public class TreeWriter extends AbstractTreeWriter {
     private HtmlTree getBody() {
         String title = resources.getText("doclet.Window_Class_Hierarchy");
         HtmlTree bodyTree = getBody(getWindowTitle(title));
-        bodyContents.setHeader(getHeader(PageMode.TREE)); // idempotent
+        bodyContents.setHeader(getHeader(PageMode.TREE));
         return bodyTree;
     }
 

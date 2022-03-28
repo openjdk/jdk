@@ -137,7 +137,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     protected void addSummaryType(Element member, Content content) {
-        addModifierAndType(member, null, content);
+        addModifiersAndType(member, null, content);
     }
 
     @Override

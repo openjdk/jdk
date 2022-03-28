@@ -197,7 +197,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
 
     @Override
     protected void addSummaryType(Element member, Content content) {
-        addModifierAndType(member, utils.asInstantiatedFieldType(typeElement, (VariableElement)member), content);
+        addModifiersAndType(member, utils.asInstantiatedFieldType(typeElement, (VariableElement)member), content);
     }
 
     @Override

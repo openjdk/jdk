@@ -211,7 +211,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     protected void addSummaryType(Element member, Content content) {
-        addModifierAndType(member, utils.getReturnType(typeElement, (ExecutableElement)member), content);
+        addModifiersAndType(member, utils.getReturnType(typeElement, (ExecutableElement)member), content);
     }
 
     @Override

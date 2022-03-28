@@ -231,7 +231,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     @Override
     protected void addSummaryType(Element member, Content content) {
         ExecutableElement meth = (ExecutableElement)member;
-        addModifierAndType(meth, utils.getReturnType(typeElement, meth), content);
+        addModifiersAndType(meth, utils.getReturnType(typeElement, meth), content);
     }
 
     /**
