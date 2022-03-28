@@ -28,6 +28,7 @@
 #include "logging/logLevel.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -66,7 +67,8 @@ class PathString : public CHeapObj<mtArguments> {
  public:
   char* value() const { return _value; }
 
-  void set_value(const char *value);
+  // return false iff OOM && alloc_failmode == AllocFailStrategy::RETURN_NULL
+  bool set_value(const char *value, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   void append_value(const char *value);
 
   PathString(const char* value);
@@ -113,6 +115,12 @@ class SystemProperty : public PathString {
                           value() != NULL);
   }
 
+  enum SetWriteableValueResult {
+    SUCCESS,
+    NOT_WRITEABLE,
+    OOM
+  };
+
   // A system property should only have its value set
   // via an external interface if it is a writeable property.
   // The internal, non-writeable property jdk.boot.class.path.append
@@ -120,12 +128,15 @@ class SystemProperty : public PathString {
   // via -Xbootclasspath/a or JVMTI OnLoad phase call to AddToBootstrapClassLoaderSearch.
   // In those cases for jdk.boot.class.path.append, the base class
   // set_value and append_value methods are called directly.
-  bool set_writeable_value(const char *value) {
-    if (writeable()) {
-      set_value(value);
-      return true;
+  SetWriteableValueResult set_writeable_value(const char *value,  AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+    if (!writeable()) {
+      return NOT_WRITEABLE;
     }
-    return false;
+    if (!set_value(value, alloc_failmode)) {
+      assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "must be");
+      return OOM;
+    }
+    return SUCCESS;
   }
   void append_writeable_value(const char *value) {
     if (writeable()) {
