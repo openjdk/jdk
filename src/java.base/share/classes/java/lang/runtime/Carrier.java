@@ -1078,7 +1078,7 @@ public final class Carrier {
     }
 
     /**
-     * {@return the underlying carrier class.}
+     * {@return the underlying carrier class}
      */
     public Class<?> carrierClass() {
         return carrierClass;
@@ -1086,7 +1086,7 @@ public final class Carrier {
 
     /**
      * {@return the constructor {@link MethodHandle} for the carrier . The
-     * carrier constructor will have a return type of {@link Object}.}
+     * carrier constructor will have a return type of {@link Object} }
      */
     public MethodHandle constructor() {
         return constructor;
@@ -1095,7 +1095,7 @@ public final class Carrier {
     /**
      * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
      * for all the carrier's components. The receiver type of the accessors
-     * will be {@link Object}.}
+     * will be {@link Object} }
      */
     public List<MethodHandle> components() {
         return components;
@@ -1103,7 +1103,7 @@ public final class Carrier {
 
     /**
      * {@return a component accessor {@link MethodHandle} for component {@code i}.
-     * The receiver type of the accessor will be {@link Object}.}
+     * The receiver type of the accessor will be {@link Object} }
      *
      * @param i  component index
      *
