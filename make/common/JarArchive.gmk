@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,8 @@ define SetupJarArchiveBody
   $1_UPDATE_CONTENTS=\
       if [ "`$(WC) -l $$($1_BIN)/_the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'`" -gt "0" ]; then \
         $(ECHO) "  updating" `$(WC) -l $$($1_BIN)/_the.$$($1_JARNAME)_contents | $(AWK) '{ print $$$$1 }'` files && \
-        $$($1_JAR_CMD) --update $$($1_JAR_OPTIONS) --file $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents; \
+        $(SORT) $$($1_BIN)/_the.$$($1_JARNAME)_contents > $$($1_BIN)/_the.$$($1_JARNAME)_contents_sorted && \
+        $$($1_JAR_CMD) --update $$($1_JAR_OPTIONS) --file $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents_sorted; \
       fi $$(NEWLINE)
   # The s-variants of the above macros are used when the jar is created from scratch.
   # NOTICE: please leave the parentheses space separated otherwise the AIX build will break!
@@ -212,7 +213,9 @@ define SetupJarArchiveBody
             | $(SED) 's|$$(src)/|-C $$(src) |g' >> \
         $$($1_BIN)/_the.$$($1_JARNAME)_contents) $$(NEWLINE) )
   endif
-  $1_SUPDATE_CONTENTS=$$($1_JAR_CMD) --update $$($1_JAR_OPTIONS) --file $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents $$(NEWLINE)
+  $1_SUPDATE_CONTENTS=\
+      $(SORT) $$($1_BIN)/_the.$$($1_JARNAME)_contents > $$($1_BIN)/_the.$$($1_JARNAME)_contents_sorted && \
+      $$($1_JAR_CMD) --update $$($1_JAR_OPTIONS) --file $$@ @$$($1_BIN)/_the.$$($1_JARNAME)_contents_sorted $$(NEWLINE)
 
   # Use a slightly shorter name for logging, but with enough path to identify this jar.
   $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_JAR))

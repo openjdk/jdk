@@ -61,7 +61,7 @@ Node* SubNode::Identity(PhaseGVN* phase) {
   }
 
   // Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
-  if (in(1)->Opcode() == Op_AddI) {
+  if (in(1)->Opcode() == Op_AddI || in(1)->Opcode() == Op_AddL) {
     if (in(1)->in(2) == in(2)) {
       return in(1)->in(1);
     }
@@ -416,6 +416,10 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "x - (x+y)" into "-y"
   if (op2 == Op_AddL && in1 == in2->in(1)) {
     return new SubLNode(phase->makecon(TypeLong::ZERO), in2->in(2));
+  }
+  // Convert "(x-y) - x" into "-y"
+  if (op1 == Op_SubL && in1->in(1) == in2) {
+    return new SubLNode(phase->makecon(TypeLong::ZERO), in1->in(2));
   }
   // Convert "x - (y+x)" into "-y"
   if (op2 == Op_AddL && in1 == in2->in(2)) {

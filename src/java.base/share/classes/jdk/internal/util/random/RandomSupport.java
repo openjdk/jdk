@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 3);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>3] = (result[j>>3] << 8) | seed[j];
+            result[j>>3] = (result[j>>3] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
@@ -645,7 +645,7 @@ public class RandomSupport {
         if (origin < bound) {
             r = r * (bound - origin) + origin;
             if (r >= bound)  // may need to correct a rounding problem
-                r = Math.nextAfter(r, origin);
+                r = Math.nextAfter(bound, origin);
         }
         return r;
     }
@@ -677,7 +677,7 @@ public class RandomSupport {
         double r = rng.nextDouble();
         r = r * bound;
         if (r >= bound)  // may need to correct a rounding problem
-            r = Math.nextDown(r);
+            r = Math.nextDown(bound);
         return r;
     }
 

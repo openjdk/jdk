@@ -253,7 +253,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
      */
     private Content getTreeForClassHelper(TypeMirror type) {
         Content content = new ContentBuilder();
-        if (type.equals(typeElement.asType())) {
+        if (utils.typeUtils.isSameType(type, typeElement.asType())) {
             Content typeParameters = getTypeParameterLinks(
                     new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.TREE,
                     typeElement));

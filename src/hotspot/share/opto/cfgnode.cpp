@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -865,10 +865,10 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   }
   proj1 = proj1->other_if_proj();
   proj2 = proj2->other_if_proj();
-  if (!((proj1->unique_ctrl_out() == iff2 &&
-         proj2->unique_ctrl_out() == this) ||
-        (proj2->unique_ctrl_out() == iff1 &&
-         proj1->unique_ctrl_out() == this))) {
+  if (!((proj1->unique_ctrl_out_or_null() == iff2 &&
+         proj2->unique_ctrl_out_or_null() == this) ||
+        (proj2->unique_ctrl_out_or_null() == iff1 &&
+         proj1->unique_ctrl_out_or_null() == this))) {
     return false; // Ifs are not connected through other projs
   }
   // Found 'iff -> proj -> iff -> proj -> this' shape where all other projs are merged
@@ -2687,6 +2687,17 @@ const Type* CatchNode::Value(PhaseGVN* phase) const {
       // Rethrows always throw exceptions, never return
       if (call->entry_point() == OptoRuntime::rethrow_stub()) {
         f[CatchProjNode::fall_through_index] = Type::TOP;
+      } else if (call->is_AllocateArray()) {
+        Node* klass_node = call->in(AllocateNode::KlassNode);
+        Node* length = call->in(AllocateNode::ALength);
+        const Type* length_type = phase->type(length);
+        const Type* klass_type = phase->type(klass_node);
+        Node* valid_length_test = call->in(AllocateNode::ValidLengthTest);
+        const Type* valid_length_test_t = phase->type(valid_length_test);
+        if (length_type == Type::TOP || klass_type == Type::TOP || valid_length_test_t == Type::TOP ||
+            valid_length_test_t->is_int()->is_con(0)) {
+          f[CatchProjNode::fall_through_index] = Type::TOP;
+        }
       } else if( call->req() > TypeFunc::Parms ) {
         const Type *arg0 = phase->type( call->in(TypeFunc::Parms) );
         // Check for null receiver to virtual or interface calls

@@ -78,7 +78,7 @@ VMNativeEntryWrapper::~VMNativeEntryWrapper() {
 
 unsigned int InterfaceSupport::_scavenge_alot_counter = 1;
 unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
-int InterfaceSupport::_fullgc_alot_invocation = 0;
+intx InterfaceSupport::_fullgc_alot_invocation = 0;
 
 void InterfaceSupport::gc_alot() {
   Thread *thread = Thread::current();

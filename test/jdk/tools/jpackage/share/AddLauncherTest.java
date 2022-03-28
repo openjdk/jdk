@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.jpackage.test.CfgFile;
  * AddLauncherTest*.* installer. The output installer should provide the
  * same functionality as the default installer (see description of the default
  * installer in SimplePackageTest.java) plus install three extra application
- * launchers.
+ * launchers with unique description ("LauncherName Description").
  */
 
 /*
@@ -80,7 +80,8 @@ public class AddLauncherTest {
         PackageTest packageTest = new PackageTest().configureHelloApp();
         packageTest.addInitializer(cmd -> {
             cmd.addArguments("--arguments", "Duke", "--arguments", "is",
-                    "--arguments", "the", "--arguments", "King");
+                    "--arguments", "the", "--arguments", "King",
+                    "--description", "AddLauncherTest Description");
         });
 
         new FileAssociations(
@@ -89,14 +90,17 @@ public class AddLauncherTest {
 
         new AdditionalLauncher("Baz2")
                 .setDefaultArguments()
+                .addRawProperties(Map.entry("description", "Baz2 Description"))
                 .applyTo(packageTest);
 
         new AdditionalLauncher("foo")
                 .setDefaultArguments("yep!")
+                .addRawProperties(Map.entry("description", "foo Description"))
                 .applyTo(packageTest);
 
         new AdditionalLauncher("Bar")
                 .setDefaultArguments("one", "two", "three")
+                .addRawProperties(Map.entry("description", "Bar Description"))
                 .setIcon(GOLDEN_ICON)
                 .applyTo(packageTest);
 

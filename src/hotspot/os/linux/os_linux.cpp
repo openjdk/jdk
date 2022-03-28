@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2092,6 +2093,34 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
   return false;
 }
 
+#ifdef __GLIBC__
+// For Glibc, print a one-liner with the malloc tunables.
+// Most important and popular is MALLOC_ARENA_MAX, but we are
+// thorough and print them all.
+static void print_glibc_malloc_tunables(outputStream* st) {
+  static const char* var[] = {
+      // the new variant
+      "GLIBC_TUNABLES",
+      // legacy variants
+      "MALLOC_CHECK_", "MALLOC_TOP_PAD_", "MALLOC_PERTURB_",
+      "MALLOC_MMAP_THRESHOLD_", "MALLOC_TRIM_THRESHOLD_",
+      "MALLOC_MMAP_MAX_", "MALLOC_ARENA_TEST", "MALLOC_ARENA_MAX",
+      NULL};
+  st->print("glibc malloc tunables: ");
+  bool printed = false;
+  for (int i = 0; var[i] != NULL; i ++) {
+    const char* const val = ::getenv(var[i]);
+    if (val != NULL) {
+      st->print("%s%s=%s", (printed ? ", " : ""), var[i], val);
+      printed = true;
+    }
+  }
+  if (!printed) {
+    st->print("(default)");
+  }
+}
+#endif // __GLIBC__
+
 void os::Linux::print_process_memory_info(outputStream* st) {
 
   st->print_cr("Process Memory:");
@@ -2114,8 +2143,9 @@ void os::Linux::print_process_memory_info(outputStream* st) {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
-  // Print glibc outstanding allocations.
-  // (note: there is no implementation of mallinfo for muslc)
+  // glibc only:
+  // - Print outstanding allocations using mallinfo
+  // - Print glibc tunables
 #ifdef __GLIBC__
   size_t total_allocated = 0;
   bool might_have_wrapped = false;
@@ -2123,9 +2153,10 @@ void os::Linux::print_process_memory_info(outputStream* st) {
     struct glibc_mallinfo2 mi = _mallinfo2();
     total_allocated = mi.uordblks;
   } else if (_mallinfo != NULL) {
-    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-    // So values may have wrapped around. Still useful enough to see how much glibc thinks
-    // we allocated.
+    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are 32-bit signed.
+    // So for larger footprints the values may have wrapped around. We try to detect this here: if the
+    // process whole resident set size is smaller than 4G, malloc footprint has to be less than that
+    // and the numbers are reliable.
     struct glibc_mallinfo mi = _mallinfo();
     total_allocated = (size_t)(unsigned)mi.uordblks;
     // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
@@ -2136,8 +2167,10 @@ void os::Linux::print_process_memory_info(outputStream* st) {
                  total_allocated / K,
                  might_have_wrapped ? " (may have wrapped)" : "");
   }
-#endif // __GLIBC__
-
+  // Tunables
+  print_glibc_malloc_tunables(st);
+  st->cr();
+#endif
 }
 
 bool os::Linux::print_ld_preload_file(outputStream* st) {
@@ -2174,7 +2207,11 @@ bool os::Linux::print_container_info(outputStream* st) {
   int i = OSContainer::active_processor_count();
   st->print("active_processor_count: ");
   if (i > 0) {
-    st->print_cr("%d", i);
+    if (ActiveProcessorCount > 0) {
+      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount %d", i, ActiveProcessorCount);
+    } else {
+      st->print_cr("%d", i);
+    }
   } else {
     st->print_cr("not supported");
   }
@@ -2459,6 +2496,8 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, "IA64", length);
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
+#elif defined(RISCV)
+  strncpy(cpuinfo, "RISCV64", length);
 #elif defined(S390)
   strncpy(cpuinfo, "S390", length);
 #elif defined(SPARC)
@@ -3935,23 +3974,14 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   return addr;
 }
 
-static void warn_on_commit_special_failure(char* req_addr, size_t bytes,
+static void log_on_commit_special_failure(char* req_addr, size_t bytes,
                                            size_t page_size, int error) {
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
-  bool warn_on_failure = UseLargePages &&
-      (!FLAG_IS_DEFAULT(UseLargePages) ||
-       !FLAG_IS_DEFAULT(UseHugeTLBFS) ||
-       !FLAG_IS_DEFAULT(LargePageSizeInBytes));
-
-  if (warn_on_failure) {
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory. req_addr: "
-                                   PTR_FORMAT " bytes: " SIZE_FORMAT " page size: "
-                                   SIZE_FORMAT " (errno = %d).",
-                                   req_addr, bytes, page_size, error);
-    warning("%s", msg);
-  }
+  log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
+                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
+                     p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
+                     byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
 
 bool os::Linux::commit_memory_special(size_t bytes,
@@ -3973,7 +4003,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
-    warn_on_commit_special_failure(req_addr, bytes, page_size, errno);
+    log_on_commit_special_failure(req_addr, bytes, page_size, errno);
     return false;
   }
 
@@ -5380,21 +5410,20 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
+  // Note: all ranges are "[..)"
   unsigned long long start = (unsigned long long)addr;
   unsigned long long end = start + bytes;
   FILE* f = os::fopen("/proc/self/maps", "r");
   int num_found = 0;
   if (f != NULL) {
-    st->print("Range [%llx-%llx) contains: ", start, end);
+    st->print_cr("Range [%llx-%llx) contains: ", start, end);
     char line[512];
     while(fgets(line, sizeof(line), f) == line) {
-      unsigned long long a1 = 0;
-      unsigned long long a2 = 0;
-      if (::sscanf(line, "%llx-%llx", &a1, &a2) == 2) {
+      unsigned long long segment_start = 0;
+      unsigned long long segment_end = 0;
+      if (::sscanf(line, "%llx-%llx", &segment_start, &segment_end) == 2) {
         // Lets print out every range which touches ours.
-        if ((a1 >= start && a1 < end) || // left leg in
-            (a2 >= start && a2 < end) || // right leg in
-            (a1 < start && a2 >= end)) { // superimposition
+        if (segment_start < end && segment_end > start) {
           num_found ++;
           st->print("%s", line); // line includes \n
         }
@@ -5402,7 +5431,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     ::fclose(f);
     if (num_found == 0) {
-      st->print("nothing.");
+      st->print_cr("nothing.");
     }
     st->cr();
   }

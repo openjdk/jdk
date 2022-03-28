@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,7 +86,8 @@ public final class CfgFile {
         }
 
         if (!currentSection.isEmpty()) {
-            result.put("", Collections.unmodifiableMap(currentSection));
+            result.put(Optional.ofNullable(currentSectionName).orElse(""),
+                    Collections.unmodifiableMap(currentSection));
         }
 
         return new CfgFile(Collections.unmodifiableMap(result), path.toString());

@@ -30,11 +30,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
-
-inline HeapWord* G1BlockOffsetTablePart::align_up_by_card_size(HeapWord* const addr) const {
-  assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
-  return align_up(addr, BOTConstants::card_size());
-}
+#include "oops/oop.inline.hpp"
 
 inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
@@ -144,7 +140,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWo
         "start of block must be an initialized object");
     n += block_size(q);
   }
-  assert(q <= n, "wrong order for q and addr");
+  assert(q <= addr, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");
   return q;
 }

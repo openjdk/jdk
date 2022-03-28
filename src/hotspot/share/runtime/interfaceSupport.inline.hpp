@@ -54,7 +54,7 @@ class InterfaceSupport: AllStatic {
  public:
   static unsigned int _scavenge_alot_counter;
   static unsigned int _fullgc_alot_counter;
-  static int _fullgc_alot_invocation;
+  static intx _fullgc_alot_invocation;
 
   // Helper methods used to implement +ScavengeALot and +FullGCALot
   static void check_gc_alot() { if (ScavengeALot || FullGCALot) gc_alot(); }

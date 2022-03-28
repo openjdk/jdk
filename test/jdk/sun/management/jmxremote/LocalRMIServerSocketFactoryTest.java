@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,17 +64,17 @@ public class LocalRMIServerSocketFactoryTest {
         }
 
 
-        // case of 6674166: this is very unlikely to happen, even if
-        //     both 6674166 and 6774170 aren't fixed. If it happens
+        // case of 6774166: this is very unlikely to happen, even if
+        //     both 6774166 and 6774170 aren't fixed. If it happens
         //     however, it might indicate that neither defects are fixed.
 
         if (x instanceof NullPointerException) {
             throw new Exception(message + " - " +
-                    "Congratulations! it seems you have triggered 6674166. " +
-                    "Neither 6674166 nor 6774170 seem to be fixed: " + x, x);
+                    "Congratulations! it seems you have triggered 6774166. " +
+                    "Neither 6774166 nor 6774170 seem to be fixed: " + x, x);
         } else if (x instanceof IOException) {
             throw new Exception(message + " - " +
-                    "Unexpected IOException. Maybe you triggered 6674166? " +
+                    "Unexpected IOException. Maybe you triggered 6774166? " +
                     x, x);
         } else if (x != null) {
             throw new Exception(message + " - " +

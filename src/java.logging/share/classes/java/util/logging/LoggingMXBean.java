@@ -52,6 +52,7 @@ package java.util.logging;
  * @see java.management/java.lang.management.PlatformLoggingMXBean
  */
 @Deprecated(since="9")
+@SuppressWarnings("doclint:reference")
 public interface LoggingMXBean {
 
     /**

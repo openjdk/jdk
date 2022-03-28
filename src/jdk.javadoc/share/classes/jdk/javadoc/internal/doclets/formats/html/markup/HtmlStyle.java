@@ -48,19 +48,13 @@ import java.util.regex.Pattern;
  * or {@link javax.lang.model.element.Element "language model elements"}.
  * The usage is made explicit when it is not clear from the surrounding context.
  *
+ * @apiNote
+ * The stylized use of {@code editor-fold} comments and line comments (beginning {@code //})
+ * is to support extracting details of declarations with external tools.  Edit with care!
+ *
  * @see <a href="https://html.spec.whatwg.org/#classes">WhatWG: {@code class} attribute</a>
  */
 public enum HtmlStyle {
-
-    /**
-     * The class of the {@code div} element containing a snippet element.
-     */
-    snippetContainer,
-
-    /**
-     * The class of the {@code a} element to copy snippet content to the clipboard.
-     */
-    snippetCopy,
 
     //<editor-fold desc="navigation bar">
     //
@@ -325,17 +319,6 @@ public enum HtmlStyle {
     propertyDetails,
 
     /**
-     * The class for the list containing the {@code @see} tags of an element.
-     */
-    seeList,
-
-    /**
-     * The class for the list containing the {@code @see} tags of an element
-     * when some of the tags have longer labels.
-     */
-    seeListLong,
-
-    /**
      * The class for a {@code section} element containing details of the
      * serialized form of an element, on the "Serialized Form" page.
      */
@@ -390,6 +373,17 @@ public enum HtmlStyle {
      * of a declaration.
      */
     previewLabel,
+
+    /**
+     * The class for the list containing the {@code @see} tags of an element.
+     */
+    seeList,
+
+    /**
+     * The class for the list containing the {@code @see} tags of an element
+     * when some of the tags have longer labels.
+     */
+    seeListLong,
 
     //</editor-fold>
 
@@ -844,6 +838,44 @@ public enum HtmlStyle {
 
     //</editor-fold>
 
+    //<editor-fold desc="snippets">
+    //
+    // The following constants are used for the contents of snippets.
+    // In addition, the translation of a snippet may use the class
+    // {@code language-LANG} where LANG is either specified explicitly
+    // by the "lang" attribute in a snippet tag, or can be inferred
+    // from the kind of an external snippet.
+
+    /**
+     * The class of the {@code pre} element presenting a snippet.
+     */
+    snippet,
+
+    /**
+     * The class of the {@code div} element containing a snippet element.
+     */
+    snippetContainer,
+
+    /**
+     * The class of the UI element to copy snippet content to the clipboard.
+     */
+    snippetCopy,
+
+    /**
+     * The class of text highlighted with the type {@code bold}.
+     */
+    bold,
+
+    /**
+     * The class of text highlighted with the type {@code italic}.
+     */
+    italic,
+
+    /**
+     * The class of text highlighted with the type {@code highlighted}.
+     */
+    highlighted,
+
     //<editor-fold desc="miscellaneous">
     //
     // The following constants are used in various places across a variety of pages.
@@ -908,7 +940,8 @@ public enum HtmlStyle {
     inheritedList,
 
     /**
-     * The class of an element that acts as a notification for an invalid tag.
+     * The class of an element that acts as a notification for an invalid tag
+     * or other invalid items.
      */
     invalidTag,
 
@@ -923,7 +956,7 @@ public enum HtmlStyle {
     memberNameLink,
 
     /**
-     * The class for a {@code dl} element containing serial UID information in
+     * The class of a {@code dl} element containing serial UID information in
      * the serialized form page.
      */
     nameValue,
@@ -963,11 +996,6 @@ public enum HtmlStyle {
      * source page.
      */
     sourceLineNo,
-
-    /**
-     * The class of the {@code pre} element presenting a snippet.
-     */
-    snippet,
 
     /**
      * The class of an {@code a} element for a link to a class or interface.

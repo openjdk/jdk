@@ -1886,7 +1886,7 @@ public class StyleSheet extends StyleContext {
          *  used to get the AttributeSet, and may be used to
          *  resolve percentage arguments.
          * @return the inset needed for the margin, border and padding.
-         * @exception IllegalArgumentException for an invalid direction
+         * @throws IllegalArgumentException for an invalid direction
          */
         public float getInset(int side, View v) {
             AttributeSet a = v.getAttributes();

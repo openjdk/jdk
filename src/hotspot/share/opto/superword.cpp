@@ -95,38 +95,48 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
 
 //------------------------------transform_loop---------------------------
-void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
+bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   assert(UseSuperWord, "should be");
   // SuperWord only works with power of two vector sizes.
   int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
   if (vector_width < 2 || !is_power_of_2(vector_width)) {
-    return;
+    return false;
   }
 
   assert(lpt->_head->is_CountedLoop(), "must be");
   CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-  if (!cl->is_valid_counted_loop(T_INT)) return; // skip malformed counted loop
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    return false; // skip malformed counted loop
+  }
 
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (post_loop_allowed) {
-    if (cl->is_reduction_loop()) return; // no predication mapping
+    if (cl->is_reduction_loop()) {
+      return false; // no predication mapping
+    }
     Node *limit = cl->limit();
-    if (limit->is_Con()) return; // non constant limits only
+    if (limit->is_Con()) {
+      return false; // non constant limits only
+    }
     // Now check the limit for expressions we do not handle
     if (limit->is_Add()) {
       Node *in2 = limit->in(2);
       if (in2->is_Con()) {
         int val = in2->get_int();
         // should not try to program these cases
-        if (val < 0) return;
+        if (val < 0) {
+          return false;
+        }
       }
     }
   }
 
   // skip any loop that has not been assigned max unroll by analysis
   if (do_optimization) {
-    if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) return;
+    if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) {
+      return false;
+    }
   }
 
   // Check for no control flow in body (other than exit)
@@ -141,28 +151,32 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
         lpt->dump_head();
       }
     #endif
-    return;
+    return false;
   }
 
   // Make sure the are no extra control users of the loop backedge
   if (cl->back_control()->outcnt() != 1) {
-    return;
+    return false;
   }
 
   // Skip any loops already optimized by slp
-  if (cl->is_vectorized_loop()) return;
+  if (cl->is_vectorized_loop()) {
+    return false;
+  }
 
-  if (cl->is_unroll_only()) return;
+  if (cl->is_unroll_only()) {
+    return false;
+  }
 
   if (cl->is_main_loop()) {
     // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
     CountedLoopEndNode* pre_end = find_pre_loop_end(cl);
     if (pre_end == NULL) {
-      return;
+      return false;
     }
     Node* pre_opaq1 = pre_end->limit();
     if (pre_opaq1->Opcode() != Op_Opaque1) {
-      return;
+      return false;
     }
     set_pre_loop_end(pre_end);
   }
@@ -175,9 +189,10 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   // For now, define one block which is the entire loop body
   set_bb(cl);
 
+  bool success = true;
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
-    SLP_extract();
+    success = SLP_extract();
     if (PostLoopMultiversioning && Matcher::has_predicated_vectors()) {
       if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
         IdealLoopTree *lpt_next = lpt->_next;
@@ -192,6 +207,7 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
       }
     }
   }
+  return success;
 }
 
 //------------------------------early unrolling analysis------------------------------
@@ -451,7 +467,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 //    inserting scalar promotion, vector creation from multiple scalars, and
 //    extraction of scalar values from vectors.
 //
-void SuperWord::SLP_extract() {
+bool SuperWord::SLP_extract() {
 
 #ifndef PRODUCT
   if (_do_vector_loop && TraceSuperWord) {
@@ -466,7 +482,7 @@ void SuperWord::SLP_extract() {
 #endif
   // Ready the block
   if (!construct_bb()) {
-    return; // Exit if no interesting nodes or complex graph.
+    return false; // Exit if no interesting nodes or complex graph.
   }
 
   // build    _dg, _disjoint_ptrs
@@ -483,7 +499,7 @@ void SuperWord::SLP_extract() {
         hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
 
         if (!construct_bb()) {
-          return; // Exit if no interesting nodes or complex graph.
+          return false; // Exit if no interesting nodes or complex graph.
         }
         dependence_graph();
         compute_max_depth();
@@ -511,7 +527,7 @@ void SuperWord::SLP_extract() {
     find_adjacent_refs();
 
     if (align_to_ref() == NULL) {
-      return; // Did not find memory reference to align vectors
+      return false; // Did not find memory reference to align vectors
     }
 
     extend_packlist();
@@ -563,15 +579,15 @@ void SuperWord::SLP_extract() {
         // map base types for vector usage
         compute_vector_element_type();
       } else {
-        return;
+        return false;
       }
     } else {
       // for some reason we could not map the slp analysis state of the vectorized loop
-      return;
+      return false;
     }
   }
 
-  output();
+  return output();
 }
 
 //------------------------------find_adjacent_refs---------------------------
@@ -2385,17 +2401,11 @@ void SuperWord::print_loop(bool whole) {
 
 //------------------------------output---------------------------
 // Convert packs into vector node operations
-void SuperWord::output() {
+bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   Compile* C = _phase->C;
   if (_packset.length() == 0) {
-    if (cl->is_main_loop()) {
-      // Instigate more unrolling for optimization when vectorization fails.
-      C->set_major_progress();
-      cl->set_notpassed_slp();
-      cl->mark_do_unroll_only();
-    }
-    return;
+    return false;
   }
 
 #ifndef PRODUCT
@@ -2429,7 +2439,7 @@ void SuperWord::output() {
 
   if (do_reserve_copy() && !make_reversable.has_reserved()) {
     NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: loop was not reserved correctly, exiting SuperWord");})
-    return;
+    return false;
   }
 
   for (int i = 0; i < _block.length(); i++) {
@@ -2474,7 +2484,7 @@ void SuperWord::output() {
         if (val == NULL) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: val should not be NULL, exiting SuperWord");})
-            return; //and reverse to backup IG
+            return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
         }
@@ -2518,7 +2528,7 @@ void SuperWord::output() {
           if (in1 == NULL) {
             if (do_reserve_copy()) {
               NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: in1 should not be NULL, exiting SuperWord");})
-              return; //and reverse to backup IG
+              return false; //and reverse to backup IG
             }
             ShouldNotReachHere();
           }
@@ -2527,7 +2537,7 @@ void SuperWord::output() {
         if (in2 == NULL) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: in2 should not be NULL, exiting SuperWord");})
-            return; //and reverse to backup IG
+            return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
         }
@@ -2569,7 +2579,7 @@ void SuperWord::output() {
       } else if (is_cmov_pack(p)) {
         if (can_process_post_loop) {
           // do not refactor of flow in post loop context
-          return;
+          return false;
         }
         if (!n->is_CMove()) {
           continue;
@@ -2586,7 +2596,7 @@ void SuperWord::output() {
         if (!bol->is_Bool()) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: expected %d bool node, exiting SuperWord", bol->_idx); bol->dump();})
-            return; //and reverse to backup IG
+            return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
         }
@@ -2602,7 +2612,7 @@ void SuperWord::output() {
         if (src1 == NULL) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: src1 should not be NULL, exiting SuperWord");})
-            return; //and reverse to backup IG
+            return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
         }
@@ -2610,7 +2620,7 @@ void SuperWord::output() {
         if (src2 == NULL) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: src2 should not be NULL, exiting SuperWord");})
-            return; //and reverse to backup IG
+            return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
         }
@@ -2634,7 +2644,7 @@ void SuperWord::output() {
       } else {
         if (do_reserve_copy()) {
           NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: ShouldNotReachHere, exiting SuperWord");})
-          return; //and reverse to backup IG
+          return false; //and reverse to backup IG
         }
         ShouldNotReachHere();
       }
@@ -2643,7 +2653,7 @@ void SuperWord::output() {
       if (vn == NULL) {
         if (do_reserve_copy()){
           NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: got NULL node, cannot proceed, exiting SuperWord");})
-          return; //and reverse to backup IG
+          return false; //and reverse to backup IG
         }
         ShouldNotReachHere();
       }
@@ -2661,7 +2671,7 @@ void SuperWord::output() {
         // first check if the vector size if the maximum vector which we can use on the machine,
         // other vector size have reduced values for predicated data mapping.
         if (vlen_in_bytes != (uint)MaxVectorSize) {
-          return;
+          return false;
         }
       }
 
@@ -2734,7 +2744,7 @@ void SuperWord::output() {
     make_reversable.use_new();
   }
   NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
-  return;
+  return true;
 }
 
 //------------------------------vector_opd---------------------------

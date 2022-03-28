@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,14 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/method.hpp"
 #include "unittest.hpp"
 
 // Tests for InstanceKlass::is_class_loader_instance_klass() function
@@ -62,3 +65,21 @@ TEST_VM(InstanceKlass, class_loader_printer) {
   ASSERT_TRUE(strstr(st.as_string(), "'java/lang/ClassLoader'") != NULL) << "Must be in ClassLoader";
 #endif
 }
+
+#ifndef PRODUCT
+// This class is friends with Method.
+class MethodTest : public ::testing::Test{
+ public:
+  static void compare_names(Method* method, Symbol* name) {
+    ASSERT_EQ(method->_name, name) << "Method name field isn't set";
+  }
+};
+
+TEST_VM(Method, method_name) {
+  InstanceKlass* ik = vmClasses::Object_klass();
+  Symbol* tostring = SymbolTable::new_symbol("toString");
+  Method* method = ik->find_method(tostring, vmSymbols::void_string_signature());
+  ASSERT_TRUE(method != nullptr) << "Object must have toString";
+  MethodTest::compare_names(method, tostring);
+}
+#endif

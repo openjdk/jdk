@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,10 +501,6 @@
                                                                             \
   product(intx, PrefetchScanIntervalInBytes, -1,                            \
           "How far ahead to prefetch scan area (<= 0 means off)")           \
-          range(-1, max_jint)                                               \
-                                                                            \
-  product(intx, PrefetchFieldsAhead, -1,                                    \
-          "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
           range(-1, max_jint)                                               \
                                                                             \
   product(bool, VerifyDuringStartup, false, DIAGNOSTIC,                     \

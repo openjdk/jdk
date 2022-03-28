@@ -46,7 +46,6 @@ import java.util.ArrayList;
  * @author David Karlton
  * @author Arnaud Weber
  */
-@SuppressWarnings("doclint:missing")
 public class BasicMenuUI extends BasicMenuItemUI
 {
     /**

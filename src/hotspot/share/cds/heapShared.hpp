@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_HEAPSHARED_HPP
 #define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
@@ -43,6 +44,7 @@
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings;
 class FileMapInfo;
+class KlassSubGraphInfo;
 
 struct ArchivableStaticFieldInfo {
   const char* klass_name;
@@ -159,7 +161,7 @@ public:
       if (_disable_writing) {
         return false;
       }
-      return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);
+      return (UseG1GC && UseCompressedClassPointers);
     )
     NOT_CDS_JAVA_HEAP(return false;)
   }
@@ -169,7 +171,7 @@ public:
   }
   // Can this VM map archived heap regions? Currently only G1+compressed{oops,cp}
   static bool can_map() {
-    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
+    CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
   static bool is_mapped() {
@@ -193,7 +195,7 @@ public:
   static bool is_fully_available() {
     return is_loaded() || is_mapped();
   }
-
+  static bool is_subgraph_root_class(InstanceKlass* ik);
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
@@ -228,29 +230,35 @@ public:
     assert(is_in_loaded_heap(o), "must be");
   }
 
+  struct CachedOopInfo {
+    KlassSubGraphInfo* _subgraph_info;
+    oop _referrer;
+    oop _obj;
+    CachedOopInfo() :_subgraph_info(), _referrer(), _obj() {}
+  };
+
 private:
+  static void check_enum_obj(int level,
+                             KlassSubGraphInfo* subgraph_info,
+                             oop orig_obj,
+                             bool is_closed_archive);
   static bool is_in_loaded_heap(uintptr_t o) {
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
 
-  typedef ResourceHashtable<oop, oop,
+  typedef ResourceHashtable<oop, CachedOopInfo,
       15889, // prime number
       ResourceObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
-  static unsigned klass_hash(Klass* const& klass) {
-    // Generate deterministic hashcode even if SharedBaseAddress is changed due to ASLR.
-    return primitive_hash<address>(address(klass) - SharedBaseAddress);
-  }
-
   class DumpTimeKlassSubGraphInfoTable
     : public ResourceHashtable<Klass*, KlassSubGraphInfo,
                                137, // prime number
                                ResourceObj::C_HEAP,
                                mtClassShared,
-                               HeapShared::klass_hash> {
+                               DumpTimeSharedClassTable_hash> {
   public:
     int _count;
   };
@@ -272,7 +280,7 @@ private:
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
   static void check_closed_region_object(InstanceKlass* k);
-
+  static CachedOopInfo make_cached_oop_info(oop orig_obj);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        int num,
                                        bool is_closed_archive,
@@ -297,9 +305,12 @@ private:
   static void init_subgraph_entry_fields(ArchivableStaticFieldInfo fields[],
                                          int num, TRAPS);
 
-  // Used by decode_from_archive
+  // UseCompressedOops only: Used by decode_from_archive
   static address _narrow_oop_base;
   static int     _narrow_oop_shift;
+
+  // !UseCompressedOops only: used to relocate pointers to the archived objects
+  static ptrdiff_t _runtime_delta;
 
   typedef ResourceHashtable<oop, bool,
       15889, // prime number
@@ -418,9 +429,21 @@ private:
 
   // Run-time only
   static void clear_root(int index);
+
+  static void set_runtime_delta(ptrdiff_t delta) {
+    assert(!UseCompressedOops, "must be");
+    _runtime_delta = delta;
+  }
+
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static ptrdiff_t runtime_delta() {
+    assert(!UseCompressedOops, "must be");
+    CDS_JAVA_HEAP_ONLY(return _runtime_delta;)
+    NOT_CDS_JAVA_HEAP_RETURN_(0L);
+  }
+
   static void run_full_gc_in_vm_thread() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_heap_region(int idx) {
@@ -467,6 +490,7 @@ private:
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

@@ -270,7 +270,7 @@ public abstract class AbstractWriter {
      * when encountered.
      *
      * @param     elem an <code>Element</code>
-     * @exception BadLocationException if pos represents an invalid
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document
      * @return    the text as a <code>String</code>
      */
@@ -286,8 +286,8 @@ public abstract class AbstractWriter {
      * out.
      *
      * @param     elem an Element.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *            location within the document.
      */
     protected void text(Element elem) throws BadLocationException,
@@ -462,7 +462,7 @@ public abstract class AbstractWriter {
      * line is empty, this will not make it so that the current line is
      * still considered empty.
      *
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void indent() throws IOException {
         int max = getIndentLevel() * getIndentSpace();
@@ -485,7 +485,7 @@ public abstract class AbstractWriter {
      * the <code>write</code> method that takes a char[].
      *
      * @param     ch a char.
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void write(char ch) throws IOException {
         if (tempChars == null) {
@@ -500,7 +500,7 @@ public abstract class AbstractWriter {
      * <code>write</code> method that takes a char[].
      *
      * @param     content a String.
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void write(String content) throws IOException {
         if (content == null) {
@@ -671,7 +671,7 @@ public abstract class AbstractWriter {
      * pairs. It throws an IOException when encountered.
      *
      * @param     attr an AttributeSet.
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     protected void writeAttributes(AttributeSet attr) throws IOException {
 

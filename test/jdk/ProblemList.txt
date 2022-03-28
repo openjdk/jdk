@@ -542,6 +542,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/Enum/ConstantDirectoryOptimalCapacity.java            8282120 generic-all
 
 ############################################################################
 
@@ -596,7 +597,6 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8219083 windows-all
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
-
 
 ############################################################################
 
@@ -759,6 +759,8 @@ javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 
 # jdk_time
 
+java/time/test/java/time/TestZoneOffset.java                    8283716 generic-all
+
 
 ############################################################################
 
@@ -820,13 +822,13 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 generic-all
+jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 macosx-all,linux-all,windows-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/event/oldobject/TestLargeRootSet.java                   8276333 generic-x64
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
+jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
 ############################################################################
 

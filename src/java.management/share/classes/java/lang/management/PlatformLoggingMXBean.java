@@ -46,6 +46,7 @@ package java.lang.management;
  *
  * @since   1.7
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public interface PlatformLoggingMXBean extends PlatformManagedObject {
 
     /**

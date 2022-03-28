@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,9 +329,8 @@ class Universe: AllStatic {
   // CDS support
   static void serialize(SerializeClosure* f);
 
-  // Apply "f" to all klasses for basic types (classes not present in
+  // Apply the closure to all klasses for basic types (classes not present in
   // SystemDictionary).
-  static void basic_type_classes_do(void f(Klass*));
   static void basic_type_classes_do(KlassClosure* closure);
   static void metaspace_pointers_do(MetaspaceClosure* it);
 

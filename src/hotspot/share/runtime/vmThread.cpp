@@ -96,8 +96,8 @@ void VMOperationTimeoutTask::disarm() {
 //------------------------------------------------------------------------------------------------------------------
 // Implementation of VMThread stuff
 
-static VM_None    safepointALot_op("SafepointALot");
-static VM_Cleanup cleanup_op;
+static VM_SafepointALot safepointALot_op;
+static VM_Cleanup       cleanup_op;
 
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
@@ -147,7 +147,7 @@ void VMThread::destroy() {
   _vm_thread = NULL;      // VM thread is gone
 }
 
-static VM_None halt_op("Halt");
+static VM_Halt halt_op;
 
 void VMThread::run() {
   assert(this == vm_thread(), "check");

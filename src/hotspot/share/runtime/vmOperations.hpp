@@ -32,19 +32,41 @@
 
 // A hodge podge of commonly used VM Operations
 
-class VM_None: public VM_Operation {
-  const char* _reason;
- public:
-  VM_None(const char* reason) : _reason(reason) {}
-  const char* name() const { return _reason; }
-  VMOp_Type type() const { return VMOp_None; }
-  void doit() {};
+class VM_EmptyOperation : public VM_Operation {
+public:
+  virtual void doit() final {}
+  virtual bool skip_thread_oop_barriers() const final {
+    // Neither the doit function nor the the safepoint
+    // cleanup tasks read oops in the Java threads.
+    return true;
+  }
 };
 
-class VM_Cleanup: public VM_Operation {
+class VM_Halt: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_Halt; }
+};
+
+class VM_SafepointALot: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_SafepointALot; }
+};
+
+class VM_Cleanup: public VM_EmptyOperation {
  public:
   VMOp_Type type() const { return VMOp_Cleanup; }
-  void doit() {};
+};
+
+// empty vm op, evaluated just to force a safepoint
+class VM_ForceSafepoint: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_ForceSafepoint; }
+};
+
+// empty vm op, when forcing a safepoint due to inline cache buffers being full
+class VM_ICBufferFull: public VM_EmptyOperation {
+ public:
+  VMOp_Type type() const { return VMOp_ICBufferFull; }
 };
 
 class VM_ClearICs: public VM_Operation {
@@ -54,32 +76,6 @@ class VM_ClearICs: public VM_Operation {
   VM_ClearICs(bool preserve_static_stubs) { _preserve_static_stubs = preserve_static_stubs; }
   void doit();
   VMOp_Type type() const { return VMOp_ClearICs; }
-};
-
-// empty vm op, evaluated just to force a safepoint
-class VM_ForceSafepoint: public VM_Operation {
- public:
-  void doit()         {}
-  VMOp_Type type() const { return VMOp_ForceSafepoint; }
-};
-
-// empty vm op, when forcing a safepoint to suspend a thread
-class VM_ThreadSuspend: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_ThreadSuspend; }
-};
-
-// empty vm op, when forcing a safepoint to suspend threads from jvmti
-class VM_ThreadsSuspendJVMTI: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_ThreadsSuspendJVMTI; }
-};
-
-// empty vm op, when forcing a safepoint due to inline cache buffers being full
-class VM_ICBufferFull: public VM_ForceSafepoint {
- public:
-  VMOp_Type type() const { return VMOp_ICBufferFull; }
-  virtual bool skip_thread_oop_barriers() const { return true; }
 };
 
 // Base class for invoking parts of a gtest in a safepoint.

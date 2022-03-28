@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -793,6 +793,13 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
   }
 }
 
+void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
+  assert(DumpSharedSpaces, "static dump only");
+  DumpTimeClassInfo* info = SystemDictionaryShared::find_or_allocate_info_for_locked(ik);
+  assert(info != NULL, "must be");
+  info->add_enum_klass_static_field(root_index);
+}
+
 void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
                                                            InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
@@ -1174,7 +1181,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
-      size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
+      size_t byte_size = info.runtime_info_bytesize();
       _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
     }
     return true; // keep on iterating
@@ -1283,7 +1290,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
-      size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
+      size_t byte_size = info.runtime_info_bytesize();
       RunTimeClassInfo* record;
       record = (RunTimeClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
       record->init(info);
@@ -1415,6 +1422,11 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
+    // We did not save the classfile data of the regenerated LambdaForm invoker classes,
+    // so we cannot support CLFH for such classes.
+    if (record->_klass->is_regenerated() && JvmtiExport::should_post_class_file_load_hook()) {
+       return NULL;
+    }
     return record->_klass;
   } else {
     return NULL;

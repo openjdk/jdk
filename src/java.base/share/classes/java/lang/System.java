@@ -1240,6 +1240,7 @@ public final class System {
          * @see java.lang.System.LoggerFinder
          * @see java.lang.System.Logger
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public enum Level {
 
             // for convenience, we're reusing java.util.logging.Level int values
@@ -1600,6 +1601,7 @@ public final class System {
      *
      * @since 9
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public abstract static class LoggerFinder {
         /**
          * The {@code RuntimePermission("loggerFinder")} is

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -453,7 +453,7 @@ public class HtmlDocletWriter {
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
         additionalStylesheets.addAll(localStylesheets);
-        Head head = new Head(path, configuration.getDocletVersion(), configuration.startTime)
+        Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
                 .setGenerator(getGenerator(getClass()))
@@ -1009,6 +1009,10 @@ public class HtmlDocletWriter {
                     case REFERENCE -> {
                         // @see reference label...
                         label = ref.subList(1, ref.size());
+                    }
+                    case ERRONEOUS -> {
+                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input", seeText),
+                                Optional.empty());
                     }
                     default ->
                         throw new IllegalStateException(ref.get(0).getKind().toString());
@@ -2397,6 +2401,10 @@ public class HtmlDocletWriter {
         Set<DeclarationPreviewLanguageFeatures> previewLanguageFeatures = new HashSet<>();
         for (Element enclosed : el.getEnclosedElements()) {
             if (!utils.isIncluded(enclosed)) {
+                continue;
+            }
+            if (utils.isPreviewAPI(enclosed)) {
+                //for class summary, ignore methods that are themselves preview:
                 continue;
             }
             if (!enclosed.getKind().isClass() && !enclosed.getKind().isInterface()) {
