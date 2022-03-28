@@ -26,6 +26,7 @@
 
 #include "prims/foreign_globals.hpp"
 
+#include "classfile/javaClasses.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oopCast.inline.hpp"

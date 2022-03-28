@@ -23,7 +23,8 @@
 
 #include "precompiled.hpp"
 #include "code/vmreg.hpp"
-#include "prims/foreign_globals.hpp"#include "utilities/debug.hpp"
+#include "prims/foreign_globals.hpp"
+#include "utilities/debug.hpp"
 
 class MacroAssembler;
 

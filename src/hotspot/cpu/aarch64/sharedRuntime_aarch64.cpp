@@ -970,16 +970,6 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
   }
 }
 
-static void rt_call(MacroAssembler* masm, address dest) {
-  CodeBlob *cb = CodeCache::find_blob(dest);
-  if (cb) {
-    __ far_call(RuntimeAddress(dest));
-  } else {
-    __ lea(rscratch1, RuntimeAddress(dest));
-    __ blr(rscratch1);
-  }
-}
-
 static void verify_oop_args(MacroAssembler* masm,
                             const methodHandle& method,
                             const BasicType* sig_bt,

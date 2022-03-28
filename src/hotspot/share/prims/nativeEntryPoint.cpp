@@ -73,34 +73,6 @@ JNI_ENTRY(jlong, NEP_makeInvoker(JNIEnv* env, jclass _unused, jobject method_typ
     output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
   }
 
-#ifdef ASSERT
-  LogTarget(Trace, panama) lt;
-  if (lt.is_enabled()) {
-    ResourceMark rm;
-    LogStream ls(lt);
-    ls.print_cr("Generating native invoker {");
-    ls.print("BasicType { ");
-    for (int i = 0; i < pslots; i++) {
-      ls.print("%s, ", null_safe_string(type2name(basic_type[i])));
-    }
-    ls.print_cr("}");
-    ls.print_cr("shadow_space_bytes = %d", abi._shadow_space_bytes);
-    ls.print("input_registers { ");
-    for (int i = 0; i < input_regs.length(); i++) {
-      VMReg reg = input_regs.at(i);
-      ls.print("%s (" INTPTR_FORMAT "), ", reg->name(), reg->value());
-    }
-    ls.print_cr("}");
-      ls.print("output_registers { ");
-    for (int i = 0; i < output_regs.length(); i++) {
-      VMReg reg = output_regs.at(i);
-      ls.print("%s (" INTPTR_FORMAT "), ", reg->name(), reg->value());
-    }
-    ls.print_cr("}");
-    ls.print_cr("}");
-  }
-#endif
-
   return (jlong) ProgrammableInvoker::make_native_invoker(
     basic_type, pslots, ret_bt, abi, input_regs, output_regs, needs_return_buffer)->code_begin();
 JNI_END
