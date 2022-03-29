@@ -25,8 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DynamicConstantDesc;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -235,13 +233,6 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
     @Override
     boolean hasNaturalAlignment() {
         return alignment == elementLayout.bitAlignment();
-    }
-
-    @Override
-    public Optional<DynamicConstantDesc<SequenceLayout>> describeConstable() {
-        return Optional.of(decorateLayoutConstant(
-                DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "value",
-                        CD_SEQUENCE_LAYOUT, MH_SIZED_SEQUENCE, elemCount, elementLayout.describeConstable().get())));
     }
 
     //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout

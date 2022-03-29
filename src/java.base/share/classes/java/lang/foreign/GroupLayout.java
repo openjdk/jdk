@@ -25,10 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.constant.ConstantDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodHandleDesc;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -58,19 +54,17 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
         /**
          * A 'struct' kind.
          */
-        STRUCT("", MH_STRUCT, Long::sum),
+        STRUCT("", Long::sum),
         /**
          * A 'union' kind.
          */
-        UNION("|", MH_UNION, Math::max);
+        UNION("|", Math::max);
 
         final String delimTag;
-        final MethodHandleDesc mhDesc;
         final LongBinaryOperator sizeOp;
 
-        Kind(String delimTag, MethodHandleDesc mhDesc, LongBinaryOperator sizeOp) {
+        Kind(String delimTag, LongBinaryOperator sizeOp) {
             this.delimTag = delimTag;
-            this.mhDesc = mhDesc;
             this.sizeOp = sizeOp;
         }
 
@@ -171,18 +165,6 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
     @Override
     boolean hasNaturalAlignment() {
         return alignment == kind.alignof(elements);
-    }
-
-    @Override
-    public Optional<DynamicConstantDesc<GroupLayout>> describeConstable() {
-        ConstantDesc[] constants = new ConstantDesc[1 + elements.size()];
-        constants[0] = kind.mhDesc;
-        for (int i = 0 ; i < elements.size() ; i++) {
-            constants[i + 1] = elements.get(i).describeConstable().get();
-        }
-        return Optional.of(decorateLayoutConstant(DynamicConstantDesc.ofNamed(
-                    ConstantDescs.BSM_INVOKE, kind.name().toLowerCase(),
-                CD_GROUP_LAYOUT, constants)));
     }
 
     //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout

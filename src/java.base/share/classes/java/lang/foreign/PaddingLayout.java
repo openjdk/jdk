@@ -25,8 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DynamicConstantDesc;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -79,12 +77,6 @@ import java.util.Optional;
     @Override
     public boolean hasNaturalAlignment() {
         return true;
-    }
-
-    @Override
-    public Optional<DynamicConstantDesc<MemoryLayout>> describeConstable() {
-        return Optional.of(decorateLayoutConstant(DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "padding",
-                CD_MEMORY_LAYOUT, MH_PADDING, bitSize())));
     }
 
     //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout

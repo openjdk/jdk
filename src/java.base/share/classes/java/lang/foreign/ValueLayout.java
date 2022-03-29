@@ -25,8 +25,6 @@
  */
 package java.lang.foreign;
 
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -133,12 +131,6 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
     @Override
     ValueLayout dup(long alignment, Optional<String> name) {
         return new ValueLayout(carrier, order, bitSize(), alignment, name());
-    }
-
-    @Override
-    public Optional<DynamicConstantDesc<ValueLayout>> describeConstable() {
-        return Optional.of(decorateLayoutConstant(DynamicConstantDesc.ofNamed(ConstantDescs.BSM_INVOKE, "value",
-                CD_VALUE_LAYOUT, MH_VALUE, carrier().describeConstable().get(), order == ByteOrder.BIG_ENDIAN ? BIG_ENDIAN : LITTLE_ENDIAN)));
     }
 
     //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout
