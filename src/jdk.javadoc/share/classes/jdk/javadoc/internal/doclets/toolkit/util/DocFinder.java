@@ -126,7 +126,7 @@ public class DocFinder {
                      boolean isFirstSentence,
                      boolean isInheritDocTag) {
             this.utils = utils;
-            this.element = element;
+            this.element = Objects.requireNonNull(element);
             this.taglet = taglet;
             this.isFirstSentence = isFirstSentence;
             this.isInheritDocTag = isInheritDocTag;
@@ -134,14 +134,11 @@ public class DocFinder {
         }
 
         private Input copy(Utils utils) {
-            if (this.element == null) {
-                throw new NullPointerException();
-            }
-            Input clone = new Input(utils, this.element, this.taglet, this.docTreeInfo,
-                    this.isFirstSentence, this.isInheritDocTag);
-            clone.tagId = this.tagId;
-            clone.isTypeVariableParamTag = this.isTypeVariableParamTag;
-            return clone;
+            var copy = new Input(utils, element, taglet, docTreeInfo,
+                    isFirstSentence, isInheritDocTag);
+            copy.tagId = tagId;
+            copy.isTypeVariableParamTag = isTypeVariableParamTag;
+            return copy;
         }
 
         /**
