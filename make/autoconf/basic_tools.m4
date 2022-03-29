@@ -348,7 +348,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   UTIL_LOOKUP_PROGS(DTRACE, dtrace, $PATH:/usr/sbin)
   UTIL_LOOKUP_PROGS(PATCH, gpatch patch)
   # Check if it's GNU time
-  IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
+  [ IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU [Tt]ime'` ]
   if test "x$IS_GNU_TIME" != x; then
     IS_GNU_TIME=yes
   else

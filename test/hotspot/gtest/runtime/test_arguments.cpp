@@ -214,7 +214,7 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
 }
 
 struct Dummy {};
-static Dummy BAD;
+static Dummy BAD_INT;
 
 template <typename T>
 struct NumericArgument {
@@ -292,143 +292,143 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
 #define INTEGER_TEST_TABLE(f) \
   /*input                      i32           u32           i64                      u64 */ \
   f("0",                       0,            0,            0,                       0                        ) \
-  f("-0",                      0,            BAD,          0,                       BAD                      ) \
-  f("-1",                     -1,            BAD,         -1,                       BAD                      ) \
+  f("-0",                      0,            BAD_INT,      0,                       BAD_INT                  ) \
+  f("-1",                     -1,            BAD_INT,      -1,                      BAD_INT                  ) \
   f("0x1",                     1,            1,            1,                       1                        ) \
-  f("-0x1",                   -1,            BAD,         -1,                       BAD                      ) \
+  f("-0x1",                   -1,            BAD_INT,      -1,                      BAD_INT                  ) \
   f("4711",                    4711,         4711,         4711,                    4711                     ) \
   f("1K",                      1024,         1024,         1024,                    1024                     ) \
   f("1k",                      1024,         1024,         1024,                    1024                     ) \
   f("2M",                      2097152,      2097152,      2097152,                 2097152                  ) \
   f("2m",                      2097152,      2097152,      2097152,                 2097152                  ) \
   f("1G",                      1073741824,   1073741824,   1073741824,              1073741824               ) \
-  f("2G",                      BAD,          0x80000000,   2147483648LL,            2147483648ULL            ) \
-  f("1T",                      BAD,          BAD,          1099511627776LL,         1099511627776ULL         ) \
-  f("1t",                      BAD,          BAD,          1099511627776LL,         1099511627776ULL         ) \
-  f("-1K",                    -1024,         BAD,         -1024,                    BAD                      ) \
+  f("2G",                      BAD_INT,      0x80000000,   2147483648LL,            2147483648ULL            ) \
+  f("1T",                      BAD_INT,      BAD_INT,      1099511627776LL,         1099511627776ULL         ) \
+  f("1t",                      BAD_INT,      BAD_INT,      1099511627776LL,         1099511627776ULL         ) \
+  f("-1K",                    -1024,         BAD_INT,     -1024,                    BAD_INT                  ) \
   f("0x1K",                    1024,         1024,         1024,                    1024                     ) \
-  f("-0x1K",                  -1024,         BAD,         -1024,                    BAD                      ) \
+  f("-0x1K",                  -1024,         BAD_INT,     -1024,                    BAD_INT                  ) \
   f("0K",                      0,            0,            0,                       0                        ) \
-  f("0x1000000k",              BAD,          BAD,          17179869184LL,           17179869184ULL           ) \
-  f("0x800000m",               BAD,          BAD,          0x80000000000LL,         0x80000000000ULL         ) \
-  f("0x8000g",                 BAD,          BAD,          0x200000000000LL,        0x200000000000ULL        ) \
-  f("0x8000t",                 BAD,          BAD,          0x80000000000000LL,      0x80000000000000ULL      ) \
-  f("-0x1000000k",             BAD,          BAD,         -17179869184LL,           BAD                      ) \
-  f("-0x800000m",              BAD,          BAD,         -0x80000000000LL,         BAD                      ) \
-  f("-0x8000g",                BAD,          BAD,         -0x200000000000LL,        BAD                      ) \
-  f("-0x8000t",                BAD,          BAD,         -0x80000000000000LL,      BAD                      ) \
+  f("0x1000000k",              BAD_INT,      BAD_INT,      17179869184LL,           17179869184ULL           ) \
+  f("0x800000m",               BAD_INT,      BAD_INT,      0x80000000000LL,         0x80000000000ULL         ) \
+  f("0x8000g",                 BAD_INT,      BAD_INT,      0x200000000000LL,        0x200000000000ULL        ) \
+  f("0x8000t",                 BAD_INT,      BAD_INT,      0x80000000000000LL,      0x80000000000000ULL      ) \
+  f("-0x1000000k",             BAD_INT,      BAD_INT,     -17179869184LL,           BAD_INT                  ) \
+  f("-0x800000m",              BAD_INT,      BAD_INT,     -0x80000000000LL,         BAD_INT                  ) \
+  f("-0x8000g",                BAD_INT,      BAD_INT,     -0x200000000000LL,        BAD_INT                  ) \
+  f("-0x8000t",                BAD_INT,      BAD_INT,     -0x80000000000000LL,      BAD_INT                  ) \
   f("0x7fffffff",              0x7fffffff,   0x7fffffff,   0x7fffffff,              0x7fffffff               ) \
-  f("0xffffffff",              BAD,          0xffffffff,   0xffffffff,              0xffffffff               ) \
-  f("0x80000000",              BAD,          0x80000000,   0x80000000,              0x80000000               ) \
-  f("-0x7fffffff",            -2147483647,   BAD,         -2147483647LL,            BAD                      ) \
-  f("-0x80000000",            -2147483648,   BAD,         -2147483648LL,            BAD                      ) \
-  f("-0x80000001",             BAD,          BAD,         -2147483649LL,            BAD                      ) \
-  f("0x100000000",             BAD,          BAD,          0x100000000LL,           0x100000000ULL           ) \
-  f("0xcafebabe",              BAD,          0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
-  f("0XCAFEBABE",              BAD,          0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
-  f("0XCAFEbabe",              BAD,          0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
-  f("0xcafebabe1",             BAD,          BAD,          0xcafebabe1,             0xcafebabe1              ) \
-  f("0x7fffffffffffffff",      BAD,          BAD,          max_jlong,               9223372036854775807ULL   ) \
-  f("0x8000000000000000",      BAD,          BAD,          BAD,                     9223372036854775808ULL   ) \
-  f("0xffffffffffffffff",      BAD,          BAD,          BAD,                     max_julong               ) \
-  f("9223372036854775807",     BAD,          BAD,          9223372036854775807LL,   9223372036854775807ULL   ) \
-  f("9223372036854775808",     BAD,          BAD,          BAD,                     9223372036854775808ULL   ) \
-  f("-9223372036854775808",    BAD,          BAD,          min_jlong,               BAD                      ) \
-  f("18446744073709551615",    BAD,          BAD,          BAD,                     max_julong               ) \
+  f("0xffffffff",              BAD_INT,      0xffffffff,   0xffffffff,              0xffffffff               ) \
+  f("0x80000000",              BAD_INT,      0x80000000,   0x80000000,              0x80000000               ) \
+  f("-0x7fffffff",            -2147483647,   BAD_INT,     -2147483647LL,            BAD_INT                  ) \
+  f("-0x80000000",            -2147483648,   BAD_INT,     -2147483648LL,            BAD_INT                  ) \
+  f("-0x80000001",             BAD_INT,      BAD_INT,     -2147483649LL,            BAD_INT                  ) \
+  f("0x100000000",             BAD_INT,      BAD_INT,      0x100000000LL,           0x100000000ULL           ) \
+  f("0xcafebabe",              BAD_INT,      0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
+  f("0XCAFEBABE",              BAD_INT,      0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
+  f("0XCAFEbabe",              BAD_INT,      0xcafebabe,   0xcafebabe,              0xcafebabe               ) \
+  f("0xcafebabe1",             BAD_INT,      BAD_INT,      0xcafebabe1,             0xcafebabe1              ) \
+  f("0x7fffffffffffffff",      BAD_INT,      BAD_INT,      max_jlong,               9223372036854775807ULL   ) \
+  f("0x8000000000000000",      BAD_INT,      BAD_INT,      BAD_INT,                 9223372036854775808ULL   ) \
+  f("0xffffffffffffffff",      BAD_INT,      BAD_INT,      BAD_INT,                 max_julong               ) \
+  f("9223372036854775807",     BAD_INT,      BAD_INT,      9223372036854775807LL,   9223372036854775807ULL   ) \
+  f("9223372036854775808",     BAD_INT,      BAD_INT,      BAD_INT,                 9223372036854775808ULL   ) \
+  f("-9223372036854775808",    BAD_INT,      BAD_INT,      min_jlong,               BAD_INT                  ) \
+  f("18446744073709551615",    BAD_INT,      BAD_INT,      BAD_INT,                 max_julong               ) \
                                                                                                                \
   /* All edge cases without a k/m/g/t suffix */                                                                \
   f("0x7ffffffe",              max_jint-1,   0x7ffffffe,   0x7ffffffeLL,            0x7ffffffeULL            ) \
   f("0x7fffffff",              max_jint,     0x7fffffff,   0x7fffffffLL,            0x7fffffffULL            ) \
-  f("0x80000000",              BAD,          0x80000000,   0x80000000LL,            0x80000000ULL            ) \
-  f("0xfffffffe",              BAD,          max_juint-1,  0xfffffffeLL,            0xfffffffeULL            ) \
-  f("0xffffffff",              BAD,          max_juint,    0xffffffffLL,            0xffffffffULL            ) \
-  f("0x100000000",             BAD,          BAD,          0x100000000LL,           0x100000000ULL           ) \
-  f("-0x7fffffff",             min_jint+1,   BAD,         -0x7fffffffLL,            BAD                      ) \
-  f("-0x80000000",             min_jint,     BAD,         -0x80000000LL,            BAD                      ) \
-  f("-0x80000001",             BAD,          BAD,         -0x80000001LL,            BAD                      ) \
+  f("0x80000000",              BAD_INT,      0x80000000,   0x80000000LL,            0x80000000ULL            ) \
+  f("0xfffffffe",              BAD_INT,      max_juint-1,  0xfffffffeLL,            0xfffffffeULL            ) \
+  f("0xffffffff",              BAD_INT,      max_juint,    0xffffffffLL,            0xffffffffULL            ) \
+  f("0x100000000",             BAD_INT,      BAD_INT,      0x100000000LL,           0x100000000ULL           ) \
+  f("-0x7fffffff",             min_jint+1,   BAD_INT,     -0x7fffffffLL,            BAD_INT                  ) \
+  f("-0x80000000",             min_jint,     BAD_INT,     -0x80000000LL,            BAD_INT                  ) \
+  f("-0x80000001",             BAD_INT,      BAD_INT,     -0x80000001LL,            BAD_INT                  ) \
                                                                                                                \
-  f("0x7ffffffffffffffe",      BAD,          BAD,          max_jlong-1,             0x7ffffffffffffffeULL    ) \
-  f("0x7fffffffffffffff",      BAD,          BAD,          max_jlong,               0x7fffffffffffffffULL    ) \
-  f("0x8000000000000000",      BAD,          BAD,          BAD,                     0x8000000000000000ULL    ) \
-  f("0xfffffffffffffffe",      BAD,          BAD,          BAD,                     max_julong-1             ) \
-  f("0xffffffffffffffff",      BAD,          BAD,          BAD,                     max_julong               ) \
-  f("0x10000000000000000",     BAD,          BAD,          BAD,                     BAD                      ) \
-  f("-0x7fffffffffffffff",     BAD,          BAD,          min_jlong+1,             BAD                      ) \
-  f("-0x8000000000000000",     BAD,          BAD,          min_jlong,               BAD                      ) \
-  f("-0x8000000000000001",     BAD,          BAD,          BAD,                     BAD                      ) \
+  f("0x7ffffffffffffffe",      BAD_INT,      BAD_INT,      max_jlong-1,             0x7ffffffffffffffeULL    ) \
+  f("0x7fffffffffffffff",      BAD_INT,      BAD_INT,      max_jlong,               0x7fffffffffffffffULL    ) \
+  f("0x8000000000000000",      BAD_INT,      BAD_INT,      BAD_INT,                 0x8000000000000000ULL    ) \
+  f("0xfffffffffffffffe",      BAD_INT,      BAD_INT,      BAD_INT,                 max_julong-1             ) \
+  f("0xffffffffffffffff",      BAD_INT,      BAD_INT,      BAD_INT,                 max_julong               ) \
+  f("0x10000000000000000",     BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
+  f("-0x7fffffffffffffff",     BAD_INT,      BAD_INT,      min_jlong+1,             BAD_INT                  ) \
+  f("-0x8000000000000000",     BAD_INT,      BAD_INT,      min_jlong,               BAD_INT                  ) \
+  f("-0x8000000000000001",     BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
                                                                                                                \
   /* edge cases for suffix: K */                                                                               \
   f("0x1ffffek",               0x1ffffe * k, 0x1ffffeU * k,0x1ffffeLL * k,          0x1ffffeULL * k          ) \
   f("0x1fffffk",               0x1fffff * k, 0x1fffffU * k,0x1fffffLL * k,          0x1fffffULL * k          ) \
-  f("0x200000k",               BAD,          0x200000U * k,0x200000LL * k,          0x200000ULL * k          ) \
-  f("0x3ffffek",               BAD,          0x3ffffeU * k,0x3ffffeLL * k,          0x3ffffeULL * k          ) \
-  f("0x3fffffk",               BAD,          0x3fffffU * k,0x3fffffLL * k,          0x3fffffULL * k          ) \
-  f("0x400000k",               BAD,          BAD,          0x400000LL * k,          0x400000ULL * k          ) \
-  f("-0x1fffffk",             -0x1fffff * k, BAD,         -0x1fffffLL * k,          BAD                      ) \
-  f("-0x200000k",             -0x200000 * k, BAD,         -0x200000LL * k,          BAD                      ) \
-  f("-0x200001k",              BAD,          BAD,         -0x200001LL * k,          BAD                      ) \
+  f("0x200000k",               BAD_INT,      0x200000U * k,0x200000LL * k,          0x200000ULL * k          ) \
+  f("0x3ffffek",               BAD_INT,      0x3ffffeU * k,0x3ffffeLL * k,          0x3ffffeULL * k          ) \
+  f("0x3fffffk",               BAD_INT,      0x3fffffU * k,0x3fffffLL * k,          0x3fffffULL * k          ) \
+  f("0x400000k",               BAD_INT,      BAD_INT,      0x400000LL * k,          0x400000ULL * k          ) \
+  f("-0x1fffffk",             -0x1fffff * k, BAD_INT,     -0x1fffffLL * k,          BAD_INT                  ) \
+  f("-0x200000k",             -0x200000 * k, BAD_INT,     -0x200000LL * k,          BAD_INT                  ) \
+  f("-0x200001k",              BAD_INT,      BAD_INT,     -0x200001LL * k,          BAD_INT                  ) \
                                                                                                                \
-  f("0x1ffffffffffffek",       BAD,          BAD,          0x1ffffffffffffeLL * k,  0x1ffffffffffffeULL * k  ) \
-  f("0x1fffffffffffffk",       BAD,          BAD,          0x1fffffffffffffLL * k,  0x1fffffffffffffULL * k  ) \
-  f("0x20000000000000k",       BAD,          BAD,          BAD,                     0x20000000000000ULL * k  ) \
-  f("0x3ffffffffffffek",       BAD,          BAD,          BAD,                     0x3ffffffffffffeULL * k  ) \
-  f("0x3fffffffffffffk",       BAD,          BAD,          BAD,                     0x3fffffffffffffULL * k  ) \
-  f("0x40000000000000k",       BAD,          BAD,          BAD,                     BAD                      ) \
-  f("-0x1fffffffffffffk",      BAD,          BAD,         -0x1fffffffffffffLL * k,  BAD                      ) \
-  f("-0x20000000000000k",      BAD,          BAD,         -0x20000000000000LL * k,  BAD                      ) \
-  f("-0x20000000000001k",      BAD,          BAD,          BAD,                     BAD                      ) \
+  f("0x1ffffffffffffek",       BAD_INT,      BAD_INT,      0x1ffffffffffffeLL * k,  0x1ffffffffffffeULL * k  ) \
+  f("0x1fffffffffffffk",       BAD_INT,      BAD_INT,      0x1fffffffffffffLL * k,  0x1fffffffffffffULL * k  ) \
+  f("0x20000000000000k",       BAD_INT,      BAD_INT,      BAD_INT,                 0x20000000000000ULL * k  ) \
+  f("0x3ffffffffffffek",       BAD_INT,      BAD_INT,      BAD_INT,                 0x3ffffffffffffeULL * k  ) \
+  f("0x3fffffffffffffk",       BAD_INT,      BAD_INT,      BAD_INT,                 0x3fffffffffffffULL * k  ) \
+  f("0x40000000000000k",       BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
+  f("-0x1fffffffffffffk",      BAD_INT,      BAD_INT,     -0x1fffffffffffffLL * k,  BAD_INT                  ) \
+  f("-0x20000000000000k",      BAD_INT,      BAD_INT,     -0x20000000000000LL * k,  BAD_INT                  ) \
+  f("-0x20000000000001k",      BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
                                                                                                                \
   /* edge cases for suffix: M */                                                                               \
   f("0x7fem",                  0x7fe * m,    0x7feU * m,   0x7feLL * m,             0x7feULL * m             ) \
   f("0x7ffm",                  0x7ff * m,    0x7ffU * m,   0x7ffLL * m,             0x7ffULL * m             ) \
-  f("0x800m",                  BAD,          0x800U * m,   0x800LL * m,             0x800ULL * m             ) \
-  f("0xffem",                  BAD,          0xffeU * m,   0xffeLL * m,             0xffeULL * m             ) \
-  f("0xfffm",                  BAD,          0xfffU * m,   0xfffLL * m,             0xfffULL * m             ) \
-  f("0x1000m",                 BAD,          BAD,          0x1000LL * m,            0x1000ULL * m            ) \
-  f("-0x7ffm",                -0x7ff * m,    BAD,         -0x7ffLL * m,             BAD                      ) \
-  f("-0x800m",                -0x800 * m,    BAD,         -0x800LL * m,             BAD                      ) \
-  f("-0x801m",                 BAD,          BAD,         -0x801LL * m,             BAD                      ) \
+  f("0x800m",                  BAD_INT,      0x800U * m,   0x800LL * m,             0x800ULL * m             ) \
+  f("0xffem",                  BAD_INT,      0xffeU * m,   0xffeLL * m,             0xffeULL * m             ) \
+  f("0xfffm",                  BAD_INT,      0xfffU * m,   0xfffLL * m,             0xfffULL * m             ) \
+  f("0x1000m",                 BAD_INT,      BAD_INT,      0x1000LL * m,            0x1000ULL * m            ) \
+  f("-0x7ffm",                -0x7ff * m,    BAD_INT,     -0x7ffLL * m,             BAD_INT                  ) \
+  f("-0x800m",                -0x800 * m,    BAD_INT,     -0x800LL * m,             BAD_INT                  ) \
+  f("-0x801m",                 BAD_INT,      BAD_INT,     -0x801LL * m,             BAD_INT                  ) \
                                                                                                                \
-  f("0x7fffffffffem",          BAD,          BAD,          0x7fffffffffeLL * m,     0x7fffffffffeULL * m     ) \
-  f("0x7ffffffffffm",          BAD,          BAD,          0x7ffffffffffLL * m,     0x7ffffffffffULL * m     ) \
-  f("0x80000000000m",          BAD,          BAD,          BAD,                     0x80000000000ULL * m     ) \
-  f("0xffffffffffem",          BAD,          BAD,          BAD,                     0xffffffffffeULL * m     ) \
-  f("0xfffffffffffm",          BAD,          BAD,          BAD,                     0xfffffffffffULL * m     ) \
-  f("0x100000000000m",         BAD,          BAD,          BAD,                     BAD                      ) \
-  f("-0x7ffffffffffm",         BAD,          BAD,         -0x7ffffffffffLL * m,     BAD                      ) \
-  f("-0x80000000000m",         BAD,          BAD,         -0x80000000000LL * m,     BAD                      ) \
-  f("-0x80000000001m",         BAD,          BAD,          BAD,                     BAD                      ) \
+  f("0x7fffffffffem",          BAD_INT,      BAD_INT,      0x7fffffffffeLL * m,     0x7fffffffffeULL * m     ) \
+  f("0x7ffffffffffm",          BAD_INT,      BAD_INT,      0x7ffffffffffLL * m,     0x7ffffffffffULL * m     ) \
+  f("0x80000000000m",          BAD_INT,      BAD_INT,      BAD_INT,                 0x80000000000ULL * m     ) \
+  f("0xffffffffffem",          BAD_INT,      BAD_INT,      BAD_INT,                 0xffffffffffeULL * m     ) \
+  f("0xfffffffffffm",          BAD_INT,      BAD_INT,      BAD_INT,                 0xfffffffffffULL * m     ) \
+  f("0x100000000000m",         BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
+  f("-0x7ffffffffffm",         BAD_INT,      BAD_INT,     -0x7ffffffffffLL * m,     BAD_INT                  ) \
+  f("-0x80000000000m",         BAD_INT,      BAD_INT,     -0x80000000000LL * m,     BAD_INT                  ) \
+  f("-0x80000000001m",         BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
                                                                                                                \
   /* edge cases for suffix: G */                                                                               \
   f("0x0g",                    0x0 * g,      0x0U * g,     0x0LL * g,               0x0ULL * g               ) \
   f("0x1g",                    0x1 * g,      0x1U * g,     0x1LL * g,               0x1ULL * g               ) \
-  f("0x2g",                    BAD,          0x2U * g,     0x2LL * g,               0x2ULL * g               ) \
-  f("0x3g",                    BAD,          0x3U * g,     0x3LL * g,               0x3ULL * g               ) \
-  f("0x4g",                    BAD,          BAD,          0x4LL * g,               0x4ULL * g               ) \
-  f("-0x1g",                  -0x1 * g,      BAD,         -0x1LL * g,               BAD                      ) \
-  f("-0x2g",                  -0x2 * g,      BAD,         -0x2LL * g,               BAD                      ) \
-  f("-0x3g",                   BAD,          BAD,         -0x3LL * g,               BAD                      ) \
+  f("0x2g",                    BAD_INT,      0x2U * g,     0x2LL * g,               0x2ULL * g               ) \
+  f("0x3g",                    BAD_INT,      0x3U * g,     0x3LL * g,               0x3ULL * g               ) \
+  f("0x4g",                    BAD_INT,      BAD_INT,      0x4LL * g,               0x4ULL * g               ) \
+  f("-0x1g",                  -0x1 * g,      BAD_INT,     -0x1LL * g,               BAD_INT                  ) \
+  f("-0x2g",                  -0x2 * g,      BAD_INT,     -0x2LL * g,               BAD_INT                  ) \
+  f("-0x3g",                   BAD_INT,      BAD_INT,     -0x3LL * g,               BAD_INT                  ) \
                                                                                                                \
-  f("0x1fffffffeg",            BAD,          BAD,          0x1fffffffeLL * g,       0x1fffffffeULL * g       ) \
-  f("0x1ffffffffg",            BAD,          BAD,          0x1ffffffffLL * g,       0x1ffffffffULL * g       ) \
-  f("0x200000000g",            BAD,          BAD,          BAD,                     0x200000000ULL * g       ) \
-  f("0x3fffffffeg",            BAD,          BAD,          BAD,                     0x3fffffffeULL * g       ) \
-  f("0x3ffffffffg",            BAD,          BAD,          BAD,                     0x3ffffffffULL * g       ) \
-  f("0x400000000g",            BAD,          BAD,          BAD,                     BAD                      ) \
-  f("-0x1ffffffffg",           BAD,          BAD,         -0x1ffffffffLL * g,       BAD                      ) \
-  f("-0x200000000g",           BAD,          BAD,         -0x200000000LL * g,       BAD                      ) \
-  f("-0x200000001g",           BAD,          BAD,          BAD,                     BAD                      ) \
+  f("0x1fffffffeg",            BAD_INT,      BAD_INT,      0x1fffffffeLL * g,       0x1fffffffeULL * g       ) \
+  f("0x1ffffffffg",            BAD_INT,      BAD_INT,      0x1ffffffffLL * g,       0x1ffffffffULL * g       ) \
+  f("0x200000000g",            BAD_INT,      BAD_INT,      BAD_INT,                 0x200000000ULL * g       ) \
+  f("0x3fffffffeg",            BAD_INT,      BAD_INT,      BAD_INT,                 0x3fffffffeULL * g       ) \
+  f("0x3ffffffffg",            BAD_INT,      BAD_INT,      BAD_INT,                 0x3ffffffffULL * g       ) \
+  f("0x400000000g",            BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
+  f("-0x1ffffffffg",           BAD_INT,      BAD_INT,     -0x1ffffffffLL * g,       BAD_INT                  ) \
+  f("-0x200000000g",           BAD_INT,      BAD_INT,     -0x200000000LL * g,       BAD_INT                  ) \
+  f("-0x200000001g",           BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
                                                                                                                \
   /* edge cases for suffix: T */                                                                               \
-  f("0x7ffffet",               BAD,          BAD,          0x7ffffeLL * t,          0x7ffffeULL * t          ) \
-  f("0x7ffffft",               BAD,          BAD,          0x7fffffLL * t,          0x7fffffULL * t          ) \
-  f("0x800000t",               BAD,          BAD,          BAD,                     0x800000ULL * t          ) \
-  f("0xfffffet",               BAD,          BAD,          BAD,                     0xfffffeULL * t          ) \
-  f("0xfffffft",               BAD,          BAD,          BAD,                     0xffffffULL * t          ) \
-  f("0x1000000t",              BAD,          BAD,          BAD,                     BAD                      ) \
-  f("-0x7ffffft",              BAD,          BAD,         -0x7fffffLL * t,          BAD                      ) \
-  f("-0x800000t",              BAD,          BAD,         -0x800000LL * t,          BAD                      ) \
-  f("-0x800001t",              BAD,          BAD,          BAD,                     BAD                      )
+  f("0x7ffffet",               BAD_INT,      BAD_INT,      0x7ffffeLL * t,          0x7ffffeULL * t          ) \
+  f("0x7ffffft",               BAD_INT,      BAD_INT,      0x7fffffLL * t,          0x7fffffULL * t          ) \
+  f("0x800000t",               BAD_INT,      BAD_INT,      BAD_INT,                 0x800000ULL * t          ) \
+  f("0xfffffet",               BAD_INT,      BAD_INT,      BAD_INT,                 0xfffffeULL * t          ) \
+  f("0xfffffft",               BAD_INT,      BAD_INT,      BAD_INT,                 0xffffffULL * t          ) \
+  f("0x1000000t",              BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  ) \
+  f("-0x7ffffft",              BAD_INT,      BAD_INT,     -0x7fffffLL * t,          BAD_INT                  ) \
+  f("-0x800000t",              BAD_INT,      BAD_INT,     -0x800000LL * t,          BAD_INT                  ) \
+  f("-0x800001t",              BAD_INT,      BAD_INT,      BAD_INT,                 BAD_INT                  )
 
 #define INTEGER_TEST_i32(s, i32, u32, i64, u64) NumericArgument<T>(s, i32),
 #define INTEGER_TEST_u32(s, i32, u32, i64, u64) NumericArgument<T>(s, u32),
