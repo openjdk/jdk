@@ -65,10 +65,12 @@ public class DocFinder {
      * The class that encapsulates the input.
      */
     public static class Input {
+
         /**
          * The element to search documentation from.
          */
         public Element element;
+
         /**
          * The taglet to search for documentation on behalf of. Null if we want
          * to search for overall documentation.
@@ -82,7 +84,7 @@ public class DocFinder {
 
         /**
          * The tag to retrieve documentation for.  This is only used for the
-         * inheritDoc tag.
+         * {@code {@inheritDoc}} tag.
          */
         public final DocTreeInfo docTreeInfo;
 
@@ -92,7 +94,7 @@ public class DocFinder {
         public boolean isFirstSentence = false;
 
         /**
-         * True if we are looking for documentation to replace the inheritDocTag.
+         * True if we are looking for documentation to replace the {@code {@inheritDoc}} tag.
          */
         public boolean isInheritDocTag = false;
 
@@ -178,6 +180,7 @@ public class DocFinder {
      * The class that encapsulates the output.
      */
     public static class Output {
+
         /**
          * The tag that holds the documentation.  Null if documentation
          * is not held by a tag.
@@ -207,7 +210,7 @@ public class DocFinder {
          * subclass of IOException.  This subclass of DocFinder.Output allows
          * multiple tag inheritance.
          */
-        public List<DocTree> tagList  = new ArrayList<>();
+        public List<DocTree> tagList = new ArrayList<>();
 
         /**
          * Returns a string representation for debugging purposes
@@ -272,7 +275,7 @@ public class DocFinder {
             TypeElement encl = utils.getEnclosingTypeElement(input.element);
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(encl);
             List<ExecutableElement> implementedMethods =
-                    vmt.getImplementedMethods((ExecutableElement)input.element);
+                    vmt.getImplementedMethods((ExecutableElement) input.element);
             for (ExecutableElement implementedMethod : implementedMethods) {
                 inheritedSearchInput.element = implementedMethod;
                 output = search(configuration, inheritedSearchInput);

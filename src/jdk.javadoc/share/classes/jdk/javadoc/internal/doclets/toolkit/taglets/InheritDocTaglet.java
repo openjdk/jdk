@@ -55,13 +55,13 @@ public class InheritDocTaglet extends BaseTaglet {
 
     /**
      * Given an element, a {@code DocTree} in the element's doc comment
-     * replace all occurrences of @inheritDoc with documentation from its
+     * replace all occurrences of {@code {@inheritDoc}} with documentation from its
      * superclass or superinterface.
      *
      * @param writer the writer that is writing the output.
      * @param e the {@link Element} that we are documenting.
-     * @param holderTag the tag that holds the inheritDoc tag or null for type
-     * (class) docs.
+     * @param holderTag the tag that holds the {@code {@inheritDoc}} tag or null for type
+     *                  (class) docs.
      * @param isFirstSentence true if we only want to inherit the first sentence.
      */
     private Content retrieveInheritedDocumentation(TagletWriter writer,
@@ -94,7 +94,6 @@ public class InheritDocTaglet extends BaseTaglet {
                 replacement = writer.commentTagsToOutput(inheritedDoc.holder, inheritedDoc.holderTag,
                     inheritedDoc.inlineTags, isFirstSentence);
             }
-
         } else {
             String message = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
