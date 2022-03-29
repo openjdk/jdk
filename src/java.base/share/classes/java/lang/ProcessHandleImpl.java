@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package java.lang;
+
+import jdk.internal.misc.InnocuousThread;
 
 import java.lang.annotation.Native;
 import java.security.AccessController;
@@ -89,10 +91,6 @@ final class ProcessHandleImpl implements ProcessHandle {
                 // of the processReaper threads.
                 ThreadLocalRandom.current();
 
-                ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                while (tg.getParent() != null) tg = tg.getParent();
-                ThreadGroup systemThreadGroup = tg;
-
                 // For a debug build, the stack shadow zone is larger;
                 // Increase the total stack size to avoid potential stack overflow.
                 int debugDelta = "release".equals(System.getProperty("jdk.debug")) ? 0 : (4*4096);
@@ -100,11 +98,9 @@ final class ProcessHandleImpl implements ProcessHandle {
                         ? 0 : REAPER_DEFAULT_STACKSIZE + debugDelta;
 
                 ThreadFactory threadFactory = grimReaper -> {
-                    Thread t = new Thread(systemThreadGroup, grimReaper,
-                            "process reaper", stackSize, false);
+                    Thread t = InnocuousThread.newSystemThread("process reaper", grimReaper,
+                            stackSize, Thread.MAX_PRIORITY);
                     t.setDaemon(true);
-                    // A small attempt (probably futile) to avoid priority inversion
-                    t.setPriority(Thread.MAX_PRIORITY);
                     return t;
                 };
 
