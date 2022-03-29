@@ -100,7 +100,6 @@ class SystemProperty : public PathString {
   SystemProperty* _next;
   bool            _internal;
   bool            _writeable;
-  bool writeable() { return _writeable; }
 
  public:
   // Accessors
@@ -109,17 +108,12 @@ class SystemProperty : public PathString {
   bool internal() const               { return _internal; }
   SystemProperty* next() const        { return _next; }
   void set_next(SystemProperty* next) { _next = next; }
+  bool writeable() const              { return _writeable; }
 
-  bool is_readable() const {
+  bool readable() const {
     return !_internal || (strcmp(_key, "jdk.boot.class.path.append") == 0 &&
                           value() != NULL);
   }
-
-  enum SetWriteableValueResult {
-    SUCCESS,
-    NOT_WRITEABLE,
-    OOM
-  };
 
   // A system property should only have its value set
   // via an external interface if it is a writeable property.
@@ -128,15 +122,10 @@ class SystemProperty : public PathString {
   // via -Xbootclasspath/a or JVMTI OnLoad phase call to AddToBootstrapClassLoaderSearch.
   // In those cases for jdk.boot.class.path.append, the base class
   // set_value and append_value methods are called directly.
-  SetWriteableValueResult set_writeable_value(const char *value,  AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-    if (!writeable()) {
-      return NOT_WRITEABLE;
+  void set_writeable_value(const char *value) {
+    if (writeable()) {
+      set_value(value);
     }
-    if (!set_value(value, alloc_failmode)) {
-      assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "must be");
-      return OOM;
-    }
-    return SUCCESS;
   }
   void append_writeable_value(const char *value) {
     if (writeable()) {

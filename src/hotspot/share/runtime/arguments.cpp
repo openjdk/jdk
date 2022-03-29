@@ -4253,7 +4253,7 @@ int Arguments::PropertyList_count(SystemProperty* pl) {
 int Arguments::PropertyList_readable_count(SystemProperty* pl) {
   int count = 0;
   while(pl != NULL) {
-    if (pl->is_readable()) {
+    if (pl->readable()) {
       count++;
     }
     pl = pl->next();

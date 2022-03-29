@@ -3381,7 +3381,7 @@ JvmtiEnv::GetSystemProperties(jint* count_ptr, char*** property_ptr) {
   int readable_count = 0;
   // Loop through the system properties until all the readable properties are found.
   for (SystemProperty* p = Arguments::system_properties(); p != NULL && readable_count < *count_ptr; p = p->next()) {
-    if (p->is_readable()) {
+    if (p->readable()) {
       const char *key = p->key();
       char **tmp_value = *property_ptr+readable_count;
       readable_count++;
@@ -3428,17 +3428,15 @@ JvmtiEnv::GetSystemProperty(const char* property, char** value_ptr) {
 // value - NULL is a valid value, must be checked
 jvmtiError
 JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
-  NULL_CHECK(property, JVMTI_ERROR_NULL_POINTER);
-
   for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
     if (strcmp(property, p->key()) == 0) {
-      switch (p->set_writeable_value(value_ptr, AllocFailStrategy::RETURN_NULL)) {
-      case SystemProperty::SUCCESS:
-        return JVMTI_ERROR_NONE;
-      case SystemProperty::OOM:
-        return JVMTI_ERROR_OUT_OF_MEMORY;
-      case SystemProperty::NOT_WRITEABLE:
-      default:
+      if (p->writeable()) {
+        if (p->set_value(value_ptr, AllocFailStrategy::RETURN_NULL)) {
+          return JVMTI_ERROR_NONE;
+        } else {
+          return JVMTI_ERROR_OUT_OF_MEMORY;
+        }
+      } else {
         // We found a property, but it's not writeable
         return JVMTI_ERROR_NOT_AVAILABLE;
       }
