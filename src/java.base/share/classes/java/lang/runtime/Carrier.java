@@ -331,8 +331,9 @@ public final class Carrier {
              * @param objectCount     slot count required for objects
              */
             CarrierArray(int primitiveCount, int objectCount) {
-                this.primitives = new long[primitiveCount];
-                this.objects = new Object[objectCount];
+                this.primitives =
+                    primitiveCount != 0 ? new long[(primitiveCount + 1) / 2] : null;
+                this.objects = objectCount != 0 ? new Object[objectCount] : null;
             }
 
             /**
@@ -343,7 +344,7 @@ public final class Carrier {
              * @return offset for unsafe access
              */
             private long offset(int i) {
-                if (i < 0 || primitives.length <= i) {
+                if (i < 0 || (primitives.length * LONG_SLOTS) <= i) {
                     throw new RuntimeException("primitive index out of range: " + i);
                 }
 
@@ -432,10 +433,10 @@ public final class Carrier {
             int longCount = carrierShape.longCount();
             int intCount = carrierShape.intCount();
             int objectCount = carrierShape.objectCount();
-            int primitiveSlots = longCount * LONG_SLOTS + intCount;
+            int primitiveCount = longCount * LONG_SLOTS + intCount;
 
             MethodHandle constructor = MethodHandles.insertArguments(CONSTRUCTOR,
-                    0, primitiveSlots, objectCount);
+                    0, primitiveCount, objectCount);
 
             // long array index
             int index = 0;
@@ -1116,5 +1117,63 @@ public final class Carrier {
         }
 
         return components.get(i);
+    }
+
+    /**
+     * {@return the underlying carrier class of the carrier representing
+     * {@code methodType} }
+     *
+     * @param methodType  {@link MethodType} whose parameter types supply the
+     *                    the shape of the carrier's components
+     *
+     * @implNote Used internally by the Condy API.
+     */
+    public static Class<?> carrierClass(MethodType methodType) {
+        return of(methodType).carrierClass();
+    }
+
+    /**
+     * {@return the constructor {@link MethodHandle} for the carrier
+     * representing {@code methodType}. The carrier constructor will have a
+     * return type of {@link Object} }
+     *
+     * @param methodType  {@link MethodType} whose parameter types supply the
+     *                    the shape of the carrier's components
+     *
+     * @implNote Used internally by the Condy API.
+     */
+    public static MethodHandle constructor(MethodType methodType) {
+        return of(methodType).constructor();
+    }
+
+    /**
+     * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
+     * for all the components of the carrier representing {@code methodType}. The
+     * receiver type of the accessors will be {@link Object} }
+     *
+     * @param methodType  {@link MethodType} whose parameter types supply the
+     *                    the shape of the carrier's components
+     *
+     * @implNote Used internally by the Condy API.
+     */
+    public static List<MethodHandle> components(MethodType methodType) {
+        return of(methodType).components();
+    }
+
+    /**
+     * {@return a component accessor {@link MethodHandle} for component {@code i}
+     * of the carrier representing {@code methodType}. The receiver type of the
+     * accessor will be {@link Object} }
+     *
+     * @param methodType  {@link MethodType} whose parameter types supply the
+     *                    the shape of the carrier's components
+     * @param i  component index
+     *
+     * @implNote Used internally by the Condy API.
+     *
+     * @throws IllegalArgumentException if {@code i} is out of bounds
+     */
+    public static MethodHandle component(MethodType methodType, int i) {
+        return of(methodType).component(i);
     }
 }

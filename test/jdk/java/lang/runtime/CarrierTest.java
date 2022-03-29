@@ -29,11 +29,9 @@
  */
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.runtime.Carrier;
 import java.util.Arrays;
-import java.util.List;
 
 public class CarrierTest {
     public static void main(String[] args) throws Throwable {
@@ -41,6 +39,7 @@ public class CarrierTest {
         primitivesTestInArrayCarrier();
         limitsTest();
         cacheTest();
+        staticTest();
     }
 
     static void assertTrue(boolean test, String message) {
@@ -48,8 +47,6 @@ public class CarrierTest {
             throw new RuntimeException(message);
         }
     }
-
-    static final int MAX_COMPONENTS = 254;
 
     static void primitivesTest() throws Throwable {
         MethodType methodType =
@@ -104,7 +101,7 @@ public class CarrierTest {
                         Object.class, Object.class,Object.class,Object.class,
                         Object.class, Object.class,Object.class,Object.class,
                         Object.class, Object.class,Object.class,Object.class
-                        );
+                );
         Carrier carrier = Carrier.of(methodType);
         Class<?> carrierClass = carrier.carrierClass();
         assertTrue(carrierClass.isArray(), "carrier should be array");
@@ -120,7 +117,7 @@ public class CarrierTest {
                 (Object)null, (Object)null, (Object)null, (Object)null,
                 (Object)null, (Object)null, (Object)null, (Object)null,
                 (Object)null, (Object)null, (Object)null, (Object)null
-                );
+        );
         MethodHandle[] components = carrier.components().toArray(new MethodHandle[0]);
         assertTrue((byte)components[0].invokeExact(object) == (byte)0xFF,
                 "primitive in array byte test failure");
@@ -147,7 +144,7 @@ public class CarrierTest {
 
         passed = false;
         try {
-            Class<?>[] ptypes = new Class<?>[MAX_COMPONENTS + 1];
+            Class<?>[] ptypes = new Class<?>[Carrier.MAX_COMPONENTS + 1];
             Arrays.fill(ptypes, Object.class);
             MethodType methodType = MethodType.methodType(Object.class, ptypes);
             Carrier carrier = Carrier.of(methodType);
@@ -156,13 +153,11 @@ public class CarrierTest {
             passed = true;
         }
 
-        if (!passed) {
-            throw new RuntimeException("failed to report too many components ");
-        }
+        assertTrue(passed, "failed to report too many components");
 
         passed = false;
         try {
-            Class<?>[] ptypes = new Class<?>[MAX_COMPONENTS / 2 + 1];
+            Class<?>[] ptypes = new Class<?>[Carrier.MAX_COMPONENTS / 2 + 1];
             Arrays.fill(ptypes, long.class);
             MethodType methodType = MethodType.methodType(Object.class, ptypes);
             Carrier carrier = Carrier.of(methodType);
@@ -171,9 +166,7 @@ public class CarrierTest {
             passed = true;
         }
 
-        if (!passed) {
-            throw new RuntimeException("failed to report too many components ");
-        }
+        assertTrue(passed, "failed to report too many components");
     }
 
     static void cacheTest() {
@@ -183,13 +176,27 @@ public class CarrierTest {
                 float.class, double.class,
                 boolean.class, String.class
         };
-        MethodType methodType =
-                MethodType.methodType(Object.class, ptypes);
+        MethodType methodType = MethodType.methodType(Object.class, ptypes);
         Carrier carrier1 = Carrier.of(ptypes);
         Carrier carrier2 = Carrier.of(methodType);
 
-        if (carrier1 != carrier2) {
-            throw new RuntimeException("carrier cache not matching correctly");
-        }
+        assertTrue(carrier1 == carrier2, "carrier cache not matching correctly");
+    }
+
+    static void staticTest() {
+        Class<?>[] ptypes = new Class<?>[] {
+                byte.class, short.class,
+                char.class, int.class, long.class,
+                float.class, double.class,
+                boolean.class, String.class
+        };
+        MethodType methodType = MethodType.methodType(Object.class, ptypes);
+        Carrier carrier = Carrier.of(methodType);
+        assertTrue(carrier.constructor() == Carrier.constructor(methodType),
+                "static constructor incorrect");
+        assertTrue(carrier.components() == Carrier.components(methodType),
+                "static components incorrect");
+        assertTrue(carrier.component(1) == Carrier.component(methodType, 1),
+                "static component incorrect");
     }
 }
