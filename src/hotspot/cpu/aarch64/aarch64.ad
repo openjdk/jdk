@@ -3816,12 +3816,8 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
+      assert(_method->is_loaded(), "must be loaded");
+      cbuf.shared_stub_to_interp_for(_method->get_Method(), cbuf.insts_mark());
     }
 
     // Only non uncommon_trap calls need to reinitialize ptrue.

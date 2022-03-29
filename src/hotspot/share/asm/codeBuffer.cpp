@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "asm/macroAssembler.hpp"
+#include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "code/oopRecorder.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "logging/log.hpp"
@@ -442,6 +445,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
   address buf = dest->_total_start;
   csize_t buf_offset = 0;
   assert(dest->_total_size >= total_content_size(), "must be big enough");
+  assert(!_finalize_stubs, "non-finalized stubs");
 
   {
     // not sure why this is here, but why not...
@@ -977,6 +981,43 @@ void CodeBuffer::log_section_sizes(const char* name) {
     }
     xtty->print_cr("</blob>");
   }
+}
+
+static bool emit_shared_stubs_to_interp(const SharedStubToInterpRequests& requests, MacroAssembler* masm) {
+  LinkedListIterator<SharedStubToInterpRequest> it(requests.head());
+  SharedStubToInterpRequest* request = it.next();
+  while (request != NULL) {
+    address stub = masm->start_a_stub(CompiledStaticCall::to_interp_stub_size());
+    if (stub == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return false;
+    }
+    Method* method = request->shared_method();
+    do {
+      masm->relocate(static_stub_Relocation::spec(request->caller_pc()));
+      request = it.next();
+    } while (request != NULL && request->shared_method() == method);
+    masm->emit_static_call_stub();
+    masm->end_a_stub();
+  }
+  return true;
+}
+
+void CodeBuffer::finalize_stubs() {
+  MacroAssembler masm(this);
+  if (!emit_shared_stubs_to_interp(_shared_stub_to_interp_requests, &masm)) {
+    return;
+  }
+  _finalize_stubs = false;
+}
+
+void CodeBuffer::shared_stub_to_interp_for(Method* method, address caller_pc) {
+  SharedStubToInterpRequest request(method, caller_pc);
+  auto node = _shared_stub_to_interp_requests.find_node(request);
+  auto new_node = (node == NULL) ? _shared_stub_to_interp_requests.add(request)
+                                 : _shared_stub_to_interp_requests.insert_after(request, node);
+  assert(new_node != NULL, "sanity");
+  _finalize_stubs = true;
 }
 
 #ifndef PRODUCT

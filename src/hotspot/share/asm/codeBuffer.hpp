@@ -29,6 +29,7 @@
 #include "code/relocInfo.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/linkedlist.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -342,6 +343,28 @@ class Scrubber {
 };
 #endif // ASSERT
 
+// A Java method can have calls of Java methods which can be statically bound.
+// Calls of Java mehtods need stubs to the interpreter. Calls sharing the same Java method
+// can share a stub to interpreter.
+// A SharedStubToInterpRequest describes a request for a shared stub to the interpreter.
+class SharedStubToInterpRequest {
+ private:
+  Method* _shared_method;
+  address _caller_pc;
+
+ public:
+  SharedStubToInterpRequest(Method* method, address caller_pc = NULL) : _shared_method(method),
+      _caller_pc(caller_pc) {}
+
+  bool equals(const SharedStubToInterpRequest& request) const {
+    return _shared_method == request._shared_method;
+  }
+
+  Method* shared_method() { return _shared_method; }
+  address caller_pc() { return _caller_pc; }
+};
+typedef LinkedListImpl<SharedStubToInterpRequest> SharedStubToInterpRequests;
+
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
 // interior of a single BufferBlob, but in some cases it may be
@@ -414,6 +437,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
+  SharedStubToInterpRequests _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
+
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
   DbgStrings   _dbg_strings;
@@ -431,6 +457,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _oop_recorder    = NULL;
     _overflow_arena  = NULL;
     _last_insn       = NULL;
+    _finalize_stubs  = false;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -681,6 +708,12 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
+
+  // Make a set of stubs final. It can create/optimize stubs.
+  void finalize_stubs();
+
+  // Request for a shared stub to the interpreter
+  void shared_stub_to_interp_for(Method* call, address caller_pc);
 
 #ifndef PRODUCT
  public:

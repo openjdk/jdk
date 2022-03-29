@@ -454,8 +454,11 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   // must align calls sites, otherwise they can't be updated atomically
   align_call(op->code());
 
-  // emit the static call stub stuff out of line
-  emit_static_call_stub();
+  if (op->code() == lir_static_call && op->method()->is_loaded()) {
+    _masm->code()->shared_stub_to_interp_for(op->method()->get_Method(), pc());
+  } else {
+    emit_static_call_stub();
+  }
   CHECK_BAILOUT();
 
   switch (op->code()) {
