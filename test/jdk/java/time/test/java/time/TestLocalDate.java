@@ -429,23 +429,24 @@ public class TestLocalDate extends AbstractTest {
         long maxDay = ChronoField.EPOCH_DAY.range().getMaximum();
         long minYear = ChronoField.YEAR.range().getMinimum();
         long maxYear = ChronoField.YEAR.range().getMinimum();
-        for (int i = 0; i < 500; i++) {
-            LocalDate minDate = LocalDate.ofEpochDay(minDay + i);
-            assertEquals(minDate, LocalDate.MIN.plusDays(i));
+        int[] offsets = new int[] { 0, 1, 2, 3, 28, 29, 30, 31, 32, 363, 364, 365, 366, 367 };
+        for (int offset : offsets) {
+            LocalDate minDate = LocalDate.ofEpochDay(minDay + offset);
+            assertEquals(minDate, LocalDate.MIN.plusDays(offset));
             assertTrue(ChronoField.YEAR.range().isValidValue(minDate.getYear()));
 
-            LocalDate maxDate = LocalDate.ofEpochDay(maxDay - i);
-            assertEquals(maxDate, LocalDate.MAX.minusDays(i));
+            LocalDate maxDate = LocalDate.ofEpochDay(maxDay - offset);
+            assertEquals(maxDate, LocalDate.MAX.minusDays(offset));
             assertTrue(ChronoField.YEAR.range().isValidValue(maxDate.getYear()));
 
             try {
-                LocalDate.ofEpochDay(minDay - 1 - i);
+                LocalDate.ofEpochDay(minDay - 1 - offset);
                 fail("Expected DateTimeException");
             } catch (DateTimeException e) {
                 // expected
             }
             try {
-                LocalDate.ofEpochDay(maxDay + 1 + i);
+                LocalDate.ofEpochDay(maxDay + 1 + offset);
                 fail("Expected DateTimeException");
             } catch (DateTimeException e) {
                 // expected
