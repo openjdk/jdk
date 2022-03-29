@@ -146,8 +146,7 @@ public final class ZoneRules implements Serializable {
     /**
      * The map of recent transitions.
      */
-    private final transient ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
-                new ConcurrentHashMap<Integer, ZoneOffsetTransition[]>();
+    private final transient ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache;
     /**
      * The zero-length long array.
      */
@@ -259,12 +258,18 @@ public final class ZoneRules implements Serializable {
         }
 
         // last rules
-        Object[] temp = lastRules.toArray();
-        ZoneOffsetTransitionRule[] rulesArray = Arrays.copyOf(temp, temp.length, ZoneOffsetTransitionRule[].class);
-        if (rulesArray.length > 16) {
-            throw new IllegalArgumentException("Too many transition rules");
+        if (lastRules.size() > 0) {
+            Object[] temp = lastRules.toArray();
+            ZoneOffsetTransitionRule[] rulesArray = Arrays.copyOf(temp, temp.length, ZoneOffsetTransitionRule[].class);
+            if (rulesArray.length > 16) {
+                throw new IllegalArgumentException("Too many transition rules");
+            }
+            this.lastRules = rulesArray;
+            this.lastRulesCache = new ConcurrentHashMap<>();
+        } else {
+            this.lastRules = EMPTY_LASTRULES;
+            this.lastRulesCache = null;
         }
-        this.lastRules = rulesArray;
     }
 
     /**
@@ -288,6 +293,7 @@ public final class ZoneRules implements Serializable {
         this.savingsInstantTransitions = savingsInstantTransitions;
         this.wallOffsets = wallOffsets;
         this.lastRules = lastRules;
+        this.lastRulesCache = (lastRules.length > 0) ? new ConcurrentHashMap<>() : null;
 
         if (savingsInstantTransitions.length == 0) {
             this.savingsLocalTransitions = EMPTY_LDT_ARRAY;
@@ -324,6 +330,7 @@ public final class ZoneRules implements Serializable {
         this.savingsLocalTransitions = EMPTY_LDT_ARRAY;
         this.wallOffsets = standardOffsets;
         this.lastRules = EMPTY_LASTRULES;
+        this.lastRulesCache = null;
     }
 
     /**

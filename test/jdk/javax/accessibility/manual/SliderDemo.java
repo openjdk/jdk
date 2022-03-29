@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +19,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#ifndef CPU_AARCH64_RELOCINFO_AARCH64_HPP
-#define CPU_AARCH64_RELOCINFO_AARCH64_HPP
-
-  // machine-dependent parts of class relocInfo
- private:
-  enum {
-    // AArch64 instructions are always 4 bytes long and 4-aligned, so
-    // the two lowest offset bits can always be discarded.
-    offset_unit        =  4,
-    // Must be at least 1 for RelocInfo::narrow_oop_in_const.
-    format_width       =  1
-  };
-
- public:
-
-  // This platform has no oops in the code that are not also
-  // listed in the oop section.
-  static bool mustIterateImmediateOopsInCode() { return false; }
-
-#endif // CPU_AARCH64_RELOCINFO_AARCH64_HPP
+/*
+@test
+@key headful
+@summary manual test for accessibility Slider demo
+@run main/manual SwingSetTest SliderDemo
+*/
