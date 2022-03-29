@@ -143,11 +143,6 @@ public class DocFinder {
             this.docTreeInfo = new DocTreeInfo();
         }
 
-        public Input(Utils utils, Element element, boolean isFirstSentence) {
-            this(utils, element);
-            this.isFirstSentence = isFirstSentence;
-        }
-
         public Input copy(Utils utils) {
             if (this.element == null) {
                 throw new NullPointerException();
