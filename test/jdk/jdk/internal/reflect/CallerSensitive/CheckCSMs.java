@@ -68,7 +68,6 @@ public class CheckCSMs {
     // over time.  Do not add any new one to this list.
     private static Set<String> KNOWN_NON_FINAL_CSMS =
         Set.of("java/io/ObjectStreamField#getType ()Ljava/lang/Class;",
-               "java/io/ObjectStreamClass#forClass ()Ljava/lang/Class;",
                "java/lang/Runtime#load (Ljava/lang/String;)V",
                "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V",
                "java/lang/Thread#getContextClassLoader ()Ljava/lang/ClassLoader;",
@@ -91,11 +90,13 @@ public class CheckCSMs {
         CheckCSMs checkCSMs = new CheckCSMs();
         Set<String> result = checkCSMs.run(getPlatformClasses());
         if (!KNOWN_NON_FINAL_CSMS.equals(result)) {
-            Set<String> diff = new HashSet<>(result);
-            diff.removeAll(KNOWN_NON_FINAL_CSMS);
-            throw new RuntimeException("Unexpected non-final instance method: " +
-                result.stream().sorted()
-                      .collect(Collectors.joining("\n", "\n", "")));
+            Set<String> extras = new HashSet<>(result);
+            extras.removeAll(KNOWN_NON_FINAL_CSMS);
+            Set<String> missing = new HashSet<>(KNOWN_NON_FINAL_CSMS);
+            missing.removeAll(result);
+            throw new RuntimeException("Mismatch in non-final instance methods.\n" +
+                "Extra methods:\n" + String.join("\n", extras) + "\n" +
+                "Missing methods:\n" + String.join("\n", missing) + "\n");
         }
 
         // check if all csm methods with a trailing Class parameter are supported
