@@ -424,7 +424,7 @@ public class TestLocalDate extends AbstractTest {
     }
 
     @Test
-    public void test_toEpochDay_edges() {
+    public void test_ofEpochDay_edges() {
         long minDay = ChronoField.EPOCH_DAY.range().getMinimum();
         long maxDay = ChronoField.EPOCH_DAY.range().getMaximum();
         long minYear = ChronoField.YEAR.range().getMinimum();
