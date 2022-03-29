@@ -893,8 +893,8 @@ static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
 }
 
 static bool set_fp_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
+  // strtod allows leading whitespace, but our flag format does not.
   if (*value == '\0' || isspace(*value)) {
-    // strtod allows leading whitespace, but our flag format does not.
     return false;
   }
   char* end;
