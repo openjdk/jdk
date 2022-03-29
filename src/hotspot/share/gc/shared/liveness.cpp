@@ -75,6 +75,9 @@ LivenessEstimatorThread::LivenessEstimatorThread()
   , _actual_object_count(0)
   , _actual_object_size_words(0)
 {
+  // Give this thread a name
+  set_name("LivenessEstimator");
+
   // This initializes the bitmap and reserves the memory, but does not commit it
   initialize_mark_bit_map();
 
@@ -184,16 +187,28 @@ bool LivenessEstimatorThread::estimate_liveness() {
   VM_LivenessRootScan root_scan(this);
   VMThread::execute(&root_scan);
 
+  Ticks after_vm_op = Ticks::now();
+
+  unsigned int collections = Universe::heap()->total_collections();
+  log_info(gc,estimator)("Total collections before root scan: " UINT32_FORMAT, collections);
+
+  // This will block if the VM thread has already started another operation. We need
+  // to check if that operation completed a GC because the oops from the root set may
+  // no longer be valid.
   SuspendibleThreadSetJoiner sst;
-  if (!check_yield_and_continue(&sst)) {
+
+  if (collections != Universe::heap()->total_collections()) {
+    // The gc has run while this thread was joining the collection set. The oops in the
+    // mark stack from the root scan cannot be used.
+    log_info(gc,estimator)("Total collections after root scan: " UINT32_FORMAT, collections);
     return false;
   }
 
   KlassInfoTable cit(false);
 
-  Ticks after_vm_op = Ticks::now();
 
-  log_info(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
+
+  log_debug(gc, estimator)("Mark stack size after root scan: " SIZE_FORMAT, _mark_stack.size());
 
   LivenessOopClosure cl(this);
   while (!_mark_stack.is_empty()) {
