@@ -427,9 +427,17 @@ public class TestLocalDate extends AbstractTest {
     public void test_toEpochDay_edges() {
         long minDay = ChronoField.EPOCH_DAY.range().getMinimum();
         long maxDay = ChronoField.EPOCH_DAY.range().getMaximum();
+        long minYear = ChronoField.YEAR.range().getMinimum();
+        long maxYear = ChronoField.YEAR.range().getMinimum();
         for (int i = 0; i < 500; i++) {
-            assertEquals(LocalDate.ofEpochDay(minDay + i), LocalDate.MIN.plusDays(i));
-            assertEquals(LocalDate.ofEpochDay(maxDay - i), LocalDate.MAX.minusDays(i));
+            LocalDate minDate = LocalDate.ofEpochDay(minDay + i);
+            assertEquals(minDate, LocalDate.MIN.plusDays(i));
+            assertTrue(ChronoField.YEAR.range().isValidValue(minDate.getYear()));
+
+            LocalDate maxDate = LocalDate.ofEpochDay(maxDay - i);
+            assertEquals(maxDate, LocalDate.MAX.minusDays(i));
+            assertTrue(ChronoField.YEAR.range().isValidValue(maxDate.getYear()));
+
             try {
                 LocalDate.ofEpochDay(minDay - 1 - i);
                 fail("Expected DateTimeException");
