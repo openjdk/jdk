@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,10 +260,10 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
         // to crash. Let's just print out the symbolic address.
         frame::print_C_frame(st, buf, buf_size, pc);
         // print source file and line, if available
-        char filename[128];
+        char buf[128];
         int line_no;
-        if (SymbolEngine::get_source_info(pc, filename, sizeof(filename), &line_no)) {
-          st->print("  (%s:%d)", filename, line_no);
+        if (SymbolEngine::get_source_info(pc, buf, sizeof(buf), &line_no)) {
+          st->print("  (%s:%d)", buf, line_no);
         }
         st->cr();
       }

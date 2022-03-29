@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,11 +576,11 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 
 }
 
-bool SymbolEngine::get_source_info(const void* addr, char* filename, size_t filename_len,
+bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,
                                    int* line_no)
 {
-  assert(filename != NULL && filename_len > 0 && line_no != NULL, "Argument error");
-  filename[0] = '\0';
+  assert(buf != NULL && buflen > 0 && line_no != NULL, "Argument error");
+  buf[0] = '\0';
   *line_no = -1;
 
   if (addr == NULL) {
@@ -595,15 +595,15 @@ bool SymbolEngine::get_source_info(const void* addr, char* filename, size_t file
   DWORD displacement;
   if (WindowsDbgHelp::symGetLineFromAddr64(::GetCurrentProcess(), (DWORD64)addr,
                                            &displacement, &lineinfo)) {
-    if (filename != NULL && filename_len > 0 && lineinfo.FileName != NULL) {
+    if (buf != NULL && buflen > 0 && lineinfo.FileName != NULL) {
       // We only return the file name, not the whole path.
       char* p = lineinfo.FileName;
       char* q = strrchr(lineinfo.FileName, '\\');
       if (q) {
         p = q + 1;
       }
-      ::strncpy(filename, p, filename_len - 1);
-      filename[filename_len - 1] = '\0';
+      ::strncpy(buf, p, buflen - 1);
+      buf[buflen - 1] = '\0';
     }
     if (line_no != 0) {
       *line_no = lineinfo.LineNumber;
