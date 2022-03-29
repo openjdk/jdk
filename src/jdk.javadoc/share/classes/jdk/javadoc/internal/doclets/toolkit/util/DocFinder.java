@@ -75,12 +75,12 @@ public class DocFinder {
          * The taglet to search for documentation on behalf of. Null if we want
          * to search for overall documentation.
          */
-        public InheritableTaglet taglet = null;
+        public InheritableTaglet taglet;
 
         /**
          * The id of the tag to retrieve documentation for.
          */
-        public String tagId = null;
+        public String tagId;
 
         /**
          * The tag to retrieve documentation for.  This is only used for the
@@ -91,18 +91,18 @@ public class DocFinder {
         /**
          * True if we only want to search for the first sentence.
          */
-        public boolean isFirstSentence = false;
+        public boolean isFirstSentence;
 
         /**
          * True if we are looking for documentation to replace the {@code {@inheritDoc}} tag.
          */
-        public boolean isInheritDocTag = false;
+        public boolean isInheritDocTag;
 
         /**
          * Used to distinguish between type variable param tags and regular
          * param tags.
          */
-        public boolean isTypeVariableParamTag = false;
+        public boolean isTypeVariableParamTag;
 
         public final Utils utils;
 
@@ -205,7 +205,7 @@ public class DocFinder {
          * subclass of IOException.  This subclass of DocFinder.Output allows
          * multiple tag inheritance.
          */
-        public List<DocTree> tagList = new ArrayList<>();
+        public final List<DocTree> tagList = new ArrayList<>();
 
         /**
          * Returns a string representation for debugging purposes
