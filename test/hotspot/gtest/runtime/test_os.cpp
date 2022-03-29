@@ -416,9 +416,7 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
       if (q == NULL) {
         // Someone grabbed that area concurrently. Cleanup, then retry.
         tty->print_cr("reserve_multiple: retry (%d)...", stripe);
-        if (stripe > 0) {
-          carefully_release_multiple(p, stripe, stripe_len);
-        }
+        carefully_release_multiple(p, stripe, stripe_len);
         p = NULL;
       } else {
         EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
