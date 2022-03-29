@@ -41,25 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.InheritableTaglet;
  */
 public class DocFinder {
 
-    public static final class DocTreeInfo {
-        public final DocTree docTree;
-        public final Element element;
-
-        public DocTreeInfo() {
-            this.docTree = null;
-            this.element = null;
-        }
-
-        public DocTreeInfo(DocTree docTree, Element baseElement) {
-            this.docTree = docTree;
-            this.element = baseElement;
-        }
-
-        @Override
-        public String toString() {
-            return "DocTreeInfo{" + "docTree=" + docTree + ", element=" + element + '}';
-        }
-    }
+    public record DocTreeInfo(DocTree docTree, Element element) { }
 
     /**
      * The class that encapsulates the input.
@@ -140,7 +122,7 @@ public class DocFinder {
                 throw new NullPointerException();
             this.element = element;
             this.utils = utils;
-            this.docTreeInfo = new DocTreeInfo();
+            this.docTreeInfo = new DocTreeInfo(null, null);
         }
 
         public Input copy(Utils utils) {

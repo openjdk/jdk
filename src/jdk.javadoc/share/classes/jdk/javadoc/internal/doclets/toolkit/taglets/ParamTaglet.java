@@ -88,13 +88,13 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         Utils utils = input.utils;
         if (input.tagId == null) {
-            input.isTypeVariableParamTag = ((ParamTree)input.docTreeInfo.docTree).isTypeParameter();
-            ExecutableElement ee = (ExecutableElement)input.docTreeInfo.element;
+            input.isTypeVariableParamTag = ((ParamTree)input.docTreeInfo.docTree()).isTypeParameter();
+            ExecutableElement ee = (ExecutableElement)input.docTreeInfo.element();
             CommentHelper ch = utils.getCommentHelper(ee);
             List<? extends Element> parameters = input.isTypeVariableParamTag
                     ? ee.getTypeParameters()
                     : ee.getParameters();
-            String target = ch.getParameterName(input.docTreeInfo.docTree);
+            String target = ch.getParameterName(input.docTreeInfo.docTree());
             for (int i = 0 ; i < parameters.size(); i++) {
                 Element e = parameters.get(i);
                 String pname = input.isTypeVariableParamTag
