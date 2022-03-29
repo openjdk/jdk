@@ -25,7 +25,7 @@
  * @bug 8282819
  * @summary Unit tests for Locale.of() method. Those tests check the equality
  *      of obtained objects with ones that are gotten from other means with both
- *      well-formed and ill-formed arguments. Also checks the possible exceptions
+ *      well-formed and ill-formed arguments. Also checks the possible NPEs
  *      for error cases.
  * @run testng TestOf
  */
@@ -37,50 +37,75 @@ import java.util.Locale;
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
+@SuppressWarnings("deprecation")
 @Test
 public class TestOf {
 
-    @SuppressWarnings("deprecation")
     @DataProvider
-    public Object[][] data_validArgs() {
+    public Object[][] data_1Arg() {
         return new Object[][]{
                 // well-formed
-                {Locale.ROOT, new String[0]},
-                {Locale.ROOT, ""},
                 {Locale.ENGLISH, "en"},
-                {Locale.US, "en", "US"},
-                {Locale.forLanguageTag("en-Latn-US"), "en", "US", "", "Latn"},
+                {Locale.JAPANESE, "ja"},
 
                 // ill-formed
-                {new Locale("a", "A", "a"), "a", "A", "a"},
-                {new Locale("ja", "JP", "JP"), "ja", "JP", "JP"},
-                {new Locale("th", "TH", "TH"), "th", "TH", "TH"},
+                {Locale.ROOT, ""},
+                {new Locale("a"), "a"},
+                {new Locale("xxxxxxxxxx"), "xxxxxxxxxx"},
         };
     }
 
     @DataProvider
-    public Object[][] data_nullArgs() {
+    public Object[][] data_2Args() {
         return new Object[][]{
-                {null},
-                {"", null},
-                {"", "", null},
-                {"", "", "", null},
+                // well-formed
+                {Locale.US, "en", "US"},
+                {Locale.JAPAN, "ja", "JP"},
+
+                // ill-formed
+                {new Locale("", "US"), "", "US"},
+                {new Locale("a", "b"), "a", "b"},
+                {new Locale("xxxxxxxxxx", "yyyyyyyyyy"), "xxxxxxxxxx", "yyyyyyyyyy"},
         };
     }
 
-    @Test (dataProvider = "data_validArgs")
-    public void test_validArgs(Locale expected, String... args) {
-        assertEquals(Locale.of(args), expected);
+    @DataProvider
+    public Object[][] data_3Args() {
+        return new Object[][]{
+                // well-formed
+                {Locale.forLanguageTag("en-US-POSIX"), "en", "US", "POSIX"},
+                {Locale.forLanguageTag("ja-JP-POSIX"), "ja", "JP", "POSIX"},
+
+                // ill-formed
+                {new Locale("", "", "POSIX"), "", "", "POSIX"},
+                {new Locale("a", "b", "c"), "a", "b", "c"},
+                {new Locale("xxxxxxxxxx", "yyyyyyyyyy", "zzzzzzzzzz"),
+                        "xxxxxxxxxx", "yyyyyyyyyy", "zzzzzzzzzz"},
+                {new Locale("ja", "JP", "JP"), "ja", "JP", "JP"},
+                {new Locale("th", "TH", "TH"), "th", "TH", "TH"},
+                {new Locale("no", "NO", "NY"), "no", "NO", "NY"},
+        };
     }
 
-    @Test (dataProvider = "data_nullArgs")
-    public void test_nullArgs(String... args) {
-        assertThrows(NullPointerException.class, () -> Locale.of(args));
+    @Test (dataProvider = "data_1Arg")
+    public void test_1Arg(Locale expected, String lang) {
+        assertEquals(Locale.of(lang), expected);
+    }
+
+    @Test (dataProvider = "data_2Args")
+    public void test_2Args(Locale expected, String lang, String ctry) {
+        assertEquals(Locale.of(lang, ctry), expected);
+    }
+
+    @Test (dataProvider = "data_3Args")
+    public void test_3Args(Locale expected, String lang, String ctry, String vrnt) {
+        assertEquals(Locale.of(lang, ctry, vrnt), expected);
     }
 
     @Test
-    public void test_IAE() {
-        assertThrows(IllegalArgumentException.class, () -> Locale.of("en", "", "", "", ""));
-        assertThrows(IllegalArgumentException.class, () -> Locale.of(new String[5]));
+    public void test_NPE() {
+        assertThrows(NullPointerException.class, () -> Locale.of(null));
+        assertThrows(NullPointerException.class, () -> Locale.of("", null));
+        assertThrows(NullPointerException.class, () -> Locale.of("", "", null));
     }
 }

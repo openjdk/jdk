@@ -35,10 +35,10 @@ import java.util.Locale;
  * @author Masayoshi Okutsu
  */
 public class JRELocaleConstants {
-    public static final Locale JA_JP_JP = Locale.forLanguageTag("ja-JP-x-lvariant-JP");
-    public static final Locale NO_NO_NY = Locale.forLanguageTag("no-NO-x-lvariant-NY");
-    public static final Locale TH_TH    = Locale.forLanguageTag("th-TH");
-    public static final Locale TH_TH_TH = Locale.forLanguageTag("th-TH-x-lvariant-TH");
+    public static final Locale JA_JP_JP = Locale.of("ja", "JP", "JP");
+    public static final Locale NO_NO_NY = Locale.of("no", "NO", "NY");
+    public static final Locale TH_TH    = Locale.of("th", "TH");
+    public static final Locale TH_TH_TH = Locale.of("th", "TH", "TH");
 
     private JRELocaleConstants() {
     }

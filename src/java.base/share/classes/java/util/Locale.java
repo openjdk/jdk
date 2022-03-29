@@ -244,9 +244,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <p>The method {@link #forLanguageTag} obtains a {@code Locale}
  * object for a well-formed BCP 47 language tag. The method
- * {@link #of(String...)} obtains a {@code Locale} object from
- * given fields ({@code language}, {@code country}, {@code variant},
- * and/or {@code script} defined above.
+ * {@link #of(String, String, String)} and its overloads obtain a
+ * {@code Locale} object from given ({@code language}, {@code country},
+ * and/or {@code variant} defined above.
  *
  * <h4>Locale Constants</h4>
  *
@@ -801,34 +801,82 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns a {@code Locale} obtained from the given
-     * fields. Fields can take up to 4 arguments in the following order;
-     * {@code Locale.of(}<a href="#def_language">language</a>,
-     * <a href="#def_region">country</a>,
-     * <a href="#def_variant">variant</a>,
-     * <a href="#def_script">script</a>{@code )}.
-     * Each field can be an empty String, but cannot be {@code null}.
-     * If {@code fields} holds more than 4 arguments, {@code IllegalArgumentException}
-     * is thrown. If no arguments are given, {@link #ROOT} is returned.
+     * Obtains a locale from language, country and variant.
+     * This method normalizes the language value to lowercase and
+     * the country value to uppercase.
+     * @implNote
+     * <ul>
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
+     * <li>For backward compatibility reasons, this method does not make
+     * any syntactic checks on the input.
+     * <li>The two cases ("ja", "JP", "JP") and ("th", "TH", "TH") are handled specially,
+     * see <a href="#special_cases_constructor">Special Cases</a> for more information.
+     * </ul>
      *
-     * @apiNote This method also accepts a single {@code String} array as an argument.
-     * Each field must be the array element in the above order. The length of the array
-     * must not exceed 4, otherwise an {@code IllegalArgumentException} is thrown.
-     * @param fields language, country, variant, and/or script, cannot be {@code null}.
-     * @return the {@code Locale} instance requested
-     * @throws NullPointerException if any {@code fields} argument is {@code null}.
-     * @throws IllegalArgumentException if {@code fields} holds more than 4 arguments.
+     * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
+     * up to 8 characters in length.  See the {@code Locale} class description about
+     * valid language values.
+     * @param country An ISO 3166 alpha-2 country code or a UN M.49 numeric-3 area code.
+     * See the {@code Locale} class description about valid country values.
+     * @param variant Any arbitrary value used to indicate a variation of a {@code Locale}.
+     * See the {@code Locale} class description for the details.
+     * @throws    NullPointerException thrown if any argument is null.
+     * @return A {@code Locale} object
      * @since 19
      */
-    public static Locale of(String... fields) {
-        return switch (fields.length) {
-            case 0 -> ROOT;
-            case 1 -> getInstance(fields[0], "", "", "", null);
-            case 2 -> getInstance(fields[0], "", fields[1], "", null);
-            case 3 -> getInstance(fields[0], "", fields[1], fields[2], null);
-            case 4 -> getInstance(fields[0], fields[3], fields[1], fields[2], null);
-            default -> throw new IllegalArgumentException("The number of arguments exceeds 4.");
-        };
+    public static Locale of(String language, String country, String variant) {
+        return getInstance(language, "", country, variant, null);
+    }
+
+    /**
+     * Obtains a locale from language and country.
+     * This method normalizes the language value to lowercase and
+     * the country value to uppercase.
+     * @implNote
+     * <ul>
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
+     * <li>For backward compatibility reasons, this method does not make
+     * any syntactic checks on the input.
+     * </ul>
+     *
+     * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
+     * up to 8 characters in length.  See the {@code Locale} class description about
+     * valid language values.
+     * @param country An ISO 3166 alpha-2 country code or a UN M.49 numeric-3 area code.
+     * See the {@code Locale} class description about valid country values.
+     * @throws    NullPointerException thrown if either argument is null.
+     * @return A {@code Locale} object
+     * @since 19
+     */
+    public static Locale of(String language, String country) {
+        return getInstance(language, "", country, "", null);
+    }
+
+    /**
+     * Obtains a locale from a language code.
+     * This method normalizes the language value to lowercase.
+     * @implNote
+     * <ul>
+     * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
+     * their current forms. See <a href="#legacy_language_codes">Legacy language
+     * codes</a> for more information.
+     * <li>For backward compatibility reasons, this method does not make
+     * any syntactic checks on the input.
+     * </ul>
+     *
+     * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
+     * up to 8 characters in length.  See the {@code Locale} class description about
+     * valid language values.
+     * @throws    NullPointerException thrown if argument is null.
+     * @return A {@code Locale} object
+     * @since 19
+     */
+    public static Locale of(String language) {
+        return getInstance(language, "", "", "", null);
     }
 
     /**
