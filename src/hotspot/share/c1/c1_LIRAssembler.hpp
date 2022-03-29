@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,11 @@
 
 class Compilation;
 class ScopeValue;
-class BarrierSet;
 
 class LIR_Assembler: public CompilationResourceObj {
  private:
   C1_MacroAssembler* _masm;
   CodeStubList*      _slow_case_stubs;
-  BarrierSet*        _bs;
 
   Compilation*       _compilation;
   FrameMap*          _frame_map;
@@ -186,6 +184,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_op1(LIR_Op1* op);
   void emit_op2(LIR_Op2* op);
   void emit_op3(LIR_Op3* op);
+  void emit_op4(LIR_Op4* op);
   void emit_opBranch(LIR_OpBranch* op);
   void emit_opLabel(LIR_OpLabel* op);
   void emit_arraycopy(LIR_OpArrayCopy* op);
@@ -219,8 +218,8 @@ class LIR_Assembler: public CompilationResourceObj {
   void volatile_move_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);
   void comp_mem_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);  // info set for null exceptions
   void comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr result, LIR_Op2* op);
-  void cmove(LIR_Condition code, LIR_Opr left, LIR_Opr right, LIR_Opr result, BasicType type);
-
+  void cmove(LIR_Condition code, LIR_Opr left, LIR_Opr right, LIR_Opr result, BasicType type,
+             LIR_Opr cmp_opr1 = LIR_OprFact::illegalOpr, LIR_Opr cmp_opr2 = LIR_OprFact::illegalOpr);
   void call(        LIR_OpJavaCall* op, relocInfo::relocType rtype);
   void ic_call(     LIR_OpJavaCall* op);
   void vtable_call( LIR_OpJavaCall* op);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,8 +189,6 @@ public class InflaterInputStream extends FilterInputStream {
         }
     }
 
-    private byte[] b = new byte[512];
-
     /**
      * Skips specified number of bytes of uncompressed data.
      * @param n the number of bytes to skip
@@ -205,6 +203,7 @@ public class InflaterInputStream extends FilterInputStream {
         ensureOpen();
         int max = (int)Math.min(n, Integer.MAX_VALUE);
         int total = 0;
+        byte[] b = new byte[Math.min(max, 512)];
         while (total < max) {
             int len = max - total;
             if (len > b.length) {

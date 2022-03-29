@@ -1405,8 +1405,12 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_PopCountVI:
+      if (!UsePopCountInstruction || (UseAVX < 2)) {
+        return false;
+      }
+      break;
     case Op_PopCountVL:
-      if (!UsePopCountInstruction || !VM_Version::supports_avx512_vpopcntdq()) {
+      if (!UsePopCountInstruction || (UseAVX <= 2)) {
         return false;
       }
       break;
@@ -1858,6 +1862,18 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
+    case Op_PopCountVI:
+      if (!VM_Version::supports_avx512_vpopcntdq() &&
+          (vlen == 16) && !VM_Version::supports_avx512bw()) {
+        return false;
+      }
+      break;
+    case Op_PopCountVL:
+      if (!VM_Version::supports_avx512_vpopcntdq() &&
+          ((vlen <= 4) || ((vlen == 8) && !VM_Version::supports_avx512bw()))) {
         return false;
       }
       break;
@@ -8571,28 +8587,54 @@ instruct vmuladdaddS2I_reg(vec dst, vec src1, vec src2) %{
 
 // --------------------------------- PopCount --------------------------------------
 
-instruct vpopcountI(vec dst, vec src) %{
+instruct vpopcountI_popcntd(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512_vpopcntdq());
   match(Set dst (PopCountVI src));
-  format %{ "vpopcntd  $dst,$src\t! vector popcount packedI" %}
+  format %{ "vector_popcount_int $dst, $src\t! vector popcount packedI" %}
   ins_encode %{
     assert(UsePopCountInstruction, "not enabled");
-
     int vlen_enc = vector_length_encoding(this);
-    __ vpopcntd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+    __ vector_popcount_int($dst$$XMMRegister, $src$$XMMRegister, xnoreg, xnoreg, xnoreg, noreg, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vpopcountL(vec dst, vec src) %{
-  match(Set dst (PopCountVL src));
-  format %{ "vpopcntq  $dst,$src\t! vector popcount packedL" %}
+instruct vpopcountI(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, rRegP rtmp, rFlagsReg cc) %{
+  predicate(!VM_Version::supports_avx512_vpopcntdq());
+  match(Set dst (PopCountVI src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, KILL cc);
+  format %{ "vector_popcount_int  $dst, $src\t! using $xtmp1, $xtmp2, $xtmp3, and $rtmp as TEMP" %}
   ins_encode %{
     assert(UsePopCountInstruction, "not enabled");
+    int vlen_enc = vector_length_encoding(this);
+    __ vector_popcount_int($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                           $xtmp3$$XMMRegister, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct vpopcountL_popcntd(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512_vpopcntdq());
+  match(Set dst (PopCountVL src));
+  format %{ "vector_popcount_long  $dst, $src\t! vector popcount packedL" %}
+  ins_encode %{
+    assert(UsePopCountInstruction, "not enabled");
     int vlen_enc = vector_length_encoding(this, $src);
-    __ vpopcntq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ evpmovqd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+    __ vector_popcount_long($dst$$XMMRegister, $src$$XMMRegister, xnoreg, xnoreg, xnoreg, noreg, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct vpopcountL(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, rRegP rtmp, rFlagsReg cc) %{
+  predicate(!VM_Version::supports_avx512_vpopcntdq());
+  match(Set dst (PopCountVL src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, KILL cc);
+  format %{ "vector_popcount_long  $dst, $src\t! using $xtmp1, $xtmp2, $xtmp3, and $rtmp as TEMP" %}
+  ins_encode %{
+    assert(UsePopCountInstruction, "not enabled");
+    int vlen_enc = vector_length_encoding(this, $src);
+    __ vector_popcount_long($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                           $xtmp3$$XMMRegister, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ AwtCheckbox* AwtCheckbox::Create(jobject peer, jobject parent)
 
             label = (jstring)env->GetObjectField(target, AwtCheckbox::labelID);
             if (label != NULL) {
-                labelStr = JNU_GetStringPlatformChars(env, label, 0);
+                labelStr = JNU_GetStringPlatformChars(env, label, NULL);
             }
             if (labelStr != 0) {
                 jint x = env->GetIntField(target, AwtComponent::xID);
@@ -375,7 +375,7 @@ void AwtCheckbox::_SetLabel(void *param)
         }
         else
         {
-            labelStr = JNU_GetStringPlatformChars(env, label, JNI_FALSE);
+            labelStr = JNU_GetStringPlatformChars(env, label, NULL);
         }
 
         if (labelStr == NULL)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,7 +522,8 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
   if (MetaspaceShared::is_in_shared_metaspace(obj)) {
     // Don't dump existing shared metadata again.
     return point_to_it;
-  } else if (ref->msotype() == MetaspaceObj::MethodDataType) {
+  } else if (ref->msotype() == MetaspaceObj::MethodDataType ||
+             ref->msotype() == MetaspaceObj::MethodCountersType) {
     return set_to_null;
   } else {
     if (ref->msotype() == MetaspaceObj::ClassType) {
