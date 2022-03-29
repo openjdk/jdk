@@ -13437,8 +13437,8 @@ instruct tlsLoadP(r15_RegP dst) %{
 // These instructions is not matched by the matcher but used by the peephole
 instruct leaI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2)
 %{
+  predicate(false);
   match(Set dst (AddI src1 src2));
-  ins_cost(10000);
   format %{ "leal    $dst, [$src1 + $src2]" %}
   ins_encode %{
     Register dst = $dst$$Register;
@@ -13456,8 +13456,8 @@ instruct leaI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2)
 
 instruct leaI_rReg_immI_peep(rRegI dst, rRegI src1, immI src2)
 %{
+  predicate(false);
   match(Set dst (AddI src1 src2));
-  ins_cost(10000);
   format %{ "leal    $dst, [$src1 + $src2]" %}
   ins_encode %{
     __ leal($dst$$Register, Address($src1$$Register, $src2$$constant));
@@ -13467,8 +13467,8 @@ instruct leaI_rReg_immI_peep(rRegI dst, rRegI src1, immI src2)
 
 instruct leaI_rReg_immI2_peep(rRegI dst, rRegI src, immI2 shift)
 %{
+  predicate(false);
   match(Set dst (LShiftI src shift));
-  ins_cost(10000);
   format %{ "leal    $dst, [$src << $shift]" %}
   ins_encode %{
     Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
@@ -13484,8 +13484,8 @@ instruct leaI_rReg_immI2_peep(rRegI dst, rRegI src, immI2 shift)
 
 instruct leaL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2)
 %{
+  predicate(false);
   match(Set dst (AddL src1 src2));
-  ins_cost(10000);
   format %{ "leaq    $dst, [$src1 + $src2]" %}
   ins_encode %{
     Register dst = $dst$$Register;
@@ -13503,8 +13503,8 @@ instruct leaL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2)
 
 instruct leaL_rReg_immL32_peep(rRegL dst, rRegL src1, immL32 src2)
 %{
+  predicate(false);
   match(Set dst (AddL src1 src2));
-  ins_cost(10000);
   format %{ "leaq    $dst, [$src1 + $src2]" %}
   ins_encode %{
     __ leaq($dst$$Register, Address($src1$$Register, $src2$$constant));
@@ -13514,8 +13514,8 @@ instruct leaL_rReg_immL32_peep(rRegL dst, rRegL src1, immL32 src2)
 
 instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
 %{
+  predicate(false);
   match(Set dst (LShiftL src shift));
-  ins_cost(10000);
   format %{ "leaq    $dst, [$src << $shift]" %}
   ins_encode %{
     Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);

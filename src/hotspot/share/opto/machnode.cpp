@@ -429,7 +429,7 @@ int MachNode::operand_index(Node* def) const {
 
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
-int MachNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_) {
+int MachNode::peephole(Block *block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc *ra_) {
   return -1;
 }
 

@@ -2046,7 +2046,7 @@ void PhasePeephole::do_transform() {
         if( n->is_Mach() ) {
           MachNode *m = n->as_Mach();
           // check for peephole opportunities
-          int result = m->peephole(block, instruction_index, _regalloc);
+          int result = m->peephole(block, instruction_index, &_cfg, _regalloc);
           if( result != -1 ) {
 #ifndef PRODUCT
             if( PrintOptoPeephole ) {

@@ -30,9 +30,9 @@
 
 class Peephole {
 public:
-  static bool lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
+  static bool lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                MachNode* (*new_root)(), uint inst0_rule);
-  static bool lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
+  static bool lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                MachNode* (*new_root)(), uint inst0_rule);
 };
 

@@ -1317,7 +1317,6 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
           fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
         }
         // Define result register and result operand
-        fprintf(fp, "        ra_->add_reference(root, inst%d);\n", inst_num);
         fprintf(fp, "        ra_->set_oop (root, ra_->is_oop(inst%d));\n", inst_num);
         fprintf(fp, "        ra_->set_pair(root->_idx, ra_->get_reg_second(inst%d), ra_->get_reg_first(inst%d));\n", inst_num, inst_num);
         fprintf(fp, "        root->_opnds[0] = inst%d->_opnds[0]->clone(); // result\n", inst_num);
@@ -1347,11 +1346,13 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
   // Mark the node as removed because peephole does not remove nodes from the graph
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        inst%d->set_removed();\n", i);
+    fprintf(fp, "        cfg_->map_node_to_block(inst%d, nullptr);\n", i);
   }
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        block->remove_node(block_index - %d);\n", i);
   }
   fprintf(fp, "        block->insert_node(root, block_index - %d);\n", max_position);
+  fprintf(fp, "        cfg_->map_node_to_block(root, block);\n");
   // Return the peephole index
   fprintf(fp, "        return %d;  // return the peephole index;\n", peephole_number);
   fprintf(fp, "      }\n");
@@ -1361,7 +1362,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
 // Define the Peephole method for an instruction node
 void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Generate Peephole function header
-  fprintf(fp, "int %sNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_) {\n", node->_ident);
+  fprintf(fp, "int %sNode::peephole(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_) {\n", node->_ident);
   fprintf(fp, "  bool  matches = true;\n");
 
   // Identify the maximum instruction position,
@@ -1432,7 +1433,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
 
       // Call the precedure
-      fprintf(fp, "    bool replacement = Peephole::%s(block, block_index, ra_, replacing", pprocedure->name());
+      fprintf(fp, "    bool replacement = Peephole::%s(block, block_index, cfg_, ra_, replacing", pprocedure->name());
 
       int         parent        = -1;
       int         inst_position = 0;

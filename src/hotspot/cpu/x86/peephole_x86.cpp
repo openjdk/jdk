@@ -33,7 +33,7 @@
 // lea d, [s1 + s2]     and
 // mov d, s1; shl d, s2 into
 // lea d, [s1 << s2]    with s2 = 1, 2, 3
-bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
+bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                          MachNode* (*new_root)(), uint inst0_rule, bool imm) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
@@ -55,7 +55,8 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   }
   assert(dst != src1, "");
 
-  // Go up the block to find inst1, if any node writes to src1 then coalescing fails
+  // Go up the block to find inst1, if any node writes to src1 or read from dst
+  // then coalescing fails
   for (int pos = block_index - 1; pos >= 0; pos--) {
     Node* curr = block->get_node(pos);
     if (curr == inst1) {
@@ -66,6 +67,16 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
     OptoReg::Name out = ra_->get_reg_first(curr);
     if (out == src1) {
       return false;
+    }
+
+    for (uint i = 0; i < curr->len(); i++) {
+      if (curr->in(i) == nullptr) {
+        continue;
+      }
+      OptoReg::Name in = ra_->get_reg_first(curr->in(i));
+      if (in == dst) {
+        return false;
+      }
     }
   }
   if (inst1_index == -1) {
@@ -84,9 +95,21 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
     }
   }
 
+  // Go down the block to find the output proj node (the flag output) of inst0
+  int proj_index = -1;
+  Node* proj = nullptr;
+  for (uint pos = block_index + 1; pos < block->number_of_nodes(); pos++) {
+    Node* curr = block->get_node(pos);
+    if (curr->is_MachProj() && curr->in(0) == inst0) {
+      proj_index = pos;
+      proj = curr;
+      break;
+    }
+  }
+  assert(proj != nullptr, "");
+
   MachNode* root = new_root();
   // Assign register for the newly allocated node
-  ra_->add_reference(root, inst0);
   ra_->set_oop(root, ra_->is_oop(inst0));
   ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
 
@@ -98,6 +121,7 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
     root->add_req(inst2);
   }
   inst0->replace_by(root);
+  proj->set_req(0, inst0);
 
   // Initialize the operand array
   root->_opnds[0] = inst0->_opnds[0]->clone();
@@ -107,20 +131,28 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   // Modify the block
   inst0->set_removed();
   inst1->set_removed();
+  block->remove_node(proj_index);
   block->remove_node(block_index);
   block->remove_node(inst1_index);
   block->insert_node(root, block_index - 1);
+
+  // Modify the CFG
+  cfg_->map_node_to_block(inst0, nullptr);
+  cfg_->map_node_to_block(inst1, nullptr);
+  cfg_->map_node_to_block(proj, nullptr);
+  cfg_->map_node_to_block(root, block);
+
   return true;
 }
 
-bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseRegAlloc* ra_,
+bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                 MachNode* (*new_root)(), uint inst0_rule) {
-  return lea_coalesce_helper(block, block_index, ra_, new_root, inst0_rule, false);
+  return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, false);
 }
 
-bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseRegAlloc* ra_,
+bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                 MachNode* (*new_root)(), uint inst0_rule) {
-  return lea_coalesce_helper(block, block_index, ra_, new_root, inst0_rule, true);
+  return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
 }
 #endif // _LP64
 
