@@ -95,7 +95,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     public static final int TRAILER_FIELD_BC = 1;
 
     /**
-     * The PSS parameter set with all default values
+     * The PSS parameter set with all default values.
      * @deprecated This field uses the default values defined in the PKCS #1
      *         standard. Some of these defaults are no longer recommended due
      *         to advances in cryptanalysis -- see the
@@ -103,7 +103,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         standard for more details. Thus, it is recommended to create
      *         a new {@code PSSParameterSpec} with the desired parameter values
      *         using
-     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
+     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int)} constructor.
      *
      * @since 1.5
      */
@@ -172,7 +172,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
      *         standard for more details. Thus, it is recommended to explicitly
      *         specify all desired parameter values with
-     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int) PSSParameterSpec}.
+     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int)} constructor.
      */
     @Deprecated(since="19")
     public PSSParameterSpec(int saltLen) {
