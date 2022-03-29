@@ -88,24 +88,20 @@ public class DocFinder {
 
         public final Utils utils;
 
-        public Input(Utils utils, Element element, InheritableTaglet taglet, DocTreeInfo dtInfo,
-                boolean isFirstSentence, boolean isInheritDocTag) {
-            this.utils = utils;
-            this.element = element;
-            this.taglet = taglet;
-            this.isFirstSentence = isFirstSentence;
-            this.isInheritDocTag = isInheritDocTag;
-            this.docTreeInfo = dtInfo;
-        }
-
-        public Input(Utils utils, Element element, InheritableTaglet taglet, String tagId) {
+        public Input(Utils utils,
+                     Element element,
+                     InheritableTaglet taglet,
+                     String tagId) {
             this(utils, element);
             this.taglet = taglet;
             this.tagId = tagId;
         }
 
-        public Input(Utils utils, Element element, InheritableTaglet taglet, String tagId,
-            boolean isTypeVariableParamTag) {
+        public Input(Utils utils,
+                     Element element,
+                     InheritableTaglet taglet,
+                     String tagId,
+                     boolean isTypeVariableParamTag) {
             this(utils, element);
             this.taglet = taglet;
             this.tagId = tagId;
@@ -118,14 +114,26 @@ public class DocFinder {
         }
 
         public Input(Utils utils, Element element) {
-            if (element == null)
-                throw new NullPointerException();
-            this.element = element;
+            this.element = Objects.requireNonNull(element);
             this.utils = utils;
             this.docTreeInfo = new DocTreeInfo(null, null);
         }
 
-        public Input copy(Utils utils) {
+        public Input(Utils utils,
+                     Element element,
+                     InheritableTaglet taglet,
+                     DocTreeInfo dtInfo,
+                     boolean isFirstSentence,
+                     boolean isInheritDocTag) {
+            this.utils = utils;
+            this.element = element;
+            this.taglet = taglet;
+            this.isFirstSentence = isFirstSentence;
+            this.isInheritDocTag = isInheritDocTag;
+            this.docTreeInfo = dtInfo;
+        }
+
+        private Input copy(Utils utils) {
             if (this.element == null) {
                 throw new NullPointerException();
             }
@@ -137,8 +145,7 @@ public class DocFinder {
         }
 
         /**
-         * For debugging purposes
-         * @return string representation
+         * For debugging purposes.
          */
         @Override
         public String toString() {
