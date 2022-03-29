@@ -4568,7 +4568,14 @@ void PhaseIdealLoop::build_and_optimize() {
             sw.transform_loop(lpt, true);
           }
         } else if (cl->is_main_loop()) {
-          sw.transform_loop(lpt, true);
+          if (!sw.transform_loop(lpt, true)) {
+            // Instigate more unrolling for optimization when vectorization fails.
+            if (cl->has_passed_slp()) {
+              C->set_major_progress();
+              cl->set_notpassed_slp();
+              cl->mark_do_unroll_only();
+            }
+          }
         }
       }
     }
@@ -5775,7 +5782,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
       pinned = false;
     }
     if (n->is_CMove() || n->is_ConstraintCast()) {

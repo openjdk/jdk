@@ -125,7 +125,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     /**
      * Constructs a new menu with an empty label. This menu is not
      * a tear-off menu.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since      1.1
@@ -139,7 +139,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * a tear-off menu.
      * @param       label the menu's label in the menu bar, or in
      *                   another menu of which this menu is a submenu.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -158,7 +158,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      *                   another menu of which this menu is a submenu.
      * @param       tearOff   if {@code true}, the menu
      *                   is a tear-off menu.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -313,7 +313,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      *                          item should be inserted.
      * @see           java.awt.Menu#add(java.lang.String)
      * @see           java.awt.Menu#add(java.awt.MenuItem)
-     * @exception     IllegalArgumentException if the value of
+     * @throws     IllegalArgumentException if the value of
      *                    {@code index} is less than zero
      * @since         1.1
      */
@@ -357,7 +357,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      *                      should be inserted
      * @see         java.awt.Menu#add(java.lang.String)
      * @see         java.awt.Menu#add(java.awt.MenuItem)
-     * @exception     IllegalArgumentException if the value of
+     * @throws     IllegalArgumentException if the value of
      *                    {@code index} is less than zero
      * @since       1.1
      */
@@ -378,7 +378,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * Inserts a separator at the specified position.
      * @param       index the position at which the
      *                       menu separator should be inserted.
-     * @exception   IllegalArgumentException if the value of
+     * @throws   IllegalArgumentException if the value of
      *                       {@code index} is less than 0.
      * @see         java.awt.Menu#addSeparator
      * @since       1.1

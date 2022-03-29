@@ -193,7 +193,9 @@ import java.util.Spliterator;
  * @since 1.4
  */
 
-public abstract class Buffer {
+public abstract sealed class Buffer
+    permits ByteBuffer, CharBuffer, DoubleBuffer, FloatBuffer, IntBuffer,
+        LongBuffer, ShortBuffer {
     // Cached unsafe-access object
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
