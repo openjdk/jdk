@@ -367,9 +367,7 @@ public final class LocalDate
         int dom = marchDoy0 - (marchMonth0 * 306 + 5) / 10 + 1;
         yearEst += marchMonth0 / 10;
 
-        // check year now we are certain it is correct
-        int year = YEAR.checkValidIntValue(yearEst);
-        return new LocalDate(year, month, dom);
+        return new LocalDate((int)yearEst, month, dom);
     }
 
     //-----------------------------------------------------------------------

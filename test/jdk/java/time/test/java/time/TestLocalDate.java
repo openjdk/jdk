@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,12 @@ import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
 
@@ -417,6 +420,28 @@ public class TestLocalDate extends AbstractTest {
         for (long i = date_0000_01_01; i > -2000000; i--) {
             assertEquals(LocalDate.ofEpochDay(test.toEpochDay()), test);
             test = previous(test);
+        }
+    }
+
+    @Test
+    public void test_toEpochDay_edges() {
+        long minDay = ChronoField.EPOCH_DAY.range().getMinimum();
+        long maxDay = ChronoField.EPOCH_DAY.range().getMaximum();
+        for (int i = 0; i < 500; i++) {
+            assertEquals(LocalDate.ofEpochDay(minDay + i), LocalDate.MIN.plusDays(i));
+            assertEquals(LocalDate.ofEpochDay(maxDay - i), LocalDate.MAX.minusDays(i));
+            try {
+                LocalDate.ofEpochDay(minDay - 1 - i);
+                fail("Expected DateTimeException");
+            } catch (DateTimeException e) {
+                // expected
+            }
+            try {
+                LocalDate.ofEpochDay(maxDay + 1 + i);
+                fail("Expected DateTimeException");
+            } catch (DateTimeException e) {
+                // expected
+            }
         }
     }
 
