@@ -36,10 +36,10 @@ import javax.lang.model.type.TypeMirror;
  * The represented module may have an explicit {@linkplain
  * javax.lang.model.util.Elements#getFileObjectOf(Element) backing
  * construct} (either source code or executable output) or may be
- * created from implicit information. The explicit source code
+ * created from implicit information. The explicit and standalone source code
  * construct for a module is typically a {@code module-info.java} file
  * (JLS {@jls 7.7}). Implicit information is used to model {@linkplain
- * #isUnnamed unnamed modules} and {@linkplain
+ * #isUnnamed unnamed modules} and may be used for {@linkplain
  * javax.lang.model.util.Elements#isAutomaticModule(ModuleElement)
  * automatic modules} (JLS {@jls 7.7.1}).
  *
