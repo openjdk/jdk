@@ -1681,11 +1681,6 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   Handshake::execute(&iaeh, target);
 }
 
-void JavaThread::send_async_exception(JavaThread* target, AsyncExceptionHandshake* aeh) {
-  InstallAsyncExceptionHandshake iaeh(aeh);
-  Handshake::execute(&iaeh, target);
-}
-
 
 // External suspension mechanism.
 //

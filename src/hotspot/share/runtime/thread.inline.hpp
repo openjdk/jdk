@@ -144,9 +144,7 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
-    if (should_throw()) {
-      self->handle_async_exception(exception());
-    }
+    self->handle_async_exception(exception());
   }
   oop exception() {
     assert(!_exception.is_empty(), "invariant");
@@ -154,7 +152,6 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   }
   bool is_async_exception()   { return true; }
   bool is_ThreadDeath()       { return _is_ThreadDeath; }
-  virtual bool should_throw() { return true; }
 };
 
 class UnsafeAccessErrorHandshake : public AsyncHandshakeClosure {
