@@ -114,6 +114,8 @@ public class VectorCastShape128Test {
         0,
         Long.MAX_VALUE,
         Long.MIN_VALUE,
+        // A special value to make sure correct rounding of
+        // conversion from long to float. See: JDK-8282764.
         0x561a524000000001L,
     };
 
