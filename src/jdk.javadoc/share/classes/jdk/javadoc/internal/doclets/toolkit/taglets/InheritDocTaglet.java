@@ -49,7 +49,7 @@ public class InheritDocTaglet extends BaseTaglet {
     /**
      * Construct a new InheritDocTaglet.
      */
-    public InheritDocTaglet () {
+    public InheritDocTaglet() {
         super(DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.TYPE, Location.METHOD));
     }
 
@@ -65,7 +65,9 @@ public class InheritDocTaglet extends BaseTaglet {
      * @param isFirstSentence true if we only want to inherit the first sentence.
      */
     private Content retrieveInheritedDocumentation(TagletWriter writer,
-            Element e, DocTree holderTag, boolean isFirstSentence) {
+                                                   Element e,
+                                                   DocTree holderTag,
+                                                   boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
         BaseConfiguration configuration = writer.configuration();
         Messages messages = configuration.getMessages();
@@ -75,15 +77,15 @@ public class InheritDocTaglet extends BaseTaglet {
                 ? null
                 : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
         if (inheritableTaglet != null &&
-            !(inheritableTaglet instanceof InheritableTaglet)) {
-                String message = utils.getSimpleName(e) +
+                !(inheritableTaglet instanceof InheritableTaglet)) {
+            String message = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
-                        ? utils.flatSignature((ExecutableElement)e, writer.getCurrentPageElement())
-                        : "");
-                //This tag does not support inheritance.
-                var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(holderTag);
-                messages.warning(path, "doclet.inheritDocWithinInappropriateTag", message);
-                return replacement;
+                            ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
+                            : "");
+            //This tag does not support inheritance.
+            var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(holderTag);
+            messages.warning(path, "doclet.inheritDocWithinInappropriateTag", message);
+            return replacement;
         }
         Input input = new DocFinder.Input(utils, e,
                 (InheritableTaglet) inheritableTaglet, new DocFinder.DocTreeInfo(holderTag, e),
@@ -92,13 +94,13 @@ public class InheritDocTaglet extends BaseTaglet {
         if (inheritedDoc.isValidInheritDocTag) {
             if (!inheritedDoc.inlineTags.isEmpty()) {
                 replacement = writer.commentTagsToOutput(inheritedDoc.holder, inheritedDoc.holderTag,
-                    inheritedDoc.inlineTags, isFirstSentence);
+                        inheritedDoc.inlineTags, isFirstSentence);
             }
         } else {
             String message = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
-                        ? utils.flatSignature((ExecutableElement)e, writer.getCurrentPageElement())
-                        : "");
+                            ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
+                            : "");
             messages.warning(e, "doclet.noInheritedDoc", message);
         }
         return replacement;
