@@ -61,6 +61,9 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   if (inst1 == nullptr) {
     return false;
   }
+  assert(dst != src1, "");
+  // mov d, s1; add d, d should be transformed into lea d, [s1 + s1]
+  Node* in2 = imm ? nullptr : ((ra_->get_reg_first(inst0->in(2)) == dst) ? inst1->in(1) : inst0->in(2));
 
   // If some nodes between inst0 and inst1 read from dst or write to dst or src1
   // then the coalescing fails
@@ -84,7 +87,8 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   // See VM_Version::supports_fast_3op_lea()
   if (!imm) {
     Register rsrc1 = OptoReg::as_VMReg(src1)->as_Register();
-    Register rsrc2 = OptoReg::as_VMReg(ra_->get_reg_first(inst0->in(2)))->as_Register();
+    // mov d, s1; add d, d should be transformed into lea d, [s1 + s1]
+    Register rsrc2 = OptoReg::as_VMReg(ra_->get_reg_first(in2))->as_Register();
     if ((rsrc1 == rbp || rsrc1 == r13) && (rsrc2 == rbp || rsrc2 == r13)) {
       return false;
     }
@@ -99,7 +103,10 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseRegAlloc* ra_,
   // Set input for the node
   root->add_req(inst0->in(0));
   root->add_req(inst1->in(1));
-  if (!imm) { root->add_req(inst0->in(2)); } // No input for constant after matching
+  // No input for constant after matching
+  if (!imm) {
+    root->add_req(in2);
+  }
   inst0->replace_by(root);
 
   // Initialize the operand array
