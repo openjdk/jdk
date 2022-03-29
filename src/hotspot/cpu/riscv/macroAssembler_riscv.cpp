@@ -529,10 +529,11 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 }
 
 void MacroAssembler::stop(const char* msg) {
-  // these shall generate fixed-length instruction sequences
-  // because machnode size of scratch_emit() and emit() should match
   address ip = pc();
   pusha();
+  // The length of the instruction sequence emitted should be independent
+  // of the values of msg and ip so that size of mach node for scratch emit
+  // and normal emit.
   mv(c_rarg0, (address)msg);
   mv(c_rarg1, (address)ip);
   mv(c_rarg2, sp);
