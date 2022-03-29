@@ -68,10 +68,12 @@ public class AllPlatforms {
             lc.login();
             System.out.println(lc.getSubject());
             lc.logout();
-        } catch (LoginException e) {
+        } catch (FailedLoginException e) {
             // This exception can occur in other platform module than the running one.
-            System.out.println("Expected Exception found.");
-            e.printStackTrace(System.out);
+            if(e.getMessage().startsWith("Failed in attempt to import")) {
+                System.out.println("Expected Exception found.");
+                e.printStackTrace(System.out);
+            }
         }
     }
 }
