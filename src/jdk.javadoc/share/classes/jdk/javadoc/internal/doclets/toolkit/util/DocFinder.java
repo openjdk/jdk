@@ -237,7 +237,7 @@ public class DocFinder {
             input.taglet.inherit(input, output);
         }
 
-        if (output.inlineTags != null && !output.inlineTags.isEmpty()) {
+        if (!output.inlineTags.isEmpty()) {
             return output;
         }
         output.isValidInheritDocTag = false;

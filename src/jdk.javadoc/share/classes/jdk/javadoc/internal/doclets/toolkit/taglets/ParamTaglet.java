@@ -175,7 +175,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         Input input = new DocFinder.Input(writer.configuration().utils, holder, this,
                 Integer.toString(rank), kind == ParamKind.TYPE_PARAMETER);
         DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-        if (inheritedDoc.inlineTags != null && !inheritedDoc.inlineTags.isEmpty()) {
+        if (!inheritedDoc.inlineTags.isEmpty()) {
             String lname = kind != ParamKind.TYPE_PARAMETER
                     ? utils.getSimpleName(param)
                     : utils.getTypeName(param.asType(), false);
