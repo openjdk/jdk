@@ -332,7 +332,7 @@ public final class Carrier {
              */
             CarrierArray(int primitiveCount, int objectCount) {
                 this.primitives =
-                    primitiveCount != 0 ? new long[(primitiveCount + 1) / 2] : null;
+                    primitiveCount != 0 ? new long[(primitiveCount + 1) / LONG_SLOTS] : null;
                 this.objects = objectCount != 0 ? new Object[objectCount] : null;
             }
 
