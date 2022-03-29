@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,14 +298,20 @@ class Http1Request {
             contentLength = requestPublisher.contentLength();
         }
 
-        if (contentLength == 0) {
-            systemHeadersBuilder.setHeader("Content-Length", "0");
-        } else if (contentLength > 0) {
-            systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
-            streaming = false;
-        } else {
-            streaming = true;
-            systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
+        // GET with no body should not set the Content-Length header
+        if (requestPublisher != null || !"GET".equals(request.method())) {
+            if (contentLength == 0) {
+                systemHeadersBuilder.setHeader("Content-Length", "0");
+                System.err.println("in 1");
+            } else if (contentLength > 0) {
+                systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
+                streaming = false;
+                System.err.println("in 2");
+            } else {
+                streaming = true;
+                systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
+                System.err.println("in 3");
+            }
         }
         collectHeaders0(sb);
         String hs = sb.toString();
