@@ -471,6 +471,9 @@
   develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \
           " register allocation.")                                          \
                                                                             \
+  product(bool, SplitPhiBases, false,                                       \
+          "Split object bases through Phis")                                \
+                                                                            \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
                                                                             \

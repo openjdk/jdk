@@ -601,7 +601,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
                   _coarsened_locks   (comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
-                  _unique_base_id_seq(0),
+                  _unique_base_id(0),
                   NOT_PRODUCT(_igv_printer(NULL) COMMA)
                   _dead_node_list(comp_arena()),
                   _dead_node_count(0),
@@ -880,7 +880,7 @@ Compile::Compile( ciEnv* ci_env,
     _log(ci_env->log()),
     _failure_reason(NULL),
     _congraph(NULL),
-    _unique_base_id_seq(0),
+    _unique_base_id(0),
     NOT_PRODUCT(_igv_printer(NULL) COMMA)
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
@@ -2168,6 +2168,8 @@ void Compile::Optimize() {
 
   // Perform escape analysis
   if (do_escape_analysis() && ConnectionGraph::has_candidates(this)) {
+    Unique_Node_List splitted_phi_nodes;
+
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
@@ -2176,16 +2178,15 @@ void Compile::Optimize() {
       if (failing())  return;
     }
 
-    ConnectionGraph::do_analysis(this, &igvn);
-    if (failing())  return;
+    if (SplitPhiBases && split_phi_bases()) {
+      ConnectionGraph::do_analysis(this, &igvn, true);
+      if (failing())  return;
 
-    if (congraph() != NULL) {
-      Split_Bases(igvn);
-      congraph()->save_trace();
+      // Only try to split-phis if there are Allocate nodes that NoEscape
+      if (congraph() != NULL) {
+        congraph()->split_bases(splitted_phi_nodes);
+      }
     }
-
-    // Optimize out fields loads from scalar replaceable allocations.
-    igvn.optimize();
 
     bool progress;
     do {
@@ -2202,13 +2203,33 @@ void Compile::Optimize() {
       if (failing())  return;
 
       if (congraph() != NULL && macro_count() > 0) {
+        NOT_PRODUCT( congraph()->dump_ir("Before Eliminate MacroNodes."); )
+
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
-        igvn.set_delay_transform(false);
 
+        // If we weren't able to remove the Allocate nodes touched by
+        // split_bases it's possible that the graph is in "a bad [dominance]
+        // shape" because of the use of "fake Phis". When this happens we
+        // recompile the method without split_bases enabled.
+        if (congraph()->were_splitted_bases_removed(splitted_phi_nodes) == false) {
+          C->record_failure(C2Compiler::retry_no_split_phi_bases());
+          NOT_PRODUCT(tty->print_cr("Split-phi failed. Deoptimizing."));
+          return;
+        }
+#ifndef PRODUCT
+        else {
+          if (splitted_phi_nodes.size() > 0)
+            tty->print_cr("split phi succeeded! %s:%s", method()->holder()->name()->as_utf8(), method()->name()->as_utf8());
+        }
+#endif
+
+        igvn.set_delay_transform(false);
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
+
+        NOT_PRODUCT( congraph()->dump_ir("After Eliminate MacroNodes."); )
 
         if (failing())  return;
       }
@@ -2343,72 +2364,6 @@ void Compile::Optimize() {
 
  print_method(PHASE_OPTIMIZE_FINISHED, 2);
  DEBUG_ONLY(set_phase_optimize_finished();)
-}
-
-void Compile::Split_Bases(PhaseIterGVN& igvn) {
-  Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
-  ideal_nodes.map(live_nodes(), NULL);  // preallocate space
-  ideal_nodes.push(root());
-
-  GrowableArray<PointsToNode*> phi_nodes;
-
-  congraph()->dump_ir("Before Split_Bases");
-
-  for( uint next = 0; next < ideal_nodes.size(); ++next ) {
-    Node* n = ideal_nodes.at(next);
-
-    if (n->is_Phi() && n->as_Phi()->type()->make_ptr() != NULL) {
-      PointsToNode* ptn = congraph()->ptnode_adr(n->_idx);
-
-      if (ptn != NULL && ptn->escape_state() == PointsToNode::EscapeState::NoEscape) {
-        phi_nodes.push(ptn);
-      }
-    }
-
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* m = n->fast_out(i);
-      ideal_nodes.push(m);
-    }
-  }
-
-  for( int next = 0; next < phi_nodes.length(); ++next ) {
-    PointsToNode* ptn = phi_nodes.at(next);
-    Node *n           = ptn->ideal_node();
-    Split_Bases_Of(igvn, ptn, n->as_Phi());
-  }
-
-  congraph()->dump_ir("After Split_Bases");
-}
-
-void Compile::Split_Bases_Of(PhaseIterGVN& igvn, PointsToNode* ptn, PhiNode* orig_phi) {
-  Node_List _bases;
-
-  congraph()->_traceStream.print_cr("Original PHI ID: %d", orig_phi->_idx);
-
-  uint orig_unique_base_id_seq = _unique_base_id_seq;
-  PhiNode* selector_id_phi = new PhiNode(orig_phi->region(), TypeInt::INT);
-  selector_id_phi->grow(orig_phi->req());
-  igvn._worklist.push(selector_id_phi);
-  for (uint i=1; i<orig_phi->req(); i++) {
-    _bases.push( orig_phi->in(i) );
-    Node* coni = ConINode::make(_unique_base_id_seq++);
-    igvn._worklist.push(coni);
-    selector_id_phi->set_req(i, coni);
-  }
-
-  congraph()->_traceStream.print_cr("Selector PHI ID: %d", selector_id_phi->_idx);
-
-  for (DUIterator_Fast imax, i = orig_phi->fast_outs(imax); i < imax; i++) {
-    Node* use_of_orig_phi = orig_phi->fast_out(i);
-    Create_Selector_Switch(use_of_orig_phi, selector_id_phi, &_bases, orig_unique_base_id_seq);
-  }
-}
-
-void Compile::Create_Selector_Switch(Node* use, PhiNode* orig_phi, Node_List* bases, uint orig_unique_base_id_seq) {
-  congraph()->_traceStream.print_cr("Is control null? %d", use->in(0) == NULL);
-  congraph()->_traceStream.print_cr("Orig Phi User ID is: %d", use->_idx);
-  use->dump("", false, &congraph()->_traceStream);
-  congraph()->_traceStream.print_cr("\n");
 }
 
 #ifdef ASSERT

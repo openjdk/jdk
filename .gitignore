@@ -18,3 +18,4 @@ NashornProfile.txt
 /src/utils/LogCompilation/target/
 /.project/
 /.settings/
+*.dat

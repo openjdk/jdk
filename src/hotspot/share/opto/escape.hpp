@@ -345,8 +345,12 @@ private:
   int        _build_iterations; // Number of iterations took to build graph
   double           _build_time; // Time (sec) took to build graph
 
-public:
   JavaObjectNode* phantom_obj; // Unknown object
+
+  // Check if the ideal node with ID 'idx' is present in the Connection Graph.
+  bool is_ideal_node_in_graph(uint idx) const {
+    return idx < nodes_size() && _nodes.at(idx) != NULL;
+  }
 
   // Address of an element in _nodes.  Used when the element is to be modified
   PointsToNode* ptnode_adr(int idx) const {
@@ -354,9 +358,6 @@ public:
     // growableArray::at() will throw assert otherwise.
     return _nodes.at(idx);
   }
-
-private:
-
   uint nodes_size() const { return _nodes.length(); }
 
   uint next_pidx() { return _next_pidx++; }
@@ -535,6 +536,11 @@ private:
   PhiNode *create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, bool &new_created);
   PhiNode *split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist);
 
+  bool should_split_this_phi(Node* n, Unique_Node_List& splitted_phi_nodes);
+  Node* create_selector_phi(Node* orig_phi);
+  void clone_addp_and_load_chain(Node* original_phi, uint idx, Node* original_addp, Node* original_addp_use, Unique_Node_List& splitted_phi_nodes, Node* final_merge_region, Node* final_merge_phi, Node* merge_ctrl);
+  Node* split_phi_for_addp(Node* orig_phi, Node* use, Node* prev_control, Unique_Node_List& split_phi_nodes);
+
   void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis);
   Node* find_inst_mem(Node* mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist);
   Node* step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop);
@@ -570,7 +576,7 @@ private:
   void record_for_optimizer(Node *n);
 
   // Compute the escape information
-  bool compute_escape();
+  bool compute_escape(bool only_analysis);
 
 public:
   ConnectionGraph(Compile *C, PhaseIterGVN *igvn, int iteration);
@@ -579,7 +585,10 @@ public:
   static bool has_candidates(Compile *C);
 
   // Perform escape analysis
-  static void do_analysis(Compile *C, PhaseIterGVN *igvn);
+  static void do_analysis(Compile *C, PhaseIterGVN *igvn, bool only_analysis = false);
+
+  void split_bases(Unique_Node_List& split_phi_nodes);
+  bool were_splitted_bases_removed(Unique_Node_List& split_phi_nodes);
 
   bool not_global_escape(Node *n);
 
