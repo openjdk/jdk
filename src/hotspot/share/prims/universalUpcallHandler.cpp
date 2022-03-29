@@ -76,7 +76,7 @@ JavaThread* ProgrammableUpcallHandler::maybe_attach_and_get_thread() {
   if (thread == nullptr) {
     JavaVM_ *vm = (JavaVM *)(&main_vm);
     JNIEnv* p_env = nullptr; // unused
-    jint result = vm->functions->AttachCurrentThread(vm, (void**) &p_env, nullptr);
+    jint result = vm->functions->AttachCurrentThreadAsDaemon(vm, (void**) &p_env, nullptr);
     guarantee(result == JNI_OK, "Could not attach thread for upcall. JNI error code: %d", result);
     thread = JavaThread::current();
     threadContext.attachedThread = thread;
