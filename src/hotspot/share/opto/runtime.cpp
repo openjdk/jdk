@@ -1469,7 +1469,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   // This needs authenticating, but to do that here requires the fp of the previous frame.
   // A better way of doing it would be authenticate in the caller by adding a
   // AuthPAuthNode and using it in GraphKit::gen_stub. For now, just strip it.
-  AARCH64_ONLY(ret_pc = pauth_strip_pointer(ret_pc));
+  AARCH64_PORT_ONLY(ret_pc = pauth_strip_pointer(ret_pc));
 
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows

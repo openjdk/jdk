@@ -258,7 +258,6 @@ var getJibProfilesCommon = function (input, data) {
     common.release_profile_base = {
         configure_args: [
             "--enable-reproducible-build",
-            "--with-source-date=current",
         ],
     };
     // Extra settings for debug profiles
@@ -1043,10 +1042,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc10.3.0-OL6.4+1.0",
+        linux_x64: "gcc11.2.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.0",
         windows_x64: "VS2019-16.9.3+1.0",
-        linux_aarch64: "gcc10.3.0-OL7.6+1.0",
+        linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0"
@@ -1437,6 +1436,14 @@ var versionArgs = function(input, common) {
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
     }
+    var sourceDate
+    if (input.build_id_data && input.build_id_data.creationTime) {
+        sourceDate = Math.floor(Date.parse(input.build_id_data.creationTime)/1000);
+    } else {
+        sourceDate = "current";
+    }
+    args = concat(args, "--with-source-date=" + sourceDate);
+
     return args;
 }
 

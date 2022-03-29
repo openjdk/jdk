@@ -134,7 +134,7 @@ public class BasicLauncherTest {
             launcher.addToolArg("--pid=" + Long.toString(theApp.getPid()));
 
             ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
-            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);;
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
             output.shouldContain("No deadlocks found");
             output.shouldNotContain("illegal bci");
             output.shouldNotContain("AssertionFailure");
@@ -171,7 +171,7 @@ public class BasicLauncherTest {
 
             ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);;
+            OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
             output.shouldContain(expectedMessage);
             unexpectedMessage.ifPresent(output::shouldNotContain);
             output.shouldHaveExitValue(0);

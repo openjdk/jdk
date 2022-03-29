@@ -54,10 +54,20 @@ inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
 
 // returns true if SafeFetch32 and SafeFetchN can be used safely (stubroutines are already generated)
 inline bool CanUseSafeFetch32() {
+#if defined (__APPLE__) && defined(AARCH64)
+  if (Thread::current_or_null_safe() == NULL) { // workaround for JDK-8282475
+    return false;
+  }
+#endif // __APPLE__ && AARCH64
   return StubRoutines::SafeFetch32_stub() ? true : false;
 }
 
 inline bool CanUseSafeFetchN() {
+#if defined (__APPLE__) && defined(AARCH64)
+  if (Thread::current_or_null_safe() == NULL) {
+    return false;
+  }
+#endif // __APPLE__ && AARCH64
   return StubRoutines::SafeFetchN_stub() ? true : false;
 }
 

@@ -201,7 +201,7 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
-Klass::Klass(KlassID id) : _id(id),
+Klass::Klass(KlassKind kind) : _kind(kind),
                            _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
