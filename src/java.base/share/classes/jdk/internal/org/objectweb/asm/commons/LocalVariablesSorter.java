@@ -382,3 +382,4 @@ public class LocalVariablesSorter extends MethodVisitor {
         return local;
     }
 }
+

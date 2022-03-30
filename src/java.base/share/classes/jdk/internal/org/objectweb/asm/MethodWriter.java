@@ -2423,3 +2423,4 @@ final class MethodWriter extends MethodVisitor {
         attributePrototypes.addAttributes(firstCodeAttribute);
     }
 }
+

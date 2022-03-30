@@ -113,3 +113,4 @@ public class RemappingAnnotationAdapter extends AnnotationVisitor {
                         : new RemappingAnnotationAdapter(annotationVisitor, remapper));
     }
 }
+

@@ -601,3 +601,4 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
         }
     }
 }
+

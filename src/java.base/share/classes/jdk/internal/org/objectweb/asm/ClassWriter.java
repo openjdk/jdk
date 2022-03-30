@@ -1083,3 +1083,4 @@ public class ClassWriter extends ClassVisitor {
         return getClass().getClassLoader();
     }
 }
+

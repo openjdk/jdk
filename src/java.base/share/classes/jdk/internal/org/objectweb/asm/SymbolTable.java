@@ -1352,3 +1352,4 @@ final class SymbolTable {
         }
     }
 }
+

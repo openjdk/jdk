@@ -274,3 +274,4 @@ public final class TraceClassVisitor extends ClassVisitor {
         super.visitEnd();
     }
 }
+

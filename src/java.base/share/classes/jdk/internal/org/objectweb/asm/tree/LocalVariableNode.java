@@ -122,3 +122,4 @@ public class LocalVariableNode {
                 name, desc, signature, start.getLabel(), end.getLabel(), index);
     }
 }
+

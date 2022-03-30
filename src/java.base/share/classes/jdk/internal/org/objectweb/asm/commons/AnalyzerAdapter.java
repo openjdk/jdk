@@ -939,3 +939,4 @@ public class AnalyzerAdapter extends MethodVisitor {
         labels = null;
     }
 }
+

@@ -116,3 +116,4 @@ public class TypeAnnotationNode extends AnnotationNode {
         this.typePath = typePath;
     }
 }
+

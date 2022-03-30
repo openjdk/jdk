@@ -314,3 +314,4 @@ final class FieldWriter extends FieldVisitor {
         attributePrototypes.addAttributes(firstAttribute);
     }
 }
+

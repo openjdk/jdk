@@ -1172,3 +1172,4 @@ public class CheckClassAdapter extends ClassVisitor {
         }
     }
 }
+

@@ -374,3 +374,4 @@ public final class TraceSignatureVisitor extends SignatureVisitor {
         }
     }
 }
+

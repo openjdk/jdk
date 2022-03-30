@@ -115,3 +115,4 @@ public class InnerClassNode {
         classVisitor.visitInnerClass(name, outerName, innerName, access);
     }
 }
+

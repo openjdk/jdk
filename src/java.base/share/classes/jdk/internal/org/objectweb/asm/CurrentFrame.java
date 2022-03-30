@@ -85,3 +85,4 @@ final class CurrentFrame extends Frame {
         copyFrom(successor);
     }
 }
+

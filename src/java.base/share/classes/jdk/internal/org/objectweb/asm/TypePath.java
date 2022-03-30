@@ -230,3 +230,4 @@ public final class TypePath {
         }
     }
 }
+

@@ -331,3 +331,4 @@ public class ClassRemapper extends ClassVisitor {
         return new RecordComponentRemapper(api, recordComponentVisitor, remapper);
     }
 }
+
