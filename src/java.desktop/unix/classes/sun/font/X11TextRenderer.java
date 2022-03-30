@@ -67,7 +67,7 @@ public class X11TextRenderer extends GlyphListPipe {
         }
     }
 
-    native void doDrawGlyphList(long dstData, long xgc,
+    native boolean doDrawGlyphList(long dstData, long xgc,
                                 Region clip, GlyphList gl);
 
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
@@ -78,7 +78,23 @@ public class X11TextRenderer extends GlyphListPipe {
             long xgc = x11sd.getRenderGC(clip, SunGraphics2D.COMP_ISCOPY,
                                          null, sg2d.pixel);
             gl.startGlyphIteration();
-            doDrawGlyphList(x11sd.getNativeOps(), xgc, clip, gl);
+            boolean allGlyphsRendered = doDrawGlyphList(x11sd.getNativeOps(), xgc, clip, gl);
+            // There are some color glyphs, which we couldn't draw
+            if (!allGlyphsRendered) {
+                gl.startGlyphIteration();
+                for (int i = 0; i < gl.getNumGlyphs(); i++) {
+                    if (gl.isColorGlyph(i)) {
+                        int end;
+                        for (end = i + 1; end < gl.getNumGlyphs(); end++) {
+                            if (!gl.isColorGlyph(end)) break;
+                        }
+                        sg2d.loops.drawGlyphListColorLoop.
+                                DrawGlyphListColor(sg2d, sg2d.surfaceData,
+                                        gl, i, end);
+                        i = end - 1;
+                    } else gl.setGlyphIndex(i);
+                }
+            }
         } finally {
             SunToolkit.awtUnlock();
         }
@@ -89,11 +105,11 @@ public class X11TextRenderer extends GlyphListPipe {
     }
 
     public static class Tracer extends X11TextRenderer {
-        void doDrawGlyphList(long dstData, long xgc,
+        boolean doDrawGlyphList(long dstData, long xgc,
                              Region clip, GlyphList gl)
         {
             GraphicsPrimitive.tracePrimitive("X11DrawGlyphs");
-            super.doDrawGlyphList(dstData, xgc, clip, gl);
+            return super.doDrawGlyphList(dstData, xgc, clip, gl);
         }
     }
 }

@@ -103,7 +103,7 @@ static jboolean checkPixmap(JNIEnv *env, AwtGraphicsConfigDataPtr cData)
 static void FillBitmap(XImage *theImage,
                        ImageRef *glyphs, jint totalGlyphs,
                        jint clipLeft, jint clipTop,
-                       jint clipRight, jint clipBottom)
+                       jint clipRight, jint clipBottom, jboolean *allGlyphsRendered)
 {
     int glyphCounter;
     int scan = theImage->bytes_per_line;
@@ -124,11 +124,16 @@ static void FillBitmap(XImage *theImage,
         if (!pixels) {
             continue;
         }
-        rowBytes = glyphs[glyphCounter].width;
+        rowBytes = glyphs[glyphCounter].rowBytes;
         left     = glyphs[glyphCounter].x;
         top      = glyphs[glyphCounter].y;
         width    = glyphs[glyphCounter].width;
         height   = glyphs[glyphCounter].height;
+
+        if ((int) rowBytes == width * 4) { // Skip colored glyphs
+            *allGlyphsRendered = JNI_FALSE;
+            continue;
+        }
 
         /* if any clipping required, modify parameters now */
         right  = left + width;
@@ -206,7 +211,7 @@ static void FillBitmap(XImage *theImage,
 JNIEXPORT void JNICALL
 AWTDrawGlyphList(JNIEnv *env, jobject xtr,
                  jlong dstData, jlong gc,
-                 SurfaceDataBounds *bounds, ImageRef *glyphs, jint totalGlyphs)
+                 SurfaceDataBounds *bounds, ImageRef *glyphs, jint totalGlyphs, jboolean *allGlyphsRendered)
 {
 #ifndef HEADLESS
     GC xgc, theGC;
@@ -259,7 +264,7 @@ AWTDrawGlyphList(JNIEnv *env, jobject xtr,
             FillBitmap(theImage,
                        glyphs,
                        totalGlyphs,
-                       cx1, cy1, cx2, cy2);
+                       cx1, cy1, cx2, cy2, allGlyphsRendered);
 
             // NOTE: Since we are tiling around by BM_W, BM_H offsets
             // and thePixmap is BM_W x BM_H, we do not have to move

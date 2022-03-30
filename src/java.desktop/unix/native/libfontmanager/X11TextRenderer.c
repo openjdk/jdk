@@ -45,14 +45,14 @@
 JNIEXPORT void JNICALL AWTDrawGlyphList
 (JNIEnv *env, jobject xtr,
  jlong dstData, jlong gc,
- SurfaceDataBounds *bounds, ImageRef *glyphs, jint totalGlyphs);
+ SurfaceDataBounds *bounds, ImageRef *glyphs, jint totalGlyphs, jboolean *allGlyphsRendered);
 
 /*
  * Class:     sun_font_X11TextRenderer
  * Method:    doDrawGlyphList
- * Signature: (Lsun/java2d/SurfaceData;Ljava/awt/Rectangle;ILsun/font/GlyphList;J)V
+ * Signature: (Lsun/java2d/SurfaceData;Ljava/awt/Rectangle;ILsun/font/GlyphList;J)Z
  */
-JNIEXPORT void JNICALL Java_sun_font_X11TextRenderer_doDrawGlyphList
+JNIEXPORT jboolean JNICALL Java_sun_font_X11TextRenderer_doDrawGlyphList
     (JNIEnv *env, jobject xtr,
      jlong dstData, jlong xgc, jobject clip,
      jobject glyphlist)
@@ -64,13 +64,15 @@ JNIEXPORT void JNICALL Java_sun_font_X11TextRenderer_doDrawGlyphList
 
     glyphCount =  (*env)->GetIntField(env, glyphlist, sunFontIDs.glyphListLen);
     if ((gbv = setupBlitVector(env, glyphlist, 0, glyphCount)) == NULL) {
-        return;
+        return JNI_TRUE;
     }
     if (!RefineBounds(gbv, &bounds)) {
         free(gbv);
-        return;
+        return JNI_TRUE;
     }
+    jboolean allGlyphsRendered = JNI_TRUE;
     AWTDrawGlyphList(env, xtr, dstData, xgc,
-                     &bounds, gbv->glyphs, gbv->numGlyphs);
+                     &bounds, gbv->glyphs, gbv->numGlyphs, &allGlyphsRendered);
     free(gbv);
+    return allGlyphsRendered;
 }
