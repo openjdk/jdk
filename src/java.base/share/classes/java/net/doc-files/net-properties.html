@@ -224,6 +224,14 @@ of proxies.</P>
 	      property is defined, then its value will be used as the domain
 	      name.</P>
 	</OL>
+	<LI><P><B>{@systemProperty http.auth.digest.reEnabledAlgorithms}</B> (default: &lt;none&gt;)<BR>
+        By default, certain message digest algorithms are disabled for use in HTTP Digest
+        authentication due to their proven security limitations. This only applies to proxy
+        authentication and plain-text HTTP server authentication. Disabled algorithms are still
+        usable for HTTPS server authentication. The default list of disabled algorithms is specified
+        in the {@code java.security} properties file and currently comprises {@code MD5} and
+        {@code SHA-1}. If it is still required to use one of these algorithms, then they can be
+        re-enabled by setting this property to a comma separated list of the algorithm names.</P>
 	<LI><P><B>{@systemProperty jdk.https.negotiate.cbt}</B> (default: &lt;never&gt;)<BR>
 	This controls the generation and sending of TLS channel binding tokens (CBT) when Kerberos 
         or the Negotiate authentication scheme using Kerberos are employed over HTTPS with
