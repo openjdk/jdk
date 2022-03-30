@@ -124,10 +124,17 @@ intx CompilerConfig::scaled_freq_log(intx freq_log) {
 // Returns threshold scaled with the value of scale.
 // If scale < 0.0, threshold is returned without scaling.
 intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
+  assert(threshold >= 0, "must be");
   if (scale == 1.0 || scale < 0.0) {
     return threshold;
   } else {
-    return (intx)(threshold * scale);
+    double v = threshold * scale;
+    assert(v >= 0, "must be");
+    if (v > max_intx) {
+      return max_intx;
+    } else {
+      return (intx)(v);
+    }
   }
 }
 

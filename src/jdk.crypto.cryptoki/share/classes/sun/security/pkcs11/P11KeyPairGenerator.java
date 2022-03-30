@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,28 +99,34 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
         // set default key sizes and apply our own algorithm-specific limits
         // override lower limit to disallow unsecure keys being generated
         // override upper limit to deter DOS attack
-        if (algorithm.equals("EC")) {
-            keySize = DEF_EC_KEY_SIZE;
-            if (minKeyLen < 112) {
-                minKeyLen = 112;
+        int jdkMinKeyLen = 512;
+        int jdkMaxKeyLen = Integer.MAX_VALUE;
+        switch (algorithm) {
+            case "EC" -> {
+                keySize = DEF_EC_KEY_SIZE;
+                jdkMinKeyLen = 112;
+                jdkMaxKeyLen = 2048;
             }
-            if (maxKeyLen > 2048) {
-                maxKeyLen = 2048;
-            }
-        } else {
-            if (algorithm.equals("DSA")) {
+            case "DSA" -> {
                 keySize = DEF_DSA_KEY_SIZE;
-            } else if (algorithm.equals("RSA")) {
+            }
+            case "RSA" -> {
                 keySize = DEF_RSA_KEY_SIZE;
-                if (maxKeyLen > 64 * 1024) {
-                    maxKeyLen = 64 * 1024;
-                }
-            } else {
+                jdkMaxKeyLen = 64 * 1024;
+            }
+            case "DH" -> {
                 keySize = DEF_DH_KEY_SIZE;
             }
-            if (minKeyLen < 512) {
-                minKeyLen = 512;
+            default -> {
+                throw new ProviderException
+                        ("Unrecognized algorithm for checking key size");
             }
+        }
+        if (minKeyLen < jdkMinKeyLen) {
+            minKeyLen = jdkMinKeyLen;
+        }
+        if (maxKeyLen > jdkMaxKeyLen) {
+            maxKeyLen = jdkMaxKeyLen;
         }
 
         // auto-adjust default keysize in case it's out-of-range

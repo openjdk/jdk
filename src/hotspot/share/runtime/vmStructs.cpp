@@ -1757,9 +1757,11 @@
   declare_c2_type(MulVFNode, VectorNode)                                  \
   declare_c2_type(MulReductionVFNode, ReductionNode)                      \
   declare_c2_type(MulVDNode, VectorNode)                                  \
-  declare_c2_type(NegVINode, VectorNode)                                  \
-  declare_c2_type(NegVFNode, VectorNode)                                  \
-  declare_c2_type(NegVDNode, VectorNode)                                  \
+  declare_c2_type(NegVNode, VectorNode)                                   \
+  declare_c2_type(NegVINode, NegVNode)                                    \
+  declare_c2_type(NegVLNode, NegVNode)                                    \
+  declare_c2_type(NegVFNode, NegVNode)                                    \
+  declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
   declare_c2_type(CMoveVFNode, VectorNode)                                \

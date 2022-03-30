@@ -133,10 +133,10 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-  static const KlassID ID = InstanceKlassID;
+  static const KlassKind Kind = InstanceKlassKind;
 
  protected:
-  InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id = ID);
+  InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind);
 
  public:
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -229,15 +229,7 @@ class InstanceKlass: public Klass {
   // _idnum_allocated_count.
   u1              _init_state;              // state of class
 
-  // This can be used to quickly discriminate among the four kinds of
-  // InstanceKlass. This should be an enum (?)
-  static const unsigned _kind_other        = 0; // concrete InstanceKlass
-  static const unsigned _kind_reference    = 1; // InstanceRefKlass
-  static const unsigned _kind_class_loader = 2; // InstanceClassLoaderKlass
-  static const unsigned _kind_mirror       = 3; // InstanceMirrorKlass
-
   u1              _reference_type;                // reference type
-  u1              _kind;                          // kind of InstanceKlass
 
   enum {
     _misc_rewritten                           = 1 << 0,  // methods rewritten.
@@ -787,24 +779,8 @@ public:
   void set_has_resolved_methods() {
     _access_flags.set_has_resolved_methods();
   }
-private:
-
-  void set_kind(unsigned kind) {
-    _kind = (u1)kind;
-  }
-
-  bool is_kind(unsigned desired) const {
-    return _kind == (u1)desired;
-  }
 
 public:
-
-  // Other is anything that is not one of the more specialized kinds of InstanceKlass.
-  bool is_other_instance_klass() const        { return is_kind(_kind_other); }
-  bool is_reference_instance_klass() const    { return is_kind(_kind_reference); }
-  bool is_mirror_instance_klass() const       { return is_kind(_kind_mirror); }
-  bool is_class_loader_instance_klass() const { return is_kind(_kind_class_loader); }
-
 #if INCLUDE_JVMTI
 
   void init_previous_versions() {

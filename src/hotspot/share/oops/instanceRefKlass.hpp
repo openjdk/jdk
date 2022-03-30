@@ -50,10 +50,10 @@ class ClassFileParser;
 class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
  public:
-  static const KlassID ID = InstanceRefKlassID;
+  static const KlassKind Kind = InstanceRefKlassKind;
 
  private:
-  InstanceRefKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_reference, ID) {}
+  InstanceRefKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
  public:
   InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
