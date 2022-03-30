@@ -27,6 +27,7 @@ package java.lang.foreign;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -69,7 +70,7 @@ public sealed class FunctionDescriptor permits FunctionDescriptor.VariadicFuncti
      * {@return the argument layouts associated with this function descriptor}.
      */
     public List<MemoryLayout> argumentLayouts() {
-        return argLayouts;
+        return Collections.unmodifiableList(argLayouts);
     }
 
     /**
