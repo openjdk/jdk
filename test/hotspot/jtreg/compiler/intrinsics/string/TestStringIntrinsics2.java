@@ -23,7 +23,7 @@
  */
 
 /*
- * @test id=DefaultHeap
+ * @test
  * @bug 8145336
  * @summary PPC64: fix string intrinsics after CompactStrings change
  * @modules java.base/jdk.internal.misc
@@ -104,7 +104,6 @@ public class TestStringIntrinsics2 {
 
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static int[] FILL_HEAP;
 
     public enum Role {
         TEST_ENTRY,
@@ -138,9 +137,6 @@ public class TestStringIntrinsics2 {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 0 && "LargeHeap".equals(args[0])) {
-            FILL_HEAP = new int[Integer.MAX_VALUE / 2];
-        }
 
         // Warmup helper methods
         Arrays.stream(TestStringIntrinsics2.class.getDeclaredMethods())
