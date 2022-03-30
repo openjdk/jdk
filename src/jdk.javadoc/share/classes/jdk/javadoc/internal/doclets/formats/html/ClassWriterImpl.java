@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
