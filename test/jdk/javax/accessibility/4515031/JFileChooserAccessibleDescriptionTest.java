@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@
  * @run main JFileChooserAccessibleDescriptionTest
  */
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
@@ -45,20 +43,21 @@ public class JFileChooserAccessibleDescriptionTest {
     private static JButton jButton;
 
     private static Robot robot;
+    private static volatile String description;
+    private static volatile int xLocn;
+    private static volatile int yLocn;
+    private static volatile int width;
+    private static volatile int height;
 
     public static void createGUI() {
         jFrame = new JFrame("bug4515031 Frame");
         jFileChooser = new JFileChooser();
 
         jButton = new JButton("Show FileChooser");
-        jButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                jFileChooser.showDialog(jFrame, null);
-            }
-        });
-
+        jButton.addActionListener(e -> jFileChooser.showDialog(jFrame, null));
         jFrame.getContentPane().add(jButton);
         jFrame.setSize(200, 100);
+        jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
     }
 
@@ -69,13 +68,20 @@ public class JFileChooserAccessibleDescriptionTest {
             robot.setAutoDelay(200);
             robot.setAutoWaitForIdle(true);
 
-            robot.mouseMove(jButton.getLocationOnScreen().x + jButton.getSize().width / 2,
-                jButton.getLocationOnScreen().y + jButton.getSize().height / 2);
+            SwingUtilities.invokeAndWait(() -> {
+                xLocn = jButton.getLocationOnScreen().x;
+                yLocn = jButton.getLocationOnScreen().y;
+                width = jButton.getSize().width;
+                height = jButton.getSize().height;
+            });
+
+            robot.mouseMove(xLocn + width / 2, yLocn + height / 2);
 
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            String description = jFileChooser.getAccessibleContext().getAccessibleDescription();
+            SwingUtilities.invokeAndWait(() -> description =
+                jFileChooser.getAccessibleContext().getAccessibleDescription());
 
             robot.keyPress(KeyEvent.VK_ALT);
             robot.keyPress(KeyEvent.VK_C);
@@ -83,9 +89,11 @@ public class JFileChooserAccessibleDescriptionTest {
             robot.keyRelease(KeyEvent.VK_ALT);
 
             if (description != null) {
-                System.out.println("Accessibility Description for JFileChooser is Set");
+                System.out.println(
+                    "Accessibility Description " + "for JFileChooser is Set");
             } else {
-                throw new RuntimeException("Accessibility Description for JFileChooser is not Set");
+                throw new RuntimeException("Accessibility Description for"
+                    + "JFileChooser is not Set");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> jFrame.dispose());
