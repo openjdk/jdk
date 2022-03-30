@@ -1109,7 +1109,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 
 # Chile
 
-# From Paul Eggert (2015-04-03):
+# From Paul Eggert (2022-03-15):
 # Shanks & Pottenger says America/Santiago introduced standard time in
 # 1890 and rounds its UT offset to 70W40; guess that in practice this
 # was the same offset as in 1916-1919.  It also says Pacific/Easter
@@ -1132,7 +1132,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # Historia de la hora oficial de Chile (retrieved 2012-10-24).  See:
 # https://web.archive.org/web/20121024234627/http://www.horaoficial.cl/horaof.htm
 # A fancier Spanish version (requiring mouse-clicking) is at:
-# http://www.horaoficial.cl/historia_hora.html
+# http://www.horaoficial.cl/historia_hora.php
 # Conflicts between [1] and [2] were resolved as follows:
 #
 #  - [1] says the 1910 transition was Jan 1, [2] says Jan 10 and cites
@@ -1141,7 +1141,8 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 #  - [1] says SMT was -4:42:45, [2] says Chile's official time from
 #    1916 to 1919 was -4:42:46.3, the meridian of Chile's National
 #    Astronomical Observatory (OAN), then located in what is now
-#    Quinta Normal in Santiago.  Go with [2], rounding it to -4:42:46.
+#    Quinta Normal in Santiago.  Go with [1], as this matches the meridian
+#    referred to by the relevant Chilean laws to this day.
 #
 #  - [1] says the 1918 transition was Sep 1, [2] says Sep 10 and cites
 #    Boletín No. 22, Aviso No. 129/1918 (1918-08-23).  Go with [2].
@@ -1162,6 +1163,32 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # Pacific/Easter is always two hours behind America/Santiago;
 # this is known to work for DST transitions starting in 2008 and
 # may well be true for earlier transitions.
+
+# From Tim Parenti (2022-03-15):
+# For a brief period of roughly six weeks in 1946, DST was only observed on an
+# emergency basis in specific regions of central Chile; namely, "the national
+# territory between the provinces of Coquimbo and Concepción, inclusive".
+# This was enacted by Decree 3,891, dated 1946-07-13, and took effect
+# 1946-07-14 24:00, advancing these central regions to -03.
+# https://www.diariooficial.interior.gob.cl/versiones-anteriores/do-h/19460715/#page/1
+# The decree contemplated "[t]hat this advancement of the Official Time, even
+# though it has been proposed for the cities of Santiago and Valparaíso only,
+# must be agreed with that of other cities, due to the connection of various
+# activities that require it, such as, for example, the operation of rail
+# services".  It was originally set to expire after 30 days but was extended
+# through 1946-08-31 by Decree 4,506, dated 1946-08-13.
+# https://www.diariooficial.interior.gob.cl/versiones-anteriores/do-h/19460814/#page/1
+#
+# Law Number 8,522, promulgated 1946-08-27, reunified Chilean clocks at their
+# new "Summer Time" of -04, reckoned as that of "the meridian of the
+# Astronomical Observatory of Lo Espejo, advanced by 42 minutes and 45
+# seconds".
+# https://www.diariooficial.interior.gob.cl/versiones-anteriores/do-h/19460828/#page/1
+# After a brief "Winter Time" stint at -05 beginning 1947-04-01, Law Number
+# 8,777, promulgated 1947-05-17, established year-round -04 "from 23:00 on the
+# second day after it is published in the 'Diario Oficial'."  It was published
+# on Monday 1947-05-19 and so took effect from Wednesday 1947-05-21 23:00.
+# https://www.diariooficial.interior.gob.cl/versiones-anteriores/do-h/19470519/#page/1
 
 # From Eduardo Krell (1995-10-19):
 # The law says to switch to DST at midnight [24:00] on the second SATURDAY
@@ -1321,12 +1348,12 @@ Rule	Chile	2019	max	-	Sep	Sun>=2	4:00u	1:00	-
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Santiago	-4:42:46 -	LMT	1890
-			-4:42:46 -	SMT	1910 Jan 10 # Santiago Mean Time
+Zone America/Santiago	-4:42:45 -	LMT	1890
+			-4:42:45 -	SMT	1910 Jan 10 # Santiago Mean Time
 			-5:00	-	-05	1916 Jul  1
-			-4:42:46 -	SMT	1918 Sep 10
+			-4:42:45 -	SMT	1918 Sep 10
 			-4:00	-	-04	1919 Jul  1
-			-4:42:46 -	SMT	1927 Sep  1
+			-4:42:45 -	SMT	1927 Sep  1
 			-5:00	Chile	-05/-04	1932 Sep  1
 			-4:00	-	-04	1942 Jun  1
 			-5:00	-	-05	1942 Aug  1
@@ -1336,11 +1363,11 @@ Zone America/Santiago	-4:42:46 -	LMT	1890
 			-5:00	-	-05	1947 May 21 23:00
 			-4:00	Chile	-04/-03
 Zone America/Punta_Arenas -4:43:40 -	LMT	1890
-			-4:42:46 -	SMT	1910 Jan 10
+			-4:42:45 -	SMT	1910 Jan 10
 			-5:00	-	-05	1916 Jul  1
-			-4:42:46 -	SMT	1918 Sep 10
+			-4:42:45 -	SMT	1918 Sep 10
 			-4:00	-	-04	1919 Jul  1
-			-4:42:46 -	SMT	1927 Sep  1
+			-4:42:45 -	SMT	1927 Sep  1
 			-5:00	Chile	-05/-04	1932 Sep  1
 			-4:00	-	-04	1942 Jun  1
 			-5:00	-	-05	1942 Aug  1
