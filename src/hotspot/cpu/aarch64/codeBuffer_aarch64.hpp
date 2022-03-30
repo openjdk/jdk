@@ -28,8 +28,13 @@
 
 private:
   void pd_initialize() {}
+  bool emit_shared_stubs_to_interp();
+  bool pd_finalize_stubs() {
+    return emit_shared_stubs_to_interp();
+  }
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+  static bool supports_shared_stubs() { return true; }
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP

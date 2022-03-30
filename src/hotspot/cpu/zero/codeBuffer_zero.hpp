@@ -28,5 +28,10 @@
 
  private:
   void pd_initialize() {}
+  bool emit_shared_stubs_to_interp() { Unimplemented(); return true; }
+  bool pd_finalize_stubs() { return true; }
+
+ public:
+  static bool supports_shared_stubs() { return false; }
 
 #endif // CPU_ZERO_CODEBUFFER_ZERO_HPP

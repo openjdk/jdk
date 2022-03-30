@@ -27,8 +27,11 @@
 
 private:
   void pd_initialize() {}
+  bool emit_shared_stubs_to_interp() { Unimplemented(); return true; }
+  bool pd_finalize_stubs() { return true; }
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+  static bool supports_shared_stubs() { return false; }
 
 #endif // CPU_X86_CODEBUFFER_X86_HPP
