@@ -437,23 +437,28 @@ jobs:
             flags: --with-debug-level=optimized --disable-precompiled-headers
           - flavor: hs aarch64 build only
             flags: --enable-debug --disable-precompiled-headers
+            debian-distro: buster
             debian-arch: arm64
             gnu-arch: aarch64
           - flavor: hs arm build only
             flags: --enable-debug --disable-precompiled-headers
+            debian-distro: buster
             debian-arch: armhf
             gnu-arch: arm
             gnu-flavor: eabihf
           - flavor: hs s390x build only
             flags: --enable-debug --disable-precompiled-headers
+            debian-distro: buster
             debian-arch: s390x
             gnu-arch: s390x
           - flavor: hs ppc64le build only
             flags: --enable-debug --disable-precompiled-headers
+            debian-distro: buster
             debian-arch: ppc64el
             gnu-arch: powerpc64le
           - flavor: hs riscv64 build only
             flags: --enable-debug --disable-precompiled-headers
+            debian-distro: bullseye
             debian-arch: riscv64
             gnu-arch: riscv64
 
@@ -543,7 +548,7 @@ jobs:
           --verbose
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
           --resolve-deps
-          buster
+          ${{ matrix.debian-distro }}
           ~/sysroot-${{ matrix.debian-arch }}
           http://httpredir.debian.org/debian/
         if: matrix.debian-arch != '' && steps.cache-sysroot.outputs.cache-hit != 'true'
