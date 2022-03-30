@@ -32,6 +32,7 @@
 
  public:
   void flush_bundle(bool start_new_bundle) {}
+  static bool supports_shared_stubs() { return false; }
 
   void getCpuData(const CodeBuffer * const cb) {}
 
