@@ -270,8 +270,7 @@ jdk_launcher = \
 core_tools = \
     tools \
     jdk/internal/jrtfs \
-    sun/tools/jrunscript \
-    sun/tools/jmod
+    sun/tools/jrunscript
 
 svc_tools = \
     com/sun/tools/attach \
