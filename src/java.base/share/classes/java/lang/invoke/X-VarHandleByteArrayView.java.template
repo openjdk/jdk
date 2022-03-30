@@ -73,7 +73,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
 #end[floatingPoint]
 
 
-    private static abstract class ByteArrayViewVarHandle extends VarHandle {
+    static abstract sealed class ByteArrayViewVarHandle extends VarHandle {
         final boolean be;
 
         ByteArrayViewVarHandle(VarForm form, boolean be, boolean exact) {

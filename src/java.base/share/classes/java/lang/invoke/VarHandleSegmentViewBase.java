@@ -28,7 +28,14 @@ package java.lang.invoke;
 /**
  * Base class for memory segment var handle view implementations.
  */
-abstract class VarHandleSegmentViewBase extends VarHandle {
+abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
+        VarHandleSegmentAsBytes,
+        VarHandleSegmentAsChars,
+        VarHandleSegmentAsDoubles,
+        VarHandleSegmentAsFloats,
+        VarHandleSegmentAsInts,
+        VarHandleSegmentAsLongs,
+        VarHandleSegmentAsShorts {
 
     /** endianness **/
     final boolean be;
