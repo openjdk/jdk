@@ -4266,6 +4266,47 @@ instruct vsqrt2D(vecX dst, vecX src)
 
 // --------------------------------- NEG --------------------------------------
 
+instruct vnegID(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length_in_bytes() < 16);
+  match(Set dst (NegVI src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst, $src\t# vector (8B/4H/2S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), false);
+    __ negr(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp64);
+%}
+
+instruct vnegIX(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (NegVI src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst, $src\t# vector (16B/8H/4S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), true);
+    __ negr(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp128);
+%}
+
+instruct vneg2L(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (NegVL src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst,$src\t# vector (2D)" %}
+  ins_encode %{
+    __ negr(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp128);
+%}
+
 instruct vneg2F(vecD dst, vecD src)
 %{
   predicate(n->as_Vector()->length() == 2);
