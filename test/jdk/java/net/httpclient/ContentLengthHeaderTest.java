@@ -51,19 +51,17 @@ import java.net.http.HttpResponse;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
 
 
 public class ContentLengthHeaderTest {
 
     final String GET_NO_BODY_PATH = "/get_no_body";
     final String GET_BODY_PATH = "/get_body";
-    static final String GET_BODY_STRING = "Get with body";
+    static final String GET_BODY = "Get with body";
+    static final String RESPONSE_BODY = "Test Response Body";
 
     static HttpServer testContentLengthServer;
     static PrintStream testLog = System.err;
-    static String responseString = "Test Response Body";
 
     String testContentLenURI;
 
@@ -97,7 +95,9 @@ public class ContentLengthHeaderTest {
                 .uri(URI.create(testContentLenURI + GET_NO_BODY_PATH))
                 .build();
         HttpClient hc = HttpClient.newHttpClient();
-        hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200,
+                "Content-length header was set in request but should not be present.");
     }
 
     @Test
@@ -105,18 +105,19 @@ public class ContentLengthHeaderTest {
     public void getWithBody() throws IOException, InterruptedException {
         HttpRequest req = HttpRequest.newBuilder()
                 .version(HTTP_1_1)
-                .method("GET", HttpRequest.BodyPublishers.ofString(GET_BODY_STRING))
+                .method("GET", HttpRequest.BodyPublishers.ofString(GET_BODY))
                 .uri(URI.create(testContentLenURI + GET_BODY_PATH))
                 .build();
         HttpClient hc = HttpClient.newHttpClient();
-        hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200,
+                "Content-length header was not set in request but should be present.");
     }
 
-    public static void handleResponse(HttpExchange ex) throws IOException {
-        // Meaningless response to finish off the exchange
+    public static void handleResponse(HttpExchange ex, int rCode) throws IOException {
         try (OutputStream os = ex.getResponseBody()) {
-            byte[] bytes = responseString.getBytes(UTF_8);
-            ex.sendResponseHeaders(200, bytes.length);
+            byte[] bytes = RESPONSE_BODY.getBytes(UTF_8);
+            ex.sendResponseHeaders(rCode, bytes.length);
             os.write(bytes);
         }
     }
@@ -125,13 +126,17 @@ public class ContentLengthHeaderTest {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            testLog.println("NoContentLengthHandler Received Headers: " + exchange.getRequestHeaders().entrySet());
+            testLog.println("NoContentLengthHandler: Received Headers " +
+                            exchange.getRequestHeaders().entrySet());
             String contentLength = exchange.getRequestHeaders().getFirst("Content-length");
 
-            // Check that content length was not set
-            assertNull(contentLength);
-            // Finish exchange with canned response
-            handleResponse(exchange);
+            // Check Content-length header was not set
+            if (contentLength == null) {
+                handleResponse(exchange, 200);
+            } else {
+                testLog.println("NoContentLengthHandler: Request contained an unexpected Content-length header");
+                handleResponse(exchange, 400);
+            }
         }
     }
 
@@ -139,15 +144,17 @@ public class ContentLengthHeaderTest {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            testLog.println("ContentLengthHandler Received Headers: " +
+            testLog.println("ContentLengthHandler: Received Headers " +
                             exchange.getRequestHeaders().entrySet());
             String contentLength = exchange.getRequestHeaders().getFirst("Content-length");
 
-            // Check that the Content-length is correctly set
-            assertNotNull(contentLength);
-            assertEquals(Integer.valueOf(contentLength), Integer.valueOf(GET_BODY_STRING.getBytes(UTF_8).length));
-            // Finish exchange with canned response
-            handleResponse(exchange);
+            // Check Content-length header was set
+            if (contentLength != null) {
+                handleResponse(exchange, 200);
+            } else {
+                testLog.println("ContentLengthHandler: Expected a Content-length header in request but was not present");
+                handleResponse(exchange, 400);
+            }
         }
     }
 }
