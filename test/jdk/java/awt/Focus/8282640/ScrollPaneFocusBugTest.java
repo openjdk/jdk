@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,15 @@ import javax.swing.SwingUtilities;
 
 public class ScrollPaneFocusBugTest {
 
-    private static String focussedComponentName;
+    private static volatile String focussedComponentName;
     private static JScrollPane scrollPane;
     private static JFrame frame;
     private static Robot robot;
+
+    private static volatile int xLocn;
+    private static volatile int yLocn;
+    private static volatile int width;
+    private static volatile int height;
 
     public static JScrollPane createScrollPaneComponent(JComponent componentToMoveFocusTo) {
         JTextArea textArea = new JTextArea("1111\n2222\n3333\n4444\n5555\n");
@@ -75,10 +80,8 @@ public class ScrollPaneFocusBugTest {
 
         pressKey();
 
-        SwingUtilities.invokeAndWait(() -> {
-            focussedComponentName = KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                .getFocusOwner().getClass().getName();
-        });
+        SwingUtilities.invokeAndWait(() -> focussedComponentName = KeyboardFocusManager
+            .getCurrentKeyboardFocusManager().getFocusOwner().getClass().getName());
 
         if (focussedComponentName.equals("javax.swing.JTextField")) {
             System.out
@@ -90,12 +93,17 @@ public class ScrollPaneFocusBugTest {
         }
 
         SwingUtilities.invokeAndWait(() -> frame.dispose());
-
     }
 
-    protected static void pressKey() {
-        robot.mouseMove(scrollPane.getLocationOnScreen().x + scrollPane.getSize().width / 2,
-            scrollPane.getLocationOnScreen().y + scrollPane.getSize().height / 2);
+    protected static void pressKey() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            xLocn = scrollPane.getLocationOnScreen().x;
+            yLocn = scrollPane.getLocationOnScreen().y;
+            width = scrollPane.getSize().width;
+            height = scrollPane.getSize().height;
+        });
+
+        robot.mouseMove(xLocn + width / 2, yLocn + height / 2);
 
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
