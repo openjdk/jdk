@@ -25,10 +25,12 @@ import java.awt.Component;
 import java.awt.Container;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -46,10 +48,10 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  */
 public class JFileChooserReadOnlyTest {
 
-    private static boolean result = true;
-    private static boolean newFolderFound = false;
+    private static volatile boolean result = true;
+    private static volatile boolean newFolderFound = false;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
                                   .map(LookAndFeelInfo::getClassName)
@@ -60,8 +62,9 @@ public class JFileChooserReadOnlyTest {
             }
 
             // Test1, Read Only JFileChooser
-            boolean readOnly = true;
-            createAndTestCustomFileChooser(readOnly);
+            final AtomicBoolean readOnly = new AtomicBoolean(true);
+            SwingUtilities.invokeAndWait(
+                    () -> createAndTestCustomFileChooser(readOnly.get()));
             System.out.println("Its a Read Only JFileChooser " +
                                (newFolderFound ? "but it has" :
                                 "and it doesn't have") +
@@ -71,7 +74,9 @@ public class JFileChooserReadOnlyTest {
 
             // Test2, Read/Write JFileChooser
             if (!(laf.contains("Motif") || laf.contains("Aqua"))) {
-                createAndTestCustomFileChooser(readOnly = false);
+                readOnly.set(false);
+                SwingUtilities.invokeAndWait(
+                        () -> createAndTestCustomFileChooser(readOnly.get()));
                 System.out.println("Its a not a Read Only JFileChooser " +
                                    (newFolderFound ? "and it has" :
                                     "but it doesn't have") +
