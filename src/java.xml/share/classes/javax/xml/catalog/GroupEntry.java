@@ -40,9 +40,6 @@ class GroupEntry extends BaseEntry {
     static final int ATTRIBUTE_DEFFER = 1;
     static final int ATTRIBUTE_RESOLUTION = 2;
 
-    //Indicates whether this is the Catalog instance (vs a Catalog entry)
-    boolean isCatalogInstance = false;
-
     //Indicates a continuous session, should not reset state
     boolean shouldKeepState = false;
 
@@ -175,7 +172,7 @@ class GroupEntry extends BaseEntry {
      * Resets the state of the Catalog instance, allowing it to be reused.
      */
     private void resetOnStart() {
-        if (isCatalogInstance && !shouldKeepState) {
+        if (this instanceof Catalog  && !shouldKeepState) {
             reset();
         }
     }

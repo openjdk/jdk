@@ -106,8 +106,6 @@ class CatalogImpl extends GroupEntry implements Catalog {
      */
     public CatalogImpl(CatalogImpl parent, CatalogFeatures f, URI... uris) throws CatalogException {
         super(CatalogEntryType.CATALOG, parent);
-        isCatalogInstance = true;
-
         if (f == null) {
             throw new NullPointerException(
                     formatMessage(CatalogMessages.ERR_NULL_ARGUMENT, new Object[]{"CatalogFeatures"}));
