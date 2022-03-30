@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 
 #include "register_x86.hpp"
-#include "runtime/globals.hpp"
 
 #ifndef AMD64
 const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers;
@@ -94,16 +93,6 @@ const char* XMMRegisterImpl::sub_word_name(int i) const {
   };
   assert(i >= 0 && i < 8, "offset too large");
   return is_valid() ? names[encoding() * 8 + i] : "xnoreg";
-}
-
-int XMMRegisterImpl::available_xmm_registers() {
-  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
-#ifdef _LP64
-  if (UseAVX < 3) {
-    num_xmm_regs /= 2;
-  }
-#endif
-  return num_xmm_regs;
 }
 
 const char* KRegisterImpl::name() const {

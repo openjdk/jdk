@@ -26,6 +26,7 @@
 #define CPU_X86_REGISTER_X86_HPP
 
 #include "asm/register.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -166,7 +167,15 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
 
   // Actually available XMM registers for use, depending on actual CPU capabilities
   // and flags.
-  static int available_xmm_registers();
+  static int available_xmm_registers() {
+    int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+#ifdef _LP64
+    if (UseAVX < 3) {
+      num_xmm_regs /= 2;
+    }
+#endif
+    return num_xmm_regs;
+  }
 };
 
 
