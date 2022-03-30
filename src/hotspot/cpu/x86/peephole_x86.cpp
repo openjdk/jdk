@@ -55,8 +55,7 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
   }
   assert(dst != src1, "");
 
-  // Go up the block to find inst1, if any node writes to src1 or read from dst
-  // then coalescing fails
+  // Go up the block to find inst1, if any node writes to src1 then coalescing fails
   for (int pos = block_index - 1; pos >= 0; pos--) {
     Node* curr = block->get_node(pos);
     if (curr == inst1) {
@@ -68,16 +67,6 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
     if (out == src1) {
       return false;
     }
-
-    for (uint i = 0; i < curr->len(); i++) {
-      if (curr->in(i) == nullptr) {
-        continue;
-      }
-      OptoReg::Name in = ra_->get_reg_first(curr->in(i));
-      if (in == dst) {
-        return false;
-      }
-    }
   }
   if (inst1_index == -1) {
     return false;
@@ -88,7 +77,6 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
   // See VM_Version::supports_fast_3op_lea()
   if (!imm) {
     Register rsrc1 = OptoReg::as_VMReg(src1)->as_Register();
-    // mov d, s1; add d, d should be transformed into lea d, [s1 + s1]
     Register rsrc2 = OptoReg::as_VMReg(ra_->get_reg_first(inst2))->as_Register();
     if ((rsrc1 == rbp || rsrc1 == r13) && (rsrc2 == rbp || rsrc2 == r13)) {
       return false;
@@ -107,13 +95,21 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
     }
   }
   assert(proj != nullptr, "");
+  // If some node uses the flag, cannot remove
+  if (proj->outcnt() > 0) {
+    return false;
+  }
+  // If some node read the MachSpillCopy other than inst0, cannot remove
+  if (inst1->outcnt() > 2 || (inst1->outcnt() == 2 && (imm || inst0->in(2) != inst1))) {
+    return false;
+  }
 
   MachNode* root = new_root();
   // Assign register for the newly allocated node
   ra_->set_oop(root, ra_->is_oop(inst0));
   ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
 
-  // Set input for the node
+  // Set input and output for the node
   root->add_req(inst0->in(0));
   root->add_req(inst1->in(1));
   // No input for constant after matching

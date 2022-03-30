@@ -2041,7 +2041,7 @@ void PhasePeephole::do_transform() {
       progress = false;
       // block->end_idx() not valid after PhaseRegAlloc
       uint end_index = block->number_of_nodes();
-      for( uint instruction_index = 1; instruction_index < end_index; ++instruction_index ) {
+      for( uint instruction_index = end_index - 1; instruction_index > 0; --instruction_index ) {
         Node     *n = block->get_node(instruction_index);
         if( n->is_Mach() ) {
           MachNode *m = n->as_Mach();
