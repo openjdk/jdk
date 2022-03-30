@@ -12109,21 +12109,7 @@ instruct compareSignedI_rReg(rRegI dst, rRegI op1, rRegI op2, rRegI tmp, rFlagsR
 
   format %{ "cmpsignedl    $op1, $op2 # CompareSignedI" %}
   ins_encode %{
-    Register op1 = $op1$$Register;
-    Register op2 = $op2$$Register;
-    Register dest = $dst$$Register;
-    Register tmp = $tmp$$Register;
-
-    Label done;
-    __ movl(tmp, -1);
-    __ cmpl(op1, op2);
-    __ jccb(Assembler::less, done);
-	  __ movl(tmp, 1);
-    __ jccb(Assembler::greater, done);
-	  __ movl(tmp, 0);
-    __ bind(done);
-    __ movl(dest, tmp);
-
+    __ compare_signed_int($dst$$Register, $op1$$Register, $op2$$Register, $tmp$$Register);
   %}
   ins_pipe(ialu_cr_reg_reg);
 %}
@@ -12135,21 +12121,7 @@ instruct compareSignedL_rReg(rRegI dst, rRegL op1, rRegL op2, rRegI tmp, rFlagsR
 
   format %{ "cmpsignedq    $op1, $op2 # CompareSignedL" %}
   ins_encode %{
-    Register op1 = $op1$$Register;
-    Register op2 = $op2$$Register;
-    Register dest = $dst$$Register;
-    Register tmp = $tmp$$Register;
-
-    Label done;
-    __ movl(tmp, -1);
-    __ cmpq(op1, op2);
-    __ jccb(Assembler::less, done);
-	  __ movl(tmp, 1);
-    __ jccb(Assembler::greater, done);
-	  __ movl(tmp, 0);
-    __ bind(done);
-    __ movl(dest, tmp);
-
+    __ compare_signed_long($dst$$Register, $op1$$Register, $op2$$Register, $tmp$$Register);
   %}
   ins_pipe(ialu_cr_reg_reg);
 %}
@@ -12162,21 +12134,7 @@ instruct compareUnsignedI_rReg(rRegI dst, rRegI op1, rRegI op2, rRegI tmp, rFlag
 
   format %{ "cmpunsignedl    $op1, $op2 # CompareUnsignedI" %}
   ins_encode %{
-    Register op1 = $op1$$Register;
-    Register op2 = $op2$$Register;
-    Register dest = $dst$$Register;
-    Register tmp = $tmp$$Register;
-
-    Label done;
-    __ movl(tmp, -1);
-    __ cmpl(op1, op2);
-    __ jccb(Assembler::below, done);
-	  __ movl(tmp, 1);
-    __ jccb(Assembler::above, done);
-	  __ movl(tmp, 0);
-    __ bind(done);
-    __ movl(dest, tmp);
-
+    __ compare_unsigned_int($dst$$Register, $op1$$Register, $op2$$Register, $tmp$$Register);
   %}
   ins_pipe(ialu_cr_reg_reg);
 %}
@@ -12188,21 +12146,7 @@ instruct compareUnsignedL_rReg(rRegI dst, rRegL op1, rRegL op2, rRegI tmp, rFlag
 
   format %{ "cmpunsignedq    $op1, $op2 # CompareUnsignedL" %}
   ins_encode %{
-    Register op1 = $op1$$Register;
-    Register op2 = $op2$$Register;
-    Register dest = $dst$$Register;
-    Register tmp = $tmp$$Register;
-
-    Label done;
-    __ movl(tmp, -1);
-    __ cmpq(op1, op2);
-    __ jccb(Assembler::below, done);
-	  __ movl(tmp, 1);
-    __ jccb(Assembler::above, done);
-	  __ movl(tmp, 0);
-    __ bind(done);
-    __ movl(dest, tmp);
-
+    __ compare_unsigned_long($dst$$Register, $op1$$Register, $op2$$Register, $tmp$$Register);
   %}
   ins_pipe(ialu_cr_reg_reg);
 %}

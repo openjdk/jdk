@@ -324,4 +324,12 @@ public:
                             XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                             int vec_enc);
 
+  void compare_signed_int(Register dst, Register op1, Register op2, Register tmp);
+  void compare_unsigned_int(Register dst, Register op1, Register op2, Register tmp);
+  #ifdef _LP64
+  void compare_signed_long(Register dst, Register op1, Register op2, Register tmp);
+  void compare_unsigned_long(Register dst, Register op1, Register op2, Register tmp);
+  #endif
+
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -4463,3 +4463,54 @@ void C2_MacroAssembler::vector_maskall_operation32(KRegister dst, Register src, 
   kunpckdql(dst, tmp, tmp);
 }
 #endif
+
+void C2_MacroAssembler::compare_signed_int(Register dst, Register op1, Register op2, Register tmp) {
+  Label done;
+  movl(tmp, -1);
+  cmpl(op1, op2);
+  jccb(Assembler::less, done);
+  movl(tmp, 1);
+  jccb(Assembler::greater, done);
+  movl(tmp, 0);
+  bind(done);
+  movl(dst, tmp);
+}
+
+void C2_MacroAssembler::compare_unsigned_int(Register dst, Register op1, Register op2, Register tmp) {
+  Label done;
+  movl(tmp, -1);
+  cmpl(op1, op2);
+  jccb(Assembler::below, done);
+  movl(tmp, 1);
+  jccb(Assembler::above, done);
+  movl(tmp, 0);
+  bind(done);
+  movl(dst, tmp);
+}
+
+#ifdef _LP64
+void C2_MacroAssembler::compare_signed_long(Register dst, Register op1, Register op2, Register tmp) {
+  Label done;
+  movq(tmp, -1);
+  cmpq(op1, op2);
+  jccb(Assembler::less, done);
+  movq(tmp, 1);
+  jccb(Assembler::greater, done);
+  movq(tmp, 0);
+  bind(done);
+  movq(dst, tmp);
+}
+
+void C2_MacroAssembler::compare_unsigned_long(Register dst, Register op1, Register op2, Register tmp) {
+  Label done;
+  movq(tmp, -1);
+  cmpq(op1, op2);
+  jccb(Assembler::below, done);
+  movq(tmp, 1);
+  jccb(Assembler::above, done);
+  movq(tmp, 0);
+  bind(done);
+  movq(dst, tmp);
+}
+#endif
+
