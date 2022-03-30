@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,16 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
 #endif
       return false;
     }
+  } else if (VectorNode::is_vector_integral_negate(sopc)) {
+    if (!VectorNode::is_vector_integral_negate_supported(sopc, num_elem, type, false)) {
+#ifndef PRODUCT
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** Rejected vector op (%s,%s,%d) because architecture does not support integral vector negate",
+                      NodeClassNames[sopc], type2name(type), num_elem);
+      }
+#endif
+      return false;
+    }
   } else {
     // Check that architecture supports this op-size-type combination.
     if (!Matcher::match_rule_supported_vector(sopc, num_elem, type)) {
@@ -277,8 +287,16 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
   }
 
   if ((mask_use_type & VecMaskUsePred) != 0) {
-    if (!Matcher::has_predicated_vectors() ||
-        !Matcher::match_rule_supported_vector_masked(sopc, num_elem, type)) {
+    bool is_supported = false;
+    if (Matcher::has_predicated_vectors()) {
+      if (VectorNode::is_vector_integral_negate(sopc)) {
+        is_supported = VectorNode::is_vector_integral_negate_supported(sopc, num_elem, type, true);
+      } else {
+        is_supported = Matcher::match_rule_supported_vector_masked(sopc, num_elem, type);
+      }
+    }
+
+    if (!is_supported) {
     #ifndef PRODUCT
       if (C->print_intrinsics()) {
         tty->print_cr("Rejected vector mask predicate using (%s,%s,%d) because architecture does not support it",

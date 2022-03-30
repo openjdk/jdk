@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     private static final long serialVersionUID = 7205873507486557157L;
 
     /**
-     * The object identitifer being used for this algorithm.
+     * The object identifier being used for this algorithm.
      */
     private ObjectIdentifier algid;
 
@@ -584,7 +584,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 String upperCaseAlias = alias.toUpperCase(Locale.ENGLISH);
                 int index;
                 if (upperCaseAlias.startsWith("ALG.ALIAS") &&
-                    (index = upperCaseAlias.indexOf("OID.", 0)) != -1) {
+                    (index = upperCaseAlias.indexOf("OID.")) != -1) {
                     index += "OID.".length();
                     if (index == alias.length()) {
                         // invalid alias entry

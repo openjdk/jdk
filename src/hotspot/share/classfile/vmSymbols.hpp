@@ -465,8 +465,6 @@
   template(security_manager_signature,                "Ljava/lang/SecurityManager;")              \
   template(defineOrCheckPackage_name,                 "defineOrCheckPackage")                     \
   template(defineOrCheckPackage_signature,            "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)Ljava/lang/Package;") \
-  template(fileToEncodedURL_name,                     "fileToEncodedURL")                         \
-  template(fileToEncodedURL_signature,                "(Ljava/io/File;)Ljava/net/URL;")           \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
   template(java_lang_Integer_array_signature,         "[Ljava/lang/Integer;")                     \
