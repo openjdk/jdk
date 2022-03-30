@@ -526,7 +526,7 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
 }
 
 //------------------------------builtin_throw----------------------------------
-void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
+void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
   bool must_throw = true;
 
   // If this particular condition has not yet happened at this
