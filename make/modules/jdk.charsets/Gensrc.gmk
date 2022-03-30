@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ CHARSET_TEMPLATES := \
     $(CHARSET_DATA_DIR)/SingleByte-X.java.template \
     $(CHARSET_DATA_DIR)/DoubleByte-X.java.template
 CHARSET_EXTENDED_JAVA_TEMPLATES := \
-    $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext/ExtendedCharsets.java.template
-CHARSET_EXTENDED_JAVA_DIR := $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext
+    $(MODULE_SRC)/share/classes/sun/nio/cs/ext/ExtendedCharsets.java.template
+CHARSET_EXTENDED_JAVA_DIR := $(MODULE_SRC)/share/classes/sun/nio/cs/ext
 CHARSET_STANDARD_OS := stdcs-$(OPENJDK_TARGET_OS)
 
 $(CHARSET_DONE_CS)-extcs: $(CHARSET_DATA_DIR)/charsets \

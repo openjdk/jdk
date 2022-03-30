@@ -359,18 +359,17 @@ JNIEXPORT jobjectArray JNICALL Java_sun_util_locale_provider_HostLocaleProviderA
 JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getNumberPattern
   (JNIEnv *env, jclass cls, jint numberStyle, jstring jlangtag) {
     const jchar *langtag;
-    jstring ret;
+    jstring ret = NULL;
     WCHAR * pattern;
 
     langtag = (*env)->GetStringChars(env, jlangtag, NULL);
     CHECK_NULL_RETURN(langtag, NULL);
     pattern = getNumberPattern(langtag, numberStyle);
-    CHECK_NULL_RETURN(pattern, NULL);
-
+    if (!IS_NULL(pattern)) {
+        ret = (*env)->NewString(env, pattern, (jsize)wcslen(pattern));
+        free(pattern);
+    }
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
-    ret = (*env)->NewString(env, pattern, (jsize)wcslen(pattern));
-    free(pattern);
-
     return ret;
 }
 

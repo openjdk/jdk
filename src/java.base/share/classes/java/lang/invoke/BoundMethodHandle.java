@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import static java.lang.invoke.MethodHandleStatics.uncaughtException;
  * All bound arguments are encapsulated in dedicated species.
  */
 /*non-public*/
-abstract class BoundMethodHandle extends MethodHandle {
+abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
     /*non-public*/
     BoundMethodHandle(MethodType type, LambdaForm form) {
