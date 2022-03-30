@@ -513,19 +513,11 @@ public interface RandomGenerator {
      * @return a pseudorandomly chosen {@code float} value between
      *         zero (inclusive) and the bound (exclusive)
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}, or
-     *         the difference between {@code bound} and {@code origin}
-     *         is so large that it cannot be represented as a finite
-     *         {@code float} value
+     * @throws IllegalArgumentException if {@code bound} is not finite
      *
-     * @implSpec The default implementation checks if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}, or
-     *         the difference between {@code bound} and {@code origin}
-     *         is so large that it cannot be represented as a finite
-     *         {@code float} value
+     * @implSpec The default implementation verifies that {@code bound} is valid
+     *           then invokes {@code nextDouble()} scaling and translating the
+     *           result to fit {@code 0.0f} and {@code bound} (exclusive).
      */
     default float nextFloat(float bound) {
         RandomSupport.checkBound(bound);
@@ -548,14 +540,12 @@ public interface RandomGenerator {
      *         is greater than or equal to {@code bound}, or
      *         the difference between {@code bound} and {@code origin}
      *         is so large that it cannot be represented as a finite
-     *         {@code double} value
+     *         {@code float} value
      *
-     * @implSpec The default implementation checks if {@code origin} is not finite,
-     *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}, or
-     *         the difference between {@code bound} and {@code origin}
-     *         is so large that it cannot be represented as a finite
-     *         {@code double} value
+     * @implSpec The default implementation verifies that the {@code origin}
+     *           and {@code bound} are valid then invokes {@code nextFloat()}
+     *           scaling and translating the result to fit {@code origin} and
+     *           {@code bound} (exclusive).
      */
     default float nextFloat(float origin, float bound) {
         RandomSupport.checkRange(origin, bound);
@@ -587,13 +577,11 @@ public interface RandomGenerator {
      * @return a pseudorandomly chosen {@code double} value between
      *         zero (inclusive) and the bound (exclusive)
      *
-     * @throws IllegalArgumentException if {@code bound} is not
-     *         both positive and finite
+     * @throws IllegalArgumentException if {@code bound} is not finite
      *
-     * @implSpec The default implementation checks that {@code bound} is a
-     * positive finite double. Then invokes {@code nextDouble()}, scaling
-     * the result so that the final result lies between {@code 0.0} (inclusive)
-     * and {@code bound} (exclusive).
+     * @implSpec The default implementation verifies that {@code bound} is valid
+     *           then invokes {@code nextDouble()} scaling and translating the
+     *           result to fit {@code 0.0} and {@code bound} (exclusive).
      */
     default double nextDouble(double bound) {
         RandomSupport.checkBound(bound);
@@ -613,13 +601,15 @@ public interface RandomGenerator {
      *
      * @throws IllegalArgumentException if {@code origin} is not finite,
      *         or {@code bound} is not finite, or {@code origin}
-     *         is greater than or equal to {@code bound}
+     *         is greater than or equal to {@code bound}, or
+     *         the difference between {@code bound} and {@code origin}
+     *         is so large that it cannot be represented as a finite
+     *         {@code double} value
      *
-     * @implSpec The default implementation checks that {@code origin} and
-     * {@code bound} are positive finite doubles. Then calls
-     * {@code nextDouble()}, scaling and translating the result so that the final
-     * result lies between {@code origin} (inclusive) and {@code bound}
-     * (exclusive).
+     * @implSpec The default implementation verifies that the {@code origin}
+     *           and {@code bound} are valid, then invokes {@code nextDouble()}
+     *           scaling and translating the result to fit {@code origin} and
+     *           {@code bound}( exclusive).
      */
     default double nextDouble(double origin, double bound) {
         RandomSupport.checkRange(origin, bound);
