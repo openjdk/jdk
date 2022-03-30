@@ -588,7 +588,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new byte array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link byte[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code byte[]} instance,
      * e.g. its size is greater than {@link Integer#MAX_VALUE}.
      */
     byte[] toArray(ValueLayout.OfByte elementLayout);
@@ -600,7 +600,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new short array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link short[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code short[]} instance,
      * e.g. because {@code byteSize() % 2 != 0}, or {@code byteSize() / 2 > Integer#MAX_VALUE}
      */
     short[] toArray(ValueLayout.OfShort elementLayout);
@@ -612,7 +612,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new char array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link char[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code char[]} instance,
      * e.g. because {@code byteSize() % 2 != 0}, or {@code byteSize() / 2 > Integer#MAX_VALUE}.
      */
     char[] toArray(ValueLayout.OfChar elementLayout);
@@ -624,7 +624,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new int array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link int[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code int[]} instance,
      * e.g. because {@code byteSize() % 4 != 0}, or {@code byteSize() / 4 > Integer#MAX_VALUE}.
      */
     int[] toArray(ValueLayout.OfInt elementLayout);
@@ -636,7 +636,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new float array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link float[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code float[]} instance,
      * e.g. because {@code byteSize() % 4 != 0}, or {@code byteSize() / 4 > Integer#MAX_VALUE}.
      */
     float[] toArray(ValueLayout.OfFloat elementLayout);
@@ -648,7 +648,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new long array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link long[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code long[]} instance,
      * e.g. because {@code byteSize() % 8 != 0}, or {@code byteSize() / 8 > Integer#MAX_VALUE}.
      */
     long[] toArray(ValueLayout.OfLong elementLayout);
@@ -660,7 +660,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @return a new double array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
-     * @throws IllegalStateException if this segment's contents cannot be copied into a {@link double[]} instance,
+     * @throws IllegalStateException if this segment's contents cannot be copied into a {@code double[]} instance,
      * e.g. because {@code byteSize() % 8 != 0}, or {@code byteSize() / 8 > Integer#MAX_VALUE}.
      */
     double[] toArray(ValueLayout.OfDouble elementLayout);
