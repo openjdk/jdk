@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,15 @@ package java.lang.invoke;
 /**
  * Base class for memory access var handle implementations.
  */
-abstract class MemoryAccessVarHandleBase extends VarHandle {
+abstract sealed class MemoryAccessVarHandleBase extends VarHandle permits
+        MemoryAccessVarHandleByteHelper,
+        MemoryAccessVarHandleCharHelper,
+        MemoryAccessVarHandleDoubleHelper,
+        MemoryAccessVarHandleFloatHelper,
+        MemoryAccessVarHandleIntHelper,
+        MemoryAccessVarHandleLongHelper,
+        MemoryAccessVarHandleShortHelper
+{
 
     /** endianness **/
     final boolean be;

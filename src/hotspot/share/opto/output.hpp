@@ -263,6 +263,7 @@ public:
   void BuildOopMaps();
 
 #ifndef PRODUCT
+  void print_scheduling();
   static void print_statistics();
 #endif
 };
