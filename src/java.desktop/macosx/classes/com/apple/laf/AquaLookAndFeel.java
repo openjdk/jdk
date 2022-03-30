@@ -890,7 +890,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
             "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(
-                    deriveContrastFocusRing(selectionBackground), 2),
+                    deriveLighterFocusRing(focusRingColor), 2),
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1125,21 +1125,20 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns a lighter Cell Focus Ring color by changing saturation
-     * and setting the brightness to 100% for a given selection
-     * background color.
+     * Returns a lighter Focus Ring color by changing saturation
+     * and setting the brightness to 100% for incoming focusRingColor.
      *
-     * If selectedBackgroundColor is equal to white/black/grey, the
-     * returned focus ring color is Light Gray. For all other colors,
-     * a lighter color of selectionBackgroundColor is returned. A new
-     * Focus Ring color (in the latter case) is obtained by adjusting
-     * the saturation levels and setting the brightness to 100% of the
-     * corresponding selectedBackgroundColor.
+     * If the incoming focusRingColor is equal to white/black/grey, the
+     * returned focusRingColor is Light Gray. For all other colors,
+     * a lighter color of focusRingColor is returned. A new focusRingColor
+     * (in the latter case), is obtained by adjusting the saturation
+     * levels and setting the brightness to 100% of the
+     * incoming focusRingColor.
      *
-     * @param selectedBackgroundColor - the {@code Color} object
+     * @param focusRingColor - the {@code Color} object
      * @return the {@code Color} object corresponding to new HSB values
      */
-    private Color deriveContrastFocusRing(Color selectedBackgroundColor) {
+    static Color deriveLighterFocusRing(Color focusRingColor) {
 
         // define constants
         float satLowerValue = 0.30f;
@@ -1152,18 +1151,22 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         // brightness always set to 100%
         float brightnessValue = 1.0f;
 
+        // focus ring color returned for Graphite accent color
+        Color graphiteFocusRing = new Color(135,135,140);
+
         float[] hsbValues = new float[3];
 
-        int redValue = selectedBackgroundColor.getRed();
-        int greenValue = selectedBackgroundColor.getGreen();
-        int blueValue = selectedBackgroundColor.getBlue();
+        int redValue = focusRingColor.getRed();
+        int greenValue = focusRingColor.getGreen();
+        int blueValue = focusRingColor.getBlue();
 
-        // if selectionBackground color white/black/gray
-        if ((redValue == greenValue && redValue == blueValue)) {
+        // if focusRingColor is white/black/gray
+        if ((redValue == greenValue && redValue == blueValue)
+                || focusRingColor.equals(graphiteFocusRing)) {
             return Color.LIGHT_GRAY;
         }
 
-        // if selectionBackground color NOT white/black/gray
+        // if focusRingColor color NOT white/black/gray
         Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
 
         //saturation adjustment - saturation set to either lower or

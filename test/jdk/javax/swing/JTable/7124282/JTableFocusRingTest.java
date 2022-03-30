@@ -56,9 +56,13 @@ public class JTableFocusRingTest {
             Color originalFocusRingColor = null;
             Color brighterFocusRingColor = null;
 
+            // focus ring color returned for Graphite accent color
+            Color graphiteFocusRing = new Color(135,135,140);
+
             if (UIManager.getDefaults().get("Table.selectionBackground") != null
                     && UIManager.getDefaults().get("Table.selectionBackground") instanceof Color) {
-                selectionBackground = (Color) UIManager.getDefaults().get("Table.selectionBackground");
+                selectionBackground = (Color) UIManager.getDefaults()
+                        .get("Table.selectionBackground");
             }
             if (UIManager.getDefaults().get("Focus.color") != null
                     && UIManager.getDefaults().get("Focus.color") instanceof Color) {
@@ -82,12 +86,14 @@ public class JTableFocusRingTest {
             System.out.println("Original FocusRing Color: "+ originalFocusRingColor.toString());
             System.out.println("Brighter FocusRing Color: "+ brighterFocusRingColor.toString());
 
-            int redValue = selectionBackground.getRed();
-            int greenValue = selectionBackground.getGreen();
-            int blueValue = selectionBackground.getBlue();
+            int redValue = originalFocusRingColor.getRed();
+            int greenValue = originalFocusRingColor.getGreen();
+            int blueValue = originalFocusRingColor.getBlue();
 
-            // Selected Background color: WHITE/BLACK/GRAY
-            if (redValue == greenValue && redValue == blueValue && brighterFocusRingColor.equals(Color.LIGHT_GRAY)) {
+            // Original Focus ring color: WHITE/BLACK/GRAY
+            if ((redValue == greenValue && redValue == blueValue ||
+                    originalFocusRingColor.equals(graphiteFocusRing)) &&
+                    brighterFocusRingColor.equals(Color.LIGHT_GRAY)) {
                 System.out.println("Condition-Background Color: WHITE/BLACK/GRAY, " +
                         "Focus Ring Color: LIGHT GRAY");
                 System.out.println("Test case passed");
