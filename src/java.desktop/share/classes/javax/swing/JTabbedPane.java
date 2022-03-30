@@ -2207,7 +2207,18 @@ public class JTabbedPane extends JComponent
 
         @Override
         public boolean setCurrentAccessibleValue(Number n) {
-            return false;
+            if (getPageIndex() != parent.getSelectedIndex()) {
+                if (n.intValue() != 0) {
+                    // Set current page selected
+                    parent.setSelectedIndex(getPageIndex());
+                }
+            } else {
+                if (n.intValue() == 0) {
+                    // Can not "deselect" because what page should i select instead?
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Override
