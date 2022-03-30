@@ -67,7 +67,9 @@ import sun.awt.InputMethodSupport;
  * @author      Arthur van Hoff
  * @since       1.0
  */
-public class TextComponent extends Component implements Accessible {
+public sealed class TextComponent extends Component implements Accessible
+     permits TextArea,
+             TextField {
 
     /**
      * The value of the text.
