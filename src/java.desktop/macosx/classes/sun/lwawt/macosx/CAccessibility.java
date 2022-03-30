@@ -470,37 +470,39 @@ class CAccessibility implements PropertyChangeListener {
     public static Accessible accessibilityHitTest(final Container parent, final float hitPointX, final float hitPointY) {
         return invokeAndWait(new Callable<Accessible>() {
             public Accessible call() throws Exception {
+                if (parent == null) {
+                    return null;
+                }
+
+                final Point p;
                 try {
-                    if (parent == null) {
-                        return null;
-                    }
-                    final Point p = parent.getLocationOnScreen();
-
-                    // Make it into local coords
-                    final Point localPoint = new Point((int) (hitPointX - p.getX()), (int) (hitPointY - p.getY()));
-
-                    final Component component = parent.findComponentAt(localPoint);
-                    if (component == null) return null;
-
-                    final AccessibleContext axContext = component.getAccessibleContext();
-                    if (axContext == null) return null;
-
-                    final AccessibleComponent axComponent = axContext.getAccessibleComponent();
-                    if (axComponent == null) return null;
-
-                    final int numChildren = axContext.getAccessibleChildrenCount();
-                    if (numChildren > 0) {
-                        // It has children, check to see which one is hit.
-                        final Point p2 = axComponent.getLocationOnScreen();
-                        final Point localP2 = new Point((int) (hitPointX - p2.getX()), (int) (hitPointY - p2.getY()));
-                        return CAccessible.getCAccessible(axComponent.getAccessibleAt(localP2));
-                    }
-
-                    if (!(component instanceof Accessible)) return null;
-                    return CAccessible.getCAccessible((Accessible) component);
+                    p = parent.getLocationOnScreen();
                 } catch (IllegalComponentStateException ice) {
                     return null;
                 }
+
+                // Make it into local coords
+                final Point localPoint = new Point((int)(hitPointX - p.getX()), (int)(hitPointY - p.getY()));
+
+                final Component component = parent.findComponentAt(localPoint);
+                if (component == null) return null;
+
+                final AccessibleContext axContext = component.getAccessibleContext();
+                if (axContext == null) return null;
+
+                final AccessibleComponent axComponent = axContext.getAccessibleComponent();
+                if (axComponent == null) return null;
+
+                final int numChildren = axContext.getAccessibleChildrenCount();
+                if (numChildren > 0) {
+                    // It has children, check to see which one is hit.
+                    final Point p2 = axComponent.getLocationOnScreen();
+                    final Point localP2 = new Point((int)(hitPointX - p2.getX()), (int)(hitPointY - p2.getY()));
+                    return CAccessible.getCAccessible(axComponent.getAccessibleAt(localP2));
+                }
+
+                if (!(component instanceof Accessible)) return null;
+                return CAccessible.getCAccessible((Accessible)component);
             }
         }, parent);
     }
