@@ -1066,6 +1066,10 @@ bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
   }
 
   size_t name_len = size_t(arg - name);
+  if (name_len == 0) {
+    return false;
+  }
+
   JVMFlag* flag = find_jvm_flag(name, name_len);
   if (flag == NULL) {
     return false;
