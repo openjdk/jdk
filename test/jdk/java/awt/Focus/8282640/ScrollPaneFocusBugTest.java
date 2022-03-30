@@ -25,7 +25,8 @@
  * @test
  * @bug 4740761
  * @key headful
- * @summary Focus stays with the ScrollPane despite it being removed from the Parent
+ * @summary Focus stays with the ScrollPane despite
+ * it being removed from the Parent
  * @run main ScrollPaneFocusBugTest
  */
 
@@ -56,7 +57,8 @@ public class ScrollPaneFocusBugTest {
     private static volatile int width;
     private static volatile int height;
 
-    public static JScrollPane createScrollPaneComponent(JComponent componentToMoveFocusTo) {
+    public static JScrollPane
+    createScrollPaneComponent(JComponent componentToMoveFocusTo) {
         JTextArea textArea = new JTextArea("1111\n2222\n3333\n4444\n5555\n");
         JScrollPane scrollPaneComponent = new JScrollPane(textArea);
         textArea.addKeyListener(new KeyAdapter() {
@@ -80,18 +82,20 @@ public class ScrollPaneFocusBugTest {
 
         pressKey();
 
-        SwingUtilities.invokeAndWait(() -> focussedComponentName = KeyboardFocusManager
-            .getCurrentKeyboardFocusManager().getFocusOwner().getClass().getName());
+        SwingUtilities.invokeAndWait(() -> focussedComponentName =
+            KeyboardFocusManager.getCurrentKeyboardFocusManager()
+            .getFocusOwner().getClass().getName());
 
         if (focussedComponentName.equals("javax.swing.JTextField")) {
-            System.out
-                .println("Test Passed: Focus shifted to JTextField after removing ScrollPane");
+            System.out.println(
+                "Test Passed: Focus shifted to JTextField"
+                + "after removing ScrollPane");
         } else {
             throw new RuntimeException(
-                "Test Failed: Focus did not shift to JTextField after removing ScrollPane, "
-                    + " current Focus with " + focussedComponentName);
+                "Test Failed: Focus did not shift to JTextField after"
+                + "removing ScrollPane, current"
+                + " Focus with " + focussedComponentName);
         }
-
         SwingUtilities.invokeAndWait(() -> frame.dispose());
     }
 
