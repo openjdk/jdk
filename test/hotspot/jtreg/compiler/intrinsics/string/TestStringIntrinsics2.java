@@ -43,28 +43,6 @@
  *        compiler.intrinsics.string.TestStringIntrinsics2
  */
 
-/*
- * @test id=LargeHeap
- * @bug 8254790
- * @requires vm.bits == "64" & os.maxMemory > 8G
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- *
- * @run main/othervm
- *        -mx8G
- *        -Xbootclasspath/a:.
- *        -Xmixed
- *        -XX:+UnlockDiagnosticVMOptions
- *        -XX:+WhiteBoxAPI
- *        -XX:+IgnoreUnrecognizedVMOptions
- *        -XX:MaxInlineSize=70
- *        -XX:MinInlineFrequencyRatio=0
- *        compiler.intrinsics.string.TestStringIntrinsics2 LargeHeap
- */
-
 package compiler.intrinsics.string;
 
 import sun.hotspot.WhiteBox;
