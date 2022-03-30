@@ -93,7 +93,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
                 int totalCPUs = getHostOnlineCpuCount0();
                 int containerCPUs = getAvailableProcessors();
                 // scale the total host load to the actual container cpus
-                hostTicks = (long) (hostTicks * (1.0 * containerCPUs / totalCPUs));
+                double scaleFactor = ((double) containerCPUs) / totalCPUs;
+                hostTicks = (long) (hostTicks * scaleFactor);
                 return getUsageDividesTotal(cpuUsageSupplier().getAsLong(), hostTicks);
             } else {
                 // If CPU quotas and shares are not active then find the average load for
