@@ -2182,6 +2182,9 @@ void Compile::Optimize() {
       ConnectionGraph::do_analysis(this, &igvn, true);
       if (failing())  return;
 
+      igvn.optimize();
+      if (failing())  return;
+
       // Only try to split-phis if there are Allocate nodes that NoEscape
       if (congraph() != NULL) {
         congraph()->split_bases(splitted_phi_nodes);

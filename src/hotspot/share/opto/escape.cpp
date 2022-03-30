@@ -268,8 +268,10 @@ bool ConnectionGraph::compute_escape(bool only_analysis) {
     return false;
   }
 
-  if (only_analysis)
+  if (only_analysis) {
+    _collecting = false;
     return non_escaped_allocs_worklist.length() > 0;
+  }
 
   NOT_PRODUCT( dump(ptnodes_worklist, "Before adjust_scalar_replaceable_state"); )
 
@@ -3767,7 +3769,7 @@ void ConnectionGraph::split_bases(Unique_Node_List& splitted_phi_nodes) {
 
   NOT_PRODUCT( dump_ir("After Split_Bases"); )
 
-  _igvn->set_delay_transform(prev_delay_transform);
+_igvn->set_delay_transform(prev_delay_transform);
 }
 
 Node* ConnectionGraph::create_selector_phi(Node* orig_phi) {
@@ -3786,7 +3788,7 @@ Node* ConnectionGraph::split_phi_for_addp(Node* original_phi, Node* original_add
   Node* original_load      = original_addp->raw_out(0); // For now we only handle AddPs with single output
   Node* ctrl_of_next_if    = (original_addp->in(TypeFunc::Control) != NULL) ? original_addp->in(TypeFunc::Control) : prev_control;
   Node* final_merge_region = _igvn->transform(new RegionNode(selector_phi->req()));
-  Node* final_merge_phi    = _igvn->transform(PhiNode::make_blank(final_merge_region, original_load));
+  Node* final_merge_phi    = _igvn->transform(PhiNode::make_blank(original_phi->in(0), original_load));
 
   NOT_PRODUCT(tty->print("\t\tOrig_Use: %d\n", original_addp->_idx);)
   NOT_PRODUCT(tty->print("\t\tOrig_Use_Use: %d\n", original_load->_idx);)
@@ -3843,8 +3845,6 @@ Node* ConnectionGraph::split_phi_for_addp(Node* original_phi, Node* original_add
 void ConnectionGraph::clone_addp_and_load_chain(Node* original_phi, uint idx, Node* original_addp, Node* original_load, Unique_Node_List& splitted_phi_nodes, Node* final_merge_region, Node* final_merge_phi, Node* merge_ctrl) {
   Node* new_addp = _igvn->transform(original_addp->clone());
   Node* new_load = _igvn->transform(original_load->clone());
-
-  new_load->set_req(0, merge_ctrl);
 
   new_addp->replace_edge(original_phi, original_phi->in(idx));
 
@@ -4030,13 +4030,17 @@ void ConnectionGraph::dump_ir(const char* title) {
 
 void ConnectionGraph::save_trace() {
   if (_collectingTrace) {
+    ttyLocker ttl;
+    static int counter = 0;
     stringStream fullName;
-    fullName.print("/tmp/EATrace_%s_%s_%d.log", _compile->method()->holder()->name()->as_utf8(), _compile->method()->name()->as_utf8(), _invocation);
+    fullName.print("/tmp/EATrace_%s_%s_%d.log", _compile->method()->holder()->name()->as_utf8(), _compile->method()->name()->as_utf8(), counter++);
 
-    fileStream oStream(fullName.as_string(), "wa");
+    fileStream oStream(fullName.as_string(), "w");
                oStream.write(_traceStream.as_string(), _traceStream.size());
                oStream.cr();
                oStream.flush();
+
+    _traceStream.reset();
   }
 }
 #endif
