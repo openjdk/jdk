@@ -274,6 +274,12 @@ public final class StandardSocketOptions {
         new StdSocketOption<Integer>("IP_TOS", Integer.class);
 
     /**
+     * Blah blah
+     */
+    public static final SocketOption<Boolean> IP_DONTFRAGMENT =
+        new StdSocketOption<Boolean>("IP_DONTFRAGMENT", Boolean.class);
+
+    /**
      * The network interface for Internet Protocol (IP) multicast datagrams.
      *
      * <p> The value of this socket option is a {@link NetworkInterface} that

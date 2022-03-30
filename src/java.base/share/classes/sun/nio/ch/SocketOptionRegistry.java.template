@@ -33,6 +33,9 @@
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
+#ifdef MACOSX
+#define __APPLE_USE_RFC_3542
+#endif
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #endif
@@ -48,6 +51,10 @@
 #else
 #define SO_REUSEPORT 0
 #endif
+#endif
+
+#ifdef __linux__
+#define IP_DONTFRAGMENT IP_PMTUDISC_DO
 #endif
 
 /* To be able to name the Java constants the same as the C constants without
@@ -122,6 +129,8 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_TTL));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_LOOP));
+            map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
+                StandardProtocolFamily.INET), new OptionKey(0, IP_DONTFRAG));
 
 #ifdef AF_INET6
             // IPPROTO_IPV6 is 41
@@ -133,6 +142,8 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MULTICAST_HOPS));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MULTICAST_LOOP));
+            map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
+                StandardProtocolFamily.INET6), new OptionKey(41, IPV6_DONTFRAG));
 #endif
 
             map.put(new RegistryKey(ExtendedSocketOption.PREFIX_SO_OOBINLINE,
