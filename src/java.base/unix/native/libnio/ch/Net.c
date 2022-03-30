@@ -548,6 +548,16 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         carg = (u_char)arg;
     }
 
+#ifdef __linux__
+    if ((level == IPPROTO_IP && (opt == IP_MTU_DISCOVER))
+        || (level == IPPROTO_IPV6 && (opt == IPV6_MTU_DISCOVER))) {
+        if (arg != 0) {
+            arg = IP_PMTUDISC_DO;
+        } else {
+            arg = IP_PMTUDISC_DONT;
+        }
+    }
+#endif
     if (level == SOL_SOCKET && opt == SO_LINGER) {
         parg = (void *)&linger;
         arglen = sizeof(linger);
@@ -563,7 +573,7 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
     if (mayNeedConversion) {
         n = NET_SetSockOpt(fdval(env, fdo), level, opt, parg, arglen);
     } else {
-	printf("fd: %d, level=%d, opt=%d, arg=%d, arglen=%d\n", fdval(env, fdo), level, opt, *(int *)parg, arglen);
+        printf("fd: %d, level=%d, opt=%d, arg=%d, arglen=%d\n", fdval(env, fdo), level, opt, *(int *)parg, arglen);
         n = setsockopt(fdval(env, fdo), level, opt, parg, arglen);
     }
     if (n < 0) {
