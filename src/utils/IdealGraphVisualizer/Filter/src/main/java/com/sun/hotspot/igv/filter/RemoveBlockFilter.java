@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,22 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.*;
+import com.sun.hotspot.igv.graph.Diagram;
+import com.sun.hotspot.igv.graph.Block;
+import com.sun.hotspot.igv.graph.BlockSelector;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class RemoveSelfLoopsFilter extends AbstractFilter {
+public class RemoveBlockFilter extends AbstractFilter {
 
-    private String name;
+    private final List<RemoveBlockRule> rules;
+    private final String name;
 
-    /** Creates a new instance of RemoveSelfLoops */
-    public RemoveSelfLoopsFilter(String name) {
+    public RemoveBlockFilter(String name) {
         this.name = name;
+        rules = new ArrayList<>();
     }
 
     @Override
@@ -46,33 +47,28 @@ public class RemoveSelfLoopsFilter extends AbstractFilter {
     }
 
     @Override
-    public void apply(Diagram d) {
+    public void apply(Diagram diagram) {
+        for (RemoveBlockRule r : rules) {
+            List<Block> selected = r.getBlockSelector().selected(diagram);
+            Set<Block> toRemove = new HashSet<>(selected);
+            diagram.removeAllBlocks(toRemove);
+        }
+    }
 
-        for (Figure f : d.getFigures()) {
+    public void addRule(RemoveBlockRule rule) {
+        rules.add(rule);
+    }
 
-            for (InputSlot is : f.getInputSlots()) {
+    public static class RemoveBlockRule {
 
-                List<FigureConnection> toRemove = new ArrayList<>();
-                for (FigureConnection c : is.getConnections()) {
+        private final BlockSelector selector;
 
-                    if (c.getOutputSlot().getFigure() == f) {
-                        toRemove.add(c);
-                    }
-                }
+        public RemoveBlockRule(BlockSelector selector) {
+            this.selector = selector;
+        }
 
-                for (FigureConnection c : toRemove) {
-
-                    c.remove();
-
-                    OutputSlot os = c.getOutputSlot();
-                    if (os.getConnections().size() == 0) {
-                        f.removeSlot(os);
-                    }
-
-                    c.getInputSlot().setShortName("O");
-                    c.getInputSlot().setText("Self Loop");
-                }
-            }
+        public BlockSelector getBlockSelector() {
+            return selector;
         }
     }
 }

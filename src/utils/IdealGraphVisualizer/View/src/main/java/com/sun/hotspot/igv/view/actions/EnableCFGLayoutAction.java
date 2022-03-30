@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,31 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.view.actions;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.util.Set;
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ImageIcon;
+import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Cluster extends Comparable<Cluster> {
+public class EnableCFGLayoutAction extends AbstractAction {
 
-    public Cluster getOuter();
+    public EnableCFGLayoutAction() {
+        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(SELECTED_KEY, false);
+        putValue(Action.SHORT_DESCRIPTION, "Show control-flow graph");
+    }
 
-    public void setBounds(Rectangle r);
+    public boolean isSelected() {
+        return (Boolean)getValue(SELECTED_KEY);
+    }
 
-    public Set<? extends Cluster> getSuccessors();
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/cfg.png";
+    }
 
-    public Dimension getNodeOffset();
+    @Override
+    public void actionPerformed(ActionEvent e) {
+    }
 }

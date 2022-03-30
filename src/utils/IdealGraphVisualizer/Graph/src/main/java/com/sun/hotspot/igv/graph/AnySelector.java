@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,26 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.graph;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Cluster extends Comparable<Cluster> {
+// Selects blocks where any node is selected.
+public class AnySelector implements BlockSelector {
 
-    public Cluster getOuter();
+    private final Selector selector;
 
-    public void setBounds(Rectangle r);
+    public AnySelector(Selector s) {
+        this.selector = s;
+    }
 
-    public Set<? extends Cluster> getSuccessors();
-
-    public Dimension getNodeOffset();
+    @Override
+    public List<Block> selected(Diagram d) {
+        List<Block> l = new ArrayList<>();
+        for (Figure f : selector.selected(d)) {
+            l.add(d.getBlock(f.getBlock()));
+        }
+        return l;
+    }
 }

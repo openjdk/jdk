@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,10 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
+package com.sun.hotspot.igv.graph;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.util.Set;
+import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface Cluster extends Comparable<Cluster> {
-
-    public Cluster getOuter();
-
-    public void setBounds(Rectangle r);
-
-    public Set<? extends Cluster> getSuccessors();
-
-    public Dimension getNodeOffset();
+public interface BlockSelector {
+    List<Block> selected(Diagram d);
 }
