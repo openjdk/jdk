@@ -28,9 +28,12 @@
 
  private:
   void pd_initialize() {}
+  bool emit_shared_stubs_to_interp() { Unimplemented(); return true; }
+  bool pd_finalize_stubs() { return true; }
 
  public:
   void flush_bundle(bool start_new_bundle) {}
+  static bool supports_shared_stubs() { return false; }
 
   void getCpuData(const CodeBuffer * const cb) {}
 
