@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -107,5 +107,11 @@ public class DatatypeException extends Exception {
         }
 
         return msg;
+    }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        // This is an internal exception; the stack trace is irrelevant.
+        return this;
     }
 }
