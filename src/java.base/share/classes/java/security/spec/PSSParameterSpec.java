@@ -102,7 +102,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
      *         standard for more details. Thus, it is recommended to create
      *         a new {@code PSSParameterSpec} with the desired parameter values
-     *         using
+     *         using the
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int)} constructor.
      *
      * @since 1.5
@@ -171,7 +171,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         cryptanalysis -- see the
      *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
      *         standard for more details. Thus, it is recommended to explicitly
-     *         specify all desired parameter values with
+     *         specify all desired parameter values with the
      *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int)} constructor.
      */
     @Deprecated(since="19")
