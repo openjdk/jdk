@@ -2548,52 +2548,30 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Calculate initial capacity for HashMap based classes, from expected size and default load factor (0.75).
      *
-     * <p>This function is designed to return equal results than {@code (int)Math.ceil(expectedSize / 0.75)} when expectedSize&gt;=0.
-     * When expectedSize&lt;0, result of this function is meaningless.
-     *
-     * <p>Implementation logic of this function is:
-     *
-     * <p>1. When expectedSize is a small enough positive number,
-     * {@code (expectedSize + (expectedSize + 2) / 3)} always equals to {@code (int)Math.ceil(expectedSize / 0.75)}, as
-     * {@code (int)Math.ceil(expectedSize / 0.75)} equals to {@code (int)Math.ceil(expectedSize + expectedSize / 3.0)},
-     * thus equals to {@code expectedSize + (int)Math.ceil(expectedSize / 3.0)},
-     * thus equals to {@code (expectedSize + (expectedSize + 2) / 3)}.
-     *
-     * <p>2. When expectedSize is a big enough positive number (at least {@code Integer.MAX_VALUE / 4 * 3 + 3}, or say, 1610612736),
-     * {@code (expectedSize + (expectedSize + 2) / 3)} would overflow, in this turn we just return {@code Integer.MAX_VALUE}
-     *
-     * <p>3. When expectedSize is 0, return 0.
-     *
-     * <p>4. User must never let expectedSize be negative.Otherwise, return any number &lt; 0.
-     *
-     * @param expectedSize expected size
+     * @param numMappings the expected number of mappings
      * @return initial capacity for HashMap based classes.
      * @since 19
      */
-    static int calculateHashMapCapacity(int expectedSize) {
-        if (expectedSize >= Integer.MAX_VALUE / 4 * 3 + 3) {
-            return Integer.MAX_VALUE;
-        }
-        if (expectedSize > 0) {
-            return (expectedSize + (expectedSize + 2) / 3);
-        }
-        return expectedSize;
+    static int calculateHashMapCapacity(int numMappings) {
+        return (int) Math.ceil(numMappings / 0.75);
     }
 
     /**
-     * Creates a new, empty HashMap with an initial table size
-     * accommodating the specified number of elements and default load factor (0.75)
-     * without the need to dynamically resize.
+     * Creates a new, empty HashMap suitable for the expected number of mappings.
+     * The returned map uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of mappings can be added
+     * without resizing the map.
      *
-     * @param expectedSize expected size
-     * @param <K>          the type of keys maintained by this map
-     * @param <V>          the type of mapped values
-     * @return the HashMap created.
-     * @throws IllegalArgumentException if the initial capacity is negative.
+     * @param numMappings the expected number of mappings
+     * @param <K>         the type of keys maintained by this map
+     * @param <V>         the type of mapped values
+     * @return the newly created map
+     * @throws IllegalArgumentException if numMappings is negative
      * @since 19
      */
-    public static <K, V> HashMap<K, V> newHashMap(int expectedSize) {
-        return new HashMap<>(calculateHashMapCapacity(expectedSize));
+    public static <K, V> HashMap<K, V> newHashMap(int numMappings) {
+        return new HashMap<>(calculateHashMapCapacity(numMappings));
     }
+
 
 }

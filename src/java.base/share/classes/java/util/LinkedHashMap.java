@@ -789,19 +789,20 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Creates a new, empty LinkedHashMap with an initial table size
-     * accommodating the specified number of elements and default load factor (0.75)
-     * without the need to dynamically resize.
+     * Creates a new, empty LinkedHashMap suitable for the expected number of mappings.
+     * The returned map uses the default load factor of 0.75, and its initial capacity is
+     * generally large enough so that the expected number of mappings can be added
+     * without resizing the map.
      *
-     * @param expectedSize expected size
-     * @param <K>          the type of keys maintained by this map
-     * @param <V>          the type of mapped values
-     * @return the LinkedHashMap created.
-     * @throws IllegalArgumentException if the initial capacity is negative.
+     * @param numMappings the expected number of mappings
+     * @param <K>         the type of keys maintained by this map
+     * @param <V>         the type of mapped values
+     * @return the newly created map
+     * @throws IllegalArgumentException if numMappings is negative
      * @since 19
      */
-    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(int expectedSize) {
-        return new LinkedHashMap<>(HashMap.calculateHashMapCapacity(expectedSize));
+    public static <K, V> LinkedHashMap<K, V> newLinkedHashMap(int numMappings) {
+        return new LinkedHashMap<>(HashMap.calculateHashMapCapacity(numMappings));
     }
 
 }
