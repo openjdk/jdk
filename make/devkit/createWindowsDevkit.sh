@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,19 @@
 # suitable for building OpenJDK and OracleJDK. Needs to run in Cygwin or WSL.
 # erik.joelsson@oracle.com
 
-VS_VERSION="2017"
-VS_VERSION_NUM_NODOT="150"
+usage_and_exit() {
+    echo "Usage: createWindowsDevkit.sh <2019 | 2022>"
+    exit 1
+}
+
+if [ ! $# = 1 ]; then
+    usage_and_exit
+fi
+
+VS_VERSION="$1"
+
 VS_DLL_VERSION="140"
 SDK_VERSION="10"
-MSVC_DIR="Microsoft.VC141.CRT"
 
 SCRIPT_DIR="$(cd "$(dirname $0)" > /dev/null && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
@@ -63,13 +71,33 @@ fi
 
 # Work around the insanely named ProgramFiles(x86) env variable
 PROGRAMFILES_X86="$($WINDOWS_PATH_TO_UNIX_PATH "$(cmd.exe /c set | sed -n 's/^ProgramFiles(x86)=//p' | tr -d '\r')")"
+PROGRAMFILES="$($WINDOWS_PATH_TO_UNIX_PATH "$PROGRAMFILES")"
+
+case $VS_VERSION in
+    2019)
+        MSVC_PROGRAMFILES_DIR="${PROGRAMFILES_X86}"
+        MSVC_CRT_DIR="Microsoft.VC142.CRT"
+        VS_VERSION_NUM_NODOT="160"
+        ;;
+
+    2022)
+        MSVC_PROGRAMFILES_DIR="${PROGRAMFILES}"
+        MSVC_CRT_DIR="Microsoft.VC143.CRT"
+        VS_VERSION_NUM_NODOT="170"
+        ;;
+    *)
+        echo "Unexpected VS version: $VS_VERSION"
+        usage_and_exit
+        ;;
+esac
+
 
 # Find Visual Studio installation dir
 VSNNNCOMNTOOLS=`cmd.exe /c echo %VS${VS_VERSION_NUM_NODOT}COMNTOOLS% | tr -d '\r'`
 if [ -d "$VSNNNCOMNTOOLS" ]; then
     VS_INSTALL_DIR="$($WINDOWS_PATH_TO_UNIX_PATH "$VSNNNCOMNTOOLS/../..")"
 else
-    VS_INSTALL_DIR="${PROGRAMFILES_X86}/Microsoft Visual Studio/2017"
+    VS_INSTALL_DIR="${MSVC_PROGRAMFILES_DIR}/Microsoft Visual Studio/$VS_VERSION"
     VS_INSTALL_DIR="$(ls -d "${VS_INSTALL_DIR}/"{Community,Professional,Enterprise} 2>/dev/null | head -n1)"
 fi
 echo "VS_INSTALL_DIR: $VS_INSTALL_DIR"
@@ -98,8 +126,9 @@ DEVKIT_BUNDLE="${DEVKIT_ROOT}.tar.gz"
 
 echo "Creating devkit in $DEVKIT_ROOT"
 
-MSVCR_DLL=${MSVC_DIR}/vcruntime${VS_DLL_VERSION}.dll
-MSVCP_DLL=${MSVC_DIR}/msvcp${VS_DLL_VERSION}.dll
+MSVCR_DLL=${MSVC_CRT_DIR}/vcruntime${VS_DLL_VERSION}.dll
+VCRUNTIME_1_DLL=${MSVC_CRT_DIR}/vcruntime${VS_DLL_VERSION}_1.dll
+MSVCP_DLL=${MSVC_CRT_DIR}/msvcp${VS_DLL_VERSION}.dll
 
 ################################################################################
 # Copy Visual Studio files
@@ -193,6 +222,7 @@ echo-info "DEVKIT_TOOLCHAIN_PATH_x86_64=\"\$DEVKIT_ROOT/VC/bin/x64:\$DEVKIT_ROOT
 echo-info "DEVKIT_VS_INCLUDE_x86_64=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_x86_64=\"\$DEVKIT_ROOT/VC/lib/x64;\$DEVKIT_ROOT/VC/atlmfc/lib/x64;\$DEVKIT_ROOT/$SDK_VERSION/lib/x64\""
 echo-info "DEVKIT_MSVCR_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL\""
+echo-info "DEVKIT_VCRUNTIME_1_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$VCRUNTIME_1_DLL\""
 echo-info "DEVKIT_MSVCP_DLL_x86_64=\"\$DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_x86_64=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/x64\""
 echo-info ""
@@ -200,6 +230,7 @@ echo-info "DEVKIT_TOOLCHAIN_PATH_aarch64=\"\$DEVKIT_ROOT/VC/bin/arm64:\$DEVKIT_R
 echo-info "DEVKIT_VS_INCLUDE_aarch64=\"\$DEVKIT_ROOT/VC/include;\$DEVKIT_ROOT/VC/atlmfc/include;\$DEVKIT_ROOT/$SDK_VERSION/include/shared;\$DEVKIT_ROOT/$SDK_VERSION/include/ucrt;\$DEVKIT_ROOT/$SDK_VERSION/include/um;\$DEVKIT_ROOT/$SDK_VERSION/include/winrt\""
 echo-info "DEVKIT_VS_LIB_aarch64=\"\$DEVKIT_ROOT/VC/lib/arm64;\$DEVKIT_ROOT/VC/atlmfc/lib/arm64;\$DEVKIT_ROOT/$SDK_VERSION/lib/arm64\""
 echo-info "DEVKIT_MSVCR_DLL_aarch64=\"\$DEVKIT_ROOT/VC/redist/arm64/$MSVCR_DLL\""
+echo-info "DEVKIT_VCRUNTIME_1_DLL_aarch64=\"\$DEVKIT_ROOT/VC/redist/arm64/$VCRUNTIME_1_DLL\""
 echo-info "DEVKIT_MSVCP_DLL_aarch64=\"\$DEVKIT_ROOT/VC/redist/arm64/$MSVCP_DLL\""
 echo-info "DEVKIT_UCRT_DLL_DIR_aarch64=\"\$DEVKIT_ROOT/10/Redist/ucrt/DLLs/arm64\""
 echo-info ""

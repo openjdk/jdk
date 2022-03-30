@@ -45,12 +45,12 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  public:
-  static const KlassID ID = InstanceMirrorKlassID;
+  static const KlassKind Kind = InstanceMirrorKlassKind;
 
  private:
   static int _offset_of_static_fields;
 
-  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, ID) {}
+  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
  public:
   InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
