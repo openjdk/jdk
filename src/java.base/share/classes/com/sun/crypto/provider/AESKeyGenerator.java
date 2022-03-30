@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Arrays;
 import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
+import sun.security.util.SecurityProviderConstants;
 
 /**
  * This class generates a AES key.
@@ -46,7 +46,8 @@ import javax.crypto.spec.SecretKeySpec;
 public final class AESKeyGenerator extends KeyGeneratorSpi {
 
     private SecureRandom random = null;
-    private int keySize = 16; // default keysize (in number of bytes)
+    // default keysize (in number of bytes)
+    private int keySize = SecurityProviderConstants.getDefAESKeySize() >> 3;
 
     /**
      * Empty constructor.

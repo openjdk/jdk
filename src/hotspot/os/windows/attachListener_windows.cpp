@@ -154,7 +154,7 @@ class Win32AttachOperation: public AttachOperation {
   }
 
  public:
-  void Win32AttachOperation::complete(jint result, bufferedStream* result_stream);
+  void complete(jint result, bufferedStream* result_stream);
 };
 
 

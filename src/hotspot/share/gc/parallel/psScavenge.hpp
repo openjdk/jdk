@@ -135,6 +135,10 @@ class PSScavenge: AllStatic {
   inline static bool is_obj_in_young(HeapWord* o) {
     return o >= _young_generation_boundary;
   }
+
+  static bool is_obj_in_to_space(oop o) {
+    return ParallelScavengeHeap::young_gen()->to_space()->contains(o);
+  }
 };
 
 #endif // SHARE_GC_PARALLEL_PSSCAVENGE_HPP

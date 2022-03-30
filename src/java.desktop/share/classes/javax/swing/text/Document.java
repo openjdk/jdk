@@ -453,7 +453,7 @@ public interface Document {
      *
      * @param offs  the offset from the beginning &gt;= 0
      * @param len   the number of characters to remove &gt;= 0
-     * @exception BadLocationException  some portion of the removal range
+     * @throws BadLocationException  some portion of the removal range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      * @see javax.swing.event.DocumentEvent
@@ -490,7 +490,7 @@ public interface Document {
      * @param str    the string to insert
      * @param a      the attributes to associate with the inserted
      *   content.  This may be null if there are no attributes.
-     * @exception BadLocationException  the given insert position is not a valid
+     * @throws BadLocationException  the given insert position is not a valid
      * position within the document
      * @see javax.swing.event.DocumentEvent
      * @see javax.swing.event.DocumentListener
@@ -507,7 +507,7 @@ public interface Document {
      *   start of the text &gt;= 0
      * @param length  the length of the desired string &gt;= 0
      * @return the text, in a String of length &gt;= 0
-     * @exception BadLocationException  some portion of the given range
+     * @throws BadLocationException  some portion of the given range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      */
@@ -546,7 +546,7 @@ public interface Document {
      * @param length  the length of the desired string &gt;= 0
      * @param txt the Segment object to return the text in
      *
-     * @exception BadLocationException  Some portion of the given range
+     * @throws BadLocationException  Some portion of the given range
      *   was not a valid part of the document.  The location in the exception
      *   is the first bad position encountered.
      */
@@ -582,7 +582,7 @@ public interface Document {
      *
      * @param offs  the offset from the start of the document &gt;= 0
      * @return the position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      */
     public Position createPosition(int offs) throws BadLocationException;
