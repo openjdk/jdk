@@ -25,13 +25,14 @@
  * @test
  * @bug 4699544
  * @key headful
- * @summary AccessibleJRootPane always returns null for getAccessibleAt()
+ * @summary AccessibleJRootPane always returns null for getAccessibleAt
  * @run main JRootPaneAccessiblAtTest
  */
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleComponent;
 import javax.swing.JFrame;
 import javax.swing.JRootPane;
+import javax.swing.SwingUtilities;
 
 public class JRootPaneAccessiblAtTest extends JFrame {
     JRootPane rootPane;
@@ -39,20 +40,21 @@ public class JRootPaneAccessiblAtTest extends JFrame {
 
     public JRootPaneAccessiblAtTest() {
         rootPane = getRootPane();
-        accessibleComponent = rootPane.getAccessibleContext().getAccessibleComponent();
-        Accessible accessible =
-            accessibleComponent.getAccessibleAt(accessibleComponent.getLocation());
+        accessibleComponent =
+            rootPane.getAccessibleContext().getAccessibleComponent();
+        Accessible accessible = accessibleComponent
+            .getAccessibleAt(accessibleComponent.getLocation());
         if (accessible == null) {
-            throw new RuntimeException(
-                "Test Failed: AccessibleJRootPane always returns null for getAccessibleAt()");
+            throw new RuntimeException("Test Failed: AccessibleJRootPane "
+                + "always returns null for getAccessibleAt()");
         } else {
-            System.out.println("Test Passed: AccessibilityJRootPane returns " + accessible
-                + " for getAccessibleAt()");
+            System.out.println("Test Passed: AccessibilityJRootPane returns "
+                + accessible + " for getAccessibleAt()");
         }
     }
 
-    public static void main(String args[]) {
-        new JRootPaneAccessiblAtTest();
+    public static void main(String args[]) throws Exception {
+        SwingUtilities.invokeAndWait(() -> new JRootPaneAccessiblAtTest());
     }
 }
 
