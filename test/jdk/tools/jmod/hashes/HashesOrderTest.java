@@ -88,7 +88,6 @@ public class HashesOrderTest {
         assertEquals(Files.mismatch(jmod1, jmod2), -1);
     }
 
-
     private void makeModule(String mn, String... deps)
         throws IOException
     {
