@@ -425,6 +425,7 @@ jobs:
           - hs arm build only
           - hs s390x build only
           - hs ppc64le build only
+          - hs riscv64 build only
         include:
           - flavor: hs x64 build only
             flags: --enable-debug --disable-precompiled-headers
@@ -451,6 +452,10 @@ jobs:
             flags: --enable-debug --disable-precompiled-headers
             debian-arch: ppc64el
             gnu-arch: powerpc64le
+          - flavor: hs riscv64 build only
+            flags: --enable-debug --disable-precompiled-headers
+            debian-arch: riscv64
+            gnu-arch: riscv64
 
     env:
       JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
