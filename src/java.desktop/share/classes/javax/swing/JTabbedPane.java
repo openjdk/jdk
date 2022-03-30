@@ -47,7 +47,15 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
 
-import javax.accessibility.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleIcon;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+import javax.accessibility.AccessibleValue;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.TabbedPaneUI;
@@ -2389,7 +2397,7 @@ public class JTabbedPane extends JComponent
          * one exists and the page is disabled.  Otherwise, null
          * is returned.
          */
-        public AccessibleIcon [] getAccessibleIcon() {
+        public AccessibleIcon[] getAccessibleIcon() {
             AccessibleIcon accessibleIcon = null;
             if (enabled && icon instanceof ImageIcon) {
                 AccessibleContext ac =
