@@ -1898,7 +1898,7 @@ public class Resolve {
                     syms.objectType.tsym.members(), bestSoFar, allowBoxing, useVarargs, true);
             if (bestSoFar.kind.isValid()) {
                 Symbol baseSymbol = bestSoFar;
-                bestSoFar = new MethodSymbol(bestSoFar.flags_field, bestSoFar.name, bestSoFar.type, intype.tsym) {
+                bestSoFar = new MethodSymbol(bestSoFar.flags_field | OBJECT_METHOD_IN_INTERFACE, bestSoFar.name, bestSoFar.type, intype.tsym) {
                     @Override
                     public Symbol baseSymbol() {
                         return baseSymbol;
