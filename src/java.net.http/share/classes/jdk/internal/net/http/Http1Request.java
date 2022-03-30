@@ -302,15 +302,12 @@ class Http1Request {
         if (requestPublisher != null || !"GET".equals(request.method())) {
             if (contentLength == 0) {
                 systemHeadersBuilder.setHeader("Content-Length", "0");
-                System.err.println("in 1");
             } else if (contentLength > 0) {
                 systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
                 streaming = false;
-                System.err.println("in 2");
             } else {
                 streaming = true;
                 systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
-                System.err.println("in 3");
             }
         }
         collectHeaders0(sb);
