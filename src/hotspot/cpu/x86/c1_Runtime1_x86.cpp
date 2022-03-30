@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_Defs.hpp"
+#include "c1/c1_FrameMap.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "ci/ciUtilities.hpp"
@@ -369,12 +370,7 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
   map->set_callee_saved(VMRegImpl::stack2reg(r15H_off + num_rt_args), r15->as_VMReg()->next());
 #endif // _LP64
 
-  int xmm_bypass_limit = FrameMap::nof_xmm_regs;
-#ifdef _LP64
-  if (UseAVX < 3) {
-    xmm_bypass_limit = xmm_bypass_limit / 2;
-  }
-#endif
+  int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
 
   if (save_fpu_registers) {
 #ifndef _LP64
@@ -487,13 +483,8 @@ void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) 
       // so always save them as doubles.
       // note that float values are _not_ converted automatically, so for float values
       // the second word contains only garbage data.
-      int xmm_bypass_limit = FrameMap::nof_xmm_regs;
+      int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
       int offset = 0;
-#ifdef _LP64
-      if (UseAVX < 3) {
-        xmm_bypass_limit = xmm_bypass_limit / 2;
-      }
-#endif
       for (int n = 0; n < xmm_bypass_limit; n++) {
         XMMRegister xmm_name = as_XMMRegister(n);
         __ movdbl(Address(rsp, xmm_regs_as_doubles_off * VMRegImpl::stack_slot_size + offset), xmm_name);
@@ -513,10 +504,7 @@ static void restore_fpu(C1_MacroAssembler* sasm, bool restore_fpu_registers) {
 #ifdef _LP64
   if (restore_fpu_registers) {
     // restore XMM registers
-    int xmm_bypass_limit = FrameMap::nof_xmm_regs;
-    if (UseAVX < 3) {
-      xmm_bypass_limit = xmm_bypass_limit / 2;
-    }
+    int xmm_bypass_limit = FrameMap::get_num_caller_save_xmms();
     int offset = 0;
     for (int n = 0; n < xmm_bypass_limit; n++) {
       XMMRegister xmm_name = as_XMMRegister(n);
