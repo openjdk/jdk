@@ -40,9 +40,9 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * An inline taglet representing the {@code {@inheritDoc}} tag. This tag should only
- * be used with a method.  It is used to inherit documentation from overridden
- * and implemented methods.
+ * An inline taglet representing the {@code {@inheritDoc}} tag.
+ * It is used to copy documentation from superclass (but not superinterface)
+ * declarations and from overridden and implemented methods.
  */
 public class InheritDocTaglet extends BaseTaglet {
 
@@ -60,9 +60,17 @@ public class InheritDocTaglet extends BaseTaglet {
      *
      * @param writer the writer that is writing the output.
      * @param e the {@link Element} that we are documenting.
-     * @param holderTag the tag that holds the {@code {@inheritDoc}} tag or null for type
-     *                  (class) docs.
-     * @param isFirstSentence true if we only want to inherit the first sentence.
+     *
+     * @param holderTag
+     *
+     * either the tag that holds the {@code {@inheritDoc}} tag or {@code null},
+     * which can mean either of:
+     * <ul>
+     *     <li>the tag is used on a class {@link jdk.javadoc.doclet.Taglet.Location#TYPE} declaration, or
+     *     <li>the tag is used to copy the overall doc comment
+     * </ul>
+     *
+     * @param isFirstSentence true if we only want to inherit the first sentence
      */
     private Content retrieveInheritedDocumentation(TagletWriter writer,
                                                    Element e,
