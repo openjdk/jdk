@@ -125,18 +125,17 @@ char* Arguments::_ext_dirs = NULL;
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
 
-bool PathString::set_value(const char *value) {
+bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
+  char* new_value = AllocateHeap(strlen(value)+1, mtArguments, alloc_failmode);
+  if (new_value == NULL) {
+    assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "must be");
+    return false;
+  }
   if (_value != NULL) {
     FreeHeap(_value);
   }
-  _value = AllocateHeap(strlen(value)+1, mtArguments);
-  assert(_value != NULL, "Unable to allocate space for new path value");
-  if (_value != NULL) {
-    strcpy(_value, value);
-  } else {
-    // not able to allocate
-    return false;
-  }
+  _value = new_value;
+  strcpy(_value, value);
   return true;
 }
 
@@ -4254,7 +4253,7 @@ int Arguments::PropertyList_count(SystemProperty* pl) {
 int Arguments::PropertyList_readable_count(SystemProperty* pl) {
   int count = 0;
   while(pl != NULL) {
-    if (pl->is_readable()) {
+    if (pl->readable()) {
       count++;
     }
     pl = pl->next();
