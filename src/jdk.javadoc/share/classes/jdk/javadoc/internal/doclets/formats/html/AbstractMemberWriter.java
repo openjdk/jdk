@@ -238,7 +238,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             code.add(" ");
         }
         if (!utils.isAnnotationInterface(member.getEnclosingElement()) && utils.isMethod(member)) {
-            if (!utils.isInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
+            if (!utils.isPlainInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
                 code.add("abstract ");
             }
             if (utils.isDefault(member)) {
@@ -327,7 +327,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
-            addSummaryLink(utils.isClass(element) || utils.isInterface(element)
+            addSummaryLink(utils.isClass(element) || utils.isPlainInterface(element)
                     ? HtmlLinkInfo.Kind.CLASS_USE
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);

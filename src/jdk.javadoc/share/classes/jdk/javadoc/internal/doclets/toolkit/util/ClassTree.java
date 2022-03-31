@@ -180,7 +180,7 @@ public class ClassTree {
                 processType(aClass, configuration, baseEnums, subEnums);
             } else if (utils.isClass(aClass)) {
                 processType(aClass, configuration, baseClasses, subClasses);
-            } else if (utils.isInterface(aClass)) {
+            } else if (utils.isPlainInterface(aClass)) {
                 processInterface(aClass);
             } else if (utils.isAnnotationInterface(aClass)) {
                 processType(aClass, configuration, baseAnnotationTypes,
@@ -338,7 +338,7 @@ public class ClassTree {
             return get(subEnums, typeElement);
         } else if (utils.isAnnotationInterface(typeElement)) {
             return get(subAnnotationTypes, typeElement);
-        } else if (utils.isInterface(typeElement)) {
+        } else if (utils.isPlainInterface(typeElement)) {
             return get(subInterfaces, typeElement);
         } else if (utils.isClass(typeElement)) {
             return get(subClasses, typeElement);

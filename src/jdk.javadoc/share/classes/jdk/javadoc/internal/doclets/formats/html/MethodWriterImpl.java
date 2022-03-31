@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .addTab(contents.getContent("doclet.Instance_Methods"), e -> !utils.isStatic(e))
                 .addTab(contents.getContent("doclet.Abstract_Methods"), utils::isAbstract)
                 .addTab(contents.getContent("doclet.Concrete_Methods"),
-                        e -> !utils.isAbstract(e) && !utils.isInterface(e.getEnclosingElement()))
+                        e -> !utils.isAbstract(e) && !utils.isPlainInterface(e.getEnclosingElement()))
                 .addTab(contents.getContent("doclet.Default_Methods"), utils::isDefault)
                 .addTab(contents.getContent("doclet.Deprecated_Methods"),
                         e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement));

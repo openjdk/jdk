@@ -93,7 +93,7 @@ public class MetaKeywords {
      */
     protected List<String> getClassKeyword(TypeElement typeElement) {
         ArrayList<String> metakeywords = new ArrayList<>(1);
-        String cltypelower = utils.isInterface(typeElement) ? "interface" : "class";
+        String cltypelower = utils.isPlainInterface(typeElement) ? "interface" : "class";
         metakeywords.add(utils.getFullyQualifiedName(typeElement) + " " + cltypelower);
         return metakeywords;
     }

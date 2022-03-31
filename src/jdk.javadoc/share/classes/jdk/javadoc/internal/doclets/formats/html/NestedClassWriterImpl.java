@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
-        Content label = utils.isInterface(member) ?
+        Content label = utils.isPlainInterface(member) ?
                 contents.interfaceLabel : contents.classLabel;
 
         return new TableHeader(contents.modifierAndTypeLabel, label, contents.descriptionLabel);
@@ -104,11 +104,11 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
         Content classLink = writer.getPreQualifiedClassLink(HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = Text.of(utils.isInterface(typeElement)
+            label = Text.of(utils.isPlainInterface(typeElement)
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Class"));
         } else {
-            label = Text.of(utils.isInterface(typeElement)
+            label = Text.of(utils.isPlainInterface(typeElement)
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }

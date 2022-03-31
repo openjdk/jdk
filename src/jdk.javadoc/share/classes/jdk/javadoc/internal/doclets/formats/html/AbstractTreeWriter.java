@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             Content sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                     headingContent);
             HtmlTree htmlTree = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
-            addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
+            addLevelInfo(!utils.isPlainInterface(firstTypeElement) ? firstTypeElement : null,
                     sset, isEnums, htmlTree);
             content.add(htmlTree);
         }
@@ -137,14 +137,14 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     {
         SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.makeGeneralPurposeComparator());
         typeElement.getInterfaces().forEach(t -> interfaces.add(utils.asTypeElement(t)));
-        if (interfaces.size() > (utils.isInterface(typeElement) ? 1 : 0)) {
+        if (interfaces.size() > (utils.isPlainInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;
             for (TypeElement intf : interfaces) {
                 if (parent != intf) {
                     if (utils.isPublic(intf) || utils.isLinkable(intf)) {
                         if (isFirst) {
                             isFirst = false;
-                            if (utils.isInterface(typeElement)) {
+                            if (utils.isPlainInterface(typeElement)) {
                                 contentTree.add(" (");
                                 contentTree.add(contents.also);
                                 contentTree.add(" extends ");

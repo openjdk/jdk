@@ -577,7 +577,7 @@ public class VisibleMemberTable {
 
     boolean isEnclosureInterface(Element e) {
         TypeElement enclosing = utils.getEnclosingTypeElement(e);
-        return utils.isInterface(enclosing);
+        return utils.isPlainInterface(enclosing);
     }
 
     boolean allowInheritedMethod(ExecutableElement inheritedMethod,

@@ -251,7 +251,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
-                .addTab(contents.interfaces, utils::isInterface)
+                .addTab(contents.interfaces, utils::isPlainInterface)
                 .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
                 .addTab(contents.enums, utils::isEnum)
                 .addTab(contents.records, e -> utils.isRecord((TypeElement)e))

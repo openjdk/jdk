@@ -307,7 +307,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addSubInterfacesInfo(Content classInfoTree) {
-        if (utils.isInterface(typeElement)) {
+        if (utils.isPlainInterface(typeElement)) {
             Set<TypeElement> subInterfaces = classtree.allSubClasses(typeElement, false);
             if (!subInterfaces.isEmpty()) {
                 Content dl = HtmlTree.DL(HtmlStyle.notes);
@@ -320,7 +320,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addInterfaceUsageInfo (Content classInfoTree) {
-        if (!utils.isInterface(typeElement)) {
+        if (!utils.isPlainInterface(typeElement)) {
             return;
         }
         for (String s : suppressImplementingSet) {
@@ -355,7 +355,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 new TreeSet<>(comparators.makeTypeMirrorIndexUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
-        if (utils.isInterface(typeElement) && !interfaces.isEmpty()) {
+        if (utils.isPlainInterface(typeElement) && !interfaces.isEmpty()) {
             HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.allSuperinterfacesLabel));
             dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SUPER_INTERFACES, interfaces)));
@@ -372,7 +372,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             @Override
             public Void visitType(TypeElement e, Void p) {
                 HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
-                dl.add(HtmlTree.DT(utils.isInterface(e)
+                dl.add(HtmlTree.DT(utils.isPlainInterface(e)
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
                 dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.CLASS, List.of(e))));
