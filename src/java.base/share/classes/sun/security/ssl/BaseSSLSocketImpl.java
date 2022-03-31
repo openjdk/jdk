@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import javax.net.ssl.*;
 
+import jdk.internal.ref.CleanerFactory;
+
 /**
  * Abstract base class for SSLSocketImpl.
  *
@@ -61,18 +63,25 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
         super();
         this.self = this;
         this.consumedInput = null;
+
+        CleanerFactory.cleaner().register(this, this::tryClose);
     }
+
 
     BaseSSLSocketImpl(Socket socket) {
         super();
         this.self = socket;
         this.consumedInput = null;
+
+        CleanerFactory.cleaner().register(this, this::tryClose);
     }
 
     BaseSSLSocketImpl(Socket socket, InputStream consumed) {
         super();
         this.self = socket;
         this.consumedInput = consumed;
+
+        CleanerFactory.cleaner().register(this, this::tryClose);
     }
 
     //
@@ -267,29 +276,19 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * as possible, in case the application forgets to do so.
      * This allows SSL connections to be implicitly reclaimed,
      * rather than forcing them to be explicitly reclaimed at
-     * the penalty of prematurly killing SSL sessions.
+     * the penalty of prematurely killing SSL sessions.
      */
-    @Override
-    @SuppressWarnings("removal")
-    protected final void finalize() throws Throwable {
+    private void tryClose() {
         try {
             close();
-        } catch (IOException e1) {
+        } catch (IOException ioe) {
             try {
                 if (self == this) {
                     super.close();
                 }
-            } catch (IOException e2) {
+            } catch (IOException e) {
                 // ignore
             }
-        } finally {
-            // We called close on the underlying socket above to
-            // make doubly sure all resources got released.  We
-            // don't finalize self in the case of overlain sockets,
-            // that's a different object which the GC will finalize
-            // separately.
-
-            super.finalize();
         }
     }
 
