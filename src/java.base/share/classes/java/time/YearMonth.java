@@ -850,9 +850,9 @@ public final class YearMonth
         }
         long monthCount = year * 12L + (month - 1);
         long calcMonths = monthCount + monthsToAdd;  // safe overflow
-        int newYear = YEAR.checkValidIntValue(Math.floorDiv(calcMonths, 12));
-        int newMonth = Math.floorMod(calcMonths, 12) + 1;
-        return with(newYear, newMonth);
+        long newYear = Math.floorDiv(calcMonths, 12);
+        int newMonth = (int) (calcMonths - newYear * 12 + 1);
+        return with(YEAR.checkValidIntValue(newYear), newMonth);
     }
 
     //-----------------------------------------------------------------------

@@ -71,9 +71,9 @@ public class GetYearBench {
 
     @Setup
     public void createInstants() {
-        // Various instants during the same day
-        final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365*50)); // 2020-01-01
-        final Instant hiInstant = loInstant.plus(Duration.ofDays(1));
+        // Various instants during a few years (2020-2024)
+        final Instant loInstant = Instant.EPOCH.plus(Duration.ofDays(365 * 50)); // 2020-01-01
+        final Instant hiInstant = loInstant.plus(Duration.ofDays(4 * 365));
         final long maxOffsetNanos = Duration.between(loInstant, hiInstant).toNanos();
         final Random random = new Random(0);
         INSTANT_MILLIS = IntStream

@@ -329,9 +329,9 @@ public final class Instant
      * @throws ArithmeticException if numeric overflow occurs
      */
     public static Instant ofEpochSecond(long epochSecond, long nanoAdjustment) {
-        long secs = Math.addExact(epochSecond, Math.floorDiv(nanoAdjustment, NANOS_PER_SECOND));
-        int nos = (int)Math.floorMod(nanoAdjustment, NANOS_PER_SECOND);
-        return create(secs, nos);
+        long nanos = Math.floorDiv(nanoAdjustment, NANOS_PER_SECOND);
+        int nos = (int) (nanoAdjustment - nanos * NANOS_PER_SECOND);
+        return create(Math.addExact(epochSecond, nanos), nos);
     }
 
     /**
@@ -346,7 +346,7 @@ public final class Instant
      */
     public static Instant ofEpochMilli(long epochMilli) {
         long secs = Math.floorDiv(epochMilli, 1000);
-        int mos = Math.floorMod(epochMilli, 1000);
+        int mos = (int) (epochMilli - secs * 1000);
         return create(secs, mos * 1000_000);
     }
 

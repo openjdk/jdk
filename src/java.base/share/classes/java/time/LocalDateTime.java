@@ -420,9 +420,9 @@ public final class LocalDateTime
         NANO_OF_SECOND.checkValidValue(nanoOfSecond);
         long localSecond = epochSecond + offset.getTotalSeconds();  // overflow caught later
         long localEpochDay = Math.floorDiv(localSecond, SECONDS_PER_DAY);
-        int secsOfDay = Math.floorMod(localSecond, SECONDS_PER_DAY);
+        long nanoOfDay = (localSecond - localEpochDay * SECONDS_PER_DAY) * NANOS_PER_SECOND + nanoOfSecond;
         LocalDate date = LocalDate.ofEpochDay(localEpochDay);
-        LocalTime time = LocalTime.ofNanoOfDay(secsOfDay * NANOS_PER_SECOND + nanoOfSecond);
+        LocalTime time = LocalTime.ofNanoOfDay(nanoOfDay);
         return new LocalDateTime(date, time);
     }
 
@@ -1559,8 +1559,9 @@ public final class LocalDateTime
                 (hours % HOURS_PER_DAY) * NANOS_PER_HOUR;          //   max  86400000000000
         long curNoD = time.toNanoOfDay();                       //   max  86400000000000
         totNanos = totNanos * sign + curNoD;                    // total 432000000000000
-        totDays += Math.floorDiv(totNanos, NANOS_PER_DAY);
-        long newNoD = Math.floorMod(totNanos, NANOS_PER_DAY);
+        long daysToAdd = Math.floorDiv(totNanos, NANOS_PER_DAY);
+        totDays += daysToAdd;
+        long newNoD = totNanos - daysToAdd * NANOS_PER_DAY;
         LocalTime newTime = (newNoD == curNoD ? time : LocalTime.ofNanoOfDay(newNoD));
         return with(newDate.plusDays(totDays), newTime);
     }

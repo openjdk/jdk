@@ -593,8 +593,10 @@ public final class IsoChronology extends AbstractChronology implements Serializa
             if (resolverStyle != ResolverStyle.LENIENT) {
                 PROLEPTIC_MONTH.checkValidValue(pMonth);
             }
-            addFieldValue(fieldValues, MONTH_OF_YEAR, Math.floorMod(pMonth, 12) + 1);
-            addFieldValue(fieldValues, YEAR, Math.floorDiv(pMonth, 12));
+            long month = pMonth.longValue();
+            long year = Math.floorDiv(month, 12);
+            addFieldValue(fieldValues, MONTH_OF_YEAR, month - year * 12 + 1);
+            addFieldValue(fieldValues, YEAR, year);
         }
     }
 

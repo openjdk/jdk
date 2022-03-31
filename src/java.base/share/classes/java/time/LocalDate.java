@@ -1304,9 +1304,9 @@ public final class LocalDate
         }
         long monthCount = year * 12L + (month - 1);
         long calcMonths = monthCount + monthsToAdd;  // safe overflow
-        int newYear = YEAR.checkValidIntValue(Math.floorDiv(calcMonths, 12));
-        int newMonth = Math.floorMod(calcMonths, 12) + 1;
-        return resolvePreviousValid(newYear, newMonth, day);
+        long newYear = Math.floorDiv(calcMonths, 12);
+        int newMonth = (int) (calcMonths - newYear * 12 + 1); // safe cast
+        return resolvePreviousValid(YEAR.checkValidIntValue(newYear), newMonth, day);
     }
 
     /**
