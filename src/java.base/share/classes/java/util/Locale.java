@@ -245,7 +245,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>The method {@link #forLanguageTag} obtains a {@code Locale}
  * object for a well-formed BCP 47 language tag. The method
  * {@link #of(String, String, String)} and its overloads obtain a
- * {@code Locale} object from given ({@code language}, {@code country},
+ * {@code Locale} object from given {@code language}, {@code country},
  * and/or {@code variant} defined above.
  *
  * <h4>Locale Constants</h4>
@@ -815,13 +815,12 @@ public final class Locale implements Cloneable, Serializable {
      * codes</a> for more information.
      * </ul>
      *
-     * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
-     * up to 8 characters in length.  See the {@code Locale} class description about
-     * valid language values.
-     * @param country An ISO 3166 alpha-2 country code or a UN M.49 numeric-3 area code.
-     * See the {@code Locale} class description about valid country values.
+     * @param language A language code. See the {@code Locale} class description about
+     * <a href="#def_language">language</a> values.
+     * @param country A country code. See the {@code Locale} class description about
+     * <a href="#def_region">country</a> values.
      * @param variant Any arbitrary value used to indicate a variation of a {@code Locale}.
-     * See the {@code Locale} class description for the details.
+     * See the {@code Locale} class description about <a href="#def_variant">variant</a> values.
      * @throws    NullPointerException thrown if any argument is null.
      * @return A {@code Locale} object
      * @since 19
@@ -843,11 +842,10 @@ public final class Locale implements Cloneable, Serializable {
      * codes</a> for more information.
      * </ul>
      *
-     * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
-     * up to 8 characters in length.  See the {@code Locale} class description about
-     * valid language values.
-     * @param country An ISO 3166 alpha-2 country code or a UN M.49 numeric-3 area code.
-     * See the {@code Locale} class description about valid country values.
+     * @param language A language code. See the {@code Locale} class description about
+     * <a href="#def_language">language</a> values.
+     * @param country A country code. See the {@code Locale} class description about
+     * <a href="#def_region">country</a> values.
      * @throws    NullPointerException thrown if either argument is null.
      * @return A {@code Locale} object
      * @since 19
@@ -868,9 +866,8 @@ public final class Locale implements Cloneable, Serializable {
      * codes</a> for more information.
      * </ul>
      *
-     * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
-     * up to 8 characters in length.  See the {@code Locale} class description about
-     * valid language values.
+     * @param language A language code. See the {@code Locale} class description about
+     * <a href="#def_language">language</a> values.
      * @throws    NullPointerException thrown if argument is null.
      * @return A {@code Locale} object
      * @since 19
