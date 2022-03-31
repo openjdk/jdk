@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,7 +487,7 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  */
 CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool handle_alloc_failure, int orig_code_blob_type) {
   // Possibly wakes up the sweeper thread.
-  NMethodSweeper::report_allocation(code_blob_type);
+  NMethodSweeper::report_allocation();
   assert_locked_or_safepoint(CodeCache_lock);
   assert(size > 0, "Code cache allocation request must be > 0 but is %d", size);
   if (size <= 0) {
@@ -512,7 +512,7 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool handle_alloc_fa
         // Fallback solution: Try to store code in another code heap.
         // NonNMethod -> MethodNonProfiled -> MethodProfiled (-> MethodNonProfiled)
         // Note that in the sweeper, we check the reverse_free_ratio of the code heap
-        // and force stack scanning if less than 10% of the code heap are free.
+        // and force stack scanning if less than 10% of the entire code cache are free.
         int type = code_blob_type;
         switch (type) {
         case CodeBlobType::NonNMethod:
@@ -889,20 +889,17 @@ size_t CodeCache::max_capacity() {
   return max_cap;
 }
 
-/**
- * Returns the reverse free ratio. E.g., if 25% (1/4) of the code heap
- * is free, reverse_free_ratio() returns 4.
- */
-double CodeCache::reverse_free_ratio(int code_blob_type) {
-  CodeHeap* heap = get_code_heap(code_blob_type);
-  if (heap == NULL) {
-    return 0;
-  }
 
-  double unallocated_capacity = MAX2((double)heap->unallocated_capacity(), 1.0); // Avoid division by 0;
-  double max_capacity = (double)heap->max_capacity();
-  double result = max_capacity / unallocated_capacity;
-  assert (max_capacity >= unallocated_capacity, "Must be");
+// Returns the reverse free ratio. E.g., if 25% (1/4) of the code cache
+// is free, reverse_free_ratio() returns 4.
+// Since code heap for each type of code blobs falls forward to the next
+// type of code heap, return the reverse free ratio for the entire
+// code cache.
+double CodeCache::reverse_free_ratio() {
+  double unallocated = MAX2((double)unallocated_capacity(), 1.0); // Avoid division by 0;
+  double max = (double)max_capacity();
+  double result = max / unallocated;
+  assert (max >= unallocated, "Must be");
   assert (result >= 1.0, "reverse_free_ratio must be at least 1. It is %f", result);
   return result;
 }
