@@ -275,7 +275,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addClassTree(Content classContentTree) {
-        if (!utils.isClass(typeElement)) {
+        if (!utils.isOfClassKind(typeElement)) {
             return;
         }
         classContentTree.add(getClassInheritanceTree(typeElement.asType()));
@@ -294,7 +294,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addSubClassInfo(Content classInfoTree) {
-        if (utils.isClass(typeElement)) {
+        if (utils.isOfClassKind(typeElement)) {
             for (String s : suppressSubtypesSet) {
                 if (typeElement.getQualifiedName().contentEquals(s)) {
                     return;    // Don't generate the list, too huge
@@ -346,7 +346,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     public void addImplementedInterfacesInfo(Content classInfoTree) {
         SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.makeTypeMirrorClassUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
-        if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
+        if (utils.isOfClassKind(typeElement) && !interfaces.isEmpty()) {
             HtmlTree dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.allImplementedInterfacesLabel));
             dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.IMPLEMENTED_INTERFACES, interfaces)));

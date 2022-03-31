@@ -290,7 +290,7 @@ public class Utils {
     }
 
     // Note that e.getKind().isClass() is not the same as e.getKind() == CLASS
-    public boolean isClass(Element e) {
+    public boolean isOfClassKind(Element e) {
         return e.getKind().isClass();
     }
 
@@ -1089,7 +1089,7 @@ public class Utils {
             return null;
         }
         TypeMirror superclass = te.getSuperclass();
-        if (isNoType(superclass) && isClass(te)) {
+        if (isNoType(superclass) && isOfClassKind(te)) {
             superclass = getObjectType();
         }
         return asTypeElement(superclass);

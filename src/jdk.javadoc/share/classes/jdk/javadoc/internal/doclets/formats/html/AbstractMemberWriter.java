@@ -321,7 +321,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Content typeContent = new ContentBuilder();
             if (te != null
                     && !utils.isConstructor(element)
-                    && !utils.isClass(element)
+                    && !utils.isOfClassKind(element)
                     && !utils.isInterface(element)
                     && !utils.isAnnotationInterface(element)) {
                 HtmlTree name = new HtmlTree(TagName.SPAN);
@@ -329,7 +329,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
-            addSummaryLink(utils.isClass(element) || utils.isInterface(element)
+            addSummaryLink(utils.isOfClassKind(element) || utils.isInterface(element)
                     ? HtmlLinkInfo.Kind.CLASS_USE
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);

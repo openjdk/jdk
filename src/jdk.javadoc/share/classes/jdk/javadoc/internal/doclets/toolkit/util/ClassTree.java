@@ -178,7 +178,7 @@ public class ClassTree {
 
             if (utils.isEnum(aClass)) {
                 processType(aClass, configuration, baseEnums, subEnums);
-            } else if (utils.isClass(aClass)) {
+            } else if (utils.isOfClassKind(aClass)) {
                 processType(aClass, configuration, baseClasses, subClasses);
             } else if (utils.isInterface(aClass)) {
                 processInterface(aClass);
@@ -340,7 +340,7 @@ public class ClassTree {
             return get(subAnnotationTypes, typeElement);
         } else if (utils.isInterface(typeElement)) {
             return get(subInterfaces, typeElement);
-        } else if (utils.isClass(typeElement)) {
+        } else if (utils.isOfClassKind(typeElement)) {
             return get(subClasses, typeElement);
         } else {
             return Collections.emptySortedSet();

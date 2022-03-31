@@ -211,7 +211,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
             currentTypeElement = typeElement;
             fieldWriter = writer.getSerialFieldWriter(currentTypeElement);
             methodWriter = writer.getSerialMethodWriter(currentTypeElement);
-            if (utils.isClass(currentTypeElement) && utils.isSerializable(currentTypeElement)) {
+            if (utils.isOfClassKind(currentTypeElement) && utils.isSerializable(currentTypeElement)) {
                 if (!serialClassInclude(utils, currentTypeElement)) {
                     continue;
                 }
@@ -519,7 +519,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         if (element == null) {
             return false;
         }
-        return utils.isClass(element)
+        return utils.isOfClassKind(element)
                 ? serialClassInclude(utils, (TypeElement)element)
                 : serialDocInclude(utils, element);
     }

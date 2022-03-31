@@ -164,11 +164,11 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = Text.of(utils.isClass(typeElement)
+            label = Text.of(utils.isOfClassKind(typeElement)
                     ? resources.getText("doclet.Fields_Declared_In_Class")
                     : resources.getText("doclet.Fields_Declared_In_Interface"));
         } else {
-            label = Text.of(utils.isClass(typeElement)
+            label = Text.of(utils.isOfClassKind(typeElement)
                     ? resources.getText("doclet.Fields_Inherited_From_Class")
                     : resources.getText("doclet.Fields_Inherited_From_Interface"));
         }

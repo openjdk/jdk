@@ -337,7 +337,7 @@ public class TagletWriterImpl extends TagletWriter {
             links.add(htmlWriter.links.createLink(link,
                     contents.getContent("doclet.Constants_Summary")));
         }
-        if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
+        if (utils.isOfClassKind(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
             if (SerializedFormBuilder.serialInclude(utils, holder) &&
                       SerializedFormBuilder.serialInclude(utils, utils.containingPackage(holder))) {
