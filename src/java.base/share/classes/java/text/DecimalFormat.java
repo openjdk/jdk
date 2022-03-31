@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3210,16 +3210,18 @@ public class DecimalFormat extends NumberFormat {
             for (i = digitCount; i > 0; --i) {
                 if (i != digitCount && isGroupingUsed() && groupingSize != 0 &&
                     i % groupingSize == 0) {
-                    result.append(localized ? symbols.getGroupingSeparator() :
-                                  PATTERN_GROUPING_SEPARATOR);
+                    result.append(localized ?
+                        (isCurrencyFormat ? symbols.getMonetaryGroupingSeparator() : symbols.getGroupingSeparator()) :
+                        PATTERN_GROUPING_SEPARATOR);
                 }
                 result.append(i <= getMinimumIntegerDigits()
                     ? (localized ? symbols.getZeroDigit() : PATTERN_ZERO_DIGIT)
                     : (localized ? symbols.getDigit() : PATTERN_DIGIT));
             }
             if (getMaximumFractionDigits() > 0 || decimalSeparatorAlwaysShown)
-                result.append(localized ? symbols.getDecimalSeparator() :
-                              PATTERN_DECIMAL_SEPARATOR);
+                result.append(localized ?
+                    (isCurrencyFormat ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) :
+                    PATTERN_DECIMAL_SEPARATOR);
             for (i = 0; i < getMaximumFractionDigits(); ++i) {
                 if (i < getMinimumFractionDigits()) {
                     result.append(localized ? symbols.getZeroDigit() :

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * or whether a native transition is required) and a <em>fallback</em> method handle, which can be used
  * when intrinsification of this method handle is not possible.
  */
-/*non-public*/ class NativeMethodHandle extends MethodHandle {
+/*non-public*/ final class NativeMethodHandle extends MethodHandle {
     final NativeEntryPoint nep;
     final MethodHandle fallback;
 

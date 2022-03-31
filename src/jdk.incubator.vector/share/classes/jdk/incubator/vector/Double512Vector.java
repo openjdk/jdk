@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,12 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     public final Double512Mask test(Test op) {
         return super.testTemplate(Double512Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Double512Mask test(Test op, VectorMask<Double> m) {
+        return super.testTemplate(Double512Mask.class, op, (Double512Mask) m);  // specialize
     }
 
     // Specialized comparisons
