@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.WeakHashMap;
 import jdk.internal.access.JavaSecurityAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 import sun.security.provider.PolicyFile;
 import sun.security.util.Debug;
 import sun.security.util.FilePermCompat;
@@ -65,8 +65,8 @@ public class ProtectionDomain {
      * FilePermission checking even if a 3rd-party Policy implementation is set.
      */
     private static final boolean filePermCompatInPD =
-            "true".equals(GetPropertyAction.privilegedGetProperty(
-                "jdk.security.filePermCompat"));
+        GetBooleanAction.privilegedGetProperty(
+            "jdk.security.filePermCompat");
 
     private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
 

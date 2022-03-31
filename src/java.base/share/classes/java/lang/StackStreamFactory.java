@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 
 import static java.lang.StackStreamFactory.WalkerState.*;
 
@@ -82,7 +82,7 @@ final class StackStreamFactory {
      * VM built-in backtrace filled in Throwable with the StackWalker.
      */
     static final boolean isDebug =
-            "true".equals(GetPropertyAction.privilegedGetProperty("stackwalk.debug"));
+            GetBooleanAction.privilegedGetProperty("stackwalk.debug");
 
     static <T> StackFrameTraverser<T>
         makeStackTraverser(StackWalker walker, Function<? super Stream<StackFrame>, ? extends T> function)

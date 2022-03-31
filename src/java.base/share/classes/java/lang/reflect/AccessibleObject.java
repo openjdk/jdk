@@ -35,7 +35,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -773,11 +773,8 @@ public class AccessibleObject implements AnnotatedElement {
      */
     private static boolean printStackTraceWhenAccessFails() {
         if (!printStackPropertiesSet && VM.initLevel() >= 1) {
-            String s = GetPropertyAction.privilegedGetProperty(
-                    "sun.reflect.debugModuleAccessChecks");
-            if (s != null) {
-                printStackWhenAccessFails = !s.equalsIgnoreCase("false");
-            }
+            printStackWhenAccessFails = GetBooleanAction.
+                privilegedGetProperty("sun.reflect.debugModuleAccessChecks");
             printStackPropertiesSet = true;
         }
         return printStackWhenAccessFails;

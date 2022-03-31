@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
 
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
+import static sun.security.action.GetBooleanAction.privilegedGetProperty;
 
 /**
  * This class is used to maintain mappings from packages, classes
@@ -76,7 +76,7 @@ public class JarIndex {
      * be added to the index. Otherwise, just the directory names are added.
      */
     private static final boolean metaInfFilenames =
-        "true".equals(privilegedGetProperty("sun.misc.JarIndex.metaInfFilenames"));
+        privilegedGetProperty("sun.misc.JarIndex.metaInfFilenames");
 
     /**
      * Constructs a new, empty jar index.

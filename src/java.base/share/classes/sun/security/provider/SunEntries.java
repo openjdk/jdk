@@ -31,7 +31,7 @@ import java.util.*;
 import java.security.*;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.SecurityProviderConstants;
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
@@ -320,8 +320,8 @@ public final class SunEntries {
     private static final String PROP_RNDSOURCE = "securerandom.source";
 
     private static final boolean useLegacyDSA =
-        Boolean.parseBoolean(GetPropertyAction.privilegedGetProperty
-            ("jdk.security.legacyDSAKeyPairGenerator"));
+        GetBooleanAction.privilegedGetProperty
+            ("jdk.security.legacyDSAKeyPairGenerator");
 
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";

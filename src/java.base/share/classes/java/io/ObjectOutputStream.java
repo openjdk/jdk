@@ -221,7 +221,7 @@ public class ObjectOutputStream
     private static final boolean extendedDebugInfo =
         java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
-                "sun.io.serialization.extendedDebugInfo")).booleanValue();
+                "sun.io.serialization.extendedDebugInfo"));
 
     /**
      * Creates an ObjectOutputStream that writes to the specified OutputStream.
