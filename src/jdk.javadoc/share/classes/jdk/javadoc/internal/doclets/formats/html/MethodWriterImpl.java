@@ -158,7 +158,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                                             : utils.getFullyQualifiedName(holder));
                     Content codeLink = HtmlTree.CODE(link);
                     Content descriptionFromTypeLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
-                            utils.isOfClassKind(holder)
+                            utils.isClass(holder)
                                     ? contents.descriptionFromClassLabel
                                     : contents.descriptionFromInterfaceLabel);
                     descriptionFromTypeLabel.add(Entity.NO_BREAK_SPACE);
@@ -218,11 +218,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = Text.of(utils.isOfClassKind(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Declared_In_Class")
                     : resources.getText("doclet.Methods_Declared_In_Interface"));
         } else {
-            label = Text.of(utils.isOfClassKind(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Methods_Inherited_From_Class")
                     : resources.getText("doclet.Methods_Inherited_From_Interface"));
         }

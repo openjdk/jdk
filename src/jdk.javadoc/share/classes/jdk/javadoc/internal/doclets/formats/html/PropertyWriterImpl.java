@@ -119,7 +119,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                                             ? holder.getSimpleName() : holder.getQualifiedName());
                     Content codeLink = HtmlTree.CODE(link);
                     Content descriptionFromLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
-                            utils.isOfClassKind(holder)
+                            utils.isClass(holder)
                                     ? contents.descriptionFromClassLabel
                                     : contents.descriptionFromInterfaceLabel);
                     descriptionFromLabel.add(Entity.NO_BREAK_SPACE);
@@ -172,11 +172,11 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = Text.of(utils.isOfClassKind(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Properties_Declared_In_Class")
                     : resources.getText("doclet.Properties_Declared_In_Interface"));
         } else {
-            label = Text.of(utils.isOfClassKind(typeElement)
+            label = Text.of(utils.isClass(typeElement)
                     ? resources.getText("doclet.Properties_Inherited_From_Class")
                     : resources.getText("doclet.Properties_Inherited_From_Interface"));
         }

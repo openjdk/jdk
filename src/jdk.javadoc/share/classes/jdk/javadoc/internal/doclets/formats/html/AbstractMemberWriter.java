@@ -327,7 +327,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
-            addSummaryLink(utils.isOfClassKind(element) || utils.isInterface(element)
+            addSummaryLink(utils.isClass(element) || utils.isInterface(element)
                     ? HtmlLinkInfo.Kind.CLASS_USE
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);
