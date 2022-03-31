@@ -45,7 +45,6 @@ public class InterruptCopy {
 
     private static final long FILE_SIZE_TO_COPY = 1024L * 1024L * 1024L;
     private static final int INTERRUPT_DELAY_IN_MS = 50;
-    private static final int DURATION_MAX_IN_MS = 3*INTERRUPT_DELAY_IN_MS;
     private static final int CANCEL_DELAY_IN_MS = 10;
 
     public static void main(String[] args) throws Exception {
@@ -109,8 +108,15 @@ public class InterruptCopy {
                 long theEnd = System.currentTimeMillis();
                 System.out.printf("Done copying at %d ms...%n", theEnd);
                 long duration = theEnd - theBeginning;
-                if (duration > DURATION_MAX_IN_MS)
-                    throw new RuntimeException("Copy was not interrupted");
+
+                // If the copy was interrupted the target file should have been
+                // deleted, so if the file does not exist, then the copy must
+                // have been interrupted without throwing an exception; if the
+                // file exists, then the copy finished before being interrupted
+                // so not throwing an exception is not considered a failure
+                if (Files.notExists(target))
+                    throw new RuntimeException("Copy was not interrupted in " +
+                        duration + " ms");
             } catch (IOException e) {
                 boolean interrupted = Thread.interrupted();
                 if (!interrupted)
