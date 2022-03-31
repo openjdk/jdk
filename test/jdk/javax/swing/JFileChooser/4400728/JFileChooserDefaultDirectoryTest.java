@@ -22,7 +22,9 @@
  */
 
 import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JFileChooser;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -35,11 +37,14 @@ import javax.swing.JFileChooser;
  */
 public class JFileChooserDefaultDirectoryTest {
 
-    public static void main(String[] args) {
-        JFileChooser jFileChooser = new JFileChooser();
-        final String actualDefaultDirectory =
-                jFileChooser.getFileSystemView().getDefaultDirectory()
-                            .getName();
+    public static void main(String[] args) throws Exception {
+        final AtomicReference<String> actual = new AtomicReference<>("");
+        SwingUtilities.invokeAndWait(() -> {
+            JFileChooser jFileChooser = new JFileChooser();
+            actual.set(jFileChooser.getFileSystemView().getDefaultDirectory()
+                                   .getName());
+        });
+        String actualDefaultDirectory = actual.get();
         final boolean isWindows = System.getProperty("os.name").toLowerCase()
                                         .startsWith("windows");
         if (isWindows) {
