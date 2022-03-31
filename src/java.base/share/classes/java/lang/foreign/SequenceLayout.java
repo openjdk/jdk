@@ -65,7 +65,7 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
     }
 
     SequenceLayout(long elemCount, MemoryLayout elementLayout, long alignment, Optional<String> name) {
-        super(elemCount * elementLayout.bitSize(), alignment, name);
+        super(Math.multiplyExact(elemCount, elementLayout.bitSize()), alignment, name);
         this.elemCount = elemCount;
         this.elementLayout = elementLayout;
     }

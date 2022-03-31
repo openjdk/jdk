@@ -54,7 +54,7 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
         /**
          * A 'struct' kind.
          */
-        STRUCT("", Long::sum),
+        STRUCT("", Math::addExact),
         /**
          * A 'union' kind.
          */

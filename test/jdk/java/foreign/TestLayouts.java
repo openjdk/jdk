@@ -130,6 +130,25 @@ public class TestLayouts {
         assertEquals(struct.byteAlignment(), 8);
     }
 
+    @Test
+    public void testSequenceOverflow() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
+    }
+
+    @Test
+    public void testStructOverflow() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.structLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
+                                                MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE)));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.structLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
+                                                MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
+                                                MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE)));
+    }
+
     @Test(dataProvider = "layoutKinds")
     public void testPadding(LayoutKind kind) {
         assertEquals(kind == LayoutKind.PADDING, kind.layout.isPadding());
