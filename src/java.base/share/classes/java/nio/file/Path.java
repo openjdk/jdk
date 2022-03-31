@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,56 @@ public interface Path
      *          {@code null} if this path has zero elements
      */
     Path getFileName();
+
+    /**
+     * Returns the file name extension of this path as a {@code String},
+     * or a default value.  The extension is defined to be the portion of
+     * the {@code String} representation of the file name after the last
+     * dot ('.').  If the first character in the file name string is a dot
+     * it is ignored.  If the extension cannot be determined, then the
+     * parameter {@code defaultExtension} is returned.  This will occur if
+     * the path has zero elements ({@link #getFileName()} returns
+     * {@code null}), or the file name string does not contain a dot, only
+     * the first character is a dot, or the last character is a dot.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * <pre>{@code
+     *     String name = getFileName().toString();
+     *     int lastDot = name.lastIndexOf('.');
+     *     lastDot > 0 && lastDot < name.length() - 1 ?
+     *         name.substring(lastDot + 1) : defaultExtension;
+     * }</pre>
+     *
+     * @param   defaultExtension
+     *          the value to return if the extension is indeterminate;
+     *          may be {@code null}
+     *
+     * @return  the file name extension of this path, or {@code ext}
+     *          if the extension is indeterminate
+     *
+     * @since 19
+     */
+    default String getExtension(String defaultExtension) {
+        Path fileName = getFileName();
+        if (fileName == null) {
+            return defaultExtension;
+        }
+
+        String fileNameString = fileName.toString();
+        int length = fileNameString.length();
+
+        // Indeterminate if fileNameString is too short
+        if (length > 2) {
+            int lastDotIndex = fileNameString.lastIndexOf('.');
+            // Indeterminate if no dot or found at last or only the first index
+            if (lastDotIndex > 0 && lastDotIndex < length - 1) {
+                return fileNameString.substring(lastDotIndex + 1);
+            }
+        }
+
+        return defaultExtension;
+    }
 
     /**
      * Returns the <em>parent path</em>, or {@code null} if this path does not
