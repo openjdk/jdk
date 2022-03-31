@@ -99,12 +99,7 @@ public class XRMaskFill extends MaskFill {
         try {
             SunToolkit.awtLock();
 
-            XRSurfaceData x11sd;
-            try {
-                x11sd = (XRSurfaceData) sData;
-            } catch (ClassCastException e) {
-                throw new InvalidPipeException("wrong surface data type: " + sData);
-            }
+            XRSurfaceData x11sd = SurfaceData.convertTo(XRSurfaceData.class, sData);
             x11sd.validateAsDestination(null, sg2d.getCompClip());
 
             XRCompositeManager maskBuffer = x11sd.maskBuffer;
