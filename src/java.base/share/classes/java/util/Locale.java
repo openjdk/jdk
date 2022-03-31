@@ -806,13 +806,13 @@ public final class Locale implements Cloneable, Serializable {
      * the country value to uppercase.
      * @implNote
      * <ul>
+     * <li>This method does not make any syntactic checks on the input.
+     * Use {@link Locale.Builder} for full syntactic checks with BCP47.
+     * <li>The two cases ("ja", "JP", "JP") and ("th", "TH", "TH") are handled specially,
+     * see <a href="#special_cases_constructor">Special Cases</a> for more information.
      * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
      * their current forms. See <a href="#legacy_language_codes">Legacy language
      * codes</a> for more information.
-     * <li>For backward compatibility reasons, this method does not make
-     * any syntactic checks on the input.
-     * <li>The two cases ("ja", "JP", "JP") and ("th", "TH", "TH") are handled specially,
-     * see <a href="#special_cases_constructor">Special Cases</a> for more information.
      * </ul>
      *
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
@@ -836,11 +836,11 @@ public final class Locale implements Cloneable, Serializable {
      * the country value to uppercase.
      * @implNote
      * <ul>
+     * <li>This method does not make any syntactic checks on the input.
+     * Use {@link Locale.Builder} for full syntactic checks with BCP47.
      * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
      * their current forms. See <a href="#legacy_language_codes">Legacy language
      * codes</a> for more information.
-     * <li>For backward compatibility reasons, this method does not make
-     * any syntactic checks on the input.
      * </ul>
      *
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
@@ -861,11 +861,11 @@ public final class Locale implements Cloneable, Serializable {
      * This method normalizes the language value to lowercase.
      * @implNote
      * <ul>
+     * <li>This method does not make any syntactic checks on the input.
+     * Use {@link Locale.Builder} for full syntactic checks with BCP47.
      * <li>Obsolete ISO 639 codes ("iw", "ji", and "in") are mapped to
      * their current forms. See <a href="#legacy_language_codes">Legacy language
      * codes</a> for more information.
-     * <li>For backward compatibility reasons, this method does not make
-     * any syntactic checks on the input.
      * </ul>
      *
      * @param language An ISO 639 alpha-2 or alpha-3 language code, or a language subtag
