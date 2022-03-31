@@ -1428,7 +1428,9 @@ Java_sun_awt_X11GraphicsDevice_getDoubleBufferVisuals(JNIEnv *env,
             break;
         }
     }
+    AWT_LOCK();
     XdbeFreeVisualInfo(visScreenInfo);
+    AWT_UNLOCK();
 }
 
 /*
