@@ -1916,7 +1916,7 @@ public final class Long extends Number
      */
     // @IntrinsicCandidate
     public static long compress(long i, long mask) {
-        // See Hacker's Delight 7–4 Compress, or Generalized Extract
+        // See Hacker's Delight (2nd ed) section 7.4 Compress, or Generalized Extract
 
         i = i & mask; // Clear irrelevant bits
         long maskCount = ~mask << 1; // Count 0's to right
@@ -1933,11 +1933,11 @@ public final class Long extends Number
             // Bits to move
             long maskMove = maskPrefix & mask;
             // Compress mask
-            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            mask = (mask ^ maskMove) | (maskMove >>> (1 << j));
             // Bits of i to be moved
             long t = i & maskMove;
             // Compress i
-            i = (i ^ t) | (t >> (1 << j));
+            i = (i ^ t) | (t >>> (1 << j));
             // Adjust the mask count by identifying bits that have 0 to the right
             maskCount = maskCount & ~maskPrefix;
         }
@@ -1971,7 +1971,7 @@ public final class Long extends Number
             long maskMove = maskPrefix & mask;
             array[j] = maskMove;
             // Compress mask
-            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            mask = (mask ^ maskMove) | (maskMove >>> (1 << j));
             maskCount = maskCount & ~maskPrefix;
         }
 

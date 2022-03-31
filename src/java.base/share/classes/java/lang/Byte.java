@@ -597,8 +597,8 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @return the value obtained by compressing the specified value
      * @since 19
      */
-    public byte compress(byte i, int mask) {
-        // See Hacker's Delight 7–4 Compress, or Generalized Extract
+    public static byte compress(byte i, int mask) {
+        // See Hacker's Delight (2nd ed) section 7.4 Compress, or Generalized Extract
 
         // Mask off upper bits
         mask = mask & 0xFF;
@@ -614,11 +614,11 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
             // Bits to move
             int maskMove = maskPrefix & mask;
             // Compress mask
-            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            mask = (mask ^ maskMove) | (maskMove >>> (1 << j));
             // Bits of i to be moved
             int t = x & maskMove;
             // Compress i
-            x = (x ^ t) | (t >> (1 << j));
+            x = (x ^ t) | (t >>> (1 << j));
             // Adjust the mask count by identifying bits that have 0 to the right
             maskCount = maskCount & ~maskPrefix;
         }
@@ -650,7 +650,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
             int maskMove = maskPrefix & mask;
             array[j] = maskMove;
             // Compress mask
-            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            mask = (mask ^ maskMove) | (maskMove >>> (1 << j));
             maskCount = maskCount & ~maskPrefix;
         }
 
@@ -658,7 +658,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
         for (int j = 2; j >= 0; j--) {
             int maskMove = array[j];
             int t = x << (1 << j);
-            x = (i & ~maskMove) | (t & maskMove);
+            x = (x & ~maskMove) | (t & maskMove);
         }
 
         // Clear irrelevant bits
