@@ -1521,11 +1521,11 @@ void MacroAssembler::revb_h_h_u(Register Rd, Register Rs, Register tmp) {
 // reverse bytes in halfwords in lower 32 bits and zero-extend
 // Rd[31:0] = Rs[23:16] Rs[31:24] Rs[7:0] Rs[15:8] (zero-extend to 64 bits)
 void MacroAssembler::revb_h_w_u(Register Rd, Register Rs, Register tmp1, Register tmp2) {
-  if (UseZba && UseZbb) {
+  if (UseZbb) {
     rev8(Rd, Rs);
     rori(Rd, Rd, 32);
     roriw(Rd, Rd, 16);
-    zext_w(Rd, Rd);
+    zero_extend(Rd, Rd, 32);
     return;
   }
   assert_different_registers(Rs, tmp1, tmp2);
@@ -1554,16 +1554,16 @@ void MacroAssembler::revb_h_helper(Register Rd, Register Rs, Register tmp1, Regi
 // reverse bytes in each halfword
 // Rd[63:0] = Rs[55:48] Rs[63:56] Rs[39:32] Rs[47:40] Rs[23:16] Rs[31:24] Rs[7:0] Rs[15:8]
 void MacroAssembler::revb_h(Register Rd, Register Rs, Register tmp1, Register tmp2) {
-  if (UseZba && UseZbb) {
+  if (UseZbb) {
     assert_different_registers(Rs, tmp1);
     assert_different_registers(Rd, tmp1);
     rev8(Rd, Rs);
-    zext_w(tmp1, Rd);
+    zero_extend(tmp1, Rd, 32);
     roriw(tmp1, tmp1, 16);
     slli(tmp1, tmp1, 32);
     srli(Rd, Rd, 32);
     roriw(Rd, Rd, 16);
-    zext_w(Rd, Rd);
+    zero_extend(Rd, Rd, 32);
     orr(Rd, Rd, tmp1);
     return;
   }
@@ -3924,14 +3924,14 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
 }
 
 void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
-  if (UseZba && UseZbb) {
-    if (bits == 16) {
-      zext_h(dst, src);
-      return;
-    } else if (bits == 32) {
-      zext_w(dst, src);
-      return;
-    }
+  if (UseZba && bits == 32) {
+    zext_w(dst, src);
+    return;
+  }
+
+  if (UseZbb && bits == 16) {
+    zext_h(dst, src);
+    return;
   }
 
   if (bits == 8) {
