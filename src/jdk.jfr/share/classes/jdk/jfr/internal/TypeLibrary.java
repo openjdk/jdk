@@ -401,8 +401,8 @@ public final class TypeLibrary {
                     Class<?> ct = returnType.getComponentType();
                     if (Annotation.class.isAssignableFrom(ct) && ct.getAnnotation(Repeatable.class) != null) {
                         Object res = m.invoke(a, new Object[0]);
-                        if (res instanceof Annotation[]) {
-                            for (Annotation rep : (Annotation[]) m.invoke(a, new Object[0])) {
+                        if (res instanceof Annotation[] anns) {
+                            for (Annotation rep : anns) {
                                 annos.add(rep);
                             }
                             repeated = true;
