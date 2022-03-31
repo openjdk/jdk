@@ -430,21 +430,18 @@ public class Utils {
         return t.getKind() == NONE;
     }
 
-    public boolean isOrdinaryClass(TypeElement te) {
-        return te.getKind() == CLASS && !isThrowable(te);
-    }
-
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
+    public boolean isNonThrowableClass(TypeElement te) {
+        return te.getKind() == CLASS && !isThrowable(te);
+    }
+
     public boolean isThrowable(TypeElement te) {
-        if (te.getKind() != CLASS) { // quick check
-            return false;
-        }
-        return typeUtils.isSubtype(te.asType(), getThrowableType());
+        return te.getKind() == CLASS && typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isExecutableElement(Element e) {

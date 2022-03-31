@@ -117,7 +117,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
                 .addTab(contents.enums, utils::isEnum)
                 .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
                 .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
