@@ -244,16 +244,16 @@ class OrderedPair {
   static const OrderedPair initial;
 };
 
-// -------------------------VectorLaneSizeStats-------------------------
+// -----------------------VectorElementSizeStats-----------------------
 // Vector lane size statistics for loop vectorization with vector masks
-class VectorLaneSizeStats {
+class VectorElementSizeStats {
  private:
   static const int NO_SIZE = -1;
   static const int MIXED_SIZE = -2;
   int* _stats;
 
  public:
-  VectorLaneSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) {
+  VectorElementSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) {
     memset(_stats, 0, sizeof(int) * 4);
   }
 

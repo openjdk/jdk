@@ -84,6 +84,15 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
+    public int[] crossZeroRange() {
+        int[] res = new int[SIZE];
+        for (int i = -20; i < 20; i++) {
+            res[i + 50] = a[i + 50] + b[i + 50];
+        }
+        return res;
+    }
+
+    @Test
     public int[] nonEqualTestRange() {
         int[] res = new int[SIZE];
         for (int i = start; i != end; i++) {

@@ -2737,13 +2737,16 @@ Node* SuperWord::create_post_loop_vmask() {
   // only have positive scale in counting-up loop and negative scale in
   // counting-down loop.) Collected SWPointer(s) are also used for data
   // dependence check next.
-  VectorLaneSizeStats stats(_arena);
+  VectorElementSizeStats stats(_arena);
   GrowableArray<SWPointer*> swptrs(_arena, _packset.length(), 0, NULL);
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     assert(p->size() == 1, "all post loop packs should be singleton");
     Node* n = p->at(0);
     BasicType bt = velt_basic_type(n);
+    if (!is_java_primitive(bt)) {
+      return NULL;
+    }
     if (n->is_Mem()) {
       SWPointer* mem_p = new (_arena) SWPointer(n->as_Mem(), this, NULL, false);
       // For each memory access, we check if the scale (in bytes) in its
@@ -2755,7 +2758,6 @@ Node* SuperWord::create_post_loop_vmask() {
       }
       swptrs.append(mem_p);
     }
-    assert(is_java_primitive(bt), "only primitive types are allowed in post loop");
     stats.record_size(type2aelembytes(bt));
   }
 
@@ -2805,9 +2807,9 @@ Node* SuperWord::create_post_loop_vmask() {
   _igvn.register_new_node_with_optimizer(trip_cnt);
   _igvn.register_new_node_with_optimizer(new_incr);
   _igvn.replace_node(cl->incr(), new_incr);
-  Node* offset = new ConvI2LNode(trip_cnt);
-  _igvn.register_new_node_with_optimizer(offset);
-  Node* vmask = VectorMaskGenNode::make(offset, vmask_bt);
+  Node* length = new ConvI2LNode(trip_cnt);
+  _igvn.register_new_node_with_optimizer(length);
+  Node* vmask = VectorMaskGenNode::make(length, vmask_bt);
   _igvn.register_new_node_with_optimizer(vmask);
 
   // Remove exit test to transform 1-iteration loop to straight-line code.

@@ -67,6 +67,15 @@ public class ArrayUnsafeOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    public byte[] arrayUnsafeFillWithOneAddp() {
+        byte[] res = new byte[SIZE];
+        for (int i = 123; i < 500; i++) {
+            unsafe.putByte(res, i, (byte) i);
+        }
+        return res;
+    }
+
+    @Test
     // Note that this case cannot be vectorized since data dependence
     // exists between two unsafe stores of different types on the same
     // array reference.
