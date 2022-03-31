@@ -25,16 +25,16 @@
 
 package java.lang;
 
-import java.lang.annotation.Native;
-import java.lang.invoke.MethodHandles;
-import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
-import java.util.Objects;
-import java.util.Optional;
-
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+import java.lang.annotation.Native;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.invoke.MethodHandles;
+import java.util.Objects;
+import java.util.Optional;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -1765,6 +1765,83 @@ public final class Integer extends Number
         i = (i & 0x0f0f0f0f) << 4 | (i >>> 4) & 0x0f0f0f0f;
 
         return reverseBytes(i);
+    }
+
+    /**
+     * Compress bits of an {@code int} value given a bit mask.
+     *
+     * @param i the value to be compressed
+     * @param mask the mask
+     * @return the value obtained by compressing the specified value
+     * @since 19
+     */
+    // @IntrinsicCandidate
+    public static int compress(int i, int mask) {
+        // See Hacker's Delight 7–4 Compress, or Generalized Extract
+
+        i = i & mask; // Clear irrelevant bits
+        int maskCount = ~mask << 1; // Count 0's to right
+
+        for (int j = 0; j < 5; j++) {
+            // Parallel prefix
+            // Mask prefix identifies bits of the mask that have an odd number of 0's to the right
+            int maskPrefix = maskCount  ^ (maskCount  << 1);
+            maskPrefix = maskPrefix ^ (maskPrefix << 2);
+            maskPrefix = maskPrefix ^ (maskPrefix << 4);
+            maskPrefix = maskPrefix ^ (maskPrefix << 8);
+            maskPrefix = maskPrefix ^ (maskPrefix << 16);
+            // Bits to move
+            int maskMove = maskPrefix & mask;
+            // Compress mask
+            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            // Bits of i to be moved
+            int t = i & maskMove;
+            // Compress i
+            i = (i ^ t) | (t >> (1 << j));
+            // Adjust the mask count by identifying bits that have 0 to the right
+            maskCount = maskCount & ~maskPrefix;
+        }
+        return i;
+    }
+
+    /**
+     * Expand bits of an {@code int} value given a bit mask.
+     *
+     * @param i the value to be compressed
+     * @param mask the mask
+     * @return the value obtained by expanding the specified value
+     * @since 19
+     */
+    // @IntrinsicCandidate
+    public static int expand(int i, int mask) {
+        int[] array = new int[5];
+        // Save original mask
+        int originalMask = mask;
+        // Count 0's to right
+        int maskCount = ~mask << 1;
+        for (int j = 0; j < 5; j++) {
+            // Parallel suffix
+            int maskPrefix = maskCount ^ (maskCount << 1);
+            maskPrefix = maskPrefix ^ (maskPrefix << 2);
+            maskPrefix = maskPrefix ^ (maskPrefix << 4);
+            maskPrefix = maskPrefix ^ (maskPrefix << 8);
+            maskPrefix = maskPrefix ^ (maskPrefix << 16);
+            // Bits to move
+            int maskMove = maskPrefix & mask;
+            array[j] = maskMove;
+            // Compress mask
+            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            maskCount = maskCount & ~maskPrefix;
+        }
+
+        for (int j = 4; j >= 0; j--) {
+            int maskMove = array[j];
+            int t = i << (1 << j);
+            i = (i & ~maskMove) | (t & maskMove);
+        }
+
+        // Clear irrelevant bits
+        return i & originalMask;
     }
 
     /**

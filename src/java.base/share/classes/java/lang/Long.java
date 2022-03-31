@@ -1907,6 +1907,85 @@ public final class Long extends Number
     }
 
     /**
+     * Compress bits of an {@code long} value given a bit mask.
+     *
+     * @param i the value to be compressed
+     * @param mask the mask
+     * @return the value obtained by compressing the specified value
+     * @since 19
+     */
+    // @IntrinsicCandidate
+    public static long compress(long i, long mask) {
+        // See Hacker's Delight 7–4 Compress, or Generalized Extract
+
+        i = i & mask; // Clear irrelevant bits
+        long maskCount = ~mask << 1; // Count 0's to right
+
+        for (int j = 0; j < 6; j++) {
+            // Parallel prefix
+            // Mask prefix identifies bits of the mask that have an odd number of 0's to the right
+            long maskPrefix = maskCount  ^ (maskCount  << 1);
+            maskPrefix = maskPrefix ^ (maskPrefix << 2);
+            maskPrefix = maskPrefix ^ (maskPrefix << 4);
+            maskPrefix = maskPrefix ^ (maskPrefix << 8);
+            maskPrefix = maskPrefix ^ (maskPrefix << 16);
+            maskPrefix = maskPrefix ^ (maskPrefix << 32);
+            // Bits to move
+            long maskMove = maskPrefix & mask;
+            // Compress mask
+            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            // Bits of i to be moved
+            long t = i & maskMove;
+            // Compress i
+            i = (i ^ t) | (t >> (1 << j));
+            // Adjust the mask count by identifying bits that have 0 to the right
+            maskCount = maskCount & ~maskPrefix;
+        }
+        return i;
+    }
+
+    /**
+     * Expand bits of an {@code int} value given a bit mask.
+     *
+     * @param i the value to be compressed
+     * @param mask the mask
+     * @return the value obtained by expanding the specified value
+     * @since 19
+     */
+    // @IntrinsicCandidate
+    public static long expand(long i, long mask) {
+        long[] array = new long[6];
+        // Save original mask
+        long originalMask = mask;
+        // Count 0's to right
+        long maskCount = ~mask << 1;
+        for (int j = 0; j < 6; j++) {
+            // Parallel suffix
+            long maskPrefix = maskCount ^ (maskCount << 1);
+            maskPrefix = maskPrefix ^ (maskPrefix << 2);
+            maskPrefix = maskPrefix ^ (maskPrefix << 4);
+            maskPrefix = maskPrefix ^ (maskPrefix << 8);
+            maskPrefix = maskPrefix ^ (maskPrefix << 16);
+            maskPrefix = maskPrefix ^ (maskPrefix << 32);
+            // Bits to move
+            long maskMove = maskPrefix & mask;
+            array[j] = maskMove;
+            // Compress mask
+            mask = (mask ^ maskMove) | (maskMove >> (1 << j));
+            maskCount = maskCount & ~maskPrefix;
+        }
+
+        for (int j = 5; j >= 0; j--) {
+            long maskMove = array[j];
+            long t = i << (1 << j);
+            i = (i & ~maskMove) | (t & maskMove);
+        }
+
+        // Clear irrelevant bits
+        return i & originalMask;
+    }
+
+    /**
      * Returns the signum function of the specified {@code long} value.  (The
      * return value is -1 if the specified value is negative; 0 if the
      * specified value is zero; and 1 if the specified value is positive.)
