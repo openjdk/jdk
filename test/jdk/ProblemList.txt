@@ -742,7 +742,7 @@ java/awt/Robot/HiDPIScreenCapture/ScreenCaptureTest.java  8277816 macosx-aarch64
 java/awt/Robot/CheckCommonColors/CheckCommonColors.java 8277816 macosx-aarch64
 java/awt/ColorClass/AlphaColorTest.java 8277816 macosx-aarch64
 java/awt/AlphaComposite/WindowAlphaCompositeTest.java 8277816 macosx-aarch64
-	
+
 # macos12 failure
 javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
 
@@ -758,7 +758,6 @@ javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 ############################################################################
 
 # jdk_time
-
 
 ############################################################################
 
