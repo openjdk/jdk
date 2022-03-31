@@ -113,6 +113,7 @@ public class IRNode {
     public static final String LOOP   = START + "Loop" + MID + END;
     public static final String COUNTEDLOOP = START + "CountedLoop\\b" + MID + END;
     public static final String COUNTEDLOOP_MAIN = START + "CountedLoop\\b" + MID + "main" + END;
+    public static final String OUTERSTRIPMINEDLOOP = START + "OuterStripMinedLoop\\b" + MID + END;
 
     public static final String CALL = START + "Call.*Java" + MID + END;
     public static final String CALL_OF_METHOD = COMPOSITE_PREFIX + START + "Call.*Java" + MID + IS_REPLACED + " " +  END;
@@ -132,6 +133,7 @@ public class IRNode {
 
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
+    public static final String SAFEPOINT = START + "SafePoint" + MID + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
