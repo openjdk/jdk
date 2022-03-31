@@ -27,7 +27,6 @@
  * @summary Jar validation fails when sealed classes and records are involved
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
- * @build ValidateJarWithSealedAndRecord
  * @run main ValidateJarWithSealedAndRecord
  */
 
