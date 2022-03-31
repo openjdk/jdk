@@ -348,7 +348,7 @@ public final class BasicTest {
         cmd.assertImageCreated();
         HelloApp.executeLauncherAndVerifyOutput(cmd);
     }
-    
+
     @Test
     @Parameter("1")
     @Parameter("123")
