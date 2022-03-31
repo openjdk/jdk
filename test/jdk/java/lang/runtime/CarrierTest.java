@@ -30,7 +30,8 @@
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.lang.runtime.Carrier;
+import java.lang.runtime.Carriers;
+import java.lang.runtime.Carriers.*;
 import java.util.Arrays;
 
 public class CarrierTest {
@@ -54,7 +55,7 @@ public class CarrierTest {
                         char.class, int.class, long.class,
                         float.class, double.class,
                         boolean.class, String.class);
-        Carrier carrier = Carrier.of(methodType);
+        CarrierElements carrier = Carriers.CarrierFactory.of(methodType);
         Class<?> carrierClass = carrier.carrierClass();
         assertTrue(!carrierClass.isArray(), "carrier should be instance");
         MethodHandle constructor = carrier.constructor();
@@ -102,7 +103,7 @@ public class CarrierTest {
                         Object.class, Object.class,Object.class,Object.class,
                         Object.class, Object.class,Object.class,Object.class
                 );
-        Carrier carrier = Carrier.of(methodType);
+        CarrierElements carrier = Carriers.CarrierFactory.of(methodType);
         Class<?> carrierClass = carrier.carrierClass();
         assertTrue(carrierClass.isArray(), "carrier should be array");
         MethodHandle constructor = carrier.constructor();
@@ -144,10 +145,10 @@ public class CarrierTest {
 
         passed = false;
         try {
-            Class<?>[] ptypes = new Class<?>[Carrier.MAX_COMPONENTS + 1];
+            Class<?>[] ptypes = new Class<?>[Carriers.MAX_COMPONENTS + 1];
             Arrays.fill(ptypes, Object.class);
             MethodType methodType = MethodType.methodType(Object.class, ptypes);
-            Carrier carrier = Carrier.of(methodType);
+            CarrierElements carrier = Carriers.CarrierFactory.of(methodType);
             MethodHandle constructor = carrier.constructor();
         } catch (IllegalArgumentException ex) {
             passed = true;
@@ -157,10 +158,10 @@ public class CarrierTest {
 
         passed = false;
         try {
-            Class<?>[] ptypes = new Class<?>[Carrier.MAX_COMPONENTS / 2 + 1];
+            Class<?>[] ptypes = new Class<?>[Carriers.MAX_COMPONENTS / 2 + 1];
             Arrays.fill(ptypes, long.class);
             MethodType methodType = MethodType.methodType(Object.class, ptypes);
-            Carrier carrier = Carrier.of(methodType);
+            CarrierElements carrier = Carriers.CarrierFactory.of(methodType);
             MethodHandle constructor = carrier.constructor();
         } catch (IllegalArgumentException ex) {
             passed = true;
@@ -177,8 +178,8 @@ public class CarrierTest {
                 boolean.class, String.class
         };
         MethodType methodType = MethodType.methodType(Object.class, ptypes);
-        Carrier carrier1 = Carrier.of(ptypes);
-        Carrier carrier2 = Carrier.of(methodType);
+        CarrierElements carrier1 = Carriers.CarrierFactory.of(ptypes);
+        CarrierElements carrier2 = Carriers.CarrierFactory.of(methodType);
 
         assertTrue(carrier1 == carrier2, "carrier cache not matching correctly");
     }
@@ -191,12 +192,12 @@ public class CarrierTest {
                 boolean.class, String.class
         };
         MethodType methodType = MethodType.methodType(Object.class, ptypes);
-        Carrier carrier = Carrier.of(methodType);
-        assertTrue(carrier.constructor() == Carrier.constructor(methodType),
+        CarrierElements carrier = Carriers.CarrierFactory.of(methodType);
+        assertTrue(carrier.constructor() == Carriers.constructor(methodType),
                 "static constructor incorrect");
-        assertTrue(carrier.components() == Carrier.components(methodType),
+        assertTrue(carrier.components() == Carriers.components(methodType),
                 "static components incorrect");
-        assertTrue(carrier.component(1) == Carrier.component(methodType, 1),
+        assertTrue(carrier.component(1) == Carriers.component(methodType, 1),
                 "static component incorrect");
     }
 }

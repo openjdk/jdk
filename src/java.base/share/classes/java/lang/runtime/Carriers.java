@@ -48,17 +48,47 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 /**
  * A <em>carrier</em> is an opaque object that can be used to store component values
  * while avoiding primitive boxing associated with collection objects. Component values
- * can be primitive or Object. Clients can create new carrier instances by describing a
- * carrier <em>shape</em>, that is, a {@linkplain MethodType method type} whose parameter
- * types describe the types of the carrier component values.
+ * can be primitive or Object.
+ * <p>
+ * Clients can create new carrier instances by describing a carrier <em>shape</em>, that
+ * is, a {@linkplain MethodType method type} whose parameter types describe the types of
+ * the carrier component values, or by providing the parameter types directly.
+ *
+ * {@snippet :
+ * // Create a carrier for a string and an integer
+ * CarrierElements elements = CarrierFactory.of(String.class, int.class);
+ * // Fetch the carrier constructor MethodHandle
+ * MethodHandle constructor = elements.constructor();
+ * // Fetch the list of carrier component MethodHandles
+ * List<MethodHandle> components = elements.components();
+ *
+ * // Create an instance of the carrier with a string and an integer
+ * Object carrier = constructor.invokeExact("abc", 10);
+ * // Extract the first component, type string
+ * String string = (String)components.get(0).invokeExact(carrier);
+ * // Extract the second component, type int
+ * int i = (int)components.get(1).invokeExact(carrier);
+ * }
+ *
+ * Alternatively, the client can use static methods when the carrier use is scattered.
+ * This is possible since {@link Carriers} ensures that the same underlying carrier
+ * class is used when the same component types are provided.
+ *
+ * {@snippet :
+ * // Describe carrier using a MethodType
+ * MethodType mt = MethodType.methodType(Object.class, String.class, int.class);
+ * // Fetch the carrier constructor MethodHandle
+ * MethodHandle constructor = Carriers.constructor(mt);
+ * // Fetch the list of carrier component MethodHandles
+ * List<MethodHandle> components = Carriers.components(mt);
+ * }
  *
  * @implNote The strategy for storing components is deliberately left unspecified
- * so that future improvements will not be hampered by backward compatibility
- * issues.
+ * so that future improvements will not be hampered by issues of backward compatibility.
  *
  * @since 19
  */
-public final class Carrier {
+public final class Carriers {
     /**
      * Class file version.
      */
@@ -71,7 +101,7 @@ public final class Carrier {
     public static final int MAX_COMPONENTS = 255 - /* this */ 1;
 
     /**
-     * Maximum number of components in a CarrierClass.
+     * Maximum number of components in a {@link CarrierClass}.
      */
     private static final int MAX_OBJECT_COMPONENTS = 32;
 
@@ -84,7 +114,7 @@ public final class Carrier {
     /**
      * Number of integer slots used by a long.
      */
-    private static final int LONG_SLOTS = 2;
+    private static final int LONG_SLOTS = Long.SIZE / Integer.SIZE;
 
     /*
      * Initialize {@link MethodHandle} constants.
@@ -130,28 +160,6 @@ public final class Carrier {
      */
     private static final String OBJECT_DESCRIPTOR =
             Type.getDescriptor(Object.class);
-
-    /**
-     * Cache mapping {@link MethodType} to previously defined
-     * {@link Carrier Carriers}.
-     */
-    private static ConcurrentHashMap<MethodType, Carrier>
-            methodTypeCache = new ConcurrentHashMap<>();
-
-    /**
-     * Class of the underly carrier.
-     */
-    private final Class<?> carrierClass;
-
-    /**
-     * Constructor {@link MethodHandle}.
-     */
-    private final MethodHandle constructor;
-
-    /**
-     * List of component {@link MethodHandle MethodHandles}
-     */
-    private final List<MethodHandle> components;
 
     /**
      * Given a constructor {@link MethodHandle} recast and reorder arguments to
@@ -263,7 +271,7 @@ public final class Carrier {
 
     /**
      * Factory for carriers that are backed by int[] and Object[]. This strategy is
-     * used when the number of components exceeds {@link Carrier#MAX_OBJECT_COMPONENTS}.
+     * used when the number of components exceeds {@link Carriers#MAX_OBJECT_COMPONENTS}.
      */
     private static class CarrierArrayFactory {
         /**
@@ -332,7 +340,7 @@ public final class Carrier {
              */
             CarrierArray(int primitiveCount, int objectCount) {
                 this.primitives =
-                    primitiveCount != 0 ? new long[(primitiveCount + 1) / LONG_SLOTS] : null;
+                        primitiveCount != 0 ? new long[(primitiveCount + 1) / LONG_SLOTS] : null;
                 this.objects = objectCount != 0 ? new Object[objectCount] : null;
             }
 
@@ -495,27 +503,26 @@ public final class Carrier {
         }
 
         /**
-         * Permute a raw constructor and component accessor
-         * {@link MethodHandle MethodHandles} to match the order and types of
-         * the parameter types.
+         * Permute a raw constructor and component accessor {@link MethodHandle MethodHandles} to
+         * match the order and types of the parameter types.
          *
          * @param carrierShape  carrier object shape
          *
-         * @return {@link Carrier} instance
+         * @return {@link CarrierElements} instance
          */
-        private static Carrier carrier(CarrierShape carrierShape) {
+        private static CarrierElements carrier(CarrierShape carrierShape) {
             MethodHandle constructor = constructor(carrierShape);
             MethodHandle[] components = createComponents(carrierShape);
 
-            return new Carrier(Object[].class,
-                               reshapeConstructor(carrierShape, constructor),
-                               reshapeComponents(carrierShape, components));
+            return new CarrierElements(Object[].class,
+                                       reshapeConstructor(carrierShape, constructor),
+                                       reshapeComponents(carrierShape, components));
         }
     }
 
     /**
      * Factory for object based carrier. This strategy is used when the number of
-     * components is less than equal {@link Carrier#MAX_OBJECT_COMPONENTS}. The factory
+     * components is less than equal {@link Carriers#MAX_OBJECT_COMPONENTS}. The factory
      * constructs an anonymous class that provides a shape that  matches the
      * number of longs, ints and objects required by the {@link CarrierShape}. The
      * factory caches and reuses anonymous classes when looking for a match.
@@ -587,7 +594,7 @@ public final class Carrier {
          * @return name of a carrier class
          */
         private static String carrierClassName(CarrierShape carrierShape) {
-            String packageName = Carrier.class.getPackageName().replace('.', '/');
+            String packageName = Carriers.class.getPackageName().replace('.', '/');
             String className = "Carrier" +
                     longFieldName(carrierShape.longCount()) +
                     intFieldName(carrierShape.intCount()) +
@@ -804,16 +811,16 @@ public final class Carrier {
          *
          * @param carrierShape  carrier object shape
          *
-         * @return {@link Carrier} instance
+         * @return {@link CarrierElements} instance
          */
-        private static Carrier carrier(CarrierShape carrierShape) {
+        private static CarrierElements carrier(CarrierShape carrierShape) {
             CarrierClass carrierClass = findCarrierClass(carrierShape);
             MethodHandle constructor = carrierClass.constructor();
             MethodHandle[] components = carrierClass.components();
 
-            return new Carrier(constructor.type().returnType(),
-                               reshapeConstructor(carrierShape, constructor),
-                               reshapeComponents(carrierShape, components));
+            return new CarrierElements(constructor.type().returnType(),
+                                       reshapeConstructor(carrierShape, constructor),
+                                       reshapeComponents(carrierShape, components));
         }
     }
 
@@ -846,18 +853,8 @@ public final class Carrier {
     /**
      * Constructor
      */
-    private Carrier() {
+    private Carriers() {
         throw new AssertionError("private constructor");
-    }
-
-    /**
-     * Constructor
-     */
-    private Carrier(Class<?> carrierClass,
-                    MethodHandle constructor, List<MethodHandle> components) {
-        this.carrierClass = carrierClass;
-        this.constructor = constructor;
-        this.components = components;
     }
 
     /**
@@ -1030,150 +1027,216 @@ public final class Carrier {
     }
 
     /**
-     * Factory method to return a {@link Carrier} instance that matches the shape
-     * of the supplied {@link MethodType}. The return type of the {@link MethodType}
-     * is ignored.
-     *
-     * @param methodType  {@link MethodType} whose parameter types supply the
-     *                    the shape of the carrier's components
-     *
-     * @return {@link Carrier} instance
-     *
-     * @throws NullPointerException is methodType is null
-     * @throws IllegalArgumentException if number of component slots exceeds maximum
+     * This factory class generates {@link CarrierElements} instances containing the
+     * {@link MethodHandle MethodHandles} to the constructor and accessors of a carrier
+     * object.
+     * <p>
+     * Clients can create instances by describing a carrier <em>shape</em>, that
+     * is, a {@linkplain MethodType method type} whose parameter types describe the types of
+     * the carrier component values, or by providing the parameter types directly.
      */
-    public static Carrier of(MethodType methodType) {
-        Objects.requireNonNull(methodType, "methodType must be not be null");
-        MethodType constructorMT = methodType.changeReturnType(Object.class);
-        CarrierShape carrierShape = new CarrierShape(constructorMT);
-        int slotCount = carrierShape.slotCount();
-
-        if (MAX_COMPONENTS < slotCount) {
-            throw new IllegalArgumentException("Exceeds maximum number of component slots");
+    public static class CarrierFactory {
+        /**
+         * Constructor
+         */
+        private CarrierFactory() {
+            throw new AssertionError("private constructor");
         }
 
-        return methodTypeCache.computeIfAbsent(constructorMT, (mt) -> {
-            if (slotCount <= MAX_OBJECT_COMPONENTS && carrierShape.hasPrimitives()) {
-                return CarrierObjectFactory.carrier(carrierShape);
-            } else {
-                return CarrierArrayFactory.carrier(carrierShape);
+        /**
+         * Cache mapping {@link MethodType} to previously defined {@link CarrierElements}.
+         */
+        private static ConcurrentHashMap<MethodType, CarrierElements>
+                methodTypeCache = new ConcurrentHashMap<>();
+
+        /**
+         * Factory method to return a {@link CarrierElements} instance that matches the shape of
+         * the supplied {@link MethodType}. The return type of the {@link MethodType} is ignored.
+         *
+         * @param methodType  {@link MethodType} whose parameter types supply the
+         *                    the shape of the carrier's components
+         *
+         * @return {@link CarrierElements} instance
+         *
+         * @throws NullPointerException is methodType is null
+         * @throws IllegalArgumentException if number of component slots exceeds maximum
+         */
+        public static CarrierElements of(MethodType methodType) {
+            Objects.requireNonNull(methodType, "methodType must be not be null");
+            MethodType constructorMT = methodType.changeReturnType(Object.class);
+            CarrierShape carrierShape = new CarrierShape(constructorMT);
+            int slotCount = carrierShape.slotCount();
+
+            if (MAX_COMPONENTS < slotCount) {
+                throw new IllegalArgumentException("Exceeds maximum number of component slots");
             }
-        });
-    }
 
-    /**
-     * Factory method to return  a {@link Carrier} instance that matches the shape
-     * of the supplied parameter types.
-     *
-     * @param ptypes   parameter types that supply the shape of the carrier's
-     *                 components
-     *
-     * @return {@link Carrier} instance
-     *
-     * @throws NullPointerException is ptypes is null
-     * @throws IllegalArgumentException if number of component slots exceeds maximum
-     */
-    public static Carrier of(Class<?>... ptypes) {
-        Objects.requireNonNull(ptypes, "ptypes must be not be null");
-        return of(methodType(Object.class, ptypes));
-    }
-
-    /**
-     * {@return the underlying carrier class}
-     */
-    public Class<?> carrierClass() {
-        return carrierClass;
-    }
-
-    /**
-     * {@return the constructor {@link MethodHandle} for the carrier . The
-     * carrier constructor will have a return type of {@link Object} }
-     */
-    public MethodHandle constructor() {
-        return constructor;
-    }
-
-    /**
-     * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
-     * for all the carrier's components. The receiver type of the accessors
-     * will be {@link Object} }
-     */
-    public List<MethodHandle> components() {
-        return components;
-    }
-
-    /**
-     * {@return a component accessor {@link MethodHandle} for component {@code i}.
-     * The receiver type of the accessor will be {@link Object} }
-     *
-     * @param i  component index
-     *
-     * @throws IllegalArgumentException if {@code i} is out of bounds
-     */
-    public MethodHandle component(int i) {
-        if (i < 0 || components.size() <= i) {
-            throw new IllegalArgumentException("i is out of bounds " + i +
-                    " of " + components.size());
+            return methodTypeCache.computeIfAbsent(constructorMT, (mt) -> {
+                if (slotCount <= MAX_OBJECT_COMPONENTS && carrierShape.hasPrimitives()) {
+                    return CarrierObjectFactory.carrier(carrierShape);
+                } else {
+                    return CarrierArrayFactory.carrier(carrierShape);
+                }
+            });
         }
 
-        return components.get(i);
+        /**
+         * Factory method to return  a {@link CarrierElements} instance that matches the shape of
+         * the supplied parameter types.
+         *
+         * @param ptypes   parameter types that supply the shape of the carrier's components
+         *
+         * @return {@link CarrierElements} instance
+         *
+         * @throws NullPointerException is ptypes is null
+         * @throws IllegalArgumentException if number of component slots exceeds maximum
+         */
+        public static CarrierElements of(Class < ? >...ptypes) {
+            Objects.requireNonNull(ptypes, "ptypes must be not be null");
+            return of(methodType(Object.class, ptypes));
+        }
     }
 
     /**
-     * {@return the underlying carrier class of the carrier representing
-     * {@code methodType} }
+     * Instances of this class provide the {@link MethodHandle MethodHandles} to the
+     * constructor and accessors of a carrier object. The original component types can be
+     * gleaned from the parameter types of the constructor {@link MethodHandle} or by the
+     * return types of the components' {@link MethodHandle MethodHandles}.
+     */
+    public static class CarrierElements {
+        /**
+         * Underlying carrier class.
+         */
+        private final Class<?> carrierClass;
+
+        /**
+         * Constructor {@link MethodHandle}.
+         */
+        private final MethodHandle constructor;
+
+        /**
+         * List of component {@link MethodHandle MethodHandles}
+         */
+        private final List<MethodHandle> components;
+
+        /**
+         * Constructor
+         */
+        private CarrierElements() {
+            throw new AssertionError("private constructor");
+        }
+
+        /**
+         * Constructor
+         */
+        private CarrierElements(Class<?> carrierClass,
+                                MethodHandle constructor,
+                                List<MethodHandle> components) {
+            this.carrierClass = carrierClass;
+            this.constructor = constructor;
+            this.components = components;
+        }
+
+        /**
+         * {@return the underlying carrier class}
+         */
+        public Class<?> carrierClass() {
+            return carrierClass;
+        }
+
+        /**
+         * {@return the constructor {@link MethodHandle} for the carrier. The
+         * carrier constructor will always have a return type of {@link Object} }
+         */
+        public MethodHandle constructor() {
+            return constructor;
+        }
+
+        /**
+         * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
+         * for all the carrier's components. The receiver type of the accessors
+         * will always be {@link Object} }
+         */
+        public List<MethodHandle> components() {
+            return components;
+        }
+
+        /**
+         * {@return a component accessor {@link MethodHandle} for component {@code i}.
+         * The receiver type of the accessor will be {@link Object} }
+         *
+         * @param i  component index
+         *
+         * @throws IllegalArgumentException if {@code i} is out of bounds
+         */
+        public MethodHandle component(int i) {
+            if (i < 0 || components.size() <= i) {
+                throw new IllegalArgumentException("i is out of bounds " + i +
+                        " of " + components.size());
+            }
+
+            return components.get(i);
+        }
+
+        @Override
+        public String toString() {
+            return "Carrier" + constructor.type().parameterList();
+        }
+    }
+
+    /**
+     * {@return the underlying carrier class of the carrier representing {@code methodType} }
      *
-     * @param methodType  {@link MethodType} whose parameter types supply the
-     *                    the shape of the carrier's components
+     * @param methodType  {@link MethodType} whose parameter types supply the the shape of the
+     *                    carrier's components
      *
-     * @implNote Used internally by the Condy API.
+     * @implNote Used internally by Condy APIs.
      */
     public static Class<?> carrierClass(MethodType methodType) {
-        return of(methodType).carrierClass();
+        return CarrierFactory.of(methodType).carrierClass();
     }
 
     /**
-     * {@return the constructor {@link MethodHandle} for the carrier
-     * representing {@code methodType}. The carrier constructor will have a
-     * return type of {@link Object} }
+     * {@return the constructor {@link MethodHandle} for the carrier representing {@code
+     * methodType}. The carrier constructor will always have a return type of {@link Object} }
      *
-     * @param methodType  {@link MethodType} whose parameter types supply the
-     *                    the shape of the carrier's components
+     * @param methodType  {@link MethodType} whose parameter types supply the the shape of the
+     *                    carrier's components
      *
-     * @implNote Used internally by the Condy API.
+     * @implNote Used internally by Condy APIs.
      */
     public static MethodHandle constructor(MethodType methodType) {
-        return of(methodType).constructor();
+        return CarrierFactory.of(methodType).constructor();
     }
 
     /**
-     * {@return immutable list of component accessor {@link MethodHandle MethodHandles}
-     * for all the components of the carrier representing {@code methodType}. The
-     * receiver type of the accessors will be {@link Object} }
+     * {@return immutable list of component accessor {@link MethodHandle MethodHandles} for
+     * all the components of the carrier representing {@code methodType}. The receiver type of
+     * the accessors will always be {@link Object} }
      *
-     * @param methodType  {@link MethodType} whose parameter types supply the
-     *                    the shape of the carrier's components
+     * @param methodType  {@link MethodType} whose parameter types supply the the shape of the
+     *                    carrier's components
      *
-     * @implNote Used internally by the Condy API.
+     * @implNote Used internally by Condy APIs.
      */
     public static List<MethodHandle> components(MethodType methodType) {
-        return of(methodType).components();
+        return CarrierFactory.of(methodType).components();
     }
 
     /**
-     * {@return a component accessor {@link MethodHandle} for component {@code i}
-     * of the carrier representing {@code methodType}. The receiver type of the
-     * accessor will be {@link Object} }
+     * {@return a component accessor {@link MethodHandle} for component {@code i} of the
+     * carrier representing {@code methodType}. The receiver type of the accessor will always
+     * be {@link Object} }
      *
-     * @param methodType  {@link MethodType} whose parameter types supply the
-     *                    the shape of the carrier's components
-     * @param i  component index
+     * @param methodType  {@link MethodType} whose parameter types supply the the shape of the
+     *                    carrier's components
+     * @param i           component index
      *
-     * @implNote Used internally by the Condy API.
+     * @implNote Used internally by Condy APIs.
      *
      * @throws IllegalArgumentException if {@code i} is out of bounds
      */
     public static MethodHandle component(MethodType methodType, int i) {
-        return of(methodType).component(i);
+        return CarrierFactory.of(methodType).component(i);
     }
 }
