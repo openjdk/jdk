@@ -127,7 +127,7 @@ public class PopupFactory {
      * <code>factory</code> is null.
      *
      * @param factory Shared PopupFactory
-     * @exception IllegalArgumentException if <code>factory</code> is null
+     * @throws IllegalArgumentException if <code>factory</code> is null
      * @see #getPopup
      */
     public static void setSharedInstance(PopupFactory factory) {
@@ -186,7 +186,7 @@ public class PopupFactory {
      * @param contents Contents of the Popup
      * @param x        Initial x screen coordinate
      * @param y        Initial y screen coordinate
-     * @exception IllegalArgumentException if contents is null
+     * @throws IllegalArgumentException if contents is null
      * @return Popup containing Contents
      */
     public Popup getPopup(Component owner, Component contents,

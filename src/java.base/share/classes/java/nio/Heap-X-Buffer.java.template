@@ -40,8 +40,16 @@ import jdk.internal.access.foreign.MemorySegmentProxy;
  * instance of this class rather than of the superclass.
 #end[rw]
  */
+#if[rw]
+sealed
+#else[rw]
+final
+#end[rw]
 class Heap$Type$Buffer$RW$
     extends {#if[ro]?Heap}$Type$Buffer
+#if[rw]
+    permits Heap$Type$BufferR
+#end[rw]
 {
 #if[rw]
     // Cached array base offset

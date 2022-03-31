@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,8 @@ import static java.lang.String.checkOffset;
  * @author      Ulf Zibis
  * @since       1.5
  */
-abstract class AbstractStringBuilder implements Appendable, CharSequence {
+abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
+    permits StringBuilder, StringBuffer {
     /**
      * The value is used for character storage.
      */

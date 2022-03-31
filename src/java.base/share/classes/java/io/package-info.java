@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,13 @@
  * Provides for system input and output through data streams,
  * serialization and the file system.
  *
- * Unless otherwise noted, passing a null argument to a constructor or
+ * Unless otherwise noted, passing a {@code null} argument to a constructor or
  * method in any class or interface in this package will cause a
  * {@code NullPointerException} to be thrown.
+ *
+ * A <i>pathname string</i> passed as a {@code String} argument to a
+ * constructor or method in any class or interface in this package will be
+ * interpreted as described in the class specification of {@link File}.
  *
  * <h2>Object Serialization</h2>
  * <p><strong>Warning: Deserialization of untrusted data is inherently dangerous

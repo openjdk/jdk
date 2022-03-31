@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,7 @@ static void handle_dcmd_result(outputStream* output,
   const bool startup = DCmd_Source_Internal == source;
   if (HAS_PENDING_EXCEPTION) {
     handle_pending_exception(output, startup, PENDING_EXCEPTION);
-    // Don't clear excption on startup, JVM should fail initialization.
+    // Don't clear exception on startup, JVM should fail initialization.
     if (!startup) {
       CLEAR_PENDING_EXCEPTION;
     }
