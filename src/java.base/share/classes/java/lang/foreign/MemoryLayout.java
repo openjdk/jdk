@@ -673,6 +673,8 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      * @param elementLayout the sequence element layout.
      * @return the new sequence layout with the given element layout and size.
      * @throws IllegalArgumentException if {@code elementCount < 0}.
+     * @throws IllegalArgumentException if the computation {@code elementCount * elementLayout.bitSize()} overflows.
+     * is greater than {@link Long#MAX_VALUE}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         AbstractLayout.checkSize(elementCount, true);
@@ -685,6 +687,8 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      *
      * @param elements The member layouts of the struct layout.
      * @return a struct layout with the given member layouts.
+     * @throws IllegalArgumentException if the sum of the {@linkplain #bitSize() bit sizes} of the member layouts
+     * overflows.
      */
     static GroupLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);

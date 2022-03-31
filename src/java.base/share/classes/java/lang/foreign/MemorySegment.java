@@ -676,8 +676,9 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      *               the final address of this read operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @return a Java string constructed from the bytes read from the given starting address up to (but not including)
      * the first {@code '\0'} terminator character (assuming one is found).
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
-     * @throws IllegalStateException if the size of the native string is greater than the size of this segment.
+     * @throws IllegalArgumentException if the size of the UTF-8 string is greater than the largest string supported by the platform.
+     * @throws IndexOutOfBoundsException if {@code S + offset > byteSize()}, where {@code S} is the size of the UTF-8
+     * string (including the terminator character).
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      */
@@ -695,8 +696,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @param str the Java string to be written into this segment.
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
-     * @throws IllegalStateException if the size of the native string is greater than the size of this segment.
+     * @throws IndexOutOfBoundsException if {@code str.getBytes().length() + offset >= byteSize()}.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
      */

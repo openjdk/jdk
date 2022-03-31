@@ -103,7 +103,7 @@ public sealed interface MemoryAddress extends Addressable permits MemoryAddressI
      * @param offset offset in bytes (relative to this address). The final address of this read operation can be expressed as {@code toRowLongValue() + offset}.
      * @return a Java string constructed from the bytes read from the given starting address ({@code toRowLongValue() + offset})
      * up to (but not including) the first {@code '\0'} terminator character (assuming one is found).
-     * @throws IllegalArgumentException if the size of the native string is greater than the largest string supported by the platform.
+     * @throws IllegalArgumentException if the size of the UTF-8 string is greater than the largest string supported by the platform.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
