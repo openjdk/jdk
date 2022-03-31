@@ -321,9 +321,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Content typeContent = new ContentBuilder();
             if (te != null
                     && !utils.isConstructor(element)
-                    && !utils.isOfClassKind(element)
-                    && !utils.isInterface(element)
-                    && !utils.isAnnotationInterface(element)) {
+                    && !utils.isTypeElement(element)) {
                 HtmlTree name = new HtmlTree(TagName.SPAN);
                 name.setStyle(HtmlStyle.typeNameLabel);
                 name.add(name(te) + ".");
