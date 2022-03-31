@@ -46,7 +46,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementKindVisitor14;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -106,7 +105,7 @@ public class Signatures {
         private final HtmlConfiguration configuration;
         private Content modifiers;
 
-        private static final Set<String> previewModifiers = Collections.emptySet();
+        private static final Set<String> previewModifiers = Set.of();
 
          TypeSignature(TypeElement typeElement, HtmlDocletWriter writer) {
              this.typeElement = typeElement;
