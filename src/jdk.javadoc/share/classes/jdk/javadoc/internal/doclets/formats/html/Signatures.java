@@ -507,7 +507,7 @@ public class Signatures {
             // interface methods and fields.
             if ((utils.isField(element) || utils.isMethod(element))) {
                 Element te = element.getEnclosingElement();
-                if (utils.isPlainInterface(te) || utils.isAnnotationInterface(te)) {
+                if (utils.isInterface(te)) {
                     // Remove the implicit abstract and public modifiers
                     if (utils.isMethod(element)) {
                         set.remove(ABSTRACT);

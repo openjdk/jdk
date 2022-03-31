@@ -291,6 +291,11 @@ public class Utils {
         return e.getKind().isClass();
     }
 
+    // Note that e.getKind().isInterface() is not the same as e.getKind() == INTERFACE
+    public boolean isInterface(Element e) {
+        return e.getKind().isInterface();
+    }
+
     public boolean isConstructor(Element e) {
          return e.getKind() == CONSTRUCTOR;
     }
@@ -1092,8 +1097,7 @@ public class Utils {
     }
 
     private boolean checkType(TypeElement te) {
-        return isPlainInterface(te) || typeUtils.isSameType(te.asType(), getObjectType())
-                || isAnnotationInterface(te);
+        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType());
     }
 
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {
