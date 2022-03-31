@@ -674,7 +674,6 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      * @return the new sequence layout with the given element layout and size.
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      * @throws IllegalArgumentException if the computation {@code elementCount * elementLayout.bitSize()} overflows.
-     * is greater than {@link Long#MAX_VALUE}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         AbstractLayout.checkSize(elementCount, true);
