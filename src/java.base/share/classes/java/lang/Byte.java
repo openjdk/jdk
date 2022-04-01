@@ -634,7 +634,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @since 19
      */
     public static byte expand(byte i, int mask) {
-        int[] array = new int[4];
+        int[] array = new int[3];
         // Mask off upper bits
         mask = mask & 0xFF;
         // Save original mask
