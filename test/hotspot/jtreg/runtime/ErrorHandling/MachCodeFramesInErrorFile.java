@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import jdk.test.lib.Asserts;
 import jdk.internal.misc.Unsafe;
 
 public class MachCodeFramesInErrorFile {
+    private static final String OS_NAME = System.getProperty("os.name");
 
     private static class Crasher {
         // Make Crasher.unsafe a compile-time constant so that
@@ -71,7 +72,8 @@ public class MachCodeFramesInErrorFile {
                 crashInJava1(10);
             } else {
                 assert args[0].equals("crashInVM");
-                crashInNative1(10);
+                // AIX does not prohibit low address reads
+                crashInNative1( OS_NAME.startsWith("AIX") ? -1 : 10 );
             }
         }
 
@@ -164,11 +166,16 @@ public class MachCodeFramesInErrorFile {
 
     /**
      * Extracts the lines in {@code hsErr} below the line starting with
-     * "Native frames:" or "Java frames:" up to the next blank line
+     * "Native frames:" ("current frame:" on AIX) or "Java frames:" up to the next blank line
      * and adds them to {@code frames}.
      */
     private static void extractFrames(String hsErr, Set<String> frames, boolean nativeStack) {
-        String marker = (nativeStack ? "Native" : "Java") + " frames: ";
+        String marker;
+        if (OS_NAME.startsWith("AIX")) {
+            marker = nativeStack ? "------ current frame:" : "Java frames: ";
+        } else {
+            marker = (nativeStack ? "Native" : "Java") + " frames: ";
+        }
         boolean seenMarker = false;
         for (String line : hsErr.split(System.lineSeparator())) {
             if (line.startsWith(marker)) {
@@ -180,6 +187,6 @@ public class MachCodeFramesInErrorFile {
                 frames.add(line);
             }
         }
-        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file:\n" + hsErr);
+        throw new RuntimeException("\"" + marker + "\" line missing in hs_err_pid file:\n");
     }
 }
