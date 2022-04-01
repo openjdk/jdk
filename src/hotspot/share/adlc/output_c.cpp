@@ -1334,7 +1334,6 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
         }
         fprintf(fp, "        root->_opnds[%d] = inst%d->_opnds[%d]->clone();\n",
                 opnds_index, inst_num, inst_op_num );
-        fprintf(fp, "        inst0->replace_by(root);\n");
       }
       ++opnds_index;
     }
@@ -1343,6 +1342,8 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
     assert( false, "ShouldNotReachHere();");
   }
 
+  // Set output of the new node
+  fprintf(fp, "        inst0->replace_by(root);\n");
   // Mark the node as removed because peephole does not remove nodes from the graph
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        inst%d->set_removed();\n", i);
