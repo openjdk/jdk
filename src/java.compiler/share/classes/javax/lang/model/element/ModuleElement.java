@@ -34,14 +34,22 @@ import javax.lang.model.type.TypeMirror;
  *
  * @apiNote
  * The represented module may have an explicit {@linkplain
- * javax.lang.model.util.Elements#getFileObjectOf(Element) backing
- * construct} (either source code or executable output) or may be
- * created from implicit information. The explicit and standalone source code
- * construct for a module is typically a {@code module-info.java} file
- * (JLS {@jls 7.7}). Implicit information is used to model {@linkplain
- * #isUnnamed unnamed modules} and may be used for {@linkplain
+ * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
+ * representation} (either source code or executable output) or may be
+ * created from implicit information. The explicit and standalone
+ * source code construct for a module is typically a {@code
+ * module-info.java} file (JLS {@jls 7.7}). {@linkplain
  * javax.lang.model.util.Elements#isAutomaticModule(ModuleElement)
- * automatic modules} (JLS {@jls 7.7.1}).
+ * Automatic modules} (JLS {@jls 7.7.1}) are named modules that do
+ * <em>not</em> have a {@code module-info} file. Implicit information
+ * is used to model {@linkplain #isUnnamed unnamed modules}.
+ * <p>In the context of annotation processing, a module element can
+ * be:
+ * <ul>
+ * <li>created from the initial inputs to a run of the tool
+ * <li>{@linkplain javax.lang.model.util.Elements#getModuleElement(CharSequence)
+ * queried for} in the configured environment
+ * </ul>
  *
  * @see javax.lang.model.util.Elements#getModuleOf
  * @since 9
