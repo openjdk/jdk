@@ -253,6 +253,38 @@ public class CompressExpand {
     }
 
     @Test
+    public void testCompressExpandInt() {
+        RandomGenerator rg = RandomGenerator.getDefault();
+
+        int[] values = rg.ints(SIZE).toArray();
+        int[] masks = rg.ints(SIZE).toArray();
+
+        for (int i : values) {
+            for (int m : masks) {
+                {
+                    int actual = Integer.compress(Integer.expand(i, m), m);
+                    int expected = i;
+                    // Remove bits higher than MSB of mask
+                    int mbc = Integer.bitCount(m);
+                    if (mbc != 32) {
+                        expected &= (1 << mbc) - 1;
+                    }
+                    Assert.assertEquals(actual, expected);
+                }
+
+                {
+                    int a = Integer.expand(Integer.compress(i, m), m);
+                    // Remove non-mask bits
+                    Assert.assertEquals(a, i & m);
+
+                    int b = Integer.expand(Integer.compress(i, ~m), ~m);
+                    Assert.assertEquals(a | b, i);
+                }
+            }
+        }
+    }
+
+    @Test
     public void testCompressLong() {
         RandomGenerator rg = RandomGenerator.getDefault();
 
