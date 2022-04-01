@@ -35,9 +35,10 @@ public abstract class AbstractCompressExpandTest {
         int rpos = 0;
         while (mask != 0) {
             if ((mask & 1) != 0) {
-                result |= (i & 1) << rpos++;
+                result |= (i & 1) << rpos;
+                rpos++; // conditional increment
             }
-            i >>>= 1;
+            i >>>= 1; // unconditional shift-out
             mask >>>= 1;
         }
         return result;
@@ -49,9 +50,9 @@ public abstract class AbstractCompressExpandTest {
         while (mask != 0) {
             if ((mask & 1) != 0) {
                 result |= (i & 1) << rpos;
-                i >>>= 1;
+                i >>>= 1; // conditional shift-out
             }
-            rpos++;
+            rpos++; // unconditional increment
             mask >>>= 1;
         }
         return result;
@@ -120,45 +121,44 @@ public abstract class AbstractCompressExpandTest {
     Object[][] maskIntProvider() {
         RandomGenerator rg = RandomGenerator.getDefault();
 
-        return new Object[][]{
-                {supplierWithToString(() -> rg.ints(SIZE).toArray(), "random masks")},
-                {supplierWithToString(this::contigiousMasksInt, "contiguous masks")}
-        };
+        return new Object[][]{{supplierWithToString(() -> rg.ints(SIZE).toArray(), "random masks")}, {supplierWithToString(this::contiguousMasksInt, "contiguous masks")}};
     }
 
     @DataProvider
     Object[][] maskLongProvider() {
         RandomGenerator rg = RandomGenerator.getDefault();
 
-        return new Object[][]{
-                {supplierWithToString(() -> rg.longs(SIZE).toArray(), "random masks")},
-                {supplierWithToString(this::contigiousMasksLong, "contiguous masks")}
-        };
+        return new Object[][]{{supplierWithToString(() -> rg.longs(SIZE).toArray(), "random masks")}, {supplierWithToString(this::contiguousMasksLong, "contiguous masks")}};
     }
 
-    int[] contigiousMasksInt() {
-        RandomGenerator rg = RandomGenerator.getDefault();
+    int[] contiguousMasksInt() {
+        int size = 32 * (32 + 1) / 2; // 528
+        int[] masks = new int[size];
 
-        int[] masks = new int[SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            int len = rg.nextInt(31);
-            int pos = rg.nextInt(32 - len);
-            masks[i] = ((1 << len) - 1) << pos;
+        int i = 0;
+        for (int len = 0; len < 32; len++) {
+            for (int pos = 0; pos < 32 - len; pos++) {
+                masks[i++] = ((1 << len) - 1) << pos;
+            }
         }
 
+        assert i == masks.length;
         return masks;
     }
 
-    long[] contigiousMasksLong() {
-        RandomGenerator rg = RandomGenerator.getDefault();
+    long[] contiguousMasksLong() {
+        int size = 64 * (64 + 1) / 2; // 2080
+        long[] masks = new long[size];
 
-        long[] masks = new long[SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            int len = rg.nextInt(31);
-            int pos = rg.nextInt(32 - len);
-            masks[i] = ((1L << len) - 1) << pos;
+
+        int i = 0;
+        for (int len = 0; len < 64; len++) {
+            for (int pos = 0; pos < 64 - len; pos++) {
+                masks[i++] = ((1L << len) - 1) << pos;
+            }
         }
 
+        assert i == masks.length;
         return masks;
     }
 
@@ -238,13 +238,13 @@ public abstract class AbstractCompressExpandTest {
         int[] values = rg.ints(SIZE).toArray();
 
         for (int i : values) {
-            for (int j = 0; j < 1024; j++) {
-                int len = rg.nextInt(31);
-                int pos = rg.nextInt(32 - len);
-                int mask = ((1 << len) - 1) << pos;
+            for (int len = 0; len < 32; len++) {
+                for (int pos = 0; pos < 32 - len; pos++) {
+                    int mask = ((1 << len) - 1) << pos;
 
-                Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
-                Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+                    Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
+                    Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+                }
             }
         }
     }
@@ -325,13 +325,13 @@ public abstract class AbstractCompressExpandTest {
         long[] values = rg.longs(SIZE).toArray();
 
         for (long i : values) {
-            for (int j = 0; j < 1024; j++) {
-                int len = rg.nextInt(63);
-                int pos = rg.nextInt(64 - len);
-                long mask = ((1L << len) - 1) << pos;
+            for (int len = 0; len < 64; len++) {
+                for (int pos = 0; pos < 64 - len; pos++) {
+                    long mask = ((1L << len) - 1) << pos;
 
-                Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
-                Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+                    Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
+                    Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+                }
             }
         }
     }
