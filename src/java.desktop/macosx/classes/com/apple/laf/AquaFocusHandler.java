@@ -127,12 +127,14 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         if (!(bg instanceof UIResource) || !(fg instanceof UIResource)) return;
 
         if (Boolean.FALSE.equals(value)) {
-            setSelectionColors(c, "Table.selectionInactiveForeground", "Table.selectionInactiveBackground");
+            setSelectionColors(c, "Table.selectionInactiveForeground",
+                    "Table.selectionInactiveBackground");
             return;
         }
 
         if (Boolean.TRUE.equals(value)) {
-            setSelectionColors(c, "Table.selectionForeground", "Table.selectionBackground");
+            setSelectionColors(c, "Table.selectionForeground",
+                    "Table.selectionBackground");
             return;
         }
     }
@@ -160,12 +162,14 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         if (!(bg instanceof UIResource) || !(fg instanceof UIResource)) return;
 
         if (Boolean.FALSE.equals(value)) {
-            setSelectionColors(c, "List.selectionInactiveForeground", "List.selectionInactiveBackground");
+            setSelectionColors(c, "List.selectionInactiveForeground",
+                    "List.selectionInactiveBackground");
             return;
         }
 
         if (Boolean.TRUE.equals(value)) {
-            setSelectionColors(c, "List.selectionForeground", "List.selectionBackground");
+            setSelectionColors(c, "List.selectionForeground",
+                    "List.selectionBackground");
             return;
         }
     }

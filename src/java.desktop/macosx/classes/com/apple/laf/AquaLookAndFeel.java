@@ -1125,14 +1125,13 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns a lighter Focus Ring color by changing saturation
+     * Returns a new Focus Ring color by changing saturation
      * and setting the brightness to 100% for incoming focusRingColor.
      *
-     * If the incoming focusRingColor is equal to white/black/grey, the
-     * returned focusRingColor is Light Gray. For all other colors,
-     * a lighter color of focusRingColor is returned. A new focusRingColor
-     * (in the latter case), is obtained by adjusting the saturation
-     * levels and setting the brightness to 100% of the
+     * If the incoming focusRingColor is equal to white/black/grayish,
+     * the returned focusRingColor is Light Gray. For all other colors,
+     * new focusRingColor (in the latter case), is obtained by adjusting
+     * the saturation levels and setting the brightness to 100% of the
      * incoming focusRingColor.
      *
      * @param focusRingColor - the {@code Color} object
@@ -1144,15 +1143,15 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         float satLowerValue = 0.30f;
         float satUpperValue = 1.0f;
 
-        // used to compare with saturation value of selectedBackgroundColor and
+        // saturation threshold for grayish colors
+        float satGrayScale = 0.10f;
+
+        // used to compare with saturation value of original focus ring and
         // set it to either lower or upper saturation value
         float saturationThreshold = 0.5f;
 
         // brightness always set to 100%
         float brightnessValue = 1.0f;
-
-        // focus ring color returned for Graphite accent color
-        Color graphiteFocusRing = new Color(135,135,140);
 
         float[] hsbValues = new float[3];
 
@@ -1160,22 +1159,22 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         int greenValue = focusRingColor.getGreen();
         int blueValue = focusRingColor.getBlue();
 
-        // if focusRingColor is white/black/gray
-        if ((redValue == greenValue && redValue == blueValue)
-                || focusRingColor.equals(graphiteFocusRing)) {
+        Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
+
+        // if focusRingColor is White/Black/Grayish
+        if ((hsbValues[0] == 0 && hsbValues[1] == 0)
+                || hsbValues[1] <= satGrayScale) {
             return Color.LIGHT_GRAY;
         }
 
-        // if focusRingColor color NOT white/black/gray
-        Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
-
-        //saturation adjustment - saturation set to either lower or
+        // if focusRingColor color NOT White/Black/Grayish
+        // saturation adjustment - saturation set to either lower or
         // upper saturation value based on current saturation level
         hsbValues[1] = hsbValues[1] >= saturationThreshold ?
                     satLowerValue : satUpperValue;
 
-        //brightness adjustment - brightness set to 100%, always return the
-        //brightest color for the new color
+        // brightness adjustment - brightness set to 100%, always return the
+        // brightest color for the new color
         hsbValues[2] = brightnessValue;
 
         //create and return color corresponding to new hsbValues

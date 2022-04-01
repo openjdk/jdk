@@ -26,11 +26,15 @@
  * @test
  * @bug 7124282
  * @requires (os.family == "mac")
- * @summary Tests whether the JTable's cell focus ring is visible against the table's selection background color
+ * @summary Checks whether the JTable's focus ring color's RGB color
+ * diff with selectionBackground is greater in comparison to original
+ * focus ring (represented by 'Focus.color' property in Aqua LAF
+ * UIDefaults)
  * @run main JTableFocusRingTest
  */
 
 import java.awt.Color;
+import java.util.Arrays;
 import javax.swing.plaf.BorderUIResource.LineBorderUIResource;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -49,62 +53,76 @@ public class JTableFocusRingTest {
         SwingUtilities.invokeAndWait(() -> {
 
             float[] bckRGB = new float[3];
-            float[] originalFocusRingRGB = new float[3];
-            float[] brighterFocusRingRGB = new float[3];
+            float[] oldCellRingRGB = new float[3];
+            float[] newCellRingRGB = new float[3];
 
-            Color selectionBackground = null;
-            Color originalFocusRingColor = null;
-            Color brighterFocusRingColor = null;
+            Color selectionBck = null;
+            Color oldRingColor = null;
+            Color newRingColor = null;
 
-            // focus ring color returned for Graphite accent color
-            Color graphiteFocusRing = new Color(135,135,140);
+            // saturation threshold for grayish colors
+            float satGrayScale = 0.10f;
 
             if (UIManager.getDefaults().get("Table.selectionBackground") != null
-                    && UIManager.getDefaults().get("Table.selectionBackground") instanceof Color) {
-                selectionBackground = (Color) UIManager.getDefaults()
+                    && UIManager.getDefaults().get("Table.selectionBackground")
+                    instanceof Color) {
+                selectionBck = (Color) UIManager.getDefaults()
                         .get("Table.selectionBackground");
             }
             if (UIManager.getDefaults().get("Focus.color") != null
-                    && UIManager.getDefaults().get("Focus.color") instanceof Color) {
-               originalFocusRingColor = (Color) UIManager.getDefaults().get("Focus.color");
+                    && UIManager.getDefaults().get("Focus.color")
+                    instanceof Color) {
+               oldRingColor = (Color) UIManager.getDefaults().get("Focus.color");
             }
 
-            if (UIManager.getDefaults().get("Table.focusCellHighlightBorder") != null
-                    && UIManager.getDefaults().get("Table.focusCellHighlightBorder")
-                    instanceof LineBorderUIResource) {
+            if (UIManager.getDefaults()
+                    .get("Table.focusCellHighlightBorder") != null &&
+                    UIManager.getDefaults().get("Table.focusCellHighlightBorder")
+                            instanceof LineBorderUIResource) {
                 LineBorderUIResource cellFocusBorderObj = (LineBorderUIResource)
                         UIManager.getDefaults().get("Table.focusCellHighlightBorder");
-                brighterFocusRingColor = cellFocusBorderObj.getLineColor();
+                newRingColor = cellFocusBorderObj.getLineColor();
             }
 
-            if (selectionBackground == null || originalFocusRingColor == null ||
-                    brighterFocusRingColor == null) {
+            if (selectionBck == null || oldRingColor == null ||
+                    newRingColor == null) {
                 throw new RuntimeException("One or more color values are null");
             }
             System.out.println(UIManager.getLookAndFeel().toString());
-            System.out.println("Selection Background Color: "+ selectionBackground.toString());
-            System.out.println("Original FocusRing Color: "+ originalFocusRingColor.toString());
-            System.out.println("Brighter FocusRing Color: "+ brighterFocusRingColor.toString());
+            System.out.println("Selection Background Color: "
+                    + selectionBck.toString());
 
-            int redValue = originalFocusRingColor.getRed();
-            int greenValue = originalFocusRingColor.getGreen();
-            int blueValue = originalFocusRingColor.getBlue();
+            System.out.println("Original FocusRing Color: "
+                    + oldRingColor.toString());
 
-            // Original Focus ring color: WHITE/BLACK/GRAY
-            if ((redValue == greenValue && redValue == blueValue ||
-                    originalFocusRingColor.equals(graphiteFocusRing)) &&
-                    brighterFocusRingColor.equals(Color.LIGHT_GRAY)) {
-                System.out.println("Condition-Background Color: WHITE/BLACK/GRAY, " +
-                        "Focus Ring Color: LIGHT GRAY");
+            System.out.println("Brighter FocusRing Color: "
+                    + newRingColor.toString());
+
+            int redValue = oldRingColor.getRed();
+            int greenValue = oldRingColor.getGreen();
+            int blueValue = oldRingColor.getBlue();
+
+            float[] hsbValues = new float[3];
+            Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
+
+            System.out.println("Original Focus Ring Hue, Saturation and" +
+                    " Brightness: "+ Arrays.toString(hsbValues));
+
+            // Edge case - Original Focus ring color: WHITE/BLACK/GRAY
+            if (((hsbValues[0] == 0 && hsbValues[1] == 0)
+                    || hsbValues[1] <= satGrayScale) &&
+                    newRingColor.equals(Color.LIGHT_GRAY)) {
+                System.out.println("Original Focus ring color:" +
+                        "WHITE/BLACK/GRAYISH, Focus Ring Color: LIGHT GRAY");
                 System.out.println("Test case passed");
                 return;
             }
-            selectionBackground.getRGBColorComponents(bckRGB);
-            originalFocusRingColor.getRGBColorComponents(originalFocusRingRGB);
-            brighterFocusRingColor.getRGBColorComponents(brighterFocusRingRGB);
+            selectionBck.getRGBColorComponents(bckRGB);
+            oldRingColor.getRGBColorComponents(oldCellRingRGB);
+            newRingColor.getRGBColorComponents(newCellRingRGB);
 
-            float originalRGBDiff = calculateRGBDiff(originalFocusRingRGB, bckRGB);
-            float brighterRGBDiff = calculateRGBDiff(brighterFocusRingRGB, bckRGB);
+            float originalRGBDiff = calculateRGBDiff(oldCellRingRGB, bckRGB);
+            float brighterRGBDiff = calculateRGBDiff(newCellRingRGB, bckRGB);
 
             System.out.println("Original RGB Diff: "+ originalRGBDiff);
             System.out.println("Brighter RGB Diff: "+ brighterRGBDiff);
