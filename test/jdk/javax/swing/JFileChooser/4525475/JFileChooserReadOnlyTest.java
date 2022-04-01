@@ -113,8 +113,8 @@ public class JFileChooserReadOnlyTest {
             if (comp instanceof JButton) {
                 JButton b = (JButton) comp;
                 Action action = b.getAction();
-                if (action != null &&
-                    "New Folder".equals(action.getValue(Action.NAME))) {
+                if (action != null
+                    && "New Folder".equals(action.getValue(Action.NAME))) {
                     newFolderFound = true;
                     System.out.println(
                             "New Folder Button Found when readOnly = " +
