@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -106,15 +105,15 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             ClassWriter classWriter, Context context) {
         MemberSummaryBuilder builder = new MemberSummaryBuilder(context, classWriter.getTypeElement()) {
             @Override
-            public void build(Content summariesList) {
-                buildPropertiesSummary(summariesList);
-                buildNestedClassesSummary(summariesList);
-                buildEnumConstantsSummary(summariesList);
-                buildAnnotationTypeRequiredMemberSummary(summariesList);
-                buildAnnotationTypeOptionalMemberSummary(summariesList);
-                buildFieldsSummary(summariesList);
-                buildConstructorsSummary(summariesList);
-                buildMethodsSummary(summariesList);
+            public void build(Content target) {
+                buildPropertiesSummary(target);
+                buildNestedClassesSummary(target);
+                buildEnumConstantsSummary(target);
+                buildAnnotationTypeRequiredMemberSummary(target);
+                buildAnnotationTypeOptionalMemberSummary(target);
+                buildFieldsSummary(target);
+                buildConstructorsSummary(target);
+                buildMethodsSummary(target);
             }
 
             @Override
@@ -233,7 +232,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * Builds the summary for any methods.
      *
-     * @param summariesList the content tree to which the documentation will be added
+     * @param summariesList the content to which the documentation will be added
      */
     protected void buildMethodsSummary(Content summariesList) {
         MemberSummaryWriter writer = memberSummaryWriters.get(METHODS);
@@ -243,7 +242,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
     /**
      * Builds the summary for any constructors.
      *
-     * @param summariesList the content tree to which the documentation will be added
+     * @param summariesList the content to which the documentation will be added
      */
     protected void buildConstructorsSummary(Content summariesList) {
         MemberSummaryWriter writer = memberSummaryWriters.get(CONSTRUCTORS);
@@ -255,7 +254,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      *
      * @param writer the summary writer to write the output.
      * @param kind the kind of  members to summarize.
-     * @param summaryTreeList list of content trees to which the documentation will be added
+     * @param summaryTreeList the list of contents to which the documentation will be added
      */
     private void buildSummary(MemberSummaryWriter writer,
             VisibleMemberTable.Kind kind, LinkedList<Content> summaryTreeList) {
@@ -280,7 +279,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 }
                 writer.addMemberSummary(typeElement, member, firstSentenceTags);
             }
-            summaryTreeList.add(writer.getSummaryTableTree(typeElement));
+            summaryTreeList.add(writer.getSummaryTable(typeElement));
         }
     }
 
@@ -289,10 +288,10 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
      *
      * @param writer the writer for this member summary.
      * @param kind the kind of members to document.
-     * @param summaryTreeList list of content trees to which the documentation will be added
+     * @param targets the list of contents to which the documentation will be added
      */
     private void buildInheritedSummary(MemberSummaryWriter writer,
-            VisibleMemberTable.Kind kind, LinkedList<Content> summaryTreeList) {
+            VisibleMemberTable.Kind kind, LinkedList<Content> targets) {
         VisibleMemberTable visibleMemberTable = getVisibleMemberTable();
         SortedSet<? extends Element> inheritedMembersFromMap = asSortedSet(visibleMemberTable.getAllVisibleMembers(kind));
 
@@ -314,22 +313,22 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (!members.isEmpty()) {
                 SortedSet<Element> inheritedMembers = new TreeSet<>(comparator);
                 inheritedMembers.addAll(members);
-                Content inheritedTree = writer.getInheritedSummaryHeader(inheritedClass);
-                Content linksTree = writer.getInheritedSummaryLinksTree();
-                addSummaryFootNote(inheritedClass, inheritedMembers, linksTree, writer);
-                inheritedTree.add(linksTree);
-                summaryTreeList.add(inheritedTree);
+                Content inheritedHeader = writer.getInheritedSummaryHeader(inheritedClass);
+                Content links = writer.getInheritedSummaryLinks();
+                addSummaryFootNote(inheritedClass, inheritedMembers, links, writer);
+                inheritedHeader.add(links);
+                targets.add(inheritedHeader);
             }
         }
     }
 
     private void addSummaryFootNote(TypeElement inheritedClass, SortedSet<Element> inheritedMembers,
-                                    Content linksTree, MemberSummaryWriter writer) {
+                                    Content links, MemberSummaryWriter writer) {
         for (Element member : inheritedMembers) {
             TypeElement t = utils.isUndocumentedEnclosure(inheritedClass)
                     ? typeElement : inheritedClass;
             writer.addInheritedMemberSummary(t, member, inheritedMembers.first() == member,
-                    inheritedMembers.last() == member, linksTree);
+                    inheritedMembers.last() == member, links);
         }
     }
 
@@ -351,9 +350,9 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         if (showInheritedSummary)
             buildInheritedSummary(writer, kind, summaryTreeList);
         if (!summaryTreeList.isEmpty()) {
-            Content memberTree = writer.getMemberSummaryHeader(typeElement, summariesList);
-            summaryTreeList.forEach(memberTree::add);
-            writer.addSummary(summariesList, memberTree);
+            Content member = writer.getMemberSummaryHeader(typeElement, summariesList);
+            summaryTreeList.forEach(member::add);
+            writer.addSummary(summariesList, member);
         }
     }
 
