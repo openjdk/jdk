@@ -55,3 +55,6 @@ public:
                                   Register recv, Register method_temp,
                                   Register temp2,
                                   bool for_compiler_entry);
+
+  static void jump_to_native_invoker(MacroAssembler* _masm,
+                                     Register nep_reg, Register temp);

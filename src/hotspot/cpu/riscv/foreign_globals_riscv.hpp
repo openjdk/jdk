@@ -27,6 +27,5 @@
 #define CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
 
 class ABIDescriptor {};
-class BufferLayout {};
 
 #endif // CPU_RISCV_FOREIGN_GLOBALS_RISCV_HPP
