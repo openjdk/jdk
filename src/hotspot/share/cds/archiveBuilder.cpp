@@ -1074,7 +1074,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     LogStreamHandle(Trace, cds, map) lsh;
     if (lsh.is_enabled()) {
-      size_t unitsize = sizeof(address);
+      int unitsize = sizeof(address);
       if (is_heap && UseCompressedOops) {
         // This makes the compressed oop pointers easier to read, but
         // longs and doubles will be split into two words.
