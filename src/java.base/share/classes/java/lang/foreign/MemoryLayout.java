@@ -691,7 +691,7 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      */
     static GroupLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return MemoryLayout.wrapOverflow(() ->
+        return wrapOverflow(() ->
                 new GroupLayout(GroupLayout.Kind.STRUCT,
                         Stream.of(elements)
                                 .map(Objects::requireNonNull)
