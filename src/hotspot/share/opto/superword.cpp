@@ -2773,7 +2773,11 @@ Node* SuperWord::create_post_loop_vmask() {
     default: return NULL;
   }
 
-  // Vector size should be the MaxVectorSize we can use on this machine
+  // Currently we can't remove this MaxVectorSize constraint. Without it,
+  // it's not guaranteed that the RCE'd post loop runs at most "vlen - 1"
+  // iterations, because the vector drain loop may not be cloned from the
+  // vectorized main loop. We should re-engineer PostLoopMultiversioning
+  // to fix this problem.
   int vlen = cl->slp_max_unroll();
   if (unique_size * vlen != MaxVectorSize) {
     return NULL;
