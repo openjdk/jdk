@@ -319,7 +319,9 @@ oop HeapShared::archive_object(oop obj) {
     ArchivedObjectCache* cache = archived_object_cache();
     CachedOopInfo info = make_cached_oop_info(archived_oop);
     cache->put(obj, info);
-    _original_object_table->put(archived_oop, obj);
+    if (_original_object_table != NULL) {
+      _original_object_table->put(archived_oop, obj);
+    }
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT " : %s",
@@ -469,7 +471,7 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
     NoSafepointVerifier nsv;
 
     // Cache for recording where the archived objects are copied to
-    create_archived_object_cache();
+    create_archived_object_cache(log_is_enabled(Info, cds, map));
 
     log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                    UseCompressedOops ? p2i(CompressedOops::begin()) :

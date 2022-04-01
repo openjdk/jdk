@@ -247,14 +247,14 @@ private:
   }
 
   typedef ResourceHashtable<oop, CachedOopInfo,
-      15889, // prime number
+      36137, // prime number
       ResourceObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   typedef ResourceHashtable<oop, oop,
-      15889, // prime number
+      36137, // prime number
       ResourceObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> OriginalObjectTable;
@@ -382,22 +382,29 @@ private:
   static void fill_failed_loaded_region();
  public:
   static void reset_archived_object_states(TRAPS);
-  static void create_archived_object_cache() {
+  static void create_archived_object_cache(bool create_orig_table) {
     _archived_object_cache =
       new (ResourceObj::C_HEAP, mtClass)ArchivedObjectCache();
-    _original_object_table =
-      new (ResourceObj::C_HEAP, mtClass)OriginalObjectTable();
+    if (create_orig_table) {
+      _original_object_table =
+        new (ResourceObj::C_HEAP, mtClass)OriginalObjectTable();
+    } else {
+      _original_object_table = NULL;
+    }
   }
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
     _archived_object_cache = NULL;
-    delete _original_object_table;
-    _original_object_table = NULL;
+    if (_original_object_table != NULL) {
+      delete _original_object_table;
+      _original_object_table = NULL;
+    }
   }
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
   }
   static oop get_original_object(oop archived_object) {
+    assert(_original_object_table != NULL, "sanity");
     oop* r = _original_object_table->get(archived_object);
     if (r == NULL) {
       return NULL;
