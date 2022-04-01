@@ -1407,6 +1407,12 @@ public class Resolve {
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
         }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            // This is an internal exception; the stack trace is irrelevant.
+            return this;
+        }
     }
 
 /* ***************************************************************************

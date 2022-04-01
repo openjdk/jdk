@@ -1310,6 +1310,12 @@ public class Infer {
             public NodeNotFoundException(InferenceGraph graph) {
                 this.graph = graph;
             }
+
+            @Override
+            public Throwable fillInStackTrace() {
+                // This is an internal exception; the stack trace is irrelevant.
+                return this;
+            }
         }
         /**
          * Pick the next node (leaf) to solve in the graph
