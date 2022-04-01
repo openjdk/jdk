@@ -815,12 +815,12 @@ public final class Locale implements Cloneable, Serializable {
      * codes</a> for more information.
      * </ul>
      *
-     * @param language A language code. See the {@code Locale} class description about
+     * @param language A language code. See the {@code Locale} class description of
      * <a href="#def_language">language</a> values.
-     * @param country A country code. See the {@code Locale} class description about
+     * @param country A country code. See the {@code Locale} class description of
      * <a href="#def_region">country</a> values.
      * @param variant Any arbitrary value used to indicate a variation of a {@code Locale}.
-     * See the {@code Locale} class description about <a href="#def_variant">variant</a> values.
+     * See the {@code Locale} class description of <a href="#def_variant">variant</a> values.
      * @throws    NullPointerException thrown if any argument is null.
      * @return A {@code Locale} object
      * @since 19
@@ -842,9 +842,9 @@ public final class Locale implements Cloneable, Serializable {
      * codes</a> for more information.
      * </ul>
      *
-     * @param language A language code. See the {@code Locale} class description about
+     * @param language A language code. See the {@code Locale} class description of
      * <a href="#def_language">language</a> values.
-     * @param country A country code. See the {@code Locale} class description about
+     * @param country A country code. See the {@code Locale} class description of
      * <a href="#def_region">country</a> values.
      * @throws    NullPointerException thrown if either argument is null.
      * @return A {@code Locale} object
@@ -866,7 +866,7 @@ public final class Locale implements Cloneable, Serializable {
      * codes</a> for more information.
      * </ul>
      *
-     * @param language A language code. See the {@code Locale} class description about
+     * @param language A language code. See the {@code Locale} class description of
      * <a href="#def_language">language</a> values.
      * @throws    NullPointerException thrown if argument is null.
      * @return A {@code Locale} object
