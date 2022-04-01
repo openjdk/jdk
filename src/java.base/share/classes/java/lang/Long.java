@@ -1907,11 +1907,21 @@ public final class Long extends Number
     }
 
     /**
-     * Compress bits of an {@code long} value given a bit mask.
+     * Returns the value obtained by compressing the bits of the
+     * specified {@code long} value, {@code i}, in accordance with
+     * the specified bit mask.
+     * <p>
+     * For each one-bit value of the mask, {@code mb} say, from least
+     * significant to most significant, the bit value of {@code i} at
+     * the same bit location as {@code mb} is assigned to the compressed
+     * value contiguously starting from the least significant bit location.
+     * All the upper remaining bits of the compressed value are set
+     * to zero.
      *
-     * @param i the value to be compressed
-     * @param mask the mask
-     * @return the value obtained by compressing the specified value
+     * @param i the value whose bits are to be compressed
+     * @param mask the bit mask
+     * @return the compressed value
+     * @see #expand
      * @since 19
      */
     // @IntrinsicCandidate
@@ -1945,11 +1955,20 @@ public final class Long extends Number
     }
 
     /**
-     * Expand bits of an {@code int} value given a bit mask.
+     * Returns the value obtained by expanding the bits of the
+     * specified {@code long} value, {@code i}, in accordance with
+     * the specified bit mask.
+     * <p>
+     * For each one-bit value of the mask, {@code mb} say, from least
+     * significant to most significant, the next contiguous bit value
+     * of {@code i} starting at the least significant bit is assigned
+     * to the expanded value at the same bit location as {@code mb}.
+     * All other remaining bits of the expanded value are set to zero.
      *
-     * @param i the value to be compressed
-     * @param mask the mask
-     * @return the value obtained by expanding the specified value
+     * @param i the value whose bits are to be expanded
+     * @param mask the bit mask
+     * @return the expanded value
+     * @see #compress
      * @since 19
      */
     // @IntrinsicCandidate
