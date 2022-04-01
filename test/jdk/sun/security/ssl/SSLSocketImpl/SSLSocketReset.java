@@ -46,9 +46,10 @@ public class SSLSocketReset {
         ServerThread serverThread = null;
         Exception clientException = null;
         try {
-            SSLContext sslContext = SSLContext.getDefault();;
+            SSLServerSocketFactory sslServerSocketFactory =
+                    SSLContext.getDefault().getServerSocketFactory();;
             SSLServerSocket sslServerSocket =
-                    (SSLServerSocket) sslContext.getServerSocketFactory().createServerSocket(0);
+                    (SSLServerSocket) sslServerSocketFactory.createServerSocket(0);
             serverThread = new ServerThread(sslServerSocket);
             serverThread.start();
             Socket socket = null;
