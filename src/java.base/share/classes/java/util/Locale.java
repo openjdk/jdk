@@ -75,8 +75,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * region, or culture.
  *
  * <p> The {@code Locale} class implements IETF BCP 47 which is composed of
- * <a href="http://tools.ietf.org/html/rfc4647">RFC 4647 "Matching of Language
- * Tags"</a> and <a href="http://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
+ * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 "Matching of Language
+ * Tags"</a> and <a href="https://tools.ietf.org/html/rfc5646">RFC 5646 "Tags
  * for Identifying Languages"</a> with support for the LDML (UTS#35, "Unicode
  * Locale Data Markup Language") BCP 47-compatible extensions for locale data
  * exchange.
@@ -280,7 +280,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * locale matching documentation.
  *
  * <p>In order to do matching a user's preferred locales to a set of language
- * tags, <a href="http://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+ * tags, <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
  * Language Tags</a> defines two mechanisms: filtering and lookup.
  * <em>Filtering</em> is used to get all matching locales, whereas
  * <em>lookup</em> is to choose the best matching locale.
@@ -2853,7 +2853,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This enum provides constants to select a filtering mode for locale
-     * matching. Refer to <a href="http://tools.ietf.org/html/rfc4647">RFC 4647
+     * matching. Refer to <a href="https://tools.ietf.org/html/rfc4647">RFC 4647
      * Matching of Language Tags</a> for details.
      *
      * <p>As an example, think of two Language Priority Lists each of which
@@ -2989,7 +2989,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * This class expresses a <em>Language Range</em> defined in
-     * <a href="http://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
+     * <a href="https://tools.ietf.org/html/rfc4647">RFC 4647 Matching of
      * Language Tags</a>. A language range is an identifier which is used to
      * select language tag(s) meeting specific requirements by using the
      * mechanisms described in <a href="Locale.html#LocaleMatching">Locale
@@ -2998,7 +2998,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * <p>There are two types of language ranges: basic and extended. In RFC
      * 4647, the syntax of language ranges is expressed in
-     * <a href="http://tools.ietf.org/html/rfc4234">ABNF</a> as follows:
+     * <a href="https://tools.ietf.org/html/rfc4234">ABNF</a> as follows:
      * <blockquote>
      * <pre>
      *     basic-language-range    = (1*8ALPHA *("-" 1*8alphanum)) / "*"
@@ -3164,7 +3164,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * In a weighted list, each language range is given a weight value.
          * The weight value is identical to the "quality value" in
-         * <a href="http://tools.ietf.org/html/rfc2616">RFC 2616</a>, and it
+         * <a href="https://tools.ietf.org/html/rfc2616">RFC 2616</a>, and it
          * expresses how much the user prefers  the language. A weight value is
          * specified after a corresponding language range followed by
          * {@code ";q="}, and the default weight value is {@code MAX_WEIGHT}
@@ -3202,7 +3202,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * @param ranges a list of comma-separated language ranges or a list of
          *     language ranges in the form of the "Accept-Language" header
-         *     defined in <a href="http://tools.ietf.org/html/rfc2616">RFC
+         *     defined in <a href="https://tools.ietf.org/html/rfc2616">RFC
          *     2616</a>
          * @return a Language Priority List consisting of language ranges
          *     included in the given {@code ranges} and their equivalent
@@ -3223,7 +3223,7 @@ public final class Locale implements Cloneable, Serializable {
          *
          * @param ranges a list of comma-separated language ranges or a list
          *     of language ranges in the form of the "Accept-Language" header
-         *     defined in <a href="http://tools.ietf.org/html/rfc2616">RFC
+         *     defined in <a href="https://tools.ietf.org/html/rfc2616">RFC
          *     2616</a>
          * @param map a map containing information to customize language ranges
          * @return a Language Priority List with customization. The list is
