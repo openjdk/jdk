@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Azul, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Azul, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,11 @@
  */
 
 import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.Socket;
 
 public class SSLSocketReset {
 
@@ -43,34 +46,43 @@ public class SSLSocketReset {
         ServerThread serverThread = null;
         Exception clientException = null;
         try {
-            SSLServerSocketFactory sslserversocketfactory =
-                    SSLContext.getDefault().getServerSocketFactory();
+            SSLContext sslContext = SSLContext.getDefault();;
             SSLServerSocket sslServerSocket =
-                    (SSLServerSocket) sslserversocketfactory.createServerSocket(0);
+                    (SSLServerSocket) sslContext.getServerSocketFactory().createServerSocket(0);
             serverThread = new ServerThread(sslServerSocket);
             serverThread.start();
+            Socket socket = null;
             try {
-                Socket socket = new Socket(sslServerSocket.getInetAddress(), sslServerSocket.getLocalPort());
+                socket = new Socket(sslServerSocket.getInetAddress(), sslServerSocket.getLocalPort());
                 DataInputStream in = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
                 String msg = "Hello";
                 out.writeUTF(msg);
                 out.flush();
-                msg = in.readUTF();
-            } catch(Exception e) {
+                in.readUTF();
+            } catch (Exception e) {
                 clientException = e;
+                System.out.println("Client side exception: " + e);
                 e.printStackTrace();
+            } finally {
+                if (socket != null) {
+                    try {
+                        socket.close();
+                    } catch (IOException ie) {
+                        System.out.println("Ignore IOException at socket " +
+                                "close on client side");
+                    }
+                }
             }
             serverThread.join();
         } catch(Exception e) {
-            throw new RuntimeException("Fails to start SSL server");
+            throw new RuntimeException("Fails to start SSL server", e);
         }
         if (serverThread.exception instanceof SSLException &&
                 serverThread.exception.getMessage().equals("Unsupported or unrecognized SSL message") &&
-                !(clientException instanceof SocketException &&
-                clientException.getMessage().equals("Connection reset"))) {
-                System.out.println("Test PASSED");
+                clientException instanceof EOFException) {
+            System.out.println("Test PASSED");
         } else {
             throw new RuntimeException("TCP connection reset");
         }
@@ -79,29 +91,39 @@ public class SSLSocketReset {
     // Thread handling the server socket
     private static class ServerThread extends Thread {
         private SSLServerSocket sslServerSocket = null;
-        private SSLSocket sslSocket = null;
-        Exception exception;
+        Exception exception = null;
 
         ServerThread(SSLServerSocket sslServerSocket){
             this.sslServerSocket = sslServerSocket;
         }
 
+        @Override
         public void run(){
+            SSLSocket sslSocket = null;
             try {
-                SSLSocket sslsocket = null;
                 while (true) {
-                    sslsocket = (SSLSocket) sslServerSocket.accept();
-                    DataInputStream in = new DataInputStream(sslsocket.getInputStream());
-                    DataOutputStream out = new DataOutputStream(sslsocket.getOutputStream());
+                    sslSocket = (SSLSocket) sslServerSocket.accept();
+                    DataInputStream in = new DataInputStream(sslSocket.getInputStream());
+                    DataOutputStream out = new DataOutputStream(sslSocket.getOutputStream());
                     String string;
                     while ((string = in.readUTF()) != null) {
                         out.writeUTF(string);
                         out.flush();
                     }
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 exception = e;
+                System.out.println("Server side exception: " + e);
                 e.printStackTrace();
+            } finally {
+                if (sslSocket != null) {
+                    try {
+                        sslSocket.close();
+                    } catch (IOException ie) {
+                        System.out.println("Ignore IOException at socket " +
+                                "close on server side");
+                    }
+                }
             }
         }
     }
