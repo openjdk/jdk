@@ -140,6 +140,8 @@ final class ProcessHandleImpl implements ProcessHandle {
                 processReaperExecutor.execute(new Runnable() {
                     // Use inner class to avoid lambda stack overhead
                     public void run() {
+                        String threadName = Thread.currentThread().getName();
+                        Thread.currentThread().setName("process reaper (pid " + pid + ")");
                         int exitValue = waitForProcessExit0(pid, shouldReap);
                         if (exitValue == NOT_A_CHILD) {
                             // pid not alive or not a child of this process
@@ -167,6 +169,8 @@ final class ProcessHandleImpl implements ProcessHandle {
                         newCompletion.complete(exitValue);
                         // remove from cache afterwards
                         completions.remove(pid, newCompletion);
+                        // Restore thread name
+                        Thread.currentThread().setName(threadName);
                     }
                 });
             }
