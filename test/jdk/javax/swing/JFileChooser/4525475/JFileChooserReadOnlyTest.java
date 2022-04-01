@@ -25,7 +25,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.swing.Action;
 import javax.swing.JButton;
@@ -34,6 +33,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
+
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
@@ -62,10 +62,9 @@ public class JFileChooserReadOnlyTest {
             }
 
             // Test1, Read Only JFileChooser
-            final AtomicBoolean readOnly = new AtomicBoolean(true);
             SwingUtilities.invokeAndWait(
-                    () -> createAndTestCustomFileChooser(readOnly.get()));
-            System.out.println("Its a Read Only JFileChooser " +
+                        () -> createAndTestCustomFileChooser(true));
+            System.out.println("It's a read-only JFileChooser " +
                                (newFolderFound ? "but it has" :
                                 "and it doesn't have") +
                                " a New Folder Button found" +
@@ -73,11 +72,17 @@ public class JFileChooserReadOnlyTest {
                                (result ? "Passed" : "Failed") + " for " + laf);
 
             // Test2, Read/Write JFileChooser
+            /* Skipping Motif and Aqua L&Fs, because for Motif L&F, the 'New
+            Folder' button is not shown anywhere irrespective of what we set in
+            UI defaults in any platform and the Aqua L&F behaves similar to the
+            native FileChooser always, like for 'Open' dialog it will not show
+            the 'New Folder' button, but it will show the 'New Folder' button
+             for 'Save' dialog.
+             */
             if (!(laf.contains("Motif") || laf.contains("Aqua"))) {
-                readOnly.set(false);
                 SwingUtilities.invokeAndWait(
-                        () -> createAndTestCustomFileChooser(readOnly.get()));
-                System.out.println("Its a not a Read Only JFileChooser " +
+                        () -> createAndTestCustomFileChooser(false));
+                System.out.println("It's not a read-only JFileChooser " +
                                    (newFolderFound ? "and it has" :
                                     "but it doesn't have") +
                                    " a New Folder Button" + ", So the Test2 " +
@@ -100,27 +105,22 @@ public class JFileChooserReadOnlyTest {
         UIManager.put("FileChooser.readOnly", Boolean.valueOf(readOnly));
         JFileChooser jfc = new JFileChooser();
         checkNewFolderButton(jfc, readOnly);
-        result = readOnly ^ newFolderFound;
+        result = result && (readOnly ^ newFolderFound);
     }
 
     private static void checkNewFolderButton(Container c, boolean readOnly) {
         int n = c.getComponentCount();
-        for (int i = 0; i < n; i++) {
-            if (newFolderFound) {
-                break;
-            }
+        for (int i = 0; i < n && !newFolderFound; i++) {
             Component comp = c.getComponent(i);
             if (comp instanceof JButton) {
                 JButton b = (JButton) comp;
                 Action action = b.getAction();
-                if (action != null) {
-                    String name = (String) action.getValue(Action.NAME);
-                    if (name != null && name.equals("New Folder")) {
-                        newFolderFound = true;
-                        System.out.println(
-                                "New Folder Button Found when readOnly = " +
-                                readOnly);
-                    }
+                if (action != null &&
+                    "New Folder".equals(action.getValue(Action.NAME))) {
+                    newFolderFound = true;
+                    System.out.println(
+                            "New Folder Button Found when readOnly = " +
+                            readOnly);
                 }
             } else if (comp instanceof Container) {
                 checkNewFolderButton((Container) comp, readOnly);
