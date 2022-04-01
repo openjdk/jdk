@@ -531,8 +531,11 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 void MacroAssembler::stop(const char* msg) {
   address ip = pc();
   pusha();
-  li(c_rarg0, (uintptr_t)(address)msg);
-  li(c_rarg1, (uintptr_t)(address)ip);
+  // The length of the instruction sequence emitted should be independent
+  // of the values of msg and ip so that the size of mach nodes for scratch
+  // emit and normal emit matches.
+  mv(c_rarg0, (address)msg);
+  mv(c_rarg1, (address)ip);
   mv(c_rarg2, sp);
   mv(c_rarg3, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
   jalr(c_rarg3);

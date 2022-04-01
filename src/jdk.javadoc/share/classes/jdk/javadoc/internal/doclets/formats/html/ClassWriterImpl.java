@@ -27,7 +27,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -68,10 +67,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  *  deletion without notice.</b>
  *
  * @see javax.lang.model.element.TypeElement
- * @see java.util.Collections
- * @see java.util.List
- * @see java.util.ArrayList
- * @see java.util.HashMap
  */
 public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWriter {
 

@@ -350,16 +350,23 @@ instruct vcvt4Bto4I(vecX dst, vecD src)
   ins_pipe(pipe_class_default);
 %}
 
-instruct vcvt2Lto2F(vecD dst, vecX src)
+instruct vcvt2Lto2F(vecD dst, vecX src, vRegF tmp)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
   match(Set dst (VectorCastL2X src));
-  format %{ "scvtfv  T2D, $dst, $src\n\t"
-            "fcvtn   $dst, T2S, $dst, T2D\t# convert 2L to 2F vector"
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "umov   rscratch1, $src, D, 0\n\t"
+            "scvtfs $dst, rscratch1\n\t"
+            "umov   rscratch1, $src, D, 1\n\t"
+            "scvtfs $tmp, rscratch1\n\t"
+            "ins    $dst, S, $tmp, 1, 0\t# convert 2L to 2F vector"
   %}
   ins_encode %{
-    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
-    __ fcvtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($dst$$reg), __ T2D);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 0);
+    __ scvtfs(as_FloatRegister($dst$$reg), rscratch1);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 1);
+    __ scvtfs(as_FloatRegister($tmp$$reg), rscratch1);
+    __ ins(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($tmp$$reg), 1, 0);
   %}
   ins_pipe(pipe_slow);
 %}
