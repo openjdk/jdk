@@ -304,7 +304,9 @@ public final class ProviderList {
                 throw createGSSException(p, className, "is not a " +
                                          SPI_MECH_FACTORY_TYPE, null);
             }
-        } catch (SecurityException | ReflectiveOperationException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException |
+                 InvocationTargetException | InstantiationException |
+                 IllegalAccessException | SecurityException e) {
             throw createGSSException(p, className, "cannot be created", e);
         }
     }
