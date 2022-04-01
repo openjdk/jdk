@@ -125,11 +125,12 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_TTL));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_LOOP));
-#ifdef __linux__
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
+#if defined(__linux__)
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MTU_DISCOVER));
+#elif defined(_WIN32)
+                StandardProtocolFamily.INET), new OptionKey(0, IP_DONTFRAGMENT));
 #else
-            map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
                 StandardProtocolFamily.INET), new OptionKey(0, IP_DONTFRAG));
 #endif
 
@@ -143,11 +144,10 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MULTICAST_HOPS));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MULTICAST_LOOP));
-#ifdef __linux__
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
+#if defined(__linux__) || defined(_WIN32)
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MTU_DISCOVER));
 #else
-            map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_DONTFRAG));
 #endif
 #endif
