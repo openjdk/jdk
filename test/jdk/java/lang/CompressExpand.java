@@ -36,28 +36,12 @@ import java.util.random.RandomGenerator;
 
 public class CompressExpand {
 
-    public static byte compress(byte i, int mask) {
-        return (byte) compress((int) i, mask & 0xFF);
-    }
-
-    public static byte expand(byte i, int mask) {
-        return (byte) expand((int) i, mask & 0xFF);
-    }
-
-    public static short compress(short i, int mask) {
-        return (short) compress((int) i, mask & 0xFFFF);
-    }
-
-    public static short expand(short i, int mask) {
-        return (short) expand((int) i, mask & 0xFFFF);
-    }
-
     public static int compress(int i, int mask) {
         int result = 0;
-        int rpos = -1;
+        int rpos = 0;
         while (mask != 0) {
             if ((mask & 1) != 0) {
-                result |= (i & 1) << ++rpos;
+                result |= (i & 1) << rpos++;
             }
             i >>>= 1;
             mask >>>= 1;
@@ -67,13 +51,13 @@ public class CompressExpand {
 
     public static int expand(int i, int mask) {
         int result = 0;
-        int rpos = -1;
+        int rpos = 0;
         while (mask != 0) {
-            ++rpos;
             if ((mask & 1) != 0) {
                 result |= (i & 1) << rpos;
                 i >>>= 1;
             }
+            rpos++;
             mask >>>= 1;
         }
         return result;
@@ -81,10 +65,10 @@ public class CompressExpand {
 
     public static long compress(long i, long mask) {
         long result = 0;
-        int rpos = -1;
+        int rpos = 0;
         while (mask != 0) {
             if ((mask & 1) != 0) {
-                result |= (i & 1) << ++rpos;
+                result |= (i & 1) << rpos++;
             }
             i >>>= 1;
             mask >>>= 1;
@@ -94,119 +78,19 @@ public class CompressExpand {
 
     public static long expand(long i, long mask) {
         long result = 0;
-        int rpos = -1;
+        int rpos = 0;
         while (mask != 0) {
-            ++rpos;
             if ((mask & 1) != 0) {
                 result |= (i & 1) << rpos;
                 i >>>= 1;
             }
+            rpos++;
             mask >>>= 1;
         }
         return result;
     }
 
     static int SIZE = 1024;
-
-    @Test
-    public void testCompressByte() {
-        RandomGenerator rg = RandomGenerator.getDefault();
-
-        byte[] values = new byte[SIZE];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = (byte) rg.nextInt(0, 1 << 8);
-        }
-        int[] masks = rg.ints(SIZE, 0, 1 << 8).toArray();
-
-        for (byte i : values) {
-            for (int m : masks) {
-                byte actual = Byte.compress(i, m);
-                byte expected = compress(i, m);
-                if (actual != expected) {
-                    System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
-                }
-                Assert.assertEquals(actual, expected);
-            }
-        }
-    }
-
-    @Test
-    public void testExpandByte() {
-        RandomGenerator rg = RandomGenerator.getDefault();
-
-        byte[] values = new byte[SIZE];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = (byte) rg.nextInt(0, 1 << 8);
-        }
-        int[] masks = rg.ints(SIZE, 0, 1 << 8).toArray();
-
-        for (byte i : values) {
-            for (int m : masks) {
-                byte actual = Byte.expand(i, m);
-                byte expected = expand(i, m);
-                if (actual != expected) {
-                    System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
-                }
-                Assert.assertEquals(actual, expected);
-            }
-        }
-    }
-
-    @Test
-    public void testCompressShort() {
-        RandomGenerator rg = RandomGenerator.getDefault();
-
-        short[] values = new short[SIZE];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = (short) rg.nextInt(0, 1 << 16);
-        }
-        int[] masks = rg.ints(SIZE, 0, 1 << 16).toArray();
-
-        for (short i : values) {
-            for (int m : masks) {
-                short actual = Short.compress(i, m);
-                short expected = compress(i, m);
-                if (actual != expected) {
-                    System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
-                }
-                Assert.assertEquals(actual, expected);
-            }
-        }
-    }
-
-    @Test
-    public void testExpandShort() {
-        RandomGenerator rg = RandomGenerator.getDefault();
-
-        short[] values = new short[SIZE];
-        for (int i = 0; i < values.length; i++) {
-            values[i] = (short) rg.nextInt(0, 1 << 16);
-        }
-        int[] masks = rg.ints(SIZE, 0, 1 << 16).toArray();
-
-        for (short i : values) {
-            for (int m : masks) {
-                short actual = Short.expand(i, m);
-                short expected = expand(i, m);
-                if (actual != expected) {
-                    System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
-                }
-                Assert.assertEquals(actual, expected);
-            }
-        }
-    }
 
     @Test
     public void testCompressInt() {
@@ -220,10 +104,7 @@ public class CompressExpand {
                 int actual = Integer.compress(i, m);
                 int expected = compress(i, m);
                 if (actual != expected) {
-                    System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
+                    print(i, m, actual, expected);
                 }
                 Assert.assertEquals(actual, expected);
             }
@@ -242,10 +123,7 @@ public class CompressExpand {
                 int actual = Integer.expand(i, m);
                 int expected = expand(i, m);
                 if (actual != expected) {
-                    System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
+                    print(i, m, actual, expected);
                 }
                 Assert.assertEquals(actual, expected);
             }
@@ -262,22 +140,20 @@ public class CompressExpand {
         for (int i : values) {
             for (int m : masks) {
                 {
-                    int actual = Integer.compress(Integer.expand(i, m), m);
-                    int expected = i;
-                    // Remove bits higher than MSB of mask
-                    int mbc = Integer.bitCount(m);
-                    if (mbc != 32) {
-                        expected &= (1 << mbc) - 1;
-                    }
-                    Assert.assertEquals(actual, expected);
+                    int a = Integer.compress(Integer.expand(i, m), m);
+                    Assert.assertEquals(a, normalizeCompressedValue(i, m));
+
+                    int b = Integer.compress(Integer.expand(i, ~m), ~m);
+                    Assert.assertEquals(b, normalizeCompressedValue(i, ~m));
                 }
 
                 {
                     int a = Integer.expand(Integer.compress(i, m), m);
-                    // Remove non-mask bits
+                    // Clear unset mask bits
                     Assert.assertEquals(a, i & m);
 
                     int b = Integer.expand(Integer.compress(i, ~m), ~m);
+                    Assert.assertEquals(a & b, 0);
                     Assert.assertEquals(a | b, i);
                 }
             }
@@ -296,10 +172,7 @@ public class CompressExpand {
                 long actual = Long.compress(i, m);
                 long expected = compress(i, m);
                 if (actual != expected) {
-                    System.out.println(String.format("i = %s", Long.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Long.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Long.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Long.toBinaryString(expected)));
+                    print(i, m, actual, expected);
                 }
                 Assert.assertEquals(actual, expected);
             }
@@ -318,13 +191,75 @@ public class CompressExpand {
                 long actual = Long.expand(i, m);
                 long expected = expand(i, m);
                 if (actual != expected) {
-                    System.out.println(String.format("i = %s", Long.toBinaryString(i)));
-                    System.out.println(String.format("m = %s", Long.toBinaryString(m)));
-                    System.out.println(String.format("a = %s", Long.toBinaryString(actual)));
-                    System.out.println(String.format("e = %s", Long.toBinaryString(expected)));
+                    print(i, m, actual, expected);
                 }
                 Assert.assertEquals(actual, expected);
             }
         }
+    }
+
+    @Test
+    public void testCompressExpandLong() {
+        RandomGenerator rg = RandomGenerator.getDefault();
+
+        long[] values = rg.longs(SIZE).toArray();
+        long[] masks = rg.longs(SIZE).toArray();
+
+        for (long i : values) {
+            for (long m : masks) {
+                {
+                    long a = Long.compress(Long.expand(i, m), m);
+                    Assert.assertEquals(a, normalizeCompressedValue(i, m));
+
+                    long b = Long.compress(Long.expand(i, ~m), ~m);
+                    Assert.assertEquals(b, normalizeCompressedValue(i, ~m));
+                }
+
+                {
+                    long a = Long.expand(Long.compress(i, m), m);
+                    // Clear unset mask bits
+                    Assert.assertEquals(a, i & m);
+
+                    long b = Long.expand(Long.compress(i, ~m), ~m);
+                    Assert.assertEquals(a & b, 0);
+                    Assert.assertEquals(a | b, i);
+                }
+            }
+        }
+    }
+
+
+    static int normalizeCompressedValue(int i, int mask) {
+        int mbc = Integer.bitCount(mask);
+        if (mbc != 32) {
+            return i & ((1 << mbc) - 1);
+        }
+        else {
+            return i;
+        }
+    }
+
+    static long normalizeCompressedValue(long i, long mask) {
+        int mbc = Long.bitCount(mask);
+        if (mbc != 64) {
+            return i & ((1L << mbc) - 1);
+        }
+        else {
+            return i;
+        }
+    }
+
+    static void print(int i, int m, int actual, int expected) {
+        System.out.println(String.format("i = %s", Integer.toBinaryString(i)));
+        System.out.println(String.format("m = %s", Integer.toBinaryString(m)));
+        System.out.println(String.format("a = %s", Integer.toBinaryString(actual)));
+        System.out.println(String.format("e = %s", Integer.toBinaryString(expected)));
+    }
+
+    static void print(long i, long m, long actual, long expected) {
+        System.out.println(String.format("i = %s", Long.toBinaryString(i)));
+        System.out.println(String.format("m = %s", Long.toBinaryString(m)));
+        System.out.println(String.format("a = %s", Long.toBinaryString(actual)));
+        System.out.println(String.format("e = %s", Long.toBinaryString(expected)));
     }
 }
