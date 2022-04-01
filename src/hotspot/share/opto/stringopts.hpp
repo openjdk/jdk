@@ -112,14 +112,14 @@ class PhaseStringOpts : public Phase {
   };
 
  public:
-  PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List* worklist);
+  PhaseStringOpts(PhaseGVN* gvn);
 
 #ifndef PRODUCT
   static void print_statistics();
  private:
   static uint _stropts_replaced;
   static uint _stropts_merged;
-  static uint _stropts_encount;
+  static uint _stropts_total;
 #endif
 };
 

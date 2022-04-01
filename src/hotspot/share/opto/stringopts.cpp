@@ -43,6 +43,8 @@ class StringConcat : public ResourceObj {
   AllocateNode*       _begin;          // The allocation the begins the pattern
   CallStaticJavaNode* _end;            // The final call of the pattern.  Will either be
                                        // SB.toString or or String.<init>(SB.toString)
+  bool                _multiple;       // indicates this is a fusion of two or more
+                                       // separate StringBuilders
 
   Node*               _arguments;      // The list of arguments to be concatenated
   GrowableArray<int>  _mode;           // into a String along with a mode flag
@@ -65,7 +67,8 @@ class StringConcat : public ResourceObj {
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
     _stringopts(stringopts),
     _begin(NULL),
-    _end(end) {
+    _end(end),
+    _multiple(false) {
     _arguments = new Node(1);
     _arguments->del_req(0);
   }
@@ -185,7 +188,7 @@ class StringConcat : public ResourceObj {
   void maybe_log_transform() {
     CompileLog* log = _stringopts->C->log();
     if (log != NULL) {
-      log->head("replace_string_concat arguments='%d'", num_arguments());
+      log->head("replace_string_concat arguments='%d' multiple='%d'", num_arguments(), _multiple);
       JVMState* p = _begin->jvms();
       while (p != NULL) {
         log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
@@ -303,6 +306,7 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   for (uint i = 0; i < other->_constructors.size(); i++) {
     result->add_constructor(other->_constructors.at(i));
   }
+  result->_multiple = true;
   return result;
 }
 
@@ -376,13 +380,14 @@ Node_List PhaseStringOpts::collect_toString_calls() {
       worklist.push(n);
     }
   }
-  uint encount = 0;
+
+  uint encountered = 0;
   while (worklist.size() > 0) {
     Node* ctrl = worklist.pop();
     if (StringConcat::is_SB_toString(ctrl)) {
       CallStaticJavaNode* csj = ctrl->as_CallStaticJava();
       string_calls.push(csj);
-      encount++;
+      encountered++;
     }
     if (ctrl->in(0) != NULL && !_visited.test_set(ctrl->in(0)->_idx)) {
       worklist.push(ctrl->in(0));
@@ -396,7 +401,7 @@ Node_List PhaseStringOpts::collect_toString_calls() {
     }
   }
 #ifndef PRODUCT
-  Atomic::add(&_stropts_encount, encount);
+  Atomic::add(&_stropts_total, encountered);
 #endif
   return string_calls;
 }
@@ -624,7 +629,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 }
 
 
-PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
+PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
   Phase(StringOpts),
   _gvn(gvn) {
 
@@ -2053,9 +2058,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 #ifndef PRODUCT
 uint PhaseStringOpts::_stropts_replaced = 0;
 uint PhaseStringOpts::_stropts_merged = 0;
-uint PhaseStringOpts::_stropts_encount = 0;
+uint PhaseStringOpts::_stropts_total = 0;
 
 void PhaseStringOpts::print_statistics() {
-  tty->print_cr("StringConcat: %4d/%4d/%4d(replaced/merged/encounter)", _stropts_replaced, _stropts_merged, _stropts_encount);
+  tty->print_cr("StringConcat: %4d/%4d/%4d(replaced/merged/total)", _stropts_replaced, _stropts_merged, _stropts_total);
 }
 #endif
