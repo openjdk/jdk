@@ -2078,9 +2078,9 @@ static Method* unpack_method_and_appendix(Handle mname,
 Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
                                                      Symbol* name,
                                                      Symbol* signature,
-                                                          Klass* accessing_klass,
-                                                          Handle *appendix_result,
-                                                          TRAPS) {
+                                                     Klass* accessing_klass,
+                                                     Handle* appendix_result,
+                                                     TRAPS) {
   assert(THREAD->can_call_java() ,"");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
