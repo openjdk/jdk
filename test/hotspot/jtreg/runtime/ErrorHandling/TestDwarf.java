@@ -220,6 +220,7 @@ class Flags {
 
     Flags(String... flags) {
         listOfOptions.add("-Xlog:dwarf=info"); // Always add debug flag
+        listOfOptions.add("-XX:-CreateCoredumpOnCrash"); // Never create dumps
         listOfOptions.addAll(Arrays.asList(flags));
     }
 

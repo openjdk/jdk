@@ -41,6 +41,8 @@
 #include "utilities/elfSymbolTable.hpp"
 #include "utilities/ostream.hpp"
 
+const char* ElfFile::USR_LIB_DEBUG_DIRECTORY = "/usr/lib/debug";
+
 // For test only, disable elf section cache and force to read from file directly.
 bool ElfFile::_do_not_cache_elf_section = false;
 
@@ -105,19 +107,15 @@ MarkedFileReader::~MarkedFileReader() {
 }
 
 ElfFile::ElfFile(const char* filepath) :
-  _next(NULL), _filepath(NULL), _file(NULL),
+  _next(NULL), _filepath(os::strdup(filepath)), _file(NULL),
   _symbol_tables(NULL), _string_tables(NULL), _shdr_string_table(NULL), _funcDesc_table(NULL),
   _status(NullDecoder::no_error), _dwarf_file(nullptr) {
   memset(&_elfHdr, 0, sizeof(_elfHdr));
-
-  size_t len = strlen(filepath) + 1;
-  _filepath = (char*)os::malloc(len * sizeof(char), mtInternal);
-  if (_filepath == NULL) {
+  if (_filepath == nullptr) {
     _status = NullDecoder::out_of_memory;
-    return;
+  } else {
+    _status = parse_elf(filepath);
   }
-  strcpy(_filepath, filepath);
-  _status = parse_elf(filepath);
 }
 
 ElfFile::~ElfFile() {
@@ -127,25 +125,40 @@ ElfFile::~ElfFile() {
     fclose(_file);
   }
 
-  if (_filepath != NULL) {
-    os::free((void*)_filepath);
+  if (_filepath != nullptr) {
+    os::free((void*) _filepath);
+    _filepath = nullptr;
   }
 
-  delete _shdr_string_table;
-  _shdr_string_table = nullptr;
-  delete _next;
-  _next = nullptr;
-  delete _dwarf_file;
-  _dwarf_file = nullptr;
+  if (_shdr_string_table != nullptr) {
+    delete _shdr_string_table;
+    _shdr_string_table = nullptr;
+  }
+
+  if (_next != nullptr) {
+    delete _next;
+    _next = nullptr;
+  }
+
+  if (_dwarf_file != nullptr) {
+    delete _dwarf_file;
+    _dwarf_file = nullptr;
+  }
 }
 
 void ElfFile::cleanup_tables() {
-  delete _string_tables;
-  _string_tables = nullptr;
-  delete _symbol_tables;
-  _symbol_tables = nullptr;
-  delete _funcDesc_table;
-  _funcDesc_table = nullptr;
+  if (_string_tables != nullptr) {
+    delete _string_tables;
+    _string_tables = nullptr;
+  }
+  if (_symbol_tables != nullptr) {
+    delete _symbol_tables;
+    _symbol_tables = nullptr;
+  }
+  if (_funcDesc_table != nullptr) {
+    delete _funcDesc_table;
+    _funcDesc_table = nullptr;
+  }
 }
 
 NullDecoder::decoder_status ElfFile::parse_elf(const char* filepath) {
@@ -241,6 +254,37 @@ NullDecoder::decoder_status ElfFile::load_tables() {
   return NullDecoder::no_error;
 }
 
+#if defined(PPC64) && !defined(ABI_ELFv2)
+int ElfFile::section_by_name(const char* name, Elf_Shdr& hdr) {
+  assert(name != NULL, "No section name");
+  size_t len = strlen(name) + 1;
+  ResourceMark rm;
+  char* buf = NEW_RESOURCE_ARRAY(char, len);
+  if (buf == NULL) {
+    return -1;
+  }
+
+  assert(_shdr_string_table != NULL, "Section header string table should be loaded");
+  ElfStringTable* const table = _shdr_string_table;
+  MarkedFileReader mfd(fd());
+  if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) return -1;
+
+  int sect_index = -1;
+  for (int index = 0; index < _elfHdr.e_shnum; index ++) {
+    if (!mfd.read((void*)&hdr, sizeof(hdr))) {
+      break;
+    }
+    if (table->string_at(hdr.sh_name, buf, len)) {
+      if (strncmp(buf, name, len) == 0) {
+        sect_index = index;
+        break;
+      }
+    }
+  }
+  return sect_index;
+}
+#endif
+
 bool ElfFile::decode(address addr, char* buf, int buflen, int* offset) {
   // something already went wrong, just give up
   if (NullDecoder::is_error(_status)) {
@@ -306,7 +350,6 @@ ElfStringTable* ElfFile::get_string_table(int index) {
 // and the debug symbols might be in an unsupported DWARF version or wrong format.
 bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, const size_t filename_len, int* line, bool is_pc_after_call) {
   ResourceMark rm;
-  // (1)
   if (!load_dwarf_file()) {
     // Some ELF libraries do not provide separate .debuginfo files. Check if the current ELF file has the required
     // DWARF sections. If so, treat the current ELF file as DWARF file.
@@ -321,7 +364,7 @@ bool ElfFile::get_source_info(const uint32_t offset_in_library, char* filename, 
   }
 
   // Store result in filename and line pointer.
-  if (!_dwarf_file->get_filename_and_line_number(offset_in_library, *filename, filename_len, *line, is_pc_after_call)) {
+  if (!_dwarf_file->get_filename_and_line_number(offset_in_library, filename, filename_len, line, is_pc_after_call)) {
     log_develop_info(dwarf)("Failed to retrieve file and line number information for %s at offset: " PTR32_FORMAT, _filepath, offset_in_library);
     return false;
   }
