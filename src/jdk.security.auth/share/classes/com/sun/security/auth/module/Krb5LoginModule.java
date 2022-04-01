@@ -785,14 +785,10 @@ public class Krb5LoginModule implements LoginModule {
                 }
 
             }
-        } catch (KrbException e) {
+        } catch (KrbException | IOException e) {
             LoginException le = new LoginException(e.getMessage());
             le.initCause(e);
             throw le;
-        } catch (IOException ioe) {
-            LoginException ie = new LoginException(ioe.getMessage());
-            ie.initCause(ioe);
-            throw ie;
         }
     }
 
