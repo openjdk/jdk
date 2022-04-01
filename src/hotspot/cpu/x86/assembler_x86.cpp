@@ -2410,10 +2410,7 @@ void Assembler::ldmxcsr( Address src) {
 
 void Assembler::leal(Register dst, Address src) {
   InstructionMark im(this);
-#ifdef _LP64
-  emit_int8(0x67); // addr32
   prefix(src, dst);
-#endif // LP64
   emit_int8((unsigned char)0x8D);
   emit_operand(dst, src);
 }

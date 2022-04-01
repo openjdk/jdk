@@ -702,6 +702,16 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
       DSA keySize < 1024, SHA1 denyAfter 2019-01-01
 
 #
+# Disabled message digest algorithms for use with plaintext
+# HTTP Digest authentication (java.net.HttpURLConnection).
+# This includes HTTPS Digest authentication to proxies.
+# This may be overridden by setting the networking (or system)
+# property "http.auth.digest.reEnabledAlgorithms" to a comma
+# separated list of algorithms to be allowed.
+#
+http.auth.digest.disabledAlgorithms = MD5, SHA-1
+
+#
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
 # (SSL/TLS/DTLS) processing
 #

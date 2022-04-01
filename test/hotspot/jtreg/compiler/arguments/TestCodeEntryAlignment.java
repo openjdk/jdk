@@ -27,7 +27,6 @@
  * @library /test/lib /
  * @bug 8281467
  * @requires vm.flagless
- * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  *
  * @summary Test large CodeEntryAlignments are accepted

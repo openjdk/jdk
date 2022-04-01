@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class SnippetTaglet extends BaseTaglet {
 
             if (fileObject == null) {
                 // i.e. the file does not exist
-                throw new BadSnippetException(a, "doclet.File_not_found", v);
+                throw new BadSnippetException(a, "doclet.snippet_file_not_found", v);
             }
 
             try {

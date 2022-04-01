@@ -196,7 +196,7 @@ public abstract class ImageReader {
      * provider, or which desire a different naming policy should
      * override this method.
      *
-     * @exception IOException if an error occurs reading the
+     * @throws IOException if an error occurs reading the
      * information from the input source.
      *
      * @return the format name, as a {@code String}.
@@ -276,7 +276,7 @@ public abstract class ImageReader {
      * @param ignoreMetadata if {@code true}, metadata
      * may be ignored during reads.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * not an instance of one of the classes returned by the
      * originating service provider's {@code getInputTypes}
      * method, or is not an {@code ImageInputStream}.
@@ -343,7 +343,7 @@ public abstract class ImageReader {
      * @param seekForwardOnly if {@code true}, images and metadata
      * may only be read in ascending order from this input source.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * not an instance of one of the classes returned by the
      * originating service provider's {@code getInputTypes}
      * method, or is not an {@code ImageInputStream}.
@@ -369,7 +369,7 @@ public abstract class ImageReader {
      * @param input the {@code ImageInputStream} or other
      * {@code Object} to use for future decoding.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * not an instance of one of the classes returned by the
      * originating service provider's {@code getInputTypes}
      * method, or is not an {@code ImageInputStream}.
@@ -470,7 +470,7 @@ public abstract class ImageReader {
      * @param locale the desired {@code Locale}, or
      * {@code null}.
      *
-     * @exception IllegalArgumentException if {@code locale} is
+     * @throws IllegalArgumentException if {@code locale} is
      * non-{@code null} but is not one of the values returned by
      * {@code getAvailableLocales}.
      *
@@ -538,10 +538,10 @@ public abstract class ImageReader {
      * {@code -1} if {@code allowSearch} is
      * {@code false} and a search would be required.
      *
-     * @exception IllegalStateException if the input source has not been set,
+     * @throws IllegalStateException if the input source has not been set,
      * or if the input has been specified with {@code seekForwardOnly}
      * set to {@code true}.
-     * @exception IOException if an error occurs reading the
+     * @throws IOException if an error occurs reading the
      * information from the input source.
      *
      * @see #setInput
@@ -559,10 +559,10 @@ public abstract class ImageReader {
      *
      * @return the width of the image, as an {@code int}.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs reading the width
+     * @throws IOException if an error occurs reading the width
      * information from the input source.
      */
     public abstract int getWidth(int imageIndex) throws IOException;
@@ -578,10 +578,10 @@ public abstract class ImageReader {
      *
      * @return the height of the image, as an {@code int}.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs reading the height
+     * @throws IOException if an error occurs reading the height
      * information from the input source.
      */
     public abstract int getHeight(int imageIndex) throws IOException;
@@ -617,12 +617,12 @@ public abstract class ImageReader {
      * @return {@code true} if reading a region of interest of
      * the given image is likely to be efficient.
      *
-     * @exception IllegalStateException if an input source is required
+     * @throws IllegalStateException if an input source is required
      * to determine the return value, but none has been set.
-     * @exception IndexOutOfBoundsException if an image must be
+     * @throws IndexOutOfBoundsException if an image must be
      * accessed to determine the return value, but the supplied index
      * is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public boolean isRandomAccessEasy(int imageIndex) throws IOException {
         return false;
@@ -644,10 +644,10 @@ public abstract class ImageReader {
      * @return a {@code float} indicating the aspect ratio of the
      * given image.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public float getAspectRatio(int imageIndex) throws IOException {
         return (float)getWidth(imageIndex)/getHeight(imageIndex);
@@ -669,10 +669,10 @@ public abstract class ImageReader {
      *
      * @return an {@code ImageTypeSpecifier}.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs reading the format
+     * @throws IOException if an error occurs reading the format
      * information from the input source.
      */
     public ImageTypeSpecifier getRawImageType(int imageIndex)
@@ -699,10 +699,10 @@ public abstract class ImageReader {
      * {@code ImageTypeSpecifier} representing suggested image
      * types for decoding the current given image.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs reading the format
+     * @throws IOException if an error occurs reading the format
      * information from the input source.
      *
      * @see ImageReadParam#setDestination(BufferedImage)
@@ -739,7 +739,7 @@ public abstract class ImageReader {
      *
      * @return an {@code IIOMetadata} object, or {@code null}.
      *
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public abstract IIOMetadata getStreamMetadata() throws IOException;
 
@@ -778,11 +778,11 @@ public abstract class ImageReader {
      *
      * @return an {@code IIOMetadata} object, or {@code null}.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code nodeNames}
+     * @throws IllegalArgumentException if {@code nodeNames}
      * is {@code null}.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public IIOMetadata getStreamMetadata(String formatName,
                                          Set<String> nodeNames)
@@ -839,11 +839,11 @@ public abstract class ImageReader {
      * @return an {@code IIOMetadata} object, or
      * {@code null}.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public abstract IIOMetadata getImageMetadata(int imageIndex)
         throws IOException;
@@ -885,15 +885,15 @@ public abstract class ImageReader {
      *
      * @return an {@code IIOMetadata} object, or {@code null}.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code nodeNames}
+     * @throws IllegalArgumentException if {@code nodeNames}
      * is {@code null}.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public IIOMetadata getImageMetadata(int imageIndex,
                                         String formatName,
@@ -928,11 +928,11 @@ public abstract class ImageReader {
      * @return the desired portion of the image as a
      * {@code BufferedImage}.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public BufferedImage read(int imageIndex) throws IOException {
         return read(imageIndex, null);
@@ -980,18 +980,18 @@ public abstract class ImageReader {
      * @return the desired portion of the image as a
      * {@code BufferedImage}.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IllegalArgumentException if the set of source and
+     * @throws IllegalArgumentException if the set of source and
      * destination bands specified by
      * {@code param.getSourceBands} and
      * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
-     * @exception IllegalArgumentException if the resulting image would
+     * @throws IllegalArgumentException if the resulting image would
      * have a width or height less than 1.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public abstract BufferedImage read(int imageIndex, ImageReadParam param)
         throws IOException;
@@ -1043,18 +1043,18 @@ public abstract class ImageReader {
      * of the image, a set of thumbnails, and associated image
      * metadata.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IllegalArgumentException if the set of source and
+     * @throws IllegalArgumentException if the set of source and
      * destination bands specified by
      * {@code param.getSourceBands} and
      * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
-     * @exception IllegalArgumentException if the resulting image
+     * @throws IllegalArgumentException if the resulting image
      * would have a width or height less than 1.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public IIOImage readAll(int imageIndex, ImageReadParam param)
         throws IOException {
@@ -1134,19 +1134,19 @@ public abstract class ImageReader {
      * @return an {@code Iterator} representing the
      * contents of the input source as {@code IIOImage}s.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IllegalArgumentException if any
+     * @throws IllegalArgumentException if any
      * non-{@code null} element of {@code params} is not an
      * {@code ImageReadParam}.
-     * @exception IllegalArgumentException if the set of source and
+     * @throws IllegalArgumentException if the set of source and
      * destination bands specified by
      * {@code param.getSourceBands} and
      * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
-     * @exception IllegalArgumentException if a resulting image would
+     * @throws IllegalArgumentException if a resulting image would
      * have a width or height less than 1.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      *
      * @see ImageReadParam
      * @see IIOImage
@@ -1267,13 +1267,13 @@ public abstract class ImageReader {
      * @return the desired portion of the image as a
      * {@code Raster}.
      *
-     * @exception UnsupportedOperationException if this plug-in does not
+     * @throws UnsupportedOperationException if this plug-in does not
      * support reading raw {@code Raster}s.
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      *
      * @see #canReadRaster
      * @see #read
@@ -1310,12 +1310,12 @@ public abstract class ImageReader {
      *
      * @return {@code true} if the image is tiled.
      *
-     * @exception IllegalStateException if an input source is required
+     * @throws IllegalStateException if an input source is required
      * to determine the return value, but none has been set.
-     * @exception IndexOutOfBoundsException if an image must be
+     * @throws IndexOutOfBoundsException if an image must be
      * accessed to determine the return value, but the supplied index
      * is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public boolean isImageTiled(int imageIndex) throws IOException {
         return false;
@@ -1333,10 +1333,10 @@ public abstract class ImageReader {
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getTileWidth(int imageIndex) throws IOException {
         return getWidth(imageIndex);
@@ -1354,10 +1354,10 @@ public abstract class ImageReader {
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getTileHeight(int imageIndex) throws IOException {
         return getHeight(imageIndex);
@@ -1382,12 +1382,12 @@ public abstract class ImageReader {
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @exception IllegalStateException if an input source is required
+     * @throws IllegalStateException if an input source is required
      * to determine the return value, but none has been set.
-     * @exception IndexOutOfBoundsException if an image must be
+     * @throws IndexOutOfBoundsException if an image must be
      * accessed to determine the return value, but the supplied index
      * is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getTileGridXOffset(int imageIndex) throws IOException {
         return 0;
@@ -1412,12 +1412,12 @@ public abstract class ImageReader {
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @exception IllegalStateException if an input source is required
+     * @throws IllegalStateException if an input source is required
      * to determine the return value, but none has been set.
-     * @exception IndexOutOfBoundsException if an image must be
+     * @throws IndexOutOfBoundsException if an image must be
      * accessed to determine the return value, but the supplied index
      * is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getTileGridYOffset(int imageIndex) throws IOException {
         return 0;
@@ -1455,13 +1455,13 @@ public abstract class ImageReader {
      *
      * @return the tile as a {@code BufferedImage}.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if {@code imageIndex}
+     * @throws IndexOutOfBoundsException if {@code imageIndex}
      * is out of bounds.
-     * @exception IllegalArgumentException if the tile indices are
+     * @throws IllegalArgumentException if the tile indices are
      * out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public BufferedImage readTile(int imageIndex,
                                   int tileX, int tileY) throws IOException {
@@ -1495,15 +1495,15 @@ public abstract class ImageReader {
      *
      * @return the tile as a {@code Raster}.
      *
-     * @exception UnsupportedOperationException if this plug-in does not
+     * @throws UnsupportedOperationException if this plug-in does not
      * support reading raw {@code Raster}s.
-     * @exception IllegalArgumentException if the tile indices are
+     * @throws IllegalArgumentException if the tile indices are
      * out of bounds.
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if {@code imageIndex}
+     * @throws IndexOutOfBoundsException if {@code imageIndex}
      * is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      *
      * @see #readTile
      * @see #readRaster
@@ -1554,18 +1554,18 @@ public abstract class ImageReader {
      * @return a {@code RenderedImage} object providing a view of
      * the image.
      *
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IllegalArgumentException if the set of source and
+     * @throws IllegalArgumentException if the set of source and
      * destination bands specified by
      * {@code param.getSourceBands} and
      * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
-     * @exception IllegalArgumentException if the resulting image
+     * @throws IllegalArgumentException if the resulting image
      * would have a width or height less than 1.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public RenderedImage readAsRenderedImage(int imageIndex,
                                              ImageReadParam param)
@@ -1611,11 +1611,11 @@ public abstract class ImageReader {
      *
      * @return {@code true} if the given image has thumbnails.
      *
-     * @exception IllegalStateException if the reader supports
+     * @throws IllegalStateException if the reader supports
      * thumbnails but the input source has not been set.
-     * @exception IndexOutOfBoundsException if the reader supports
+     * @throws IndexOutOfBoundsException if the reader supports
      * thumbnails but {@code imageIndex} is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public boolean hasThumbnails(int imageIndex) throws IOException {
         return getNumThumbnails(imageIndex) > 0;
@@ -1637,11 +1637,11 @@ public abstract class ImageReader {
      * @return the number of thumbnails associated with the given
      * image.
      *
-     * @exception IllegalStateException if the reader supports
+     * @throws IllegalStateException if the reader supports
      * thumbnails but the input source has not been set.
-     * @exception IndexOutOfBoundsException if the reader supports
+     * @throws IndexOutOfBoundsException if the reader supports
      * thumbnails but {@code imageIndex} is out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getNumThumbnails(int imageIndex)
         throws IOException {
@@ -1669,12 +1669,12 @@ public abstract class ImageReader {
      *
      * @return the width of the desired thumbnail as an {@code int}.
      *
-     * @exception UnsupportedOperationException if thumbnails are not
+     * @throws UnsupportedOperationException if thumbnails are not
      * supported.
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if either of the supplied
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if either of the supplied
      * indices are out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getThumbnailWidth(int imageIndex, int thumbnailIndex)
         throws IOException {
@@ -1702,12 +1702,12 @@ public abstract class ImageReader {
      *
      * @return the height of the desired thumbnail as an {@code int}.
      *
-     * @exception UnsupportedOperationException if thumbnails are not
+     * @throws UnsupportedOperationException if thumbnails are not
      * supported.
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if either of the supplied
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if either of the supplied
      * indices are out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public int getThumbnailHeight(int imageIndex, int thumbnailIndex)
         throws IOException {
@@ -1738,12 +1738,12 @@ public abstract class ImageReader {
      *
      * @return the desired thumbnail as a {@code BufferedImage}.
      *
-     * @exception UnsupportedOperationException if thumbnails are not
+     * @throws UnsupportedOperationException if thumbnails are not
      * supported.
-     * @exception IllegalStateException if the input source has not been set.
-     * @exception IndexOutOfBoundsException if either of the supplied
+     * @throws IllegalStateException if the input source has not been set.
+     * @throws IndexOutOfBoundsException if either of the supplied
      * indices are out of bounds.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public BufferedImage readThumbnail(int imageIndex,
                                        int thumbnailIndex)
@@ -2388,7 +2388,7 @@ public abstract class ImageReader {
      *
      * @param warning the warning message to send.
      *
-     * @exception IllegalArgumentException if {@code warning}
+     * @throws IllegalArgumentException if {@code warning}
      * is {@code null}.
      */
     protected void processWarningOccurred(String warning) {
@@ -2420,15 +2420,15 @@ public abstract class ImageReader {
      * @param keyword the keyword used to index the warning message
      * within the set of {@code ResourceBundle}s.
      *
-     * @exception IllegalArgumentException if {@code baseName}
+     * @throws IllegalArgumentException if {@code baseName}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code keyword}
+     * @throws IllegalArgumentException if {@code keyword}
      * is {@code null}.
-     * @exception IllegalArgumentException if no appropriate
+     * @throws IllegalArgumentException if no appropriate
      * {@code ResourceBundle} may be located.
-     * @exception IllegalArgumentException if the named resource is
+     * @throws IllegalArgumentException if the named resource is
      * not found in the located {@code ResourceBundle}.
-     * @exception IllegalArgumentException if the object retrieved
+     * @throws IllegalArgumentException if the object retrieved
      * from the {@code ResourceBundle} is not a
      * {@code String}.
      */
@@ -2594,11 +2594,11 @@ public abstract class ImageReader {
      * the source region of interest.
      * @param destRegion a {@code Rectangle} that will be filled with
      * the destination region of interest.
-     * @exception IllegalArgumentException if {@code srcRegion}
+     * @throws IllegalArgumentException if {@code srcRegion}
      * is {@code null}.
-     * @exception IllegalArgumentException if {@code dstRegion}
+     * @throws IllegalArgumentException if {@code dstRegion}
      * is {@code null}.
-     * @exception IllegalArgumentException if the resulting source or
+     * @throws IllegalArgumentException if the resulting source or
      * destination region is empty.
      */
     protected static void computeRegions(ImageReadParam param,
@@ -2720,7 +2720,7 @@ public abstract class ImageReader {
      * @param numDstBands the number of bands in the destination image
      * being written.
      *
-     * @exception IllegalArgumentException if {@code param}
+     * @throws IllegalArgumentException if {@code param}
      * contains an invalid specification of a source and/or
      * destination band subset.
      */
@@ -2797,15 +2797,15 @@ public abstract class ImageReader {
      * @return the {@code BufferedImage} to which decoded pixel
      * data should be written.
      *
-     * @exception IIOException if the {@code ImageTypeSpecifier}
+     * @throws IIOException if the {@code ImageTypeSpecifier}
      * specified by {@code param} does not match any of the legal
      * ones from {@code imageTypes}.
-     * @exception IllegalArgumentException if {@code imageTypes}
+     * @throws IllegalArgumentException if {@code imageTypes}
      * is {@code null} or empty, or if an object not of type
      * {@code ImageTypeSpecifier} is retrieved from it.
-     * @exception IllegalArgumentException if the resulting image would
+     * @throws IllegalArgumentException if the resulting image would
      * have a width or height less than 1.
-     * @exception IllegalArgumentException if the product of
+     * @throws IllegalArgumentException if the product of
      * {@code width} and {@code height} is greater than
      * {@code Integer.MAX_VALUE}.
      */
