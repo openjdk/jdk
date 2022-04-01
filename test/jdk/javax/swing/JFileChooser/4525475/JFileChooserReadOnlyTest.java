@@ -71,12 +71,11 @@ public class JFileChooserReadOnlyTest {
                                (result ? "Passed" : "Failed") + " for " + laf);
 
             // Test2, Read/Write JFileChooser
-            /* Skipping Motif and Aqua L&Fs, because for Motif L&F, the 'New
-            Folder' button is not shown anywhere irrespective of what we set in
-            UI defaults in any platform and the Aqua L&F behaves similar to the
-            native FileChooser always, like for 'Open' dialog it will not show
-            the 'New Folder' button, but it will show the 'New Folder' button
-             for 'Save' dialog.
+            /* Skipping Motif and Aqua L&Fs
+               For Motif L&F, the 'New Folder' button is never shown.
+               The Aqua L&F behaves similar to the native FileChooser:
+                 the 'Open' dialog doesn't show the 'New Folder' button,
+                 but it shows the button for the 'Save' dialog.
              */
             if (!(laf.contains("Motif") || laf.contains("Aqua"))) {
                 SwingUtilities.invokeAndWait(
