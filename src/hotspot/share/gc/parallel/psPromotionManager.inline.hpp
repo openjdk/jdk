@@ -300,24 +300,18 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 }
 
 // Attempt to "claim" oop at p via CAS, push the new obj if successful
-// This version tests the oop* to make sure it is within the heap before
-// attempting marking.
 template <bool promote_immediately, class T>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
+  assert(ParallelScavengeHeap::heap()->is_in_reserved(p), "precondition");
   assert(should_scavenge(p, true), "revisiting object?");
 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   oop new_obj = copy_to_survivor_space<promote_immediately>(o);
   RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
-  // We cannot mark without test, as some code passes us pointers
-  // that are outside the heap. These pointers are either from roots
-  // or from metadata.
-  if ((!PSScavenge::is_obj_in_young((HeapWord*)p)) &&
-      ParallelScavengeHeap::heap()->is_in_reserved(p)) {
-    if (PSScavenge::is_obj_in_young(new_obj)) {
-      PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
-    }
+  if (!PSScavenge::is_obj_in_young((HeapWord*)p) &&
+       PSScavenge::is_obj_in_young(new_obj)) {
+    PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
   }
 }
 

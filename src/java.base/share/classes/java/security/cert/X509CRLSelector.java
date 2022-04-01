@@ -53,7 +53,7 @@ import sun.security.x509.X500Name;
  * {@link CertStore#getCRLs CertStore.getCRLs} or some similar
  * method.
  * <p>
- * Please refer to <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * Please refer to <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a>
  * for definitions of the X.509 CRL fields and extensions mentioned below.
  * <p>

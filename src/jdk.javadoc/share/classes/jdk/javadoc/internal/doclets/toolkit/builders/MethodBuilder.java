@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,34 +102,34 @@ public class MethodBuilder extends AbstractMemberBuilder {
     }
 
     @Override
-    public void build(Content contentTree) throws DocletException {
-        buildMethodDoc(contentTree);
+    public void build(Content target) throws DocletException {
+        buildMethodDoc(target);
     }
 
     /**
      * Build the method documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param detailsList the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildMethodDoc(Content detailsList) throws DocletException {
         if (hasMembersToDocument()) {
-            Content methodDetailsTreeHeader = writer.getMethodDetailsTreeHeader(detailsList);
+            Content methodDetailsHeader = writer.getMethodDetailsHeader(detailsList);
             Content memberList = writer.getMemberList();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
-                Content methodDocTree = writer.getMethodDocTreeHeader(currentMethod);
+                Content methodContent = writer.getMethodHeader(currentMethod);
 
-                buildSignature(methodDocTree);
-                buildDeprecationInfo(methodDocTree);
-                buildPreviewInfo(methodDocTree);
-                buildMethodComments(methodDocTree);
-                buildTagInfo(methodDocTree);
+                buildSignature(methodContent);
+                buildDeprecationInfo(methodContent);
+                buildPreviewInfo(methodContent);
+                buildMethodComments(methodContent);
+                buildTagInfo(methodContent);
 
-                memberList.add(writer.getMemberListItem(methodDocTree));
+                memberList.add(writer.getMemberListItem(methodContent));
             }
-            Content methodDetails = writer.getMethodDetails(methodDetailsTreeHeader, memberList);
+            Content methodDetails = writer.getMethodDetails(methodDetailsHeader, memberList);
             detailsList.add(methodDetails);
         }
     }
@@ -137,37 +137,37 @@ public class MethodBuilder extends AbstractMemberBuilder {
     /**
      * Build the signature.
      *
-     * @param methodDocTree the content tree to which the documentation will be added
+     * @param methodContent the content to which the documentation will be added
      */
-    protected void buildSignature(Content methodDocTree) {
-        methodDocTree.add(writer.getSignature(currentMethod));
+    protected void buildSignature(Content methodContent) {
+        methodContent.add(writer.getSignature(currentMethod));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param methodDocTree the content tree to which the documentation will be added
+     * @param methodContent the content to which the documentation will be added
      */
-    protected void buildDeprecationInfo(Content methodDocTree) {
-        writer.addDeprecated(currentMethod, methodDocTree);
+    protected void buildDeprecationInfo(Content methodContent) {
+        writer.addDeprecated(currentMethod, methodContent);
     }
 
     /**
      * Build the preview information.
      *
-     * @param methodDocTree the content tree to which the documentation will be added
+     * @param methodContent the content to which the documentation will be added
      */
-    protected void buildPreviewInfo(Content methodDocTree) {
-        writer.addPreview(currentMethod, methodDocTree);
+    protected void buildPreviewInfo(Content methodContent) {
+        writer.addPreview(currentMethod, methodContent);
     }
 
     /**
      * Build the comments for the method.  Do nothing if
      * {@link BaseOptions#noComment()} is set to true.
      *
-     * @param methodDocTree the content tree to which the documentation will be added
+     * @param methodContent the content to which the documentation will be added
      */
-    protected void buildMethodComments(Content methodDocTree) {
+    protected void buildMethodComments(Content methodContent) {
         if (!options.noComment()) {
             ExecutableElement method = currentMethod;
             if (utils.getFullBody(currentMethod).isEmpty()) {
@@ -177,17 +177,17 @@ public class MethodBuilder extends AbstractMemberBuilder {
                         method = (ExecutableElement)docs.holder;
             }
             TypeMirror containingType = method.getEnclosingElement().asType();
-            writer.addComments(containingType, method, methodDocTree);
+            writer.addComments(containingType, method, methodContent);
         }
     }
 
     /**
      * Build the tag information.
      *
-     * @param methodDocTree the content tree to which the documentation will be added
+     * @param methodContent the content to which the documentation will be added
      */
-    protected void buildTagInfo(Content methodDocTree) {
-        writer.addTags(currentMethod, methodDocTree);
+    protected void buildTagInfo(Content methodContent) {
+        writer.addTags(currentMethod, methodContent);
     }
 
     /**
