@@ -179,7 +179,7 @@ public class SequenceInputStream extends InputStream {
      * @param      len   the maximum number of bytes read.
      * @return     the total number of bytes read into the buffer, or
      *             {@code -1} if there is no more data because the end of
-     *             the stream has been reached.
+     *             the last contained stream has been reached.
      * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
      *             {@code len} is negative, or {@code len} is
