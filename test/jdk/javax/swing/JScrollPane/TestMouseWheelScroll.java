@@ -35,7 +35,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 /*
  * @test
  * @key headful
- * @requires (os.family != "mac")
  * @bug  6911375
  * @summary Verifies mouseWheel effect on JList without scrollBar
  */
@@ -98,7 +97,11 @@ public class TestMouseWheelScroll {
                     viewPosition = scrollPane.getViewport().getViewPosition();
                 });
                 robot.delay(1000);
-                robot.mouseWheel(1);
+                if (!(System.getProperty("os.name").contains("OS X"))) {
+                    robot.mouseWheel(1);
+                } else {
+                    robot.mouseWheel(-1);
+                }
                 robot.delay(500);
                 SwingUtilities.invokeAndWait(() -> {
                     newPosition = scrollPane.getViewport().getViewPosition();
