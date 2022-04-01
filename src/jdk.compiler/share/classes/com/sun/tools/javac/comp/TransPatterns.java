@@ -455,11 +455,13 @@ public class TransPatterns extends TreeTranslator {
             if (tree.hasTag(Tag.SWITCH)) {
                 ((JCSwitch) tree).selector = selector;
                 ((JCSwitch) tree).cases = cases;
+                ((JCSwitch) tree).wasEnumSelector = enumSelector;
                 statements.append((JCSwitch) tree);
                 result = make.Block(0, statements.toList());
             } else {
                 ((JCSwitchExpression) tree).selector = selector;
                 ((JCSwitchExpression) tree).cases = cases;
+                ((JCSwitchExpression) tree).wasEnumSelector = enumSelector;
                 LetExpr r = (LetExpr) make.LetExpr(statements.toList(), (JCSwitchExpression) tree)
                                           .setType(tree.type);
 

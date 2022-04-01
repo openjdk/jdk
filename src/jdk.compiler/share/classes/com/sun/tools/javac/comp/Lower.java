@@ -3615,19 +3615,24 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(tree.cases) : tree.cases;
+        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
+        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(matchException, tree.cases)
+                                                : tree.cases;
         handleSwitch(tree, tree.selector, cases);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        List<JCCase> cases = addDefaultIfNeeded(tree.cases);
+        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
+        List<JCCase> cases = addDefaultIfNeeded(matchException, tree.cases);
         handleSwitch(tree, tree.selector, cases);
     }
 
-    private List<JCCase> addDefaultIfNeeded(List<JCCase> cases) {
+    private List<JCCase> addDefaultIfNeeded(boolean matchException, List<JCCase> cases) {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
-            JCThrow thr = make.Throw(makeNewClass(syms.incompatibleClassChangeErrorType,
+            Type exception = matchException ? syms.matchExceptionType
+                                            : syms.incompatibleClassChangeErrorType;
+            JCThrow thr = make.Throw(makeNewClass(exception,
                                                   List.nil()));
             JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), null, List.of(thr), null);
             cases = cases.prepend(c);

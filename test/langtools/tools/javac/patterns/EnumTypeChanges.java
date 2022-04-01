@@ -42,11 +42,22 @@ public class EnumTypeChanges {
     void run() throws Exception {
         doRun(this::statementEnum);
         doRun(this::expressionEnum);
+        doRunExhaustive(this::expressionEnumExhaustive);
+        doRunExhaustive(this::statementEnumExhaustive);
     }
 
     void doRun(Function<EnumTypeChangesEnum, String> c) throws Exception {
         assertEquals("A", c.apply(EnumTypeChangesEnum.A));
         assertEquals("D", c.apply(EnumTypeChangesEnum.valueOf("C")));
+    }
+
+    void doRunExhaustive(Function<EnumTypeChangesEnum, String> c) throws Exception {
+        try {
+            c.apply(EnumTypeChangesEnum.valueOf("C"));
+            throw new AssertionError();
+        } catch (IncompatibleClassChangeError e) {
+            //expected
+        }
     }
 
     String statementEnum(EnumTypeChangesEnum e) {
@@ -64,6 +75,23 @@ public class EnumTypeChanges {
             case B -> "B";
             case EnumTypeChangesEnum e1 when false -> throw new AssertionError();
             default -> "D";
+        };
+    }
+
+    String statementEnumExhaustive(EnumTypeChangesEnum e) {
+        switch (e) {
+            case A -> { return "A"; }
+            case B -> { return "B"; }
+            case EnumTypeChangesEnum x when e == EnumTypeChangesEnum.A -> throw new AssertionError();
+        }
+        return "";
+    }
+
+    String expressionEnumExhaustive(EnumTypeChangesEnum e) {
+        return switch (e) {
+            case A -> "A";
+            case B -> "B";
+            case EnumTypeChangesEnum x when e == EnumTypeChangesEnum.A -> throw new AssertionError();
         };
     }
 
