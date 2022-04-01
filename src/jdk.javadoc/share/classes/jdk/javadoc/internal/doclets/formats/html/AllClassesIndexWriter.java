@@ -97,20 +97,20 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         addContents(allClassesContent);
         Content mainContent = new ContentBuilder();
         mainContent.add(allClassesContent);
-        HtmlTree bodyTree = getBody(getWindowTitle(label));
-        bodyTree.add(new BodyContents()
+        HtmlTree body = getBody(getWindowTitle(label));
+        body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.ALL_CLASSES))
                 .addMainContent(mainContent)
                 .setFooter(getFooter()));
-        printHtmlDocument(null, "class index", bodyTree);
+        printHtmlDocument(null, "class index", body);
     }
 
     /**
-     * Add all types to the content tree.
+     * Add all types to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addContents(Content content) {
+    protected void addContents(Content target) {
         Table table = new Table(HtmlStyle.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
@@ -131,12 +131,12 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
             }
         }
         Content titleContent = contents.allClassesAndInterfacesLabel;
-        Content pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
-        Content headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
-        content.add(headerDiv);
+        var headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
+        target.add(headerDiv);
         if (!table.isEmpty()) {
-            content.add(table);
+            target.add(table);
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
             }
