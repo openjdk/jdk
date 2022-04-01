@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,10 @@ JavaThread* ProgrammableUpcallHandler::on_entry(OptimizedEntryBlob::FrameData* c
 
   // clear any pending exception in thread (native calls start with no exception pending)
   thread->clear_pending_exception();
+
+  // The call to transition_from_native below contains a safepoint check
+  // which needs the code cache to be writable.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   // After this, we are officially in Java Code. This needs to be done before we change any of the thread local
   // info, since we cannot find oops before the new information is set up completely.
