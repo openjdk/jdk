@@ -272,8 +272,8 @@ public interface Path
      *          the value to return if the extension is indeterminate;
      *          may be {@code null}
      *
-     * @return  the file name extension of this path, or {@code ext}
-     *          if the extension is indeterminate
+     * @return  the file name extension of this path, or
+     *          {@code defaultExtension} if the extension is indeterminate
      *
      * @since 19
      */
