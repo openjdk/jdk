@@ -41,21 +41,22 @@ public class JFileChooserDefaultDirectoryTest {
         final AtomicReference<String> actual = new AtomicReference<>("");
         SwingUtilities.invokeAndWait(() -> {
             JFileChooser jFileChooser = new JFileChooser();
-            actual.set(jFileChooser.getFileSystemView().getDefaultDirectory()
+            actual.set(jFileChooser.getFileSystemView()
+                                   .getDefaultDirectory()
                                    .getName());
         });
         String actualDefaultDirectory = actual.get();
-        final boolean isWindows = System.getProperty("os.name").toLowerCase()
-                                        .startsWith("windows");
+        final boolean isWindows = System.getProperty("os.name")
+                                        .startsWith("Windows");
         if (isWindows) {
-            if (actualDefaultDirectory.endsWith("Documents")) {
+            if (actualDefaultDirectory.equals("Documents")) {
                 System.out.println("Test Passed");
             } else {
                 throw new RuntimeException(
                         "Test Failed, JFileChooser constructor sets incorrect" +
                         " default directory, actual = " +
                         actualDefaultDirectory +
-                        " expected should be 'My Documents' or 'Documents' ");
+                        " expected should be 'Documents'");
             }
         } else {
             final String userHome = System.getProperty("user.home");
