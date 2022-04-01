@@ -30,7 +30,6 @@
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestFloatVect
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestFloatVect
  * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestFloatVect
- * @run main/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -XX:TieredStopAtLevel=2 -Xmx128m -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestFloatVect
  */
 
 package compiler.c2.cr6340864;
