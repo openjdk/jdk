@@ -341,99 +341,147 @@ bool ElfFile::load_dwarf_file() {
     return true; // Already opened.
   }
 
-  const char* dwarf_filename = get_dwarf_filename();
-  if (dwarf_filename == nullptr) {
+  DebugInfo debug_info;
+  if (!read_debug_info(&debug_info)) {
+    log_develop_debug(dwarf)("Could not read debug info from .gnu_debuglink section");
     return false;
   }
 
-  const size_t dwarf_filepath_len = strlen(dwarf_filename) + strlen(_filepath) + strlen(".debug/")
-                                    + strlen(usr_lib_debug_directory()) + 2;
-  char* dwarf_filepath_buf = NEW_RESOURCE_ARRAY(char, dwarf_filepath_len);
-  if (dwarf_filepath_buf == nullptr) {
-    log_develop_info(dwarf)("Failed to allocate path buffer");
-    return false;
-  }
-
-  DwarfFilePath dwarf_file_path(dwarf_filename, dwarf_filepath_buf, dwarf_filepath_len);
-  dwarf_file_path.set(_filepath);
+  DwarfFilePath dwarf_file_path(debug_info);
   return load_dwarf_file_from_same_directory(dwarf_file_path)
          || load_dwarf_file_from_env_var_path(dwarf_file_path)
          || load_dwarf_file_from_debug_sub_directory(dwarf_file_path)
          || load_dwarf_file_from_usr_lib_debug(dwarf_file_path);
 }
 
-const char* ElfFile::get_dwarf_filename() const {
+// Read .gnu_debuglink section which contains:
+// Filename (null terminated) + 0-3 padding bytes (to 4 byte align) + CRC (4 bytes)
+bool ElfFile::read_debug_info(DebugInfo* debug_info) const {
   Elf_Shdr shdr;
   if (!read_section_header(".gnu_debuglink", shdr)) {
-    // Section not found.
     log_develop_debug(dwarf)("Failed to read the .gnu_debuglink header.");
-    return nullptr;
+    return false;
+  }
+
+  if (shdr.sh_size % 4 != 0) {
+    log_develop_info(dwarf)(".gnu_debuglink section is not 4 byte aligned (i.e. file is corrupted)");
+    return false;
   }
 
   MarkedFileReader mfd(fd());
   if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
-    return nullptr;
+    return false;
   }
 
-  char* debug_filename = NEW_RESOURCE_ARRAY(char, shdr.sh_size);
-  if (debug_filename == nullptr) {
-    return nullptr;
-  }
-
+  uint64_t filename_max_len = shdr.sh_size - DebugInfo::CRC_LEN;
   mfd.set_position(shdr.sh_offset);
-  if (!mfd.read(debug_filename, shdr.sh_size)) {
-    return nullptr;
+  if (!mfd.read(&debug_info->_dwarf_filename, filename_max_len)) {
+    return false;
   }
-  return debug_filename;
+
+  if (debug_info->_dwarf_filename[filename_max_len - 1] != '\0') {
+    // Filename not null-terminated (i.e. overflowed).
+    log_develop_info(dwarf)("Dwarf filename is not null-terminated");
+    return false;
+  }
+
+  return mfd.read(&debug_info->_crc, DebugInfo::CRC_LEN);
+}
+
+bool ElfFile::DwarfFilePath::set(const char* src) {
+  int bytes_written = jio_snprintf(_path, MAX_DWARF_PATH_LENGTH, "%s", src);
+  if (bytes_written < 0 || bytes_written >= MAX_DWARF_PATH_LENGTH) {
+    log_develop_info(dwarf)("Dwarf file path buffer is too small");
+    return false;
+  }
+  update_null_terminator_index();
+  return check_valid_path(); // Sanity check
+}
+
+bool ElfFile::DwarfFilePath::set_after_last_slash(const char* src) {
+  char* last_slash = strrchr(_path, '/');
+  if (last_slash == nullptr) {
+    // Should always find a slash.
+    return false;
+  }
+
+  uint16_t index_after_slash = (uint16_t)(last_slash + 1 - _path);
+  return copy_to_path_index(index_after_slash, src);
+}
+
+bool ElfFile::DwarfFilePath::append(const char* src) {
+  return copy_to_path_index(_null_terminator_index, src);
+}
+
+bool ElfFile::DwarfFilePath::copy_to_path_index(uint16_t index_in_path, const char* src) {
+  if (index_in_path >= MAX_DWARF_PATH_LENGTH - 1) {
+    // Should not override '\0' at _path[MAX_DWARF_PATH_LENGTH - 1]
+    log_develop_info(dwarf)("Dwarf file path buffer is too small");
+    return false;
+  }
+
+  uint16_t max_len = MAX_DWARF_PATH_LENGTH - index_in_path;
+  int bytes_written = jio_snprintf(_path + index_in_path, max_len, "%s", src);
+  if (bytes_written < 0 || bytes_written >= max_len) {
+    log_develop_info(dwarf)("Dwarf file path buffer is too small");
+    return false;
+  }
+  update_null_terminator_index();
+  return check_valid_path(); // Sanity check
 }
 
 // Try to load the dwarf file from the same directory as the library file.
 bool ElfFile::load_dwarf_file_from_same_directory(DwarfFilePath& dwarf_file_path) {
-  dwarf_file_path.set_filename_after_last_slash();
+  if (!dwarf_file_path.set(_filepath)
+      || !dwarf_file_path.set_filename_after_last_slash()) {
+    return false;
+  }
   return open_valid_debuginfo_file(dwarf_file_path);
 }
 
 // Try to load the dwarf file from a user specified path in environmental variable _JVM_DWARF_PATH.
-bool ElfFile::load_dwarf_file_from_env_var_path(const DwarfFilePath& dwarf_file_path) {
-  const char* dwarf_path = ::getenv("_JVM_DWARF_PATH");
-  if (dwarf_path != nullptr) {
-    log_develop_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path);
-    const char* filename = dwarf_file_path.filename();
-    return (load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/server/", filename)
-            || load_dwarf_file_from_env_path_folder(dwarf_path, "/lib/", filename)
-            || load_dwarf_file_from_env_path_folder(dwarf_path, "/bin/", filename)
-            || load_dwarf_file_from_env_path_folder(dwarf_path, "/", filename));
+bool ElfFile::load_dwarf_file_from_env_var_path(DwarfFilePath& dwarf_file_path) {
+  const char* dwarf_path_from_env = ::getenv("_JVM_DWARF_PATH");
+  if (dwarf_path_from_env != nullptr) {
+    log_develop_debug(dwarf)("_JVM_DWARF_PATH: %s", dwarf_path_from_env);
+    return (load_dwarf_file_from_env_path_folder(dwarf_file_path, dwarf_path_from_env, "/lib/server/")
+            || load_dwarf_file_from_env_path_folder(dwarf_file_path, dwarf_path_from_env, "/lib/")
+            || load_dwarf_file_from_env_path_folder(dwarf_file_path, dwarf_path_from_env, "/bin/")
+            || load_dwarf_file_from_env_path_folder(dwarf_file_path, dwarf_path_from_env, "/"));
   }
   return false;
 }
 
-bool ElfFile::load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* filename) {
-  const size_t dwarf_filepath_buf_len = strlen(env_path) + strlen(folder) + strlen(filename) + 2;
-  char* dwarf_filepath_buf = NEW_RESOURCE_ARRAY(char, dwarf_filepath_buf_len);
-  if (dwarf_filepath_buf == nullptr) {
-    log_develop_info(dwarf)("Failed to allocate path buffer");
+bool ElfFile::load_dwarf_file_from_env_path_folder(DwarfFilePath& dwarf_file_path, const char* dwarf_path_from_env,
+                                                   const char* folder) {
+  if (!dwarf_file_path.set(dwarf_path_from_env)
+      || !dwarf_file_path.append(folder)
+      || !dwarf_file_path.append(dwarf_file_path.filename())) {
+    log_develop_info(dwarf)("Dwarf file path buffer is too small");
     return false;
   }
-
-  DwarfFilePath dwarf_file_path(filename, dwarf_filepath_buf, dwarf_filepath_buf_len);
-  dwarf_file_path.set(env_path);
-  dwarf_file_path.append(folder);
-  dwarf_file_path.append(filename);
   return open_valid_debuginfo_file(dwarf_file_path);
 }
 
 // Try to load the dwarf file from a subdirectory named .debug within the directory of the library file.
 bool ElfFile::load_dwarf_file_from_debug_sub_directory(DwarfFilePath& dwarf_file_path) {
-  dwarf_file_path.set_after_last_slash(".debug/");
-  dwarf_file_path.append(dwarf_file_path.filename());
+  if (!dwarf_file_path.set(_filepath)
+      || !dwarf_file_path.set_after_last_slash(".debug/")
+      || !dwarf_file_path.append(dwarf_file_path.filename())) {
+    log_develop_info(dwarf)("Dwarf file path buffer is too small");
+    return false;
+  }
   return open_valid_debuginfo_file(dwarf_file_path);
 }
 
 // Try to load the dwarf file from /usr/lib/debug + the full pathname.
 bool ElfFile::load_dwarf_file_from_usr_lib_debug(DwarfFilePath& dwarf_file_path) {
-  dwarf_file_path.set(usr_lib_debug_directory());
-  dwarf_file_path.append(_filepath);
-  dwarf_file_path.set_filename_after_last_slash();
+  if (!dwarf_file_path.set(USR_LIB_DEBUG_DIRECTORY)
+      || !dwarf_file_path.append(_filepath)
+      || !dwarf_file_path.set_filename_after_last_slash()) {
+    log_develop_info(dwarf)("Dwarf file path buffer is too small");
+    return false;
+  }
   return open_valid_debuginfo_file(dwarf_file_path);
 }
 
@@ -442,14 +490,14 @@ bool ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) const {
     // Section header string table should be loaded
     return false;
   }
+  const uint8_t buf_len = 24;
+  char buf[buf_len];
   size_t len = strlen(name) + 1;
-  ResourceMark rm;
-  char* buf = NEW_RESOURCE_ARRAY(char, len);
-  if (buf == nullptr) {
+  if (len > buf_len) {
+    log_develop_info(dwarf)("Section header name buffer is too small: Required: %zu, Found: %d", len, buf_len);
     return false;
   }
 
-  ElfStringTable* const table = _shdr_string_table;
   MarkedFileReader mfd(fd());
   if (!mfd.has_mark() || !mfd.set_position(_elfHdr.e_shoff)) {
     return false;
@@ -459,8 +507,8 @@ bool ElfFile::read_section_header(const char* name, Elf_Shdr& hdr) const {
     if (!mfd.read((void*)&hdr, sizeof(hdr))) {
       return false;
     }
-    if (table->string_at(hdr.sh_name, buf, len)) {
-      if (strncmp(buf, name, len) == 0) {
+    if (_shdr_string_table->string_at(hdr.sh_name, buf, buf_len)) {
+      if (strncmp(buf, name, buf_len) == 0) {
         return true;
       }
     }
@@ -540,13 +588,12 @@ bool ElfFile::open_valid_debuginfo_file(const DwarfFilePath& dwarf_file_path) {
   uint32_t file_crc = get_file_crc(file);
   fclose(file); // Close it here to reopen it again when the DwarfFile object is created below.
 
-  if (dwarf_file_path.crc() == file_crc) {
+  if (dwarf_file_path.crc() != file_crc) {
     // Must be equal, otherwise the file is corrupted.
-    return create_new_dwarf_file(filepath);
+    log_develop_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, dwarf_file_path.crc(), file_crc);
+    return false;
   }
-
-  log_develop_info(dwarf)("CRC did not match. Expected: " PTR32_FORMAT ", found: " PTR32_FORMAT, dwarf_file_path.crc(), file_crc);
-  return false;
+  return create_new_dwarf_file(filepath);
 }
 
 uint32_t ElfFile::get_file_crc(FILE* const file) {
@@ -588,8 +635,8 @@ bool ElfFile::create_new_dwarf_file(const char* filepath) {
 }
 
 // Starting point of reading line number and filename information from the DWARF file.
-bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, char& filename, const size_t filename_len,
-                                             int& line, const bool is_pc_after_call) {
+bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, char* filename, const size_t filename_len,
+                                             int* line, const bool is_pc_after_call) {
   DebugAranges debug_aranges(this);
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
   if (!debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
@@ -1034,7 +1081,7 @@ bool DwarfFile::CompilationUnit::read_attribute_value(const uint64_t attribute_f
   return true;
 }
 
-bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char& filename, const size_t filename_len, int& line) {
+bool DwarfFile::LineNumberProgram::find_filename_and_line_number(char* filename, const size_t filename_len, int* line) {
   if (!read_header()) {
     log_develop_info(dwarf)("Failed to parse the line number program header correctly.");
     return false;
@@ -1178,7 +1225,7 @@ bool DwarfFile::LineNumberProgram::read_header() {
 //      E.g. x = 0x55d13f -> 0x55d136 < 0x55d13f < 0x55d146 -> Take entry 0x55d136.
 //
 // Enable logging with debug level to print the generated line number information matrix.
-bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const size_t filename_len, int& line) {
+bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const size_t filename_len, int* line) {
   log_develop_debug(dwarf)("");
   log_develop_debug(dwarf)("Line Number Information Matrix");
   log_develop_debug(dwarf)("------------------------------");
@@ -1214,7 +1261,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char& filename, const
       }
       if (does_offset_match_entry(previous_address, previous_file, previous_line)) {
         // We are using an int for the line number which should never be larger than INT_MAX for any files.
-        line = (int)_state->_line;
+        *line = (int)_state->_line;
         return get_filename_from_header(_state->_file, filename, filename_len);
       }
 
@@ -1488,12 +1535,12 @@ void DwarfFile::LineNumberProgram::print_and_store_prev_entry(const uint32_t pre
 }
 
 // Read field file_names from the header as specified in section 6.2.4 of the DWARF 4 spec.
-bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_index, char& filename, const size_t filename_len) {
+bool DwarfFile::LineNumberProgram::get_filename_from_header(const uint32_t file_index, char* filename, const size_t filename_len) {
   // We do not need to restore the position afterwards as this is the last step of parsing from the file for this compilation unit.
   _reader.set_position(_header._file_names_offset);
   uint32_t current_index = 1; // file_names start at index 1
   while (_reader.has_bytes_left()) {
-    if (!_reader.read_string(&filename, filename_len)) {
+    if (!_reader.read_string(filename, filename_len)) {
       // Either an error while reading or we have reached the end of the file_names. Both should not happen.
       return false;
     }

@@ -204,18 +204,37 @@ class ElfFile: public CHeapObj<mtInternal> {
 
   bool create_new_dwarf_file(const char* filepath);
 
+  // Struct to store the debug info read from the .gnu_debuglink section.
+  struct DebugInfo {
+    static const uint8_t CRC_LEN = 4;
+
+    char _dwarf_filename[JVM_MAXPATHLEN];
+    uint32_t _crc;
+  };
+
   // Helper class to create DWARF paths when loading a DWARF file.
   class DwarfFilePath {
    private:
+    static const uint16_t MAX_DWARF_PATH_LENGTH = JVM_MAXPATHLEN;
     const char* _filename;
-    char* _path;
-    const size_t _path_len;
-    uint32_t _crc;
+    char _path[MAX_DWARF_PATH_LENGTH];
+    const uint32_t _crc;
+    uint16_t _null_terminator_index; // Index for the current null terminator of the string stored in _path
+
+    bool check_valid_path() const {
+      return _path[MAX_DWARF_PATH_LENGTH - 1] == '\0';
+    }
+
+    void update_null_terminator_index() {
+      _null_terminator_index = strlen(_path);
+    }
+
+    bool copy_to_path_index(uint16_t index_in_path, const char* src);
 
    public:
-    DwarfFilePath(const char* filename, char* buf, size_t buf_len) : _filename(filename), _path(buf), _path_len(buf_len) {
-      size_t offset = (strlen(filename) + 4) >> 2u;
-      _crc = ((uint32_t*) filename)[offset];
+    DwarfFilePath(DebugInfo& debug_info)
+      : _filename(debug_info._dwarf_filename), _crc(debug_info._crc), _null_terminator_index(0) {
+      _path[MAX_DWARF_PATH_LENGTH - 1] = '\0';  // Ensures to have a null terminated string and not read beyond the buffer limit.
     }
 
     const char* path() const {
@@ -230,22 +249,14 @@ class ElfFile: public CHeapObj<mtInternal> {
       return _crc;
     }
 
-    void set(const char* src) {
-      strncpy(_path, src, _path_len);
+    bool set(const char* src);
+
+    bool set_filename_after_last_slash() {
+      return set_after_last_slash(_filename);
     }
 
-    void set_filename_after_last_slash() {
-      set_after_last_slash(_filename);
-    }
-
-    void set_after_last_slash(const char* src) {
-      char* last_slash = strrchr(_path, '/');
-      strncpy(last_slash + 1, src, _path_len);
-    }
-
-    void append(const char* src) {
-      strncat(_path, src, _path_len);
-    }
+    bool set_after_last_slash(const char* src);
+    bool append(const char* src);
   };
 
   // Load the DWARF file (.debuginfo) that belongs to this file either from (checked in listed order):
@@ -259,11 +270,11 @@ class ElfFile: public CHeapObj<mtInternal> {
     return "/usr/lib/debug";
   }
 
-  const char* get_dwarf_filename() const;
+  bool read_debug_info(DebugInfo* debug_info) const;
 
   bool load_dwarf_file_from_same_directory(DwarfFilePath& dwarf_file_path);
-  bool load_dwarf_file_from_env_var_path(const DwarfFilePath& dwarf_file_path);
-  bool load_dwarf_file_from_env_path_folder(const char* env_path, const char* folder, const char* filename);
+  bool load_dwarf_file_from_env_var_path(DwarfFilePath& dwarf_file_path);
+  bool load_dwarf_file_from_env_path_folder(DwarfFilePath& dwarf_file_path, const char* dwarf_path_from_env, const char* folder);
   bool load_dwarf_file_from_debug_sub_directory(DwarfFilePath& dwarf_file_path);
   bool load_dwarf_file_from_usr_lib_debug(DwarfFilePath& dwarf_file_path);
   bool open_valid_debuginfo_file(const DwarfFilePath& dwarf_file_path);
