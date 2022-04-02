@@ -2252,12 +2252,12 @@ void MacroAssembler::fld_x(AddressLiteral src) {
   Assembler::fld_x(as_Address(src));
 }
 
-void MacroAssembler::ldmxcsr(AddressLiteral src) {
+void MacroAssembler::ldmxcsr(AddressLiteral src, Register scratchReg) {
   if (reachable(src)) {
     Assembler::ldmxcsr(as_Address(src));
   } else {
-    lea(rscratch1, src);
-    Assembler::ldmxcsr(Address(rscratch1, 0));
+    lea(scratchReg, src);
+    Assembler::ldmxcsr(Address(scratchReg, 0));
   }
 }
 
@@ -9118,6 +9118,80 @@ void MacroAssembler::convert_f2l(Register dst, XMMRegister src) {
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
   pop(dst);
   bind(done);
+}
+
+void MacroAssembler::round_float(Register dst, XMMRegister src, Register rtmp, Register rcx) {
+  // Following code is line by line assembly translation rounding algorithm.
+  // Please refer to java.lang.Math.round(float) algorithm for details.
+  const int32_t FloatConsts_EXP_BIT_MASK = 0x7F800000;
+  const int32_t FloatConsts_SIGNIFICAND_WIDTH = 24;
+  const int32_t FloatConsts_EXP_BIAS = 127;
+  const int32_t FloatConsts_SIGNIF_BIT_MASK = 0x007FFFFF;
+  const int32_t MINUS_32 = 0xFFFFFFE0;
+  Label L_special_case, L_block1, L_exit;
+  movl(rtmp, FloatConsts_EXP_BIT_MASK);
+  movdl(dst, src);
+  andl(dst, rtmp);
+  sarl(dst, FloatConsts_SIGNIFICAND_WIDTH - 1);
+  movl(rtmp, FloatConsts_SIGNIFICAND_WIDTH - 2 + FloatConsts_EXP_BIAS);
+  subl(rtmp, dst);
+  movl(rcx, rtmp);
+  movl(dst, MINUS_32);
+  testl(rtmp, dst);
+  jccb(Assembler::notEqual, L_special_case);
+  movdl(dst, src);
+  andl(dst, FloatConsts_SIGNIF_BIT_MASK);
+  orl(dst, FloatConsts_SIGNIF_BIT_MASK + 1);
+  movdl(rtmp, src);
+  testl(rtmp, rtmp);
+  jccb(Assembler::greaterEqual, L_block1);
+  negl(dst);
+  bind(L_block1);
+  sarl(dst);
+  addl(dst, 0x1);
+  sarl(dst, 0x1);
+  jmp(L_exit);
+  bind(L_special_case);
+  convert_f2i(dst, src);
+  bind(L_exit);
+}
+
+void MacroAssembler::round_double(Register dst, XMMRegister src, Register rtmp, Register rcx) {
+  // Following code is line by line assembly translation rounding algorithm.
+  // Please refer to java.lang.Math.round(double) algorithm for details.
+  const int64_t DoubleConsts_EXP_BIT_MASK = 0x7FF0000000000000L;
+  const int64_t DoubleConsts_SIGNIFICAND_WIDTH = 53;
+  const int64_t DoubleConsts_EXP_BIAS = 1023;
+  const int64_t DoubleConsts_SIGNIF_BIT_MASK = 0x000FFFFFFFFFFFFFL;
+  const int64_t MINUS_64 = 0xFFFFFFFFFFFFFFC0L;
+  Label L_special_case, L_block1, L_exit;
+  mov64(rtmp, DoubleConsts_EXP_BIT_MASK);
+  movq(dst, src);
+  andq(dst, rtmp);
+  sarq(dst, DoubleConsts_SIGNIFICAND_WIDTH - 1);
+  mov64(rtmp, DoubleConsts_SIGNIFICAND_WIDTH - 2 + DoubleConsts_EXP_BIAS);
+  subq(rtmp, dst);
+  movq(rcx, rtmp);
+  mov64(dst, MINUS_64);
+  testq(rtmp, dst);
+  jccb(Assembler::notEqual, L_special_case);
+  movq(dst, src);
+  mov64(rtmp, DoubleConsts_SIGNIF_BIT_MASK);
+  andq(dst, rtmp);
+  mov64(rtmp, DoubleConsts_SIGNIF_BIT_MASK + 1);
+  orq(dst, rtmp);
+  movq(rtmp, src);
+  testq(rtmp, rtmp);
+  jccb(Assembler::greaterEqual, L_block1);
+  negq(dst);
+  bind(L_block1);
+  sarq(dst);
+  addq(dst, 0x1);
+  sarq(dst, 0x1);
+  jmp(L_exit);
+  bind(L_special_case);
+  convert_d2l(dst, src);
+  bind(L_exit);
 }
 
 void MacroAssembler::convert_d2l(Register dst, XMMRegister src) {
