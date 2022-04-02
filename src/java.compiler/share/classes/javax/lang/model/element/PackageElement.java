@@ -33,13 +33,18 @@ import javax.lang.model.type.TypeMirror;
  * about the package and its members.
  *
  * @apiNote
+
  * The represented package may have an explicit {@linkplain
  * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
  * representation} (either source code or executable output) or may be
  * created from implicit information. The explicit and standalone
  * source code construct for a package is typically a {@code
- * package-info.java} file (JLS {@jls 7.4.1}). Implicit information is
- * used to model {@linkplain #isUnnamed unnamed packages}.
+ * package-info.java} file (JLS {@jls 7.4.1}).
+ * A named package without a standalone {@code package-info.java} file
+ * can be declared by the package declarations in a {@linkplain
+ * NestingKind#TOP_LEVEL top-level} class or interface.
+ * Implicit information is
+ * used to model {@linkplain #isUnnamed unnamed packages} (JLS {@jls 7.4.2}).
  * <p>In the context of annotation processing, a package element can
  * be:
  * <ul>
