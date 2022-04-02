@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,23 @@
  */
 package javax.swing.text;
 
-import java.util.*;
-import java.awt.*;
+import java.awt.Container;
+import java.awt.Font;
+import java.awt.Rectangle;
+import java.awt.font.FontRenderContext;
+import java.awt.font.LineBreakMeasurer;
+import java.awt.font.TextAttribute;
+import java.awt.font.TextLayout;
 import java.text.AttributedCharacterIterator;
 import java.text.BreakIterator;
-import java.awt.font.*;
-import java.awt.geom.AffineTransform;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
+
 import javax.swing.JComponent;
 import javax.swing.event.DocumentEvent;
+
 import sun.font.BidiUtils;
 
 /**
@@ -98,7 +107,7 @@ class TextLayoutStrategy extends FlowView.FlowStrategy {
     }
 
     /**
-     * Does a a full layout on the given View.  This causes all of
+     * Does a full layout on the given View.  This causes all of
      * the rows (child views) to be rebuilt to match the given
      * constraints for each row.  This is called by a FlowView.layout
      * to update the child views in the flow.
