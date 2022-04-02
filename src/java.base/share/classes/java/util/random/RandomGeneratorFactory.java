@@ -89,9 +89,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  *
  * <pre>{@code
  *     RandomGeneratorFactory<RandomGenerator> best = RandomGeneratorFactory.all()
- *         .sorted(Comparator.<RandomGeneratorFactory<RandomGenerator>, Integer>comparing(
- *             RandomGeneratorFactory::stateBits).reversed())
- *         .findFirst()
+ *         .max(Comparator.comparing(RandomGeneratorFactory::stateBits))
  *         .orElse(RandomGeneratorFactory.of("Random"));
  *     System.out.println(best.name() + " in " + best.group() + " was selected");
  *
