@@ -25,7 +25,7 @@
 package com.sun.nio.sctp;
 
 /**
- * Notification emitted when a peers shutdowns an the association.
+ * Notification emitted when a peers shutdowns the association.
  *
  * <P> When a peer sends a <i>SHUTDOWN</i>, the SCTP stack delivers this
  * notification to inform the application that it should cease sending data.
