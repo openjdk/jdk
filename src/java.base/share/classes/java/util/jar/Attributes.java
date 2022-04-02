@@ -69,7 +69,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Constructs a new, empty Attributes object with default size.
      */
     public Attributes() {
-        this(11);
+        this(16);
     }
 
     /**
@@ -79,7 +79,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * @param size the initial number of attributes
      */
     public Attributes(int size) {
-        map = new LinkedHashMap<>(size);
+        map = LinkedHashMap.newLinkedHashMap(size);
     }
 
     /**

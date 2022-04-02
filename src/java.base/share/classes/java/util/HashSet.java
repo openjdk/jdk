@@ -117,7 +117,7 @@ public class HashSet<E>
      * @throws NullPointerException if the specified collection is null
      */
     public HashSet(Collection<? extends E> c) {
-        map = new HashMap<>(Math.max((int) (c.size()/.75f) + 1, 16));
+        map = HashMap.newHashMap(Math.max(c.size(), 12));
         addAll(c);
     }
 

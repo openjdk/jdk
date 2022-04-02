@@ -290,7 +290,7 @@ abstract class MethodHandleImpl {
         BoundMethodHandle mh = target.rebind();
 
         // Match each unique conversion to the positions at which it is to be applied
-        var convSpecMap = new HashMap<Object, int[]>(((4 * convCount) / 3) + 1);
+        HashMap<Object, int[]> convSpecMap = HashMap.newHashMap(convCount);
         for (int i = 0; i < convSpecs.length - MH_RECEIVER_OFFSET; i++) {
             Object convSpec = convSpecs[i];
             if (convSpec == null) continue;

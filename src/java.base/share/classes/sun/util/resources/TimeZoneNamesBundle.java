@@ -96,7 +96,7 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
      */
     @Override
     protected <K, V> Map<K, V> createMap(int size) {
-        return new LinkedHashMap<>(size);
+        return LinkedHashMap.newLinkedHashMap(size);
     }
 
     /**

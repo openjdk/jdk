@@ -4125,10 +4125,10 @@ public final class Class<T> implements java.io.Serializable,
                 Class<? extends Annotation> annotationClass = e.getKey();
                 if (AnnotationType.getInstance(annotationClass).isInherited()) {
                     if (annotations == null) { // lazy construction
-                        annotations = new LinkedHashMap<>((Math.max(
+                        annotations = LinkedHashMap.newLinkedHashMap(Math.max(
                                 declaredAnnotations.size(),
                                 Math.min(12, declaredAnnotations.size() + superAnnotations.size())
-                            ) * 4 + 2) / 3
+                            )
                         );
                     }
                     annotations.put(annotationClass, e.getValue());

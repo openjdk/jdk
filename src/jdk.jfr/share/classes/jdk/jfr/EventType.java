@@ -78,7 +78,7 @@ public final class EventType {
         Objects.requireNonNull(name, "name");
         if (cache == null) {
             List<ValueDescriptor> fields = getFields();
-            Map<String, ValueDescriptor> newCache = new LinkedHashMap<>(fields.size());
+            Map<String, ValueDescriptor> newCache = LinkedHashMap.newLinkedHashMap(fields.size());
             for (ValueDescriptor v :fields) {
                 newCache.put(v.getName(), v);
             }

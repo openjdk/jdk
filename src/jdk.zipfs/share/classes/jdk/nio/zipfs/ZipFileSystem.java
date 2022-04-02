@@ -1561,7 +1561,7 @@ class ZipFileSystem extends FileSystem {
             throw new ZipException("read CEN tables failed");
         }
         // Iterate through the entries in the central directory
-        inodes = new LinkedHashMap<>(end.centot + 1);
+        inodes = LinkedHashMap.newLinkedHashMap(end.centot + 1);
         int pos = 0;
         int limit = cen.length - ENDHDR;
         while (pos < limit) {
