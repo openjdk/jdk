@@ -194,7 +194,7 @@ public class ClassBuilder extends AbstractBuilder {
     }
 
     /**
-     * Adds inner-classes, to an an outer class builder.
+     * Adds inner-classes, to an outer class builder.
      * @param cbs class builder(s) of the inner classes.
      * @return this builder.
      */

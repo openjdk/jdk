@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8003881
- * @summary tests Lambda expression with a a security manager at top level
+ * @summary tests Lambda expression with a security manager at top level
  * @modules jdk.compiler
  * @compile -XDignore.symbol.file LambdaAccessControlTest.java LUtils.java
  *

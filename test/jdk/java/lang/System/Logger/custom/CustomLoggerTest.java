@@ -370,7 +370,7 @@ public class CustomLoggerTest {
             throw new RuntimeException("sys logger in appplication map");
         }
         if (provider.system.contains(sysLogger1)) {
-            // sysLogger should be a a LazyLoggerWrapper
+            // sysLogger should be a LazyLoggerWrapper
             throw new RuntimeException("sys logger is in system map (should be wrapped)");
         }
 

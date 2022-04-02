@@ -910,7 +910,7 @@ public final class HexPrinter {
         }
 
         /**
-         * Read a a byte and write nothing.
+         * Read a byte and write nothing.
          *
          * @param in  a DataInputStream
          * @param out an Appendable to write the output to
