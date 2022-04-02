@@ -462,7 +462,7 @@ public final class Utils {
     }
 
     public static Map<String, String> sanitizeNullFreeStringMap(Map<String, String> settings) {
-        HashMap<String, String> map = new HashMap<>(settings.size());
+        HashMap<String, String> map = HashMap.newHashMap(settings.size());
         for (Map.Entry<String, String> e : settings.entrySet()) {
             String key = e.getKey();
             if (key == null) {

@@ -836,7 +836,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
     private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot s, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, int offx, int offy, SceneAnimator animator) {
-        Map<Point, List<Connection>> pointMap = new HashMap<>(connections.size());
+        Map<Point, List<Connection>> pointMap = HashMap.newHashMap(connections.size());
 
         for (Connection c : connections) {
 

@@ -46,9 +46,9 @@ public class LayoutGraph {
         assert verify();
 
         vertices = new TreeSet<>();
-        portLinks = new HashMap<>(links.size());
-        inputPorts = new HashMap<>(links.size());
-        outputPorts = new HashMap<>(links.size());
+        portLinks = HashMap.newHashMap(links.size());
+        inputPorts = HashMap.newHashMap(links.size());
+        outputPorts = HashMap.newHashMap(links.size());
 
         for (Link l : links) {
             if (l.getFrom() == null || l.getTo() == null) {

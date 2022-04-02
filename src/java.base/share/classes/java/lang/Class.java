@@ -3910,7 +3910,7 @@ public final class Class<T> implements java.io.Serializable,
             if (universe == null)
                 throw new IllegalArgumentException(
                     getName() + " is not an enum class");
-            directory = new HashMap<>((int)(universe.length / 0.75f) + 1);
+            directory = HashMap.newHashMap(universe.length);
             for (T constant : universe) {
                 directory.put(((Enum<?>)constant).name(), constant);
             }

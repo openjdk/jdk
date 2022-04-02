@@ -393,7 +393,7 @@ public class CoreDocumentImpl
 
             if (identifiers != null) {
                 // Build a reverse mapping from element to identifier.
-                reversedIdentifiers = new HashMap<>(identifiers.size());
+                reversedIdentifiers = HashMap.newHashMap(identifiers.size());
                 for (String elementId : identifiers.keySet()) {
                     reversedIdentifiers.put(identifiers.get(elementId), elementId);
                 }

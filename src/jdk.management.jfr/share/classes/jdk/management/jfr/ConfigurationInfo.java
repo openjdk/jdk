@@ -73,7 +73,7 @@ public final class ConfigurationInfo {
         if (o instanceof TabularData) {
             TabularData td = (TabularData) o;
             Collection<?> values = td.values();
-            Map<String, String> map = new HashMap<>(values.size());
+            Map<String, String> map = HashMap.newHashMap(values.size());
             for (Object value : td.values()) {
                 if (value instanceof CompositeData) {
                     CompositeData cdRow = (CompositeData) value;

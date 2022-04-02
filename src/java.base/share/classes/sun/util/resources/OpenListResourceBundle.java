@@ -157,7 +157,7 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      * Default uses HashMap.
      */
     protected <K, V> Map<K, V> createMap(int size) {
-        return new HashMap<>(size);
+        return HashMap.newHashMap(size);
     }
 
     protected <E> Set<E> createSet() {

@@ -107,7 +107,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
                             }
                         });
 
-                    mimeTypeMap = new HashMap<>(lines.size());
+                    mimeTypeMap = HashMap.newHashMap(lines.size());
                     String entry = "";
                     for (String line : lines) {
                         entry += line;

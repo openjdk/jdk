@@ -1816,7 +1816,7 @@ class SmallContainer extends Container {
 class LargeContainer extends Container {
     Map<String, OneAttr> items;
     LargeContainer(int size) {
-        items = new HashMap<>(size*2+1);
+        items = HashMap.newHashMap(size*2+1);
         values = new OneAttr[size];
     }
     void put(String key, OneAttr value) {

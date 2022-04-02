@@ -168,7 +168,7 @@ public final class DocumentCache implements DOMCache {
         _count = 0;
         _current = 0;
         _size  = size;
-        _references = new HashMap<>(_size+2);
+        _references = HashMap.newHashMap(_size);
         _URIs = new String[_size];
 
         try {

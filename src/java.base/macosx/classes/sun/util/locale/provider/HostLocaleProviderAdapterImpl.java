@@ -570,7 +570,7 @@ public class HostLocaleProviderAdapterImpl {
                 String[] names = getCalendarDisplayStrings(locale.toLanguageTag(),
                         field, style);
                 if (names != null) {
-                    map = new HashMap<>((int)Math.ceil(names.length / 0.75));
+                    map = HashMap.newHashMap(names.length);
                     for (int value = 0; value < names.length; value++) {
                         if (names[value] != null) {
                             map.put(names[value], value);

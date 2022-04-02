@@ -481,7 +481,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
     }
 
     private Map<K,V> getCachedEntries() {
-        Map<K,V> kvmap = new HashMap<>(cacheMap.size());
+        Map<K,V> kvmap = HashMap.newHashMap(cacheMap.size());
 
         for (CacheEntry<K,V> entry : cacheMap.values()) {
             kvmap.put(entry.getKey(), entry.getValue());

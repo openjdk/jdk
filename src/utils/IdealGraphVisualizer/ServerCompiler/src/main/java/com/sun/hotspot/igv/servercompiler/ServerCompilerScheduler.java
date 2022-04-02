@@ -233,7 +233,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
         // Compute block index map for dominator computation.
         int z = 0;
-        blockIndex = new HashMap<>(blocks.size());
+        blockIndex = HashMap.newHashMap(blocks.size());
         for (InputBlock b : blocks) {
             blockIndex.put(b, z);
             z++;
@@ -262,7 +262,7 @@ public class ServerCompilerScheduler implements Scheduler {
             return graph.getBlocks();
         } else {
             nodes = new ArrayList<>();
-            inputNodeToNode = new HashMap<>(graph.getNodes().size());
+            inputNodeToNode = HashMap.newHashMap(graph.getNodes().size());
 
             this.graph = graph;
             if (!hasCategoryInformation()) {
@@ -538,7 +538,7 @@ public class ServerCompilerScheduler implements Scheduler {
     }
 
     public void buildDominators() {
-        dominatorMap = new HashMap<>(graph.getBlocks().size());
+        dominatorMap = HashMap.newHashMap(graph.getBlocks().size());
         if (blocks.size() == 0) {
             return;
         }
@@ -636,7 +636,7 @@ public class ServerCompilerScheduler implements Scheduler {
             inputNodeToNode.put(n, node);
         }
 
-        Map<Integer, List<InputEdge>> edgeMap = new HashMap<>(graph.getEdges().size());
+        Map<Integer, List<InputEdge>> edgeMap = HashMap.newHashMap(graph.getEdges().size());
         for (InputEdge e : graph.getEdges()) {
 
             int to = e.getTo();

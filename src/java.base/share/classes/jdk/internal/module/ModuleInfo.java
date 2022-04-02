@@ -588,7 +588,7 @@ public final class ModuleInfo {
         String algorithm = cpool.getUtf8(algorithm_index);
 
         int hash_count = in.readUnsignedShort();
-        Map<String, byte[]> map = new HashMap<>(hash_count);
+        Map<String, byte[]> map = HashMap.newHashMap(hash_count);
         for (int i=0; i<hash_count; i++) {
             int module_name_index = in.readUnsignedShort();
             String mn = cpool.getModuleName(module_name_index);

@@ -108,7 +108,7 @@ final class HeaderTable extends SimpleHeaderTable {
 
     static {
         Map<String, Map<String, Integer>> map
-                = new HashMap<>(STATIC_TABLE_LENGTH);
+                = HashMap.newHashMap(STATIC_TABLE_LENGTH);
         for (int i = 1; i <= STATIC_TABLE_LENGTH; i++) {
             HeaderField f = staticTable.get(i);
             Map<String, Integer> values
@@ -116,7 +116,7 @@ final class HeaderTable extends SimpleHeaderTable {
             values.put(f.value, i);
         }
         // create an immutable deep copy
-        Map<String, Map<String, Integer>> copy = new HashMap<>(map.size());
+        Map<String, Map<String, Integer>> copy = HashMap.newHashMap(map.size());
         for (Map.Entry<String, Map<String, Integer>> e : map.entrySet()) {
             copy.put(e.getKey(), Map.copyOf(e.getValue()));
         }
