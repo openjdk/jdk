@@ -25,22 +25,13 @@
  * @test
  * @bug 8282446 8282508
  * @summary Jar validation fails when sealed classes and records are involved
- * @modules jdk.compiler
- *          jdk.jartool/sun.tools.jar
  * @run main ValidateJarWithSealedAndRecord
  */
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.List;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
+import java.util.spi.ToolProvider;
 
 public class ValidateJarWithSealedAndRecord {
 
@@ -60,7 +51,7 @@ public class ValidateJarWithSealedAndRecord {
     }
 
     void generateFilesNeeded() throws Exception {
-        sun.tools.jar.Main jarGenerator = new sun.tools.jar.Main(System.out, System.err, "jar");
+        ToolProvider jarTool = ToolProvider.findFirst("jar").orElseThrow(() -> new RuntimeException("jar tool not found"));
         writeFile("Foo.java",
                 """
                         public sealed interface Foo {
@@ -69,12 +60,12 @@ public class ValidateJarWithSealedAndRecord {
                         """
                         );
         com.sun.tools.javac.Main.compile(new String[]{"-d", "out", "Foo.java"});
-        jarGenerator.run(new String[] {"--create", "--file", "foo.jar", "-C", "out", "."});
+        jarTool.run(System.out, System.err, new String[] {"--create", "--file", "foo.jar", "-C", "out", "."});
         /* we need to create a fresh instance with clean options in other case the tool will
          * keep a copy of the options we just passed above
          */
-        jarGenerator = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarGenerator.run(new String[]{"--validate", "--file", "foo.jar"})) {
+        jarTool = ToolProvider.findFirst("jar").orElseThrow(() -> new RuntimeException("jar tool not found"));
+        if (jarTool.run(System.out, System.err, new String[]{"--validate", "--file", "foo.jar"}) != 0) {
             throw new AssertionError("jar file couldn't be validated");
         }
     }
