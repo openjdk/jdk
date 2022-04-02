@@ -121,14 +121,20 @@ public abstract class AbstractCompressExpandTest {
     Object[][] maskIntProvider() {
         RandomGenerator rg = RandomGenerator.getDefault();
 
-        return new Object[][]{{supplierWithToString(() -> rg.ints(SIZE).toArray(), "random masks")}, {supplierWithToString(this::contiguousMasksInt, "contiguous masks")}};
+        return new Object[][]{
+                {supplierWithToString(() -> rg.ints(SIZE).toArray(), "random masks")},
+                {supplierWithToString(this::contiguousMasksInt, "contiguous masks")}
+        };
     }
 
     @DataProvider
     Object[][] maskLongProvider() {
         RandomGenerator rg = RandomGenerator.getDefault();
 
-        return new Object[][]{{supplierWithToString(() -> rg.longs(SIZE).toArray(), "random masks")}, {supplierWithToString(this::contiguousMasksLong, "contiguous masks")}};
+        return new Object[][]{
+                {supplierWithToString(() -> rg.longs(SIZE).toArray(), "random masks")},
+                {supplierWithToString(this::contiguousMasksLong, "contiguous masks")}
+        };
     }
 
     int[] contiguousMasksInt() {
