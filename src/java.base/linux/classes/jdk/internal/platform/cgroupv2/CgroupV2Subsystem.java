@@ -332,9 +332,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
             return CgroupUtil.readFilePrivileged(Paths.get(unified.path(), "io.stat"))
                                 .map(mapFunc)
                                 .collect(Collectors.summingLong(e -> e));
-        } catch (UncheckedIOException e) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        } catch (IOException e) {
+        } catch (UncheckedIOException | IOException e) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
     }

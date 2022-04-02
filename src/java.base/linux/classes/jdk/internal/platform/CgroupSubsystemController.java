@@ -170,9 +170,7 @@ public interface CgroupSubsystemController {
                                            .findFirst();
 
             return result.isPresent() ? Long.parseLong(result.get()) : defaultRetval;
-        } catch (UncheckedIOException e) {
-            return defaultRetval;
-        } catch (IOException e) {
+        } catch (UncheckedIOException | IOException e) {
             return defaultRetval;
         }
     }

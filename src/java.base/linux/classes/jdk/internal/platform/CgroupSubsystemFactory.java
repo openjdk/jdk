@@ -82,9 +82,7 @@ public class CgroupSubsystemFactory {
         Optional<CgroupTypeResult> optResult = null;
         try {
             optResult = determineType("/proc/self/mountinfo", "/proc/cgroups", "/proc/self/cgroup");
-        } catch (IOException e) {
-            return null;
-        } catch (UncheckedIOException e) {
+        } catch (IOException | UncheckedIOException e) {
             return null;
         }
 
