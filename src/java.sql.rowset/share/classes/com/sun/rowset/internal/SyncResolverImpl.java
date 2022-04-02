@@ -596,7 +596,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
      * object.
      * <P>
      * <b>Note</b>In the reference implementation an optimistic concurrency implementation
-     * is provided as a sample implementation of a the {@code SyncProvider}
+     * is provided as a sample implementation of the {@code SyncProvider}
      * abstract class.
      * <P>
      * This method fails if any of the updates cannot be propagated back

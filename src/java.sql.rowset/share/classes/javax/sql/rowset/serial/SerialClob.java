@@ -235,7 +235,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
             return this.clob.getAsciiStream();
         } else {
             throw new SerialException("Unsupported operation. SerialClob cannot " +
-                "return a the CLOB value as an ascii stream, unless instantiated " +
+                "return the CLOB value as an ascii stream, unless instantiated " +
                 "with a fully implemented Clob object.");
         }
     }

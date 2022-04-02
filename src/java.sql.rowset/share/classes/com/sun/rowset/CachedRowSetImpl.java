@@ -855,7 +855,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * object.
      * <P>
      * <b>Note</b>In the reference implementation an optimistic concurrency implementation
-     * is provided as a sample implementation of a the <code>SyncProvider</code>
+     * is provided as a sample implementation of the <code>SyncProvider</code>
      * abstract class.
      * <P>
      * This method fails if any of the updates cannot be propagated back
