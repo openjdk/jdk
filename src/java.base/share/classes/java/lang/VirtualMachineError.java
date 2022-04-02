@@ -73,7 +73,7 @@ public abstract class VirtualMachineError extends Error {
     }
 
     /**
-     * Constructs an a {@code VirtualMachineError} with the specified
+     * Constructs a {@code VirtualMachineError} with the specified
      * cause and a detail message of {@code (cause==null ? null :
      * cause.toString())} (which typically contains the class and
      * detail message of {@code cause}).
