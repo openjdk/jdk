@@ -269,7 +269,7 @@ public class Events {
      * Creates a list of events from a recording.
      *
      * @param recording recording, not {@code null}
-     * @return an a list, not null
+     * @return a list, not null
      * @throws IOException if an event set could not be created due to I/O
      *         errors.
      */

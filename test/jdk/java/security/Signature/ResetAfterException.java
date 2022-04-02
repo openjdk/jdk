@@ -114,7 +114,7 @@ public class ResetAfterException {
                 // expected exception; ignore
                 System.out.println("Expected Ex for short output buffer: " + e);
             }
-            // Signature object should reset after an a failed verification
+            // Signature object should reset after a failed verification
             sig.update(data);
             try {
                 // verify with valid signature bytes again

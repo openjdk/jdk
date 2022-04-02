@@ -28,7 +28,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.posix.*;
 
-/** A Object can represent either a .so or an a.out file. */
+/** An Object can represent either a .so or an a.out file. */
 
 class SharedObject extends DSO {
   SharedObject(ProcDebugger dbg, String filename, long size, Address relocation) {

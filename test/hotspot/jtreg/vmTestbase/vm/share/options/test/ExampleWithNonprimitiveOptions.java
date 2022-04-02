@@ -31,7 +31,7 @@ import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 
 /**
- * This example uses @Option annotation with an a factory attribute,
+ * This example uses @Option annotation with a factory attribute,
  * to populate a field of a non-simple type.
  */
 public class ExampleWithNonprimitiveOptions

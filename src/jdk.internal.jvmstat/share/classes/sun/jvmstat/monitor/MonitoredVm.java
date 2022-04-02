@@ -123,7 +123,7 @@ public interface MonitoredVm {
      *
      * Polling implementations may choose to poll asynchronously. This
      * method allows an asynchronous task to communicate any polling related
-     * exceptions with the application. When an a non-null exception is reported
+     * exceptions with the application. When a non-null exception is reported
      * through this interface, the MonitoredVm instance is considered to
      * be in the <em>errored</em> state.
      *
