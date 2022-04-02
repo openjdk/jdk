@@ -157,7 +157,7 @@ void CodeBlobCollector::do_vtable_stub(VtableStub* vs) {
 //
 // The created list is growable array of JvmtiCodeBlobDesc - each one describes
 // a CodeBlob. Note that the list is static - this is because CodeBlob::blobs_do
-// requires a a C or static function so we can't use an instance function. This
+// requires a C or static function so we can't use an instance function. This
 // isn't a problem as the iteration is serial anyway as we need the CodeCache_lock
 // to iterate over the code cache.
 //

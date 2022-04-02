@@ -25,7 +25,7 @@
 /**
  * Plain text file handler
  *
- * This class provides an example of a a replacement content handler for
+ * This class provides an example of a replacement content handler for
  * the text/plain content type.  It reads the content of the URL, and prepends
  * an additional message at the beginning.
  *

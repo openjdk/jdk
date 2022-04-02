@@ -1813,7 +1813,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Change state to native (we save the return address in the thread, since it might not
-  // be pushed on the stack when we do a a stack traversal). It is enough that the pc()
+  // be pushed on the stack when we do a stack traversal). It is enough that the pc()
   // points into the right code segment. It does not have to be the correct return pc.
   // We use the same pc/oopMap repeatedly when we call out
 

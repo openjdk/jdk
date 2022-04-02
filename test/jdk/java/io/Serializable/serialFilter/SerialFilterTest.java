@@ -710,7 +710,7 @@ public class SerialFilterTest implements Serializable {
     }
 
     /**
-     * Generate an an object that will be serialized to some number of bytes.
+     * Generate an object that will be serialized to some number of bytes.
      * Or 1 greater if allowed is false.
      * It returns a two element Object array holding a byte array sized
      * to achieve the desired total size.
