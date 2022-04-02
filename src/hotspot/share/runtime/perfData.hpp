@@ -78,7 +78,7 @@ enum CounterNS {
  * by accessor methods to make algorithmic decisions as they are potentially
  * extracted from a shared memory region. Although any shared memory region
  * created is with appropriate access restrictions, allowing read-write access
- * only to the principal that created the JVM, it is believed that a the
+ * only to the principal that created the JVM, it is believed that the
  * shared memory region facilitates an easier attack path than attacks
  * launched through mechanisms such as /proc. For this reason, it is
  * recommended that data returned by PerfData accessor methods be used

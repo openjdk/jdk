@@ -73,7 +73,7 @@ public class PerfIntegerMonitor extends AbstractMonitor
     /**
      * Return the current value of the IntegerInstrument as an int.
      *
-     * @return int - a the current value of the IntegerInstrument.
+     * @return int - the current value of the IntegerInstrument.
      */
     public int intValue() {
         return ib.get(0);

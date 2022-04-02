@@ -162,7 +162,7 @@ public class TooSmallStackSize extends TestHelper {
         String min_stack_allowed = checkStack("64k");
 
         /*
-         * Try again with a the minimum stack size that was given in the error message
+         * Try again with the minimum stack size that was given in the error message
          */
         checkMinStackAllowed(min_stack_allowed);
 

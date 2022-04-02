@@ -121,7 +121,7 @@ public final class SHA extends DigestBase {
     private static final int round4_kt = 0xca62c1d6;
 
     /**
-     * Compute a the hash for the current block.
+     * Compute the hash for the current block.
      *
      * This is in the same vein as Peter Gutmann's algorithm listed in
      * the back of Applied Cryptography, Compact implementation of

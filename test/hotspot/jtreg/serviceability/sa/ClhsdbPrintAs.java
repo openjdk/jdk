@@ -48,7 +48,7 @@ public class ClhsdbPrintAs {
             theApp = LingeredApp.startApp();
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            // Run the 'jstack -v' command to get the address of a the Method*
+            // Run the 'jstack -v' command to get the address of the Method*
             // representing LingeredApp.steadyState
             List<String> cmds = List.of("jstack -v");
             Map<String, List<String>> expStrMap;

@@ -381,7 +381,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     private static ByteArrayTagOrder tagOrder = new ByteArrayTagOrder();
 
     /**
-     * Marshals a the contents of a set on the output stream with the
+     * Marshals the contents of a set on the output stream with the
      * encodings of its sorted in increasing order.
      *
      * @param order the order to use when sorting encodings of components.

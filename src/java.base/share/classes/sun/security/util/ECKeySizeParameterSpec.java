@@ -31,7 +31,7 @@ import sun.security.util.ObjectIdentifier;
 /**
  * This immutable class is used when randomly generating a key pair and the
  * consumer only specifies the length of the key and therefore a curve for that
- * key size must be picked from a the list of supported curves using this spec.
+ * key size must be picked from the list of supported curves using this spec.
  *
  * @see AlgorithmParameterSpec
  * @see ECGenParameterSpec

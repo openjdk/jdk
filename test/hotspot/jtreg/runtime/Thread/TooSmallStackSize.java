@@ -186,7 +186,7 @@ public class TooSmallStackSize {
         String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "64");
 
         /*
-         * Try again with a the minimum stack size that was given in the error message
+         * Try again with the minimum stack size that was given in the error message
          */
         checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, min_stack_allowed);
 
