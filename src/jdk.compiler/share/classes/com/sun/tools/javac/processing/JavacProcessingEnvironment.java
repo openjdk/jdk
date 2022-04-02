@@ -884,7 +884,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      List<ClassSymbol> topLevelClasses,
                                      List<PackageSymbol> packageInfoFiles,
                                      List<ModuleSymbol> moduleInfoFiles) {
-        Map<String, TypeElement> unmatchedAnnotations = HashMap.newHashMap(annotationsPresent.size());
+        Map<String, TypeElement> unmatchedAnnotations = new HashMap<>(annotationsPresent.size());
 
         for(TypeElement a  : annotationsPresent) {
             ModuleElement mod = elementUtils.getModuleOf(a);
