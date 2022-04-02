@@ -904,8 +904,8 @@ final class Int512Vector extends IntVector {
     @ForceInline
     @Override
     final
-    void intoArray0(int[] a, int offset, VectorMask<Integer> m) {
-        super.intoArray0Template(Int512Mask.class, a, offset, (Int512Mask) m);
+    void intoArray0(int[] a, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+        super.intoArray0Template(Int512Mask.class, a, offset, (Int512Mask) m, offsetInRange);
     }
 
     @ForceInline
@@ -926,15 +926,15 @@ final class Int512Vector extends IntVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        super.intoByteArray0Template(Int512Mask.class, a, offset, (Int512Mask) m);  // specialize
+    void intoByteArray0(byte[] a, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+        super.intoByteArray0Template(Int512Mask.class, a, offset, (Int512Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        super.intoByteBuffer0Template(Int512Mask.class, bb, offset, (Int512Mask) m);
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m, boolean offsetInRange) {
+        super.intoByteBuffer0Template(Int512Mask.class, bb, offset, (Int512Mask) m, offsetInRange);
     }
 
 

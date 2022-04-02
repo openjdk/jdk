@@ -864,8 +864,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    void intoArray0(long[] a, int offset, VectorMask<Long> m) {
-        super.intoArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m);
+    void intoArray0(long[] a, int offset, VectorMask<Long> m, boolean offsetInRange) {
+        super.intoArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, offsetInRange);
     }
 
     @ForceInline
@@ -886,15 +886,15 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Long> m) {
-        super.intoByteArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m);  // specialize
+    void intoByteArray0(byte[] a, int offset, VectorMask<Long> m, boolean offsetInRange) {
+        super.intoByteArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m) {
-        super.intoByteBuffer0Template(LongMaxMask.class, bb, offset, (LongMaxMask) m);
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m, boolean offsetInRange) {
+        super.intoByteBuffer0Template(LongMaxMask.class, bb, offset, (LongMaxMask) m, offsetInRange);
     }
 
 

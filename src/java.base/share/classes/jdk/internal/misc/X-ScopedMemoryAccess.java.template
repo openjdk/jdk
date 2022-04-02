@@ -517,14 +517,14 @@ public class ScopedMemoryAccess {
     public static
     <V extends VectorSupport.Vector<E>, E, M extends VectorSupport.VectorMask<E>>
     void storeIntoByteBufferMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
-                                   int length, V v, M m,
+                                   int length, V v, M m, boolean offsetInRange,
                                    ByteBuffer bb, int offset,
                                    VectorSupport.StoreVectorMaskedOperation<ByteBuffer, V, M> defaultImpl) {
         try {
             storeIntoByteBufferMaskedScoped(
                     BufferAccess.scope(bb),
                     vmClass, maskClass, e, length,
-                    v, m,
+                    v, m, offsetInRange,
                     bb, offset,
                     defaultImpl);
         } catch (ScopedMemoryAccess.Scope.ScopedAccessError ex) {
@@ -538,7 +538,7 @@ public class ScopedMemoryAccess {
     <V extends VectorSupport.Vector<E>, E, M extends VectorSupport.VectorMask<E>>
     void storeIntoByteBufferMaskedScoped(ScopedMemoryAccess.Scope scope,
                                          Class<? extends V> vmClass, Class<M> maskClass,
-                                         Class<E> e, int length, V v, M m,
+                                         Class<E> e, int length, V v, M m, boolean offsetInRange,
                                          ByteBuffer bb, int offset,
                                          VectorSupport.StoreVectorMaskedOperation<ByteBuffer, V, M> defaultImpl) {
         try {
@@ -546,11 +546,19 @@ public class ScopedMemoryAccess {
                 scope.checkValidState();
             }
 
-            VectorSupport.storeMasked(vmClass, maskClass, e, length,
-                    BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset),
-                    v, m,
-                    bb, offset,
-                    defaultImpl);
+            if (offsetInRange) {
+                VectorSupport.storeMasked(vmClass, maskClass, e, length,
+                        BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset),
+                        v, m, /* offsetInRange */ 1,
+                        bb, offset,
+                        defaultImpl);
+            } else {
+                VectorSupport.storeMasked(vmClass, maskClass, e, length,
+                        BufferAccess.bufferBase(bb), BufferAccess.bufferAddress(bb, offset),
+                        v, m, /* offsetInRange */ 0,
+                        bb, offset,
+                        defaultImpl);
+            }
         } finally {
             Reference.reachabilityFence(scope);
         }

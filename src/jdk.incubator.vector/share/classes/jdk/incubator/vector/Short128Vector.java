@@ -895,8 +895,8 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    void intoArray0(short[] a, int offset, VectorMask<Short> m) {
-        super.intoArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);
+    void intoArray0(short[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        super.intoArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, offsetInRange);
     }
 
 
@@ -911,22 +911,22 @@ final class Short128Vector extends ShortVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        super.intoByteArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);  // specialize
+    void intoByteArray0(byte[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        super.intoByteArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        super.intoByteBuffer0Template(Short128Mask.class, bb, offset, (Short128Mask) m);
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        super.intoByteBuffer0Template(Short128Mask.class, bb, offset, (Short128Mask) m, offsetInRange);
     }
 
     @ForceInline
     @Override
     final
-    void intoCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        super.intoCharArray0Template(Short128Mask.class, a, offset, (Short128Mask) m);
+    void intoCharArray0(char[] a, int offset, VectorMask<Short> m, boolean offsetInRange) {
+        super.intoCharArray0Template(Short128Mask.class, a, offset, (Short128Mask) m, offsetInRange);
     }
 
     // End of specialized low-level memory operations.

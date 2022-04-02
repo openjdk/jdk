@@ -1194,8 +1194,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    void intoArray0($type$[] a, int offset, VectorMask<$Boxtype$> m) {
-        super.intoArray0Template($masktype$.class, a, offset, ($masktype$) m);
+    void intoArray0($type$[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+        super.intoArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);
     }
 
 #if[!byteOrShort]
@@ -1211,8 +1211,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    void intoBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m) {
-        super.intoBooleanArray0Template($masktype$.class, a, offset, ($masktype$) m);
+    void intoBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+        super.intoBooleanArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);
     }
 #end[byte]
 
@@ -1226,23 +1226,23 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m) {
-        super.intoByteArray0Template($masktype$.class, a, offset, ($masktype$) m);  // specialize
+    void intoByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+        super.intoByteArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m) {
-        super.intoByteBuffer0Template($masktype$.class, bb, offset, ($masktype$) m);
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+        super.intoByteBuffer0Template($masktype$.class, bb, offset, ($masktype$) m, offsetInRange);
     }
 
 #if[short]
     @ForceInline
     @Override
     final
-    void intoCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m) {
-        super.intoCharArray0Template($masktype$.class, a, offset, ($masktype$) m);
+    void intoCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange) {
+        super.intoCharArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);
     }
 #end[short]
 

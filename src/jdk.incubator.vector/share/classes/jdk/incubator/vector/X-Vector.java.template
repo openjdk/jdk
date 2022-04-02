@@ -4074,8 +4074,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoArray(a, offset);
         } else {
             $Type$Species vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-            intoArray0(a, offset, m);
+            if (offset >= 0 && offset <= (a.length - vsp.length())) {
+                intoArray0(a, offset, m, /* offsetInRange */ true);
+            } else {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                intoArray0(a, offset, m, /* offsetInRange */ false);
+            }
         }
     }
 
@@ -4292,8 +4296,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoCharArray(a, offset);
         } else {
             $Type$Species vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-            intoCharArray0(a, offset, m);
+            if (offset >= 0 && offset <= (a.length - vsp.length())) {
+                intoCharArray0(a, offset, m, /* offsetInRange */ true);
+            } else {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                intoCharArray0(a, offset, m, /* offsetInRange */ false);
+            }
         }
     }
 
@@ -4454,8 +4462,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoBooleanArray(a, offset);
         } else {
             $Type$Species vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-            intoBooleanArray0(a, offset, m);
+            if (offset >= 0 && offset <= (a.length - vsp.length())) {
+                intoBooleanArray0(a, offset, m, /* offsetInRange */ true);
+            } else {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                intoBooleanArray0(a, offset, m, /* offsetInRange */ false);
+            }
         }
     }
 
@@ -4576,8 +4588,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             intoByteArray(a, offset, bo);
         } else {
             $Type$Species vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, a.length);
-            maybeSwap(bo).intoByteArray0(a, offset, m);
+            if (offset >= 0 && offset <= (a.length - vsp.vectorByteSize())) {
+                maybeSwap(bo).intoByteArray0(a, offset, m, /* offsetInRange */ true);
+            } else {
+                checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, a.length);
+                maybeSwap(bo).intoByteArray0(a, offset, m, /* offsetInRange */ false);
+            }
         }
     }
 
@@ -4612,8 +4628,12 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                 throw new ReadOnlyBufferException();
             }
             $Type$Species vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, bb.limit());
-            maybeSwap(bo).intoByteBuffer0(bb, offset, m);
+            if (offset >= 0 && offset <= (bb.limit() - vsp.vectorByteSize())) {
+                maybeSwap(bo).intoByteBuffer0(bb, offset, m, /* offsetInRange */ true);
+            } else {
+                checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, bb.limit());
+                maybeSwap(bo).intoByteBuffer0(bb, offset, m, /* offsetInRange */ false);
+            }
         }
     }
 
@@ -4895,20 +4915,37 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     abstract
-    void intoArray0($type$[] a, int offset, VectorMask<$Boxtype$> m);
+    void intoArray0($type$[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    void intoArray0Template(Class<M> maskClass, $type$[] a, int offset, M m) {
+    void intoArray0Template(Class<M> maskClass, $type$[] a, int offset, M m, boolean offsetInRange) {
+        intoArray0Template(maskClass, a, arrayAddress(a, offset), offset,
+            this, m, offsetInRange,
+            (arr, off, v, vm) -> v.stOp(arr, off, vm,
+                                        (arr_, off_, i, e) -> arr_[off_ + i] = e));
+    }
+
+    @ForceInline
+    final
+    <C, M extends VectorMask<$Boxtype$>>
+    void intoArray0Template(Class<M> maskClass, C base, long offset, int index, $abstractvectortype$ v, M m, boolean offsetInRange,
+                            VectorSupport.StoreVectorMaskedOperation<C, $abstractvectortype$, M> defaultImpl) {
         m.check(species());
         $Type$Species vsp = vspecies();
-        VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
-            this, m, a, offset,
-            (arr, off, v, vm)
-            -> v.stOp(arr, off, vm,
-                      (arr_, off_, i, e) -> arr_[off_ + i] = e));
+        if (offsetInRange) {
+            VectorSupport.storeMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                base, offset,
+                v, m, /* offsetInRange */ 1,
+                base, index, defaultImpl);
+        } else {
+            VectorSupport.storeMasked(
+                vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
+                base, offset,
+                v, m, /* offsetInRange */ 0,
+                base, index, defaultImpl);
+        }
     }
 
 #if[!byteOrShort]
@@ -4975,21 +5012,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
 #if[byte]
     abstract
-    void intoBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m);
+    void intoBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    void intoBooleanArray0Template(Class<M> maskClass, boolean[] a, int offset, M m) {
-        m.check(species());
-        $Type$Species vsp = vspecies();
+    void intoBooleanArray0Template(Class<M> maskClass, boolean[] a, int offset, M m, boolean offsetInRange) {
         ByteVector normalized = this.and((byte) 1);
-        VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, booleanArrayAddress(a, offset),
-            normalized, m, a, offset,
-            (arr, off, v, vm)
-            -> v.stOp(arr, off, vm,
-                      (arr_, off_, i, e) -> arr_[off_ + i] = (e & 1) != 0));
+        intoArray0Template(maskClass, a, booleanArrayAddress(a, offset), offset,
+            normalized,  m, offsetInRange,
+            (arr, off, v, vm) -> v.stOp(arr, off, vm,
+                                        (arr_, off_, i, e) -> arr_[off_ + i] = (e & 1) != 0));
     }
 #end[byte]
 
@@ -5011,17 +5043,13 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     abstract
-    void intoByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m);
+    void intoByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    void intoByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m) {
-        $Type$Species vsp = vspecies();
-        m.check(vsp);
-        VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, byteArrayAddress(a, offset),
-            this, m, a, offset,
+    void intoByteArray0Template(Class<M> maskClass, byte[] a, int offset, M m, boolean offsetInRange) {
+        intoArray0Template(maskClass, a, byteArrayAddress(a, offset), offset,
+            this, m, offsetInRange,
             (arr, off, v, vm) -> {
                 ByteBuffer wb = wrapper(arr, NATIVE_ENDIAN);
                 v.stOp(wb, off, vm,
@@ -5044,16 +5072,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     abstract
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m);
+    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    void intoByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m) {
+    void intoByteBuffer0Template(Class<M> maskClass, ByteBuffer bb, int offset, M m, boolean offsetInRange) {
         $Type$Species vsp = vspecies();
         m.check(vsp);
         ScopedMemoryAccess.storeIntoByteBufferMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                this, m, bb, offset,
+                this, m, offsetInRange, bb, offset,
                 (buf, off, v, vm) -> {
                     ByteBuffer wb = wrapper(buf, NATIVE_ENDIAN);
                     v.stOp(wb, off, vm,
@@ -5064,20 +5092,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[short]
     /*package-private*/
     abstract
-    void intoCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m);
+    void intoCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, boolean offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    void intoCharArray0Template(Class<M> maskClass, char[] a, int offset, M m) {
-        m.check(species());
-        $Type$Species vsp = vspecies();
-        VectorSupport.storeMasked(
-            vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
-            this, m, a, offset,
-            (arr, off, v, vm)
-            -> v.stOp(arr, off, vm,
-                      (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
+    void intoCharArray0Template(Class<M> maskClass, char[] a, int offset, M m, boolean offsetInRange) {
+        intoArray0Template(maskClass, a, charArrayAddress(a, offset), offset,
+            this, m, offsetInRange,
+            (arr, off, v, vm) -> v.stOp(arr, off, vm,
+                                        (arr_, off_, i, e) -> arr_[off_ + i] = (char) e));
     }
 #end[short]
 
