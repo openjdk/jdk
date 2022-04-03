@@ -1,0 +1,2 @@
+- compiler.note.proc.messager: p.NestedTypeToString.@p.A Inner
+- compiler.note.proc.messager: p.NestedTypeToString.Inner.@p.A InnerMost
