@@ -31,7 +31,7 @@ import javax.swing.SwingUtilities;
  * @bug 4400728
  * @summary This testcase tests CCC4400728 request, checks whether JFileChooser
  *          constructor set correct default directory or not, it is typically
- *          the "My Documents" folder on Windows, and the user's home directory
+ *          the "Documents" folder on Windows, and the user's home directory
  *          on Unix.
  * @run main JFileChooserDefaultDirectoryTest
  */
