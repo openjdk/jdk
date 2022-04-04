@@ -1335,16 +1335,16 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
 // Stack allocated class to help ensure that ObjectMarker is used
 // correctly. Constructor initializes ObjectMarker, destructor calls
 // ObjectMarker's done() function to restore object headers.
-class ObjectMarkerController : public StackObj {
+class ObjectMarker : public StackObj {
 private:
   static BitSet* _bitset;
 public:
-  ObjectMarkerController() {
+  ObjectMarker() {
     assert(_bitset == NULL, "don't initialize bitset twice");
     _bitset = new BitSet();
   }
 
-  ~ObjectMarkerController() {
+  ~ObjectMarker() {
     assert(_bitset != NULL, "bitset must be initialized");
     delete _bitset;
     _bitset = NULL;
@@ -1361,7 +1361,7 @@ public:
   }
 };
 
-BitSet* ObjectMarkerController::_bitset = NULL;
+BitSet* ObjectMarker::_bitset = NULL;
 
 // helper to map a jvmtiHeapReferenceKind to an old style jvmtiHeapRootKind
 // (not performance critical as only used for roots)
@@ -1504,7 +1504,7 @@ class CallbackInvoker : AllStatic {
   // if the object hasn't been visited then push it onto the visit stack
   // so that it will be visited later
   static inline bool check_for_visit(oop obj) {
-    if (!ObjectMarkerController::is_marked(obj)) visit_stack()->push(obj);
+    if (!ObjectMarker::is_marked(obj)) visit_stack()->push(obj);
     return true;
   }
 
@@ -2791,8 +2791,8 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
 //
 bool VM_HeapWalkOperation::visit(oop o) {
   // mark object as visited
-  assert(!ObjectMarkerController::is_marked(o), "can't visit same object more than once");
-  ObjectMarkerController::mark(o);
+  assert(!ObjectMarker::is_marked(o), "can't visit same object more than once");
+  ObjectMarker::mark(o);
 
   // instance
   if (o->is_instance()) {
@@ -2821,7 +2821,7 @@ bool VM_HeapWalkOperation::visit(oop o) {
 
 void VM_HeapWalkOperation::doit() {
   ResourceMark rm;
-  ObjectMarkerController marker;
+  ObjectMarker marker;
   ClassFieldMapCacheMark cm;
 
   JvmtiTagMap::check_hashmaps_for_heapwalk();
@@ -2846,7 +2846,7 @@ void VM_HeapWalkOperation::doit() {
     // visited or the callback asked to terminate the iteration.
     while (!visit_stack()->is_empty()) {
       oop o = visit_stack()->pop();
-      if (!ObjectMarkerController::is_marked(o)) {
+      if (!ObjectMarker::is_marked(o)) {
         if (!visit(o)) {
           break;
         }
