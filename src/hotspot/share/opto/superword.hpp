@@ -286,7 +286,7 @@ class SuperWord : public ResourceObj {
  public:
   SuperWord(PhaseIdealLoop* phase);
 
-  void transform_loop(IdealLoopTree* lpt, bool do_optimization);
+  bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
 
   void unrolling_analysis(int &local_loop_unroll_factor);
 
@@ -422,7 +422,7 @@ class SuperWord : public ResourceObj {
   // methods
 
   // Extract the superword level parallelism
-  void SLP_extract();
+  bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.
   void find_adjacent_refs();
   // Tracing support
@@ -509,7 +509,7 @@ class SuperWord : public ResourceObj {
   Node* find_last_mem_state(Node_List* pk, Node* first_mem);
 
   // Convert packs into vector node operations
-  void output();
+  bool output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?

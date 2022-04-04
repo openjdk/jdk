@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -368,6 +368,12 @@ final class IntMaxVector extends IntVector {
     @ForceInline
     public final IntMaxMask test(Test op) {
         return super.testTemplate(IntMaxMask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final IntMaxMask test(Test op, VectorMask<Integer> m) {
+        return super.testTemplate(IntMaxMask.class, op, (IntMaxMask) m);  // specialize
     }
 
     // Specialized comparisons

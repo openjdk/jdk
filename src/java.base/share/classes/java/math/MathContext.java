@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ public final class MathContext implements Serializable {
     /* ----- Constants ----- */
 
     // defaults for constructors
-    private static final int DEFAULT_DIGITS = 9;
     private static final RoundingMode DEFAULT_ROUNDINGMODE = RoundingMode.HALF_UP;
     // Smallest values for digits (Maximum is Integer.MAX_VALUE)
     private static final int MIN_DIGITS = 0;
@@ -140,7 +139,6 @@ public final class MathContext implements Serializable {
      */
     public MathContext(int setPrecision) {
         this(setPrecision, DEFAULT_ROUNDINGMODE);
-        return;
     }
 
     /**
@@ -162,7 +160,6 @@ public final class MathContext implements Serializable {
 
         precision = setPrecision;
         roundingMode = setRoundingMode;
-        return;
     }
 
     /**
@@ -181,7 +178,6 @@ public final class MathContext implements Serializable {
      * @throws NullPointerException if the argument is {@code null}
      */
     public MathContext(String val) {
-        boolean bad = false;
         int setPrecision;
         if (val == null)
             throw new NullPointerException("null String");
@@ -232,7 +228,6 @@ public final class MathContext implements Serializable {
      * @return a {@code RoundingMode} object which is the value of the
      *         {@code roundingMode} setting
      */
-
     public RoundingMode getRoundingMode() {
         return roundingMode;
     }

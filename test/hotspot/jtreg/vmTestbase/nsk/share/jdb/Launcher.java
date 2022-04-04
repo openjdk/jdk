@@ -184,7 +184,7 @@ public class Launcher extends DebugeeBinder {
             connect.append(argumentHandler.getConnectorName() + ":");
 
             String connectorAddress;
-            String vmAddress = makeTransportAddress();;
+            String vmAddress = makeTransportAddress();
 
             if (argumentHandler.isRawLaunchingConnector()) {
 

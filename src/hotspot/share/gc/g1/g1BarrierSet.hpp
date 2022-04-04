@@ -56,10 +56,12 @@ class G1BarrierSet: public CardTableBarrierSet {
   }
 
   // Add "pre_val" to a set of objects that may have been disconnected from the
-  // pre-marking object graph.
-  static void enqueue(oop pre_val);
+  // pre-marking object graph. Prefer the version that takes location, as it
+  // can avoid touching the heap unnecessarily.
+  template <class T> static void enqueue(T* dst);
+  static void enqueue_preloaded(oop pre_val);
 
-  static void enqueue_if_weak(DecoratorSet decorators, oop value);
+  static void enqueue_preloaded_if_weak(DecoratorSet decorators, oop value);
 
   template <class T> void write_ref_array_pre_work(T* dst, size_t count);
   virtual void write_ref_array_pre(oop* dst, size_t count, bool dest_uninitialized);

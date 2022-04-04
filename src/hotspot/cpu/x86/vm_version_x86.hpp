@@ -1044,6 +1044,25 @@ public:
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
 
+  // Old CPUs perform lea on AGU which causes additional latency transfering the
+  // value from/to ALU for other operations
+  static bool supports_fast_2op_lea() {
+    return (is_intel() && supports_avx()) || // Sandy Bridge and above
+           (is_amd()   && supports_avx());   // Jaguar and Bulldozer and above
+  }
+
+  // Pre Icelake Intels suffer inefficiency regarding 3-operand lea, which contains
+  // all of base register, index register and displacement immediate, with 3 latency.
+  // Note that when the address contains no displacement but the base register is
+  // rbp or r13, the machine code must contain a zero displacement immediate,
+  // effectively transform a 2-operand lea into a 3-operand lea. This can be
+  // replaced by add-add or lea-add
+  static bool supports_fast_3op_lea() {
+    return supports_fast_2op_lea() &&
+           ((is_intel() && supports_clwb() && !is_intel_skylake()) || // Icelake and above
+            is_amd());
+  }
+
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();

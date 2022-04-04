@@ -157,6 +157,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
 
+  static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 

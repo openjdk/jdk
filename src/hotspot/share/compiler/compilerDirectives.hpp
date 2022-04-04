@@ -66,6 +66,7 @@
     cflags(PrintIntrinsics,         bool, PrintIntrinsics, PrintIntrinsics) \
 NOT_PRODUCT(cflags(TraceOptoPipelining, bool, TraceOptoPipelining, TraceOptoPipelining)) \
 NOT_PRODUCT(cflags(TraceOptoOutput,     bool, TraceOptoOutput, TraceOptoOutput)) \
+NOT_PRODUCT(cflags(TraceEscapeAnalysis, bool, false, TraceEscapeAnalysis)) \
 NOT_PRODUCT(cflags(PrintIdeal,          bool, PrintIdeal, PrintIdeal)) \
 NOT_PRODUCT(cflags(PrintIdealPhase,     ccstrlist, "", PrintIdealPhase)) \
     cflags(TraceSpilling,           bool, TraceSpilling, TraceSpilling) \
