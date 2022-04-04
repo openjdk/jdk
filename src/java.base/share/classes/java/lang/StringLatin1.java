@@ -191,8 +191,8 @@ final class StringLatin1 {
     @IntrinsicCandidate
     public static int hashCode(byte[] value) {
         int h = 0;
-        for (int i = 0; i < value.length; i++) {
-            h = 31 * h + (value[i] & 0xff);
+        for (byte v : value) {
+            h = 31 * h + (v & 0xff);
         }
         return h;
     }

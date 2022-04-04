@@ -414,20 +414,8 @@ final class StringUTF16 {
     @IntrinsicCandidate
     public static int hashCode(byte[] value) {
         int h = 0;
-        int i = 0;
         int length = value.length >> 1;
-        for (; i < (length & ~(8 - 1)); i += 8) {
-            h = -1807454463 * h                   +
-                 1742810335 * getChar(value, i+0) +
-                  887503681 * getChar(value, i+1) +
-                   28629151 * getChar(value, i+2) +
-                     923521 * getChar(value, i+3) +
-                      29791 * getChar(value, i+4) +
-                        961 * getChar(value, i+5) +
-                         31 * getChar(value, i+6) +
-                          1 * getChar(value, i+7);
-        }
-        for (; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             h = 31 * h + getChar(value, i);
         }
         return h;
