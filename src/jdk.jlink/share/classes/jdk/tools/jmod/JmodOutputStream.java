@@ -53,7 +53,7 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
 
     /**
      * This method creates (or overrides, if exists) the JMOD file,
-     * returning the the output stream to write to the JMOD file.
+     * returning the output stream to write to the JMOD file.
      */
     static JmodOutputStream newOutputStream(Path file, LocalDateTime date) throws IOException {
         OutputStream out = Files.newOutputStream(file);
@@ -153,4 +153,3 @@ class JmodOutputStream extends OutputStream implements AutoCloseable {
         zos.close();
     }
 }
-

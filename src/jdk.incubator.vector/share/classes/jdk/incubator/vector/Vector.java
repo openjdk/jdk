@@ -686,7 +686,7 @@ import java.util.Arrays;
  * because it is relatively rare to find algorithms where, given two
  * adjacent vector lanes, one lane is somehow more arithmetically
  * significant than its neighbor, and even in those cases, there is no
- * general way to know which neighbor is the the more significant.
+ * general way to know which neighbor is the more significant.
  *
  * <p> Putting the terms together, we view the information structure
  * of a vector as a temporal sequence of lanes ("first", "next",

@@ -377,7 +377,7 @@ public abstract class Snippet {
      * {@link jdk.jshell.Snippet.Status#isActive()}, if, as the
      * JShell state changes, the snippet will update, possibly
      * changing {@code Status}.
-     * An executable Snippet can only be executed if it is in the the
+     * An executable Snippet can only be executed if it is in the
      * {@link jdk.jshell.Snippet.Status#VALID} {@code Status}.
      * @see JShell#status(jdk.jshell.Snippet)
      */

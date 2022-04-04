@@ -122,7 +122,7 @@
  * <h2>Starting an Agent After VM Startup</h2>
  *
  * <p> An implementation may provide a mechanism to start agents sometime after
- * the the VM has started. The details as to how this is initiated are
+ * the VM has started. The details as to how this is initiated are
  * implementation specific but typically the application has already started and
  * its {@code main} method has already been invoked. In cases where an
  * implementation supports the starting of agents after the VM has started the

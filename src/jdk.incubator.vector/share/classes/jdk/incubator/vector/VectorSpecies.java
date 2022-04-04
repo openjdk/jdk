@@ -412,7 +412,7 @@ public interface VectorSpecies<E> {
      * Returns a vector of this species
      * where lane elements are initialized
      * from the given array at the given offset.
-     * The array must be of the the correct {@code ETYPE}.
+     * The array must be of the correct {@code ETYPE}.
      *
      * Equivalent to
      * {@code IntVector.fromArray(this,a,offset)}

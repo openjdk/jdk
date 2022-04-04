@@ -247,7 +247,7 @@ public class SjavacImpl implements Sjavac {
                                 true,
                                 false);
                 javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
-                // Recheck the the source files and their timestamps again.
+                // Recheck the source files and their timestamps again.
                 javac_state.checkSourceStatus(true);
 
                 // Now do a safety check that the list of source files is identical

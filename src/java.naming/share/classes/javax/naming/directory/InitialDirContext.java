@@ -97,7 +97,7 @@ public class InitialDirContext extends InitialContext implements DirContext {
      *     The order that providers are located is implementation specific
      *     and an implementation is free to cache the located providers.
      * <li>The {@code lookupEndpoints} method of each provider, if instantiated,
-     *     is invoked once with a combination of each of the URLs in the the
+     *     is invoked once with a combination of each of the URLs in the
      *     {@code java.naming.provider.url} property and the environment until
      *     a provider returns non-empty or all providers have been exhausted.
      *     If none of the

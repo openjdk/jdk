@@ -42,7 +42,7 @@ class RemoteCodes {
     // Command codes
 
     /**
-     * Exit the the agent.
+     * Exit the agent.
      */
     static final String CMD_CLOSE          = "CMD_CLOSE";
     /**

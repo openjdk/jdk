@@ -314,7 +314,7 @@ public abstract class VectorMask<E> extends jdk.internal.vm.vector.VectorSupport
      * return a;
      * }</pre>
      *
-     * @return an array containing the the lane elements of this vector
+     * @return an array containing the lane elements of this vector
      */
     public abstract boolean[] toArray();
 

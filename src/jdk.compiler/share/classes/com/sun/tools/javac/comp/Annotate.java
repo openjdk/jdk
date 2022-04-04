@@ -442,7 +442,7 @@ public class Annotate {
      *
      * @param a the tree representing an annotation
      * @param expectedAnnotationType the expected (super)type of the annotation
-     * @param env the the current env in where the annotation instance is found
+     * @param env the current env in where the annotation instance is found
      */
     public Attribute.TypeCompound attributeTypeAnnotation(JCAnnotation a, Type expectedAnnotationType,
                                                           Env<AttrContext> env)

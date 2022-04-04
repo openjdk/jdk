@@ -88,7 +88,7 @@ import com.sun.tools.javac.util.Options;
  * For each combination of options, a separate task/context is created and kept, as most option
  * values are cached inside components themselves.
  * <p>
- * When the compilation redefines sensitive classes (e.g. classes in the the java.* packages), the
+ * When the compilation redefines sensitive classes (e.g. classes in the java.* packages), the
  * task/context is not reused.
  * <p>
  * When the task is reused, then packages that were already listed won't be listed again.
