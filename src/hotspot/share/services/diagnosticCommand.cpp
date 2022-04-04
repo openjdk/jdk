@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,7 +358,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
-  Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+  Symbol* signature = vmSymbols::void_byte_array_signature();
   JavaCalls::call_static(&result,
                          ik,
                          vmSymbols::serializePropertiesToByteArray_name(),

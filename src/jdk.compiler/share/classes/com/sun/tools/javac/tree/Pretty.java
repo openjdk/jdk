@@ -194,9 +194,7 @@ public class Pretty extends JCTree.Visitor {
                 tree.accept(this);
             }
         } catch (UncheckedIOException ex) {
-            IOException e = new IOException(ex.getMessage());
-            e.initCause(ex);
-            throw e;
+            throw new IOException(ex.getMessage(), ex);
         } finally {
             this.prec = prevPrec;
         }

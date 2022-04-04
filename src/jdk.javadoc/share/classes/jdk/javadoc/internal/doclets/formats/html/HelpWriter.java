@@ -117,8 +117,8 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds the help file contents from the resource file to the content tree. While adding the
-     * help file contents it also keeps track of user options.
+     * Adds the help file contents from the resource file to the content.
+     * While adding the help file contents it also keeps track of user options.
      *
      * The general organization is:
      * <ul>
@@ -127,10 +127,10 @@ public class HelpWriter extends HtmlDocletWriter {
      * <li>Page-specific help
      * </ul>
      */
-    protected void addHelpFileContents(Content contentTree) {
-        HtmlTree mainTOC = HtmlTree.UL(HtmlStyle.helpTOC);
+    protected void addHelpFileContents(Content content) {
+        var mainTOC = HtmlTree.UL(HtmlStyle.helpTOC);
 
-        contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
+        content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
                                         getContent("doclet.help.main_heading")))
                 .add(mainTOC)
                 .add(new HtmlTree(TagName.HR))
@@ -168,7 +168,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content content = new ContentBuilder();
 
         Content navHeading = contents.getContent("doclet.help.navigation.head");
-        HtmlTree navSection = HtmlTree.DIV(HtmlStyle.subTitle)
+        var navSection = HtmlTree.DIV(HtmlStyle.subTitle)
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, navHeading).setId(HtmlIds.HELP_NAVIGATION))
                 .add(contents.getContent("doclet.help.navigation.intro", overviewLink));
         if (options.createIndex()) {
@@ -183,24 +183,24 @@ public class HelpWriter extends HtmlDocletWriter {
         }
         content.add(navSection);
 
-        HtmlTree subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
+        var subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
 
         HtmlTree section;
 
         // Search
         if (options.createIndex()) {
             section = newHelpSection(getContent("doclet.help.search.head"), subTOC, HtmlIds.HELP_SEARCH);
-            Content searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-            Content searchExamples = HtmlTree.UL(HtmlStyle.helpSectionList);
+            var searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
+            var searchExamples = HtmlTree.UL(HtmlStyle.helpSectionList);
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
                                 HtmlTree.CODE(Text.of(example[0])), example[1])));
             }
-            Content searchSpecLink = HtmlTree.A(
+            var searchSpecLink = HtmlTree.A(
                     resources.getText("doclet.help.search.spec.url", configuration.getDocletVersion().feature()),
                     getContent("doclet.help.search.spec.title"));
-            Content searchRefer = HtmlTree.P(getContent("doclet.help.search.refer", searchSpecLink));
+            var searchRefer = HtmlTree.P(getContent("doclet.help.search.refer", searchSpecLink));
             section.add(searchIntro)
                     .add(searchExamples)
                     .add(searchRefer);
@@ -234,11 +234,11 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     private Content getPageKindSection(HtmlTree mainTOC) {
         Content pageKindsHeading = contents.getContent("doclet.help.page_kinds.head");
-        HtmlTree pageKindsSection = HtmlTree.DIV(HtmlStyle.subTitle)
+        var pageKindsSection = HtmlTree.DIV(HtmlStyle.subTitle)
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
-        HtmlTree subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
+        var subTOC = HtmlTree.UL(HtmlStyle.helpSubTOC);
 
         HtmlTree section;
 
@@ -256,7 +256,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (configuration.showModules) {
             section = newHelpSection(contents.moduleLabel, PageMode.MODULE, subTOC);
             Content moduleIntro = getContent("doclet.help.module.intro");
-            Content modulePara = HtmlTree.P(moduleIntro);
+            var modulePara = HtmlTree.P(moduleIntro);
             section.add(modulePara)
                     .add(newHelpSectionList(
                             contents.packagesLabel,
@@ -451,7 +451,7 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     private HtmlTree newHelpSectionList(Content first, Content... rest) {
-        HtmlTree list = HtmlTree.UL(HtmlStyle.helpSectionList, HtmlTree.LI(first));
+        var list = HtmlTree.UL(HtmlStyle.helpSectionList, HtmlTree.LI(first));
         List.of(rest).forEach(i -> list.add(HtmlTree.LI(i)));
         return list;
     }

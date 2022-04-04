@@ -303,12 +303,40 @@ public:
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
                            Register scratch, int vec_enc);
 
+
   void vector_castD2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
                            Register scratch, int vec_enc);
 
   void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
                             BasicType from_elem_bt, BasicType to_elem_bt);
+
+  void vector_cast_double_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                             KRegister ktmp1, KRegister ktmp2, Register scratch, AddressLiteral double_sign_flip,
+                                             int vec_enc);
+
+  void vector_cast_float_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, Register scratch, AddressLiteral float_sign_flip,
+                                            int vec_enc);
+
+  void vector_cast_float_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
+                                           Register scratch, AddressLiteral float_sign_flip,
+                                           int vec_enc);
+
+#ifdef _LP64
+  void vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                AddressLiteral new_mxcsr, Register scratch, int vec_enc);
+
+  void vector_round_float_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                               KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                               AddressLiteral new_mxcsr, Register scratch, int vec_enc);
+
+  void vector_round_float_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                              XMMRegister xtmp3, XMMRegister xtmp4, AddressLiteral float_sign_flip,
+                              AddressLiteral new_mxcsr, Register scratch, int vec_enc);
+#endif
 
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, XMMRegister src3,
                   bool merge, BasicType bt, int vlen_enc);
