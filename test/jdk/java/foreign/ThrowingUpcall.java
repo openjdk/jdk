@@ -22,7 +22,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySession;
 
@@ -38,11 +38,11 @@ public class ThrowingUpcall extends NativeTestHelper {
 
     static {
         System.loadLibrary("TestUpcall");
-        downcallVoid = CLinker.systemCLinker().downcallHandle(
+        downcallVoid = Linker.nativeLinker().downcallHandle(
             findNativeOrThrow("f0_V__"),
                 FunctionDescriptor.ofVoid(C_POINTER)
         );
-        downcallNonVoid = CLinker.systemCLinker().downcallHandle(
+        downcallNonVoid = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("f10_I_I_"),
                 FunctionDescriptor.of(C_INT, C_INT, C_POINTER)
         );
@@ -73,7 +73,7 @@ public class ThrowingUpcall extends NativeTestHelper {
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), session);
+            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), session);
 
             downcallVoid.invoke(stub); // should call Shutdown.exit(1);
         }
@@ -86,7 +86,7 @@ public class ThrowingUpcall extends NativeTestHelper {
         handle = MethodHandles.insertArguments(invoker, 0, handle);
 
         try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), session);
+            Addressable stub = Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.of(C_INT, C_INT), session);
 
             downcallNonVoid.invoke(42, stub); // should call Shutdown.exit(1);
         }

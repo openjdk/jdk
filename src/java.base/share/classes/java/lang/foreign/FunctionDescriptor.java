@@ -39,8 +39,8 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * A function descriptor is made up of zero or more argument layouts and zero or one return layout. A function descriptor
  * is used to model the signature of foreign functions when creating
- * {@linkplain CLinker#downcallHandle(Addressable, FunctionDescriptor) downcall method handles} or
- * {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stubs}.
+ * {@linkplain Linker#downcallHandle(Addressable, FunctionDescriptor) downcall method handles} or
+ * {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stubs}.
  *
  * @implSpec
  * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

@@ -26,7 +26,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -64,7 +64,7 @@ public class PointerInvoke extends CLayouts {
     static final MethodHandle F_LONG, F_PTR;
 
     static {
-        CLinker abi = CLinker.systemCLinker();
+        Linker abi = Linker.nativeLinker();
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         F_LONG = abi.downcallHandle(loaderLibs.lookup("func_as_long").get(),
                 FunctionDescriptor.of(C_INT, C_LONG_LONG));

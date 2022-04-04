@@ -29,7 +29,7 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestUnsupportedPlatform
  */
 
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertNull;
@@ -39,7 +39,7 @@ public class TestUnsupportedPlatform {
 
     @Test(expectedExceptions = ExceptionInInitializerError.class)
     public void testNoInitialization() {
-        CLinker.systemCLinker(); // trigger initialization
+        Linker.nativeLinker(); // trigger initialization
     }
 
 }

@@ -40,24 +40,24 @@ import jdk.internal.javac.PreviewFeature;
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}. Clients implementing this interface
  * must implement the {@link #allocate(long, long)} method. This interface defines several default methods
  * which can be useful to create segments from several kinds of Java values such as primitives and arrays.
- * This interface can be seen as a thin wrapper around the basic capabilities for
- * {@linkplain MemorySegment#allocateNative(long, long, MemorySession) creating} native segments;
- * since {@link SegmentAllocator} is a <em>functional interface</em>,
- * clients can easily obtain a native allocator by using either a lambda expression or a method reference.
+ * This interface is a {@linkplain FunctionalInterface functional interface}: clients can easily obtain a new segment allocator
+ * by using either a lambda expression or a method reference.
  * <p>
  * This interface also defines factories for commonly used allocators:
  * <ul>
- *     <li>{@link #newNativeArena(MemorySession)} creates a more efficient arena-style native allocator, where memory
+ *     <li>{@link #newNativeArena(MemorySession)} creates a more efficient arena-style allocator, where off-heap memory
  *     is allocated in bigger blocks, which are then sliced accordingly to fit allocation requests;</li>
- *     <li>{@link #prefixAllocator(MemorySegment)} creates an allocator which wraps a segment (either on-heap or off-heap)
+ *     <li>{@link #implicitAllocator()} obtains an allocator which allocates native memory segment in independent,
+ *     {@linkplain MemorySession#openImplicit() implicit memory sessions}; and</li>
+ *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment (either on-heap or off-heap)
  *     and recycles its content upon each new allocation request.</li>
  * </ul>
  * <p>
  * Passing a segment allocator to an API can be especially useful in circumstances where a client wants to communicate <em>where</em>
  * the results of a certain operation (performed by the API) should be stored, as a memory segment. For instance,
- * {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handles} can accept an additional
- * {@link SegmentAllocator} parameter if the underlying native function is known to return a struct by-value. Effectively,
- * the allocator parameter tells the linker runtime where to store the return value of the native function.
+ * {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handles} can accept an additional
+ * {@link SegmentAllocator} parameter if the underlying foreign function is known to return a struct by-value. Effectively,
+ * the allocator parameter tells the linker runtime where to store the return value of the foreign function.
  */
 @FunctionalInterface
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
@@ -337,13 +337,14 @@ public interface SegmentAllocator {
     MemorySegment allocate(long bytesSize, long bytesAlignment);
 
     /**
-     * Creates a native unbounded arena-based allocator, with predefined block size and maximum arena size,
-     * associated with the provided memory session. Equivalent to the following code:
+     * Creates an unbounded arena-based allocator used to allocate native memory segments.
+     * The returned allocator features a predefined block size and maximum arena size, and the segments it allocates
+     * are associated with the provided memory session. Equivalent to the following code:
      * {@snippet lang=java :
      * SegmentAllocator.newNativeArena(Long.MAX_VALUE, predefinedBlockSize, session);
      * }
      *
-     * @param session the memory session associated with the segments returned by the arena-based allocator.
+     * @param session the memory session associated with the segments allocated by the arena-based allocator.
      * @return a new unbounded arena-based allocator
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}, or if access occurs from
      * a thread other than the thread {@linkplain MemorySession#ownerThread() owning} {@code session}.
@@ -353,14 +354,15 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Creates a native unbounded arena-based allocator, with block size set to the specified arena size, associated with
-     * the provided memory session, with the given arena size. Equivalent to the following code:
+     * Creates an arena-based allocator used to allocate native memory segments.
+     * The returned allocator features a block size set to the specified arena size, and the native segments
+     * it allocates are associated with the provided memory session. Equivalent to the following code:
      * {@snippet lang=java :
      * SegmentAllocator.newNativeArena(arenaSize, arenaSize, session);
      * }
      *
      * @param arenaSize the size (in bytes) of the allocation arena.
-     * @param session the memory session associated with the segments returned by the arena-based allocator.
+     * @param session the memory session associated with the segments allocated by the arena-based allocator.
      * @return a new unbounded arena-based allocator
      * @throws IllegalArgumentException if {@code arenaSize <= 0}.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}, or if access occurs from
@@ -371,16 +373,17 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Creates a native arena-based allocator, associated with the provided memory session,
-     * with the given arena size and block size.
+     * Creates an arena-based allocator used to allocate native memory segments. The returned allocator features
+     * the given block size {@code B} and the given arena size {@code A}, and the native segments
+     * it allocates are associated with the provided memory session.
      * <p>
-     * The returned allocator {@linkplain MemorySegment#allocateNative(long, MemorySession) allocates} a memory segment
-     * {@code S} of the specified block size and then responds to allocation requests in one of the following ways:
+     * The allocator arena is first initialized by {@linkplain MemorySegment#allocateNative(long, MemorySession) allocating} a
+     * native memory segment {@code S} of size {@code B}. The allocator then responds to allocation requests in one of the following ways:
      * <ul>
      *     <li>if the size of the allocation requests is smaller than the size of {@code S}, and {@code S} has a <em>free</em>
      *     slice {@code S'} which fits that allocation request, return that {@code S'}.
      *     <li>if the size of the allocation requests is smaller than the size of {@code S}, and {@code S} has no <em>free</em>
-     *     slices which fits that allocation request, allocate a new segment {@code S'}, which has same size as {@code S}
+     *     slices which fits that allocation request, allocate a new segment {@code S'}, with size {@code B},
      *     and set {@code S = S'}; the allocator then tries to respond to the same allocation request again.
      *     <li>if the size of the allocation requests is bigger than the size of {@code S}, allocate a new segment {@code S'},
      *     which has a sufficient size to satisfy the allocation request, and return {@code S'}.
@@ -390,7 +393,7 @@ public interface SegmentAllocator {
      * cost associated with allocating a new off-heap memory region upon each allocation request.
      * <p>
      * The returned allocator might throw an {@link OutOfMemoryError} if the total memory allocated with this allocator
-     * exceeds the arena size, or the system capacity. Furthermore, the returned allocator is not thread safe.
+     * exceeds the arena size {@code A}, or the system capacity. Furthermore, the returned allocator is not thread safe.
      * Concurrent allocation needs to be guarded with synchronization primitives.
      *
      * @param arenaSize the size (in bytes) of the allocation arena.
@@ -438,13 +441,13 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Returns a native allocator which allocates segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
+     * Returns an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
      * Equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
      * SegmentAllocator implicitAllocator = (size, align) -> MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
      * }
      *
-     * @return a native allocator which allocates segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
+     * @return an allocator which allocates native segments in independent {@linkplain MemorySession#openImplicit() implicit memory sessions}.
      */
     static SegmentAllocator implicitAllocator() {
         class Holder {

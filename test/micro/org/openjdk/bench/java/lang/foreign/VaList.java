@@ -23,9 +23,8 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySession;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -48,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class VaList extends CLayouts {
 
-    static final CLinker linker = CLinker.systemCLinker();
+    static final Linker linker = Linker.nativeLinker();
     static {
         System.loadLibrary("VaList");
     }

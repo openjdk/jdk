@@ -41,7 +41,7 @@ import jdk.internal.reflect.Reflection;
  * A variable argument list, similar in functionality to a C {@code va_list}.
  * <p>
  * A variable argument list is a stateful cursor used to iterate over a set of arguments. A variable argument list
- * can be passed by reference e.g. to a {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handle}.
+ * can be passed by reference e.g. to a {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handle}.
  * <p>
  * Per the C specification (see C standard 6.5.2.2 Function calls - item 6),
  * arguments to variadic calls are erased by way of 'default argument promotions',
@@ -190,7 +190,7 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
      * Creates a variable argument list using a builder (see {@link Builder}), with the given
      * memory session.
      * <p>
-     * If this method needs to allocate native memory, such memory will be managed by the given
+     * If this method needs to allocate memory, such memory will be managed by the given
      * memory session, and will be released when the memory session is {@linkplain MemorySession#close closed}.
      * <p>
      * Note that when there are no elements added to the created va list,

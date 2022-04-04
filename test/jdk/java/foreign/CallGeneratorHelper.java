@@ -23,7 +23,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryAddress;
@@ -453,7 +453,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
-    MethodHandle downcallHandle(CLinker abi, Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
+    MethodHandle downcallHandle(Linker abi, Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
         MethodHandle mh = abi.downcallHandle(symbol, descriptor);
         if (descriptor.returnLayout().isPresent() && descriptor.returnLayout().get() instanceof GroupLayout) {
             mh = mh.bindTo(allocator);

@@ -224,7 +224,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * the memory segment.
  * <p>
  * Clients requiring sophisticated, low-level control over mapped memory segments, might consider writing
- * custom mapped memory segment factories; using {@link CLinker}, e.g. on Linux, it is possible to call {@code mmap}
+ * custom mapped memory segment factories; using {@link Linker}, e.g. on Linux, it is possible to call {@code mmap}
  * with the desired parameters; the returned address can be easily wrapped into a memory segment, using
  * {@link MemoryAddress#ofLong(long)} and {@link MemorySegment#ofAddress(MemoryAddress, long, MemorySession)}.
  *
@@ -584,7 +584,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new byte array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new byte array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -596,7 +596,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new short array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new short array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -608,7 +608,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new char array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new char array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -620,7 +620,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new int array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new int array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -632,7 +632,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new float array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new float array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -644,7 +644,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new long array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new long array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -656,7 +656,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
     /**
      * Copy the contents of this memory segment into a new double array.
      * @param elementLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @return a new double array whose contents are copied from this memory segment.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with this segment is not
      * {@linkplain MemorySession#isAlive() alive}, or if access occurs from a thread other than the thread owning that session.
@@ -804,9 +804,10 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
 
     /**
      * Creates a native memory segment with the given size, base address, and memory session.
-     * This method can be useful when interacting with custom
-     * native memory sources (e.g. custom allocators), where an address to some
-     * underlying memory region is typically obtained from native code (often as a plain {@code long} value).
+     * This method can be useful when interacting with custom memory sources (e.g. custom allocators),
+     * where an address to some underlying memory region is typically obtained from foreign code
+     * (often as a plain {@code long} value).
+     * <p>
      * The returned segment is not read-only (see {@link MemorySegment#isReadOnly()}), and is associated with the
      * provided memory session.
      * <p>
@@ -1732,7 +1733,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * Supported array types are {@code byte[]}, {@code char[]}, {@code short[]}, {@code int[]}, {@code float[]}, {@code long[]} and {@code double[]}.
      * @param srcSegment the source segment.
      * @param srcLayout the source element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @param srcOffset the starting offset, in bytes, of the source segment.
      * @param dstArray the destination array.
      * @param dstIndex the starting index of the destination array.
@@ -1784,7 +1785,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * @param srcIndex the starting index of the source array.
      * @param dstSegment the destination segment.
      * @param dstLayout the destination element layout. If the byte order associated with the layout is
-     * different from the native order, a byte swap operation will be performed on each array element.
+     * different from the {@linkplain ByteOrder#nativeOrder native order}, a byte swap operation will be performed on each array element.
      * @param dstOffset the starting offset, in bytes, of the destination segment.
      * @param elementCount the number of array elements to be copied.
      * @throws IllegalStateException if the {@linkplain #session() session} associated with {@code dstSegment} is not

@@ -38,7 +38,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -55,7 +55,7 @@ import static org.testng.Assert.assertFalse;
 
 public class TestUpcallStructScope extends NativeTestHelper {
     static final MethodHandle MH_do_upcall;
-    static final CLinker LINKER = CLinker.systemCLinker();
+    static final Linker LINKER = Linker.nativeLinker();
     static final MethodHandle MH_Consumer_accept;
 
     // struct S_PDI { void* p0; double p1; int p2; };

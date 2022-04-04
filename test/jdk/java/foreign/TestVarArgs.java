@@ -30,7 +30,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
@@ -60,7 +60,7 @@ public class TestVarArgs extends NativeTestHelper {
 
     static final VarHandle VH_IntArray = C_INT.arrayElementVarHandle();
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
     static {
         System.loadLibrary("VarArgs");
     }

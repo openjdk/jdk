@@ -26,7 +26,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
@@ -44,7 +44,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.TimeUnit;
 
@@ -74,8 +73,8 @@ public class StrLenTest extends CLayouts {
     static final MethodHandle STRLEN;
 
     static {
-        CLinker abi = CLinker.systemCLinker();
-        STRLEN = abi.downcallHandle(SymbolLookup.systemLookup().lookup("strlen").get(),
+        Linker abi = Linker.nativeLinker();
+        STRLEN = abi.downcallHandle(abi.lookup("strlen").get(),
                 FunctionDescriptor.of(C_INT, C_POINTER));
     }
 

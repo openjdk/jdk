@@ -23,7 +23,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
@@ -54,7 +54,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class QSort extends CLayouts {
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
     static final MethodHandle clib_qsort;
     static final Addressable native_compar;
     static final Addressable panama_upcall_compar;
@@ -63,7 +63,7 @@ public class QSort extends CLayouts {
     static final int[] INPUT = { 5, 3, 2, 7, 8, 12, 1, 7 };
     static final MemorySegment INPUT_SEGMENT;
 
-    static Addressable qsort_addr = SymbolLookup.systemLookup().lookup("qsort").get();
+    static Addressable qsort_addr = abi.lookup("qsort").get();
 
     static {
         INPUT_SEGMENT = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT), MemorySession.global());

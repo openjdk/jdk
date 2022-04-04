@@ -36,7 +36,7 @@
  *
  */
 
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 
 import java.lang.foreign.SymbolLookup;
@@ -48,7 +48,7 @@ public class TestLinkToNativeRBP {
         System.loadLibrary("LinkToNativeRBP");
     }
 
-    final static CLinker abi = CLinker.systemCLinker();
+    final static Linker abi = Linker.systemCLinker();
     static final SymbolLookup lookup = SymbolLookup.loaderLookup();
     final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
             FunctionDescriptor.of(ValueLayout.JAVA_INT));

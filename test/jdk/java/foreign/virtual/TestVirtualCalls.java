@@ -32,7 +32,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 
 import java.lang.invoke.MethodHandle;
@@ -43,7 +43,7 @@ import static org.testng.Assert.assertEquals;
 
 public class TestVirtualCalls extends NativeTestHelper {
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
 
     static final MethodHandle func;
     static final Addressable funcA;

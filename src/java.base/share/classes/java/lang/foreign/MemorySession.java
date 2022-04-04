@@ -121,7 +121,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see MemorySegment
  * @see SymbolLookup
- * @see CLinker
+ * @see Linker
  * @see VaList
  *
  * @since 19

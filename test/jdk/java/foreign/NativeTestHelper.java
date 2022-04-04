@@ -23,8 +23,8 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SymbolLookup;
@@ -83,13 +83,13 @@ public class NativeTestHelper {
      */
     public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
 
-    private static CLinker LINKER = CLinker.systemCLinker();
+    private static Linker LINKER = Linker.nativeLinker();
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
-            SymbolLookup.systemLookup().lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+            LINKER.lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
 
     private static final MethodHandle MALLOC = LINKER.downcallHandle(
-            SymbolLookup.systemLookup().lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+            LINKER.lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
 
     public static void freeMemory(Addressable address) {
         try {

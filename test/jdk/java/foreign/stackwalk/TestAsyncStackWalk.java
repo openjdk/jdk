@@ -79,7 +79,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 
@@ -95,7 +95,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 public class TestAsyncStackWalk extends NativeTestHelper {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    static final CLinker linker = CLinker.systemCLinker();
+    static final Linker linker = Linker.nativeLinker();
 
     static final MethodHandle MH_asyncStackWalk;
     static final MethodHandle MH_m;

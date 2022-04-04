@@ -38,7 +38,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -57,7 +57,7 @@ import static org.testng.Assert.*;
 
 public class TestDowncall extends CallGeneratorHelper {
 
-    static CLinker abi = CLinker.systemCLinker();
+    static Linker abi = Linker.nativeLinker();
     static {
         System.loadLibrary("TestDowncall");
         System.loadLibrary("TestDowncallStack");

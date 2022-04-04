@@ -23,7 +23,7 @@
 
 package handle.lookup;
 
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -52,8 +52,8 @@ public class MethodHandleLookup {
     static Object[][] restrictedMethods() {
         try {
             return new Object[][]{
-                    { MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-                            MethodType.methodType(CLinker.class)), "CLinker::systemCLinker" },
+                    { MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
+                            MethodType.methodType(Linker.class)), "Linker::nativeLinker" },
                     { MethodHandles.lookup().findStatic(VaList.class, "ofAddress",
                             MethodType.methodType(VaList.class, MemoryAddress.class, MemorySession.class)),
                             "VaList::ofAddress/1" },

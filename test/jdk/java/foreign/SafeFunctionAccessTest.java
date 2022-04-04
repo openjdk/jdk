@@ -29,7 +29,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -60,7 +60,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
             segment = MemorySegment.allocateNative(POINT, session);
         }
         assertFalse(segment.session().isAlive());
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("struct_func"),
                 FunctionDescriptor.ofVoid(POINT));
 
@@ -69,7 +69,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedStructAddr_6() throws Throwable {
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func_6"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER));
         for (int i = 0 ; i < 6 ; i++) {
@@ -111,7 +111,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
             list = VaList.make(b -> b.addVarg(C_INT, 42), session);
         }
         assertFalse(list.session().isAlive());
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func"),
                 FunctionDescriptor.ofVoid(C_POINTER));
 
@@ -123,10 +123,10 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         MemorySegment upcall;
         try (MemorySession session = MemorySession.openConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-            upcall = CLinker.systemCLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
+            upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
         }
         assertFalse(upcall.session().isAlive());
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func"),
                 FunctionDescriptor.ofVoid(C_POINTER));
 
@@ -137,7 +137,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedVaListCallback() throws Throwable {
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
@@ -149,7 +149,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedStructCallback() throws Throwable {
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
@@ -161,13 +161,13 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
 
     @Test
     public void testClosedUpcallCallback() throws Throwable {
-        MethodHandle handle = CLinker.systemCLinker().downcallHandle(
+        MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
         try (MemorySession session = MemorySession.openConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-            MemorySegment upcall = CLinker.systemCLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
+            MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
             handle.invoke(upcall, sessionChecker(session));
         }
     }
@@ -177,7 +177,7 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
             MethodHandle handle = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "checkSession",
                     MethodType.methodType(void.class, MemorySession.class));
             handle = handle.bindTo(session);
-            return CLinker.systemCLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), MemorySession.openImplicit());
+            return Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), MemorySession.openImplicit());
         } catch (Throwable ex) {
             throw new AssertionError(ex);
         }

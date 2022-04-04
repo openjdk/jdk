@@ -32,9 +32,9 @@ public class PanamaMainDirect {
     }
 
     public static void testDirectAccessCLinker() {
-        System.out.println("Trying to get CLinker");
-        CLinker.systemCLinker();
-        System.out.println("Got CLinker");
+        System.out.println("Trying to get Linker");
+        Linker.nativeLinker();
+        System.out.println("Got Linker");
    }
 
     public static void testDirectAccessMemorySegment() {

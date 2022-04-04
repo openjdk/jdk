@@ -43,7 +43,7 @@ import java.util.Optional;
 /**
  * An object that may be used to look up symbols in one or more loaded libraries. A symbol lookup allows for searching
  * symbols by name, see {@link SymbolLookup#lookup(String)}. A library symbol is modelled as a zero-length {@linkplain MemorySegment memory segment};
- * it can be used directly to create a {@linkplain CLinker#downcallHandle(Addressable, FunctionDescriptor) downcall method handle},
+ * it can be used directly to create a {@linkplain Linker#downcallHandle(Addressable, FunctionDescriptor) downcall method handle},
  * or it can be {@linkplain MemorySegment#ofAddress(MemoryAddress, long, MemorySession) resized} accordingly, if it models
  * a <em>global variable</em> that needs to be dereferenced.
  * <p>
@@ -51,9 +51,8 @@ import java.util.Optional;
  * which can be used to find symbols in libraries loaded by the current classloader (e.g. using {@link System#load(String)},
  * or {@link System#loadLibrary(String)}).
  * <p>
- * Alternatively, clients can search symbols in the standard C library using a {@linkplain SymbolLookup#systemLookup() system lookup},
- * which conveniently implements this interface. The set of symbols available in the system lookup is unspecified,
- * as it depends on the platform and on the operating system.
+ * Alternatively, clients can search symbols in the standard libraries associated with a {@link Linker} instance.
+ * The set of symbols available in a linker lookup is unspecified, as it depends on the platform and on the operating system.
  * <p>
  * Finally, clients can load a library and obtain a {@linkplain #libraryLookup(Path, MemorySession) library lookup} which can be used
  * to find symbols in that library. A library lookup is associated with a {@linkplain  MemorySession memory session},
@@ -72,8 +71,8 @@ public interface SymbolLookup {
     Optional<MemorySegment> lookup(String name);
 
     /**
-     * Returns a symbol lookup suitable to find symbols in native libraries associated with the caller's classloader.
-     * The returned lookup returns native symbols backed by a non-closeable, shared scope which keeps the caller's classloader
+     * Returns a symbol lookup suitable to find symbols in shared libraries associated with the caller's classloader.
+     * The returned lookup returns symbols backed by a non-closeable, shared scope which keeps the caller's classloader
      * <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
      *
      * @return a symbol lookup suitable to find symbols in libraries loaded by the caller's classloader.
@@ -93,15 +92,6 @@ public interface SymbolLookup {
                     ? Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr, 0L, loaderSession));
         };
-    }
-
-    /**
-     * Returns a system lookup suitable to find symbols in the standard C libraries. The set of symbols
-     * available for lookup is unspecified, as it depends on the platform and on the operating system.
-     * @return a system-specific library lookup which is suitable to find symbols in the standard C libraries.
-     */
-    static SymbolLookup systemLookup() {
-        return SystemLookup.getInstance();
     }
 
     /**

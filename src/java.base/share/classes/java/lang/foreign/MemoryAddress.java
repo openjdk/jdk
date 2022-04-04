@@ -38,9 +38,9 @@ import java.lang.invoke.MethodHandle;
  * A memory address models a reference into a memory location. Memory addresses are typically obtained in one of the following ways:
  * <ul>
  *     <li>By calling {@link Addressable#address()} on an instance of type {@link Addressable} (e.g. a memory segment);</li>
- *     <li>By invoking a {@linkplain CLinker#downcallHandle(FunctionDescriptor) downcall method handle} which returns a pointer;</li>
+ *     <li>By invoking a {@linkplain Linker#downcallHandle(FunctionDescriptor) downcall method handle} which returns a pointer;</li>
  *     <li>By reading an address from memory, e.g. via {@link MemorySegment#get(ValueLayout.OfAddress, long)}; and</li>
- *     <li>By the invocation of an {@linkplain CLinker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stub} which accepts a pointer.</li>
+ *     <li>By the invocation of an {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, MemorySession) upcall stub} which accepts a pointer.</li>
  * </ul>
  * A memory address is backed by a raw machine pointer, expressed as a {@linkplain #toRawLongValue() long value}.
  *

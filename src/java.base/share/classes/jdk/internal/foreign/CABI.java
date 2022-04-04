@@ -56,7 +56,7 @@ public enum CABI {
                 current = LinuxAArch64;
             }
         } else {
-            throw new ExceptionInInitializerError(
+            throw new UnsupportedOperationException(
                 "Unsupported os, arch, or address size: " + os + ", " + arch + ", " + addressSize);
         }
     }

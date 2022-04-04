@@ -29,7 +29,7 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMixedMallocFree
  */
 
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
@@ -47,7 +47,7 @@ public class TestMixedMallocFree extends NativeTestHelper {
 
     static {
         System.loadLibrary("Malloc");
-        MH_my_malloc = CLinker.systemCLinker().downcallHandle(
+        MH_my_malloc = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("my_malloc"),
                 FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
     }

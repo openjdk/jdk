@@ -37,23 +37,23 @@ public class PanamaMainUnnamedModule {
     }
 
    public static void testReflection() throws Throwable {
-       Method method = CLinker.class.getDeclaredMethod("systemCLinker");
+       Method method = Linker.class.getDeclaredMethod("nativeLinker");
        method.invoke(null);
    }
 
    public static void testSetAccessible() throws Throwable {
-       Method method = CLinker.class.getDeclaredMethod("systemCLinker");
+       Method method = Linker.class.getDeclaredMethod("nativeLinker");
        method.setAccessible(true);
        method.invoke(null);
    }
 
    public static void testInvoke() throws Throwable {
-       var mh = MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-           MethodType.methodType(CLinker.class));
-       var linker = (CLinker)mh.invokeExact();
+       var mh = MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
+           MethodType.methodType(Linker.class));
+       var linker = (Linker)mh.invokeExact();
    }
 
    public static void testDirectAccess() {
-       CLinker.systemCLinker();
+       Linker.nativeLinker();
    }
 }

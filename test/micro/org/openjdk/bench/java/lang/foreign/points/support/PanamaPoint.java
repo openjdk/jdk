@@ -23,7 +23,7 @@
 package org.openjdk.bench.java.lang.foreign.points.support;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -49,7 +49,7 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
     private static final MethodHandle MH_distance_ptrs;
 
     static {
-        CLinker abi = CLinker.systemCLinker();
+        Linker abi = Linker.nativeLinker();
         System.loadLibrary("Point");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
         MH_distance = abi.downcallHandle(

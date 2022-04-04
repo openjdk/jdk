@@ -28,15 +28,15 @@ import java.lang.reflect.Method;
 
 public class PanamaMainReflection {
    public static void main(String[] args) throws Throwable {
-       testReflectionCLinker();
+       testReflectionnativeLinker();
        testReflectionMemorySegment();
    }
 
-    public static void testReflectionCLinker() throws Throwable {
-        System.out.println("Trying to get CLinker");
-        Method method = CLinker.class.getDeclaredMethod("systemCLinker");
+    public static void testReflectionnativeLinker() throws Throwable {
+        System.out.println("Trying to get Linker");
+        Method method = Linker.class.getDeclaredMethod("nativeLinker");
         method.invoke(null);
-        System.out.println("Got CLinker");
+        System.out.println("Got Linker");
     }
 
     public static void testReflectionMemorySegment() throws Throwable {

@@ -96,19 +96,19 @@
  *
  * <h2>Foreign function access</h2>
  * The key abstractions introduced to support foreign function access are {@link java.lang.foreign.SymbolLookup},
- * {@link java.lang.foreign.FunctionDescriptor} and {@link java.lang.foreign.CLinker}. The first is used to look up symbols
- * inside native libraries; the second is used to model the signature of foreign functions, while the third provides
+ * {@link java.lang.foreign.FunctionDescriptor} and {@link java.lang.foreign.Linker}. The first is used to look up symbols
+ * inside shared libraries; the second is used to model the signature of foreign functions, while the third provides
  * linking capabilities which allows modelling foreign functions as {@link java.lang.invoke.MethodHandle} instances,
- * so that clients can perform foreign function calls directly in Java, without the need for intermediate layers of native
+ * so that clients can perform foreign function calls directly in Java, without the need for intermediate layers of C/C++
  * code (as is the case with the <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a>).
  * <p>
  * For example, to compute the length of a string using the C standard library function {@code strlen} on a Linux x64 platform,
  * we can use the following code:
  *
  * {@snippet lang=java :
- * var linker = CLinker.systemCLinker();
+ * var linker = Linker.nativeLinker();
  * MethodHandle strlen = linker.downcallHandle(
- *     SymbolLookup.systemLookup().lookup("strlen").get(),
+ *     linker.lookup("strlen").get(),
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *
@@ -119,24 +119,24 @@
  * }
  * }
  *
- * Here, we obtain a {@linkplain java.lang.foreign.SymbolLookup#systemLookup() system lookup} and we use it
+ * Here, we obtain a {@linkplain java.lang.foreign.Linker#nativeLinker() native linker} and we use it
  * to {@linkplain java.lang.foreign.SymbolLookup#lookup(java.lang.String) look up} the {@code strlen} symbol in the
  * standard C library; a <em>downcall method handle</em> targeting said symbol is subsequently
- * {@linkplain java.lang.foreign.CLinker#downcallHandle(java.lang.foreign.FunctionDescriptor) obtained}.
+ * {@linkplain java.lang.foreign.Linker#downcallHandle(java.lang.foreign.FunctionDescriptor) obtained}.
  * To complete the linking successfully, we must provide a {@link java.lang.foreign.FunctionDescriptor} instance,
  * describing the signature of the {@code strlen} function.
  * From this information, the linker will uniquely determine the sequence of steps which will turn
  * the method handle invocation (here performed using {@link java.lang.invoke.MethodHandle#invoke(java.lang.Object...)})
- * into a foreign function call, according to the rules specified by the platform C ABI.
+ * into a foreign function call, according to the rules specified by the ABI of the underlying platform.
  * The {@link java.lang.foreign.MemorySegment} class also provides many useful methods for
- * interacting with native code, such as converting Java strings
- * {@linkplain java.lang.foreign.MemorySegment#setUtf8String(long, java.lang.String) into} native strings and
+ * interacting with foreign code, such as converting Java strings
+ * {@linkplain java.lang.foreign.MemorySegment#setUtf8String(long, java.lang.String) into} zero-terminated, UTF-8 strings and
  * {@linkplain java.lang.foreign.MemorySegment#getUtf8String(long) back}, as demonstrated in the above example.
  *
  * <h3>Foreign addresses</h3>
  *
  * When a memory segment is created from Java code, the segment properties (spatial bounds, temporal bounds and confinement)
- * are fully known at segment creation. But when interacting with native libraries, clients will often receive <em>raw</em> pointers.
+ * are fully known at segment creation. But when interacting with foreign functions, clients will often receive <em>raw</em> pointers.
  * Such pointers have no spatial bounds. For example, the C type {@code char*} can refer to a single {@code char} value,
  * or an array of {@code char} values, of given size. Nor do said pointers have any notion of temporal bounds or thread-confinement.
  * <p>
@@ -147,7 +147,7 @@
  * provided:
  *
  * {@snippet lang=java :
- * MemoryAddress addr = ... // obtain address from native code
+ * MemoryAddress addr = ... // obtain address from foreign function call
  * int x = addr.get(ValueLayout.JAVA_INT, 0);
  * }
  *
@@ -155,17 +155,17 @@
  * {@linkplain java.lang.foreign.MemorySegment#ofAddress(java.lang.foreign.MemoryAddress, long, java.lang.foreign.MemorySession) create}
  * a memory segment <em>unsafely</em>. This allows the client to inject extra knowledge about spatial bounds which might,
  * for instance, be available in the documentation of the foreign function which produced the native address.
- * Here is how an unsafe segment can be created from a native address:
+ * Here is how an unsafe segment can be created from a memory address:
  *
  * {@snippet lang=java :
  * MemorySession session = ... // initialize a memory session object
- * MemoryAddress addr = ... // obtain address from native code
+ * MemoryAddress addr = ... // obtain address from foreign function call
  * MemorySegment segment = MemorySegment.ofAddress(addr, 4, session); // segment is 4 bytes long
  * int x = segment.get(ValueLayout.JAVA_INT, 0);
  * }
  *
  * <h3>Upcalls</h3>
- * The {@link java.lang.foreign.CLinker} interface also allows clients to turn an existing method handle (which might point
+ * The {@link java.lang.foreign.Linker} interface also allows clients to turn an existing method handle (which might point
  * to a Java method) into a memory address, so that Java code can effectively be passed to other foreign functions.
  * For instance, we can write a method that compares two integer values, as follows:
  *
@@ -190,23 +190,24 @@
  *
  * As before, we need to create a {@link java.lang.foreign.FunctionDescriptor} instance, this time describing the signature
  * of the function pointer we want to create. The descriptor can be used to
- * {@linkplain java.lang.foreign.CLinker#upcallType(java.lang.foreign.FunctionDescriptor) derive} a method type
+ * {@linkplain java.lang.foreign.Linker#upcallType(java.lang.foreign.FunctionDescriptor) derive} a method type
  * that can be used to look up the method handle for {@code IntComparator.intCompare}.
  * <p>
  * Now that we have a method handle instance, we can turn it into a fresh function pointer,
- * using the {@link java.lang.foreign.CLinker} interface, as follows:
+ * using the {@link java.lang.foreign.Linker} interface, as follows:
  *
  * {@snippet lang=java :
  * MemorySession session = ...
- * Addressable comparFunc = CLinker.systemCLinker().upcallStub(
+ * Addressable comparFunc = CLinker.nativeLinker().upcallStub(
  *     intCompareHandle, intCompareDescriptor, session);
  * );
  * }
  *
  * The {@link java.lang.foreign.FunctionDescriptor} instance created in the previous step is then used to
- * {@linkplain java.lang.foreign.CLinker#upcallStub(java.lang.invoke.MethodHandle, java.lang.foreign.FunctionDescriptor, java.lang.foreign.MemorySession) create}
+ * {@linkplain java.lang.foreign.Linker#upcallStub(java.lang.invoke.MethodHandle, java.lang.foreign.FunctionDescriptor, java.lang.foreign.MemorySession) create}
  * a new upcall stub; the layouts in the function descriptors allow the linker to determine the sequence of steps which
- * allow foreign code to call the stub for {@code intCompareHandle} according to the rules specified by the platform C ABI.
+ * allow foreign code to call the stub for {@code intCompareHandle} according to the rules specified by the ABI of the
+ * underlying platform.
  * The lifecycle of the upcall stub is tied to the {@linkplain java.lang.foreign.MemorySession memory session}
  * provided when the upcall stub is created. This same session is made available by the {@link java.lang.foreign.MemorySegment}
  * instance returned by that method.

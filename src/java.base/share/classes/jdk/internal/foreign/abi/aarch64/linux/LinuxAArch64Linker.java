@@ -25,12 +25,14 @@
  */
 package jdk.internal.foreign.abi.aarch64.linux;
 
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.VaList;
+
+import jdk.internal.foreign.SystemLookup;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
@@ -38,13 +40,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * ABI implementation based on ARM document "Procedure Call Standard for
  * the ARM 64-bit Architecture".
  */
-public final class LinuxAArch64Linker implements CLinker {
+public final class LinuxAArch64Linker implements Linker {
     private static LinuxAArch64Linker instance;
 
     static final long ADDRESS_SIZE = 64; // bits
@@ -95,4 +98,8 @@ public final class LinuxAArch64Linker implements CLinker {
         return LinuxAArch64VaList.empty();
     }
 
+    @Override
+    public Optional<MemorySegment> lookup(String name) {
+        return SystemLookup.getInstance().lookup(name);
+    }
 }

@@ -28,16 +28,16 @@ import java.lang.invoke.*;
 
 public class PanamaMainInvoke {
     public static void main(String[] args) throws Throwable {
-       testInvokeCLinker();
+       testInvokenativeLinker();
        testInvokeMemorySegment();
     }
 
-    public static void testInvokeCLinker() throws Throwable {
-        System.out.println("Trying to get CLinker");
-        var mh = MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-                MethodType.methodType(CLinker.class));
-        var linker = (CLinker)mh.invokeExact();
-        System.out.println("Got CLinker");
+    public static void testInvokenativeLinker() throws Throwable {
+        System.out.println("Trying to get Linker");
+        var mh = MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
+                MethodType.methodType(Linker.class));
+        var linker = (Linker)mh.invokeExact();
+        System.out.println("Got Linker");
     }
 
     public static void testInvokeMemorySegment() throws Throwable {

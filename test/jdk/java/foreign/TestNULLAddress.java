@@ -33,14 +33,14 @@
 import org.testng.annotations.Test;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.invoke.MethodHandle;
 
 public class TestNULLAddress {
 
-    static final CLinker LINKER = CLinker.systemCLinker();
+    static final Linker LINKER = Linker.nativeLinker();
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNULLLinking() {

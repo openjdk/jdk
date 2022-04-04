@@ -23,7 +23,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -38,7 +38,7 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 
 public class CallOverheadHelper extends CLayouts {
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
 
     static final MethodHandle func;
     static final MethodHandle func_v;

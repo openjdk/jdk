@@ -33,7 +33,7 @@
  */
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -72,7 +72,7 @@ public class TestUpcallAsync extends TestUpcallBase {
             FunctionDescriptor callbackDesc = descriptor.returnLayout()
                     .map(FunctionDescriptor::of)
                     .orElse(FunctionDescriptor.ofVoid());
-            Addressable callback = ABI.upcallStub(mh.asType(CLinker.upcallType(callbackDesc)), callbackDesc, session);
+            Addressable callback = ABI.upcallStub(mh.asType(Linker.upcallType(callbackDesc)), callbackDesc, session);
 
             MethodHandle invoker = asyncInvoker(ret, ret == Ret.VOID ? null : paramTypes.get(0), fields);
 

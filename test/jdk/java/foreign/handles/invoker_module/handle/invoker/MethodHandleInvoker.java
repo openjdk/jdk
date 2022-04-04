@@ -24,7 +24,7 @@
 package handle.invoker;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
@@ -64,7 +64,7 @@ public class MethodHandleInvoker {
     }
 
     static {
-        addDefaultMapping(CLinker.class, CLinker.systemCLinker());
+        addDefaultMapping(Linker.class, Linker.nativeLinker());
         addDefaultMapping(Path.class, Path.of("nonExistent"));
         addDefaultMapping(String.class, "Hello!");
         addDefaultMapping(Runnable.class, () -> {});

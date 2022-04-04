@@ -68,7 +68,7 @@ import static org.testng.Assert.*;
 
 public class VaListTest extends NativeTestHelper {
 
-    private static final CLinker abi = CLinker.systemCLinker();
+    private static final Linker abi = Linker.nativeLinker();
     static {
         System.loadLibrary("VaList");
     }

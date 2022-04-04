@@ -95,7 +95,7 @@ public class TestNulls {
             ValueLayout.OfAddress.class,
             GroupLayout.class,
             Addressable.class,
-            CLinker.class,
+            Linker.class,
             VaList.class,
             VaList.Builder.class,
             FunctionDescriptor.class,
@@ -178,7 +178,7 @@ public class TestNulls {
         addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
         addDefaultMapping(MemorySegment.class, MemorySegment.ofArray(new byte[10]));
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
-        addDefaultMapping(CLinker.class, CLinker.systemCLinker());
+        addDefaultMapping(Linker.class, Linker.nativeLinker());
         addDefaultMapping(VaList.class, VaListHelper.vaList);
         addDefaultMapping(VaList.Builder.class, VaListHelper.vaListBuilder);
         addDefaultMapping(MemorySession.class, MemorySession.openShared());

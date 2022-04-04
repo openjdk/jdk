@@ -24,7 +24,7 @@
 import org.testng.annotations.Test;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
@@ -46,7 +46,7 @@ import static org.testng.Assert.*;
 public class LibraryLookupTest {
 
     static final Path JAVA_LIBRARY_PATH = Path.of(System.getProperty("java.library.path"));
-    static final MethodHandle INC = CLinker.systemCLinker().downcallHandle(FunctionDescriptor.ofVoid());
+    static final MethodHandle INC = Linker.nativeLinker().downcallHandle(FunctionDescriptor.ofVoid());
     static final Path LIB_PATH = JAVA_LIBRARY_PATH.resolve(System.mapLibraryName("LibraryLookup"));
 
     @Test

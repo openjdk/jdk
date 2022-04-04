@@ -23,7 +23,7 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import java.lang.foreign.Addressable;
-import java.lang.foreign.CLinker;
+import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySession;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -50,7 +50,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class Upcalls extends CLayouts {
 
-    static final CLinker abi = CLinker.systemCLinker();
+    static final Linker abi = Linker.nativeLinker();
     static final MethodHandle blank;
     static final MethodHandle identity;
     static final MethodHandle args5;
