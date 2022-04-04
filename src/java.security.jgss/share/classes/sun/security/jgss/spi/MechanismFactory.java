@@ -37,7 +37,7 @@ import java.security.Provider;
  * property "GssApiMechanism.x.y.z" to an implementation class that serves
  * as the factory for that mechanism.
  * <p>
- * e.g., If a provider master file contained the a mapping from the
+ * e.g., If a provider master file contained the mapping from the
  * property "GssApiMechanism.1.2.840.113554.1.2.2" to the class name
  * "com.foo.krb5.Krb5GssFactory", then the GSS-API framework would assume
  * that com.foo.krb5.Krb5GssFactory implements the MechanismFactory
