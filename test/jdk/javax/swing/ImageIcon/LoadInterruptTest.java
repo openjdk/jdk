@@ -33,13 +33,14 @@ import java.nio.charset.StandardCharsets;
 /*
  * @test
  * @bug 8236987
- * @summary  Verifies if Print Function is removed and LoadStatus is changed to ABORTED when interrupted/ still LOADING.
+ * @summary Verifies ImageIcon constructor produces no output when the thread is interrupted
  * @run main LoadInterruptTest
  */
 
 public class LoadInterruptTest {
     private static ByteArrayOutputStream testOut;
     private static PrintStream prevSysOut;
+
     public static void main(String[] args) throws Exception {
 
         try {
@@ -60,28 +61,27 @@ public class LoadInterruptTest {
     }
 
     public static void unsetOutput() {
-        System.out.flush();
-        if(prevSysOut != null) {
+        if (prevSysOut != null) {
             System.setOut(prevSysOut);
         }
         testOut = null;
     }
 
     private static void loadImageIcon() {
-        int status;
         setUpOutput();
 
         Thread.currentThread().interrupt();
         ImageIcon i = new ImageIcon("https://openjdk.java.net/images/openjdk.png");
-        status = i.getImageLoadStatus();
+        int status = i.getImageLoadStatus();
+        System.out.flush();
         String outString = testOut.toString(StandardCharsets.UTF_8);
 
-        if ( !outString.isEmpty()) {
-            throw new RuntimeException("Test Case Failed!!! System.out is not empty : "+outString );
+        if (!outString.isEmpty()) {
+            throw new RuntimeException("Test Case Failed!!! System.out is not empty : " + outString);
         }
 
-        if ( ( status != MediaTracker.ABORTED ) && ( status != MediaTracker.COMPLETE) ){
-            throw new RuntimeException("Test Case Failed!!! Unexpected status : "+status );
+        if ((status != MediaTracker.ABORTED) && (status != MediaTracker.COMPLETE)) {
+            throw new RuntimeException("Test Case Failed!!! Unexpected status : " + status);
         }
     }
 }
