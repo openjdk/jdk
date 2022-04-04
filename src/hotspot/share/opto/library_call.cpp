@@ -309,6 +309,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
 
+  case vmIntrinsics::_hashCodeL:                 return inline_string_hashCode(StrIntrinsicNode::LL);
+  case vmIntrinsics::_hashCodeU:                 return inline_string_hashCode(StrIntrinsicNode::UU);
+
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
   case vmIntrinsics::_getCharStringU:           return inline_string_char_access(!is_store);
@@ -947,6 +950,26 @@ bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
 
   Node* result = make_string_method_node(Op_StrComp, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
   set_result(result);
+  return true;
+}
+
+
+//------------------------------inline_string_hashCode------------------------
+bool LibraryCallKit::inline_string_hashCode(StrIntrinsicNode::ArgEnc ae) {
+  Node* arg1 = argument(0);
+
+  arg1 = must_be_not_null(arg1, true);
+
+  // Get start addr and length of first argument
+  Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
+  Node* arg1_cnt    = load_array_length(arg1);
+
+  Node* result = new StrHashCodeNode(control(), memory(TypeAryPtr::BYTES),
+                                     arg1_start, arg1_cnt, ae);
+
+  clear_upper_avx();
+
+  set_result(_gvn.transform(result));
   return true;
 }
 

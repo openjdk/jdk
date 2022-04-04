@@ -824,6 +824,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
     switch (n->Opcode()) {
       case Op_StrComp:
       case Op_StrEquals:
+      case Op_StrHashCode:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
@@ -970,6 +971,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_MulL: body_size += 10; break;
       case Op_StrComp:
       case Op_StrEquals:
+      case Op_StrHashCode:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:

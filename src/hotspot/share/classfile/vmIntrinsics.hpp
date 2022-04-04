@@ -338,6 +338,9 @@ class methodHandle;
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
   do_intrinsic(_equalsU,                  java_lang_StringUTF16, equals_name, equalsB_signature,                 F_S)   \
+  do_intrinsic(_hashCodeL,                java_lang_StringLatin1,hashCode_name, hashCodeB_signature,             F_S)   \
+  do_intrinsic(_hashCodeU,                java_lang_StringUTF16, hashCode_name, hashCodeB_signature,             F_S)   \
+   do_signature(hashCodeB_signature,                             "([B)I")                                               \
                                                                                                                         \
   do_intrinsic(_isDigit,                  java_lang_CharacterDataLatin1, isDigit_name,      int_bool_signature,  F_R)   \
    do_name(     isDigit_name,                                           "isDigit")                                      \

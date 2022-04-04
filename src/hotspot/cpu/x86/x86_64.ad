@@ -295,11 +295,14 @@ reg_class int_rbx_reg(RBX);
 // Singleton class for RCX int register
 reg_class int_rcx_reg(RCX);
 
-// Singleton class for RCX int register
+// Singleton class for RDX int register
 reg_class int_rdx_reg(RDX);
 
-// Singleton class for RCX int register
+// Singleton class for RDI int register
 reg_class int_rdi_reg(RDI);
+
+// Singleton class for RSI int register
+reg_class int_rsi_reg(RSI);
 
 // Singleton class for instruction pointer
 // reg_class ip_reg(RIP);
@@ -3476,6 +3479,16 @@ operand rdi_RegI()
   match(rRegI);
 
   format %{ "RDI" %}
+  interface(REG_INTER);
+%}
+
+operand rsi_RegI()
+%{
+  constraint(ALLOC_IN_RC(int_rsi_reg));
+  match(RegI);
+  match(rRegI);
+
+  format %{ "RSI" %}
   interface(REG_INTER);
 %}
 
@@ -11616,6 +11629,61 @@ instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI
     __ arrays_equals(false, $str1$$Register, $str2$$Register,
                      $cnt$$Register, $result$$Register, $tmp3$$Register,
                      $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */, $ktmp$$KRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast string hashCode
+instruct stringL_hashcode(rdi_RegP str1, rdx_RegI cnt1, rbx_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3,
+                          legRegD tmp_vec4, legRegD tmp_vec5, legRegD tmp_vec6,
+                          legRegD tmp_vec7, legRegD tmp_vec8, legRegD tmp_vec9,
+                          legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rcx_RegI tmp1, rax_RegI tmp2, rsi_RegI tmp3,
+                          rFlagsReg cr)
+%{
+  predicate(UseAVX >= 2 && (((StrHashCodeNode*)n)->encoding() == StrIntrinsicNode::LL));
+  match(Set result (StrHashCode (Binary str1 cnt1)));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
+         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
+         TEMP tmp_vec13, USE_KILL str1, USE_KILL cnt1, KILL tmp1, KILL tmp2, KILL tmp3, KILL cr);
+
+  format %{ "String HashCode byte[] $str1,$cnt1 -> $result   // KILL all" %}
+  ins_encode %{
+    __ stringL_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
+                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                        $tmp_vec13$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct stringU_hashcode(rdi_RegP str1, rdx_RegI cnt1, rbx_RegI result,
+                          legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3,
+                          legRegD tmp_vec4, legRegD tmp_vec5, legRegD tmp_vec6,
+                          legRegD tmp_vec7, legRegD tmp_vec8, legRegD tmp_vec9,
+                          legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                          legRegD tmp_vec13, rcx_RegI tmp1, rax_RegI tmp2, rsi_RegI tmp3,
+                          rFlagsReg cr)
+%{
+  predicate(UseAVX >= 2 && (((StrHashCodeNode*)n)->encoding() == StrIntrinsicNode::UU));
+  match(Set result (StrHashCode (Binary str1 cnt1)));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
+         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
+         TEMP tmp_vec13, USE_KILL str1, USE_KILL cnt1, KILL tmp1, KILL tmp2, KILL tmp3, KILL cr);
+
+  format %{ "String HashCode char[] $str1,$cnt1 -> $result   // KILL all" %}
+  ins_encode %{
+    __ stringU_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
+                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                        $tmp_vec13$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

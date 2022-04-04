@@ -2977,6 +2977,174 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
   bind(DONE_LABEL);
 } // stringL_indexof_char
 
+void C2_MacroAssembler::stringL_hashcode(Register str1, Register cnt1, Register result,
+                                         Register i, Register coef, Register tmp, XMMRegister vnext,
+                                         XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                                         XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                                         XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3) {
+  ShortBranchVerifier sbv(this);
+  assert(UseAVX >= 2, "AVX2 intrinsics are required");
+
+  Label SCALAR_LOOP_BEGIN, SCALAR_LOOP_END, VECTOR_LOOP_SKIP, VECTOR_LOOP_BEGIN, VECTOR_LOOP_END;
+
+  // int result = 0;
+  movl(result, 0);
+
+  // int coef = 1;
+  movl(coef, 1);
+
+  // int i = cnt1 - 1;
+  movl(i, cnt1);
+  subl(i, 1);
+
+  Register bound = cnt1;
+
+  // bound = cnt1 - (cnt1 & (32-1));
+  movl(tmp, cnt1);
+  andl(tmp, 32-1);
+  subl(bound, tmp);
+
+  // for (; i >= bound; i -= 1) {
+  bind(SCALAR_LOOP_BEGIN);
+  // i >= bound;
+  cmpl(i, bound);
+  jcc(Assembler::less, SCALAR_LOOP_END);
+
+  // result += coef * (str1[i] & 0xff);
+  movb(tmp, Address(str1, i, Address::times(1)));
+  andl(tmp, 0xff);
+  imull(tmp, coef);
+  addl(result, tmp);
+
+  // coef *= 31;
+  movl(tmp, 31);
+  imull(coef, tmp);
+
+  // i -= 1;
+  subl(i, 1);
+  jmp(SCALAR_LOOP_BEGIN);
+
+  bind(SCALAR_LOOP_END);
+  // }
+
+  // if (i >= 32-1) {
+  cmpl(i, 32-1);
+  jcc(Assembler::less, VECTOR_LOOP_SKIP);
+
+  movl(tmp, 0);
+  // h0 = IntVector.zero(I256);
+  movdl(vresult0, tmp);
+  vpbroadcastd(vresult0, vresult0, Assembler::AVX_256bit);
+  // h1 = IntVector.zero(I256);
+  movdl(vresult1, tmp);
+  vpbroadcastd(vresult1, vresult1, Assembler::AVX_256bit);
+  // h2 = IntVector.zero(I256);
+  movdl(vresult2, tmp);
+  vpbroadcastd(vresult2, vresult2, Assembler::AVX_256bit);
+  // h3 = IntVector.zero(I256);
+  movdl(vresult3, tmp);
+  vpbroadcastd(vresult3, vresult3, Assembler::AVX_256bit);
+
+  static jint power_of_31_backwards[] = {
+     2111290369,
+    -2010103841,   350799937,    11316127,   693101697,  -254736545,   961614017,    31019807, -2077209343,
+      -67006753,  1244764481, -2038056289,   211350913,  -408824225,  -844471871,  -997072353,  1353309697,
+     -510534177,  1507551809,  -505558625,  -293403007,   129082719, -1796951359,  -196513505, -1807454463,
+     1742810335,   887503681,    28629151,      923521,       29791,         961,          31,           1};
+
+  // vnext = IntVector.broadcast(I256, power_of_31_backwards[0]);
+  movl(tmp, power_of_31_backwards[0]);
+  movdl(vnext, tmp);
+  vpbroadcastd(vnext, vnext, Assembler::AVX_256bit);
+
+  // vcoef0 = IntVector.fromArray(I256, power_of_31_backwards, 1);
+  load_vector(vcoef0, ExternalAddress(address(&power_of_31_backwards[1])), sizeof(jint) * 8);
+  // vcoef1 = IntVector.fromArray(I256, power_of_31_backwards, 9);
+  load_vector(vcoef1, ExternalAddress(address(&power_of_31_backwards[9])), sizeof(jint) * 8);
+  // vcoef2 = IntVector.fromArray(I256, power_of_31_backwards, 17);
+  load_vector(vcoef2, ExternalAddress(address(&power_of_31_backwards[17])), sizeof(jint) * 8);
+  // vcoef3 = IntVector.fromArray(I256, power_of_31_backwards, 25);
+  load_vector(vcoef3, ExternalAddress(address(&power_of_31_backwards[25])), sizeof(jint) * 8);
+
+  movdl(vtmp0, coef);
+  vpbroadcastd(vtmp0, vtmp0, Assembler::AVX_256bit);
+  // vcoef0 *= coef
+  vpmulld(vcoef0, vcoef0, vtmp0, Assembler::AVX_256bit);
+  // vcoef1 *= coef
+  vpmulld(vcoef1, vcoef1, vtmp0, Assembler::AVX_256bit);
+  // vcoef2 *= coef
+  vpmulld(vcoef2, vcoef2, vtmp0, Assembler::AVX_256bit);
+  // vcoef3 *= coef
+  vpmulld(vcoef3, vcoef3, vtmp0, Assembler::AVX_256bit);
+
+  // for (i -= 32-1; i >= 0; i -= 32) {
+  // i -= 32-1;
+  subl(i, 32-1);
+
+  bind(VECTOR_LOOP_BEGIN);
+  // i >= 0;
+  cmpl(i, 0);
+  jcc(Assembler::less, VECTOR_LOOP_END);
+
+  load_vector(vtmp0, Address(str1, i, Address::times(sizeof(jbyte)), 8*0), sizeof(jbyte) * 8);
+  load_vector(vtmp1, Address(str1, i, Address::times(sizeof(jbyte)), 8*1), sizeof(jbyte) * 8);
+  load_vector(vtmp2, Address(str1, i, Address::times(sizeof(jbyte)), 8*2), sizeof(jbyte) * 8);
+  load_vector(vtmp3, Address(str1, i, Address::times(sizeof(jbyte)), 8*3), sizeof(jbyte) * 8);
+  // vresult0 += vcoef0 * str1[i+0:i+7];
+  vector_unsigned_cast(vtmp0, vtmp0, sizeof(jint) * 8, T_BYTE, T_INT);
+  vpmulld(vtmp0, vtmp0, vcoef0, Assembler::AVX_256bit);
+  vpaddd(vresult0, vresult0, vtmp0, Assembler::AVX_256bit);
+  // vresult1 += vcoef1 * str1[i+8:i+15];
+  vector_unsigned_cast(vtmp1, vtmp1, sizeof(jint) * 8, T_BYTE, T_INT);
+  vpmulld(vtmp1, vtmp1, vcoef1, Assembler::AVX_256bit);
+  vpaddd(vresult1, vresult1, vtmp1, Assembler::AVX_256bit);
+  // vresult2 += vcoef2 * str1[i+16:i+23];
+  vector_unsigned_cast(vtmp2, vtmp2, sizeof(jint) * 8, T_BYTE, T_INT);
+  vpmulld(vtmp2, vtmp2, vcoef2, Assembler::AVX_256bit);
+  vpaddd(vresult2, vresult2, vtmp2, Assembler::AVX_256bit);
+  // vresult3 += vcoef4 * str1[i+24:i+31];
+  vector_unsigned_cast(vtmp3, vtmp3, sizeof(jint) * 8, T_BYTE, T_INT);
+  vpmulld(vtmp3, vtmp3, vcoef3, Assembler::AVX_256bit);
+  vpaddd(vresult3, vresult3, vtmp3, Assembler::AVX_256bit);
+
+  // vcoef0 *= vnext
+  vpmulld(vcoef0, vcoef0, vnext, Assembler::AVX_256bit);
+  // vcoef1 *= vnext
+  vpmulld(vcoef1, vcoef1, vnext, Assembler::AVX_256bit);
+  // vcoef2 *= vnext
+  vpmulld(vcoef2, vcoef2, vnext, Assembler::AVX_256bit);
+  // vcoef3 *= vnext
+  vpmulld(vcoef3, vcoef3, vnext, Assembler::AVX_256bit);
+
+  // i -= 32;
+  subl(i, 32);
+  jmp(VECTOR_LOOP_BEGIN);
+
+  bind(VECTOR_LOOP_END);
+  // }
+
+  // result += vresult0.reduceLanes(ADD);
+  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult0, vtmp0, vtmp1);
+  // result += vresult1.reduceLanes(ADD);
+  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult1, vtmp2, vtmp3);
+  // result += vresult2.reduceLanes(ADD);
+  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult2, vtmp0, vtmp1);
+  // result += vresult3.reduceLanes(ADD);
+  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult3, vtmp2, vtmp3);
+
+  bind(VECTOR_LOOP_SKIP);
+  // }
+
+} // stringL_hashcode
+
+void C2_MacroAssembler::stringU_hashcode(Register str1, Register cnt1, Register result,
+                                         Register i, Register coef, Register tmp, XMMRegister vnext,
+                                         XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                                         XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                                         XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3) {
+  fprintf(stderr, "C2_MacroAssembler::stringU_hashcode\n");
+} // stringU_hashcode
+
 // helper function for string_compare
 void C2_MacroAssembler::load_next_elements(Register elem1, Register elem2, Register str1, Register str2,
                                            Address::ScaleFactor scale, Address::ScaleFactor scale1,

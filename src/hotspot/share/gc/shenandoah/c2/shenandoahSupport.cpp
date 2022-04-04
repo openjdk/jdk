@@ -565,6 +565,8 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         { { 2, ShenandoahLoad },                  { 4, ShenandoahLoad } },
         Op_StrEquals,
         { { 2, ShenandoahLoad },                  { 3, ShenandoahLoad } },
+        // Op_StrHashCode,
+        // { { 2, ShenandoahLoad },                  { 3, ShenandoahLoad } }, //FIXME: what variables are these
         Op_EncodeISOArray,
         { { 2, ShenandoahLoad },                  { 3, ShenandoahStore } },
         Op_HasNegatives,

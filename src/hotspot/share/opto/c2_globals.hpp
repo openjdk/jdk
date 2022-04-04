@@ -552,6 +552,9 @@
   product(bool, SpecialStringEquals, true, DIAGNOSTIC,                      \
           "special version of string equals")                               \
                                                                             \
+  product(bool, SpecialStringHashCode, true, DIAGNOSTIC,                    \
+          "special version of string hashCode")                             \
+                                                                            \
   product(bool, SpecialArraysEquals, true, DIAGNOSTIC,                      \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \

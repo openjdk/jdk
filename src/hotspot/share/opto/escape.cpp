@@ -638,6 +638,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_HasNegatives:
     case Op_StrComp:
     case Op_StrEquals:
+    // case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
@@ -776,6 +777,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_HasNegatives:
     case Op_StrComp:
     case Op_StrEquals:
+    // case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
@@ -3346,7 +3348,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
               op == Op_CastP2X || op == Op_StoreCM ||
               op == Op_FastLock || op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
+              op == Op_StrEquals || /*op == Op_StrHashCode ||*/ op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
@@ -3477,7 +3479,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
               op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
+              op == Op_StrEquals || /*op == Op_StrHashCode ||*/ op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");

@@ -188,22 +188,10 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
+    @IntrinsicCandidate
     public static int hashCode(byte[] value) {
         int h = 0;
-        int i = 0;
-        int length = value.length;
-        for (; i < (length & ~(8 - 1)); i += 8) {
-            h = -1807454463 * h                   +
-                 1742810335 * (value[i+0] & 0xff) +
-                  887503681 * (value[i+1] & 0xff) +
-                   28629151 * (value[i+2] & 0xff) +
-                     923521 * (value[i+3] & 0xff) +
-                      29791 * (value[i+4] & 0xff) +
-                        961 * (value[i+5] & 0xff) +
-                         31 * (value[i+6] & 0xff) +
-                          1 * (value[i+7] & 0xff);
-        }
-        for (; i < length; i++) {
+        for (int i = 0; i < value.length; i++) {
             h = 31 * h + (value[i] & 0xff);
         }
         return h;

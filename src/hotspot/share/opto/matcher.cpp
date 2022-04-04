@@ -1063,6 +1063,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     switch (n->Opcode()) {
     case Op_StrComp:
     case Op_StrEquals:
+    case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
@@ -1711,7 +1712,10 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
       break;
 
   if (x >= _LAST_MACH_OPER) {
+    fprintf(stderr, "x = %d, _LAST_MACH_OPER = %d\n", x, _LAST_MACH_OPER);
+    fprintf(stderr, "dump n\n");
     n->dump();
+    fprintf(stderr, "dump svec\n");
     svec->dump();
     assert( false, "bad AD file" );
   }
@@ -2249,6 +2253,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
       return true;                             // while (mstack.is_nonempty())
     case Op_StrComp:
     case Op_StrEquals:
+    case Op_StrHashCode:
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
@@ -2414,6 +2419,13 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(2, pair1);
       n->set_req(3, n->in(4));
       n->del_req(4);
+      break;
+    }
+    case Op_StrHashCode: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
+      // n->set_req(3, n->in(4));
+      n->del_req(3);
       break;
     }
     case Op_StrComp:

@@ -103,6 +103,16 @@ class StrEqualsNode: public StrIntrinsicNode {
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
+//------------------------------StrHashCode-------------------------------------
+class StrHashCodeNode: public StrIntrinsicNode {
+ public:
+  StrHashCodeNode(Node* control, Node* char_array_mem,
+                  Node* s1, Node* c1, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, c1, encoding) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+};
+
 //------------------------------StrIndexOf-------------------------------------
 class StrIndexOfNode: public StrIntrinsicNode {
  public:

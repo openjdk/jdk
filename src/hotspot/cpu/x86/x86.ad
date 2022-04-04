@@ -1488,6 +1488,11 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_StrHashCode:
+      if (!UseSSE42Intrinsics) {
+        return false;
+      }
+      break;
     case Op_OnSpinWait:
       if (VM_Version::supports_on_spin_wait() == false) {
         return false;

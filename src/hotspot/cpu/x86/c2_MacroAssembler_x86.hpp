@@ -242,6 +242,18 @@ public:
   void stringL_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 
+  void stringL_hashcode(Register str1, Register cnt1, Register result,
+                        Register i, Register coef, Register tmp, XMMRegister vnext,
+                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3);
+
+  void stringU_hashcode(Register str1, Register cnt1, Register result,
+                        Register i, Register coef, Register tmp, XMMRegister vnext,
+                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3);
+
   // IndexOf strings.
   // Small strings are loaded through stack if they cross page boundary.
   void string_indexof(Register str1, Register str2,

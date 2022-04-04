@@ -411,6 +411,7 @@ final class StringUTF16 {
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 
+    @IntrinsicCandidate
     public static int hashCode(byte[] value) {
         int h = 0;
         int i = 0;
