@@ -30,7 +30,7 @@
 # typically beginning with -c.
 #
 # This script will run the shell command line and it will also store a simple
-# log of the the time it takes to execute the command in the OUTPUT_FILE, using
+# log of the time it takes to execute the command in the OUTPUT_FILE, using
 # utility for time measure specified with TIME_CMD option.
 #
 # Type of time measure utility is specified with TIME_CMD_TYPE option.
