@@ -116,6 +116,8 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
     return orig_old->is_Con();
   } else if (old->is_Phi()) { // Junk phi's
     return true;
+  } else if (old->rematerialize()) {
+    return true;
   } else if (old->is_MachConstantBase()) {
     return (orig_old->is_Con() && orig_old->is_MachConstant());
   }

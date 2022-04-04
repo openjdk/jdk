@@ -125,8 +125,8 @@ void PhaseCoalesce::combine_these_two(Node *n1, Node *n2) {
 }
 
 // Copy coalescing
-void PhaseCoalesce::coalesce_driver(Block_List blocks, uint region) {
-  verify(region);
+void PhaseCoalesce::coalesce_driver(Block_List blocks) {
+  verify();
   // Coalesce from high frequency to low
   for (uint i = 0; i < blocks.size(); i++) {
     coalesce(blocks[i]);
@@ -481,13 +481,13 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
   } // End of for all instructions in block
 }
 
-PhaseConservativeCoalesce::PhaseConservativeCoalesce(PhaseChaitin &chaitin) : PhaseCoalesce(chaitin) {
+PhaseConservativeCoalesce::PhaseConservativeCoalesce(PhaseChaitin &chaitin, uint region) : PhaseCoalesce(chaitin, region) {
   _ulr.initialize(_phc._lrg_map.max_lrg_id());
 }
 
-void PhaseConservativeCoalesce::verify(uint region) {
+void PhaseConservativeCoalesce::verify() {
 #ifdef ASSERT
-  _phc.set_was_low(region);
+  _phc.set_was_low(_region);
 #endif
 }
 
@@ -665,6 +665,10 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   uint lr1 = _phc._lrg_map.find(dst_copy);
   uint lr2 = _phc._lrg_map.find(src_def);
 
+  if (lrgs(lr1)._region2 < _region && lrgs(lr2)._region2 < _region) {
+    return false;
+  }
+
   // Same live ranges already?
   if (lr1 == lr2) {
     return false;
@@ -755,6 +759,11 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 
 
   // ---- THE COMBINED LRG IS COLORABLE ----
+
+//  tty->print_cr("### %d %d - %d %d - %d %d - %d", lr1, lr2, lrgs(lr1)._region, lrgs(lr2)._region, lrgs(lr1)._min_region, lrgs(lr2)._min_region, _region);
+//  dst_copy->dump();
+//  src_copy->dump();
+//  src_def->dump();
 
   if (!(lrgs(lr1).num_regs() == lrgs(lr2).num_regs())) {
     tty->print_cr("XXX %d %d %d %d", lr1, lr2, lrgs(lr1).num_regs(), lrgs(lr2).num_regs());

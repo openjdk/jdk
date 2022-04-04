@@ -92,7 +92,10 @@ void LRG::dump() const {
   if( _msize_valid ) {
     if( _degree_valid && lo_degree() ) tty->print("Trivial ");
   }
-  tty->print("Region = %d", _region);
+  if (_spilled_around_prev_region) {
+    tty->print("spill_around_prev_region");
+  }
+  tty->print("Region = %d/%d, min region = %d", _region, _region2, _min_region);
 
   tty->cr();
 }
@@ -424,7 +427,7 @@ void PhaseChaitin::Register_Allocate() {
     Compile::TracePhase tp("chaitinCoalesce1", &timers[_t_chaitinCoalesce1]);
 
     PhaseAggressiveCoalesce coalesce(*this);
-    coalesce.coalesce_driver(_cfg._blocks, 0);
+    coalesce.coalesce_driver(_cfg._blocks);
     // Insert un-coalesced copies.  Visit all Phis.  Where inputs to a Phi do
     // not match the Phi itself, insert a copy.
     coalesce.insert_copies(_matcher);
@@ -493,6 +496,20 @@ void PhaseChaitin::Register_Allocate() {
 //        block->dump();
         if (block->_region == 0) {
           region.push(block);
+          for (uint j = 0; j < block->_num_succs; ++j) {
+            Block* s = block->_succs[j];
+            if (s->_region == 1) {
+              assert(block->_num_succs == 1, "");
+              block->_next_region = 1;
+            }
+          }
+          for (uint j = 1; j < block->num_preds(); ++j) {
+            Block* p = _cfg.get_block_for_node(block->pred(j));
+            if (p->_region == 1) {
+              assert(block->num_preds() == 2, "");
+              block->_prev_region = 1;
+            }
+          }
         }
       }
       regions.push(region);
@@ -566,6 +583,14 @@ void PhaseChaitin::Register_Allocate() {
         _live = &live;
         compute_min_regions(all_blocks);
       }
+      if (UseNewCode3) {
+        _cfg.dump();
+        for (uint i = 0; i < _lrg_map.max_lrg_id(); i++) {
+          LRG &lrg = lrgs(i);
+          tty->print("%d: ", i);
+          lrg.dump();
+        }
+      }
       build_ifg_physical(&live_arena, all_blocks, region);
       _ifg->SquareUp();
       _ifg->Compute_Effective_Degree();
@@ -573,10 +598,10 @@ void PhaseChaitin::Register_Allocate() {
       if (OptoCoalesce) {
         Compile::TracePhase tp("chaitinCoalesce2", &timers[_t_chaitinCoalesce2]);
         // Conservative (and pessimistic) copy coalescing of those spills
-        PhaseConservativeCoalesce coalesce(*this);
+        PhaseConservativeCoalesce coalesce(*this, region);
         // If max live ranges greater than cutoff, don't color the stack.
         // This cutoff can be larger than below since it is only done once.
-        coalesce.coalesce_driver(all_blocks, region);
+        coalesce.coalesce_driver(all_blocks);
       }
       _lrg_map.compress_uf_map_for_nodes();
 
@@ -627,12 +652,12 @@ void PhaseChaitin::Register_Allocate() {
     while (spills) {
       if (_trip_cnt++ > 24) {
         DEBUG_ONLY(dump_for_spill_split_recycle();)
-        for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
-          Block* block = _cfg.get_block(i);
-          block->dump();
-        }
+//        for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
+//          Block* block = _cfg.get_block(i);
+//          block->dump();
+//        }
 
-        if (_trip_cnt > 27) {
+        if (_trip_cnt > 28) {
           C->record_method_not_compilable("failed spill-split-recycle sanity check");
           ShouldNotReachHere();
           return;
@@ -686,9 +711,9 @@ void PhaseChaitin::Register_Allocate() {
       if (OptoCoalesce) {
         Compile::TracePhase tp("chaitinCoalesce3", &timers[_t_chaitinCoalesce3]);
         // Conservative (and pessimistic) copy coalescing
-        PhaseConservativeCoalesce coalesce(*this);
+        PhaseConservativeCoalesce coalesce(*this, region);
         // Check for few live ranges determines how aggressive coalesce is.
-        coalesce.coalesce_driver(all_blocks, region);
+        coalesce.coalesce_driver(all_blocks);
       }
       _lrg_map.compress_uf_map_for_nodes();
 
@@ -765,6 +790,8 @@ void PhaseChaitin::Register_Allocate() {
 //      }
 //    }
   }
+
+//  tty->print_cr("XXX trip cnt = %d", _trip_cnt);
 
   // Count number of Simplify-Select trips per coloring success.
   _allocator_attempts += _trip_cnt + 1;
@@ -877,8 +904,7 @@ void PhaseChaitin::compute_min_regions(const Block_List &blocks) {
   }
   for (uint i = 0; i < blocks.size(); i++) {
     Block* block = blocks[i];
-    IndexSet liveout(_live->live(block));
-    IndexSetIterator elements(&liveout);
+    IndexSetIterator elements(_live->live(block));
     uint lid = elements.next();
     while (lid != 0) {
       LRG &lrg = lrgs(lid);
@@ -902,6 +928,77 @@ void PhaseChaitin::compute_min_regions(const Block_List &blocks) {
         }
       }
     }
+  }
+
+  for (uint i = 0; i < blocks.size(); i++) {
+    Block* block = blocks[i];
+    block->_region_start = block->end_idx();
+    block->_region_end = 0;
+//    assert(block->_region != 0 || block->_next_region != 0 || block->_prev_region != 0, "");
+    if (block->_next_region > block->_region) {
+      assert (block->_succs[0]->_region == block->_next_region, "");
+      uint location;
+      for (location = block->end_idx(); location > 0; location--) {
+        Node* n = block->get_node(location);
+        uint lid = _lrg_map.live_range_id(n);
+        if (lid) {
+          LRG& lrg = lrgs(lid);
+          if (lrg._region != block->_next_region) {
+            break;
+          }
+        }
+      }
+      block->_region_start = location;
+    }
+    if (block->_prev_region > block->_region) {
+      assert (_cfg.get_block_for_node(block->pred(1))->_region == block->_prev_region, "");
+      uint location;
+      for (location = 1; location < block->number_of_nodes(); location++) {
+        Node* n = block->get_node(location);
+        uint input_edge_start =1; // Skip control most nodes
+        if (n->is_Mach()) {
+          input_edge_start = n->as_Mach()->oper_input_base();
+        }
+        uint k;
+        for (k = input_edge_start; k < n->req(); k++) {
+          uint lid = _lrg_map.live_range_id(n->in(k));
+          if (lid && lrgs(lid)._region != block->_prev_region) {
+            break;
+          }
+        }
+        if (k < n->req()) {
+          break;
+        }
+      }
+      block->_region_end = location;
+    }
+//    for (uint location = 1; location < block->number_of_nodes(); location++) {
+//      Node* n = block->get_node(location);
+//      uint lid = _lrg_map.live_range_id(n);
+//      if (lid) {
+//        LRG& lrg = lrgs(lid);
+//        if (location > block->_region_start) {
+//          lrg._region2 = MIN2(lrg._region2, block->_next_region);
+//        } else {
+//          lrg._region2 = MIN2(lrg._region2, block->_region);
+//        }
+//      }
+//      uint input_edge_start =1; // Skip control most nodes
+//      if (n->is_Mach()) {
+//        input_edge_start = n->as_Mach()->oper_input_base();
+//      }
+//      for (uint k = input_edge_start; k < n->req(); k++) {
+//        uint vreg = _lrg_map.live_range_id(n->in(k));
+//        if (vreg) {
+//          LRG& lrg = lrgs(vreg);
+//          if (location < block->_region_end) {
+//            lrg._region2 = MIN2(lrg._region2, block->_prev_region);
+//          } else {
+//            lrg._region2 = MIN2(lrg._region2, block->_region);
+//          }
+//        }
+//      }
+//    }
   }
 }
 
@@ -955,6 +1052,9 @@ void PhaseChaitin::mark_ssa() {
 // Gather LiveRanGe information, including register masks.  Modification of
 // cisc spillable in_RegMasks should not be done before AggressiveCoalesce.
 void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggressive, uint region) {
+  for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
+    lrgs(i)._region2 = max_juint;
+  }
 
   // Nail down the frame pointer live range
   uint fp_lrg = _lrg_map.live_range_id(_cfg.get_root_node()->in(1)->in(TypeFunc::FramePtr));
@@ -984,6 +1084,18 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 //        }
 
         lrg._region = MAX2(lrg._region, block->_region);
+        lrg._region2 = MIN2(lrg._region2, block->_region);
+        if (_spilled_on_entry_to_prev_region.test(n->_idx) || _spilled_on_exit_to_prev_region.test(n->_idx)) {
+          lrg._spilled_around_prev_region = 1;
+        }
+
+//        if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+//          assert(block->_num_succs == 1, "");
+//          assert(block->_succs[0]->_region > block->_region, "should be crossing region boundary");
+//          lrg._region2 = MIN2(lrg._region2, block->_succs[0]->_region);
+//        } else {
+//          lrg._region2 = MIN2(lrg._region2, block->_region);
+//        }
 
         // Check for float-vs-int live range (used in register-pressure
         // calculations)
@@ -1279,6 +1391,14 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
         LRG &lrg = lrgs(vreg);
 
         lrg._region = MAX2(lrg._region, block->_region);
+        lrg._region2 = MIN2(lrg._region2, block->_region);
+//        if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
+//          assert(block->num_preds() == 2, "");
+//          assert(_cfg.get_block_for_node(block->pred(1))->_region >  block->_region, "");
+//          lrg._region2 = MIN2(lrg._region2, _cfg.get_block_for_node(block->pred(1))->_region);
+//        } else {
+//          lrg._region2 = MIN2(lrg._region2, block->_region);
+//        }
 
         // // Testing for floating point code shape
         // Node *test = n->in(k);
@@ -1370,6 +1490,10 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
       lrg._direct_conflict = 1;
     }
     lrg.set_degree(0);          // no neighbors in IFG yet
+//    if (!(!lrg._spilled_around_prev_region || lrg._region > 0)) {
+//      lrg.dump();
+//    }
+//    assert(!lrg._spilled_around_prev_region || lrg._region > 0 || (lrg.is_singledef() && lrg._def->outcnt() == 0), "");
   }
 }
 
@@ -1438,7 +1562,7 @@ void PhaseChaitin::cache_lrg_info(uint region) {
     // Low degree, dead or must-spill guys just get to simplify right away
     if( lrg.lo_degree() ||
        !lrg.alive() ||
-        lrg._must_spill ) {
+        lrg._must_spill) {
       // Split low degree list into those guys that must get a
       // register and those that can go to register or stack.
       // The idea is LRGs that can go register or stack color first when
@@ -1550,6 +1674,8 @@ void PhaseChaitin::Simplify(uint region) {
     double area = lrgs(lo_score)._area;
     double cost = lrgs(lo_score)._cost;
     bool bound = lrgs(lo_score)._is_bound;
+    bool spilled_around_prev_region = lrgs(lo_score)._spilled_around_prev_region;
+//    uint region2 = lrgs(lo_score)._region2;
     assert(lrgs(lo_score)._region >= region, "");
 
     // Find cheapest guy
@@ -1571,6 +1697,8 @@ void PhaseChaitin::Simplify(uint region) {
       double iarea = lrgs(i)._area;
       double icost = lrgs(i)._cost;
       bool ibound = lrgs(i)._is_bound;
+//      uint iregion2 = lrgs(i)._region2;
+      bool ispilled_around_prev_region = lrgs(i)._spilled_around_prev_region;
 
       // Compare cost/area of i vs cost/area of lo_score.  Smaller cost/area
       // wins.  Ties happen because all live ranges in question have spilled
@@ -1581,23 +1709,26 @@ void PhaseChaitin::Simplify(uint region) {
       // one block. In which case their area is 0 and score set to max.
       // In such case choose bound live range over unbound to free registers
       // or with smaller cost to spill.
-      if ( iscore < score ||
+      if ((!ispilled_around_prev_region && spilled_around_prev_region) ||
+              (ispilled_around_prev_region == spilled_around_prev_region && (
+           iscore < score ||
           (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
           (iscore == score && iarea == area &&
-           ( (ibound && !bound) || (ibound == bound && (icost < cost)) )) ) {
+           ( (ibound && !bound) || (ibound == bound && (icost < cost)) )))) ) {
         lo_score = i;
         score = iscore;
         area = iarea;
         cost = icost;
         bound = ibound;
+        spilled_around_prev_region = ispilled_around_prev_region;
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
     assert(lo_lrg->_region >= region, "");
 
-    if (region == 1) {
-      tty->print_cr("YYY %d - %d %d %d - %d", lo_score, lo_lrg->degree(), lo_lrg->degrees_of_freedom(), lo_lrg->lo_degree(), lo_no_simplify);
-    }
+    // if (region == 1) {
+    //   tty->print_cr("YYY %d - %d %d %d - %d", lo_score, lo_lrg->degree(), lo_lrg->degrees_of_freedom(), lo_lrg->lo_degree(), lo_no_simplify);
+    // }
 
     // The live range we choose for spilling is either hi-degree, or very
     // rarely it can be low-degree.  If we choose a hi-degree live range
@@ -1799,6 +1930,7 @@ uint PhaseChaitin::Select(uint region) {
     uint lidx = _simplified;
     LRG *lrg = &lrgs(lidx);
     assert(lrg->_region >= region, "");
+    uint r = lrg->_region;
     _simplified = lrg->_next;
 
 #ifndef PRODUCT
@@ -1962,6 +2094,8 @@ uint PhaseChaitin::Select(uint region) {
       assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
 
       assert(lrg->_region >= region, "");
+//      assert(lrg->_region2 <= region, "");
+      assert(!lrg->_spilled_around_prev_region, "");
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));
       // Do not empty the regmask; leave mask_size lying around

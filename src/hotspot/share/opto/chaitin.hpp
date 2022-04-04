@@ -216,9 +216,11 @@ public:
          _msize_valid:1,        // _mask_size cache valid
          _degree_valid:1,       // _degree cache valid
          _has_copy:1,           // Adjacent to some copy instruction
-         _at_risk:1;            // Simplify says this guy is at risk to spill
+         _at_risk:1,            // Simplify says this guy is at risk to spill
+         _spilled_around_prev_region:1;
 
   uint _region;
+  uint _region2;
   uint _min_region;
 
   // Alive if non-zero, dead if zero
@@ -433,6 +435,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   VectorSet _spilled_once;      // Nodes that have been spilled
   VectorSet _spilled_twice;     // Nodes that have been spilled twice
   VectorSet _was_up_in_prev_region;
+  VectorSet _spilled_on_entry_to_prev_region;
+  VectorSet _spilled_on_exit_to_prev_region;
   uint _prev_region_node_limit;
 
   // Combine the Live Range Indices for these 2 Nodes into a single live

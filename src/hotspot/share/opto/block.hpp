@@ -274,6 +274,10 @@ public:
   bool has_loop_alignment() const { return loop_alignment() > 0; }
 
   uint _region;
+  uint _next_region;
+  uint _prev_region;
+  uint _region_start;
+  uint _region_end;
 
   // Create a new Block with given head Node.
   // Creates the (empty) predecessor arrays.
@@ -294,7 +298,11 @@ public:
       _first_inst_size(999999),
       _connector(false),
       _loop_alignment(0),
-      _region(0) {
+      _region(0),
+      _next_region(0),
+      _prev_region(0),
+      _region_start(0),
+      _region_end(0) {
     _nodes.push(headnode);
   }
 

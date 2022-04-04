@@ -715,6 +715,21 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG &lrg, 
       continue;
     }
 
+    if (interfering_lrg._region > region &&
+        (interfering_lrg._region2 > region || interfering_lrg._spilled_around_prev_region) &&
+        (lrg._region <= region || (lrg._region2 <= region && !lrg._spilled_around_prev_region))) {
+      l = elements.next();
+      continue;
+    }
+
+//    if (interfering_lrg._region > region && interfering_lrg._spilled_around_prev_region && (lrg._region <= region || !lrg._spilled_around_prev_region)) {
+//      tty->print_cr("XXX %d", region);
+//      interfering_lrg.dump();
+//      lrg.dump();
+//      l = elements.next();
+//      continue;
+//    }
+
     // Remove bound register(s) from 'l's choices
     RegMask old = interfering_lrg.mask();
     uint old_size = interfering_lrg.mask_size();
@@ -752,11 +767,10 @@ void PhaseChaitin::remove_bound_register_from_interfering_live_ranges(LRG &lrg, 
       interfering_lrg.set_mask_size(old_size);
       must_spill++;
       interfering_lrg._must_spill = 1;
-      assert(interfering_lrg._region >= region, "");
-//      if (interfering_lrg._region > region) {
-//        tty->print("---> %d ", l); interfering_lrg.dump(); tty->cr();
-//        interfering_lrg.set_prev_reg(interfering_lrg.reg());
-//      }
+      if (!(interfering_lrg._region >= region && !interfering_lrg._spilled_around_prev_region)) {
+        tty->print("---> %d ", l); interfering_lrg.dump(); tty->cr();
+      }
+      assert(interfering_lrg._region >= region && !interfering_lrg._spilled_around_prev_region, "");
       interfering_lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
     }
     l = elements.next();

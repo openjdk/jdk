@@ -37,17 +37,18 @@ class PhaseCFG;
 class PhaseCoalesce : public Phase {
 protected:
   PhaseChaitin &_phc;
+  uint _region;
 
 public:
   // Coalesce copies
-  PhaseCoalesce(PhaseChaitin &phc)
+  PhaseCoalesce(PhaseChaitin &phc, uint region)
   : Phase(Coalesce)
-  , _phc(phc) {}
+  , _phc(phc), _region(region) {}
 
-  virtual void verify(uint region) = 0;
+  virtual void verify() = 0;
 
   // Coalesce copies
-  void coalesce_driver(Block_List blocks, uint region);
+  void coalesce_driver(Block_List blocks);
 
   // Coalesce copies in this block
   virtual void coalesce(Block *b) = 0;
@@ -73,9 +74,9 @@ class PhaseAggressiveCoalesce : public PhaseCoalesce {
   uint _unique;
 public:
   // Coalesce copies
-  PhaseAggressiveCoalesce( PhaseChaitin &chaitin ) : PhaseCoalesce(chaitin) {}
+  PhaseAggressiveCoalesce( PhaseChaitin &chaitin ) : PhaseCoalesce(chaitin, 0) {}
 
-  virtual void verify(uint region) { };
+  virtual void verify() { };
 
   // Aggressively coalesce copies in this block
   virtual void coalesce( Block *b );
@@ -97,9 +98,9 @@ class PhaseConservativeCoalesce : public PhaseCoalesce {
   IndexSet _ulr;               // Union live range interferences
 public:
   // Coalesce copies
-  PhaseConservativeCoalesce( PhaseChaitin &chaitin );
+  PhaseConservativeCoalesce(PhaseChaitin &chaitin, uint region);
 
-  virtual void verify(uint region);
+  virtual void verify();
 
   // Conservatively coalesce copies in this block
   virtual void coalesce( Block *b );

@@ -588,8 +588,8 @@ private:
   const RegMask *_in;           // RegMask for input
   const RegMask *_out;          // RegMask for output
   const Type *_type;
-  const SpillType _spill_type;
 public:
+  const SpillType _spill_type;
   MachSpillCopyNode(SpillType spill_type, Node *n, const RegMask &in, const RegMask &out ) :
     MachIdealNode(), _in(&in), _out(&out), _type(n->bottom_type()), _spill_type(spill_type) {
     init_class_id(Class_MachSpillCopy);
