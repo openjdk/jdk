@@ -93,14 +93,32 @@ public class StringHashCode {
 
         private final static String alphabet = "abcdefghijklmnopqrstuvwxyz";
 
+        private final static MethodHandle defaultLatin1HashCodeMH;
+        private final static MethodHandle defaultUTF16HashCodeMH;
+
+        static {
+            try {
+                Class<?> stringLatin1 = Class.forName("java.lang.StringLatin1");
+                Method stringLatin1HashCode = stringLatin1.getDeclaredMethod("hashCode", byte[].class);
+                stringLatin1HashCode.setAccessible(true);
+
+                defaultLatin1HashCodeMH = MethodHandles.lookup().unreflect(stringLatin1HashCode);
+
+                Class<?> stringUTF16 = Class.forName("java.lang.StringUTF16");
+                Method stringUTF16HashCode = stringUTF16.getDeclaredMethod("hashCode", byte[].class);
+                stringUTF16HashCode.setAccessible(true);
+
+                defaultUTF16HashCodeMH = MethodHandles.lookup().unreflect(stringUTF16HashCode);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         @Param({"0", "1", "10", "100", "1000", "10000"})
         private int size;
 
         private byte[] latin1;
         private byte[] utf16;
-
-        private MethodHandle defaultLatin1HashCodeMH;
-        private MethodHandle defaultUTF16HashCodeMH;
 
         @Setup
         public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
@@ -110,17 +128,6 @@ public class StringHashCode {
             }
             latin1 = new String(str).getBytes("US-ASCII");
             utf16 = new String(str).getBytes("UTF-16");
-
-            Class<?> stringLatin1 = Class.forName("java.lang.StringLatin1");
-            Method stringLatin1HashCode = stringLatin1.getDeclaredMethod("hashCode", byte[].class);
-            stringLatin1HashCode.setAccessible(true);
-
-            Class<?> stringUTF16 = Class.forName("java.lang.StringLatin1");
-            Method stringUTF16HashCode = stringUTF16.getDeclaredMethod("hashCode", byte[].class);
-            stringUTF16HashCode.setAccessible(true);
-
-            defaultLatin1HashCodeMH = MethodHandles.lookup().unreflect(stringLatin1HashCode);
-            defaultUTF16HashCodeMH = MethodHandles.lookup().unreflect(stringUTF16HashCode);
         }
 
         @Benchmark
