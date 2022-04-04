@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -93,7 +94,7 @@ public final class TraceMethodVisitor extends MethodVisitor {
       * @param printer the printer to convert the visited method into text.
       */
     public TraceMethodVisitor(final MethodVisitor methodVisitor, final Printer printer) {
-        super(/* latest api = */ Opcodes.ASM8, methodVisitor);
+        super(/* latest api = */ Opcodes.ASM9, methodVisitor);
         this.p = printer;
     }
 
@@ -341,3 +342,4 @@ public final class TraceMethodVisitor extends MethodVisitor {
         super.visitEnd();
     }
 }
+

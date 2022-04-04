@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -112,7 +113,7 @@ public class LocalVariablesSorter extends MethodVisitor {
       */
     public LocalVariablesSorter(
             final int access, final String descriptor, final MethodVisitor methodVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, access, descriptor, methodVisitor);
+        this(/* latest api = */ Opcodes.ASM9, access, descriptor, methodVisitor);
         if (getClass() != LocalVariablesSorter.class) {
             throw new IllegalStateException();
         }
@@ -122,8 +123,8 @@ public class LocalVariablesSorter extends MethodVisitor {
       * Constructs a new {@link LocalVariablesSorter}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link
+      *     Opcodes#ASM8} or {@link Opcodes#ASM9}.
       * @param access access flags of the adapted method.
       * @param descriptor the method's descriptor (see {@link Type}).
       * @param methodVisitor the method visitor to which this adapter delegates calls.
@@ -381,3 +382,4 @@ public class LocalVariablesSorter extends MethodVisitor {
         return local;
     }
 }
+
