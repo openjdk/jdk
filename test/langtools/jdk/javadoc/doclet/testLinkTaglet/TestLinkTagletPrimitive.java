@@ -75,7 +75,7 @@ public class TestLinkTagletPrimitive extends JavadocTester {
                     <summary>invalid @link</summary>
                     <pre><code>byte</code></pre>
                     </details>
-                                        
+
                      Void:\s
                     <details class="invalid-tag">
                     <summary>invalid @link</summary>
