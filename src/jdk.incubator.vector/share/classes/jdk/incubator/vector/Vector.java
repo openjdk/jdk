@@ -2252,7 +2252,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * <p> The scale must not be so large, and the element size must
      * not be so small, that that there would be an overflow when
      * computing any of the {@code N*scale} or {@code VLENGTH*scale},
-     * when the the result is represented using the vector
+     * when the result is represented using the vector
      * lane type {@code ETYPE}.
      *
      * <p>
