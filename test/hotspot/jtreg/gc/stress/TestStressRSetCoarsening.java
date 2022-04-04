@@ -240,7 +240,7 @@ public class TestStressRSetCoarsening {
         final int HOWL_TO_FULL_THRESHOLD = (cardsPerRegion * coarsenHowlToFullPercent) / 100;
 
         // regToRegRefCounts - array of reference counts from region to region
-        // at the the end of iteration.
+        // at the end of iteration.
         // The number of test iterations is array length - 1.
         // If c[i] > c[i-1] then during the iteration i more references will
         // be created.

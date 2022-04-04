@@ -49,7 +49,7 @@ public class JcmdCommand extends CompileCommand {
 
 
     /**
-     * Enchances parent's class method with the the JCMDtype printing:
+     * Enchances parent's class method with the JCMDtype printing:
      * {@code ... JCMDType: <jcmd_type>}
      */
     protected String formatFields() {

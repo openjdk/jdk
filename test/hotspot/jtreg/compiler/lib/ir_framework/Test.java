@@ -32,7 +32,7 @@ import java.lang.annotation.RetentionPolicy;
  * Let {@code m} be a test method specifying the {@code @Test} annotation. If {@code m} is neither part of a
  * <b>checked test</b> (an additional method specifying {@link Check @Check} with {@code @Check(test = "m")}) nor part
  * of a <b>custom run test</b> (an additional method specifying {@link Run @Run} with {@code @Run(test = "m")}),
- * then {@code m} is a so-called <b>base test</b> and the the framework invokes {@code m} in the following way:
+ * then {@code m} is a so-called <b>base test</b> and the framework invokes {@code m} in the following way:
  * <ol>
  *     <li><p>The framework warms {@code m} up by invoking it for a predefined number of iterations (default: 2000)
  *     or any number specified by an additional {@link Warmup @Warmup} annotation at {@code m} or by using

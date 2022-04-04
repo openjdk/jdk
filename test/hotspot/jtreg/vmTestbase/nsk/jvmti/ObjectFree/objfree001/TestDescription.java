@@ -31,7 +31,7 @@
  * VM Testbase readme:
  * DESCRIPTION
  *     This test exercises the JVMTI event ObjectFree.
- *     It verifies that the the JVMTI raw monitor, memory management,
+ *     It verifies that the JVMTI raw monitor, memory management,
  *     and environment local storage functions can be used during
  *     processing this event.
  *     The test works as follows. The special class 'objfree001u' is
@@ -60,4 +60,3 @@
  *      nsk.jvmti.ObjectFree.objfree001
  *      ./bin 5 ./bin
  */
-

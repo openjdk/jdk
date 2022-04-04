@@ -149,7 +149,7 @@ class TestStringDeduplicationTools {
 
     private static void forceDeduplication(int ageThreshold, String gcType) {
         // Force deduplication to happen by either causing a FullGC or a YoungGC.
-        // We do several collections to also provoke a situation where the the
+        // We do several collections to also provoke a situation where the
         // deduplication thread needs to yield while processing the queue. This
         // also tests that the references in the deduplication queue are adjusted
         // accordingly.

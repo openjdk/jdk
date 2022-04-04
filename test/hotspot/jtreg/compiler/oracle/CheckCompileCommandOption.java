@@ -51,7 +51,7 @@ public class CheckCompileCommandOption {
     // Type (1) is used to enable a boolean option for a method.
     //
     // Type (2) is used to support options with a value. Values can
-    // have the the following types: intx, uintx, bool, ccstr,
+    // have the following types: intx, uintx, bool, ccstr,
     // ccstrlist, and double.
 
     private static final String[][] FILE_ARGUMENTS = {

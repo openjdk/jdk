@@ -96,7 +96,7 @@ public:
     return 1.0;
   }
 
-  // Called by G1BatchedTask to provide information about the the maximum
+  // Called by G1BatchedTask to provide information about the maximum
   // number of workers for all subtasks after it has been determined.
   void set_max_workers(uint max_workers) override {
     assert(max_workers >= 1, "must be");

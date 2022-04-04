@@ -38,7 +38,7 @@ import nsk.share.TestFailure;
 
 /*
      Check for intermediate results that are too wide.
-     The too-wide.java test will fail if the the result of the
+     The too-wide.java test will fail if the result of the
      expression (f0+f24) is maintained in greater-than-float precision
      or if the result of the expression (d0+d53) is maintained in
      greater-than-double precision.

@@ -144,7 +144,7 @@ class Forest {
         }
     }
 
-    // Swap subtrees in 2 trees, the the path is used
+    // Swap subtrees in 2 trees, the path is used
     // as sequence of 1-0 to select subtree (left-reight sequence)
     static void swapSubtrees(Tree t1, Tree t2, int depth, int path) {
         TreeNode tn1 = t1.getRoot();

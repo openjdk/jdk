@@ -30,7 +30,7 @@ import nsk.share.jvmti.*;
 
 /**
  * This test exercises the JVMTI event <code>ObjectFree</code>.
- * <br>It verifies that the the JVMTI raw monitor, memory management,
+ * <br>It verifies that the JVMTI raw monitor, memory management,
  * and environment local storage functions can be used during processing
  * this event.<p>
  * The test works as follows. The special class <code>objfree001u</code>
