@@ -120,9 +120,7 @@ public class ProxyTunnelServer extends Thread {
     private void processRequests() throws Exception {
 
         InputStream in = clientSocket.getInputStream();
-//        MessageHeader mheader = new MessageHeader(in);
         HttpHeaderParser mheader = new HttpHeaderParser(in);
-//        String statusLine = mheader.getValue(0);
         String statusLine = mheader.getRequestDetails();
 
         if (statusLine.startsWith("CONNECT")) {

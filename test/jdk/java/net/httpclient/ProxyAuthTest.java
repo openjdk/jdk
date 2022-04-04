@@ -159,7 +159,6 @@ public class ProxyAuthTest {
                     HttpHeaderParser headers = new HttpHeaderParser(in);
                     System.out.println("Proxy: received " + headers);
 
-//                    String authInfo = headers.findValue("Proxy-Authorization");
                     String authInfo = headers.getHeaderValue("Proxy-Authorization") != null ?
                             headers.getHeaderValue("Proxy-Authorization").get(0) : null;
                     if (authInfo != null) {

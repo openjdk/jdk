@@ -103,7 +103,6 @@ class DigestServer extends Thread {
                 //is.read ();
                 // need to get the cnonce out of the response
                 HttpHeaderParser header = new HttpHeaderParser (is);
-//                String raw = header.findValue ("Authorization");
                 String raw = header.getHeaderValue("Authorization") != null ?
                         header.getHeaderValue("Authorization").get(0) : null;
                 HeaderParser parser = new HeaderParser (raw);

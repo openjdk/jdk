@@ -104,7 +104,6 @@ public class B6870935 {
                 // is.read ();
                 // need to get the cnonce out of the response
                 HttpHeaderParser header = new HttpHeaderParser (is);
-//                String raw = header.findValue ("Proxy-Authorization");
                 String raw = header.getHeaderValue("Proxy-Authorization") != null ?
                         header.getHeaderValue("Proxy-Authorization").get(0) : null;
                 HeaderParser parser = new HeaderParser (raw);

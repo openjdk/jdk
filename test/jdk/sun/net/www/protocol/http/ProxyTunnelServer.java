@@ -134,9 +134,7 @@ public class ProxyTunnelServer extends Thread {
      */
     private void processRequests(boolean makeTunnel) throws Exception {
         InputStream in = clientSocket.getInputStream();
-//        MessageHeader mheader = new MessageHeader(in);
         HttpHeaderParser mheader = new HttpHeaderParser(in);
-//        String statusLine = mheader.getValue(0);
         String statusLine = mheader.getRequestDetails();
 
         System.out.printf("Proxy: Processing request from '%s'%n", clientSocket);
@@ -146,8 +144,6 @@ public class ProxyTunnelServer extends Thread {
             // retrieveConnectInfo(statusLine);
             if (needAuth) {
                 String authInfo;
-//                if ((authInfo = mheader.findValue("Proxy-Authorization"))
-//                                         != null) {
                 if ((authInfo = (mheader.getHeaderValue("Proxy-Authorization") != null ?
                         mheader.getHeaderValue("Proxy-Authorization").get(0) : null))
                         != null) {
