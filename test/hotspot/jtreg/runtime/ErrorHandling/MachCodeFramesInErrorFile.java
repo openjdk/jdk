@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Asserts;
@@ -55,8 +56,6 @@ import jdk.test.lib.Asserts;
 import jdk.internal.misc.Unsafe;
 
 public class MachCodeFramesInErrorFile {
-    private static final String OS_NAME = System.getProperty("os.name");
-
     private static class Crasher {
         // Make Crasher.unsafe a compile-time constant so that
         // C2 intrinsifies calls to Unsafe intrinsics.
@@ -73,7 +72,7 @@ public class MachCodeFramesInErrorFile {
             } else {
                 assert args[0].equals("crashInVM");
                 // AIX does not prohibit low address reads
-                crashInNative1( OS_NAME.startsWith("AIX") ? -1 : 10 );
+                crashInNative1( Platform.isPPC() ? -1 : 10 );
             }
         }
 
@@ -171,7 +170,7 @@ public class MachCodeFramesInErrorFile {
      */
     private static void extractFrames(String hsErr, Set<String> frames, boolean nativeStack) {
         String marker;
-        if (OS_NAME.startsWith("AIX")) {
+        if (Platform.isAix()) {
             marker = nativeStack ? "------ current frame:" : "Java frames: ";
         } else {
             marker = (nativeStack ? "Native" : "Java") + " frames: ";
