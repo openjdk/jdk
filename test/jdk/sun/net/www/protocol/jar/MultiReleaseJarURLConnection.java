@@ -209,7 +209,7 @@ public class MultiReleaseJarURLConnection {
             String fragment = vclsUrl.getRef();
             Assert.assertNull(fragment);
 
-            // and verify that the the url is a reified pointer to the runtime entry
+            // and verify that the url is a reified pointer to the runtime entry
             String rep = vclsUrl.toString();
             //System.out.println("    getResource(\"/version/Version.class\") returned: " + rep);
             if (style.equals("http")) {

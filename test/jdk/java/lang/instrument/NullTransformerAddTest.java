@@ -60,7 +60,7 @@ NullTransformerAddTest
 
 
     /**
-     * Add null transformers to the the manager and check it
+     * Add null transformers to the manager and check it
      */
     public void
     testNullTransformerAdd()

@@ -381,7 +381,7 @@ public class CopyCommon {
             }
         }
 
-        // Verify the the front padding is unchanged
+        // Verify the front padding is unchanged
         verifyUnswappedData(dst, 0, 0, dstOffset);
 
         if (swap) {

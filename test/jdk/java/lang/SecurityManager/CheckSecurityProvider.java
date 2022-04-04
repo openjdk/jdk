@@ -51,7 +51,7 @@ public class CheckSecurityProvider {
         String os = System.getProperty("os.name");
         /*
          * This array should be updated whenever new security providers
-         * are added to the the java.security file.
+         * are added to the java.security file.
          * NOTE: it should be in the same order as the java.security file
          */
 

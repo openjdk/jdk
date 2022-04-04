@@ -59,7 +59,7 @@ NoTransformerAddedTest
     }
 
     /**
-     * Add no transformers to the the manager and check it
+     * Add no transformers to the manager and check it
      */
     public void
     testNoTransformersAdded()

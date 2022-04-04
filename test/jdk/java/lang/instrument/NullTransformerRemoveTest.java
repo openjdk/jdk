@@ -57,7 +57,7 @@ NullTransformerRemoveTest
 
 
     /**
-     * Remove null transformers from the the manager and check
+     * Remove null transformers from the manager and check
      * that it throws NullPointerException
      */
     public void

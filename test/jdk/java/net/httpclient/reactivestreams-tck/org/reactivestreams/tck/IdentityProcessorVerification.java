@@ -61,7 +61,7 @@ public abstract class IdentityProcessorVerification<T> extends WithHelperPublish
 
   /**
    * Test class must specify the expected time it takes for the publisher to
-   * shut itself down when the the last downstream {@code Subscription} is cancelled.
+   * shut itself down when the last downstream {@code Subscription} is cancelled.
    *
    * The processor will be required to be able to buffer {@code TestEnvironment.TEST_BUFFER_SIZE} elements.
    */
@@ -72,7 +72,7 @@ public abstract class IdentityProcessorVerification<T> extends WithHelperPublish
 
   /**
    * Test class must specify the expected time it takes for the publisher to
-   * shut itself down when the the last downstream {@code Subscription} is cancelled.
+   * shut itself down when the last downstream {@code Subscription} is cancelled.
    *
    * The processor will be required to be able to buffer {@code TestEnvironment.TEST_BUFFER_SIZE} elements.
    *
@@ -85,7 +85,7 @@ public abstract class IdentityProcessorVerification<T> extends WithHelperPublish
 
   /**
    * Test class must specify the expected time it takes for the publisher to
-   * shut itself down when the the last downstream {@code Subscription} is cancelled.
+   * shut itself down when the last downstream {@code Subscription} is cancelled.
    *
    * @param publisherReferenceGCTimeoutMillis used to determine after how much time a reference to a Subscriber should be already dropped by the Publisher.
    * @param processorBufferSize            number of elements the processor is required to be able to buffer.

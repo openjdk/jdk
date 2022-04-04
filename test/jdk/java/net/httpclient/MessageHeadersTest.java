@@ -118,7 +118,7 @@ public class MessageHeadersTest {
             }
             // In that case we expect MessageHeader to read the CR but
             // leave the LF in the buffer. We therefore need to consume
-            // the the LF in order to get an empty (all consumed) buffer.
+            // the LF in order to get an empty (all consumed) buffer.
             // This is what ResponseHeaders does.
             byte c = buffer.get();
             if (c != '\n' || bbis.lastRead != '\r') {

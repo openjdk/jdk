@@ -421,7 +421,7 @@ public class ReflectionFrames {
      * This test invokes StackInspector.class.newInstance() from
      * the caller StackInspector.Caller.create method. Because
      * Class.newInstance() is not considered as a
-     * reflection frame, the the caller returned by
+     * reflection frame, the caller returned by
      * getCallerClass() should appear to be java.lang.Class
      * and not StackInspector.Caller.
      * It also checks the expected frames collected

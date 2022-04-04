@@ -88,7 +88,7 @@ public class SocksSocketImplTest {
 
     /**
      * A {@link ProxySelector} which strips the "scheme" part of the {@link URI}
-     * before delegating the selection to the the {@link DefaultProxySelector}.
+     * before delegating the selection to the {@link DefaultProxySelector}.
      * This is to ensure that the {@code DefaultProxySelector} throws an {@link IllegalArgumentException}
      * during selection of the proxy
      */

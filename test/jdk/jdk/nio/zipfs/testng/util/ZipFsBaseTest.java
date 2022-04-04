@@ -231,7 +231,7 @@ public class ZipFsBaseTest {
      * @throws IOException If an error occurs
      */
     protected static void rmdir(Path dir) throws IOException {
-        // Nothing to do if the the file does not exist
+        // Nothing to do if the file does not exist
         if (!Files.exists(dir)) {
             return;
         }

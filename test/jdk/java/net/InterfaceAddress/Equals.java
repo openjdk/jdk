@@ -77,7 +77,7 @@ public class Equals
     }
 
     /**
-     * Returns an InterfaceAddress instance with its fields set the the values
+     * Returns an InterfaceAddress instance with its fields set the values
      * specificed.
      */
     static InterfaceAddress createInterfaceAddress(

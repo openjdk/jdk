@@ -64,7 +64,7 @@ public class SoTimeout implements Runnable {
         long waited = System.currentTimeMillis() - timeWritten;
 
         // this sequence should complete fairly quickly and if it
-        // takes something resembling the the SoTimeout value then
+        // takes something resembling the SoTimeout value then
         // we are probably incorrectly blocking and not waking up
         if (waited > 2000) {
             throw new Exception("shouldn't take " + waited + " to complete");

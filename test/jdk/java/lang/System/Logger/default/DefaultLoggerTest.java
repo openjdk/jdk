@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  * @test
  * @bug     8140364 8145686
  * @summary Tests default loggers returned by System.getLogger, and in
- *          particular the implementation of the the System.Logger method
+ *          particular the implementation of the System.Logger method
  *          performed by the default binding.
  * @modules java.logging
  * @build DefaultLoggerTest AccessSystemLogger
