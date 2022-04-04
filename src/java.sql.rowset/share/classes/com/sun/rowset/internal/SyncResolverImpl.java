@@ -698,7 +698,7 @@ public class SyncResolverImpl extends CachedRowSetImpl implements SyncResolver {
     /**
      * Immediately removes the current row from this
      * {@code CachedRowSetImpl} object if the row has been inserted, and
-     * also notifies listeners the a row has changed.  An exception is thrown
+     * also notifies listeners the row has changed.  An exception is thrown
      * if the row is not a row that has been inserted or the cursor is before
      * the first row, after the last row, or on the insert row.
      * <P>
