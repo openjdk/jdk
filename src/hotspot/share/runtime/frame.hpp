@@ -228,7 +228,7 @@ class frame {
   // returns the sender, but skips conversion frames
   frame real_sender(RegisterMap* map) const;
 
-  // returns the the sending Java frame, skipping any intermediate C frames
+  // returns the sending Java frame, skipping any intermediate C frames
   // NB: receiver must not be first frame
   frame java_sender() const;
 

@@ -690,7 +690,7 @@ class IntervalWalker : public CompilationResourceObj {
   void walk_to(IntervalState state, int from);
 
   // activate_current() is called when an unhandled interval becomes active (in current(), current_kind()).
-  // Return false if current() should not be moved the the active interval list.
+  // Return false if current() should not be moved the active interval list.
   // It is safe to append current to any interval list but the unhandled list.
   virtual bool activate_current() { return true; }
 

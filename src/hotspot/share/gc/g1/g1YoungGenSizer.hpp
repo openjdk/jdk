@@ -36,7 +36,7 @@
 // internally work with a number of regions instead. So, some rounding
 // will occur.
 //
-// If nothing related to the the young gen size is set on the command
+// If nothing related to the young gen size is set on the command
 // line we should allow the young gen to be between G1NewSizePercent
 // and G1MaxNewSizePercent of the heap size. This means that every time
 // the heap size changes, the limits for the young gen size will be

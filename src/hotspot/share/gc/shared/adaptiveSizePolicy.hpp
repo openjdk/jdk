@@ -153,7 +153,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   //   increase the tenuring threshold because of the total major GC cost
   //   is greater than the total minor GC cost
   bool _increment_tenuring_threshold_for_gc_cost;
-  //   decrease the tenuring threshold because of the the total minor GC
+  //   decrease the tenuring threshold because of the total minor GC
   //   cost is greater than the total major GC cost
   bool _decrement_tenuring_threshold_for_gc_cost;
   //   decrease due to survivor size limit

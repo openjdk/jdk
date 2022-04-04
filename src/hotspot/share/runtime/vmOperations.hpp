@@ -36,7 +36,7 @@ class VM_EmptyOperation : public VM_Operation {
 public:
   virtual void doit() final {}
   virtual bool skip_thread_oop_barriers() const final {
-    // Neither the doit function nor the the safepoint
+    // Neither the doit function nor the safepoint
     // cleanup tasks read oops in the Java threads.
     return true;
   }

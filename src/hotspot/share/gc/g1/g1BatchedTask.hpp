@@ -68,7 +68,7 @@ public:
   // Called by G1BatchedTask to determine total number of workers.
   virtual double worker_cost() const = 0;
 
-  // Called by G1BatchedTask to provide information about the the maximum
+  // Called by G1BatchedTask to provide information about the maximum
   // number of workers for all subtasks after it has been determined.
   virtual void set_max_workers(uint max_workers) { }
 

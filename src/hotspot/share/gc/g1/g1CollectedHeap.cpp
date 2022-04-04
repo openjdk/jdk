@@ -3398,7 +3398,7 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
     assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   } else {
-    // The "used" of the the collection set have already been subtracted
+    // The "used" of the collection set have already been subtracted
     // when they were freed.  Add in the bytes used.
     increase_used(_bytes_used_during_gc);
   }

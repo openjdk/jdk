@@ -1116,7 +1116,7 @@ class PSParallelCompact : AllStatic {
                                                  idx_t bit);
 
   // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the the dense prefix is
+  // prefix boundary.  Should only be called if the dense prefix is
   // non-empty.
   static void fill_dense_prefix_end(SpaceId id);
 

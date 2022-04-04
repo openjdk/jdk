@@ -907,7 +907,7 @@ class PerfTraceTime : public StackObj {
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
- * occurrence of some event and measuring the the elapsed time of
+ * occurrence of some event and measuring the elapsed time of
  * the event in two separate PerfCounter instances.
  *
  * Example:

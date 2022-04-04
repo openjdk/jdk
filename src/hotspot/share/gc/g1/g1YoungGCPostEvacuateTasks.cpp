@@ -167,7 +167,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
   //
   // Other implementation considerations:
   // - never consider object arrays at this time because they would pose
-  // considerable effort for cleaning up the the remembered sets. This is
+  // considerable effort for cleaning up the remembered sets. This is
   // required because stale remembered sets might reference locations that
   // are currently allocated into.
   bool is_reclaimable(uint region_idx) const {

@@ -193,7 +193,7 @@ BlockOffsetArray::set_remainder_to_point_to_start_incl(size_t start_card, size_t
   size_t start_card_for_region = start_card;
   u_char offset = max_jubyte;
   for (uint i = 0; i < BOTConstants::N_powers; i++) {
-    // -1 so that the the card with the actual offset is counted.  Another -1
+    // -1 so that the card with the actual offset is counted.  Another -1
     // so that the reach ends in this region and not at the start
     // of the next.
     size_t reach = start_card - 1 + (BOTConstants::power_to_cards_back(i+1) - 1);

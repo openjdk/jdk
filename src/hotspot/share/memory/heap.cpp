@@ -375,7 +375,7 @@ void CodeHeap::deallocate(void* p) {
 }
 
 /**
- * The segment map is used to quickly find the the start (header) of a
+ * The segment map is used to quickly find the start (header) of a
  * code block (e.g. nmethod) when only a pointer to a location inside the
  * code block is known. This works as follows:
  *  - The storage reserved for the code heap is divided into 'segments'.

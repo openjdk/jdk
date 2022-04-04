@@ -57,7 +57,7 @@ class JfrEpochQueueKlassPolicy : public JfrCHeapObj {
   void store_element(const Klass* klass, BufferPtr buffer);
   // Element size is a function of the traceid value.
   size_t element_size(const Klass* klass);
-  // Storage associated with the the queue is distributed and cached in thread locals.
+  // Storage associated with the queue is distributed and cached in thread locals.
   BufferPtr thread_local_storage(Thread* thread) const;
   void set_thread_local_storage(BufferPtr buffer, Thread* thread);
   // Klasses are validated for liveness before being forwarded to the user provided callback.
