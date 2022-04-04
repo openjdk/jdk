@@ -25,60 +25,35 @@
  * @test
  * @bug 8284220
  * @summary Tests DeclaredType.toString with type annotations present
- * @build NestedTypeToString
- * @compile/ref=NestedTypeToString.out -XDrawDiagnostics -processor p.NestedTypeToString -proc:only NestedTypeToString.java
+ * @library /tools/javac/lib
+ * @build AnnotatedTypeToString JavacTestingAbstractProcessor ExpectedToString
+ * @compile -processor AnnotatedTypeToString -proc:only Test.java
  */
 
-package p;
+import p.ExpectedToString;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.Set;
 
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE_USE)
-@interface A {}
-
-@SupportedAnnotationTypes("*")
-public class NestedTypeToString extends AbstractProcessor {
-
-    static class Inner {
-        static class InnerMost {}
-    }
-
-    @A Inner i;
-    Inner.@A InnerMost j;
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
-    }
+@SupportedAnnotationTypes("p.ExpectedToString")
+public class AnnotatedTypeToString extends JavacTestingAbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (roundEnv.processingOver()) {
             return false;
         }
-        for (Element e :
-                processingEnv
-                        .getElementUtils()
-                        .getTypeElement("p.NestedTypeToString")
-                        .getEnclosedElements()) {
-            if (e.getKind().equals(ElementKind.FIELD)) {
+        for (Element e : roundEnv.getElementsAnnotatedWith(ExpectedToString.class)) {
+            String expected = e.getAnnotation(ExpectedToString.class).value();
+            String actual = e.asType().toString();
+            if (!expected.equals(actual)) {
                 processingEnv
                         .getMessager()
-                        .printMessage(Diagnostic.Kind.NOTE, e.asType().toString());
+                        .printError(String.format("expected: %s, was: %s", expected, actual), e);
             }
         }
         return false;
