@@ -64,7 +64,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
-    private final Object configLock = new Object();
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
     private boolean shutdownHookRegistered;
@@ -151,17 +150,15 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration[] getConfigurations() {
         if (configs == null) {
-            synchronized (configLock) {
-                makeConfigurations();
-            }
+            makeConfigurations();
         }
         return configs.clone();
     }
 
     private void makeConfigurations() {
-        if (configs == null) {
-            XToolkit.awtLock();
-            try {
+        XToolkit.awtLock();
+        try {
+            if (configs == null) {
                 int i = 1;  // Index 0 is always the default config
                 int num = getNumConfigs(screen);
                 GraphicsConfiguration[] ret = new GraphicsConfiguration[num];
@@ -201,9 +198,9 @@ public final class X11GraphicsDevice extends GraphicsDevice
                     }
                 }
                 configs = ret;
-            } finally {
-                XToolkit.awtUnlock();
             }
+        } finally {
+            XToolkit.awtUnlock();
         }
     }
 
@@ -243,17 +240,15 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration getDefaultConfiguration() {
         if (defaultConfig == null) {
-            synchronized (configLock) {
-                makeDefaultConfiguration();
-            }
+            makeDefaultConfiguration();
         }
         return defaultConfig;
     }
 
     private void makeDefaultConfiguration() {
-        if (defaultConfig == null) {
-            XToolkit.awtLock();
-            try {
+        XToolkit.awtLock();
+        try {
+            if (defaultConfig == null) {
                 int visNum = getConfigVisualId(0, screen);
                 if (X11GraphicsEnvironment.isGLXAvailable()) {
                     defaultConfig = GLXGraphicsConfig.getConfig(this, visNum);
@@ -290,9 +285,9 @@ public final class X11GraphicsDevice extends GraphicsDevice
                                 doubleBuffer);
                     }
                 }
-            } finally {
-                XToolkit.awtUnlock();
             }
+        } finally {
+            XToolkit.awtUnlock();
         }
     }
 

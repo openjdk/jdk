@@ -62,36 +62,28 @@ class XCanvasPeer extends XComponentPeer implements CanvasPeer {
         if (graphicsConfig == null || gc == null) {
             return gc;
         }
-        // Opt: Only need to do if we're not using the default GC
 
-        XToolkit.awtLock(); // the number of screens may otherwise change during
+        final X11GraphicsDevice newDev = getSameScreenDevice(gc);
+        final int visualToLookFor = graphicsConfig.getVisual();
+
+        final GraphicsConfiguration[] configurations = newDev.getConfigurations();
+        for (final GraphicsConfiguration config : configurations) {
+            final X11GraphicsConfig x11gc = (X11GraphicsConfig) config;
+            if (visualToLookFor == x11gc.getVisual()) {
+                graphicsConfig = x11gc;
+            }
+        }
+
+        return graphicsConfig;
+    }
+
+    private X11GraphicsDevice getSameScreenDevice(GraphicsConfiguration gc) {
+        XToolkit.awtLock(); // so that the number of screens doesn't change during
         try {
-            int screenNum = ((X11GraphicsDevice) gc.getDevice()).getScreen();
-
-            X11GraphicsConfig parentgc;
-            // save vis id of current gc
-            int visual = graphicsConfig.getVisual();
-
-            X11GraphicsDevice newDev = (X11GraphicsDevice) GraphicsEnvironment.
+            final int screenNum = ((X11GraphicsDevice) gc.getDevice()).getScreen();
+            return (X11GraphicsDevice) GraphicsEnvironment.
                     getLocalGraphicsEnvironment().
                     getScreenDevices()[screenNum];
-
-            for (int i = 0; i < newDev.getNumConfigs(screenNum); i++) {
-                if (visual == newDev.getConfigVisualId(i, screenNum)) {
-                    // use that
-                    graphicsConfig = (X11GraphicsConfig) newDev.getConfigurations()[i];
-                    break;
-                }
-            }
-            // just in case...
-            if (graphicsConfig == null) {
-                graphicsConfig = (X11GraphicsConfig) GraphicsEnvironment.
-                        getLocalGraphicsEnvironment().
-                        getScreenDevices()[screenNum].
-                        getDefaultConfiguration();
-            }
-
-            return graphicsConfig;
         } finally {
             XToolkit.awtUnlock();
         }
