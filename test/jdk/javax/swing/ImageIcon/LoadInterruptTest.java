@@ -20,12 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * @test
- * @bug 8236987
- * @summary  Verifies if Print Function is removed and LoadStatus is changed to ABORTED when interrupted/ still LOADING.
- * @run main LoadInterruptTest
- */
 
 import java.awt.MediaTracker;
 
@@ -34,16 +28,24 @@ import javax.swing.SwingUtilities;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
+/*
+ * @test
+ * @bug 8236987
+ * @summary  Verifies if Print Function is removed and LoadStatus is changed to ABORTED when interrupted/ still LOADING.
+ * @run main LoadInterruptTest
+ */
 
 public class LoadInterruptTest {
     private static ByteArrayOutputStream testOut;
-    private static PrintStream prevStatus;
+    private static PrintStream prevSysOut;
     public static void main(String[] args) throws Exception {
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    LoadAndSimulate();
+                    loadImageIcon();
                 }
             });
         } finally {
@@ -52,33 +54,34 @@ public class LoadInterruptTest {
     }
 
     public static void setUpOutput() {
-        prevStatus = System.out;
+        prevSysOut = System.out;
         testOut = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(testOut));
+        System.setOut(new PrintStream(testOut, true, StandardCharsets.UTF_8));
     }
 
-    public static void unsetOutput()
-    {
+    public static void unsetOutput() {
         System.out.flush();
-        if(prevStatus != null)
-        {
-            System.setOut(prevStatus);
+        if(prevSysOut != null) {
+            System.setOut(prevSysOut);
         }
         testOut = null;
     }
 
-    private static void LoadAndSimulate()
-    {
+    private static void loadImageIcon() {
         int status;
         setUpOutput();
+
         Thread.currentThread().interrupt();
         ImageIcon i = new ImageIcon("https://openjdk.java.net/images/openjdk.png");
         status = i.getImageLoadStatus();
-        String outString = testOut.toString();
+        String outString = testOut.toString(StandardCharsets.UTF_8);
 
+        if ( !outString.isEmpty()) {
+            throw new RuntimeException("Test Case Failed!!! System.out is not empty : "+outString );
+        }
 
-        if (((status & MediaTracker.ABORTED) == 0 ) || (!outString.isEmpty())) {
-            throw new RuntimeException("Test Case Failed!!"+", Status : "+status+", Stream-Out :"+outString );
+        if ( ( status != MediaTracker.ABORTED ) && ( status != MediaTracker.COMPLETE) ){
+            throw new RuntimeException("Test Case Failed!!! Unexpected status : "+status );
         }
     }
 }
