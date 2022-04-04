@@ -486,6 +486,7 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 # jdk_foreign
 
 java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
+java/foreign/TestDowncallStack.java 8275584 macosx-aarch64
 
 ############################################################################
 
