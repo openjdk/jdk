@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@ import java.lang.reflect.Method;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.CookieManager;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
@@ -55,6 +57,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
+ * @bug 8209137
  * @summary HttpClient[.Builder] API and behaviour checks
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -65,6 +68,7 @@ public class HttpClientBuilderTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;
 
     @Test
     public void testDefaults() throws Exception {
@@ -262,6 +266,27 @@ public class HttpClientBuilderTest {
         builder.build();
     }
 
+    /**
+     * Tests the {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(SocketAddress)} method
+     */
+    @Test
+    public void testLocalAddress() throws Exception {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        // setting null should work fine
+        builder.localAddress(null);
+        // setting to InetSocketAddress with port 0 should work fine
+        builder.localAddress(new InetSocketAddress(0));
+        builder.localAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        builder.localAddress(new JustAnotherInetSocketAddress(0));
+        // resetting back to null should work fine
+        builder.localAddress(null);
+        // using a InetSocketAddress with non-zero port should throw UnsupportedOperationException
+        assertThrows(UOE, () -> builder.localAddress(new InetSocketAddress(12345)));
+        assertThrows(UOE, () -> builder.localAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345)));
+        // using a SocketAddress which isn't of type InetSocketAddress should throw UnsupportedOperationException
+        assertThrows(UOE, () -> builder.localAddress(new SocketAddress() {}));
+    }
+
     // ---
 
     static final URI uri = URI.create("http://foo.com/");
@@ -303,9 +328,6 @@ public class HttpClientBuilderTest {
 
     // ---
 
-    static final Class<UnsupportedOperationException> UOE =
-            UnsupportedOperationException.class;
-
     @Test
     static void testUnsupportedWebSocket() throws Exception {
         //  @implSpec The default implementation of this method throws
@@ -336,6 +358,14 @@ public class HttpClientBuilderTest {
         public <T> CompletableFuture<HttpResponse<T>>
         sendAsync(HttpRequest x, BodyHandler<T> y, PushPromiseHandler<T> z) {
             return null;
+        }
+    }
+
+    // used in HttpClient.Builder.localAddr(...) testing
+    private static final class JustAnotherInetSocketAddress extends InetSocketAddress {
+
+        public JustAnotherInetSocketAddress(int port) {
+            super(port);
         }
     }
 

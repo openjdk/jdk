@@ -136,7 +136,7 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     @Override
     public HttpClient.Builder localAddress(final SocketAddress localAddr) {
         // we only support InetSocketAddress type and that too with port 0
-        if (!(localAddr instanceof InetSocketAddress isa) || isa.getPort() != 0) {
+        if (localAddr != null && (!(localAddr instanceof InetSocketAddress isa) || isa.getPort() != 0)) {
             throw new UnsupportedOperationException("Only InetSocketAddress with port 0 is allowed");
         }
         this.localAddr = localAddr;
