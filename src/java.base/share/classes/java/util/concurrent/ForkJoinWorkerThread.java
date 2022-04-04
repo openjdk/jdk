@@ -33,10 +33,13 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+
 package java.util.concurrent;
 
 import java.security.AccessController;
+import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 
 /**
  * A thread managed by a {@link ForkJoinPool}, which executes
@@ -70,10 +73,10 @@ public class ForkJoinWorkerThread extends Thread {
      * Full nonpublic constructor.
      */
     ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
-                         boolean useSystemClassLoader, boolean isInnocuous) {
+                         boolean useSystemClassLoader) {
         super(group, null, pool.nextWorkerThreadName(), 0L);
         UncaughtExceptionHandler handler = (this.pool = pool).ueh;
-        this.workQueue = new ForkJoinPool.WorkQueue(this, isInnocuous);
+        this.workQueue = new ForkJoinPool.WorkQueue(this, 0);
         super.setDaemon(true);
         if (handler != null)
             super.setUncaughtExceptionHandler(handler);
@@ -89,8 +92,8 @@ public class ForkJoinWorkerThread extends Thread {
      * @param pool the pool this thread works in
      * @throws NullPointerException if pool is null
      */
-    /* TODO: protected */ ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool) {
-        this(group, pool, false, false);
+    ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool) {
+        this(group, pool, false);
     }
 
     /**
@@ -100,7 +103,7 @@ public class ForkJoinWorkerThread extends Thread {
      * @throws NullPointerException if pool is null
      */
     protected ForkJoinWorkerThread(ForkJoinPool pool) {
-        this(null, pool, false, false);
+        this(null, pool, false);
     }
 
     /**
@@ -186,19 +189,21 @@ public class ForkJoinWorkerThread extends Thread {
      */
     static final class InnocuousForkJoinWorkerThread extends ForkJoinWorkerThread {
         /** The ThreadGroup for all InnocuousForkJoinWorkerThreads */
+        private static final ThreadGroup innocuousThreadGroup;
         @SuppressWarnings("removal")
-        private static final ThreadGroup innocuousThreadGroup =
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public ThreadGroup run() {
-                    ThreadGroup group = Thread.currentThread().getThreadGroup();
-                    for (ThreadGroup p; (p = group.getParent()) != null; )
-                        group = p;
-                    return new ThreadGroup(
-                        group, "InnocuousForkJoinWorkerThreadGroup");
-                }});
-
+        private static final AccessControlContext innocuousACC;
         InnocuousForkJoinWorkerThread(ForkJoinPool pool) {
-            super(innocuousThreadGroup, pool, true, true);
+            super(innocuousThreadGroup, pool, true);
+        }
+
+        @Override @SuppressWarnings("removal")
+        protected void onStart() {
+            ForkJoinPool.WorkQueue w = workQueue;
+            if (w != null)
+                w.setInnocuous();
+            Thread t = Thread.currentThread();
+            ThreadLocalRandom.setInheritedAccessControlContext(t, innocuousACC);
+            ThreadLocalRandom.eraseThreadLocals(t);
         }
 
         @Override // to silently fail
@@ -208,6 +213,34 @@ public class ForkJoinWorkerThread extends Thread {
         public void setContextClassLoader(ClassLoader cl) {
             if (cl != null && ClassLoader.getSystemClassLoader() != cl)
                 throw new SecurityException("setContextClassLoader");
+        }
+
+        @SuppressWarnings("removal")
+        static AccessControlContext createACC() {
+            return new AccessControlContext(
+                new ProtectionDomain[] { new ProtectionDomain(null, null) });
+        }
+        static ThreadGroup createGroup() {
+            ThreadGroup group = Thread.currentThread().getThreadGroup();
+            for (ThreadGroup p; (p = group.getParent()) != null; )
+                group = p;
+            return new ThreadGroup(group, "InnocuousForkJoinWorkerThreadGroup");
+        }
+        static {
+            @SuppressWarnings("removal")
+            SecurityManager sm = System.getSecurityManager();
+            @SuppressWarnings("removal")
+            ThreadGroup g = innocuousThreadGroup =
+                (sm == null) ? createGroup() :
+                AccessController.doPrivileged(new PrivilegedAction<>() {
+                        public ThreadGroup run() {
+                            return createGroup(); }});
+            @SuppressWarnings("removal")
+            AccessControlContext a = innocuousACC =
+                (sm == null) ? createACC() :
+                AccessController.doPrivileged(new PrivilegedAction<>() {
+                        public AccessControlContext run() {
+                            return createACC(); }});
         }
     }
 }
