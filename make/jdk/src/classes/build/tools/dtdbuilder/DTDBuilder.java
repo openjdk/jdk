@@ -131,7 +131,7 @@ class DTDBuilder extends DTD {
     }
 
     //
-    // The the id of a name from the list of names
+    // The id of a name from the list of names
     //
     private short getNameId(String name)  {
         Integer o = namesHash.get(name);
