@@ -69,10 +69,15 @@ public class AsyncExceptionTest extends Thread {
             throw new RuntimeException("Unexpected: " + e);
         }
         int compLevel = WB.getMethodCompilationLevel(m);
+        long start_time = System.currentTimeMillis();
         while (compLevel < (highestLevel - 1)) {
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) { /* ignored */ }
+            if (System.currentTimeMillis() - start_time > 20000) {
+                // if more than 20 seconds have elapsed just bail out
+                break;
+            }
             compLevel = WB.getMethodCompilationLevel(m);
         }
     }
