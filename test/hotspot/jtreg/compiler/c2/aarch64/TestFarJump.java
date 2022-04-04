@@ -36,9 +36,10 @@ import java.util.*;
  *
  * @requires vm.flagless
  * @requires os.arch=="aarch64"
+ * @requires vm.debug == false
  * @requires vm.compiler2.enabled
  *
- * @run driver compiler.c2.TestFarJump
+ * @run driver compiler.c2.aarch64.TestFarJump
  */
 public class TestFarJump {
 
