@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class LocalVariableTypeTableWriter extends  InstructionDetailWriter {
                     print(" // ");
                     Descriptor d = new Signature(entry.signature_index);
                     try {
-                        print(d.getFieldType(constant_pool).toString().replace("/", "."));
+                        print(d.getFieldType(constant_pool).replace("/", "."));
                     } catch (InvalidDescriptor e) {
                         print(report(e));
                     } catch (ConstantPoolException e) {

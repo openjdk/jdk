@@ -1311,6 +1311,9 @@ public:
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
 
+  // Assert that the given node is not a variable shift.
+  bool assert_not_var_shift(const Node* n);
+
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
 %}
@@ -1725,6 +1728,12 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
+// Assert that the given node is not a variable shift.
+bool assert_not_var_shift(const Node* n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
+  return true;
+}
+
 #define __ _masm.
 
 // advance declarations for helper functions to convert register
@@ -1853,6 +1862,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->output()->need_stack_bang(framesize))
     st->print("# stack bang size=%d\n\t", framesize);
 
+  if (VM_Version::use_rop_protection()) {
+    st->print("ldr zr, [lr]\n\t");
+    st->print("pacia  lr, rfp\n\t");
+  }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
     st->print("stp  rfp, lr, [sp, #%d]", framesize - 2 * wordSize);
@@ -1960,6 +1973,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("add  sp, sp, rscratch1\n\t");
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
+  }
+  if (VM_Version::use_rop_protection()) {
+    st->print("autia lr, rfp\n\t");
+    st->print("ldr zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {
@@ -17063,13 +17080,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
+instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
 %{
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(USE_KILL ary1, USE_KILL len, KILL cr);
-  format %{ "has negatives byte[] $ary1,$len -> $result" %}
+  format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
-    address tpc = __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
     if (tpc == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;

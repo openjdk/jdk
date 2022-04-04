@@ -468,7 +468,7 @@ public:
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
-  static RegSet call_clobbered_registers();
+  static RegSet call_clobbered_gp_registers();
 
   void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
   void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
@@ -688,16 +688,16 @@ public:
   void align(int modulus);
 
   // Stack frame creation/removal
-  void enter()
-  {
-    stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
-    mov(rfp, sp);
-  }
-  void leave()
-  {
-    mov(sp, rfp);
-    ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
-  }
+  void enter(bool strip_ret_addr = false);
+  void leave();
+
+  // ROP Protection
+  void protect_return_address();
+  void protect_return_address(Register return_reg, Register temp_reg);
+  void authenticate_return_address(Register return_reg = lr);
+  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void strip_return_address();
+  void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
   // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
   // The pointer will be loaded into the thread register.
@@ -1234,7 +1234,7 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  address has_negatives(Register ary1, Register len, Register result);
+  address count_positives(Register ary1, Register len, Register result);
 
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);

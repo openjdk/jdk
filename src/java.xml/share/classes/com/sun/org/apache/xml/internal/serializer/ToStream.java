@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,6 +20,7 @@
 
 package com.sun.org.apache.xml.internal.serializer;
 
+import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xml.internal.serializer.dom3.DOMConstants;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
@@ -54,7 +55,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: June 2021
+ * @LastModified: Mar 2022
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -1745,13 +1746,19 @@ abstract public class ToStream extends SerializerBase {
             }
             else
             {
-                /*  This if check is added to support control characters in XML 1.1.
-                 *  If a character is a Control Character within C0 and C1 range, it is desirable
-                 *  to write it out as Numeric Character Reference(NCR) regardless of XML Version
-                 *  being used for output document.
+                /*
+                 *  The check was added to support control characters in XML 1.1.
+                 *  It previously wrote Control Characters within C0 and C1 range
+                 *  as Numeric Character Reference(NCR) regardless of XML Version,
+                 *  which was incorrect as Control Characters are invalid in XML 1.0.
                  */
-                if (isCharacterInC0orC1Range(ch) ||
-                        (XMLVERSION11.equals(getVersion()) && isNELorLSEPCharacter(ch)))
+                boolean isVer11 = XMLVERSION11.equals(getVersion());
+                if (!isVer11 && XMLChar.isInvalid(ch)) {
+                    throw new org.xml.sax.SAXException(Utils.messages.createMessage(
+                            MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                            new Object[]{Integer.toHexString(ch)}));
+                }
+                if (isCharacterInC0orC1Range(ch) || (isVer11 && isNELorLSEPCharacter(ch)))
                 {
                     writeCharRef(writer, ch);
                 }

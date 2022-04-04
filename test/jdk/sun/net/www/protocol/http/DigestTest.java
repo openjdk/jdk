@@ -26,14 +26,18 @@
  * @bug 4432213
  * @modules java.base/sun.net.www
  * @library /test/lib
- * @run main/othervm -Dhttp.auth.digest.validateServer=true DigestTest
- * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Dhttp.auth.digest.validateServer=true DigestTest
- * @run main/othervm -Dhttp.auth.digest.validateServer=true
-                     -Dtest.succeed=true DigestTest
- * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
+ *                   -Djava.net.preferIPv6Addresses=true
+ *                   -Dhttp.auth.digest.validateServer=true DigestTest
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
  *                   -Dhttp.auth.digest.validateServer=true
-                     -Dtest.succeed=true DigestTest
+ *                   -Dtest.succeed=true DigestTest
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
+ *                   -Djava.net.preferIPv6Addresses=true
+ *                   -Dhttp.auth.digest.validateServer=true
+ *                   -Dtest.succeed=true DigestTest
  * @summary  Need to support Digest Authentication for Proxies
  */
 

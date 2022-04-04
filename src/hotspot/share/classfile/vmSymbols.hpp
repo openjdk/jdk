@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,8 +465,6 @@
   template(security_manager_signature,                "Ljava/lang/SecurityManager;")              \
   template(defineOrCheckPackage_name,                 "defineOrCheckPackage")                     \
   template(defineOrCheckPackage_signature,            "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)Ljava/lang/Package;") \
-  template(fileToEncodedURL_name,                     "fileToEncodedURL")                         \
-  template(fileToEncodedURL_signature,                "(Ljava/io/File;)Ljava/net/URL;")           \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
   template(java_lang_Integer_array_signature,         "[Ljava/lang/Integer;")                     \
@@ -561,6 +559,7 @@
   template(char_array_void_signature,                 "([C)V")                                                    \
   template(int_int_void_signature,                    "(II)V")                                                    \
   template(long_long_void_signature,                  "(JJ)V")                                                    \
+  template(void_byte_array_signature,                 "()[B")                                                    \
   template(void_classloader_signature,                "()Ljava/lang/ClassLoader;")                                \
   template(void_object_signature,                     "()Ljava/lang/Object;")                                     \
   template(void_class_signature,                      "()Ljava/lang/Class;")                                      \
@@ -683,7 +682,6 @@
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
-  template(serializePropertiesToByteArray_signature,   "()[B")                                                    \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
@@ -700,6 +698,7 @@
   template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
+  template(java_lang_Enum,                                  "java/lang/Enum")                                     \
   template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
   template(java_lang_invoke_DirectMethodHandle_Holder,      "java/lang/invoke/DirectMethodHandle$Holder")         \
   template(java_lang_invoke_LambdaForm_Holder,              "java/lang/invoke/LambdaForm$Holder")                 \

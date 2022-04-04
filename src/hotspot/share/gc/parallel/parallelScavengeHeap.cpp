@@ -798,6 +798,16 @@ void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   _old_gen->resize(desired_free_space);
 }
 
+HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
+  return _old_gen->allocate(size);
+}
+
+void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  assert(_old_gen->object_space()->used_region().contains(archive_space),
+         "Archive space not contained in old gen");
+  _old_gen->complete_loaded_archive_space(archive_space);
+}
+
 #ifndef PRODUCT
 void ParallelScavengeHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,16 @@ public class TestDoubleVect {
     System.out.println("Testing Double vectors");
     int errn = test();
     if (errn > 0) {
-      System.err.println("FAILED: " + errn + " errors");
-      System.exit(97);
+        System.err.println("FAILED: " + errn + " errors");
+        System.exit(97);
     }
     System.out.println("PASSED");
   }
 
   static int test() {
     double[] a0 = new double[ARRLEN];
+    long  [] l0 = new long[ARRLEN];
+
     double[] a1 = new double[ARRLEN];
     double[] a2 = new double[ARRLEN];
     double[] a3 = new double[ARRLEN];
@@ -91,6 +93,7 @@ public class TestDoubleVect {
       test_ceil(a0, a1);
       test_floor(a0, a1);
       test_sqrt(a0, a1);
+      test_round(l0, a1);
     }
     // Test and verify results
     System.out.println("Verification");
@@ -355,6 +358,7 @@ public class TestDoubleVect {
         errn += verify("test_negc: ", i, a0[i], (double)(-((double)(ADD_INIT+i))));
       }
 
+
       // To test -ve and +ve Zero scenarios.
       double [] other_corner_cases     = { -0.0, 0.0, 9.007199254740992E15 };
       double [] other_corner_cases_res = new double[3];
@@ -420,6 +424,35 @@ public class TestDoubleVect {
       errn += verify("test_sqrt: ", 7, a0[7], (double)-0.0);
       for (int i=8; i<ARRLEN; i++) {
         errn += verify("test_sqrt: ", i, a0[i], Math.sqrt((double)(ADD_INIT+i)));
+      }
+
+      a1[6] = +0x1.fffffffffffffp-2;
+      a1[7] = +0x1.0p-1;
+      a1[8] = +0x1.0000000000001p-1;
+      a1[9] = -0x1.fffffffffffffp-2;
+      a1[10] = -0x1.0p-1;
+      a1[11] = -0x1.0000000000001p-1;
+      a1[12] = 1.7976931348623157E19;
+      a1[13] = -1.7976931348623157E19;
+
+      test_round(l0, a1);
+      errn += verify("test_round: ", 0, l0[0], 0L);
+      errn += verify("test_round: ", 1, l0[1], Long.MAX_VALUE);
+      errn += verify("test_round: ", 2, l0[2], Long.MIN_VALUE);
+      errn += verify("test_round: ", 3, l0[3], Long.MAX_VALUE);
+      errn += verify("test_round: ", 4, l0[4], 0L);
+      errn += verify("test_round: ", 5, l0[5], 0L);
+
+      errn += verify("test_round: ", 6, l0[6], 0L);
+      errn += verify("test_round: ", 7, l0[7], 1L);
+      errn += verify("test_round: ", 8, l0[8], 1L);
+      errn += verify("test_round: ", 9, l0[9], 0L);
+      errn += verify("test_round: ", 10, l0[10], 0L);
+      errn += verify("test_round: ", 11, l0[11], -1L);
+      errn += verify("test_round: ", 12, l0[12], Long.MAX_VALUE);
+      errn += verify("test_round: ", 13, l0[13], Long.MIN_VALUE);
+      for (int i=14; i<ARRLEN; i++) {
+        errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));
       }
     }
 
@@ -564,6 +597,12 @@ public class TestDoubleVect {
     end = System.currentTimeMillis();
     System.out.println("test_sqrt_n: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_round(l0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_round_n: " + (end - start));
     return errn;
   }
 
@@ -689,6 +728,20 @@ public class TestDoubleVect {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = (double)(Math.sqrt((double)a1[i]));
     }
+  }
+
+  static void test_round(long[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.round(a1[i]);
+    }
+  }
+
+  static int verify(String text, int i, long elem, long val) {
+    if (elem != val) {
+      System.err.println(text + "[" + i + "] = " + elem + " != " + val);
+      return 1;
+    }
+    return 0;
   }
 
   static int verify(String text, int i, double elem, double val) {
