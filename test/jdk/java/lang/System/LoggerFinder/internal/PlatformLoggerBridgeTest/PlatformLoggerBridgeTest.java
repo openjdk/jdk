@@ -54,7 +54,7 @@ import sun.util.logging.PlatformLogger;
  * @test
  * @bug     8140364
  * @summary JDK implementation specific unit test for JDK internal artifacts.
- *          Tests all bridge methods from PlatformLogger with the a custom
+ *          Tests all bridge methods from PlatformLogger with a custom
  *          backend whose loggers implement PlatformLogger.Bridge.
  * @modules java.base/sun.util.logging
  *          java.logging
