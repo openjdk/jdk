@@ -36,8 +36,10 @@ import java.awt.image.BufferedImage;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
+import javax.imageio.ImageIO;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
@@ -75,9 +77,12 @@ public class LastVisibleRow {
             clearSelect();
             testRobot.waitForIdle();
             BufferedImage bufferedImageAfter = testRobot.createScreenCapture(getCaptureRect());
+
             testRobot.delay(1000);
 
             if (!compare(bufferedImageBefore, bufferedImageAfter)) {
+                ImageIO.write(bufferedImageBefore, "png", new File("bufferedImageBefore.png"));
+                ImageIO.write(bufferedImageAfter, "png", new File("bufferedImageAfter.png"));
                 throw new RuntimeException("Test Case Failed!!");
             }
         } finally {
