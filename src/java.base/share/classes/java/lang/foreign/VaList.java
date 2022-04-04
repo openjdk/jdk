@@ -174,6 +174,7 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
      * @return a new variable argument list backed by the memory region at {@code address}.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}, or if access occurs from
      * a thread other than the thread {@linkplain MemorySession#ownerThread() owning} {@code session}.
+     * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
@@ -200,6 +201,7 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
      *                of the underlying variable argument list.
      * @param session the memory session to be associated with the new variable arity list.
      * @return a new variable argument list.
+     * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}, or if access occurs from
      * a thread other than the thread {@linkplain MemorySession#ownerThread() owning} {@code session}.
      */
@@ -214,6 +216,7 @@ sealed public interface VaList extends Addressable permits WinVaList, SysVVaList
      * memory session. The resulting variable argument list does not contain any argument, and throws {@link UnsupportedOperationException}
      * on all operations, except for {@link VaList#address()}, {@link VaList#copy()} and {@link VaList#session()}.
      * @return an empty variable argument list.
+     * @throws UnsupportedOperationException if the underlying native platform is not supported.
      */
     static VaList empty() {
         return SharedUtils.emptyVaList();
