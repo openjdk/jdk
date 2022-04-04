@@ -25,8 +25,8 @@
  * @test
  * @bug 8141039
  * @library /test/lib
- * @summary When random number is generated through the a SecureRandom instance
- *          as well from it's serialized instance in the same time then the
+ * @summary When random number is generated through a SecureRandom instance
+ *          as well from its serialized instance in the same time then the
  *          generated random numbers should be different when one or both are
  *          reseeded.
  * @run main/othervm -Djava.security.egd=file:/dev/urandom SerializedSeedTest

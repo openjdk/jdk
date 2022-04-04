@@ -31,7 +31,7 @@
  * DECSRIPTION
  *  This is a test for jdb 'resume all' and 'resume <thread id>' commands.
  *  The debuggee starts 5 'MyThreads' that are all suspended on the lock
- *  that the main thread holds. The the test driver issues the following
+ *  that the main thread holds. The test driver issues the following
  *  commands for check:
  *    - 'suspend all' : "All threads suspended" message is expected in
  *      jdb output stream;

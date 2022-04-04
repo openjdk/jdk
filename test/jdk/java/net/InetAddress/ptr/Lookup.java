@@ -102,7 +102,7 @@ public class Lookup {
         addr = strs[0];
         ipv4Name = strs[1];
 
-        // check that the a reverse lookup of the IPv4 address
+        // check that the reverse lookup of the IPv4 address
         // will succeed with the IPv4 only stack
         tmp = reverseWithIPv4Prefer(addr);
         System.out.println("IPv4 reverse lookup results: [" + tmp + "]");
