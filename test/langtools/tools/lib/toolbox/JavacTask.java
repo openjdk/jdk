@@ -258,7 +258,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
-     * Sets the the annotation processors to be used.
+     * Sets the annotation processors to be used.
      */
     public JavacTask processors(Processor... procs) {
         this.procs = List.of(procs);

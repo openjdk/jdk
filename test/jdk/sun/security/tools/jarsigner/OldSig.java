@@ -29,7 +29,7 @@
  */
 /*
  * See also PreserveRawManifestEntryAndDigest.java for tests with arbitrarily
- * formatted individual sections in addition the the main attributes tested
+ * formatted individual sections in addition the main attributes tested
  * here.
  */
 
