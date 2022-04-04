@@ -374,7 +374,7 @@ public interface DebugVC50SymbolIterator
   /** Segment portion of the procedure address. */
   public short getLGProcSegment();
 
-  /** Value defined by bitwise or of the the PROCFLAGS enumeration in
+  /** Value defined by bitwise or of the PROCFLAGS enumeration in
       {@link
       sun.jvm.hotspot.debugger.win32.coff.DebugVC50SymbolEnums}. */
   public byte getLGProcFlags();
