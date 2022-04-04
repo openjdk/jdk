@@ -141,9 +141,6 @@ import jdk.internal.reflect.Reflection;
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @implNote
- * On unsupported platforms this class will fail to initialize with an {@link ExceptionInInitializerError}.
- *
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
@@ -186,6 +183,7 @@ public sealed interface Linker extends SymbolLookup permits Windowsx64Linker, Sy
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
      *
      * @return a linker for the ABI associated with the OS and processor where the Java runtime is currently executing.
+     * @throws UnsupportedOperationException if the underlying native platform is not supported.
      * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
      * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
      * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
