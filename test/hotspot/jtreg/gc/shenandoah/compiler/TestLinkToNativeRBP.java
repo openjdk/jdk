@@ -48,7 +48,7 @@ public class TestLinkToNativeRBP {
         System.loadLibrary("LinkToNativeRBP");
     }
 
-    final static Linker abi = Linker.systemCLinker();
+    final static Linker abi = Linker.nativeLinker();
     static final SymbolLookup lookup = SymbolLookup.loaderLookup();
     final static MethodHandle foo = abi.downcallHandle(lookup.lookup("foo").get(),
             FunctionDescriptor.of(ValueLayout.JAVA_INT));
