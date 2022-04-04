@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Basic hashCode functionality
- * @run main/othervm -XX:+SpecialStringHashCode HashCode
+ * @run main/othervm HashCode
  */
 
 public class HashCode {

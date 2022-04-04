@@ -167,35 +167,6 @@ public class StringHashCode {
         }
 
         @Benchmark
-        public int scalarLatin1Unrolled16() {
-            int h = 0;
-            int i = 0, len = latin1.length;
-            for (; i < (len & ~(16 - 1)); i += 16) {
-                h =  1353309697 * h                    +
-                     -510534177 * (latin1[i+ 0] & 0xff) +
-                     1507551809 * (latin1[i+ 1] & 0xff) +
-                     -505558625 * (latin1[i+ 2] & 0xff) +
-                     -293403007 * (latin1[i+ 3] & 0xff) +
-                      129082719 * (latin1[i+ 4] & 0xff) +
-                    -1796951359 * (latin1[i+ 5] & 0xff) +
-                     -196513505 * (latin1[i+ 6] & 0xff) +
-                    -1807454463 * (latin1[i+ 7] & 0xff) +
-                     1742810335 * (latin1[i+ 8] & 0xff) +
-                      887503681 * (latin1[i+ 9] & 0xff) +
-                       28629151 * (latin1[i+10] & 0xff) +
-                         923521 * (latin1[i+11] & 0xff) +
-                          29791 * (latin1[i+12] & 0xff) +
-                            961 * (latin1[i+13] & 0xff) +
-                             31 * (latin1[i+14] & 0xff) +
-                              1 * (latin1[i+15] & 0xff);
-            }
-            for (; i < len; i++) {
-                h = 31 * h + (latin1[i] & 0xff);
-            }
-            return h;
-        }
-
-        @Benchmark
         public int scalarLatin1Inverted() {
             int h = 0;
             int len = latin1.length, i = len - 1;
