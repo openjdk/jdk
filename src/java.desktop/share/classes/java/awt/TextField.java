@@ -99,7 +99,7 @@ import javax.accessibility.AccessibleStateSet;
  * @see         java.awt.TextField#addActionListener
  * @since       1.0
  */
-public class TextField extends TextComponent {
+public non-sealed class TextField extends TextComponent {
 
     /**
      * The number of columns in the text field.

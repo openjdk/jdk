@@ -470,7 +470,6 @@ else
 
 endif
 
-
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
     libharfbuzz \
     common/awt \
@@ -484,6 +483,14 @@ LIBFONTMANAGER_CFLAGS += $(LIBFREETYPE_CFLAGS)
 BUILD_LIBFONTMANAGER_FONTLIB +=  $(LIBFREETYPE_LIBS)
 
 LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+
+ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
+  # gcc (and to an extent clang) is particularly bad at optimizing these files,
+  # causing a massive spike in compile time. We don't care about these
+  # particular files anyway, so lower optimization level.
+  BUILD_LIBFONTMANAGER_hb-subset.cc_OPTIMIZATION := SIZE
+  BUILD_LIBFONTMANAGER_hb-subset-plan.cc_OPTIMIZATION := SIZE
+endif
 
 ifeq ($(call isTargetOs, windows), true)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \

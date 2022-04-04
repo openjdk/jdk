@@ -40,10 +40,10 @@ class InstanceClassLoaderKlass: public InstanceKlass {
   friend class VMStructs;
   friend class InstanceKlass;
 public:
-  static const KlassID ID = InstanceClassLoaderKlassID;
+  static const KlassKind Kind = InstanceClassLoaderKlassKind;
 
 private:
-  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_kind_class_loader, ID) {}
+  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
 
 public:
   InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }

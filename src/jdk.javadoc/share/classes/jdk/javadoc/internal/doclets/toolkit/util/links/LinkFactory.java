@@ -56,9 +56,7 @@ public abstract class LinkFactory {
     }
 
     /**
-     * Returns an empty instance of a content object.
-     *
-     * @return an empty instance of a content object.
+     * {@return a new instance of a content object}
      */
     protected abstract Content newContent();
 
@@ -66,7 +64,7 @@ public abstract class LinkFactory {
      * Constructs a link from the given link information.
      *
      * @param linkInfo the information about the link.
-     * @return the output of the link.
+     * @return the link.
      */
     public Content getLink(LinkInfo linkInfo) {
         if (linkInfo.type != null) {
