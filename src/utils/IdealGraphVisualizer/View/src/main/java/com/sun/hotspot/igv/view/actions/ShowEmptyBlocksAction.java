@@ -21,26 +21,33 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.graph;
+package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.layout.Link;
-import java.awt.Color;
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ImageIcon;
+import org.openide.util.ImageUtilities;
 
-public interface Connection extends Link {
+public class ShowEmptyBlocksAction extends AbstractAction {
 
-    public enum ConnectionStyle {
-        NORMAL,
-        DASHED,
-        BOLD,
-        INVISIBLE
+    private boolean state;
+    public static final String STATE = "state";
+
+    public ShowEmptyBlocksAction() {
+        state = true;
+        putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(STATE, true);
+        putValue(Action.SHORT_DESCRIPTION, "Show empty blocks in control-flow graph view");
     }
 
-    public ConnectionStyle getStyle();
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        this.state = !state;
+        this.putValue(STATE, state);
+    }
 
-    public Color getColor();
-
-    public String getToolTipText();
-
-    public boolean hasSlots();
-
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/showEmptyBlocks.png";
+    }
 }
