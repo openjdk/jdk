@@ -60,13 +60,15 @@ else
     STAT_PRINT_SIZE="-c %s"
 fi
 
-COMPARE_EXCEPTIONS_INCLUDE="$TOPDIR/make/scripts/compare_exceptions.sh.incl"
-if [ ! -e "$COMPARE_EXCEPTIONS_INCLUDE" ]; then
-    echo "Error: Cannot locate the exceptions file, it should have been here: $COMPARE_EXCEPTIONS_INCLUDE"
-    exit 1
+
+if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+  # We ship a pdb file inside a published zip. Such files can never be built
+  # reproducibly, so ignore it.
+  ACCEPTED_JARZIP_CONTENTS="/modules_libs/java.security.jgss/w2k_lsa_auth.dll.pdb"
+elif [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+  # Due to signing, we can never get a byte-by-byte identical build on macOS
+  STRIP_TESTS_BEFORE_COMPARE="true"
 fi
-# Include exception definitions
-. "$COMPARE_EXCEPTIONS_INCLUDE"
 
 ################################################################################
 #
@@ -117,35 +119,6 @@ diff_text() {
 
     TMP=$($DIFF $THIS_FILE $OTHER_FILE)
 
-    if test "x$SUFFIX" = "xclass"; then
-        if [ "$NAME" = "SystemModules\$all.class" ] \
-           || [ "$NAME" = "SystemModules\$default.class" ]; then
-            # The SystemModules\$*.classes are not comparable as they contain the
-            # module hashes which would require a whole other level of
-            # reproducible builds to get reproducible. There is also random
-            # order of map initialization.
-            TMP=""
-        elif [ "$NAME" = "module-info.class" ]; then
-            # The module-info.class have several issues with random ordering of
-            # elements in HashSets.
-            MODULES_CLASS_FILTER="$SED \
-                -e 's/,$//' \
-                -e 's/;$//' \
-                -e 's/^ *[0-9]*://' \
-                -e 's/#[0-9]* */#/' \
-                -e 's/ *\/\// \/\//' \
-                -e 's/aload *[0-9]*/aload X/' \
-                -e 's/ldc_w/ldc  /' \
-                | $SORT \
-                "
-            $JAVAP -c -constants -l -p "${OTHER_FILE}" \
-                | eval "$MODULES_CLASS_FILTER" >  ${OTHER_FILE}.javap &
-            $JAVAP -c -constants -l -p "${THIS_FILE}" \
-                | eval "$MODULES_CLASS_FILTER" > ${THIS_FILE}.javap &
-            wait
-            TMP=$($DIFF ${OTHER_FILE}.javap ${THIS_FILE}.javap)
-        fi
-    fi
 
     if test -n "$TMP"; then
         echo Files $OTHER_FILE and $THIS_FILE differ
@@ -319,15 +292,10 @@ compare_general_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    GENERAL_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.so" ! -name "*.jar" \
-        ! -name "*.zip" ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
-        ! -name "modules" ! -name "ct.sym" ! -name "*.diz" ! -name "*.dll" \
-        ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
-        ! -name "*.lib" ! -name "*.jmod" ! -name "*.exe" \
-        ! -name "*.obj" ! -name "*.o" ! -name "jspawnhelper" ! -name "*.a" \
-        ! -name "*.tar.gz" ! -name "gtestLauncher" \
-        ! -name "*.map" \
-        | $GREP -v "./bin/"  | $SORT | $FILTER)
+    GENERAL_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.pdb" \
+        | $GREP -v "/hotspot/gtest/server/gtestLauncher" \
+        | $GREP -v "/hotspot/gtest/server/libjvm.dylib" \
+        | $SORT | $FILTER)
 
     echo Other files with binary differences...
     for f in $GENERAL_FILES
@@ -450,12 +418,14 @@ compare_zip_file() {
     if [ -n "$ONLY_OTHER" ]; then
         echo "        Only OTHER $ZIP_FILE contains:"
         echo "$ONLY_OTHER" | sed "s|Only in $OTHER_UNZIPDIR|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
     if [ -n "$ONLY_THIS" ]; then
         echo "        Only THIS $ZIP_FILE contains:"
         echo "$ONLY_THIS" | sed "s|Only in $THIS_UNZIPDIR|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
@@ -484,6 +454,7 @@ compare_zip_file() {
         done
 
         if [ -s "$WORK_DIR/$ZIP_FILE.diffs" ]; then
+            REGRESSIONS=true
             return_value=1
             echo "        Differing files in $ZIP_FILE"
             $CAT $WORK_DIR/$ZIP_FILE.diffs | $GREP 'differ$' | cut -f 2 -d ' ' | \
@@ -508,6 +479,7 @@ compare_zip_file() {
             compare_bin_file $THIS_UNZIPDIR $OTHER_UNZIPDIR $WORK_DIR/$ZIP_FILE.bin \
                              $file
             if [ "$?" != "0" ]; then
+                REGRESSIONS=true
                 return_value=1
             fi
         done
@@ -547,12 +519,14 @@ compare_jmod_file() {
     if [ -n "$ONLY_OTHER" ]; then
         echo "        Only OTHER $JMOD_FILE contains:"
         echo "$ONLY_OTHER" | sed "s|^>|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
     if [ -n "$ONLY_THIS" ]; then
         echo "        Only THIS $JMOD_FILE contains:"
         echo "$ONLY_THIS" | sed "s|^<|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
@@ -578,8 +552,8 @@ compare_all_zip_files() {
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
-                    return_value=1
                     REGRESSIONS=true
+                    return_value=1
                 fi
             fi
         done
@@ -606,8 +580,8 @@ compare_all_jmod_files() {
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_jmod_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
-                    return_value=1
                     REGRESSIONS=true
+                    return_value=1
                 fi
             fi
         done
@@ -636,8 +610,8 @@ compare_all_jar_files() {
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
-                    return_value=1
                     REGRESSIONS=true
+                    return_value=1
                 fi
             fi
         done
@@ -1064,6 +1038,7 @@ compare_all_libs() {
             if [ -f "$OTHER_DIR/$l" ]; then
                 compare_bin_file $THIS_DIR $OTHER_DIR $WORK_DIR $l
                 if [ "$?" != "0" ]; then
+                    REGRESSIONS=true
                     return_value=1
                 fi
             fi
@@ -1108,6 +1083,7 @@ compare_all_execs() {
             if [ -f "$OTHER_DIR/$e" ]; then
                 compare_bin_file $THIS_DIR $OTHER_DIR $WORK_DIR $e
                 if [ "$?" != "0" ]; then
+                    REGRESSIONS=true
                     return_value=1
                 fi
             fi
