@@ -292,6 +292,7 @@ public class Utils {
     }
 
     // Note that e.getKind().isInterface() is not the same as e.getKind() == INTERFACE
+    // See Also: isPlainInterface(Element)
     public boolean isInterface(Element e) {
         return e.getKind().isInterface();
     }
