@@ -113,7 +113,7 @@ void CodeHeap::mark_segmap_as_used(size_t beg, size_t end, bool is_FreeBlock_joi
     //      are appended to the right.
     //  3 - Take full advantage of the segmap being almost correct with
     //      the two blocks combined. Lets assume the left block consists
-    //      of m segments. The the segmap looks like
+    //      of m segments. The segmap looks like
     //        ... (m-2) (m-1) (m) 0  1  2  3 ...
     //      By substituting the '0' by '1', we create a valid, but
     //      suboptimal, segmap range covering the two blocks combined.
