@@ -228,8 +228,8 @@ public class PKCS11Exception extends Exception {
     }
 
     /**
-     * Returns true if the error code matches the the specified enum value.
-     * @return true if the error code matches the the specified enum value.
+     * Returns true if the error code matches the specified enum value.
+     * @return true if the error code matches the specified enum value.
      * @preconditions
      * @postconditions
      */
