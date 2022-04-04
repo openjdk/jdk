@@ -22,25 +22,31 @@
  */
 package lib;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.border.BevelBorder;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-import static java.awt.BorderLayout.*;
+import static java.awt.BorderLayout.CENTER;
+import static java.awt.BorderLayout.NORTH;
+import static java.awt.BorderLayout.SOUTH;
+import static java.io.File.separator;
 import static javax.swing.SwingUtilities.invokeAndWait;
 
 /**
@@ -51,7 +57,9 @@ public class ManualTestFrame extends JFrame {
 
     private boolean alreadyFailed = false;
 
-    private ManualTestFrame(String testName, String headerText, URL instructions, Consumer<TestResult> listener) throws IOException {
+    private ManualTestFrame(String testName, String headerText,
+                            Consumer<JEditorPane> instructions,
+                            Consumer<TestResult> listener) throws IOException {
 
         super(testName);
 
@@ -131,7 +139,9 @@ public class ManualTestFrame extends JFrame {
      * @throws InterruptedException
      * @throws InvocationTargetException
      */
-    public static Supplier<TestResult> showUI(String testName, String headerText, URL instructions)
+    public static Supplier<TestResult> showUI(String testName,
+                                              String headerText,
+                                              Consumer<JEditorPane> instructions , int timeout)
             throws InterruptedException, InvocationTargetException {
         AtomicReference<TestResult> resultContainer = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
@@ -148,7 +158,10 @@ public class ManualTestFrame extends JFrame {
         });
         return () -> {
             try {
-                latch.await();
+                if (!latch.await(timeout, TimeUnit.MINUTES)) {
+                    throw new RuntimeException("Timeout : User failed to " +
+                            "take decision on the test result.");
+                }
             } catch (InterruptedException e) {
                 return new TestResult(e);
             }
@@ -156,4 +169,32 @@ public class ManualTestFrame extends JFrame {
         };
     }
 
+    /**
+     * Checks the TestResult after user interacted with the manual TestFrame
+     * and the test UI.
+     *
+     * @param result
+     * @param testName name of the testcase
+     * @throws IOException
+     */
+    public static void handleResult(TestResult result , String testName) throws IOException {
+        if (result != null) {
+            System.err.println("Failure reason: \n" + result.getFailureDescription());
+            if (result.getScreenCapture() != null) {
+                File screenDump = new File(System.getProperty("test.classes") + separator + testName + ".png");
+                System.err.println("Saving screen image to " + screenDump.getAbsolutePath());
+                ImageIO.write(result.getScreenCapture(), "png", screenDump);
+            }
+            Throwable e = result.getException();
+            if (e != null) {
+                throw new RuntimeException(e);
+            } else {
+                if (!result.getStatus()) throw new RuntimeException("Test failed!");
+            }
+        } else {
+            throw new RuntimeException("No result returned!");
+        }
+    }
+
 }
+
