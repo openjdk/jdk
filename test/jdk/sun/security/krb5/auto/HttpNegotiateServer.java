@@ -386,15 +386,15 @@ public class HttpNegotiateServer {
         };
 
         System.err.println("\n\nExpecting to succeed when executing " +
-                "with the the logged in subject.");
+                "with the logged in subject.");
 
         try {
             Subject.callAs(subject, test_action);
             System.err.println("\n\nConnection succeed when executing " +
-                    "with the the logged in subject.");
+                    "with the logged in subject.");
         } catch (CompletionException e) {
             System.err.println("\n\nFailure unexpected when executing " +
-                    "with the the logged in subject.");
+                    "with the logged in subject.");
             e.printStackTrace();
             throw new RuntimeException("Failed to login as subject");
         }
