@@ -29,7 +29,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/objectMarker.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -66,6 +65,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "utilities/bitset.inline.hpp"
 #include "utilities/macros.hpp"
 
 bool JvmtiTagMap::_has_object_free_events = false;
@@ -1332,6 +1332,36 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
 
+// Stack allocated class to help ensure that ObjectMarker is used
+// correctly. Constructor initializes ObjectMarker, destructor calls
+// ObjectMarker's done() function to restore object headers.
+class ObjectMarkerController : public StackObj {
+private:
+  static BitSet* _bitset;
+public:
+  ObjectMarkerController() {
+    assert(_bitset == NULL, "don't initialize bitset twice");
+    _bitset = new BitSet();
+  }
+
+  ~ObjectMarkerController() {
+    assert(_bitset != NULL, "bitset must be initialized");
+    delete _bitset;
+    _bitset = NULL;
+  }
+
+  static void mark(oop o) {
+    assert(_bitset != NULL, "bitset must be initialized");
+    _bitset->mark_obj(o);
+  }
+
+  static bool is_marked(oop o) {
+    assert(_bitset != NULL, "bitset must be initialized");
+    return _bitset->is_marked(o);
+  }
+};
+
+BitSet* ObjectMarkerController::_bitset = NULL;
 
 // helper to map a jvmtiHeapReferenceKind to an old style jvmtiHeapRootKind
 // (not performance critical as only used for roots)
@@ -2805,9 +2835,6 @@ void VM_HeapWalkOperation::doit() {
     if (!collect_stack_roots()) return;
 
     if (!collect_simple_roots()) return;
-
-    // no early return so enable heap traversal to reset its state, if necessary
-    ObjectMarkerController::set_needs_reset(true);
   } else {
     visit_stack()->push(initial_object()());
   }

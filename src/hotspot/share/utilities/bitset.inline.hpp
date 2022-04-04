@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  *
  */
 
-#ifndef SHARE_JFR_LEAKPROFILER_CHAINS_BITSET_INLINE_HPP
-#define SHARE_JFR_LEAKPROFILER_CHAINS_BITSET_INLINE_HPP
+#ifndef SHARE_UTILITIES_BITSET_INLINE_HPP
+#define SHARE_UTILITIES_BITSET_INLINE_HPP
 
-#include "jfr/leakprofiler/chains/bitset.hpp"
+#include "utilities/bitset.hpp"
 
-#include "jfr/recorder/storage/jfrVirtualMemory.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -104,4 +103,4 @@ inline bool BitSet::is_marked(uintptr_t addr) {
   return bits->at(bit);
 }
 
-#endif // SHARE_JFR_LEAKPROFILER_CHAINS_BITSET_INLINE_HPP
+#endif // SHARE_UTILITIES_BITSET_INLINE_HPP
