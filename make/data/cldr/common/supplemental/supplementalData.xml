@@ -60,6 +60,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <info iso4217="RSD" digits="0" rounding="0"/>
             <info iso4217="RWF" digits="0" rounding="0"/>
             <info iso4217="SEK" digits="2" rounding="0" cashDigits="0" cashRounding="0"/>
+            <info iso4217="SLE" digits="2" rounding="0"/>
             <info iso4217="SLL" digits="0" rounding="0"/>
             <info iso4217="SOS" digits="0" rounding="0"/>
             <info iso4217="STD" digits="0" rounding="0"/>
@@ -955,6 +956,7 @@ The printed version of ISO-4217:2001
             <currency iso4217="CSK" from="1953-06-01" to="1992-12-31"/>
         </region>
         <region iso3166="SL">
+            <currency iso4217="SLE" from="2022-04-01" tender="false"/>
             <currency iso4217="SLL" from="1964-08-04"/>
             <currency iso4217="GBP" from="1808-11-30" to="1966-02-04"/>
         </region>

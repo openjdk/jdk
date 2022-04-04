@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841 8202537 8244245
+ * @bug 8176841 8202537 8244245 8265315
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata

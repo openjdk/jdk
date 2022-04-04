@@ -238,6 +238,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="shp" description="Saint Helena Pound"/>
             <type name="sit" description="Slovenian Tolar" since="1.9"/>
             <type name="skk" description="Slovak Koruna"/>
+            <type name="sle" description="Sierra Leonean New Leone"/>
             <type name="sll" description="Sierra Leonean Leone"/>
             <type name="sos" description="Somali Shilling"/>
             <type name="srd" description="Surinamese Dollar"/>

@@ -1797,8 +1797,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<defaultContent locales="
 			aa_ET ab_GE af_ZA agq_CM ak_GH am_ET an_ES ar_001 arn_CL as_IN asa_TZ ast_ES
 			az_Arab_IR az_Cyrl_AZ az_Latn az_Latn_AZ
-			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK blt_VN bm_ML bm_Nkoo_ML bn_BD
-			bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA bss_CM byn_ER
+			ba_RU bal_Arab bal_Arab_PK bal_Latn_PK bas_CM be_BY bem_ZM bez_TZ bg_BG bgn_PK
+			blt_VN bm_ML bm_Nkoo_ML bn_BD bo_CN br_FR brx_IN bs_Cyrl_BA bs_Latn bs_Latn_BA
+			bss_CM byn_ER
 			ca_ES cad_US cch_NG ccp_BD ce_RU ceb_PH cgg_UG chr_US cic_US ckb_IQ co_FR cs_CZ
 			cu_RU cv_RU cy_GB
 			da_DK dav_KE de_DE dje_NE doi_IN dsb_DE dua_CM dv_MV dyo_SN dz_BT

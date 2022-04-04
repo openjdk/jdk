@@ -137,9 +137,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%numberingSystem80" value="(arab(ext)?|armn(low)?|beng|deva|ethi|fullwide|geor|grek(low)?|gujr|guru|hanidec|han[st](fin)?|hebr|jpan(fin)?|khmr|knda|laoo|mlym|mymr|orya|roman(low)?|taml(dec)?|telu|thai|tibt)"/>
 		<coverageVariable key="%numberingSystem100" value="(finance|native|traditional|bali|brah|cakm|cham|diak|gong|gonm|hanidays|hmnp|java|jpanyear|kali|lana(tham)?|lepc|limb|mong|mtei|mymrshan|nkoo|olck|osma|rohg|saur|shrd|sora|sund|takr|talu|tnsa|vaii|wcho)"/>
 		<coverageVariable key="%persianCalendarTerritories" value="(AF|IR)"/>
-		<coverageVariable key="%personNameLanguages" value="(ar|de|en|es|hu|id|is|ja|ko|nl|uk)"/>
-		<coverageVariable key="%personNameNonMonograms" value="(long|medium|short)"/>
-		<coverageVariable key="%personNameMonograms" value="(monogram|monogramNarrow)"/>
 		<coverageVariable key="%phonebookCollationLanguages" value="(de|fi)"/>
 		<coverageVariable key="%ptVariants" value="(ABL1943|AO1990|COLB1945)"/>
 		<coverageVariable key="%quarterTypes" value="([1-4])"/>
@@ -905,18 +902,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel value="modern" match="typographicNames/styleName[@type='%anyAttribute'][@subtype='%anyAttribute']"/>
 		<coverageLevel value="modern" match="typographicNames/styleName[@type='%anyAttribute'][@subtype='%anyAttribute'][@alt='%anyAttribute']"/>
 		<coverageLevel value="modern" match="typographicNames/featureName[@type='%anyAttribute']"/>
-
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/nameOrder[@nameLocales='%anyAttribute']"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameNonMonograms'][@usage='addressing'][@style='%anyAttribute'][@order='%anyAttribute']/namePattern[@alt='%anyAttribute']"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameNonMonograms'][@usage='addressing'][@style='%anyAttribute'][@order='%anyAttribute']/namePattern"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameNonMonograms'][@usage='referring'][@style='%anyAttribute'][@order='%anyAttribute']/namePattern[@alt='%anyAttribute']"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameNonMonograms'][@usage='referring'][@style='%anyAttribute'][@order='%anyAttribute']/namePattern"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameNonMonograms'][@usage='sorting'][@style='%anyAttribute']/namePattern[@alt='%anyAttribute']"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameNonMonograms'][@usage='sorting'][@style='%anyAttribute']/namePattern"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameMonograms'][@style='%anyAttribute'][@order='%anyAttribute']/namePattern[@alt='%anyAttribute']"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName[@length='%personNameMonograms'][@style='%anyAttribute'][@order='%anyAttribute']/namePattern"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName/namePattern[@alt='%anyAttribute']"/>
-		<coverageLevel inLanguage="%personNameLanguages" value="modern" match="personNames/personName/namePattern"/>
 
 		<coverageLevel value="modern" match="annotations/annotation[@cp='%modernEmoji'][@type='%anyAttribute']"/>
 		<coverageLevel value="modern" match="annotations/annotation[@cp='%modernEmoji']"/>

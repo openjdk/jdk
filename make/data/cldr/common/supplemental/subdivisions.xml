@@ -171,10 +171,10 @@
 		<subgroup type="frpdl" contains="fr44 fr49 fr53 fr72 fr85"/>
 		<subgroup type="GA" contains="ga1 ga2 ga3 ga4 ga5 ga6 ga7 ga8 ga9"/>
 		<subgroup type="GB" contains="gbeng gbnir gbsct gbwls"/>
-		<subgroup type="gbeng" contains="gbbas gbbbd gbbcp gbbdf gbbdg gbben gbbex gbbir gbbkm gbbne gbbnh gbbns gbbol gbbpl gbbrc gbbrd gbbry gbbst gbbur gbcam gbcbf gbche gbchw gbcld gbcma gbcmd gbcon gbcov gbcry gbdal gbdby gbder gbdev gbdnc gbdor gbdud gbdur gbeal gbenf gbery gbess gbesx gbgat gbgls gbgre gbhal gbham gbhav gbhck gbhef gbhil gbhmf gbhns gbhpl gbhrt gbhrw gbhry gbios gbiow gbisl gbkec gbken gbkhl gbkir gbktt gbkwl gblan gblbh gblce gblds gblec gblew gblin gbliv gblnd gblut gbman gbmdb gbmdw gbmik gbmrt gbnbl gbnel gbnet gbnfk gbngm gbnln gbnsm gbnth gbntt gbnty gbnwm gbnyk gbold gboxf gbpem gbply gbpor gbpte gbrcc gbrch gbrdb gbrdg gbric gbrot gbrut gbsaw gbsfk gbsft gbsgc gbshf gbshn gbshr gbskp gbslf gbslg gbsnd gbsol gbsom gbsos gbsry gbste gbsth gbstn gbsts gbstt gbsty gbswd gbswk gbtam gbtfw gbthr gbtob gbtrf gbtwh gbwar gbwbk gbwft gbwgn gbwil gbwkf gbwll gbwlv gbwnd gbwnm gbwok gbwor gbwrl gbwrt gbwsm gbwsx gbyor"/>
+		<subgroup type="gbeng" contains="gbbas gbbbd gbbcp gbbdf gbbdg gbben gbbex gbbir gbbkm gbbne gbbnh gbbns gbbol gbbpl gbbrc gbbrd gbbry gbbst gbbur gbcam gbcbf gbche gbchw gbcld gbcma gbcmd gbcon gbcov gbcry gbdal gbdby gbder gbdev gbdnc gbdor gbdud gbdur gbeal gbenf gbery gbess gbesx gbgat gbgls gbgre gbhal gbham gbhav gbhck gbhef gbhil gbhmf gbhns gbhpl gbhrt gbhrw gbhry gbios gbiow gbisl gbkec gbken gbkhl gbkir gbktt gbkwl gblan gblbh gblce gblds gblec gblew gblin gbliv gblnd gblut gbman gbmdb gbmdw gbmik gbmrt gbnbl gbnel gbnet gbnfk gbngm gbnln gbnsm gbnth gbntt gbnty gbnwm gbnyk gbold gboxf gbply gbpor gbpte gbrcc gbrch gbrdb gbrdg gbric gbrot gbrut gbsaw gbsfk gbsft gbsgc gbshf gbshn gbshr gbskp gbslf gbslg gbsnd gbsol gbsom gbsos gbsry gbste gbsth gbstn gbsts gbstt gbsty gbswd gbswk gbtam gbtfw gbthr gbtob gbtrf gbtwh gbwar gbwbk gbwft gbwgn gbwil gbwkf gbwll gbwlv gbwnd gbwnm gbwok gbwor gbwrl gbwrt gbwsm gbwsx gbyor"/>
 		<subgroup type="gbnir" contains="gbabc gband gbann gbbfs gbccg gbdrs gbfmo gblbc gbmea gbmul gbnmd"/>
 		<subgroup type="gbsct" contains="gbabd gbabe gbagb gbans gbclk gbdgy gbdnd gbeay gbedh gbedu gbeln gbels gberw gbfal gbfif gbglg gbhld gbivc gbmln gbmry gbnay gbnlk gbork gbpkn gbrfw gbsay gbscb gbslk gbstg gbwdu gbwln gbzet"/>
-		<subgroup type="gbwls" contains="gbagy gbbge gbbgw gbcay gbcgn gbcmn gbcrf gbcwy gbden gbfln gbgwn gbmon gbmty gbntl gbnwp gbpow gbrct gbswa gbtof gbvgl gbwrx"/>
+		<subgroup type="gbwls" contains="gbagy gbbge gbbgw gbcay gbcgn gbcmn gbcrf gbcwy gbden gbfln gbgwn gbmon gbmty gbntl gbnwp gbpem gbpow gbrct gbswa gbtof gbvgl gbwrx"/>
 		<subgroup type="GD" contains="gd01 gd02 gd03 gd04 gd05 gd06 gd10"/>
 		<subgroup type="GE" contains="geab geaj gegu geim geka gekk gemm gerl gesj gesk gesz getb"/>
 		<subgroup type="GH" contains="ghaa ghaf ghah ghbe ghbo ghcp ghep ghne ghnp ghot ghsv ghtv ghue ghuw ghwn ghwp"/>
@@ -217,7 +217,8 @@
 		<subgroup type="ieu" contains="iecn iedl iemn"/>
 		<subgroup type="IL" contains="ild ilha iljm ilm ilta ilz"/>
 		<subgroup type="IN" contains="inan inap inar inas inbr inch inct indh indl inga ingj inhp inhr injh injk inka inkl inla inld inmh inml inmn inmp inmz innl inor inpb inpy inrj insk intg intn intr inup inut inwb"/>
-		<subgroup type="IQ" contains="iqan iqar iqba iqbb iqbg iqda iqdi iqdq iqka iqki iqma iqmu iqna iqni iqqa iqsd iqsu iqwa"/>
+		<subgroup type="IQ" contains="iqan iqba iqbb iqbg iqdi iqdq iqka iqki iqkr iqma iqmu iqna iqni iqqa iqsd iqwa"/>
+		<subgroup type="iqkr" contains="iqar iqda iqsu"/>
 		<subgroup type="IR" contains="ir00 ir01 ir02 ir03 ir04 ir05 ir06 ir07 ir08 ir09 ir10 ir11 ir12 ir13 ir14 ir15 ir16 ir17 ir18 ir19 ir20 ir21 ir22 ir23 ir24 ir25 ir26 ir27 ir28 ir29 ir30"/>
 		<subgroup type="IS" contains="is1 is2 is3 is4 is5 is6 is7 is8"/>
 		<subgroup type="is1" contains="isgar ishaf iskjo iskop ismos isrkv issel"/>
