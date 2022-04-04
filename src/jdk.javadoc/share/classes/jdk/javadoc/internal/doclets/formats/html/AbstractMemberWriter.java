@@ -237,9 +237,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             target.add(resources.getText("doclet.Package_private"));
             target.add(" ");
         }
-        boolean isAnnotatedTypeElement = utils.isAnnotationType(member.getEnclosingElement());
-        if (!isAnnotatedTypeElement && utils.isMethod(member)) {
-            if (!utils.isInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
+        if (!utils.isAnnotationInterface(member.getEnclosingElement()) && utils.isMethod(member)) {
+            if (!utils.isPlainInterface(member.getEnclosingElement()) && utils.isAbstract(member)) {
                 target.add("abstract ");
             }
             if (utils.isDefault(member)) {
@@ -322,15 +321,13 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             Content typeContent = new ContentBuilder();
             if (te != null
                     && !utils.isConstructor(element)
-                    && !utils.isClass(element)
-                    && !utils.isInterface(element)
-                    && !utils.isAnnotationType(element)) {
+                    && !utils.isTypeElement(element)) {
                 var name = new HtmlTree(TagName.SPAN);
                 name.setStyle(HtmlStyle.typeNameLabel);
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
-            addSummaryLink(utils.isClass(element) || utils.isInterface(element)
+            addSummaryLink(utils.isClass(element) || utils.isPlainInterface(element)
                     ? HtmlLinkInfo.Kind.CLASS_USE
                     : HtmlLinkInfo.Kind.MEMBER,
                     te, element, typeContent);

@@ -130,7 +130,7 @@ public class ThrowsTaglet extends BaseTaglet
             Map<String, TypeMirror> typeSubstitutions, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if (utils.isExecutableElement(holder)) {
+        if (utils.isMethod(holder)) {
             Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
             for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
                 Input input = new DocFinder.Input(utils, holder, this,

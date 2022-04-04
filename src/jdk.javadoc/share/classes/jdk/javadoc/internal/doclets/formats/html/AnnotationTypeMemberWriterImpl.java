@@ -269,7 +269,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     public void addDefaultValueInfo(Element member, Content annotationContent) {
-        if (utils.isAnnotationType(member)) {
+        if (utils.isAnnotationInterface(member.getEnclosingElement())) {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {

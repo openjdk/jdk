@@ -302,7 +302,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addSubInterfacesInfo(Content target) {
-        if (utils.isInterface(typeElement)) {
+        if (utils.isPlainInterface(typeElement)) {
             Set<TypeElement> subInterfaces = classtree.allSubClasses(typeElement, false);
             if (!subInterfaces.isEmpty()) {
                 var dl = HtmlTree.DL(HtmlStyle.notes);
@@ -315,7 +315,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
 
     @Override
     public void addInterfaceUsageInfo(Content target) {
-        if (!utils.isInterface(typeElement)) {
+        if (!utils.isPlainInterface(typeElement)) {
             return;
         }
         for (String s : suppressImplementingSet) {
@@ -350,7 +350,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                 new TreeSet<>(comparators.makeTypeMirrorIndexUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
-        if (utils.isInterface(typeElement) && !interfaces.isEmpty()) {
+        if (utils.isPlainInterface(typeElement) && !interfaces.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.allSuperinterfacesLabel));
             dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.SUPER_INTERFACES, interfaces)));
@@ -367,7 +367,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             @Override
             public Void visitType(TypeElement e, Void p) {
                 var dl = HtmlTree.DL(HtmlStyle.notes);
-                dl.add(HtmlTree.DT(utils.isInterface(e)
+                dl.add(HtmlTree.DT(utils.isPlainInterface(e)
                         ? contents.enclosingInterfaceLabel
                         : contents.enclosingClassLabel));
                 dl.add(HtmlTree.DD(getClassLinks(HtmlLinkInfo.Kind.CLASS, List.of(e))));
@@ -462,7 +462,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     public Content getMemberDetails(Content content) {
         var section = HtmlTree.SECTION(HtmlStyle.details, content);
         // The following id is required by the Navigation bar
-        if (utils.isAnnotationType(typeElement)) {
+        if (utils.isAnnotationInterface(typeElement)) {
             section.setId(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL);
         }
         return section;

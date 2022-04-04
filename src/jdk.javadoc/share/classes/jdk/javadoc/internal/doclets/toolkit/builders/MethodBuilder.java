@@ -169,6 +169,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
      */
     protected void buildMethodComments(Content methodContent) {
         if (!options.noComment()) {
+            assert utils.isMethod(currentMethod); // not all executables are methods
             ExecutableElement method = currentMethod;
             if (utils.getFullBody(currentMethod).isEmpty()) {
                 DocFinder.Output docs = DocFinder.search(configuration,

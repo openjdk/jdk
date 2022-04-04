@@ -52,7 +52,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
@@ -73,7 +72,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -284,33 +282,19 @@ public class Utils {
         return !e.getAnnotationMirrors().isEmpty();
     }
 
-    public boolean isAnnotationType(Element e) {
-        return new SimpleElementVisitor14<Boolean, Void>() {
-            @Override
-            public Boolean visitExecutable(ExecutableElement e, Void p) {
-                return visit(e.getEnclosingElement());
-            }
-
-            @Override
-            public Boolean visitUnknown(Element e, Void p) {
-                return false;
-            }
-
-            @Override
-            protected Boolean defaultAction(Element e, Void p) {
-                return e.getKind() == ANNOTATION_TYPE;
-            }
-        }.visit(e);
+    public boolean isAnnotationInterface(Element e) {
+        return e.getKind() == ANNOTATION_TYPE;
     }
 
-    /**
-     * An Enum implementation is almost identical, thus this method returns if
-     * this element represents a CLASS or an ENUM
-     * @param e element
-     * @return true if class or enum
-     */
+    // Note that e.getKind().isClass() is not the same as e.getKind() == CLASS
     public boolean isClass(Element e) {
         return e.getKind().isClass();
+    }
+
+    // Note that e.getKind().isInterface() is not the same as e.getKind() == INTERFACE
+    // See Also: isPlainInterface(Element)
+    public boolean isInterface(Element e) {
+        return e.getKind().isInterface();
     }
 
     public boolean isConstructor(Element e) {
@@ -325,7 +309,7 @@ public class Utils {
         return e.getKind() == FIELD;
     }
 
-    public boolean isInterface(Element e) {
+    public boolean isPlainInterface(Element e) {
         return e.getKind() == INTERFACE;
     }
 
@@ -447,46 +431,30 @@ public class Utils {
         return t.getKind() == NONE;
     }
 
-    public boolean isOrdinaryClass(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
-            return false;
-        }
-        return !isThrowable(te);
-    }
-
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
+    public boolean isNonThrowableClass(TypeElement te) {
+        return te.getKind() == CLASS && !isThrowable(te);
+    }
+
     public boolean isThrowable(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
-            return false;
-        }
-        return typeUtils.isSubtype(te.asType(), getThrowableType());
+        return te.getKind() == CLASS && typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isExecutableElement(Element e) {
-        return switch (e.getKind()) {
-            case CONSTRUCTOR, METHOD, INSTANCE_INIT -> true;
-            default -> false;
-        };
+        return e.getKind().isExecutable();
     }
 
     public boolean isVariableElement(Element e) {
-        return switch (e.getKind()) {
-            case ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE,
-                    PARAMETER, RESOURCE_VARIABLE -> true;
-            default -> false;
-        };
+        return e.getKind().isVariable();
     }
 
     public boolean isTypeElement(Element e) {
-        return switch (e.getKind()) {
-            case CLASS, ENUM, INTERFACE, ANNOTATION_TYPE, RECORD -> true;
-            default -> false;
-        };
+        return e.getKind().isDeclaredType();
     }
 
     /**
@@ -869,7 +837,7 @@ public class Utils {
             if (typeUtils.isSameType(t, getObjectType()))
                 continue;
             TypeElement e = asTypeElement(t);
-            if (isInterface(e)) {
+            if (isPlainInterface(e)) {
                 if (!visited.add(e)) {
                     continue; // seen it before
                 }
@@ -1127,8 +1095,7 @@ public class Utils {
     }
 
     private boolean checkType(TypeElement te) {
-        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType())
-                || isAnnotationType(te);
+        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType());
     }
 
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {

@@ -200,7 +200,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .addTab(contents.getContent("doclet.Instance_Methods"), e -> !utils.isStatic(e))
                 .addTab(contents.getContent("doclet.Abstract_Methods"), utils::isAbstract)
                 .addTab(contents.getContent("doclet.Concrete_Methods"),
-                        e -> !utils.isAbstract(e) && !utils.isInterface(e.getEnclosingElement()))
+                        e -> !utils.isAbstract(e) && !utils.isPlainInterface(e.getEnclosingElement()))
                 .addTab(contents.getContent("doclet.Default_Methods"), utils::isDefault)
                 .addTab(contents.getContent("doclet.Deprecated_Methods"),
                         e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement));

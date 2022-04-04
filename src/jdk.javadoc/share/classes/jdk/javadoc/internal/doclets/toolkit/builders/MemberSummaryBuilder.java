@@ -266,7 +266,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                     configuration.cmtUtils.updatePropertyMethodComment(ee, property);
                 }
                 List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
-                if (utils.isExecutableElement(member) && firstSentenceTags.isEmpty()) {
+                if (utils.isMethod(member) && firstSentenceTags.isEmpty()) {
                     //Inherit comments from overridden or implemented method if
                     //necessary.
                     DocFinder.Output inheritedDoc =

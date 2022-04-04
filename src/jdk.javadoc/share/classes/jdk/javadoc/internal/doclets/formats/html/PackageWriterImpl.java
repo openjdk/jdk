@@ -251,12 +251,12 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
-                .addTab(contents.interfaces, utils::isInterface)
-                .addTab(contents.classes, e -> utils.isOrdinaryClass((TypeElement)e))
+                .addTab(contents.interfaces, utils::isPlainInterface)
+                .addTab(contents.classes, e -> utils.isNonThrowableClass((TypeElement)e))
                 .addTab(contents.enums, utils::isEnum)
                 .addTab(contents.records, e -> utils.isRecord((TypeElement)e))
                 .addTab(contents.exceptionClasses, e -> utils.isThrowable((TypeElement)e))
-                .addTab(contents.annotationTypes, utils::isAnnotationType);
+                .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
                 Content classLink = getLink(new HtmlLinkInfo(
