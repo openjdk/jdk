@@ -1337,11 +1337,11 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
 // ObjectMarker's done() function to restore object headers.
 class ObjectMarker : public StackObj {
 private:
-  static BitSet* _bitset;
+  static BitSet<mtServiceability>* _bitset;
 public:
   ObjectMarker() {
     assert(_bitset == NULL, "don't initialize bitset twice");
-    _bitset = new BitSet();
+    _bitset = new BitSet<mtServiceability>();
   }
 
   ~ObjectMarker() {
@@ -1361,7 +1361,7 @@ public:
   }
 };
 
-BitSet* ObjectMarker::_bitset = NULL;
+BitSet<mtServiceability>* ObjectMarker::_bitset = NULL;
 
 // helper to map a jvmtiHeapReferenceKind to an old style jvmtiHeapRootKind
 // (not performance critical as only used for roots)

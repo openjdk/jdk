@@ -84,7 +84,7 @@ void PathToGcRootsOperation::doit() {
   assert(_cutoff_ticks > 0, "invariant");
 
   // The bitset used for marking is dimensioned as a function of the heap size
-  BitSet mark_bits;
+  BitSet<mtTracing> mark_bits;
 
   // The edge queue is dimensioned as a fraction of the heap size
   const size_t edge_queue_reservation_size = edge_queue_memory_reservation();

@@ -37,7 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitset.inline.hpp"
 
-BFSClosure::BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, BitSet* mark_bits) :
+BFSClosure::BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, BitSet<mtTracing>* mark_bits) :
   _edge_queue(edge_queue),
   _edge_store(edge_store),
   _mark_bits(mark_bits),

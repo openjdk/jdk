@@ -33,21 +33,22 @@
 
 class MemRegion;
 
-class BitSet : public CHeapObj<mtTracing> {
+template<MEMFLAGS F>
+class BitSet : public CHeapObj<F> {
   const static size_t _bitmap_granularity_shift = 26; // 64M
   const static size_t _bitmap_granularity_size = (size_t)1 << _bitmap_granularity_shift;
   const static size_t _bitmap_granularity_mask = _bitmap_granularity_size - 1;
 
   class BitMapFragment;
 
-  class BitMapFragmentTable : public BasicHashtable<mtTracing> {
-    class Entry : public BasicHashtableEntry<mtTracing> {
+  class BitMapFragmentTable : public BasicHashtable<F> {
+    class Entry : public BasicHashtableEntry<F> {
     public:
       uintptr_t _key;
       CHeapBitMap* _value;
 
       Entry* next() {
-        return (Entry*)BasicHashtableEntry<mtTracing>::next();
+        return (Entry*)BasicHashtableEntry<F>::next();
       }
     };
 
@@ -62,11 +63,11 @@ class BitSet : public CHeapObj<mtTracing> {
     }
 
     unsigned hash_to_index(unsigned hash) {
-      return hash & (BasicHashtable<mtTracing>::table_size() - 1);
+      return hash & (BasicHashtable<F>::table_size() - 1);
     }
 
   public:
-    BitMapFragmentTable(int table_size) : BasicHashtable<mtTracing>(table_size, sizeof(Entry)) {}
+    BitMapFragmentTable(int table_size) : BasicHashtable<F>(table_size, sizeof(Entry)) {}
     void add(uintptr_t key, CHeapBitMap* value);
     CHeapBitMap** lookup(uintptr_t key);
   };
@@ -97,7 +98,8 @@ class BitSet : public CHeapObj<mtTracing> {
   }
 };
 
-class BitSet::BitMapFragment : public CHeapObj<mtTracing> {
+template<MEMFLAGS F>
+class BitSet<F>::BitMapFragment : public CHeapObj<F> {
   CHeapBitMap _bits;
   BitMapFragment* _next;
 
