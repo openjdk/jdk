@@ -279,12 +279,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                            SingleFacadeFactory facadeFactory) {
         id = CLIENT_IDS.incrementAndGet();
         dbgTag = "HttpClientImpl(" + id +")";
-        if (builder.localAddr instanceof InetSocketAddress isa) {
-            @SuppressWarnings("removal")
-            var sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkListen(isa.getPort());
-            }
+        assert builder.localAddr instanceof InetSocketAddress isa && isa.getPort() == 0;
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkListen(((InetSocketAddress) (builder.localAddr)).getPort());
         }
         localAddr = builder.localAddr;
         if (builder.sslContext == null) {

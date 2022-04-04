@@ -379,10 +379,17 @@ public abstract class HttpClient {
          * through {@link HttpClient#newBuilder()} provide an implementation
          * of this method that allows setting the local address.
          *
+         * @implNote {@code Builder}s obtained through {@link HttpClient#newBuilder()}
+         * provide an implementation of this method that only supports
+         * a {@code localAddr} of type {@link InetSocketAddress} and
+         * the {@link InetSocketAddress#getPort() port} of such an address is
+         * expected to be {@code 0}.
+         *
          * @param localAddr The local socket address. Can be null.
          * @return this builder
          * @throws UnsupportedOperationException if this builder doesn't support
-         *         configuring a local address
+         *         configuring a local address or if the passed {@code localAddr}
+         *         is not supported by this {@code HttpClient} implementation.
          * @since 19
          */
         default Builder localAddress(SocketAddress localAddr) {
