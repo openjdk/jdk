@@ -25,7 +25,7 @@
  * @test
  * @bug 8022536
  * @library ../../regtesthelpers
- * @build Util
+ * @build PassFailJFrame
  * @summary JDK7 Printing: CJK and Latin Text in string overlap
  * @run main/manual PrintLatinCJKTest
  */
@@ -39,22 +39,25 @@ import java.awt.print.PrinterJob;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+
+import static javax.swing.SwingUtilities.invokeAndWait;
 
 public class PrintLatinCJKTest implements Printable {
 
-    static PrintLatinCJKTest testInstance = new PrintLatinCJKTest();
-    static String info =
-       "To test 8022536, if a remote printer is the system default, \n"+
-       "it should show in the dialog as the selected printer.\n"+
-       "You need a printer for this test. If you have none, let \n"+
-       "the test pass. If there is a printer, press Print, send \n"+
-       "the output to the printer, and examine it. It should have \n"+
-       "text looking like this : \u4e00\u4e01\u4e02\u4e03\u4e04English.";
+    private static PrintLatinCJKTest testInstance = new PrintLatinCJKTest();
+    private static JFrame frame;
+    private static String info = """
+            To test 8022536, if a remote printer is the system default,
+            it should show in the dialog as the selected printer.
+            You need a printer for this test. If you have none, let
+            the test pass. If there is a printer, press Print, send
+            the output to the printer, and examine it. It should have
+            text looking like this : \u4e00\u4e01\u4e02\u4e03\u4e04English
+            """;
 
     public static void showFrame() throws InterruptedException, InvocationTargetException {
-        SwingUtilities.invokeAndWait( () -> {
-            JFrame f = new JFrame("Test Frame");
+        invokeAndWait( () -> {
+            frame = new JFrame("Test Frame");
             JButton b = new JButton("Print");
             b.addActionListener((ae) -> {
                 try {
@@ -67,10 +70,18 @@ public class PrintLatinCJKTest implements Printable {
                     ex.printStackTrace();
                 }
             });
-            f.add("South", b);
-            f.pack();
-            f.setLocationRelativeTo(null);
-            f.setVisible(true);
+            frame.add("South", b);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
+    }
+
+    private static void disposeTestFrame() throws InterruptedException, InvocationTargetException {
+        invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
         });
     }
 
@@ -91,6 +102,8 @@ public class PrintLatinCJKTest implements Printable {
                 "Frame", info, 7, 30, 3);
         PrintLatinCJKTest.showFrame();
         passFailJFrame.awaitAndCheck();
+        PrintLatinCJKTest.disposeTestFrame();
     }
 }
+
 

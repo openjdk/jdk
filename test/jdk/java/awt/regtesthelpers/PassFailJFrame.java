@@ -36,14 +36,15 @@ import javax.swing.JTextArea;
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
-public class PassFailJFrame extends JFrame {
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private boolean failed = false;
-    private String testFailedReason;
-    private JTextArea instructionsText;
+public class PassFailJFrame {
+    private final static CountDownLatch latch = new CountDownLatch(1);
+    private static boolean failed = false;
+    private static String testFailedReason;
+    private static JTextArea instructionsText;
     private final int maxRowLength;
     private final int maxStringLength;
     private final int timeoutMinutes;
+    private static JFrame frame;
 
     /**
      * Constructs a JFrame with a given title & serves as test instructional
@@ -51,7 +52,7 @@ public class PassFailJFrame extends JFrame {
      * to test the test case & mark the test pass or fail. If the expected
      * result is seen then the user click on the 'Pass' button else click
      * on the 'Fail' button and the reason for the failure should be
-     * specified in the JDailog JTextArea.
+     * specified in the JDialog JTextArea.
      *
      * @param title           title of the Frame.
      * @param instructions    specified instruction that user should follow.
@@ -68,33 +69,43 @@ public class PassFailJFrame extends JFrame {
                           int maxRowLength, int maxStringLength,
                           int timeoutMinutes) throws HeadlessException,
             InterruptedException, InvocationTargetException {
-        super(title);
         this.maxRowLength = maxRowLength;
         this.maxStringLength = maxStringLength;
         this.timeoutMinutes = timeoutMinutes;
 
-        invokeAndWait(() -> {
-            setLayout(new BorderLayout());
-            instructionsText = new JTextArea(instructions, maxRowLength, maxStringLength);
-            instructionsText.setEditable(false);
-            instructionsText.setFocusable(false);
-            add(instructionsText, BorderLayout.NORTH);
+        if (isEventDispatchThread()) {
+            createUI(title, instructions, maxRowLength, maxStringLength, timeoutMinutes);
+        } else {
+            invokeAndWait(() -> {
+                createUI(title, instructions, maxRowLength, maxStringLength, timeoutMinutes);
+            });
+        }
+    }
 
-            JButton btnPass = new JButton("Pass");
-            btnPass.addActionListener((e) -> latch.countDown());
+    private static void createUI(String title, String instructions,
+                                 int maxRowLength, int maxStringLength,
+                                 int timeoutMinutes) {
+        frame = new JFrame(title);
+        frame.setLayout(new BorderLayout());
+        instructionsText = new JTextArea(instructions, maxRowLength, maxStringLength);
+        instructionsText.setEditable(false);
+        instructionsText.setFocusable(false);
+        frame.add(instructionsText, BorderLayout.NORTH);
 
-            JButton btnFail = new JButton("Fail");
-            btnFail.addActionListener((e) -> getFailureReason());
+        JButton btnPass = new JButton("Pass");
+        btnPass.addActionListener((e) -> latch.countDown());
 
-            JPanel buttonsPanel = new JPanel();
-            buttonsPanel.add(btnPass);
-            buttonsPanel.add(btnFail);
+        JButton btnFail = new JButton("Fail");
+        btnFail.addActionListener((e) -> getFailureReason());
 
-            add(buttonsPanel, BorderLayout.SOUTH);
-            pack();
-            setLocation(10, 10);
-            setVisible(true);
-        });
+        JPanel buttonsPanel = new JPanel();
+        buttonsPanel.add(btnPass);
+        buttonsPanel.add(btnFail);
+
+        frame.add(buttonsPanel, BorderLayout.SOUTH);
+        frame.pack();
+        frame.setLocation(10, 10);
+        frame.setVisible(true);
     }
 
     /**
@@ -109,8 +120,8 @@ public class PassFailJFrame extends JFrame {
         boolean timeoutHappened = !latch.await(this.timeoutMinutes,
                 TimeUnit.MINUTES);
         if (isEventDispatchThread()) {
-            dispose();
-        } else invokeAndWait(() -> dispose());
+            disposePassFailJFrame();
+        } else invokeAndWait(() -> disposePassFailJFrame());
 
         if (timeoutHappened) {
             throw new RuntimeException("Test timed out!");
@@ -120,7 +131,13 @@ public class PassFailJFrame extends JFrame {
         }
     }
 
-    public void getFailureReason() {
+    public static void disposePassFailJFrame() {
+        if (frame != null) {
+            frame.dispose();
+        }
+    }
+
+    public static void getFailureReason() {
         final JDialog dialog = new JDialog();
         dialog.setTitle("Failure reason");
         JPanel jPanel = new JPanel(new BorderLayout());
@@ -146,3 +163,4 @@ public class PassFailJFrame extends JFrame {
         dialog.setVisible(true);
     }
 }
+
