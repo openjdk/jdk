@@ -87,7 +87,8 @@ public class InheritDocTaglet extends BaseTaglet {
                         ? utils.flatSignature((ExecutableElement)e, writer.getCurrentPageElement())
                         : "");
                 //This tag does not support inheritance.
-                messages.warning(e, "doclet.noInheritedDoc", message);
+                var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(holderTag);
+                messages.warning(path, "doclet.unsuitableInheritDocContext", message);
                 return replacement;
         }
         Input input = new DocFinder.Input(utils, e,

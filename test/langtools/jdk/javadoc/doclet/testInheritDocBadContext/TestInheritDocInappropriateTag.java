@@ -70,9 +70,31 @@ public class TestInheritDocInappropriateTag extends JavadocTester {
                             public void x() { }
                         }
                         """);
-        javadoc("-d", base.resolve("out").toString(),
+        javadoc("-Xdoclint:none",
+                "-d", base.resolve("out").toString(),
                 src.resolve("A.java").toString(),
                 src.resolve("B.java").toString());
         checkExit(Exit.OK);
+        new OutputChecker(Output.OUT).setExpectOrdered(false).check(
+                """
+                        warning: @inheritDoc cannot be used in this context
+                             * {@summary {@inheritDoc}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used in this context
+                             * {@link Object#hashCode() {@inheritDoc}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used in this context
+                             * {@linkplain Object#hashCode() {@inheritDoc}}
+                               ^
+                        """,
+                """
+                        warning: @inheritDoc cannot be used in this context
+                             * {@index term {@inheritDoc}}
+                               ^
+                        """);
     }
 }
