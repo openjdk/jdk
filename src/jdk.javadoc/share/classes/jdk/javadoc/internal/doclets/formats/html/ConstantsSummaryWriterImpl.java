@@ -52,11 +52,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 /**
  * Write the Constants Summary Page in HTML format.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements ConstantsSummaryWriter {
 

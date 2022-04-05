@@ -59,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  * attributes for the element. See:
  * <a href="https://en.wikipedia.org/wiki/HTML_element">HTML element</a>.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @see <a href="https://html.spec.whatwg.org/multipage/syntax.html#normal-elements">WhatWG: Normal Elements</a>
  * @see <a href="https://www.w3.org/TR/html51/syntax.html#writing-html-documents-elements">HTML 5.1: Elements</a>
  */
