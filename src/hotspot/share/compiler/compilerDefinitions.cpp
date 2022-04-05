@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,10 +124,17 @@ intx CompilerConfig::scaled_freq_log(intx freq_log) {
 // Returns threshold scaled with the value of scale.
 // If scale < 0.0, threshold is returned without scaling.
 intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
+  assert(threshold >= 0, "must be");
   if (scale == 1.0 || scale < 0.0) {
     return threshold;
   } else {
-    return (intx)(threshold * scale);
+    double v = threshold * scale;
+    assert(v >= 0, "must be");
+    if (v > max_intx) {
+      return max_intx;
+    } else {
+      return (intx)(v);
+    }
   }
 }
 
@@ -309,7 +316,6 @@ void CompilerConfig::set_compilation_policy_flags() {
       }
     }
   }
-
 
   if (CompileThresholdScaling < 0) {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
@@ -508,6 +514,10 @@ bool CompilerConfig::check_args_consistency(bool status) {
         warning("TieredCompilation disabled due to -Xint.");
       }
       FLAG_SET_CMDLINE(TieredCompilation, false);
+    }
+    if (SegmentedCodeCache) {
+      warning("SegmentedCodeCache has no meaningful effect with -Xint");
+      FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
 #if INCLUDE_JVMCI
     if (EnableJVMCI) {

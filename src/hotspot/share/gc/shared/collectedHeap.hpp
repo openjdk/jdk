@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public:
 //   ShenandoahHeap
 //   ZCollectedHeap
 //
-class CollectedHeap : public CHeapObj<mtInternal> {
+class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
@@ -157,6 +157,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
 
+  static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 

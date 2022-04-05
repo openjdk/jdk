@@ -225,23 +225,7 @@ public class RecordedObject {
      * for callers of this method is to validate the field before attempting access.
      * <p>
      * Example
-     *
-     * <pre>{@literal
-     * if (event.hasField("intValue")) {
-     *   int intValue = event.getValue("intValue");
-     *   System.out.println("Int value: " + intValue);
-     * }
-     *
-     * if (event.hasField("objectClass")) {
-     *   RecordedClass clazz = event.getValue("objectClass");
-     *   System.out.println("Class name: " + clazz.getName());
-     * }
-     *
-     * if (event.hasField("sampledThread")) {
-     *   RecordedThread sampledThread = event.getValue("sampledThread");
-     *   System.out.println("Sampled thread: " + sampledThread.getJavaName());
-     * }
-     * }</pre>
+     * {@snippet class="Snippets" region="RecordedObjectGetValue"}
      *
      * @param <T> the return type
      * @param  name of the field to get, not {@code null}
@@ -263,7 +247,7 @@ public class RecordedObject {
     }
 
     private Object getValue(String name, boolean allowUnsigned) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         int index = 0;
         for (ValueDescriptor v : objectContext.fields) {
             if (name.equals(v.getName())) {
@@ -345,14 +329,14 @@ public class RecordedObject {
                 return v;
             }
         }
-        throw new IllegalArgumentException("\"Attempt to get unknown field \"" + name + "\"");
+        throw new IllegalArgumentException("Attempt to get unknown field \"" + name + "\"");
     }
 
     // Gets a value, but checks that type and name is correct first
     // This is to prevent a call to getString on a thread field, that is
     // null to succeed.
     private <T> T getTypedValue(String name, String typeName) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         // Validate name and type first
         getValueDescriptor(objectContext.fields, name, typeName);
         return getValue(name);

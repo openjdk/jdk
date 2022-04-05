@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@
 
 import javax.net.ssl.SSLEngine;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Test common DTLS cipher suites.
@@ -59,10 +62,12 @@ public class CipherSuite extends DTLSOverDatagram {
 
     // use the specific cipher suite
     volatile static String cipherSuite;
+    private static boolean reenable;
 
     public static void main(String[] args) throws Exception {
         if (args.length > 1 && "re-enable".equals(args[1])) {
             Security.setProperty("jdk.tls.disabledAlgorithms", "");
+            reenable = true;
         }
 
         cipherSuite = args[0];
@@ -77,6 +82,11 @@ public class CipherSuite extends DTLSOverDatagram {
 
         if (isClient) {
             engine.setEnabledCipherSuites(new String[]{cipherSuite});
+        } else if (reenable) {
+            List<String> cipherSuites =
+                new ArrayList(Arrays.asList(engine.getEnabledCipherSuites()));
+            cipherSuites.add(cipherSuite);
+            engine.setEnabledCipherSuites(cipherSuites.toArray(new String[0]));
         }
 
         return engine;

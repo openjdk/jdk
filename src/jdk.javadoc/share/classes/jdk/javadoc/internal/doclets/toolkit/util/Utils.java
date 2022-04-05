@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -53,7 +52,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
@@ -74,7 +72,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -159,27 +156,22 @@ public class Utils {
     }
 
     // our own little symbol table
-    private HashMap<String, TypeMirror> symtab = new HashMap<>();
+    private final Map<String, TypeMirror> symtab = new HashMap<>();
 
     public TypeMirror getSymbol(String signature) {
-        TypeMirror type = symtab.get(signature);
-        if (type == null) {
-            TypeElement typeElement = elementUtils.getTypeElement(signature);
-            if (typeElement == null)
-                return null;
-            type = typeElement.asType();
-            if (type == null)
-                return null;
-            symtab.put(signature, type);
-        }
-        return type;
+        return symtab.computeIfAbsent(signature, s -> {
+            var typeElement = elementUtils.getTypeElement(s);
+            return typeElement == null ? null : typeElement.asType();
+        });
     }
 
     public TypeMirror getObjectType() {
         return getSymbol("java.lang.Object");
     }
 
-    public TypeMirror getThrowableType() { return getSymbol("java.lang.Throwable"); }
+    public TypeMirror getThrowableType() {
+        return getSymbol("java.lang.Throwable");
+    }
 
     public TypeMirror getSerializableType() {
         return getSymbol("java.io.Serializable");
@@ -189,36 +181,12 @@ public class Utils {
         return getSymbol("java.io.Externalizable");
     }
 
-    public TypeMirror getIllegalArgumentExceptionType() {
-        return getSymbol("java.lang.IllegalArgumentException");
-    }
-
-    public TypeMirror getNullPointerExceptionType() {
-        return getSymbol("java.lang.NullPointerException");
-    }
-
     public TypeMirror getDeprecatedType() {
         return getSymbol("java.lang.Deprecated");
     }
 
     public TypeMirror getFunctionalInterface() {
         return getSymbol("java.lang.FunctionalInterface");
-    }
-
-    /**
-     * Return array of class members whose documentation is to be generated.
-     * If the member is deprecated do not include such a member in the
-     * returned array.
-     *
-     * @param  members    Array of members to choose from.
-     * @return List       List of eligible members for whom
-     *                    documentation is getting generated.
-     */
-    public List<Element> excludeDeprecatedMembers(List<? extends Element> members) {
-        return members.stream()
-                      .filter(member -> !isDeprecated(member))
-                      .sorted(comparators.makeGeneralPurposeComparator())
-                      .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -241,9 +209,9 @@ public class Utils {
     /**
      * Test whether a class is a subclass of another class.
      *
-     * @param t1 the candidate superclass.
-     * @param t2 the target
-     * @return true if t1 is a superclass of t2.
+     * @param t1 the candidate subclass
+     * @param t2 the candidate superclass
+     * @return true if t1 is a superclass of t2
      */
     public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
         return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
@@ -261,20 +229,14 @@ public class Utils {
             List<? extends VariableElement> parameters2 = e2.getParameters();
             if (e1.getSimpleName().equals(e2.getSimpleName()) &&
                     parameters1.size() == parameters2.size()) {
-                int j;
-                for (j = 0 ; j < parameters1.size(); j++) {
+                for (int j = 0; j < parameters1.size(); j++) {
                     VariableElement v1 = parameters1.get(j);
                     VariableElement v2 = parameters2.get(j);
-                    String t1 = getTypeName(v1.asType(), true);
-                    String t2 = getTypeName(v2.asType(), true);
-                    if (!(t1.equals(t2) ||
-                            isTypeVariable(v1.asType()) || isTypeVariable(v2.asType()))) {
-                        break;
+                    if (!typeUtils.isSameType(v1.asType(), v2.asType())) {
+                        return false;
                     }
                 }
-                if (j == parameters1.size()) {
-                    return true;
-                }
+                return true;
             }
             return false;
         } else {
@@ -320,37 +282,19 @@ public class Utils {
         return !e.getAnnotationMirrors().isEmpty();
     }
 
-    public boolean isAnnotated(Element e) {
-        return !e.getAnnotationMirrors().isEmpty();
+    public boolean isAnnotationInterface(Element e) {
+        return e.getKind() == ANNOTATION_TYPE;
     }
 
-    public boolean isAnnotationType(Element e) {
-        return new SimpleElementVisitor14<Boolean, Void>() {
-            @Override
-            public Boolean visitExecutable(ExecutableElement e, Void p) {
-                return visit(e.getEnclosingElement());
-            }
-
-            @Override
-            public Boolean visitUnknown(Element e, Void p) {
-                return false;
-            }
-
-            @Override
-            protected Boolean defaultAction(Element e, Void p) {
-                return e.getKind() == ANNOTATION_TYPE;
-            }
-        }.visit(e);
-    }
-
-    /**
-     * An Enum implementation is almost identical, thus this method returns if
-     * this element represents a CLASS or an ENUM
-     * @param e element
-     * @return true if class or enum
-     */
+    // Note that e.getKind().isClass() is not the same as e.getKind() == CLASS
     public boolean isClass(Element e) {
         return e.getKind().isClass();
+    }
+
+    // Note that e.getKind().isInterface() is not the same as e.getKind() == INTERFACE
+    // See Also: isPlainInterface(Element)
+    public boolean isInterface(Element e) {
+        return e.getKind().isInterface();
     }
 
     public boolean isConstructor(Element e) {
@@ -361,15 +305,11 @@ public class Utils {
         return e.getKind() == ENUM;
     }
 
-    boolean isEnumConstant(Element e) {
-        return e.getKind() == ENUM_CONSTANT;
-    }
-
     public boolean isField(Element e) {
         return e.getKind() == FIELD;
     }
 
-    public boolean isInterface(Element e) {
+    public boolean isPlainInterface(Element e) {
         return e.getKind() == INTERFACE;
     }
 
@@ -491,77 +431,30 @@ public class Utils {
         return t.getKind() == NONE;
     }
 
-    public boolean isOrdinaryClass(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te) || isRecord(te)) {
-            return false;
-        }
-        return !isThrowable(te);
-    }
-
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
-    public boolean isThrowable(TypeElement te) {
-        if (isEnum(te) || isInterface(te) || isAnnotationType(te)) {
-            return false;
-        }
-        return typeUtils.isSubtype(te.asType(), getThrowableType());
+    public boolean isNonThrowableClass(TypeElement te) {
+        return te.getKind() == CLASS && !isThrowable(te);
     }
 
-    public boolean isPrimitive(TypeMirror t) {
-        return new SimpleTypeVisitor14<Boolean, Void>() {
-
-            @Override
-            public Boolean visitNoType(NoType t, Void p) {
-                return t.getKind() == VOID;
-            }
-            @Override
-            public Boolean visitPrimitive(PrimitiveType t, Void p) {
-                return true;
-            }
-            @Override
-            public Boolean visitArray(ArrayType t, Void p) {
-                return visit(t.getComponentType());
-            }
-            @Override
-            protected Boolean defaultAction(TypeMirror e, Void p) {
-                return false;
-            }
-        }.visit(t);
+    public boolean isThrowable(TypeElement te) {
+        return te.getKind() == CLASS && typeUtils.isSubtype(te.asType(), getThrowableType());
     }
 
     public boolean isExecutableElement(Element e) {
-        ElementKind kind = e.getKind();
-        switch (kind) {
-            case CONSTRUCTOR: case METHOD: case INSTANCE_INIT:
-                return true;
-            default:
-                return false;
-        }
+        return e.getKind().isExecutable();
     }
 
     public boolean isVariableElement(Element e) {
-        ElementKind kind = e.getKind();
-        switch(kind) {
-              case ENUM_CONSTANT: case EXCEPTION_PARAMETER: case FIELD:
-              case LOCAL_VARIABLE: case PARAMETER:
-              case RESOURCE_VARIABLE:
-                  return true;
-              default:
-                  return false;
-        }
+        return e.getKind().isVariable();
     }
 
     public boolean isTypeElement(Element e) {
-        switch (e.getKind()) {
-            case CLASS: case ENUM: case INTERFACE: case ANNOTATION_TYPE: case RECORD:
-                return true;
-            default:
-                return false;
-        }
+        return e.getKind().isDeclaredType();
     }
 
     /**
@@ -693,14 +586,6 @@ public class Utils {
         return t.getKind() == DECLARED;
     }
 
-    public boolean isErrorType(TypeMirror t) {
-        return t.getKind() == ERROR;
-    }
-
-    public boolean isIntersectionType(TypeMirror t) {
-        return t.getKind() == INTERSECTION;
-    }
-
     public boolean isTypeParameterElement(Element e) {
         return e.getKind() == TYPE_PARAMETER;
     }
@@ -713,12 +598,8 @@ public class Utils {
         return t.getKind() == VOID;
     }
 
-    public boolean isWildCard(TypeMirror t) {
-        return t.getKind() == WILDCARD;
-    }
-
     public boolean ignoreBounds(TypeMirror bound) {
-        return bound.equals(getObjectType()) && !isAnnotated(bound);
+        return typeUtils.isSameType(bound, getObjectType()) && !isAnnotated(bound);
     }
 
     /*
@@ -729,7 +610,7 @@ public class Utils {
         if (!bounds.isEmpty()) {
             TypeMirror upperBound = bounds.get(bounds.size() - 1);
             if (ignoreBounds(upperBound)) {
-                return Collections.emptyList();
+                return List.of();
             }
         }
         return bounds;
@@ -783,11 +664,20 @@ public class Utils {
                !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
-    /**
-     * Return the type containing the method that this method overrides.
-     * It may be a {@code TypeElement} or a {@code TypeParameterElement}.
+    /*
+     * Returns the closest superclass (not the superinterface) that contains
+     * a method that is both:
+     *
+     *   - overridden by the specified method, and
+     *   - is not itself a *simple* override
+     *
+     * If no such class can be found, returns null.
+     *
+     * If the specified method belongs to an interface, the only considered
+     * superclass is java.lang.Object no matter how many other interfaces
+     * that interface extends.
      */
-    public TypeMirror overriddenType(ExecutableElement method) {
+    public DeclaredType overriddenType(ExecutableElement method) {
         return configuration.workArounds.overriddenType(method);
     }
 
@@ -800,28 +690,14 @@ public class Utils {
         return getType(t);
     }
 
-    /**
-     * Return the class that originally defined the method that
-     * is overridden by the current definition, or null if no
-     * such class exists.
-     *
-     * @return a TypeElement representing the superclass that
-     * originally defined this method, null if this method does
-     * not override a definition in a superclass.
-     */
-    public TypeElement overriddenClass(ExecutableElement ee) {
-        TypeMirror type = overriddenType(ee);
-        return (type != null) ? asTypeElement(type) : null;
-    }
-
     public ExecutableElement overriddenMethod(ExecutableElement method) {
         if (isStatic(method)) {
             return null;
         }
         final TypeElement origin = getEnclosingTypeElement(method);
         for (TypeMirror t = getSuperType(origin);
-                t.getKind() == DECLARED;
-                t = getSuperType(asTypeElement(t))) {
+             t.getKind() == DECLARED;
+             t = getSuperType(asTypeElement(t))) {
             TypeElement te = asTypeElement(t);
             if (te == null) {
                 return null;
@@ -834,7 +710,7 @@ public class Utils {
                     return ee;
                 }
             }
-            if (t.equals(getObjectType()))
+            if (typeUtils.isSameType(t, getObjectType()))
                 return null;
         }
         return null;
@@ -855,7 +731,7 @@ public class Utils {
     }
 
     public TypeMirror getDeclaredType(TypeElement enclosing, TypeMirror target) {
-        return getDeclaredType(Collections.emptyList(), enclosing, target);
+        return getDeclaredType(List.of(), enclosing, target);
     }
 
     /**
@@ -916,30 +792,69 @@ public class Utils {
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
-        getAllInterfaces(te.asType(), results);
+        addSuperInterfaces(te.asType(), results, new HashSet<>());
+        assert noSameTypes(results);
         return results;
     }
 
-    private void getAllInterfaces(TypeMirror type, Set<TypeMirror> results) {
-        List<? extends TypeMirror> intfacs = typeUtils.directSupertypes(type);
-        TypeMirror superType = null;
-        for (TypeMirror intfac : intfacs) {
-            if (intfac == getObjectType())
-                continue;
-            TypeElement e = asTypeElement(intfac);
-            if (isInterface(e)) {
-                if (isPublic(e) || isLinkable(e))
-                    results.add(intfac);
+    private boolean noSameTypes(Set<TypeMirror> results) {
+        for (TypeMirror t1 : results) {
+            for (TypeMirror t2 : results) {
+                if (t1 == t2) {
+                    continue;
+                }
+                if (typeUtils.isSameType(t1, t2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
-                getAllInterfaces(intfac, results);
+    /*
+     * Instances of TypeMirror should be compared using
+     * Types.isSameType. However, there's no hash function
+     * consistent with that method. This makes it problematic to
+     * store TypeMirror in a collection that relies on hashing.
+     *
+     * To work around that, along with accumulating the resulting set of type
+     * mirrors, we also maintain a set of elements that correspond to those
+     * type mirrors. Element provides strong equals and hashCode. We only add
+     * a type mirror into the result set if we don't already have an element
+     * that corresponds to this type mirror in the set of seen elements.
+     *
+     * Although this might seem wrong, as an instance of Element corresponds
+     * to multiple instances of TypeMirror (one-to-many), in an
+     * inheritance hierarchy the correspondence is effectively one-to-one.
+     * This is because it is NOT possible for a type to be a subtype
+     * of different generic invocations of the same supertype; e.g.,
+     *
+     *     interface X extends G<A>, G<B>
+     */
+    private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results, Set<Element> visited) {
+        TypeMirror superType = null;
+        for (TypeMirror t : typeUtils.directSupertypes(type)) {
+            if (typeUtils.isSameType(t, getObjectType()))
+                continue;
+            TypeElement e = asTypeElement(t);
+            if (isPlainInterface(e)) {
+                if (!visited.add(e)) {
+                    continue; // seen it before
+                }
+                if (isPublic(e) || isLinkable(e)) {
+                    results.add(t);
+                }
+                addSuperInterfaces(t, results, visited);
             } else {
+                // there can be at most one superclass and it is not null
+                assert superType == null && t != null : superType;
                 // Save the supertype for later.
-                superType = intfac;
+                superType = t;
             }
         }
         // Collect the super-interfaces of the supertype.
         if (superType != null)
-            getAllInterfaces(superType, results);
+            addSuperInterfaces(superType, results, visited);
     }
 
     /**
@@ -993,13 +908,6 @@ public class Utils {
                     : configuration.workArounds.searchClass(encl, className);
         }
         return searchResult;
-    }
-
-    /**
-     * Enclose in quotes, used for paths and filenames that contains spaces
-     */
-    public String quote(String filepath) {
-        return ("\"" + filepath + "\"");
     }
 
     /**
@@ -1176,8 +1084,7 @@ public class Utils {
     }
 
     public TypeElement getSuperClass(TypeElement te) {
-        if (isInterface(te) || isAnnotationType(te) ||
-                te.asType().equals(getObjectType())) {
+        if (checkType(te)) {
             return null;
         }
         TypeMirror superclass = te.getSuperclass();
@@ -1187,9 +1094,12 @@ public class Utils {
         return asTypeElement(superclass);
     }
 
+    private boolean checkType(TypeElement te) {
+        return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType());
+    }
+
     public TypeElement getFirstVisibleSuperClassAsTypeElement(TypeElement te) {
-        if (isAnnotationType(te) || isInterface(te) ||
-                te.asType().equals(getObjectType())) {
+        if (checkType(te)) {
             return null;
         }
         TypeMirror firstVisibleSuperClass = getFirstVisibleSuperClass(te);
@@ -1202,7 +1112,6 @@ public class Utils {
      * @return  the closest visible super class.  Return null if it cannot
      *          be found.
      */
-
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
         return getFirstVisibleSuperClass(asTypeElement(type));
     }
@@ -1213,7 +1122,7 @@ public class Utils {
      *
      * @param te the TypeElement to be interrogated
      * @return the closest visible super class.  Return null if it cannot
-     *         be found..
+     *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
         TypeMirror superType = te.getSuperclass();
@@ -1233,7 +1142,7 @@ public class Utils {
             superType = supersuperType;
             superClass = supersuperClass;
         }
-        if (te.asType().equals(superType)) {
+        if (typeUtils.isSameType(te.asType(), superType)) {
             return null;
         }
         return superType;
@@ -1481,10 +1390,14 @@ public class Utils {
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
     }
 
-    /**
-     * Returns true if the method has no comments, or a lone &commat;inheritDoc.
-     * @param m a method
-     * @return true if there are no comments, false otherwise
+    /*
+     * Returns true if the passed method does not change the specification it
+     * inherited.
+     *
+     * If the passed method is not deprecated and has either no comment or a
+     * comment consisting of single {@inheritDoc} tag, the inherited
+     * specification is deemed unchanged and this method returns true;
+     * otherwise this method returns false.
      */
     public boolean isSimpleOverride(ExecutableElement m) {
         if (!options.summarizeOverriddenMethods() || !isIncluded(m)) {
@@ -1560,19 +1473,6 @@ public class Utils {
      */
     public int compareStrings(String s1, String s2) {
         return compareStrings(true, s1, s2);
-    }
-
-    /**
-     * A general purpose case sensitive String comparator, which
-     * compares two Strings using a Collator strength of "SECONDARY".
-     *
-     * @param s1 first String to compare.
-     * @param s2 second String to compare.
-     * @return a negative integer, zero, or a positive integer as the first
-     *         argument is less than, equal to, or greater than the second.
-     */
-    public int compareCaseCompare(String s1, String s2) {
-        return compareStrings(false, s1, s2);
     }
 
     private DocCollator tertiaryCollator = null;
@@ -1767,26 +1667,6 @@ public class Utils {
     }
 
     /**
-     * Returns the documented annotation interfaces in a package.
-     *
-     * @param pkg the package
-     * @return the annotation interfaces
-     */
-    public List<TypeElement> getAnnotationTypes(PackageElement pkg) {
-        return getDocumentedItems(pkg, ANNOTATION_TYPE, TypeElement.class);
-    }
-
-    /**
-     * Returns the documented record classes in a package.
-     *
-     * @param pkg the package
-     * @return the record classes
-     */
-    public List<TypeElement> getRecords(PackageElement pkg) {
-        return getDocumentedItems(pkg, RECORD, TypeElement.class);
-    }
-
-    /**
      * Returns the documented fields in a type element.
      *
      * @param te the element
@@ -1836,13 +1716,6 @@ public class Utils {
      */
     public List<ExecutableElement> getMethods(TypeElement te) {
         return getDocumentedItems(te, METHOD, ExecutableElement.class);
-    }
-
-    public int getOrdinalValue(VariableElement member) {
-        if (member == null || member.getKind() != ENUM_CONSTANT) {
-            throw new IllegalArgumentException("must be an enum constant: " + member);
-        }
-        return member.getEnclosingElement().getEnclosedElements().indexOf(member);
     }
 
     private Map<ModuleElement, Set<PackageElement>> modulePackageMap = null;
@@ -1917,16 +1790,6 @@ public class Utils {
     }
 
     /**
-     * Returns the documented interfaces in a package.
-     *
-     * @param pkg the package
-     * @return the interfaces
-     */
-    public List<TypeElement> getInterfaces(PackageElement pkg)  {
-        return getDocumentedItems(pkg, INTERFACE, TypeElement.class);
-    }
-
-    /**
      * Returns the documented enum constants in a type element.
      *
      * @param te the element
@@ -1934,16 +1797,6 @@ public class Utils {
      */
     public List<VariableElement> getEnumConstants(TypeElement te) {
         return getDocumentedItems(te, ENUM_CONSTANT, VariableElement.class);
-    }
-
-    /**
-     * Returns the documented enum classes in a package.
-     *
-     * @param pkg the package
-     * @return the interfaces
-     */
-    public List<TypeElement> getEnums(PackageElement pkg) {
-        return getDocumentedItems(pkg, ENUM, TypeElement.class);
     }
 
     /**
@@ -2347,128 +2200,12 @@ public class Utils {
         return mdle.getQualifiedName().toString();
     }
 
-    public boolean isAttribute(DocTree doctree) {
-        return isKind(doctree, ATTRIBUTE);
-    }
-
-    public boolean isAuthor(DocTree doctree) {
-        return isKind(doctree, AUTHOR);
-    }
-
-    public boolean isComment(DocTree doctree) {
-        return isKind(doctree, COMMENT);
-    }
-
-    public boolean isDeprecated(DocTree doctree) {
-        return isKind(doctree, DEPRECATED);
-    }
-
-    public boolean isDocComment(DocTree doctree) {
-        return isKind(doctree, DOC_COMMENT);
-    }
-
-    public boolean isDocRoot(DocTree doctree) {
-        return isKind(doctree, DOC_ROOT);
-    }
-
-    public boolean isEndElement(DocTree doctree) {
-        return isKind(doctree, END_ELEMENT);
-    }
-
-    public boolean isEntity(DocTree doctree) {
-        return isKind(doctree, ENTITY);
-    }
-
-    public boolean isErroneous(DocTree doctree) {
-        return isKind(doctree, ERRONEOUS);
-    }
-
-    public boolean isException(DocTree doctree) {
-        return isKind(doctree, EXCEPTION);
-    }
-
-    public boolean isIdentifier(DocTree doctree) {
-        return isKind(doctree, IDENTIFIER);
-    }
-
-    public boolean isInheritDoc(DocTree doctree) {
-        return isKind(doctree, INHERIT_DOC);
-    }
-
-    public boolean isLink(DocTree doctree) {
-        return isKind(doctree, LINK);
-    }
-
-    public boolean isLinkPlain(DocTree doctree) {
-        return isKind(doctree, LINK_PLAIN);
-    }
-
-    public boolean isLiteral(DocTree doctree) {
-        return isKind(doctree, LITERAL);
-    }
-
-    public boolean isOther(DocTree doctree) {
-        return doctree.getKind() == DocTree.Kind.OTHER;
-    }
-
-    public boolean isParam(DocTree doctree) {
-        return isKind(doctree, PARAM);
-    }
-
-    public boolean isReference(DocTree doctree) {
-        return isKind(doctree, REFERENCE);
-    }
-
-    public boolean isReturn(DocTree doctree) {
-        return isKind(doctree, RETURN);
-    }
-
-    public boolean isSee(DocTree doctree) {
-        return isKind(doctree, SEE);
-    }
-
-    public boolean isSerial(DocTree doctree) {
-        return isKind(doctree, SERIAL);
-    }
-
-    public boolean isSerialData(DocTree doctree) {
-        return isKind(doctree, SERIAL_DATA);
-    }
-
-    public boolean isSerialField(DocTree doctree) {
-        return isKind(doctree, SERIAL_FIELD);
-    }
-
-    public boolean isSince(DocTree doctree) {
-        return isKind(doctree, SINCE);
-    }
-
     public boolean isStartElement(DocTree doctree) {
         return isKind(doctree, START_ELEMENT);
     }
 
     public boolean isText(DocTree doctree) {
         return isKind(doctree, TEXT);
-    }
-
-    public boolean isThrows(DocTree doctree) {
-        return isKind(doctree, THROWS);
-    }
-
-    public boolean isUnknownBlockTag(DocTree doctree) {
-        return isKind(doctree, UNKNOWN_BLOCK_TAG);
-    }
-
-    public boolean isUnknownInlineTag(DocTree doctree) {
-        return isKind(doctree, UNKNOWN_INLINE_TAG);
-    }
-
-    public boolean isValue(DocTree doctree) {
-        return isKind(doctree, VALUE);
-    }
-
-    public boolean isVersion(DocTree doctree) {
-        return isKind(doctree, VERSION);
     }
 
     private boolean isKind(DocTree doctree, DocTree.Kind match) {
@@ -2490,7 +2227,7 @@ public class Utils {
     }
 
     public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
-        return dcTree == null ? Collections.emptyList() : dcTree.getBlockTags();
+        return dcTree == null ? List.of() : dcTree.getBlockTags();
     }
 
     public List<? extends DocTree> getBlockTags(Element element, Predicate<DocTree> filter) {
@@ -2514,10 +2251,6 @@ public class Utils {
 
     public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
         return getBlockTags(element, t -> t.getKind() == kind, tClass);
-    }
-
-    public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind, DocTree.Kind altKind) {
-        return getBlockTags(element, t -> t.getKind() == kind || t.getKind() == altKind);
     }
 
     public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
@@ -2592,7 +2325,7 @@ public class Utils {
 
     /**
      * A cache of doc comment info objects for elements.
-     * The entries may come from the AST and DocCommentParser, or may be autromatically
+     * The entries may come from the AST and DocCommentParser, or may be automatically
      * generated comments for mandated elements and JavaFX properties.
      *
      * @see CommentUtils#dcInfoMap
@@ -2713,21 +2446,21 @@ public class Utils {
     public List<? extends DocTree> getPreamble(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
         return docCommentTree == null
-                ? Collections.emptyList()
+                ? List.of()
                 : docCommentTree.getPreamble();
     }
 
     public List<? extends DocTree> getFullBody(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
             return (docCommentTree == null)
-                    ? Collections.emptyList()
+                    ? List.of()
                     : docCommentTree.getFullBody();
     }
 
     public List<? extends DocTree> getBody(Element element) {
         DocCommentTree docCommentTree = getDocCommentTree(element);
         return (docCommentTree == null)
-                ? Collections.emptyList()
+                ? List.of()
                 : docCommentTree.getFullBody();
     }
 
@@ -2782,7 +2515,7 @@ public class Utils {
     public List<? extends DocTree> getFirstSentenceTrees(Element element) {
         DocCommentTree dcTree = getDocCommentTree(element);
         if (dcTree == null) {
-            return Collections.emptyList();
+            return List.of();
         }
         return new ArrayList<>(dcTree.getFirstSentence());
     }
@@ -2793,19 +2526,6 @@ public class Utils {
 
     public PackageElement containingPackage(Element e) {
         return elementUtils.getPackageOf(e);
-    }
-
-    public TypeElement getTopMostContainingTypeElement(Element e) {
-        if (isPackage(e)) {
-            return null;
-        }
-        TypeElement outer = getEnclosingTypeElement(e);
-        if (outer == null)
-            return (TypeElement)e;
-        while (outer != null && outer.getNestingKind().isNested()) {
-            outer = getEnclosingTypeElement(outer);
-        }
-        return outer;
     }
 
     /**
@@ -2895,7 +2615,7 @@ public class Utils {
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
         if (el.asType().getKind() == ERROR) {
             // Can happen with undocumented --ignore-source-errors option
-            return new PreviewSummary(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+            return new PreviewSummary(Set.of(), Set.of(), Set.of());
         }
         List<TypeElement> usedInDeclaration = new ArrayList<>(annotations2Classes(el));
         switch (el.getKind()) {
@@ -3053,9 +2773,11 @@ public class Utils {
      */
     public boolean isPreviewAPI(Element el) {
         boolean parentPreviewAPI = false;
-        Element enclosing = el.getEnclosingElement();
-        if (enclosing != null && (enclosing.getKind().isClass() || enclosing.getKind().isInterface())) {
-            parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
+        if (!isClassOrInterface(el)) {
+            Element enclosing = el.getEnclosingElement();
+            if (isClassOrInterface(enclosing)) {
+                parentPreviewAPI = configuration.workArounds.isPreviewAPI(enclosing);
+            }
         }
         boolean previewAPI = configuration.workArounds.isPreviewAPI(el);
         return !parentPreviewAPI && previewAPI;
@@ -3082,18 +2804,12 @@ public class Utils {
      */
     public Set<ElementFlag> elementFlags(Element el) {
         Set<ElementFlag> flags = EnumSet.noneOf(ElementFlag.class);
-        PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
         }
 
-        if ((!previewLanguageFeaturesUsed(el).isEmpty() ||
-             configuration.workArounds.isPreviewAPI(el) ||
-             !previewAPIs.previewAPI.isEmpty() ||
-             !previewAPIs.reflectivePreviewAPI.isEmpty() ||
-             !previewAPIs.declaredUsingPreviewFeature.isEmpty()) &&
-            !hasNoProviewAnnotation(el)) {
+        if (previewFlagProvider.isPreview(el)) {
             flags.add(ElementFlag.PREVIEW);
         }
 
@@ -3109,9 +2825,42 @@ public class Utils {
         PREVIEW
     }
 
-    private boolean hasNoProviewAnnotation(Element el) {
+    private boolean isClassOrInterface(Element el) {
+        return el != null && (el.getKind().isClass() || el.getKind().isInterface());
+    }
+
+    private boolean hasNoPreviewAnnotation(Element el) {
         return el.getAnnotationMirrors()
                  .stream()
                  .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
     }
+
+    private PreviewFlagProvider previewFlagProvider = new PreviewFlagProvider() {
+        @Override
+        public boolean isPreview(Element el) {
+            PreviewSummary previewAPIs = declaredUsingPreviewAPIs(el);
+            Element enclosing = el.getEnclosingElement();
+
+            return    (   !previewLanguageFeaturesUsed(el).isEmpty()
+                       || configuration.workArounds.isPreviewAPI(el)
+                       || (   !isClassOrInterface(el) && isClassOrInterface(enclosing)
+                           && configuration.workArounds.isPreviewAPI(enclosing))
+                       || !previewAPIs.previewAPI.isEmpty()
+                       || !previewAPIs.reflectivePreviewAPI.isEmpty()
+                       || !previewAPIs.declaredUsingPreviewFeature.isEmpty())
+                   && !hasNoPreviewAnnotation(el);
+        }
+    };
+
+    public PreviewFlagProvider setPreviewFlagProvider(PreviewFlagProvider provider) {
+        Objects.requireNonNull(provider);
+        PreviewFlagProvider old = previewFlagProvider;
+        previewFlagProvider = provider;
+        return old;
+    }
+
+    public interface PreviewFlagProvider {
+        public boolean isPreview(Element el);
+    }
+
 }

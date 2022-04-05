@@ -76,6 +76,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
 
 /**
  * The taglet writer that writes HTML.
@@ -201,8 +202,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content codeTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        Content result = HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
-        return result;
+        return HtmlTree.CODE(Text.of(utils.normalizeNewlines(ch.getText(tag))));
     }
 
     @Override
@@ -222,7 +222,7 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     // ugly but simple;
-    // alternatives would be to walk the Content tree, or to add new functionality to Content
+    // alternatives would be to walk the Content's tree structure, or to add new functionality to Content
     private String extractText(Content c) {
         return c.toString().replaceAll("<[^>]+>", "");
     }
@@ -300,8 +300,8 @@ public class TagletWriterImpl extends TagletWriter {
         // define id attributes for state components so that generated descriptions may refer to them
         boolean defineID = (element.getKind() == ElementKind.RECORD)
                 && !paramTag.isTypeParameter();
-        Content nameTree = Text.of(paramName);
-        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameTree) : nameTree));
+        Content nameContent = Text.of(paramName);
+        body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameContent) : nameContent));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
         body.add(htmlWriter.commentTagsToContent(paramTag, element, description, context.within(paramTag)));
@@ -352,7 +352,7 @@ public class TagletWriterImpl extends TagletWriter {
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream()
                 .anyMatch(c -> c.charCount() > SEE_TAG_MAX_INLINE_LENGTH || c.toString().contains(","));
-        HtmlTree seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
+        var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.seeListLong : HtmlStyle.seeList);
         links.stream().filter(Content::isValid).forEach(item -> {
             seeList.add(HtmlTree.LI(item));
         });
@@ -383,11 +383,11 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
                                        String id, String lang) {
-        HtmlTree pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
         }
-        HtmlTree code = new HtmlTree(TagName.CODE)
+        var code = new HtmlTree(TagName.CODE)
                 .add(HtmlTree.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
@@ -435,12 +435,18 @@ public class TagletWriterImpl extends TagletWriter {
                     int idx = line.indexOf(strippedLine);
                     assert idx >= 0; // because the stripped line is a substring of the line being stripped
                     Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
-                    // If the leading whitespace is not excluded from the link,
-                    // browsers might exhibit unwanted behavior. For example, a
-                    // browser might display hand-click cursor while user hovers
-                    // over that whitespace portion of the line; or use
-                    // underline decoration.
-                    c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    //disable preview tagging inside the snippets:
+                    PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
+                    try {
+                        // If the leading whitespace is not excluded from the link,
+                        // browsers might exhibit unwanted behavior. For example, a
+                        // browser might display hand-click cursor while user hovers
+                        // over that whitespace portion of the line; or use
+                        // underline decoration.
+                        c = new ContentBuilder(whitespace, htmlWriter.linkToContent(element, e, t, strippedLine));
+                    } finally {
+                        utils.setPreviewFlagProvider(prevPreviewProvider);
+                    }
                     // We don't care about trailing whitespace.
                 } else {
                     c = HtmlTree.SPAN(Text.of(text));
@@ -451,7 +457,7 @@ public class TagletWriterImpl extends TagletWriter {
         });
         String copyText = resources.getText("doclet.Copy_snippet_to_clipboard");
         String copiedText = resources.getText("doclet.Copied_snippet_to_clipboard");
-        HtmlTree snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
+        var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
                 new HtmlTree(TagName.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
@@ -518,15 +524,13 @@ public class TagletWriterImpl extends TagletWriter {
             body.add(" - ");
             body.add(desc);
         }
-        HtmlTree result = HtmlTree.DD(body);
-        return result;
+        return HtmlTree.DD(body);
     }
 
     @Override
     public Content throwsTagOutput(TypeMirror throwsType) {
-        HtmlTree result = HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
+        return HtmlTree.DD(HtmlTree.CODE(htmlWriter.getLink(
                 new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType))));
-        return result;
     }
 
     @Override

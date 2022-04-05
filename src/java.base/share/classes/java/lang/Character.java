@@ -737,10 +737,13 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static final class UnicodeBlock extends Subset {
         /**
-         * 696 - the expected number of entities
+         * NUM_ENTITIES should match the total number of UnicodeBlocks
+         * to calculate the initial capacity of the map. It should be
+         * adjusted whenever the Unicode Character Database is upgraded.
+         *
          * 0.75 - the default load factor of HashMap
          */
-        private static final int NUM_ENTITIES = 696;
+        private static final int NUM_ENTITIES = 737;
         private static Map<String, UnicodeBlock> map =
                 new HashMap<>((int)(NUM_ENTITIES / 0.75f + 1.0f));
 
@@ -10302,9 +10305,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierPart(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierStart(char)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierStart(char ch) {
         return isJavaIdentifierStart((int)ch);
     }
@@ -10331,9 +10335,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierPart(int)
      * @see     Character#isLetter(int)
      * @see     Character#isUnicodeIdentifierStart(int)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierStart(int codePoint) {
         return CharacterData.of(codePoint).isJavaIdentifierStart(codePoint);
     }
@@ -10368,9 +10373,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierStart(char)
      * @see     Character#isLetterOrDigit(char)
      * @see     Character#isUnicodeIdentifierPart(char)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.1
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierPart(char ch) {
         return isJavaIdentifierPart((int)ch);
     }
@@ -10401,9 +10407,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @see     Character#isJavaIdentifierStart(int)
      * @see     Character#isLetterOrDigit(int)
      * @see     Character#isUnicodeIdentifierPart(int)
-     * @see     javax.lang.model.SourceVersion#isIdentifier(CharSequence)
+     * @see     java.compiler/javax.lang.model.SourceVersion#isIdentifier(CharSequence)
      * @since   1.5
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public static boolean isJavaIdentifierPart(int codePoint) {
         return CharacterData.of(codePoint).isJavaIdentifierPart(codePoint);
     }

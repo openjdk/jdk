@@ -26,8 +26,8 @@
  * @bug 8218227
  * @summary StringBuilder/StringBuffer constructor throws confusing
  *          NegativeArraySizeException
- * @requires (sun.arch.data.model == "64" & os.maxMemory >= 6G)
- * @run main/othervm -Xms5G -Xmx5G HugeCapacity
+ * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8G)
+ * @run main/othervm -Xms6G -Xmx6G HugeCapacity
  */
 
 public class HugeCapacity {

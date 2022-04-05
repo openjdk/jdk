@@ -70,8 +70,9 @@ import jdk.internal.misc.Unsafe;
  * @since 1.4
  */
 
-public abstract class MappedByteBuffer
+public abstract sealed class MappedByteBuffer
     extends ByteBuffer
+    permits DirectByteBuffer
 {
 
     // This is a little bit backwards: By rights MappedByteBuffer should be a

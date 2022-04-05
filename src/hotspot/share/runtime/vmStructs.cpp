@@ -660,7 +660,7 @@
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
   volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
-  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         long)                                  \
+  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         int64_t)                               \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
                                                                                                                                      \
@@ -716,7 +716,6 @@
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
-  nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
@@ -1199,6 +1198,7 @@
   declare_integer_type(ssize_t)                                           \
   declare_integer_type(intx)                                              \
   declare_integer_type(intptr_t)                                          \
+  declare_integer_type(int64_t)                                           \
   declare_unsigned_integer_type(uintx)                                    \
   declare_unsigned_integer_type(uintptr_t)                                \
   declare_unsigned_integer_type(uint8_t)                                  \
@@ -1756,9 +1756,11 @@
   declare_c2_type(MulVFNode, VectorNode)                                  \
   declare_c2_type(MulReductionVFNode, ReductionNode)                      \
   declare_c2_type(MulVDNode, VectorNode)                                  \
-  declare_c2_type(NegVINode, VectorNode)                                  \
-  declare_c2_type(NegVFNode, VectorNode)                                  \
-  declare_c2_type(NegVDNode, VectorNode)                                  \
+  declare_c2_type(NegVNode, VectorNode)                                   \
+  declare_c2_type(NegVINode, NegVNode)                                    \
+  declare_c2_type(NegVLNode, NegVNode)                                    \
+  declare_c2_type(NegVFNode, NegVNode)                                    \
+  declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
   declare_c2_type(CMoveVFNode, VectorNode)                                \
@@ -1846,6 +1848,9 @@
   declare_c2_type(VectorCastL2XNode, VectorNode)                          \
   declare_c2_type(VectorCastF2XNode, VectorNode)                          \
   declare_c2_type(VectorCastD2XNode, VectorNode)                          \
+  declare_c2_type(VectorUCastB2XNode, VectorNode)                         \
+  declare_c2_type(VectorUCastS2XNode, VectorNode)                         \
+  declare_c2_type(VectorUCastI2XNode, VectorNode)                         \
   declare_c2_type(VectorInsertNode, VectorNode)                           \
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
@@ -2114,12 +2119,6 @@
   declare_constant(JVM_CONSTANT_MethodTypeInError)                        \
   declare_constant(JVM_CONSTANT_DynamicInError)                           \
   declare_constant(JVM_CONSTANT_InternalMax)                              \
-                                                                          \
-  /*****************************/                                         \
-  /* Thread::SuspendFlags enum */                                         \
-  /*****************************/                                         \
-                                                                          \
-  declare_constant(JavaThread::_has_async_exception)                      \
                                                                           \
   /*******************/                                                   \
   /* JavaThreadState */                                                   \

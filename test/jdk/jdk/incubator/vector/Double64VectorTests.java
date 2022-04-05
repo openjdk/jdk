@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1299,6 +1299,10 @@ public class Double64VectorTests extends AbstractVectorTest {
     }
 
 
+    static double firstNonZero(double a, double b) {
+        return Double.compare(a, (double) 0) != 0 ? a : b;
+    }
+
     @Test
     static void smokeTest1() {
         DoubleVector three = DoubleVector.broadcast(SPECIES, (byte)-3);
@@ -2277,7 +2281,7 @@ public class Double64VectorTests extends AbstractVectorTest {
     static double MINReduce(double[] a, int idx) {
         double res = Double.POSITIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (double)Math.min(res, a[i]);
+            res = (double) Math.min(res, a[i]);
         }
 
         return res;
@@ -2285,8 +2289,8 @@ public class Double64VectorTests extends AbstractVectorTest {
 
     static double MINReduceAll(double[] a) {
         double res = Double.POSITIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            res = (double)Math.min(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (double) Math.min(res, MINReduce(a, i));
         }
 
         return res;
@@ -2308,7 +2312,7 @@ public class Double64VectorTests extends AbstractVectorTest {
             ra = Double.POSITIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = (double)Math.min(ra, av.reduceLanes(VectorOperators.MIN));
+                ra = (double) Math.min(ra, av.reduceLanes(VectorOperators.MIN));
             }
         }
 
@@ -2318,8 +2322,8 @@ public class Double64VectorTests extends AbstractVectorTest {
     static double MINReduceMasked(double[] a, int idx, boolean[] mask) {
         double res = Double.POSITIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res = (double)Math.min(res, a[i]);
+            if (mask[i % SPECIES.length()])
+                res = (double) Math.min(res, a[i]);
         }
 
         return res;
@@ -2327,9 +2331,8 @@ public class Double64VectorTests extends AbstractVectorTest {
 
     static double MINReduceAllMasked(double[] a, boolean[] mask) {
         double res = Double.POSITIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            if(mask[i % SPECIES.length()])
-                res = (double)Math.min(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (double) Math.min(res, MINReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2353,7 +2356,7 @@ public class Double64VectorTests extends AbstractVectorTest {
             ra = Double.POSITIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = (double)Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
+                ra = (double) Math.min(ra, av.reduceLanes(VectorOperators.MIN, vmask));
             }
         }
 
@@ -2363,7 +2366,7 @@ public class Double64VectorTests extends AbstractVectorTest {
     static double MAXReduce(double[] a, int idx) {
         double res = Double.NEGATIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res = (double)Math.max(res, a[i]);
+            res = (double) Math.max(res, a[i]);
         }
 
         return res;
@@ -2371,8 +2374,8 @@ public class Double64VectorTests extends AbstractVectorTest {
 
     static double MAXReduceAll(double[] a) {
         double res = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            res = (double)Math.max(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (double) Math.max(res, MAXReduce(a, i));
         }
 
         return res;
@@ -2394,7 +2397,7 @@ public class Double64VectorTests extends AbstractVectorTest {
             ra = Double.NEGATIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = (double)Math.max(ra, av.reduceLanes(VectorOperators.MAX));
+                ra = (double) Math.max(ra, av.reduceLanes(VectorOperators.MAX));
             }
         }
 
@@ -2404,8 +2407,8 @@ public class Double64VectorTests extends AbstractVectorTest {
     static double MAXReduceMasked(double[] a, int idx, boolean[] mask) {
         double res = Double.NEGATIVE_INFINITY;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res = (double)Math.max(res, a[i]);
+            if (mask[i % SPECIES.length()])
+                res = (double) Math.max(res, a[i]);
         }
 
         return res;
@@ -2413,9 +2416,8 @@ public class Double64VectorTests extends AbstractVectorTest {
 
     static double MAXReduceAllMasked(double[] a, boolean[] mask) {
         double res = Double.NEGATIVE_INFINITY;
-        for (int i = 0; i < a.length; i++) {
-            if(mask[i % SPECIES.length()])
-                res = (double)Math.max(res, a[i]);
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = (double) Math.max(res, MAXReduceMasked(a, i, mask));
         }
 
         return res;
@@ -2439,12 +2441,97 @@ public class Double64VectorTests extends AbstractVectorTest {
             ra = Double.NEGATIVE_INFINITY;
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                ra = (double)Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
+                ra = (double) Math.max(ra, av.reduceLanes(VectorOperators.MAX, vmask));
             }
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
                 Double64VectorTests::MAXReduceMasked, Double64VectorTests::MAXReduceAllMasked);
+    }
+    static double FIRST_NONZEROReduce(double[] a, int idx) {
+        double res = (double) 0;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            res = firstNonZero(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static double FIRST_NONZEROReduceAll(double[] a) {
+        double res = (double) 0;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = firstNonZero(res, FIRST_NONZEROReduce(a, i));
+        }
+
+        return res;
+    }
+    @Test(dataProvider = "doubleUnaryOpProvider")
+    static void FIRST_NONZEROReduceDouble64VectorTests(IntFunction<double[]> fa) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+        double ra = (double) 0;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = (double) 0;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO));
+            }
+        }
+
+        assertReductionArraysEquals(r, ra, a,
+                Double64VectorTests::FIRST_NONZEROReduce, Double64VectorTests::FIRST_NONZEROReduceAll);
+    }
+    static double FIRST_NONZEROReduceMasked(double[] a, int idx, boolean[] mask) {
+        double res = (double) 0;
+        for (int i = idx; i < (idx + SPECIES.length()); i++) {
+            if (mask[i % SPECIES.length()])
+                res = firstNonZero(res, a[i]);
+        }
+
+        return res;
+    }
+
+    static double FIRST_NONZEROReduceAllMasked(double[] a, boolean[] mask) {
+        double res = (double) 0;
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            res = firstNonZero(res, FIRST_NONZEROReduceMasked(a, i, mask));
+        }
+
+        return res;
+    }
+    @Test(dataProvider = "doubleUnaryOpMaskProvider")
+    static void FIRST_NONZEROReduceDouble64VectorTestsMasked(IntFunction<double[]> fa, IntFunction<boolean[]> fm) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+        double ra = (double) 0;
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                r[i] = av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask);
+            }
+        }
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            ra = (double) 0;
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                ra = firstNonZero(ra, av.reduceLanes(VectorOperators.FIRST_NONZERO, vmask));
+            }
+        }
+
+        assertReductionArraysEqualsMasked(r, ra, a, mask,
+                Double64VectorTests::FIRST_NONZEROReduceMasked, Double64VectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
 
@@ -2490,19 +2577,21 @@ public class Double64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_DEFAULTMaskedDouble64VectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_DEFAULTMaskedDouble64VectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-            VectorMask<Double> mv = av.test(VectorOperators.IS_DEFAULT, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                VectorMask<Double> mv = av.test(VectorOperators.IS_DEFAULT, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_DEFAULT(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_DEFAULT(a[i + j]));
+                }
             }
         }
     }
@@ -2528,19 +2617,21 @@ public class Double64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_NEGATIVEMaskedDouble64VectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_NEGATIVEMaskedDouble64VectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-            VectorMask<Double> mv = av.test(VectorOperators.IS_NEGATIVE, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                VectorMask<Double> mv = av.test(VectorOperators.IS_NEGATIVE, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NEGATIVE(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NEGATIVE(a[i + j]));
+                }
             }
         }
     }
@@ -2567,19 +2658,21 @@ public class Double64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_FINITEMaskedDouble64VectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_FINITEMaskedDouble64VectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-            VectorMask<Double> mv = av.test(VectorOperators.IS_FINITE, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                VectorMask<Double> mv = av.test(VectorOperators.IS_FINITE, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_FINITE(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_FINITE(a[i + j]));
+                }
             }
         }
     }
@@ -2607,19 +2700,21 @@ public class Double64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_NANMaskedDouble64VectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_NANMaskedDouble64VectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-            VectorMask<Double> mv = av.test(VectorOperators.IS_NAN, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                VectorMask<Double> mv = av.test(VectorOperators.IS_NAN, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NAN(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_NAN(a[i + j]));
+                }
             }
         }
     }
@@ -2647,19 +2742,21 @@ public class Double64VectorTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "doubleTestOpMaskProvider")
-    static void IS_INFINITEMaskedDouble64VectorTestsSmokeTest(IntFunction<double[]> fa,
+    static void IS_INFINITEMaskedDouble64VectorTests(IntFunction<double[]> fa,
                                           IntFunction<boolean[]> fm) {
         double[] a = fa.apply(SPECIES.length());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
-        for (int i = 0; i < a.length; i += SPECIES.length()) {
-            DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-            VectorMask<Double> mv = av.test(VectorOperators.IS_INFINITE, vmask);
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                VectorMask<Double> mv = av.test(VectorOperators.IS_INFINITE, vmask);
 
-            // Check results as part of computation.
-            for (int j = 0; j < SPECIES.length(); j++) {
-                Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_INFINITE(a[i + j]));
+                // Check results as part of computation.
+                for (int j = 0; j < SPECIES.length(); j++) {
+                    Assert.assertEquals(mv.laneIsSet(j),  vmask.laneIsSet(j) && testIS_INFINITE(a[i + j]));
+                }
             }
         }
     }

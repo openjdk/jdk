@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,20 +419,22 @@ abstract class DomainKeyStore extends KeyStoreSpi {
                     if (aliases.hasMoreElements()) {
                         return true;
                     } else {
-                        if (iterator.hasNext()) {
+                        while (iterator.hasNext()) {
                             keystoresEntry = iterator.next();
                             prefix = keystoresEntry.getKey() +
-                                entryNameSeparator;
+                                    entryNameSeparator;
                             aliases = keystoresEntry.getValue().aliases();
-                        } else {
-                            return false;
+                            if (aliases.hasMoreElements()) {
+                                return true;
+                            } else {
+                                continue;
+                            }
                         }
+                        return false;
                     }
                 } catch (KeyStoreException e) {
                     return false;
                 }
-
-                return aliases.hasMoreElements();
             }
 
             public String nextElement() {

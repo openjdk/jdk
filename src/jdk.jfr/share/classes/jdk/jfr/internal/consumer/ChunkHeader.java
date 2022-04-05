@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
-    static final long HEADER_SIZE = 68;
+    public static final long HEADER_SIZE = 68;
     static final byte UPDATING_CHUNK_HEADER = (byte) 255;
-    static final long CHUNK_SIZE_POSITION = 8;
+    public static final long CHUNK_SIZE_POSITION = 8;
     static final long DURATION_NANOS_POSITION = 40;
     static final long FILE_STATE_POSITION = 64;
     static final long FLAG_BYTE_POSITION = 67;
@@ -92,10 +92,10 @@ public final class ChunkHeader {
         }
         long c = input.readRawLong(); // chunk size
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + c);
-        input.readRawLong(); // constant pool position
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + constantPoolPosition);
-        input.readRawLong(); // metadata position
-        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + metadataPosition);
+        long cp = input.readRawLong(); // constant pool position
+        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + cp);
+        long mp = input.readRawLong(); // metadata position
+        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: metadataPosition=" + mp);
         chunkStartNanos = input.readRawLong(); // nanos since epoch
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: startNanos=" + chunkStartNanos);
         durationNanos = input.readRawLong(); // duration nanos, not used
@@ -109,14 +109,19 @@ public final class ChunkHeader {
         input.position(absoluteEventStart);
     }
 
+    private byte readFileState() throws IOException {
+        byte fs;
+        input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+        while ((fs = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
+            Utils.takeNap(1);
+            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+        }
+        return fs;
+    }
+
     public void refresh() throws IOException {
         while (true) {
-            byte fileState1;
-            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
-            while ((fileState1 = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
-                Utils.takeNap(1);
-                input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
-            }
+            byte fileState1 = readFileState();
             input.positionPhysical(absoluteChunkStart + CHUNK_SIZE_POSITION);
             long chunkSize = input.readPhysicalLong();
             long constantPoolPosition = input.readPhysicalLong();
@@ -169,10 +174,9 @@ public final class ChunkHeader {
         }
         long pos = input.position();
         try {
-            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
             while (true) {
-                byte filestate = input.readPhysicalByte();
-                if (filestate == 0) {
+                byte fileState = readFileState();
+                if (fileState == 0) {
                     finished = true;
                     return;
                 }
@@ -243,7 +247,7 @@ public final class ChunkHeader {
         return constantPoolPosition;
     }
 
-    public long getMetataPosition() {
+    public long getMetadataPosition() {
         return metadataPosition;
     }
     public long getStartTicks() {

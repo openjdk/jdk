@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,10 +656,11 @@ public class ObjectOutputStream
      * stream.  Subclasses of ObjectOutputStream may override this method to
      * customize the way in which class descriptors are written to the
      * serialization stream.  The corresponding method in ObjectInputStream,
-     * {@code readClassDescriptor}, should then be overridden to
+     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be overridden to
      * reconstitute the class descriptor from its custom stream representation.
      * By default, this method writes class descriptors according to the format
-     * defined in the Object Serialization specification.
+     * defined in the <a href="{@docRoot}/../specs/serialization/index.html">
+     * <cite>Java Object Serialization Specification</cite></a>.
      *
      * <p>Note that this method will only be called if the ObjectOutputStream
      * is not using the old serialization stream format (set by calling

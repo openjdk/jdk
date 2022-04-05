@@ -437,7 +437,7 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
 void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
   HeapWord* obj_start = cast_from_oop<HeapWord*>(obj);
   HeapRegion* region = _g1h->heap_region_containing(obj_start);
-  region->update_bot_if_crossing_boundary(obj_start, word_sz);
+  region->update_bot_for_obj(obj_start, word_sz);
 }
 
 // Private inline function, for direct internal use and providing the

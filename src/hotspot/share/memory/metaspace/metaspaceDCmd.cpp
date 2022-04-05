@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
     if (strcasecmp("dynamic", scale_value) == 0) {
       scale = 0;
     } else {
-      scale = NMT_ONLY(NMTUtil::scale_from_name(scale_value)) NOT_NMT(0);
+      scale = NMTUtil::scale_from_name(scale_value);
       if (scale == 0) {
         output()->print_cr("Invalid scale: \"%s\". Will use dynamic scaling.", scale_value);
       }

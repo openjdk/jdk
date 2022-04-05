@@ -1943,12 +1943,12 @@ run:
                 Copy::fill_to_words(result + hdr_size, obj_size - hdr_size, 0);
               }
 
-              oop obj = cast_to_oop(result);
+              // Initialize header, mirrors MemAllocator.
+              oopDesc::set_mark(result, markWord::prototype());
+              oopDesc::set_klass_gap(result, 0);
+              oopDesc::release_set_klass(result, ik);
 
-              // Initialize header
-              obj->set_mark(markWord::prototype());
-              obj->set_klass_gap(0);
-              obj->set_klass(ik);
+              oop obj = cast_to_oop(result);
 
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.

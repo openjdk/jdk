@@ -1191,10 +1191,6 @@ const intx ObjectAlignmentInBytes = 8;
   develop(bool, VerifyJNIFields, trueInDebug,                               \
           "Verify jfieldIDs for instance fields")                           \
                                                                             \
-  notproduct(bool, VerifyJNIEnvThread, false,                               \
-          "Verify JNIEnv.thread == Thread::current() when entering VM "     \
-          "from JNI")                                                       \
-                                                                            \
   develop(bool, VerifyFPU, false,                                           \
           "Verify FPU state (check for NaN's, etc.)")                       \
                                                                             \
@@ -1526,19 +1522,19 @@ const intx ObjectAlignmentInBytes = 8;
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
   /* code cache parameters                                    */            \
-  develop_pd(uintx, CodeCacheSegmentSize,                                   \
+  product_pd(uintx, CodeCacheSegmentSize, EXPERIMENTAL,                     \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \
           constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
-  develop_pd(intx, CodeEntryAlignment,                                      \
+  product_pd(intx, CodeEntryAlignment, EXPERIMENTAL,                        \
           "Code entry alignment for generated code (in bytes)")             \
           constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
           "Align inner loops to zero relative to this modulus")             \
-          range(1, 16)                                                      \
+          range(1, 128)                                                     \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
@@ -1862,16 +1858,18 @@ const intx ObjectAlignmentInBytes = 8;
           "Pause and wait for keypress on exit if a debugger is attached")  \
                                                                             \
   product(bool, ExtendedDTraceProbes,    false,                             \
-          "Enable performance-impacting dtrace probes")                     \
+          "(Deprecated) Enable performance-impacting dtrace probes. "       \
+          "Use the combination of -XX:+DTraceMethodProbes, "                \
+          "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
-          "Enable dtrace probes for method-entry and method-exit")          \
+          "Enable dtrace tool probes for method-entry and method-exit")     \
                                                                             \
   product(bool, DTraceAllocProbes, false,                                   \
-          "Enable dtrace probes for object allocation")                     \
+          "Enable dtrace tool probes for object allocation")                \
                                                                             \
   product(bool, DTraceMonitorProbes, false,                                 \
-          "Enable dtrace probes for monitor events")                        \
+          "Enable dtrace tool probes for monitor events")                   \
                                                                             \
   product(bool, RelaxAccessControlCheck, false,                             \
           "Relax the access control checks in the verifier")                \

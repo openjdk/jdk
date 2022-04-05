@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1207,7 +1207,7 @@ public final class System {
          * <b>Severity values and Mapping to {@code java.util.logging.Level}.</b>
          * <p>
          * {@linkplain System.Logger.Level System logger levels} are mapped to
-         * {@linkplain java.util.logging.Level  java.util.logging levels}
+         * {@linkplain java.logging/java.util.logging.Level  java.util.logging levels}
          * of corresponding severity.
          * <br>The mapping is as follows:
          * <br><br>
@@ -1219,19 +1219,19 @@ public final class System {
          * </thead>
          * <tbody>
          * <tr><th scope="row">{@link Logger.Level#ALL ALL}</th>
-         *     <td>{@link java.util.logging.Level#ALL ALL}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#ALL ALL}</td>
          * <tr><th scope="row">{@link Logger.Level#TRACE TRACE}</th>
-         *     <td>{@link java.util.logging.Level#FINER FINER}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#FINER FINER}</td>
          * <tr><th scope="row">{@link Logger.Level#DEBUG DEBUG}</th>
-         *     <td>{@link java.util.logging.Level#FINE FINE}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#FINE FINE}</td>
          * <tr><th scope="row">{@link Logger.Level#INFO INFO}</th>
-         *     <td>{@link java.util.logging.Level#INFO INFO}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#INFO INFO}</td>
          * <tr><th scope="row">{@link Logger.Level#WARNING WARNING}</th>
-         *     <td>{@link java.util.logging.Level#WARNING WARNING}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#WARNING WARNING}</td>
          * <tr><th scope="row">{@link Logger.Level#ERROR ERROR}</th>
-         *     <td>{@link java.util.logging.Level#SEVERE SEVERE}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#SEVERE SEVERE}</td>
          * <tr><th scope="row">{@link Logger.Level#OFF OFF}</th>
-         *     <td>{@link java.util.logging.Level#OFF OFF}</td>
+         *     <td>{@link java.logging/java.util.logging.Level#OFF OFF}</td>
          * </tbody>
          * </table>
          *
@@ -1240,6 +1240,7 @@ public final class System {
          * @see java.lang.System.LoggerFinder
          * @see java.lang.System.Logger
          */
+        @SuppressWarnings("doclint:reference") // cross-module links
         public enum Level {
 
             // for convenience, we're reusing java.util.logging.Level int values
@@ -1542,7 +1543,7 @@ public final class System {
      * {@code java.util.logging} as the backend framework when the
      * {@code java.logging} module is present.
      * It returns a {@linkplain System.Logger logger} instance
-     * that will route log messages to a {@link java.util.logging.Logger
+     * that will route log messages to a {@link java.logging/java.util.logging.Logger
      * java.util.logging.Logger}. Otherwise, if {@code java.logging} is not
      * present, the default implementation will return a simple logger
      * instance that will route log messages of {@code INFO} level and above to
@@ -1556,7 +1557,7 @@ public final class System {
      * logging backend, and usually requires using APIs specific to that backend.
      * <p>For the default {@code LoggerFinder} implementation
      * using {@code java.util.logging} as its backend, refer to
-     * {@link java.util.logging java.util.logging} for logging configuration.
+     * {@link java.logging/java.util.logging java.util.logging} for logging configuration.
      * For the default {@code LoggerFinder} implementation returning simple loggers
      * when the {@code java.logging} module is absent, the configuration
      * is implementation dependent.
@@ -1591,7 +1592,7 @@ public final class System {
      * System.Logger.Level} to a level supported by the logging backend it uses.
      * <br>The default LoggerFinder using {@code java.util.logging} as the backend
      * maps {@code System.Logger} levels to
-     * {@linkplain java.util.logging.Level java.util.logging} levels
+     * {@linkplain java.logging/java.util.logging.Level java.util.logging} levels
      * of corresponding severity - as described in {@link Logger.Level
      * Logger.Level}.
      *
@@ -1600,6 +1601,7 @@ public final class System {
      *
      * @since 9
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     public abstract static class LoggerFinder {
         /**
          * The {@code RuntimePermission("loggerFinder")} is

@@ -27,6 +27,7 @@
 #include "compiler/directivesParser.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/os.hpp"
 #include <string.h>
 
@@ -334,6 +335,15 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
             return false;
           }
+        } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
+          uint64_t mask = 0;
+          PhaseNameValidator validator(s, mask);
+
+          if (!validator.is_valid()) {
+            error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
+            return false;
+          }
+          set->set_ideal_phase_mask(mask);
         }
       }
       break;

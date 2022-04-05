@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,6 +255,12 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * <a href="{@docRoot}/java.base/java/util/spi/ResourceBundleProvider.html#obtain-resource-bundle">
  * resource bundle provider</a>, it does not fall back to the
  * class loader search.
+ *
+ * <p>
+ * In cases where the {@code getBundle} factory method is called from a context
+ * where there is no caller frame on the stack (e.g. when called directly from
+ * a JNI attached thread), the caller module is default to the unnamed module for the
+ * {@linkplain ClassLoader#getSystemClassLoader system class loader}.
  *
  * <h3>Resource bundles in automatic modules</h3>
  *
@@ -1505,7 +1511,8 @@ public abstract class ResourceBundle {
     }
 
     private static Control getDefaultControl(Class<?> caller, String baseName) {
-        return getDefaultControl(caller.getModule(), baseName);
+        Module callerModule = getCallerModule(caller);
+        return getDefaultControl(callerModule, baseName);
     }
 
     private static Control getDefaultControl(Module targetModule, String baseName) {
@@ -1536,7 +1543,8 @@ public abstract class ResourceBundle {
     }
 
     private static void checkNamedModule(Class<?> caller) {
-        if (caller.getModule().isNamed()) {
+        Module callerModule = getCallerModule(caller);
+        if (callerModule.isNamed()) {
             throw new UnsupportedOperationException(
                     "ResourceBundle.Control not supported in named modules");
         }
@@ -1546,7 +1554,19 @@ public abstract class ResourceBundle {
                                                 Locale locale,
                                                 Class<?> caller,
                                                 Control control) {
-        return getBundleImpl(baseName, locale, caller, caller.getClassLoader(), control);
+        ClassLoader loader = getLoader(getCallerModule(caller));
+        return getBundleImpl(baseName, locale, caller, loader, control);
+    }
+
+    /*
+     * Determine the module to be used for the caller.  If
+     * Reflection::getCallerClass is called from JNI with an empty
+     * stack frame the caller will be null, so the system class loader unnamed
+     * module will be used.
+     */
+    private static Module getCallerModule(Class<?> caller) {
+        return  (caller != null) ? caller.getModule()
+                : ClassLoader.getSystemClassLoader().getUnnamedModule();
     }
 
     /**
@@ -1565,10 +1585,7 @@ public abstract class ResourceBundle {
                                                 Class<?> caller,
                                                 ClassLoader loader,
                                                 Control control) {
-        if (caller == null) {
-            throw new InternalError("null caller");
-        }
-        Module callerModule = caller.getModule();
+        Module callerModule = getCallerModule(caller);
 
         // get resource bundles for a named module only if loader is the module's class loader
         if (callerModule.isNamed() && loader == getLoader(callerModule)) {
@@ -1592,7 +1609,7 @@ public abstract class ResourceBundle {
                                                       Locale locale,
                                                       Control control) {
         Objects.requireNonNull(module);
-        Module callerModule = caller.getModule();
+        Module callerModule = getCallerModule(caller);
         if (callerModule != module) {
             @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
@@ -2228,9 +2245,9 @@ public abstract class ResourceBundle {
      */
     @CallerSensitive
     public static final void clearCache() {
-        Class<?> caller = Reflection.getCallerClass();
+        Module callerModule = getCallerModule(Reflection.getCallerClass());
         cacheList.keySet().removeIf(
-            key -> key.getCallerModule() == caller.getModule()
+            key -> key.getCallerModule() == callerModule
         );
     }
 

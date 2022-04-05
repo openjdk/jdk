@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_SAFEPOINT_HPP
 #define SHARE_RUNTIME_SAFEPOINT_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmOperation.hpp"

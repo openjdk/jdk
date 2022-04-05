@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,12 +87,15 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
+#include "services/mallocSiteTable.hpp"
 #include "services/memoryService.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
@@ -105,11 +108,6 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
-#if INCLUDE_NMT
-#include "services/mallocSiteTable.hpp"
-#include "services/memTracker.hpp"
-#include "utilities/nativeCallStack.hpp"
-#endif // INCLUDE_NMT
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -646,7 +644,6 @@ WB_END
 
 #endif // INCLUDE_G1GC
 
-#if INCLUDE_NMT
 // Alloc memory using the test memory type so that we can use that to see if
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
@@ -724,7 +721,6 @@ WB_ENTRY(void, WB_NMTArenaMalloc(JNIEnv* env, jobject o, jlong arena, jlong size
   Arena* a = (Arena*)arena;
   a->Amalloc(size_t(size));
 WB_END
-#endif // INCLUDE_NMT
 
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
   assert(method != NULL, "method should not be null");
@@ -2068,6 +2064,14 @@ WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))
 #endif // INCLUDE_JFR
 WB_END
 
+WB_ENTRY(jboolean, WB_IsDTraceIncluded(JNIEnv* env))
+#if defined(DTRACE_ENABLED)
+  return true;
+#else
+  return false;
+#endif // DTRACE_ENABLED
+WB_END
+
 #if INCLUDE_CDS
 
 WB_ENTRY(jint, WB_GetCDSOffsetForName(JNIEnv* env, jobject o, jstring name))
@@ -2545,7 +2549,6 @@ static JNINativeMethod methods[] = {
   {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
   {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
 #endif
-#if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
   {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTMallocWithPseudoStackAndType", CC"(JII)J",   (void*)&WB_NMTMallocWithPseudoStackAndType},
@@ -2559,7 +2562,6 @@ static JNINativeMethod methods[] = {
   {CC"NMTNewArena",         CC"(J)J",                 (void*)&WB_NMTNewArena        },
   {CC"NMTFreeArena",        CC"(J)V",                 (void*)&WB_NMTFreeArena       },
   {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
-#endif // INCLUDE_NMT
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
   {CC"isFrameDeoptimized", CC"(I)Z",                  (void*)&WB_IsFrameDeoptimized},
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
@@ -2715,6 +2717,7 @@ static JNINativeMethod methods[] = {
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
+  {CC"isDTraceIncluded",                  CC"()Z",    (void*)&WB_IsDTraceIncluded },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,9 @@ extern Monitor* JNICritical_lock;                // a lock used while entering a
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* Heap_lock;                       // a lock on the heap
-extern Mutex*   ExpandHeap_lock;                 // a lock on expanding the heap
+#ifdef INCLUDE_PARALLELGC
+extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap
+#endif
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
@@ -114,9 +116,7 @@ extern Monitor* ThreadsSMRDelete_lock;           // Used by ThreadsSMRSupport to
 extern Mutex*   ThreadIdTableCreate_lock;        // Used by ThreadIdTable to lazily create the thread id table
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
-#if INCLUDE_NMT
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
-#endif
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti

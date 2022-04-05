@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,13 +267,13 @@ void AwtDragSource::_DoDragDrop(void* param) {
     dragSource->Signal();
 
     AwtToolkit &toolkit = AwtToolkit::GetInstance();
-    toolkit.isInDoDragDropLoop = TRUE;
+    toolkit.isDnDSourceActive = TRUE;
     res = ::DoDragDrop(dragSource,
                        dragSource,
                        convertActionsToDROPEFFECT(dragSource->m_actions),
                        &effects
           );
-    toolkit.isInDoDragDropLoop = FALSE;
+    toolkit.isDnDSourceActive = FALSE;
 
     if (effects == DROPEFFECT_NONE && dragSource->m_dwPerformedDropEffect != DROPEFFECT_NONE) {
         effects = dragSource->m_dwPerformedDropEffect;

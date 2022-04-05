@@ -54,7 +54,7 @@ class InterfaceSupport: AllStatic {
  public:
   static unsigned int _scavenge_alot_counter;
   static unsigned int _fullgc_alot_counter;
-  static int _fullgc_alot_invocation;
+  static intx _fullgc_alot_invocation;
 
   // Helper methods used to implement +ScavengeALot and +FullGCALot
   static void check_gc_alot() { if (ScavengeALot || FullGCALot) gc_alot(); }
@@ -210,7 +210,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread, _allow_suspend);
+      SafepointMechanism::process_if_requested(_thread, _allow_suspend, false /* check_async_exception */);
     }
   }
 };
@@ -340,6 +340,11 @@ class VMNativeEntryWrapper {
 #define JRT_END }
 
 // Definitions for JNI
+//
+// As the JNIEnv can be passed from external native code we validate
+// it in debug builds, primarily for our own testing. In general JNI
+// does not attempt to detect programming errors and a bad JNIEnv may
+// not even be readable.
 
 #define JNI_ENTRY(result_type, header)                               \
     JNI_ENTRY_NO_PRESERVE(result_type, header)                       \
@@ -349,7 +354,7 @@ class VMNativeEntryWrapper {
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    assert(thread == Thread::current(), "JNIEnv is only valid in same thread"); \
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));        \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
@@ -360,7 +365,7 @@ extern "C" {                                                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
-    assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
+    assert(thread == Thread::current(), "JNIEnv is only valid in same thread"); \
     VM_LEAF_BASE(result_type, header)
 
 
