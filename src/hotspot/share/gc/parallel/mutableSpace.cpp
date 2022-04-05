@@ -112,7 +112,7 @@ void MutableSpace::initialize(MemRegion mr,
     }
     assert(mr.contains(head) && mr.contains(tail), "Sanity");
 
-    size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
+    size_t page_size = alignment();
 
     if (UseNUMA) {
       numa_setup_pages(head, page_size, clear_space);
