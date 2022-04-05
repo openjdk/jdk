@@ -59,7 +59,7 @@ public class TestVarArgs extends CallGeneratorHelper {
         System.loadLibrary("VarArgs");
         try {
             MH_CHECK = MethodHandles.lookup().findStatic(TestVarArgs.class, "check",
-                    MethodType.methodType(void.class, int.class, MemoryAddress.class, List.class, List.class));
+                    MethodType.methodType(void.class, int.class, MemoryAddress.class, List.class));
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -70,11 +70,10 @@ public class TestVarArgs extends CallGeneratorHelper {
     @Test(dataProvider = "functions")
     public void testVarArgs(int count, String fName, Ret ret, // ignore this stuff
                             List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
-        List<Consumer<Object>> checks = new ArrayList<>();
-        List<Arg> args = makeArgs(paramTypes, fields, checks);
+        List<Arg> args = makeArgs(paramTypes, fields);
 
         try (MemorySession session = MemorySession.openConfined()) {
-            MethodHandle checker = MethodHandles.insertArguments(MH_CHECK, 2, checks, args);
+            MethodHandle checker = MethodHandles.insertArguments(MH_CHECK, 2, args);
             MemorySegment writeBack = LINKER.upcallStub(checker, FunctionDescriptor.ofVoid(C_INT, C_POINTER), session);
             MemorySegment callInfo = MemorySegment.allocateNative(CallInfo.LAYOUT, session);
             MemorySegment argIDs = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(args.size(), C_INT), session);
@@ -82,7 +81,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             MemoryAddress callInfoPtr = callInfo.address();
 
             CallInfo.writeback(callInfo, writeBack);
-            CallInfo.argIDs(callInfo, writeBack);
+            CallInfo.argIDs(callInfo, argIDs);
 
             for (int i = 0; i < args.size(); i++) {
                 VH_IntArray.set(argIDs, (long) i, args.get(i).id.ordinal());
@@ -108,29 +107,29 @@ public class TestVarArgs extends CallGeneratorHelper {
         }
     }
 
-    private static List<Arg> makeArgs(List<ParamType> paramTypes, List<StructFieldType> fields, List<Consumer<Object>> checks) throws ReflectiveOperationException {
+    private static List<Arg> makeArgs(List<ParamType> paramTypes, List<StructFieldType> fields) throws ReflectiveOperationException {
         List<Arg> args = new ArrayList<>();
         for (ParamType pType : paramTypes) {
             MemoryLayout layout = pType.layout(fields);
+            List<Consumer<Object>> checks = new ArrayList<>();
             Object arg = makeArg(layout, checks, true);
             Arg.NativeType type = Arg.NativeType.of(pType.type(fields));
             args.add(pType == ParamType.STRUCT
-                ? Arg.structArg(type, layout, arg)
-                : Arg.primitiveArg(type, layout, arg));
+                ? Arg.structArg(type, layout, arg, checks)
+                : Arg.primitiveArg(type, layout, arg, checks));
         }
         return args;
     }
 
-    private static void check(int index, MemoryAddress ptr, List<Consumer<Object>> checks, List<Arg> args) {
-        Consumer<Object> check = checks.get(index);
+    private static void check(int index, MemoryAddress ptr, List<Arg> args) {
         Arg varArg = args.get(index);
-
         MemoryLayout layout = varArg.layout;
         MethodHandle getter = varArg.getter;
+        List<Consumer<Object>> checks = varArg.checks;
         try (MemorySession session = MemorySession.openConfined()) {
             MemorySegment seg = MemorySegment.ofAddress(ptr, layout.byteSize(), session);
             Object obj = getter.invoke(seg);
-            check.accept(obj);
+            checks.forEach(check -> check.accept(obj));
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -157,20 +156,22 @@ public class TestVarArgs extends CallGeneratorHelper {
         final MemoryLayout layout;
         final Object value;
         final MethodHandle getter;
+        final List<Consumer<Object>> checks;
 
-        private Arg(NativeType id, MemoryLayout layout, Object value, MethodHandle getter) {
+        private Arg(NativeType id, MemoryLayout layout, Object value, MethodHandle getter, List<Consumer<Object>> checks) {
             this.id = id;
             this.layout = layout;
             this.value = value;
             this.getter = getter;
+            this.checks = checks;
         }
 
-        private static Arg primitiveArg(NativeType id, MemoryLayout layout, Object value) {
-            return new Arg(id, layout, value, layout.varHandle().toMethodHandle(VarHandle.AccessMode.GET));
+        private static Arg primitiveArg(NativeType id, MemoryLayout layout, Object value, List<Consumer<Object>> checks) {
+            return new Arg(id, layout, value, layout.varHandle().toMethodHandle(VarHandle.AccessMode.GET), checks);
         }
 
-        private static Arg structArg(NativeType id, MemoryLayout layout, Object value) {
-            return new Arg(id, layout, value, MethodHandles.identity(MemorySegment.class));
+        private static Arg structArg(NativeType id, MemoryLayout layout, Object value, List<Consumer<Object>> checks) {
+            return new Arg(id, layout, value, MethodHandles.identity(MemorySegment.class), checks);
         }
 
         enum NativeType {

@@ -23,6 +23,7 @@
  */
 
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "shared.h"
 
@@ -226,6 +227,7 @@ EXPORT void varargs(call_info* info, int num, ...) {
             CASE(T_S_PPF, struct S_PPF)
             CASE(T_S_PPD, struct S_PPD)
             CASE(T_S_PPP, struct S_PPP)
+            default: exit(-1); // invalid id
         }
     }
 
