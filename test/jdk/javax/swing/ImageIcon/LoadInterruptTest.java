@@ -80,8 +80,8 @@ public class LoadInterruptTest {
             throw new RuntimeException("Test Case Failed!!! System.out is not empty : " + outString);
         }
 
-        if ((status != MediaTracker.ABORTED) && (status != MediaTracker.COMPLETE)) {
-            throw new RuntimeException("Test Case Failed!!! Unexpected status : " + status);
+        if (status == MediaTracker.LOADING) {
+            throw new RuntimeException("Test Case Failed!!! LOADING... status!!!");
         }
     }
 }
