@@ -298,8 +298,8 @@ class Http1Request {
             contentLength = requestPublisher.contentLength();
         }
 
-        // GET with no body should not set the Content-Length header
-        if (requestPublisher != null || !"GET".equals(request.method())) {
+        // GET, HEAD and DELETE with no request body should not set the Content-Length header
+        if (requestPublisher != null) {
             if (contentLength == 0) {
                 systemHeadersBuilder.setHeader("Content-Length", "0");
             } else if (contentLength > 0) {
