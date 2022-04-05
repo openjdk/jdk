@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
@@ -78,7 +79,7 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
     private int maxSize;
 
     public CodeSizeEvaluator(final MethodVisitor methodVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, methodVisitor);
+        this(/* latest api = */ Opcodes.ASM9, methodVisitor);
     }
 
     protected CodeSizeEvaluator(final int api, final MethodVisitor methodVisitor) {
@@ -236,3 +237,4 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
         super.visitMultiANewArrayInsn(descriptor, numDimensions);
     }
 }
+

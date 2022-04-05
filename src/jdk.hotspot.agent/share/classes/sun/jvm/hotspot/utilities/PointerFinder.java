@@ -87,6 +87,7 @@ public class PointerFinder {
     if (heap instanceof GenCollectedHeap) {
       GenCollectedHeap genheap = (GenCollectedHeap) heap;
       if (genheap.isIn(a)) {
+        loc.heap = heap;
         for (int i = 0; i < genheap.nGens(); i++) {
           Generation g = genheap.getGen(i);
           if (g.isIn(a)) {

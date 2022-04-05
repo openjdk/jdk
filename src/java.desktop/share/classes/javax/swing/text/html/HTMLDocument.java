@@ -427,7 +427,7 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * @param offset the starting offset
      * @param data the element data
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document.
      */
     protected void insert(int offset, ElementSpec[] data) throws BadLocationException {

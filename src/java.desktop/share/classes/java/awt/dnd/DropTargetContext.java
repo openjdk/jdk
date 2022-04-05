@@ -53,7 +53,7 @@ import sun.awt.AWTAccessor.DropTargetContextAccessor;
  * @since 1.2
  */
 
-public class DropTargetContext implements Serializable {
+public final class DropTargetContext implements Serializable {
 
     /**
      * Use serialVersionUID from JDK 1.4 for interoperability.

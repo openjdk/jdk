@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,12 @@ final class Float128Vector extends FloatVector {
     @ForceInline
     public final Float128Mask test(Test op) {
         return super.testTemplate(Float128Mask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final Float128Mask test(Test op, VectorMask<Float> m) {
+        return super.testTemplate(Float128Mask.class, op, (Float128Mask) m);  // specialize
     }
 
     // Specialized comparisons

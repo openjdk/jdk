@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package com.sun.hotspot.igv.graal.filters;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.filter.AbstractFilter;
-import com.sun.hotspot.igv.graph.Connection;
+import com.sun.hotspot.igv.graph.FigureConnection;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.InputSlot;
@@ -42,7 +42,7 @@ public class GraalCFGFilter extends AbstractFilter {
 
     @Override
     public void apply(Diagram d) {
-        Set<Connection> connectionsToRemove = new HashSet<>();
+        Set<FigureConnection> connectionsToRemove = new HashSet<>();
 
         for (Figure f : d.getFigures()) {
             Properties p = f.getProperties();
@@ -57,7 +57,7 @@ public class GraalCFGFilter extends AbstractFilter {
             }
             for (InputSlot is : f.getInputSlots()) {
                 if (is.getPosition() >= predCount && !"EndNode".equals(is.getProperties().get("class"))) {
-                    for (Connection c : is.getConnections()) {
+                    for (FigureConnection c : is.getConnections()) {
                         if (!"EndNode".equals(c.getOutputSlot().getFigure().getProperties().get("class"))) {
                             connectionsToRemove.add(c);
                         }
@@ -66,7 +66,7 @@ public class GraalCFGFilter extends AbstractFilter {
             }
         }
 
-        for (Connection c : connectionsToRemove) {
+        for (FigureConnection c : connectionsToRemove) {
             c.remove();
         }
 

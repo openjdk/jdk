@@ -100,7 +100,7 @@ final class Summary extends Command {
             }
             HashMap<Long, Statistics> stats = new HashMap<>();
             stats.put(0L, new Statistics(eventPrefix + "Metadata"));
-            stats.put(1L, new Statistics(eventPrefix + "CheckPoint"));
+            stats.put(1L, new Statistics(eventPrefix + "Checkpoint"));
             int minWidth = 0;
             while (true) {
                 long chunkEnd = ch.getEnd();

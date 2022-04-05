@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,9 +180,9 @@ public class ClassTree {
                 processType(aClass, configuration, baseEnums, subEnums);
             } else if (utils.isClass(aClass)) {
                 processType(aClass, configuration, baseClasses, subClasses);
-            } else if (utils.isInterface(aClass)) {
+            } else if (utils.isPlainInterface(aClass)) {
                 processInterface(aClass);
-            } else if (utils.isAnnotationType(aClass)) {
+            } else if (utils.isAnnotationInterface(aClass)) {
                 processType(aClass, configuration, baseAnnotationTypes,
                     subAnnotationTypes);
             }
@@ -336,9 +336,9 @@ public class ClassTree {
     private SortedSet<TypeElement> directSubClasses0(TypeElement typeElement, boolean isEnum) {
         if (isEnum) {
             return get(subEnums, typeElement);
-        } else if (utils.isAnnotationType(typeElement)) {
+        } else if (utils.isAnnotationInterface(typeElement)) {
             return get(subAnnotationTypes, typeElement);
-        } else if (utils.isInterface(typeElement)) {
+        } else if (utils.isPlainInterface(typeElement)) {
             return get(subInterfaces, typeElement);
         } else if (utils.isClass(typeElement)) {
             return get(subClasses, typeElement);
