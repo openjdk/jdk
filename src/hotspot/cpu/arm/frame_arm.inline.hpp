@@ -41,13 +41,21 @@ inline frame::frame() {
   _deopt_state = unknown;
 }
 
-inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
+inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool checkEntrant) {
   _sp = sp;
   _unextended_sp = sp;
   _fp = fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-  _cb = CodeCache::find_blob(pc);
+  if (checkEntrant) {
+    _cb = CodeCache::find_blob(pc);
+  } else {
+    _cb = CodeCache::find_blob_unsafe(pc);
+    // if the code blob appears to be non-entrant just ignore it
+    if (_cb != NULL && _cb->is_zombie()) {
+      _cb = NULL;
+    }
+  }
   adjust_unextended_sp();
 
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
@@ -59,8 +67,8 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc) {
   }
 }
 
-inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
-  init(sp, fp, pc);
+inline frame::frame(intptr_t* sp, intptr_t* fp, address pc, bool checkEntrant) {
+  init(sp, fp, pc, checkEntrant);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {
@@ -89,7 +97,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   _unextended_sp = sp;
   _fp = fp;
   assert(sp != NULL,"null SP ?");
-  _pc = (address)(sp[-1]);
+  _pc = pc_from_sp(sp);
   // assert(_pc != NULL, "no pc?"); // see comments in x86
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
@@ -224,6 +232,11 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   oop* result_adr = (oop*) map->location(R0->as_VMReg());
   guarantee(result_adr != NULL, "bad register save location");
   *result_adr = obj;
+}
+
+address frame::pc_from_sp(intptr_t* sp) {
+  assert(sp != NULL,"null SP ?");
+  return (address)(sp[-1]);
 }
 
 #endif // CPU_ARM_FRAME_ARM_INLINE_HPP

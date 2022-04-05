@@ -93,13 +93,13 @@
  public:
   // Constructors
 
-  frame(intptr_t* sp, intptr_t* fp, address pc);
+  frame(intptr_t* sp, intptr_t* fp, address pc, bool checkEntrant = true);
 
   frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
   frame(intptr_t* sp, intptr_t* fp);
 
-  void init(intptr_t* sp, intptr_t* fp, address pc);
+  void init(intptr_t* sp, intptr_t* fp, address pc, bool checkEntrant = true);
 
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)
@@ -117,5 +117,7 @@
   static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
+
+  static address pc_from_sp(intptr_t* sp);
 
 #endif // CPU_ARM_FRAME_ARM_HPP

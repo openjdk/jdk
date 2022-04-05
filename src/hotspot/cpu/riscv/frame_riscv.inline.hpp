@@ -45,7 +45,7 @@ inline frame::frame() {
 
 static int spin;
 
-inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc) {
+inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool checkEntrant) {
   intptr_t a = intptr_t(ptr_sp);
   intptr_t b = intptr_t(ptr_fp);
   _sp = ptr_sp;
@@ -53,7 +53,15 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc) {
   _fp = ptr_fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-  _cb = CodeCache::find_blob(pc);
+  if (checkEntrant) {
+    _cb = CodeCache::find_blob(pc);
+  } else {
+    _cb = CodeCache::find_blob_unsafe(pc);
+    // if the code blob appears to be non-entrant just ignore it
+    if (_cb != NULL && _cb->is_zombie()) {
+      _cb = NULL;
+    }
+  }
   adjust_unextended_sp();
 
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
@@ -65,8 +73,8 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc) {
   }
 }
 
-inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc) {
-  init(ptr_sp, ptr_fp, pc);
+inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool checkEntrant) {
+  init(ptr_sp, ptr_fp, pc, checkEntrant);
 }
 
 inline frame::frame(intptr_t* ptr_sp, intptr_t* unextended_sp, intptr_t* ptr_fp, address pc) {
