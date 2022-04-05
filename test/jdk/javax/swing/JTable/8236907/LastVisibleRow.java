@@ -83,7 +83,7 @@ public class LastVisibleRow {
             if (!compare(bufferedImageBefore, bufferedImageAfter)) {
                 ImageIO.write(bufferedImageBefore, "png", new File("bufferedImageBefore.png"));
                 ImageIO.write(bufferedImageAfter, "png", new File("bufferedImageAfter.png"));
-                throw new RuntimeException("Test Case Failed!!");
+                throw new RuntimeException("Test Case Failed!!, Last Row not Visible!!!");
             }
         } finally {
             if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
