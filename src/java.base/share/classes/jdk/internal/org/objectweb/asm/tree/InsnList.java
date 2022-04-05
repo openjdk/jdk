@@ -634,3 +634,4 @@ public class InsnList implements Iterable<AbstractInsnNode> {
         }
     }
 }
+

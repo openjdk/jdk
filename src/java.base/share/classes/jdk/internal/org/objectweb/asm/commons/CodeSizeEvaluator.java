@@ -237,3 +237,4 @@ public class CodeSizeEvaluator extends MethodVisitor implements Opcodes {
         super.visitMultiANewArrayInsn(descriptor, numDimensions);
     }
 }
+

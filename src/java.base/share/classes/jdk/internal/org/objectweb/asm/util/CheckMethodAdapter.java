@@ -1492,3 +1492,4 @@ public class CheckMethodAdapter extends MethodVisitor {
         }
     }
 }
+

@@ -700,3 +700,4 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
       */
     protected void onMethodExit(final int opcode) {}
 }
+

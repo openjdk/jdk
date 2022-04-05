@@ -109,8 +109,7 @@ public abstract class SignatureVisitor {
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4
-                && api != Opcodes.ASM10_EXPERIMENTAL) {
+                && api != Opcodes.ASM4) {
             throw new IllegalArgumentException("Unsupported api " + api);
         }
         this.api = api;
@@ -239,3 +238,4 @@ public abstract class SignatureVisitor {
     /** Ends the visit of a signature corresponding to a class or interface type. */
     public void visitEnd() {}
 }
+

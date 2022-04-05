@@ -56,57 +56,61 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+package jdk.internal.org.objectweb.asm.commons;
 
-package jdk.internal.org.objectweb.asm.tree;
-
-import java.util.List;
-import jdk.internal.org.objectweb.asm.ModuleVisitor;
+import jdk.internal.org.objectweb.asm.AnnotationVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
- * A node that represents an exported package with its name and the module that can access to it.
+ * An {@link AnnotationVisitor} adapter for type remapping.
  *
- * @author Remi Forax
+ * @deprecated use {@link AnnotationRemapper} instead.
+ * @author Eugene Kuleshov
  */
-public class ModuleExportNode {
+@Deprecated
+public class RemappingAnnotationAdapter extends AnnotationVisitor {
 
-    /** The internal name of the exported package. */
-    public String packaze;
+    protected final Remapper remapper;
 
-    /**
-      * The access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). Valid values are {@code
-      * ACC_SYNTHETIC} and {@code ACC_MANDATED}.
-      */
-    public int access;
-
-    /**
-      * The list of modules that can access this exported package, specified with fully qualified names
-      * (using dots). May be {@literal null}.
-      */
-    public List<String> modules;
-
-    /**
-      * Constructs a new {@link ModuleExportNode}.
-      *
-      * @param packaze the internal name of the exported package.
-      * @param access the package access flags, one or more of {@code ACC_SYNTHETIC} and {@code
-      *     ACC_MANDATED}.
-      * @param modules a list of modules that can access this exported package, specified with fully
-      *     qualified names (using dots).
-      */
-    public ModuleExportNode(final String packaze, final int access, final List<String> modules) {
-        this.packaze = packaze;
-        this.access = access;
-        this.modules = modules;
+    public RemappingAnnotationAdapter(
+            final AnnotationVisitor annotationVisitor, final Remapper remapper) {
+        this(Opcodes.ASM9, annotationVisitor, remapper);
     }
 
-    /**
-      * Makes the given module visitor visit this export declaration.
-      *
-      * @param moduleVisitor a module visitor.
-      */
-    public void accept(final ModuleVisitor moduleVisitor) {
-        moduleVisitor.visitExport(
-                packaze, access, modules == null ? null : modules.toArray(new String[0]));
+    protected RemappingAnnotationAdapter(
+            final int api, final AnnotationVisitor annotationVisitor, final Remapper remapper) {
+        super(api, annotationVisitor);
+        this.remapper = remapper;
+    }
+
+    @Override
+    public void visit(final String name, final Object value) {
+        av.visit(name, remapper.mapValue(value));
+    }
+
+    @Override
+    public void visitEnum(final String name, final String descriptor, final String value) {
+        av.visitEnum(name, remapper.mapDesc(descriptor), value);
+    }
+
+    @Override
+    public AnnotationVisitor visitAnnotation(final String name, final String descriptor) {
+        AnnotationVisitor annotationVisitor = av.visitAnnotation(name, remapper.mapDesc(descriptor));
+        return annotationVisitor == null
+                ? null
+                : (annotationVisitor == av
+                        ? this
+                        : new RemappingAnnotationAdapter(annotationVisitor, remapper));
+    }
+
+    @Override
+    public AnnotationVisitor visitArray(final String name) {
+        AnnotationVisitor annotationVisitor = av.visitArray(name);
+        return annotationVisitor == null
+                ? null
+                : (annotationVisitor == av
+                        ? this
+                        : new RemappingAnnotationAdapter(annotationVisitor, remapper));
     }
 }
 

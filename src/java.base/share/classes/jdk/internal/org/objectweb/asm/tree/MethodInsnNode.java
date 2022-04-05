@@ -153,3 +153,4 @@ public class MethodInsnNode extends AbstractInsnNode {
         return new MethodInsnNode(opcode, owner, name, desc, itf).cloneAnnotations(this);
     }
 }
+

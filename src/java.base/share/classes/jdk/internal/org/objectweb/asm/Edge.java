@@ -121,3 +121,4 @@ final class Edge {
         this.nextEdge = nextEdge;
     }
 }
+

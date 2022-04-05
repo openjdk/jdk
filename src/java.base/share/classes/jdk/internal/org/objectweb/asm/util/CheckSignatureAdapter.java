@@ -389,3 +389,4 @@ public class CheckSignatureAdapter extends SignatureVisitor {
         }
     }
 }
+

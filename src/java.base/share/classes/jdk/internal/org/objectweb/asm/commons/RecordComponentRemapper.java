@@ -147,3 +147,4 @@ public class RecordComponentRemapper extends RecordComponentVisitor {
                 .orDeprecatedValue(createAnnotationRemapper(annotationVisitor));
     }
 }
+

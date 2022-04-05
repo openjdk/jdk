@@ -96,3 +96,4 @@ public class ModuleProvideNode {
         moduleVisitor.visitProvide(service, providers.toArray(new String[0]));
     }
 }
+

@@ -202,3 +202,4 @@ public class SignatureRemapper extends SignatureVisitor {
         classNames.remove(classNames.size() - 1);
     }
 }
+

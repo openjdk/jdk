@@ -802,3 +802,4 @@ public class MethodNode extends MethodVisitor {
         methodVisitor.visitEnd();
     }
 }
+

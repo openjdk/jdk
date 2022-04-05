@@ -405,3 +405,4 @@ public class BasicInterpreter extends Interpreter<BasicValue> implements Opcodes
         return value1;
     }
 }
+

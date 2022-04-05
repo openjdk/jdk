@@ -1641,3 +1641,4 @@ public class ASMifier extends Printer {
         stringBuilder.append(labelNames.get(label));
     }
 }
+

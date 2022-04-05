@@ -113,3 +113,4 @@ public class LdcInsnNode extends AbstractInsnNode {
         return new LdcInsnNode(cst).cloneAnnotations(this);
     }
 }
+

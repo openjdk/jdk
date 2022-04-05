@@ -1079,7 +1079,7 @@ public class CheckClassAdapter extends ClassVisitor {
             final PrintWriter printWriter) {
         ClassNode classNode = new ClassNode();
         classReader.accept(
-                new CheckClassAdapter(/*latest*/ Opcodes.ASM10_EXPERIMENTAL, classNode, false) {},
+                new CheckClassAdapter(/*latest*/ Opcodes.ASM9, classNode, false) {},
                 ClassReader.SKIP_DEBUG);
 
         Type syperType = classNode.superName == null ? null : Type.getObjectType(classNode.superName);
@@ -1166,3 +1166,4 @@ public class CheckClassAdapter extends ClassVisitor {
         }
     }
 }
+

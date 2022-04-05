@@ -146,3 +146,4 @@ public class CheckFieldAdapter extends FieldVisitor {
         }
     }
 }
+

@@ -81,3 +81,4 @@ public interface TableSwitchGenerator {
     /** Generates the code for the default switch case. */
     void generateDefault();
 }
+

@@ -142,3 +142,4 @@ public final class ModuleResolutionAttribute extends Attribute {
         return byteVector;
     }
 }
+

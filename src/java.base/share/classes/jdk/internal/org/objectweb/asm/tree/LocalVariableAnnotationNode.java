@@ -169,3 +169,4 @@ public class LocalVariableAnnotationNode extends TypeAnnotationNode {
                         typeRef, typePath, startLabels, endLabels, indices, desc, visible));
     }
 }
+

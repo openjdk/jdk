@@ -1398,3 +1398,4 @@ public class GeneratorAdapter extends LocalVariablesSorter {
         mark(catchLabel);
     }
 }
+

@@ -155,3 +155,4 @@ public class TryCatchBlockSorter extends MethodNode {
         }
     }
 }
+
