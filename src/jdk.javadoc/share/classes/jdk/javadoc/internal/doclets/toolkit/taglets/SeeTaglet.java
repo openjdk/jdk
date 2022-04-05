@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
-        if (tags.isEmpty() && utils.isExecutableElement(holder)) {
+        if (tags.isEmpty() && utils.isMethod(holder)) {
             Input input = new DocFinder.Input(utils, holder, this);
             DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
             if (inheritedDoc.holder != null) {

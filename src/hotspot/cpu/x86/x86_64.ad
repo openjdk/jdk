@@ -10821,6 +10821,28 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
   ins_pipe(pipe_slow);
 %}
 
+instruct round_double_reg(rRegL dst, regD src, rRegL rtmp, rcx_RegL rcx, rFlagsReg cr)
+%{
+  match(Set dst (RoundD src));
+  effect(TEMP dst, TEMP rtmp, TEMP rcx, KILL cr);
+  format %{ "round_double $dst,$src \t! using $rtmp and $rcx as TEMP"%}
+  ins_encode %{
+    __ round_double($dst$$Register, $src$$XMMRegister, $rtmp$$Register, $rcx$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct round_float_reg(rRegI dst, regF src, rRegL rtmp, rcx_RegL rcx, rFlagsReg cr)
+%{
+  match(Set dst (RoundF src));
+  effect(TEMP dst, TEMP rtmp, TEMP rcx, KILL cr);
+  format %{ "round_float $dst,$src" %}
+  ins_encode %{
+    __ round_float($dst$$Register, $src$$XMMRegister, $rtmp$$Register, $rcx$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct convI2F_reg_reg(regF dst, rRegI src)
 %{
   predicate(!UseXmmI2F);

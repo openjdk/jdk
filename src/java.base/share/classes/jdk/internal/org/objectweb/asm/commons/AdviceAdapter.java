@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.util.ArrayList;
@@ -185,10 +186,12 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
                     throw new IllegalArgumentException("Invalid return in constructor");
                 case RETURN: // empty stack
                     onMethodExit(opcode);
+                    endConstructorBasicBlockWithoutSuccessor();
                     break;
                 case ATHROW: // 1 before n/a after
                     popValue();
                     onMethodExit(opcode);
+                    endConstructorBasicBlockWithoutSuccessor();
                     break;
                 case NOP:
                 case LALOAD: // remove 2 add 2
@@ -383,6 +386,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
                     popValue();
                     break;
                 case RET:
+                    endConstructorBasicBlockWithoutSuccessor();
                     break;
                 default:
                     throw new IllegalArgumentException(INVALID_OPCODE + opcode);
@@ -484,10 +488,10 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
         super.visitMethodInsn(opcodeAndSource, owner, name, descriptor, isInterface);
         int opcode = opcodeAndSource & ~Opcodes.SOURCE_MASK;
 
-        doVisitMethodInsn(opcode, descriptor);
+        doVisitMethodInsn(opcode, name, descriptor);
     }
 
-    private void doVisitMethodInsn(final int opcode, final String descriptor) {
+    private void doVisitMethodInsn(final int opcode, final String name, final String descriptor) {
         if (isConstructor && !superClassConstructorCalled) {
             for (Type argumentType : Type.getArgumentTypes(descriptor)) {
                 popValue();
@@ -502,7 +506,9 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
                     break;
                 case INVOKESPECIAL:
                     Object value = popValue();
-                    if (value == UNINITIALIZED_THIS && !superClassConstructorCalled) {
+                    if (value == UNINITIALIZED_THIS
+                            && !superClassConstructorCalled
+                            && name.equals("<init>")) {
                         superClassConstructorCalled = true;
                         onMethodEnter();
                     }
@@ -528,7 +534,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
             final Handle bootstrapMethodHandle,
             final Object... bootstrapMethodArguments) {
         super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
-        doVisitMethodInsn(Opcodes.INVOKEDYNAMIC, descriptor);
+        doVisitMethodInsn(Opcodes.INVOKEDYNAMIC, name, descriptor);
     }
 
     @Override
@@ -560,6 +566,9 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
                 case JSR:
                     pushValue(OTHER);
                     break;
+                case GOTO:
+                    endConstructorBasicBlockWithoutSuccessor();
+                    break;
                 default:
                     break;
             }
@@ -573,6 +582,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
         if (isConstructor && !superClassConstructorCalled) {
             popValue();
             addForwardJumps(dflt, labels);
+            endConstructorBasicBlockWithoutSuccessor();
         }
     }
 
@@ -583,6 +593,7 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
         if (isConstructor && !superClassConstructorCalled) {
             popValue();
             addForwardJumps(dflt, labels);
+            endConstructorBasicBlockWithoutSuccessor();
         }
     }
 
@@ -617,6 +628,19 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
             return;
         }
         forwardJumpStackFrames.put(label, new ArrayList<>(stackFrame));
+    }
+
+    private void endConstructorBasicBlockWithoutSuccessor() {
+        // The next instruction is not reachable from this instruction. If it is dead code, we
+        // should not try to simulate stack operations, and there is no need to insert advices
+        // here. If it is reachable with a backward jump, the only possible case is that the super
+        // class constructor has already been called (backward jumps are forbidden before it is
+        // called). If it is reachable with a forward jump, there are two sub-cases. Either the
+        // super class constructor has already been called when reaching the next instruction, or
+        // it has not been called. But in this case there must be a forwardJumpStackFrames entry
+        // for a Label designating the next instruction, and superClassConstructorCalled will be
+        // reset to false there. We can therefore always reset this field to true here.
+        superClassConstructorCalled = true;
     }
 
     private Object popValue() {
@@ -676,3 +700,4 @@ public abstract class AdviceAdapter extends GeneratorAdapter implements Opcodes 
       */
     protected void onMethodExit(final int opcode) {}
 }
+

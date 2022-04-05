@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,10 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
-import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -476,7 +471,41 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * @see MethodType
  * @since 9
  */
-public abstract class VarHandle implements Constable {
+public abstract sealed class VarHandle implements Constable
+     permits IndirectVarHandle, MemoryAccessVarHandleBase,
+             VarHandleByteArrayAsChars.ByteArrayViewVarHandle,
+             VarHandleByteArrayAsDoubles.ByteArrayViewVarHandle,
+             VarHandleByteArrayAsFloats.ByteArrayViewVarHandle,
+             VarHandleByteArrayAsInts.ByteArrayViewVarHandle,
+             VarHandleByteArrayAsLongs.ByteArrayViewVarHandle,
+             VarHandleByteArrayAsShorts.ByteArrayViewVarHandle,
+             VarHandleBooleans.Array,
+             VarHandleBooleans.FieldInstanceReadOnly,
+             VarHandleBooleans.FieldStaticReadOnly,
+             VarHandleBytes.Array,
+             VarHandleBytes.FieldInstanceReadOnly,
+             VarHandleBytes.FieldStaticReadOnly,
+             VarHandleChars.Array,
+             VarHandleChars.FieldInstanceReadOnly,
+             VarHandleChars.FieldStaticReadOnly,
+             VarHandleDoubles.Array,
+             VarHandleDoubles.FieldInstanceReadOnly,
+             VarHandleDoubles.FieldStaticReadOnly,
+             VarHandleFloats.Array,
+             VarHandleFloats.FieldInstanceReadOnly,
+             VarHandleFloats.FieldStaticReadOnly,
+             VarHandleInts.Array,
+             VarHandleInts.FieldInstanceReadOnly,
+             VarHandleInts.FieldStaticReadOnly,
+             VarHandleLongs.Array,
+             VarHandleLongs.FieldInstanceReadOnly,
+             VarHandleLongs.FieldStaticReadOnly,
+             VarHandleReferences.Array,
+             VarHandleReferences.FieldInstanceReadOnly,
+             VarHandleReferences.FieldStaticReadOnly,
+             VarHandleShorts.Array,
+             VarHandleShorts.FieldInstanceReadOnly,
+             VarHandleShorts.FieldStaticReadOnly {
     final VarForm vform;
     final boolean exact;
 
