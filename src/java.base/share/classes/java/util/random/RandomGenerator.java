@@ -513,11 +513,13 @@ public interface RandomGenerator {
      * @return a pseudorandomly chosen {@code float} value between
      *         zero (inclusive) and the bound (exclusive)
      *
-     * @throws IllegalArgumentException if {@code bound} is not finite
+     * @throws IllegalArgumentException if {@code bound} is not
+     *         both positive and finite
      *
-     * @implSpec The default implementation verifies that {@code bound} is valid
-     *           then invokes {@code nextDouble()} scaling and translating the
-     *           result to fit {@code 0.0f} and {@code bound} (exclusive).
+     * @implSpec The default implementation checks that {@code bound} is a
+     * positive finite float. Then invokes {@code nextFloat()}, scaling
+     * the result so that the final result lies between {@code 0.0f} (inclusive)
+     * and {@code bound} (exclusive).
      */
     default float nextFloat(float bound) {
         RandomSupport.checkBound(bound);
@@ -577,11 +579,13 @@ public interface RandomGenerator {
      * @return a pseudorandomly chosen {@code double} value between
      *         zero (inclusive) and the bound (exclusive)
      *
-     * @throws IllegalArgumentException if {@code bound} is not finite
+     * @throws IllegalArgumentException if {@code bound} is not
+     *         both positive and finite
      *
-     * @implSpec The default implementation verifies that {@code bound} is valid
-     *           then invokes {@code nextDouble()} scaling and translating the
-     *           result to fit {@code 0.0} and {@code bound} (exclusive).
+     * @implSpec The default implementation checks that {@code bound} is a
+     * positive finite double. Then invokes {@code nextDouble()}, scaling
+     * the result so that the final result lies between {@code 0.0} (inclusive)
+     * and {@code bound} (exclusive).
      */
     default double nextDouble(double bound) {
         RandomSupport.checkBound(bound);
