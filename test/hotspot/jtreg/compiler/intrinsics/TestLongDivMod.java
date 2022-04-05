@@ -23,8 +23,8 @@
 
 /**
 * @test
-* @summary Test x86 intrinsic for divideUnsigned() and remainderUnsigned() methods for Long
-* @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64"
+* @summary Test x86_64 intrinsic for divideUnsigned() and remainderUnsigned() methods for Long
+* @requires os.arch=="amd64" | os.arch=="x86_64"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestLongDivMod
 */
