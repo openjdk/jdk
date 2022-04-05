@@ -62,7 +62,6 @@ public class ArgCheck {
     // Depending on the mode the final backslash may act as an escape that may turn an added quote to a literal quote
     private static final String SPACE_AND_BACKSLASH = "SPACE AND BACKSLASH\\";
     private static final char DOUBLE_QUOTE = '"';
-    private static final char NEWLINE = '\n';
     private static final char BACKSLASH = '\\';
 
     private static final String AMBIGUOUS_PROP_NAME = "jdk.lang.Process.allowAmbiguousCommands";
@@ -75,8 +74,10 @@ public class ArgCheck {
     private static final List<String> ECHO_VBS_ARGS = Arrays.asList("CScript", "/b", ECHO_VBS_PATH);
 
     /**
-     * If zero arguments are supplied, run the test cases.
-     * If there are arguments, echo them to Stdout.
+     * If zero arguments are supplied, run the test cases, by launching each as a child process.
+     * If there are arguments, then this is a child Java process that prints each argument to stdout.
+     * The test can be run manually with -Djdk.lang.Process.allowAmbiguousCommands={"true", "false", ""}
+     * to run a matching subset of the tests.
      */
     public static void main(String[] args) throws IOException {
         if (args.length > 0) {
@@ -92,6 +93,7 @@ public class ArgCheck {
 
         int errors = 0;
         int success = 0;
+        int skipped = 0;
 
         for (CMD cmd : CASES) {
             // If System property jdk.lang.process.allowAmbiguousCommands matches the case, test it
@@ -107,9 +109,14 @@ public class ArgCheck {
                 }
             } else {
                 // skip unmatched cases
+                skipped++;
             }
         }
-        System.out.println("\nSuccess: " + success + ", errors: " + errors);
+        if (skipped > 0) {
+            System.out.printf("%d cases skipped, they did not match the tests with jdk.lang.Process.allowAmbiguousCommands: %s%n",
+                    skipped, AMBIGUOUS_PROP_BOOLEAN);
+        }
+        System.out.printf("\nSuccess: %d, errors: %d%n", success, errors);
         if (errors > 0) {
             throw new RuntimeException("Errors: " + errors);
         }
