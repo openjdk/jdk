@@ -270,7 +270,7 @@ bool MutableNUMASpace::update_layout(bool force) {
         }
       }
       if (!found) {
-        lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment()));
+        lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], page_size()));
       }
     }
 
@@ -492,10 +492,10 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   // Is there bottom?
   if (new_region.start() < intersection.start()) { // Yes
     // Try to coalesce small pages into a large one.
-    if (UseLargePages && page_size() >= alignment()) {
-      HeapWord* p = align_up(intersection.start(), alignment());
+    if (UseLargePages && page_size() >= page_size()) {
+      HeapWord* p = align_up(intersection.start(), page_size());
       if (new_region.contains(p)
-          && pointer_delta(p, new_region.start(), sizeof(char)) >= alignment()) {
+          && pointer_delta(p, new_region.start(), sizeof(char)) >= page_size()) {
         if (intersection.contains(p)) {
           intersection = MemRegion(p, intersection.end());
         } else {
@@ -511,10 +511,10 @@ void MutableNUMASpace::select_tails(MemRegion new_region, MemRegion intersection
   // Is there top?
   if (intersection.end() < new_region.end()) { // Yes
     // Try to coalesce small pages into a large one.
-    if (UseLargePages && page_size() >= alignment()) {
-      HeapWord* p = align_down(intersection.end(), alignment());
+    if (UseLargePages && page_size() >= page_size()) {
+      HeapWord* p = align_down(intersection.end(), page_size());
       if (new_region.contains(p)
-          && pointer_delta(new_region.end(), p, sizeof(char)) >= alignment()) {
+          && pointer_delta(new_region.end(), p, sizeof(char)) >= page_size()) {
         if (intersection.contains(p)) {
           intersection = MemRegion(intersection.start(), p);
         } else {
@@ -553,12 +553,12 @@ void MutableNUMASpace::merge_regions(MemRegion new_region, MemRegion* intersecti
             // That's the only case we have to make an additional bias_region() call.
             HeapWord* start = invalid_region->start();
             HeapWord* end = invalid_region->end();
-            if (UseLargePages && page_size() >= alignment()) {
-              HeapWord *p = align_down(start, alignment());
+            if (UseLargePages && page_size() >= page_size()) {
+              HeapWord *p = align_down(start, page_size());
               if (new_region.contains(p)) {
                 start = p;
               }
-              p = align_up(end, alignment());
+              p = align_up(end, page_size());
               if (new_region.contains(end)) {
                 end = p;
               }
@@ -589,7 +589,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
   // Compute chunk sizes
   size_t prev_page_size = page_size();
-  set_page_size(UseLargePages ? alignment() : os::vm_page_size());
+  set_page_size(UseLargePages ? page_size() : os::vm_page_size());
   HeapWord* rounded_bottom = align_up(bottom(), page_size());
   HeapWord* rounded_end = align_down(end(), page_size());
   size_t base_space_size_pages = pointer_delta(rounded_end, rounded_bottom, sizeof(char)) / page_size();
