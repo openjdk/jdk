@@ -2996,7 +2996,7 @@ void C2_MacroAssembler::stringL_hashcode(Register str1, Register cnt1, Register 
               vresult[] = { vresult0, vresult1, vresult2, vresult3 },
               vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
 
-  static jint power_of_31_backwards[] = {
+  static const jint power_of_31_backwards[] = {
      2111290369,
     -2010103841,   350799937,    11316127,   693101697,  -254736545,   961614017,    31019807, -2077209343,
       -67006753,  1244764481, -2038056289,   211350913,  -408824225,  -844471871,  -997072353,  1353309697,
@@ -3111,43 +3111,28 @@ void C2_MacroAssembler::stringL_hashcode(Register str1, Register cnt1, Register 
   // }
 
   movl(tmp, 0);
-  // h0 = IntVector.zero(I256);
-  movdl(vresult0, tmp);
-  vpbroadcastd(vresult0, vresult0, Assembler::AVX_256bit);
-  // h1 = IntVector.zero(I256);
-  movdl(vresult1, tmp);
-  vpbroadcastd(vresult1, vresult1, Assembler::AVX_256bit);
-  // h2 = IntVector.zero(I256);
-  movdl(vresult2, tmp);
-  vpbroadcastd(vresult2, vresult2, Assembler::AVX_256bit);
-  // h3 = IntVector.zero(I256);
-  movdl(vresult3, tmp);
-  vpbroadcastd(vresult3, vresult3, Assembler::AVX_256bit);
+  for (int idx = 0; idx < 4; idx++) {
+    // vresult = IntVector.zero(I256);
+    movdl(vresult[idx], tmp);
+    vpbroadcastd(vresult[idx], vresult[idx], Assembler::AVX_256bit);
+  }
 
   // vnext = IntVector.broadcast(I256, power_of_31_backwards[0]);
   movl(tmp, power_of_31_backwards[0]);
   movdl(vnext, tmp);
   vpbroadcastd(vnext, vnext, Assembler::AVX_256bit);
 
-  // vcoef0 = IntVector.fromArray(I256, power_of_31_backwards, 1);
-  load_vector(vcoef0, ExternalAddress(address(&power_of_31_backwards[1])), sizeof(jint) * 8);
-  // vcoef1 = IntVector.fromArray(I256, power_of_31_backwards, 9);
-  load_vector(vcoef1, ExternalAddress(address(&power_of_31_backwards[9])), sizeof(jint) * 8);
-  // vcoef2 = IntVector.fromArray(I256, power_of_31_backwards, 17);
-  load_vector(vcoef2, ExternalAddress(address(&power_of_31_backwards[17])), sizeof(jint) * 8);
-  // vcoef3 = IntVector.fromArray(I256, power_of_31_backwards, 25);
-  load_vector(vcoef3, ExternalAddress(address(&power_of_31_backwards[25])), sizeof(jint) * 8);
+  // vcoef = IntVector.fromArray(I256, power_of_31_backwards, 1);
+  for (int idx = 0; idx < 4; idx++) {
+    load_vector(vcoef[idx], ExternalAddress(address(&power_of_31_backwards[8*idx+1])), sizeof(jint) * 8);
+  }
 
+  // vcoef *= coef
   movdl(vtmp0, coef);
   vpbroadcastd(vtmp0, vtmp0, Assembler::AVX_256bit);
-  // vcoef0 *= coef
-  vpmulld(vcoef0, vcoef0, vtmp0, Assembler::AVX_256bit);
-  // vcoef1 *= coef
-  vpmulld(vcoef1, vcoef1, vtmp0, Assembler::AVX_256bit);
-  // vcoef2 *= coef
-  vpmulld(vcoef2, vcoef2, vtmp0, Assembler::AVX_256bit);
-  // vcoef3 *= coef
-  vpmulld(vcoef3, vcoef3, vtmp0, Assembler::AVX_256bit);
+  for (int idx = 0; idx < 4; idx++) {
+    vpmulld(vcoef[idx], vcoef[idx], vtmp0, Assembler::AVX_256bit);
+  }
 
   // for (i -= 32-1; i >= 0; i -= 32) {
   // i -= 32-1;
@@ -3158,35 +3143,20 @@ void C2_MacroAssembler::stringL_hashcode(Register str1, Register cnt1, Register 
   cmpl(i, 0);
   jcc(Assembler::less, LEN32_VECTOR_LOOP_END);
 
-  load_vector(vtmp0, Address(str1, i, Address::times(sizeof(jbyte)), 8*0), sizeof(jbyte) * 8);
-  load_vector(vtmp1, Address(str1, i, Address::times(sizeof(jbyte)), 8*1), sizeof(jbyte) * 8);
-  load_vector(vtmp2, Address(str1, i, Address::times(sizeof(jbyte)), 8*2), sizeof(jbyte) * 8);
-  load_vector(vtmp3, Address(str1, i, Address::times(sizeof(jbyte)), 8*3), sizeof(jbyte) * 8);
-  // vresult0 += vcoef0 * str1[i+0:i+7];
-  vector_unsigned_cast(vtmp0, vtmp0, sizeof(jint) * 8, T_BYTE, T_INT);
-  vpmulld(vtmp0, vtmp0, vcoef0, Assembler::AVX_256bit);
-  vpaddd(vresult0, vresult0, vtmp0, Assembler::AVX_256bit);
-  // vresult1 += vcoef1 * str1[i+8:i+15];
-  vector_unsigned_cast(vtmp1, vtmp1, sizeof(jint) * 8, T_BYTE, T_INT);
-  vpmulld(vtmp1, vtmp1, vcoef1, Assembler::AVX_256bit);
-  vpaddd(vresult1, vresult1, vtmp1, Assembler::AVX_256bit);
-  // vresult2 += vcoef2 * str1[i+16:i+23];
-  vector_unsigned_cast(vtmp2, vtmp2, sizeof(jint) * 8, T_BYTE, T_INT);
-  vpmulld(vtmp2, vtmp2, vcoef2, Assembler::AVX_256bit);
-  vpaddd(vresult2, vresult2, vtmp2, Assembler::AVX_256bit);
-  // vresult3 += vcoef4 * str1[i+24:i+31];
-  vector_unsigned_cast(vtmp3, vtmp3, sizeof(jint) * 8, T_BYTE, T_INT);
-  vpmulld(vtmp3, vtmp3, vcoef3, Assembler::AVX_256bit);
-  vpaddd(vresult3, vresult3, vtmp3, Assembler::AVX_256bit);
+  for (int idx = 0; idx < 4; idx++) {
+    load_vector(vtmp[idx], Address(str1, i, Address::times(sizeof(jbyte)), 8*idx), sizeof(jbyte) * 8);
+  }
+  // vresult += vcoef * str1[i+8*idx:i+8*idx+7];
+  for (int idx = 0; idx < 4; idx++) {
+    vector_unsigned_cast(vtmp[idx], vtmp[idx], sizeof(jint) * 8, T_BYTE, T_INT);
+    vpmulld(vtmp[idx], vtmp[idx], vcoef[idx], Assembler::AVX_256bit);
+    vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
+  }
 
-  // vcoef0 *= vnext
-  vpmulld(vcoef0, vcoef0, vnext, Assembler::AVX_256bit);
-  // vcoef1 *= vnext
-  vpmulld(vcoef1, vcoef1, vnext, Assembler::AVX_256bit);
-  // vcoef2 *= vnext
-  vpmulld(vcoef2, vcoef2, vnext, Assembler::AVX_256bit);
-  // vcoef3 *= vnext
-  vpmulld(vcoef3, vcoef3, vnext, Assembler::AVX_256bit);
+  // vcoef *= vnext
+  for (int idx = 0; idx < 4; idx++) {
+    vpmulld(vcoef[idx], vcoef[idx], vnext, Assembler::AVX_256bit);
+  }
 
   // i -= 32;
   subl(i, 32);
@@ -3195,14 +3165,10 @@ void C2_MacroAssembler::stringL_hashcode(Register str1, Register cnt1, Register 
   bind(LEN32_VECTOR_LOOP_END);
   // }
 
-  // result += vresult0.reduceLanes(ADD);
-  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult0, vtmp0, vtmp1);
-  // result += vresult1.reduceLanes(ADD);
-  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult1, vtmp2, vtmp3);
-  // result += vresult2.reduceLanes(ADD);
-  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult2, vtmp0, vtmp1);
-  // result += vresult3.reduceLanes(ADD);
-  reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult3, vtmp2, vtmp3);
+  // result += vresult.reduceLanes(ADD);
+  for (int idx = 0; idx < 4; idx++) {
+    reduceI(Op_AddReductionVI, 256/(sizeof(jint)*8), result, result, vresult[idx], vtmp[(idx*2+0)%4], vtmp[(idx*2+1)%4]);
+  }
 
   // }
 
