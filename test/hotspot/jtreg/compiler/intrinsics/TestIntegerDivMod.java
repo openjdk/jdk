@@ -80,7 +80,9 @@ public class TestIntegerDivMod {
     @Warmup(10000)
     @IR(counts = {"UDivModI", ">= 1"}) // Atleast one UDivModI node is generated if intrinsic is used
     public void testDivModUnsigned() {
-        for (int i = 0; i < BUFFER_SIZE; i++)  divmod(dividends[i], divisors[i], i);
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            divmod(dividends[i], divisors[i], i);
+        }
         checkResult("divmodUnsigned");
     }
 
@@ -104,8 +106,24 @@ public class TestIntegerDivMod {
                 default: throw new IllegalArgumentException("incorrect mode");
             }
             if (mismatch) {
-                throw new RuntimeException("Test failed");
+                throw new RuntimeException(errorMessage(mode, i, quo, rem));
             }
         }
+    }
+
+    private String errorMessage(String mode, int i, int quo, int rem) {
+        StringBuilder sb = new StringBuilder(mode);
+        sb = sb.append(" test error at index=").append(i);
+        sb = sb.append(": dividend=").append(dividends[i]);
+        sb = sb.append("; divisor= ").append(divisors[i]);
+        if (!mode.equals("remainderUnsigned")) {
+            sb = sb.append("; quotient (expected)= ").append(quo);
+            sb = sb.append("; quotient (actual)= ").append(quotients[i]);
+        }
+        if (!mode.equals("divideUnsigned")) {
+            sb = sb.append("; remainder (expected)= ").append(rem);
+            sb = sb.append("; remainder (actual)= ").append(remainders[i]);
+        }
+        return sb.toString();
     }
 }
