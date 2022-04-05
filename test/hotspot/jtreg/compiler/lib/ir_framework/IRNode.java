@@ -134,6 +134,7 @@ public class IRNode {
     public static final String SCOPE_OBJECT = "(.*# ScObj.*" + END;
     public static final String MEMBAR = START + "MemBar" + MID + END;
     public static final String SAFEPOINT = START + "SafePoint" + MID + END;
+    public static final String POPCOUNT_L = START + "PopCountL" + MID + END;
 
     /**
      * Called by {@link IRMatcher} to merge special composite nodes together with additional user-defined input.
