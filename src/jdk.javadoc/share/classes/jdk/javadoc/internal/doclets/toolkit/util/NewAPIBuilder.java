@@ -39,11 +39,6 @@ import static com.sun.source.doctree.DocTree.Kind.SINCE;
  * that were added in one of the releases specified by the {@code --since}
  * option. The release names must exactly match the names used in the javadoc
  * {@code @since} tags of the respective elements.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class NewAPIBuilder extends SummaryAPIListBuilder {
 

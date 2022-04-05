@@ -58,11 +58,6 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  * generates "package-list"(lists all the packages which are getting
  * documented) file in the current or the destination directory, while
  * generating the documentation.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Extern {
 

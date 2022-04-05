@@ -45,11 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * is also created to the specified field.  If a name is not specified, the value
  * is retrieved for the field that the inline tag appears on.  The name is specified
  * in the following format:  [fully qualified class name]#[constant field name].
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 
 public class ValueTaglet extends BaseTaglet {

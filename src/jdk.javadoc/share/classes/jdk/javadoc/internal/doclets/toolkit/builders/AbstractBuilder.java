@@ -46,11 +46,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * {@link ConstantsSummaryBuilder} to build a constant summary, all it has to
  * do is implement the ConstantsSummaryWriter interface and pass it to the
  * builder using a WriterFactory.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 
 public abstract class AbstractBuilder {

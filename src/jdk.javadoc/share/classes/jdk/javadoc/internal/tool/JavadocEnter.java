@@ -41,11 +41,6 @@ import com.sun.tools.javac.main.JavaCompiler;
 /**
  *  Javadoc's own enter phase does a few things above and beyond that
  *  done by javac.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class JavadocEnter extends Enter {
     public static JavadocEnter instance(Context context) {

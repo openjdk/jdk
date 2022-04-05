@@ -33,11 +33,6 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
 /**
  * Wraps an IOException and the path for the resource to which it applies.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
- *
  * @apiNote This exception should be thrown by a doclet when an IO exception occurs
  *  and the file is known that was in use when the exception occurred.
  */

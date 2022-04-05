@@ -54,11 +54,6 @@ import static jdk.javadoc.internal.tool.ToolOptions.ToolOption.Kind.*;
  * or {@link #ignoreSourceErrors}. Unless otherwise stated,
  * these methods should all be taken as just accessing the value
  * of the associated option.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ToolOptions {
     // The following are the names of options handled in the first pass of option decoding,

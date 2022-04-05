@@ -31,11 +31,6 @@ import java.util.regex.Pattern;
 /**
  * Enum representing HTML styles, with associated entries in the stylesheet files.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @apiNote
  * Despite the name, the members of this enum provide values for the HTML {@code class} attribute,
  * and <strong>not</strong> the HTML {@code style} attribute.
