@@ -242,17 +242,19 @@ public:
   void stringL_indexof_char(Register str1, Register cnt1, Register ch, Register result,
                            XMMRegister vec1, XMMRegister vec2, XMMRegister vec3, Register tmp);
 
-  void stringL_hashcode(Register str1, Register cnt1, Register result,
-                        Register i, Register coef, Register tmp, XMMRegister vnext,
-                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
-                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
-                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3);
+  void array_hashcode(Register str1, Register cnt1, Register result,
+                      Register i, Register coef, Register tmp, XMMRegister vnext,
+                      XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                      XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                      XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
+                      BasicType eltype);
 
-  void stringU_hashcode(Register str1, Register cnt1, Register result,
-                        Register i, Register coef, Register tmp, XMMRegister vnext,
-                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
-                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
-                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3);
+  // helper functions for array_hashcode
+  int array_hashcode_elsize(BasicType eltype);
+  void array_hashcode_elload(Register dst, Address src, BasicType eltype);
+  void array_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype);
+  void array_hashcode_elvload(XMMRegister dst, ExternalAddress src, BasicType eltype);
+  void array_hashcode_elvcast(XMMRegister dst, BasicType eltype);
 
   // IndexOf strings.
   // Small strings are loaded through stack if they cross page boundary.

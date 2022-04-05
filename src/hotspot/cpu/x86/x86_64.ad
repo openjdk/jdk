@@ -11650,13 +11650,13 @@ instruct stringL_hashcode(rdi_RegP str1, rdx_RegI cnt1, rbx_RegI result,
 
   format %{ "String HashCode byte[] $str1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
-    __ stringL_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
-                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
-                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
-                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
-                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                        $tmp_vec13$$XMMRegister);
+    __ array_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                      $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                      $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                      $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                      $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                      $tmp_vec13$$XMMRegister, T_BYTE);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -11677,13 +11677,13 @@ instruct stringU_hashcode(rdi_RegP str1, rdx_RegI cnt1, rbx_RegI result,
 
   format %{ "String HashCode char[] $str1,$cnt1 -> $result   // KILL all" %}
   ins_encode %{
-    __ stringU_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
-                        $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                        $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
-                        $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
-                        $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
-                        $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
-                        $tmp_vec13$$XMMRegister);
+    __ array_hashcode($str1$$Register, $cnt1$$Register, $result$$Register,
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                      $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                      $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                      $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                      $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                      $tmp_vec13$$XMMRegister, T_CHAR);
   %}
   ins_pipe( pipe_slow );
 %}

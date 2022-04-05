@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandle;
@@ -122,9 +122,11 @@ public class StringHashCode {
 
         @Setup
         public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+            Random rnd = new Random(42);
+
             char[] str = new char[size];
             for (int i = 0; i < size; i++) {
-                str[i] = alphabet.charAt(ThreadLocalRandom.current().nextInt(alphabet.length()));
+                str[i] = alphabet.charAt(rnd.nextInt(alphabet.length()));
             }
             latin1 = new String(str).getBytes("US-ASCII");
             utf16 = new String(str).getBytes("UTF-16");
