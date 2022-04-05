@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,12 @@ public class HtmlDocument {
     private final Content docContent;
 
     /**
-     * Constructor to construct an HTML document.
+     * Constructs an HTML document.
      *
-     * @param htmlTree HTML tree of the document
+     * @param html the {@link TagName#HTML HTML} element of the document
      */
-    public HtmlDocument(Content htmlTree) {
-        docContent = htmlTree;
+    public HtmlDocument(Content html) {
+        docContent = html;
     }
 
     /**

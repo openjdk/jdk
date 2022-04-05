@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "jvm_io.h"
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -78,6 +80,8 @@ class HandshakeOperation : public CHeapObj<mtThread> {
   const char* name()               { return _handshake_cl->name(); }
   bool is_async()                  { return _handshake_cl->is_async(); }
   bool is_suspend()                { return _handshake_cl->is_suspend(); }
+  bool is_async_exception()        { return _handshake_cl->is_async_exception(); }
+  bool is_ThreadDeath()            { return _handshake_cl->is_ThreadDeath(); }
 };
 
 class AsyncHandshakeOperation : public HandshakeOperation {
@@ -313,7 +317,6 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 
   // Only actually execute the operation for non terminated threads.
   if (!thread->is_terminated()) {
-    NoSafepointVerifier nsv;
     _handshake_cl->do_thread(thread);
   }
 
@@ -426,6 +429,7 @@ HandshakeState::HandshakeState(JavaThread* target) :
   _queue(),
   _lock(Monitor::nosafepoint, "HandshakeState_lock"),
   _active_handshaker(),
+  _async_exceptions_blocked(false),
   _suspended(false),
   _async_suspend_handshake(false)
 {
@@ -443,39 +447,61 @@ bool HandshakeState::operation_pending(HandshakeOperation* op) {
   return _queue.contains(mo);
 }
 
-static bool no_suspend_filter(HandshakeOperation* op) {
-  return !op->is_suspend();
+// Filters
+static bool non_self_executable_filter(HandshakeOperation* op) {
+  return !op->is_async();
+}
+static bool no_async_exception_filter(HandshakeOperation* op) {
+  return !op->is_async_exception();
+}
+static bool async_exception_filter(HandshakeOperation* op) {
+  return op->is_async_exception();
+}
+static bool is_ThreadDeath_filter(HandshakeOperation* op) {
+  return op->is_ThreadDeath();
+}
+static bool no_suspend_no_async_exception_filter(HandshakeOperation* op) {
+  return !op->is_suspend() && !op->is_async_exception();
 }
 
-HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend) {
+HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool check_async_exception) {
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  if (allow_suspend) {
+  assert(allow_suspend || !check_async_exception, "invalid case");
+  if (!allow_suspend) {
+    return _queue.peek(no_suspend_no_async_exception_filter);
+  } else if (check_async_exception && !_async_exceptions_blocked) {
     return _queue.peek();
   } else {
-    return _queue.peek(no_suspend_filter);
+    return _queue.peek(no_async_exception_filter);
   }
 }
 
-static bool non_self_queue_filter(HandshakeOperation* op) {
-  return !op->is_async();
+bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exception) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  return get_op_for_self(allow_suspend, check_async_exception) != NULL;
+}
+
+bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
+  if (!has_operation()) return false;
+  MutexLocker ml(_lock.owned_by_self() ? NULL :  &_lock, Mutex::_no_safepoint_check_flag);
+  if (!ThreadDeath_only) {
+    return _queue.peek(async_exception_filter) != NULL;
+  } else {
+    return _queue.peek(is_ThreadDeath_filter) != NULL;
+  }
 }
 
 bool HandshakeState::have_non_self_executable_operation() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.contains(non_self_queue_filter);
-}
-
-bool HandshakeState::has_a_non_suspend_operation() {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  return _queue.contains(no_suspend_filter);
+  return _queue.contains(non_self_executable_filter);
 }
 
 HandshakeOperation* HandshakeState::get_op() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.peek(non_self_queue_filter);
+  return _queue.peek(non_self_executable_filter);
 };
 
 void HandshakeState::remove_op(HandshakeOperation* op) {
@@ -485,7 +511,7 @@ void HandshakeState::remove_op(HandshakeOperation* op) {
   assert(ret == op, "Popped op must match requested op");
 };
 
-bool HandshakeState::process_by_self(bool allow_suspend) {
+bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_exception) {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
 
@@ -493,15 +519,12 @@ bool HandshakeState::process_by_self(bool allow_suspend) {
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
-  // Handshakes cannot safely safepoint.
-  // The exception to this rule is the asynchronous suspension handshake.
-  // It by-passes the NSV by manually doing the transition.
-  NoSafepointVerifier nsv;
-
   while (has_operation()) {
+    // Handshakes cannot safely safepoint. The exceptions to this rule are
+    // the asynchronous suspension and unsafe access error handshakes.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
-    HandshakeOperation* op = get_op_for_self(allow_suspend);
+    HandshakeOperation* op = get_op_for_self(allow_suspend, check_async_exception);
     if (op != NULL) {
       assert(op->_target == NULL || op->_target == Thread::current(), "Wrong thread");
       bool async = op->is_async();
@@ -517,8 +540,8 @@ bool HandshakeState::process_by_self(bool allow_suspend) {
         // An asynchronous handshake may put the JavaThread in blocked state (safepoint safe).
         // The destructor ~PreserveExceptionMark touches the exception oop so it must not be executed,
         // since a safepoint may be in-progress when returning from the async handshake.
-        op->do_handshake(_handshakee); // acquire, op removed after
         remove_op(op);
+        op->do_handshake(_handshakee);
         log_handshake_info(((AsyncHandshakeOperation*)op)->start_time(), op->name(), 1, 0, "asynchronous");
         delete op;
         return true; // Must check for safepoints
@@ -729,4 +752,30 @@ bool HandshakeState::resume() {
   set_suspended(false);
   _lock.notify();
   return true;
+}
+
+void HandshakeState::handle_unsafe_access_error() {
+  if (is_suspended()) {
+    // A suspend handshake was added to the queue after the
+    // unsafe access error. Since the suspender has already
+    // considered this JT as suspended and assumes it won't go
+    // back to Java until resumed we cannot create the exception
+    // object yet. Add a new unsafe access error operation to
+    // the end of the queue and try again in the next attempt.
+    Handshake::execute(new UnsafeAccessErrorHandshake(), _handshakee);
+    log_info(handshake)("JavaThread " INTPTR_FORMAT " skipping unsafe access processing due to suspend.", p2i(_handshakee));
+    return;
+  }
+  // Release the handshake lock before constructing the oop to
+  // avoid deadlocks since that can block. This will allow the
+  // JavaThread to execute normally as if it was outside a handshake.
+  // We will reacquire the handshake lock at return from ~MutexUnlocker.
+  MutexUnlocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  // We may be at method entry which requires we save the do-not-unlock flag.
+  UnlockFlagSaver fs(_handshakee);
+  Handle h_exception = Exceptions::new_exception(_handshakee, vmSymbols::java_lang_InternalError(), "a fault occurred in an unsafe memory access operation");
+  if (h_exception()->is_a(vmClasses::InternalError_klass())) {
+    java_lang_InternalError::set_during_unsafe_access(h_exception());
+  }
+  _handshakee->handle_async_exception(h_exception());
 }

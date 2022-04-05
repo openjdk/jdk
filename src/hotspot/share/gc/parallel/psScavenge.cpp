@@ -162,13 +162,15 @@ public:
   }
 
   template <class T> void do_oop_work(T* p) {
-    assert (oopDesc::is_oop(RawAccess<IS_NOT_NULL>::oop_load(p)),
-            "expected an oop while scanning weak refs");
+#ifdef ASSERT
+    // Referent must be non-null and in from-space
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+    assert(oopDesc::is_oop(obj), "referent must be an oop");
+    assert(PSScavenge::is_obj_in_young(obj), "must be in young-gen");
+    assert(!PSScavenge::is_obj_in_to_space(obj), "must be in from-space");
+#endif
 
-    // Weak refs may be visited more than once.
-    if (PSScavenge::should_scavenge(p, _to_space)) {
-      _promotion_manager->copy_and_push_safe_barrier</*promote_immediately=*/false>(p);
-    }
+    _promotion_manager->copy_and_push_safe_barrier</*promote_immediately=*/false>(p);
   }
   virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { PSKeepAliveClosure::do_oop_work(p); }
