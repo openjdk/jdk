@@ -55,7 +55,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   MutableSpaceMangler* _mangler;
   // The last region which page had been setup to be interleaved.
   MemRegion _last_setup_region;
-  size_t _page_size;
+  size_t _alignment;
   HeapWord* _bottom;
   HeapWord* volatile _top;
   HeapWord* _end;
@@ -66,6 +66,8 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
+
+  size_t used_page_size() const;
 
  public:
   virtual ~MutableSpace();
@@ -83,7 +85,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   HeapWord* volatile* top_addr()           { return &_top; }
   HeapWord** end_addr()                    { return &_end; }
 
-  size_t page_size()                       { return _page_size; }
+  size_t alignment()                       { return _alignment; }
 
   MemRegion region() const { return MemRegion(bottom(), end()); }
 

@@ -35,16 +35,15 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t page_size) :
+MutableSpace::MutableSpace(size_t alignment) :
   _mangler(NULL),
   _last_setup_region(),
-  _page_size(page_size),
+  _alignment(alignment),
   _bottom(NULL),
   _top(NULL),
   _end(NULL)
 {
-  assert(MutableSpace::page_size() > 0, "invalid page size");
-  assert(MutableSpace::page_size() % os::vm_page_size() == 0,
+  assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);
 }
@@ -113,17 +112,19 @@ void MutableSpace::initialize(MemRegion mr,
     }
     assert(mr.contains(head) && mr.contains(tail), "Sanity");
 
+    size_t page_size = UseLargePages ? alignment() : os::vm_page_size();
+
     if (UseNUMA) {
-      numa_setup_pages(head, page_size(), clear_space);
-      numa_setup_pages(tail, page_size(), clear_space);
+      numa_setup_pages(head, page_size, clear_space);
+      numa_setup_pages(tail, page_size, clear_space);
     }
 
     if (AlwaysPreTouch) {
       PretouchTask::pretouch("ParallelGC PreTouch head", (char*)head.start(), (char*)head.end(),
-                             page_size(), pretouch_workers);
+                             page_size, pretouch_workers);
 
       PretouchTask::pretouch("ParallelGC PreTouch tail", (char*)tail.start(), (char*)tail.end(),
-                             page_size(), pretouch_workers);
+                             page_size, pretouch_workers);
     }
 
     // Remember where we stopped so that we can continue later.
