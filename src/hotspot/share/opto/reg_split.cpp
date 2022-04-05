@@ -934,6 +934,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                   if (n->is_Phi()) {
                     break;
                   }
+                  if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
+                    break;
+                  }
                   // Found a def?  Better split after it.
                   if (_lrg_map.live_range_id(n) == lidx) {
                     break;
@@ -1026,6 +1029,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
           if (inpidx > old_last && ((inpidx - oopoff) & 1) == DERIVED) {
             continue;  // skip derived_debug added below
           }
+//          if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
+//            continue;
+//          }
           // Get lidx of input
           uint useidx = _lrg_map.find_id(n->in(inpidx));
           // Not a brand-new split, and it is a spill use
@@ -1076,7 +1082,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
               assert(lrgs(lidxs.at(slidx))._region >= region, "");
 //              assert(lrgs(lidxs.at(slidx))._min_region <= region, "");
               assert(b->_region <= region, "");
-              def = split_Rematerialize( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
+              assert(!(n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit), "");
+              uint pos = insidx;
+              while (b->get_node(pos-1)->is_SpillCopy() &&
+                     b->get_node(pos-1)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+                pos--;
+              }
+              def = split_Rematerialize( def, b, pos, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
               if( !def ) return 0; // Bail out
               insidx += b->number_of_nodes()-old_size;
             }
@@ -1413,7 +1425,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       // ********** Split Left Over Mem-Mem Moves **********
       // Check for mem-mem copies and split them now.  Do not do this
       // to copies about to be spilled; they will be Split shortly.
-      if (copyidx && b->_region <= region) {
+      if (copyidx && b->_region <= region && !(n->is_SpillCopy() && (n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry || n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit))) {
         Node *use = n->in(copyidx);
         uint useidx = _lrg_map.find_id(use);
         if (useidx < _lrg_map.max_lrg_id() &&       // This is not a new split
@@ -1573,7 +1585,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         int insert = pred->end_idx();
         while (insert >= 1 &&
                pred->get_node(insert - 1)->is_SpillCopy() &&
-               _lrg_map.find(pred->get_node(insert - 1)) >= lrgs_before_phi_split) {
+                (pred->get_node(insert - 1)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry ||
+                 _lrg_map.find(pred->get_node(insert - 1)) >= lrgs_before_phi_split)) {
           insert--;
         }
         assert(lrgs(lidxs.at(slidx))._region >= region, "");

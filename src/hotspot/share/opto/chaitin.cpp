@@ -1083,19 +1083,29 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 //          tty->print("XXX (def) %d", vreg); n->dump();
 //        }
 
-        lrg._region = MAX2(lrg._region, block->_region);
-        lrg._region2 = MIN2(lrg._region2, block->_region);
         if (_spilled_on_entry_to_prev_region.test(n->_idx) || _spilled_on_exit_to_prev_region.test(n->_idx)) {
           lrg._spilled_around_prev_region = 1;
         }
 
-//        if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
-//          assert(block->_num_succs == 1, "");
-//          assert(block->_succs[0]->_region > block->_region, "should be crossing region boundary");
-//          lrg._region2 = MIN2(lrg._region2, block->_succs[0]->_region);
-//        } else {
-//          lrg._region2 = MIN2(lrg._region2, block->_region);
-//        }
+        uint block_region = block->_region;
+
+        if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+          assert(block->_num_succs == 1, "");
+          assert(block->_succs[0]->_region > block->_region, "should be crossing region boundary");
+#ifdef ASSERT
+          assert(!block->end()->is_SpillCopy(), "");
+          assert(block->get_node(block->end_idx()-1)->is_SpillCopy() && block->get_node(block->end_idx()-1)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry, "");
+          for (int k = block->end_idx()-2; k >= 0; k--) {
+            Node* n = block->get_node(k);
+            Node* m = block->get_node(k+1);
+            assert(!(n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) || (m->is_SpillCopy() && m->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry), "");
+          }
+#endif
+          block_region = block->_succs[0]->_region;
+        }
+
+        lrg._region = MAX2(lrg._region, block_region);
+        lrg._region2 = MIN2(lrg._region2, block_region);
 
         // Check for float-vs-int live range (used in register-pressure
         // calculations)
@@ -1390,15 +1400,24 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 
         LRG &lrg = lrgs(vreg);
 
-        lrg._region = MAX2(lrg._region, block->_region);
-        lrg._region2 = MIN2(lrg._region2, block->_region);
-//        if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
-//          assert(block->num_preds() == 2, "");
-//          assert(_cfg.get_block_for_node(block->pred(1))->_region >  block->_region, "");
-//          lrg._region2 = MIN2(lrg._region2, _cfg.get_block_for_node(block->pred(1))->_region);
-//        } else {
-//          lrg._region2 = MIN2(lrg._region2, block->_region);
-//        }
+        uint block_region = block->_region;
+        if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) {
+          assert(block->num_preds() == 2, "");
+          assert(_cfg.get_block_for_node(block->pred(1))->_region >  block->_region, "");
+#ifdef ASSERT
+          assert(!block->end()->is_SpillCopy(), "");
+          assert(block->get_node(1)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit, "");
+          for (uint k = 2; k < block->end_idx(); k++) {
+            Node* n = block->get_node(k);
+            Node* m = block->get_node(k-1);
+            assert(!(n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit) || (m->is_SpillCopy() && m->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit), "");
+          }
+#endif
+          block_region = _cfg.get_block_for_node(block->pred(1))->_region;
+        }
+
+        lrg._region = MAX2(lrg._region, block_region);
+        lrg._region2 = MIN2(lrg._region2, block_region);
 
         // // Testing for floating point code shape
         // Node *test = n->in(k);

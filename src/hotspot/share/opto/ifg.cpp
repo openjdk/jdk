@@ -483,7 +483,7 @@ static uint first_nonphi_index(Block* b) {
 static void move_exception_node_up(Block* b, uint first_inst, uint last_inst) {
   for (uint i = first_inst; i < last_inst; i++) {
     Node* ex = b->get_node(i);
-    if (ex->is_SpillCopy()) {
+    if (ex->is_SpillCopy() && !(ex->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry || ex->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionExit)) {
       continue;
     }
 
