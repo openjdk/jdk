@@ -125,18 +125,17 @@ char* Arguments::_ext_dirs = NULL;
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
 
-bool PathString::set_value(const char *value) {
+bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
+  char* new_value = AllocateHeap(strlen(value)+1, mtArguments, alloc_failmode);
+  if (new_value == NULL) {
+    assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "must be");
+    return false;
+  }
   if (_value != NULL) {
     FreeHeap(_value);
   }
-  _value = AllocateHeap(strlen(value)+1, mtArguments);
-  assert(_value != NULL, "Unable to allocate space for new path value");
-  if (_value != NULL) {
-    strcpy(_value, value);
-  } else {
-    // not able to allocate
-    return false;
-  }
+  _value = new_value;
+  strcpy(_value, value);
   return true;
 }
 
@@ -892,11 +891,19 @@ static bool set_bool_flag(JVMFlag* flag, bool value, JVMFlagOrigin origin) {
   }
 }
 
-static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
+static bool set_fp_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
+  // strtod allows leading whitespace, but our flag format does not.
+  if (*value == '\0' || isspace(*value)) {
+    return false;
+  }
   char* end;
   errno = 0;
   double v = strtod(value, &end);
   if ((errno != 0) || (*end != 0)) {
+    return false;
+  }
+  if (g_isnan(v) || !g_isfinite(v)) {
+    // Currently we cannot handle these special values.
     return false;
   }
 
@@ -906,60 +913,48 @@ static bool set_fp_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin
   return false;
 }
 
-static JVMFlag::Error set_numeric_flag(JVMFlag* flag, char* value, JVMFlagOrigin origin) {
-  if (flag == NULL) {
-    return JVMFlag::INVALID_FLAG;
-  }
+static bool set_numeric_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
+  JVMFlag::Error result = JVMFlag::WRONG_FORMAT;
 
   if (flag->is_int()) {
     int v;
     if (parse_integer(value, &v)) {
-      return JVMFlagAccess::set_int(flag, &v, origin);
+      result = JVMFlagAccess::set_int(flag, &v, origin);
     }
   } else if (flag->is_uint()) {
     uint v;
     if (parse_integer(value, &v)) {
-      return JVMFlagAccess::set_uint(flag, &v, origin);
+      result = JVMFlagAccess::set_uint(flag, &v, origin);
     }
   } else if (flag->is_intx()) {
     intx v;
     if (parse_integer(value, &v)) {
-      return JVMFlagAccess::set_intx(flag, &v, origin);
+      result = JVMFlagAccess::set_intx(flag, &v, origin);
     }
   } else if (flag->is_uintx()) {
     uintx v;
     if (parse_integer(value, &v)) {
-      return JVMFlagAccess::set_uintx(flag, &v, origin);
+      result = JVMFlagAccess::set_uintx(flag, &v, origin);
     }
   } else if (flag->is_uint64_t()) {
     uint64_t v;
     if (parse_integer(value, &v)) {
-      return JVMFlagAccess::set_uint64_t(flag, &v, origin);
+      result = JVMFlagAccess::set_uint64_t(flag, &v, origin);
     }
   } else if (flag->is_size_t()) {
     size_t v;
     if (parse_integer(value, &v)) {
-      return JVMFlagAccess::set_size_t(flag, &v, origin);
-    }
-  } else if (flag->is_double()) {
-    // This function parses only input strings without a decimal
-    // point character (.)
-    // If a string looks like a FP number, it would be parsed by
-    // set_fp_numeric_flag(). See Arguments::parse_argument().
-    jlong v;
-    if (parse_integer(value, &v)) {
-      double double_v = (double) v;
-      if (value[0] == '-' && v == 0) { // special case: 0.0 is different than -0.0.
-        double_v = -0.0;
-      }
-      return JVMFlagAccess::set_double(flag, &double_v, origin);
+      result = JVMFlagAccess::set_size_t(flag, &v, origin);
     }
   }
 
-  return JVMFlag::WRONG_FORMAT;
+  return result == JVMFlag::SUCCESS;
 }
 
 static bool set_string_flag(JVMFlag* flag, const char* value, JVMFlagOrigin origin) {
+  if (value[0] == '\0') {
+    value = NULL;
+  }
   if (JVMFlagAccess::set_ccstr(flag, &value, origin) != JVMFlag::SUCCESS) return false;
   // Contract:  JVMFlag always returns a pointer that needs freeing.
   FREE_C_HEAP_ARRAY(char, value);
@@ -993,7 +988,7 @@ static bool append_to_string_flag(JVMFlag* flag, const char* new_value, JVMFlagO
   return true;
 }
 
-const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn) {
+const char* Arguments::handle_aliases_and_deprecation(const char* arg) {
   const char* real_name = real_flag_name(arg);
   JDK_Version since = JDK_Version();
   switch (is_deprecated_flag(arg, &since)) {
@@ -1011,16 +1006,14 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
     case 0:
       return real_name;
     case 1: {
-      if (warn) {
-        char version[256];
-        since.to_string(version, sizeof(version));
-        if (real_name != arg) {
-          warning("Option %s was deprecated in version %s and will likely be removed in a future release. Use option %s instead.",
-                  arg, version, real_name);
-        } else {
-          warning("Option %s was deprecated in version %s and will likely be removed in a future release.",
-                  arg, version);
-        }
+      char version[256];
+      since.to_string(version, sizeof(version));
+      if (real_name != arg) {
+        warning("Option %s was deprecated in version %s and will likely be removed in a future release. Use option %s instead.",
+                arg, version, real_name);
+      } else {
+        warning("Option %s was deprecated in version %s and will likely be removed in a future release.",
+                arg, version);
       }
       return real_name;
     }
@@ -1029,96 +1022,85 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   return NULL;
 }
 
-bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
-
-  // range of acceptable characters spelled out for portability reasons
-#define NAME_RANGE  "[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]"
 #define BUFLEN 255
-  char name[BUFLEN+1];
-  char dummy;
-  const char* real_name;
-  bool warn_if_deprecated = true;
 
-  if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
-    if (real_name == NULL) {
-      return false;
+JVMFlag* Arguments::find_jvm_flag(const char* name, size_t name_length) {
+  char name_copied[BUFLEN+1];
+  if (name[name_length] != 0) {
+    if (name_length > BUFLEN) {
+      return NULL;
+    } else {
+      strncpy(name_copied, name, name_length);
+      name_copied[name_length] = '\0';
+      name = name_copied;
     }
-    JVMFlag* flag = JVMFlag::find_flag(real_name);
-    return set_bool_flag(flag, false, origin);
-  }
-  if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
-    if (real_name == NULL) {
-      return false;
-    }
-    JVMFlag* flag = JVMFlag::find_flag(real_name);
-    return set_bool_flag(flag, true, origin);
   }
 
-  char punct;
-  if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "%c", name, &punct) == 2 && punct == '=') {
-    const char* value = strchr(arg, '=') + 1;
+  const char* real_name = Arguments::handle_aliases_and_deprecation(name);
+  if (real_name == NULL) {
+    return NULL;
+  }
+  JVMFlag* flag = JVMFlag::find_flag(real_name);
+  return flag;
+}
 
-    // this scanf pattern matches both strings (handled here) and numbers (handled later))
-    real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
-    if (real_name == NULL) {
+bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
+  bool is_bool = false;
+  bool bool_val = false;
+  char c = *arg;
+  if (c == '+' || c == '-') {
+    is_bool = true;
+    bool_val = (c == '+');
+    arg++;
+  }
+
+  const char* name = arg;
+  while (true) {
+    c = *arg;
+    if (isalnum(c) || (c == '_')) {
+      ++arg;
+    } else {
+      break;
+    }
+  }
+
+  size_t name_len = size_t(arg - name);
+  if (name_len == 0) {
+    return false;
+  }
+
+  JVMFlag* flag = find_jvm_flag(name, name_len);
+  if (flag == NULL) {
+    return false;
+  }
+
+  if (is_bool) {
+    if (*arg != 0) {
+      // Error -- extra characters such as -XX:+BoolFlag=123
       return false;
     }
-    JVMFlag* flag = JVMFlag::find_flag(real_name);
-    if (flag != NULL && flag->is_ccstr()) {
+    return set_bool_flag(flag, bool_val, origin);
+  }
+
+  if (arg[0] == '=') {
+    const char* value = arg + 1;
+    if (flag->is_ccstr()) {
       if (flag->ccstr_accumulates()) {
         return append_to_string_flag(flag, value, origin);
       } else {
-        if (value[0] == '\0') {
-          value = NULL;
-        }
         return set_string_flag(flag, value, origin);
       }
-    } else {
-      warn_if_deprecated = false; // if arg is deprecated, we've already done warning...
-    }
-  }
-
-  if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE ":%c", name, &punct) == 2 && punct == '=') {
-    const char* value = strchr(arg, '=') + 1;
-    // -XX:Foo:=xxx will reset the string flag to the given value.
-    if (value[0] == '\0') {
-      value = NULL;
-    }
-    real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
-    if (real_name == NULL) {
-      return false;
-    }
-    JVMFlag* flag = JVMFlag::find_flag(real_name);
-    return set_string_flag(flag, value, origin);
-  }
-
-#define SIGNED_FP_NUMBER_RANGE "[-0123456789.eE+]"
-#define SIGNED_NUMBER_RANGE    "[-0123456789]"
-#define        NUMBER_RANGE    "[0123456789eE+-]"
-  char value[BUFLEN + 1];
-  char value2[BUFLEN + 1];
-  if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) SIGNED_NUMBER_RANGE "." "%" XSTR(BUFLEN) NUMBER_RANGE "%c", name, value, value2, &dummy) == 3) {
-    // Looks like a floating-point number -- try again with more lenient format string
-    if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) SIGNED_FP_NUMBER_RANGE "%c", name, value, &dummy) == 2) {
-      real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
-      if (real_name == NULL) {
-        return false;
-      }
-      JVMFlag* flag = JVMFlag::find_flag(real_name);
+    } else if (flag->is_double()) {
       return set_fp_numeric_flag(flag, value, origin);
+    } else {
+      return set_numeric_flag(flag, value, origin);
     }
   }
 
-#define VALUE_RANGE "[-kmgtxKMGTX0123456789abcdefABCDEF]"
-  if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) VALUE_RANGE "%c", name, value, &dummy) == 2) {
-    real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
-    if (real_name == NULL) {
-      return false;
-    }
-    JVMFlag* flag = JVMFlag::find_flag(real_name);
-    return set_numeric_flag(flag, value, origin) == JVMFlag::SUCCESS;
+  if (arg[0] == ':' && arg[1] == '=') {
+    // -XX:Foo:=xxx will reset the string flag to the given value.
+    const char* value = arg + 2;
+    return set_string_flag(flag, value, origin);
   }
 
   return false;
@@ -4254,7 +4236,7 @@ int Arguments::PropertyList_count(SystemProperty* pl) {
 int Arguments::PropertyList_readable_count(SystemProperty* pl) {
   int count = 0;
   while(pl != NULL) {
-    if (pl->is_readable()) {
+    if (pl->readable()) {
       count++;
     }
     pl = pl->next();

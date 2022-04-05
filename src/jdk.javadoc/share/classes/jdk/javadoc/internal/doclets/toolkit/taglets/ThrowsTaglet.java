@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -132,7 +130,7 @@ public class ThrowsTaglet extends BaseTaglet
             Map<String, TypeMirror> typeSubstitutions, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if (utils.isExecutableElement(holder)) {
+        if (utils.isMethod(holder)) {
             Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
             for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
                 Input input = new DocFinder.Input(utils, holder, this,
@@ -251,6 +249,6 @@ public class ThrowsTaglet extends BaseTaglet
             }
             return map;
         }
-        return Collections.emptyMap();
+        return Map.of();
     }
 }

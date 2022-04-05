@@ -25,8 +25,10 @@
  * @test
  * @bug 6870935
  * @modules java.base/sun.net.www
- * @run main/othervm -Dhttp.nonProxyHosts="" -Dhttp.auth.digest.validateProxy=true B6870935
- * @run main/othervm -Djava.net.preferIPv6Addresses=true
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
+ *                   -Dhttp.nonProxyHosts="" -Dhttp.auth.digest.validateProxy=true B6870935
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
+ *                   -Djava.net.preferIPv6Addresses=true
  *                   -Dhttp.nonProxyHosts="" -Dhttp.auth.digest.validateProxy=true B6870935
  */
 

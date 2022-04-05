@@ -118,7 +118,7 @@ void JVMCIEnv::copy_saved_properties() {
   TempNewSymbol serializeSavedProperties = SymbolTable::new_symbol("serializeSavedProperties");
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
-  JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::serializePropertiesToByteArray_signature(), &args, THREAD);
+  JavaCalls::call_static(&result, ik, serializeSavedProperties, vmSymbols::void_byte_array_signature(), &args, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     JVMCIRuntime::fatal_exception(NULL, "Error calling jdk.vm.ci.services.Services.serializeSavedProperties");
   }

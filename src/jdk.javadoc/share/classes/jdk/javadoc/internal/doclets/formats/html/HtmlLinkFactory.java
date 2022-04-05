@@ -258,10 +258,10 @@ public class HtmlLinkFactory extends LinkFactory {
         if (isTypeLink) {
             return resources.getText("doclet.Href_Type_Param_Title",
                     utils.getSimpleName(typeElement));
-        } else if (utils.isInterface(typeElement)){
+        } else if (utils.isPlainInterface(typeElement)){
             return resources.getText("doclet.Href_Interface_Title",
                 m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
-        } else if (utils.isAnnotationType(typeElement)) {
+        } else if (utils.isAnnotationInterface(typeElement)) {
             return resources.getText("doclet.Href_Annotation_Title",
                 m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isEnum(typeElement)) {

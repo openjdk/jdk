@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,10 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
     /**
      * Adds the list of modules.
      *
-     * @param main the documentation tree to which the modules list will be added
+     * @param target the content to which the modules list will be added
      */
     @Override
-    protected void addIndex(Content main) {
+    protected void addIndex(Content target) {
         Map<String, SortedSet<ModuleElement>> groupModuleMap
                 = configuration.group.groupModules(modules);
 
@@ -115,7 +115,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
                 }
             }
 
-            main.add(table);
+            target.add(table);
 
             if (table.needsScript()) {
                 mainBodyScript.append(table.getScript());
