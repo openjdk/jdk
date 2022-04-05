@@ -129,4 +129,3 @@ public final class MethodTooLargeException extends IndexOutOfBoundsException {
         return codeSize;
     }
 }
-

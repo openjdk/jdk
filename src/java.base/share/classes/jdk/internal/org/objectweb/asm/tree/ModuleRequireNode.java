@@ -103,4 +103,3 @@ public class ModuleRequireNode {
         moduleVisitor.visitRequire(module, access, version);
     }
 }
-

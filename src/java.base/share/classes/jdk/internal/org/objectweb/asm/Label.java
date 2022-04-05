@@ -652,4 +652,3 @@ public class Label {
         return "L" + System.identityHashCode(this);
     }
 }
-

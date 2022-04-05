@@ -218,4 +218,3 @@ public class FrameNode extends AbstractInsnNode {
         return array;
     }
 }
-

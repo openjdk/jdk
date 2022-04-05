@@ -85,7 +85,7 @@ public abstract class RecordComponentVisitor {
       * @param api the ASM API version implemented by this visitor. Must be one of {@link Opcodes#ASM8}
       *     or {@link Opcodes#ASM9}.
       */
-    public RecordComponentVisitor(final int api) {
+    protected RecordComponentVisitor(final int api) {
         this(api, null);
     }
 
@@ -96,15 +96,19 @@ public abstract class RecordComponentVisitor {
       * @param recordComponentVisitor the record component visitor to which this visitor must delegate
       *     method calls. May be null.
       */
-    public RecordComponentVisitor(
+    protected RecordComponentVisitor(
             final int api, final RecordComponentVisitor recordComponentVisitor) {
         if (api != Opcodes.ASM9
                 && api != Opcodes.ASM8
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4) {
+                && api != Opcodes.ASM4
+                && api != Opcodes.ASM10_EXPERIMENTAL) {
             throw new IllegalArgumentException("Unsupported api " + api);
+        }
+        if (api == Opcodes.ASM10_EXPERIMENTAL) {
+            Constants.checkAsmExperimental(this);
         }
         this.api = api;
         this.delegate = recordComponentVisitor;
@@ -178,4 +182,3 @@ public abstract class RecordComponentVisitor {
         }
     }
 }
-

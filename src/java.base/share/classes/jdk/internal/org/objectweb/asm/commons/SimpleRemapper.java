@@ -132,4 +132,3 @@ public class SimpleRemapper extends Remapper {
         return mapping.get(key);
     }
 }
-

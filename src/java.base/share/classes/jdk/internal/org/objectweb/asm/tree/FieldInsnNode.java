@@ -126,4 +126,3 @@ public class FieldInsnNode extends AbstractInsnNode {
         return new FieldInsnNode(opcode, owner, name, desc).cloneAnnotations(this);
     }
 }
-
