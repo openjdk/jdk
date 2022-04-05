@@ -40,10 +40,5 @@
  *  <p>Finally, once the appropriate files have been read, the classes invoke
  *  the selected doclet to process those files, typically to generate API
  *  documentation.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 package jdk.javadoc.internal.tool;
