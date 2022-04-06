@@ -1345,29 +1345,10 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 //   imm64 == hex abcdefgh  T2D:  Vd = 00000000abcdefgh00000000abcdefgh
 // Clobbers rscratch1
 void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64) {
+  assert(T != T1Q, "unsupported");
   if (T == T1D || T == T2D) {
-    // To encode into movi, the 64-bit imm must be in the form of
-    // 'aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffffgggggggghhhhhhhh'
-    // and encoded in "a:b:c:d:e:f:g:h".
-    bool can_encode = true;
-    uint64_t tmp = imm64;
-    uint64_t one_byte = 0;
-    for (int i = 0; i < 8; i++) {
-      one_byte = tmp & 0xFFULL;
-      if (one_byte != 0xFFULL && one_byte != 0) {
-        can_encode = false;
-        break;
-      }
-      tmp = tmp >> 8;
-    }
-
-    if(can_encode) {
-      uint64_t imm = imm64;
-      imm &= 0x0101010101010101ULL;
-      imm |= (imm >> 7);
-      imm |= (imm >> 14);
-      imm |= (imm >> 28);
-      imm &= 0xFFULL;
+    int imm = operand_valid_for_movi_immediate(imm64, T);
+    if (-1 != imm) {
       movi(Vd, T, imm);
     } else {
       mov(rscratch1, imm64);
@@ -1376,39 +1357,18 @@ void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint64_t imm64) {
     return;
   }
 
-  uint32_t imm32 = imm64 & 0xFFFFFFFFULL;
-  if (T == T8B || T == T16B) {
-    assert((imm32 & ~0xff) == 0, "extraneous bits in unsigned imm32 (T8B/T16B)");
-    movi(Vd, T, imm32 & 0xff, 0);
-    return;
-  }
-  uint32_t nimm32 = ~imm32;
-  if (T == T4H || T == T8H) {
-    assert((imm32  & ~0xffff) == 0, "extraneous bits in unsigned imm32 (T4H/T8H)");
-    imm32 &= 0xffff;
-    nimm32 &= 0xffff;
-  }
-  uint32_t x = imm32;
-  int movi_cnt = 0;
-  int movn_cnt = 0;
-  while (x) { if (x & 0xff) movi_cnt++; x >>= 8; }
-  x = nimm32;
-  while (x) { if (x & 0xff) movn_cnt++; x >>= 8; }
-  if (movn_cnt < movi_cnt) imm32 = nimm32;
-  unsigned lsl = 0;
-  while (imm32 && (imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
-  if (movn_cnt < movi_cnt)
-    mvni(Vd, T, imm32 & 0xff, lsl);
-  else
-    movi(Vd, T, imm32 & 0xff, lsl);
-  imm32 >>= 8; lsl += 8;
-  while (imm32) {
-    while ((imm32 & 0xff) == 0) { lsl += 8; imm32 >>= 8; }
-    if (movn_cnt < movi_cnt)
-      bici(Vd, T, imm32 & 0xff, lsl);
-    else
-      orri(Vd, T, imm32 & 0xff, lsl);
-    lsl += 8; imm32 >>= 8;
+#ifdef ASSERT
+  if (T == T8B || T == T16B) assert((imm64 & ~0xff) == 0, "extraneous bits (T8B/T16B)");
+  if (T == T4H || T == T8H) assert((imm64  & ~0xffff) == 0, "extraneous bits (T4H/T8H)");
+  if (T == T2S || T == T4S) assert((imm64  & ~0xffffffff) == 0, "extraneous bits (T2S/T4S)");
+#endif
+  int shift = operand_valid_for_movi_immediate(imm64, T);
+  uint32_t imm32 = imm64 & 0xffffffffULL;
+  if (shift >= 0) {
+    movi(Vd, T, (imm32 >> shift) & 0xff, shift);
+  } else {
+    movw(rscratch1, imm32);
+    dup(Vd, T, rscratch1);
   }
 }
 
