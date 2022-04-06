@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8273115
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary CountedLoopEndNode::stride_con should not crash with -XX:+TraceLoopOpts
- * @run main/othervm  -XX:+TraceLoopOpts -Xcomp -XX:-TieredCompilation
+ * @run main/othervm -XX:+TraceLoopOpts -Xcomp -XX:-TieredCompilation
  * -XX:CompileOnly=compiler.loopopts.TestTraceLoopOptsStride.main compiler.loopopts.TestTraceLoopOptsStride
  */
 
