@@ -249,8 +249,8 @@ public abstract class AbstractCompressExpandTest {
 
         for (int i : values) {
             assertContiguousMask(i, 0, 0L);
-            for (int len = 0; len < 32; len++) {
-                for (int pos = 0; pos < 32 - len; pos++) {
+            for (int len = 1; len < 32; len++) {
+                for (int pos = 0; pos <= 32 - len; pos++) {
                     int mask = ((1 << len) - 1) << pos;
 
                     assertContiguousMask(i, pos, mask);
