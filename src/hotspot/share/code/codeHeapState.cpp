@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -756,17 +756,16 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         CodeBlob* cb  = (CodeBlob*)heap->find_start(h);
         cbType = get_cbType(cb);  // Will check for cb == NULL and other safety things.
         if (cbType != noType) {
-          const char* blob_name  = os::strdup(cb->name());
+          const char* blob_name  = nullptr;
           unsigned int nm_size   = 0;
           int temperature        = 0;
           nmethod*  nm = cb->as_nmethod_or_null();
           if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
             ResourceMark rm;
             Method* method = nm->method();
-            if (nm->is_in_use()) {
-              blob_name = os::strdup(method->name_and_sig_as_C_string());
-            }
             if (nm->is_not_entrant()) {
+              blob_name = os::strdup(method->name_and_sig_as_C_string());
+            } else if (nm->is_in_use()) {
               blob_name = os::strdup(method->name_and_sig_as_C_string());
             }
 
@@ -815,6 +814,8 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               default:
                 break;
             }
+          } else {
+            blob_name  = os::strdup(cb->name());
           }
 
           //------------------------------------------
@@ -835,6 +836,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               currMin    = hb_len;
               currMin_ix = 0;
               used_topSizeBlocks++;
+              os::free((void*)blob_name);
               blob_name  = NULL; // indicate blob_name was consumed
             // This check roughly cuts 5000 iterations (JVM98, mixed, dbg, termination stats):
             } else if ((used_topSizeBlocks < alloc_topSizeBlocks) && (hb_len < currMin)) {
@@ -852,6 +854,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               currMin    = hb_len;
               currMin_ix = used_topSizeBlocks;
               used_topSizeBlocks++;
+              os::free((void*)blob_name);
               blob_name  = NULL; // indicate blob_name was consumed
             } else {
               // This check cuts total_iterations by a factor of 6 (JVM98, mixed, dbg, termination stats):
@@ -893,6 +896,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                       TopSizeArray[i].level       = comp_lvl;
                       TopSizeArray[i].type        = cbType;
                       used_topSizeBlocks++;
+                      os::free((void*)blob_name);
                       blob_name  = NULL; // indicate blob_name was consumed
                     } else { // no room for new entries, current block replaces entry for smallest block
                       //---<  Find last entry (entry for smallest remembered block)  >---
@@ -951,6 +955,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                           TopSizeArray[i].level       = comp_lvl;
                           TopSizeArray[i].type        = cbType;
                         }
+                        os::free((void*)blob_name);
                         blob_name  = NULL; // indicate blob_name was consumed
                       } // insane
                     }
