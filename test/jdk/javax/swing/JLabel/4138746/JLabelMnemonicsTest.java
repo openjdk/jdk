@@ -110,7 +110,7 @@ public class JLabelMnemonicsTest {
                 } else {
                     hitKeys(KeyEvent.VK_ALT, KeyEvent.VK_V);
                 }
-                if (!focusGainedLatch.await(3, TimeUnit.SECONDS)) {
+                if (focusGainedLatch.await(3, TimeUnit.SECONDS)) {
                     System.out.println("Verifier 2 Passed");
                 } else {
                     System.out.println(
