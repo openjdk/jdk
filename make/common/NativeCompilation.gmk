@@ -1149,14 +1149,13 @@ define SetupNativeCompilationBody
       endif
     endif
 
-    # For reproducible builds on linux, debuginfo objcopy of ASM objects
-    # always copies the absolute object path to the debuginfo, as ASM debug info
-    # paths do not get prefix mapped.
-    # So use relative paths to ensure a reproducible debuginfo and libs, when
-    # creating debug symbols. 
+    # Debuginfo of ASM objects always embeds the absolute object path,
+    # as ASM debuginfo paths do not get prefix mapped.
+    # So for reproducible builds use relative paths to ensure a reproducible
+    # debuginfo and libs, when creating debug symbols.
     ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
       ifeq ($(call isTargetOs, linux), true)
-        ifneq ($1_CREATE_DEBUGINFO_CMDS, )
+        ifeq ($$($1_COMPILE_WITH_DEBUG_SYMBOLS), true)
           $1_LINK_OBJS_RELATIVE := true
           $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
         endif
