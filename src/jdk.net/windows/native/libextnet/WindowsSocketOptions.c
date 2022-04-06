@@ -32,20 +32,16 @@
 #include "jlong.h"
 #include "nio.h"
 #include "nio_util.h"
-#include "net_util.h"
 
-/*
- * Class:     jdk_net_WindowsSocketOptions
- * Method:    getIncomingNapiId0
- * Signature: (I)I;
- */
-JNIEXPORT jint JNICALL Java_jdk_net_WindowsSocketOptions_getIncomingNapiId0
-(JNIEnv *env, jobject unused, jint fd) {
-    jint optval, rv;
-    socklen_t sz = sizeof (optval);
-    rv = getsockopt(fd, SOL_SOCKET, SO_INCOMING_NAPI_ID, &optval, &sz);
-    handleError(env, rv, "get option SO_INCOMING_NAPI_ID failed");
-    return optval;
+static int socketFamily(jint fd) {
+    struct sockaddr_storage st;
+    struct sockaddr *sa = (struct sockaddr *)&st;
+    socklen_t sa_len = sizeof(st);
+
+    if (getsockname(fd, sa, &sa_len) == 0) {
+        return sa->sa_family;
+    }
+    return -1;
 }
 
 /*
@@ -85,13 +81,3 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
     return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
 }
 
-static int socketFamily(jint fd) {
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
-
-    if (getsockname(fd, &sa.sa, &sa_len) == 0) {
-        return sa.sa.sa_family;
-        }
-    }
-    return -1;
-}

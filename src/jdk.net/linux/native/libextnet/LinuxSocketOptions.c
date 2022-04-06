@@ -220,17 +220,6 @@ JNIEXPORT jint JNICALL Java_jdk_net_LinuxSocketOptions_getTcpKeepAliveIntvl0
     return optval;
 }
 
-static int socketFamily(jint fd) {
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
-
-    if (getsockname(fd, &sa.sa, &sa_len) == 0) {
-        return sa.sa.sa_family;
-        }
-    }
-    return -1;
-}
-
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    incomingNapiIdSupported0
@@ -253,6 +242,17 @@ JNIEXPORT jint JNICALL Java_jdk_net_LinuxSocketOptions_getIncomingNapiId0
     rv = getsockopt(fd, SOL_SOCKET, SO_INCOMING_NAPI_ID, &optval, &sz);
     handleError(env, rv, "get option SO_INCOMING_NAPI_ID failed");
     return optval;
+}
+
+static int socketFamily(jint fd) {
+    struct sockaddr_storage st;
+    struct sockaddr *sa = (struct sockaddr *)&st;
+    socklen_t sa_len = sizeof(st);
+
+    if (getsockname(fd, sa, &sa_len) == 0) {
+        return sa->sa_family;
+    }
+    return -1;
 }
 
 /*
