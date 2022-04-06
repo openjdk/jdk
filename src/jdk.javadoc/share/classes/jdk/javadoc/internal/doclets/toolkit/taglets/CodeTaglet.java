@@ -45,7 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * displays as:
  * <blockquote>  The type {@code List<P>}  </blockquote>
  */
-
 public class CodeTaglet extends BaseTaglet {
 
     CodeTaglet() {

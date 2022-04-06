@@ -89,7 +89,6 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
  * type, as its own view, and will present some form of this to the
  * doclet as and when required to.
  */
-
 public class VisibleMemberTable {
 
     public enum Kind {

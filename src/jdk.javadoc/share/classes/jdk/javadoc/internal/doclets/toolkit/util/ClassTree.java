@@ -272,7 +272,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the sub-class set for the class passed.
+     * Return the sub-class set for the class passed.
      *
      * @param typeElement class whose sub-class set is required.
      */
@@ -281,7 +281,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the sub-interface set for the interface passed.
+     * Return the sub-interface set for the interface passed.
      *
      * @param typeElement interface whose sub-interface set is required.
      */
@@ -290,7 +290,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the set of classes which implement the interface passed.
+     * Return the set of classes which implement the interface passed.
      *
      * @param typeElement interface whose implementing-classes set is required.
      */
@@ -315,7 +315,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the sub-class/interface set for the class/interface passed.
+     * Return the sub-class/interface set for the class/interface passed.
      *
      * @param typeElement class/interface whose sub-class/interface set is required.
      * @param isEnum true if the subClasses should be forced to come from the
@@ -366,16 +366,16 @@ public class ClassTree {
     }
 
     /**
-     *  Return a set of base classes. This will have only one element namely
-     *  the TypeElement for java.lang.Object, since this is the base class for all
-     *  classes.
+     * Return a set of base classes. This will have only one element namely
+     * the TypeElement for java.lang.Object, since this is the base class for all
+     * classes.
      */
     public SortedSet<TypeElement> baseClasses() {
         return baseClasses;
     }
 
     /**
-     *  Return the set of base interfaces. This is the set of interfaces
+     * Return the set of base interfaces. This is the set of interfaces
      * which do not have super-interface.
      */
     public SortedSet<TypeElement> baseInterfaces() {
@@ -383,8 +383,8 @@ public class ClassTree {
     }
 
     /**
-     *  Return the set of base enums. This is the set of enums
-     *  which do not have super-enums.
+     * Return the set of base enums. This is the set of enums
+     * which do not have super-enums.
      */
     public SortedSet<TypeElement> baseEnums() {
         return baseEnums;

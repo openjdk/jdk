@@ -53,7 +53,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * The interface for the taglet writer.
  */
-
 public abstract class TagletWriter {
 
     /**
