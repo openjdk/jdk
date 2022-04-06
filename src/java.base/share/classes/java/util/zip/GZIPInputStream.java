@@ -95,6 +95,14 @@ public class GZIPInputStream extends InflaterInputStream {
      * Reads uncompressed data into an array of bytes. If {@code len} is not
      * zero, the method will block until some input can be decompressed; otherwise,
      * no bytes are read and {@code 0} is returned.
+     * <p>
+     * If <i>n</i> denotes the returned number of inflated bytes then {@code buf[off]}
+     * trough {@code buf[off+}<i>n</i>{@code -1]} will contain the uncompressed data. The
+     * elements {@code buf[off+}<i>n</i>{@code ]} through {@code buf[off+}<i>len</i>{@code -1]}
+     * are undefined and an implementation is free to change them during the inflate
+     * operation. If the return value is -1 or an exception is thrown the whole
+     * content of {@code buf} is undefined.
+     *
      * @param buf the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
