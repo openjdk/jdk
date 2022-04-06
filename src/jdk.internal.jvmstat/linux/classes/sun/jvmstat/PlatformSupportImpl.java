@@ -56,7 +56,7 @@ public class PlatformSupportImpl extends PlatformSupport {
         }
     }
 
-    private boolean isSameWithTemporaryDirectory(Path p) {
+    private boolean tempDirectoryEquals(Path p) {
         try {
             long ino = (Long)Files.getAttribute(p, "unix:ino");
             long dev = (Long)Files.getAttribute(p, "unix:dev");
@@ -113,8 +113,8 @@ public class PlatformSupportImpl extends PlatformSupport {
      * if they are not running in a container.  To avoid this duplication,
      * we compare the inode of the /proc tmp directories to /tmp and
      * skip these duplicated directories.
-     * inode maybe same value between other devices in some case.
-     * So we also need to check device id.
+     * Host and container devices could have the same inode value,
+     * so we also need to check the device id.
      *
      * 2. Containerized processes without PID namespaces being enabled.
      *
@@ -161,7 +161,7 @@ public class PlatformSupportImpl extends PlatformSupport {
 
             if (containerFile.exists() && containerFile.isDirectory() &&
                 containerFile.canRead() &&
-                !isSameWithTemporaryDirectory(containerFile.toPath())) {
+                !tempDirectoryEquals(containerFile.toPath())) {
                 v.add(containerTmpDir);
             }
         }
