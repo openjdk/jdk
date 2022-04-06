@@ -442,13 +442,12 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     if (class_name == vmSymbols::java_lang_Class()) {
       // mirror
       ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
-    }
-    else if (is_class_loader(class_name, parser)) {
+    } else if (is_class_loader(class_name, parser)) {
       // class loader
       ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
     } else {
       // normal
-      ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_kind_other);
+      ik = new (loader_data, size, THREAD) InstanceKlass(parser);
     }
   } else {
     // reference
@@ -486,8 +485,8 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id) :
-  Klass(id),
+InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind) :
+  Klass(kind),
   _nest_members(NULL),
   _nest_host(NULL),
   _permitted_subclasses(NULL),
@@ -501,7 +500,6 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
   _init_thread(NULL)
 {
   set_vtable_length(parser.vtable_size());
-  set_kind(kind);
   set_access_flags(parser.access_flags());
   if (parser.is_hidden()) set_is_hidden();
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
@@ -2074,6 +2072,52 @@ Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
   return NULL;
 }
 
+PrintClassClosure::PrintClassClosure(outputStream* st, bool verbose)
+  :_st(st), _verbose(verbose) {
+  ResourceMark rm;
+  _st->print("%-18s  ", "KlassAddr");
+  _st->print("%-4s  ", "Size");
+  _st->print("%-20s  ", "State");
+  _st->print("%-7s  ", "Flags");
+  _st->print("%-5s  ", "ClassName");
+  _st->cr();
+}
+
+void PrintClassClosure::do_klass(Klass* k)  {
+  ResourceMark rm;
+  // klass pointer
+  _st->print(INTPTR_FORMAT "  ", p2i(k));
+  // klass size
+  _st->print("%4d  ", k->size());
+  // initialization state
+  if (k->is_instance_klass()) {
+    _st->print("%-20s  ",InstanceKlass::cast(k)->init_state_name());
+  } else {
+    _st->print("%-20s  ","");
+  }
+  // misc flags(Changes should synced with ClassesDCmd::ClassesDCmd help doc)
+  char buf[10];
+  int i = 0;
+  if (k->has_finalizer()) buf[i++] = 'F';
+  if (k->has_final_method()) buf[i++] = 'f';
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    if (ik->is_rewritten()) buf[i++] = 'W';
+    if (ik->is_contended()) buf[i++] = 'C';
+    if (ik->has_been_redefined()) buf[i++] = 'R';
+    if (ik->is_shared()) buf[i++] = 'S';
+  }
+  buf[i++] = '\0';
+  _st->print("%-7s  ", buf);
+  // klass name
+  _st->print("%-5s  ", k->external_name());
+  // end
+  _st->cr();
+  if (_verbose) {
+    k->print_on(_st);
+  }
+}
+
 /* jni_id_for for jfieldIds only */
 JNIid* InstanceKlass::jni_id_for(int offset) {
   MutexLocker ml(JfieldIdCreation_lock);
@@ -3393,6 +3437,10 @@ static void print_vtable(vtableEntry* start, int len, outputStream* st) {
   return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
+const char* InstanceKlass::init_state_name() const {
+  return state_names[_init_state];
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
@@ -3400,7 +3448,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
-  st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
+  st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
   st->print(BULLET"sub:               ");

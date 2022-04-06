@@ -45,6 +45,8 @@ public class VMDeprecatedOptions {
      */
     public static final String[][] DEPRECATED_OPTIONS;
     static {
+        // Use an ArrayList so platform-specific flags can be
+        // optionally added.
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
@@ -60,6 +62,10 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isLinux()) {
+            deprecated.add(new String[] {"UseContainerCpuShares",           "false"});
+            deprecated.add(new String[] {"PreferContainerQuotaForCPUCount", "true"});
+        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 

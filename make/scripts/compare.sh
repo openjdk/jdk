@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ compare_general_files() {
         ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
         ! -name "*.lib" ! -name "*.jmod" ! -name "*.exe" \
         ! -name "*.obj" ! -name "*.o" ! -name "jspawnhelper" ! -name "*.a" \
-        ! -name "*.tar.gz" ! -name "*.jsa" ! -name "gtestLauncher" \
+        ! -name "*.tar.gz" ! -name "classes_nocoops.jsa" ! -name "gtestLauncher" \
         ! -name "*.map" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 

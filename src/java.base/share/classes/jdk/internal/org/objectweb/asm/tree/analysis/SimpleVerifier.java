@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.List;
@@ -125,7 +126,7 @@ public class SimpleVerifier extends BasicVerifier {
             final List<Type> currentClassInterfaces,
             final boolean isInterface) {
         this(
-                /* latest api = */ ASM8,
+                /* latest api = */ ASM9,
                 currentClass,
                 currentSuperClass,
                 currentClassInterfaces,
@@ -141,8 +142,8 @@ public class SimpleVerifier extends BasicVerifier {
       *
       * @param api the ASM API version supported by this verifier. Must be one of {@link
       *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7}, {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8} or or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM9}.
       * @param currentClass the type of the class to be verified.
       * @param currentSuperClass the type of the super class of the class to be verified.
       * @param currentClassInterfaces the types of the interfaces directly implemented by the class to
@@ -411,3 +412,4 @@ public class SimpleVerifier extends BasicVerifier {
         }
     }
 }
+

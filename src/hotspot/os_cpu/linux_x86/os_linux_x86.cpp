@@ -459,11 +459,26 @@ bool os::supports_sse() {
 }
 
 juint os::cpu_microcode_revision() {
+  // Note: this code runs on startup, and therefore should not be slow,
+  // see JDK-8283200.
+
   juint result = 0;
-  char data[2048] = {0}; // lines should fit in 2K buf
-  size_t len = sizeof(data);
-  FILE *fp = os::fopen("/proc/cpuinfo", "r");
+
+  // Attempt 1 (faster): Read the microcode version off the sysfs.
+  FILE *fp = os::fopen("/sys/devices/system/cpu/cpu0/microcode/version", "r");
   if (fp) {
+    int read = fscanf(fp, "%x", &result);
+    fclose(fp);
+    if (read > 0) {
+      return result;
+    }
+  }
+
+  // Attempt 2 (slower): Read the microcode version off the procfs.
+  fp = os::fopen("/proc/cpuinfo", "r");
+  if (fp) {
+    char data[2048] = {0}; // lines should fit in 2K buf
+    size_t len = sizeof(data);
     while (!feof(fp)) {
       if (fgets(data, len, fp)) {
         if (strstr(data, "microcode") != NULL) {
@@ -475,6 +490,7 @@ juint os::cpu_microcode_revision() {
     }
     fclose(fp);
   }
+
   return result;
 }
 
