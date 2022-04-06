@@ -323,7 +323,7 @@ public class JdkXmlFeatures {
      */
     public void setFeature(int index, State state, Object value) {
         boolean temp;
-        if (Boolean.class.isInstance(value)) {
+        if (value instanceof Boolean) {
             temp = (Boolean)value;
         } else {
             temp = Boolean.parseBoolean((String) value);
