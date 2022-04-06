@@ -92,7 +92,7 @@ void LRG::dump() const {
   if( _msize_valid ) {
     if( _degree_valid && lo_degree() ) tty->print("Trivial ");
   }
-  tty->print("Region = %d/%d, min region = %d", _region, _region2, _min_region);
+  tty->print("Region = %d/%d", _region, _region2);
 
   tty->cr();
 }
@@ -537,7 +537,6 @@ void PhaseChaitin::Register_Allocate() {
 
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
-      compute_min_regions(all_blocks);
     }
 
     // Build physical interference graph
@@ -577,7 +576,6 @@ void PhaseChaitin::Register_Allocate() {
         gather_lrg_masks(all_blocks, true, region);   // Collect intersect mask
         live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
         _live = &live;
-        compute_min_regions(all_blocks);
       }
       if (UseNewCode3) {
         _cfg.dump();
@@ -661,7 +659,7 @@ void PhaseChaitin::Register_Allocate() {
 //          block->dump();
 //        }
 
-        if (_trip_cnt > 28) {
+        if (_trip_cnt > 27) {
           C->record_method_not_compilable("failed spill-split-recycle sanity check");
           ShouldNotReachHere();
           return;
@@ -694,7 +692,6 @@ void PhaseChaitin::Register_Allocate() {
         gather_lrg_masks(all_blocks, true, region);
         live.compute(_lrg_map.max_lrg_id());
         _live = &live;
-        compute_min_regions(all_blocks);
       }
       must_spill = build_ifg_physical(&live_arena, all_blocks, region);
       _ifg->SquareUp();
@@ -781,7 +778,17 @@ void PhaseChaitin::Register_Allocate() {
         tty->print("\n");
       }
     }
-    record_regs();
+
+    if (region > 0) {
+      for (uint i = 0; i < _lrg_map.size(); i++) {
+        if (_lrg_map.live_range_id(i)) { // Live range associated with Node?
+          LRG &lrg = lrgs(_lrg_map.live_range_id(i));
+          if (lrg.alive() && lrg._region >= (uint)region && !lrg._fat_proj && OptoReg::is_reg(lrg.reg())) {
+            set1(i, lrg.reg());
+          }
+        }
+      }
+    }
 
 //    if (region == 1) {
 //      for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
@@ -904,110 +911,6 @@ void PhaseChaitin::record_regs() {// Move important info out of the live_arena t
   }
 }
 
-void PhaseChaitin::compute_min_regions(const Block_List &blocks) {
-  for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
-    lrgs(i)._min_region = max_juint;
-  }
-  for (uint i = 0; i < blocks.size(); i++) {
-    Block* block = blocks[i];
-    IndexSetIterator elements(_live->live(block));
-    uint lid = elements.next();
-    while (lid != 0) {
-      LRG &lrg = lrgs(lid);
-      lrg._min_region = MIN2(lrg._min_region, block->_region);
-      lid = elements.next();
-    }
-    for (uint location = block->end_idx(); location > 0; location--) {
-      Node* n = block->get_node(location);
-      uint lid = _lrg_map.live_range_id(n);
-
-      if (lid) {
-        LRG &lrg = lrgs(lid);
-        lrg._min_region = MIN2(lrg._min_region, block->_region);
-      }
-      for (uint k = ((n->Opcode() == Op_SCMemProj) ? 0 : 1); k < n->req(); k++) {
-        Node* def = n->in(k);
-        uint lid = _lrg_map.live_range_id(def);
-        if (lid) {
-          LRG &lrg = lrgs(lid);
-          lrg._min_region = MIN2(lrg._min_region, block->_region);
-        }
-      }
-    }
-  }
-
-  for (uint i = 0; i < blocks.size(); i++) {
-    Block* block = blocks[i];
-    block->_region_start = block->end_idx();
-    block->_region_end = 0;
-//    assert(block->_region != 0 || block->_next_region != 0 || block->_prev_region != 0, "");
-    if (block->_next_region > block->_region) {
-      assert (block->_succs[0]->_region == block->_next_region, "");
-      uint location;
-      for (location = block->end_idx(); location > 0; location--) {
-        Node* n = block->get_node(location);
-        uint lid = _lrg_map.live_range_id(n);
-        if (lid) {
-          LRG& lrg = lrgs(lid);
-          if (lrg._region != block->_next_region) {
-            break;
-          }
-        }
-      }
-      block->_region_start = location;
-    }
-    if (block->_prev_region > block->_region) {
-      assert (_cfg.get_block_for_node(block->pred(1))->_region == block->_prev_region, "");
-      uint location;
-      for (location = 1; location < block->number_of_nodes(); location++) {
-        Node* n = block->get_node(location);
-        uint input_edge_start =1; // Skip control most nodes
-        if (n->is_Mach()) {
-          input_edge_start = n->as_Mach()->oper_input_base();
-        }
-        uint k;
-        for (k = input_edge_start; k < n->req(); k++) {
-          uint lid = _lrg_map.live_range_id(n->in(k));
-          if (lid && lrgs(lid)._region != block->_prev_region) {
-            break;
-          }
-        }
-        if (k < n->req()) {
-          break;
-        }
-      }
-      block->_region_end = location;
-    }
-//    for (uint location = 1; location < block->number_of_nodes(); location++) {
-//      Node* n = block->get_node(location);
-//      uint lid = _lrg_map.live_range_id(n);
-//      if (lid) {
-//        LRG& lrg = lrgs(lid);
-//        if (location > block->_region_start) {
-//          lrg._region2 = MIN2(lrg._region2, block->_next_region);
-//        } else {
-//          lrg._region2 = MIN2(lrg._region2, block->_region);
-//        }
-//      }
-//      uint input_edge_start =1; // Skip control most nodes
-//      if (n->is_Mach()) {
-//        input_edge_start = n->as_Mach()->oper_input_base();
-//      }
-//      for (uint k = input_edge_start; k < n->req(); k++) {
-//        uint vreg = _lrg_map.live_range_id(n->in(k));
-//        if (vreg) {
-//          LRG& lrg = lrgs(vreg);
-//          if (location < block->_region_end) {
-//            lrg._region2 = MIN2(lrg._region2, block->_prev_region);
-//          } else {
-//            lrg._region2 = MIN2(lrg._region2, block->_region);
-//          }
-//        }
-//      }
-//    }
-  }
-}
-
 void PhaseChaitin::de_ssa() {
   // Set initial Names for all Nodes.  Most Nodes get the virtual register
   // number.  A few get the ZERO live range number.  These do not
@@ -1060,6 +963,7 @@ void PhaseChaitin::mark_ssa() {
 void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggressive, uint region) {
   for (uint i = 1; i < _lrg_map.max_lrg_id(); i++) {
     lrgs(i)._region2 = max_juint;
+    lrgs(i).set_prev_reg(OptoReg::Bad);
   }
 
   // Nail down the frame pointer live range
@@ -1089,6 +993,13 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 //          tty->print("XXX (def) %d", vreg); n->dump();
 //        }
 
+        if (n->_idx < (uint)_node_regs.length()) {
+          OptoReg::Name r = get_reg_first(n);
+          if (OptoReg::is_valid(r)) {
+            assert(lrg.prev_reg() == OptoReg::Bad || lrg.prev_reg() == r, "");
+            lrg.set_prev_reg(r);
+          }
+        }
         uint block_region = block->_region;
 
         if (n->is_SpillCopy() && n->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
@@ -1500,6 +1411,14 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
   // Final per-liverange setup
   for (uint i2 = 0; i2 < _lrg_map.max_lrg_id(); i2++) {
     LRG &lrg = lrgs(i2);
+    if (lrg._region > region && OptoReg::is_valid(lrg.prev_reg())) {
+      RegMask rm;
+      rm.Insert(lrg.prev_reg());
+      for (int i = 1; i < lrg.num_regs(); i++) {
+        rm.Insert(OptoReg::add(lrg.prev_reg(), -i));
+      }
+      lrg.AND(rm);
+    }
     assert(!lrg._is_vector || !lrg._fat_proj, "sanity");
     if (lrg.num_regs() > 1 && !lrg._fat_proj) {
       lrg.clear_to_sets();

@@ -220,7 +220,6 @@ public:
 
   uint _region;
   uint _region2;
-  uint _min_region;
 
   // Alive if non-zero, dead if zero
   bool alive() const { return _def != NULL; }
@@ -818,8 +817,6 @@ private:
   friend class PhaseCoalesce;
   friend class PhaseAggressiveCoalesce;
   friend class PhaseConservativeCoalesce;
-
-  void compute_min_regions(const Block_List &blocks);
 
   void record_regs();
 };

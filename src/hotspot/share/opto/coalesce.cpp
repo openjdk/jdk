@@ -665,7 +665,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   uint lr1 = _phc._lrg_map.find(dst_copy);
   uint lr2 = _phc._lrg_map.find(src_def);
 
-  if (lrgs(lr1)._region2 < _region && lrgs(lr2)._region2 < _region) {
+  if (lrgs(lr1)._region2 < _region || lrgs(lr2)._region2 < _region) {
     return false;
   }
 
