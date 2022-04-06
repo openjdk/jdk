@@ -220,6 +220,17 @@ JNIEXPORT jint JNICALL Java_jdk_net_LinuxSocketOptions_getTcpKeepAliveIntvl0
     return optval;
 }
 
+static int socketFamily(jint fd) {
+    SOCKETADDRESS sa;
+    socklen_t sa_len = sizeof(SOCKETADDRESS);
+
+    if (getsockname(fd, &sa.sa, &sa_len) == 0) {
+        return sa.sa.sa_family;
+        }
+    }
+    return -1;
+}
+
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    incomingNapiIdSupported0
@@ -280,15 +291,4 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_getIpDontFragment0
     rv = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optval, &sz);
     handleError(env, rv, "get option IP_DONTFRAGMENT failed");
     return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
-}
-
-static int socketFamily(jint fd) {
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
-
-    if (getsockname(fd, &sa.sa, &sa_len) == 0) {
-        return sa.sa.sa_family;
-        }
-    }
-    return -1;
 }
