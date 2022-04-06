@@ -288,7 +288,6 @@ void DefNewGeneration::swap_spaces() {
 }
 
 bool DefNewGeneration::expand(size_t bytes) {
-  MutexLocker x(ExpandHeap_lock);
   HeapWord* prev_high = (HeapWord*) _virtual_space.high();
   bool success = _virtual_space.expand_by(bytes);
   if (success && ZapUnusedHeapArea) {

@@ -210,7 +210,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread, _allow_suspend);
+      SafepointMechanism::process_if_requested(_thread, _allow_suspend, false /* check_async_exception */);
     }
   }
 };

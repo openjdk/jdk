@@ -36,6 +36,7 @@ import sun.jvm.hotspot.debugger.MachineDescription;
 import sun.jvm.hotspot.debugger.MachineDescriptionAMD64;
 import sun.jvm.hotspot.debugger.MachineDescriptionPPC64;
 import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
+import sun.jvm.hotspot.debugger.MachineDescriptionRISCV64;
 import sun.jvm.hotspot.debugger.MachineDescriptionIntelX86;
 import sun.jvm.hotspot.debugger.NoSuchSymbolException;
 import sun.jvm.hotspot.debugger.bsd.BsdDebuggerLocal;
@@ -476,12 +477,8 @@ public class HotSpotAgent {
             throw new DebuggerException("Cannot find alternate SA Debugger: '" + alternateName + "'");
         } catch (NoSuchMethodException nsme) {
             throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' has missing constructor.");
-        } catch (InstantiationException ie) {
-            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", ie);
-        } catch (IllegalAccessException iae) {
-            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", iae);
-        } catch (InvocationTargetException iae) {
-            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", iae);
+        } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+            throw new DebuggerException("Alternate SA Debugger: '" + alternateName + "' fails to initialise: ", e);
         }
 
         System.err.println("Loaded alternate HotSpot SA Debugger: " + alternateName);
@@ -558,6 +555,8 @@ public class HotSpotAgent {
             machDesc = new MachineDescriptionPPC64();
         } else if (cpu.equals("aarch64")) {
             machDesc = new MachineDescriptionAArch64();
+        } else if (cpu.equals("riscv64")) {
+            machDesc = new MachineDescriptionRISCV64();
         } else {
           try {
             machDesc = (MachineDescription)

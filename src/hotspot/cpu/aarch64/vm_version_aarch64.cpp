@@ -45,6 +45,7 @@ int VM_Version::_zva_length;
 int VM_Version::_dcache_line_size;
 int VM_Version::_icache_line_size;
 int VM_Version::_initial_sve_vector_length;
+bool VM_Version::_rop_protection;
 
 SpinWait VM_Version::_spin_wait;
 
@@ -407,6 +408,39 @@ void VM_Version::initialize() {
   if (!UsePopCountInstruction) {
     warning("UsePopCountInstruction is always enabled on this CPU");
     UsePopCountInstruction = true;
+  }
+
+  if (UseBranchProtection == nullptr || strcmp(UseBranchProtection, "none") == 0) {
+    _rop_protection = false;
+  } else if (strcmp(UseBranchProtection, "standard") == 0) {
+    _rop_protection = false;
+    // Enable PAC if this code has been built with branch-protection and the CPU/OS supports it.
+#ifdef __ARM_FEATURE_PAC_DEFAULT
+    if ((_features & CPU_PACA) != 0) {
+      _rop_protection = true;
+    }
+#endif
+  } else if (strcmp(UseBranchProtection, "pac-ret") == 0) {
+    _rop_protection = true;
+#ifdef __ARM_FEATURE_PAC_DEFAULT
+    if ((_features & CPU_PACA) == 0) {
+      warning("ROP-protection specified, but not supported on this CPU.");
+      // Disable PAC to prevent illegal instruction crashes.
+      _rop_protection = false;
+    }
+#else
+    warning("ROP-protection specified, but this VM was built without ROP-protection support.");
+#endif
+  } else {
+    vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
+  }
+
+  // The frame pointer must be preserved for ROP protection.
+  if (_rop_protection == true) {
+    if (FLAG_IS_DEFAULT(PreserveFramePointer) == false && PreserveFramePointer == false ) {
+      vm_exit_during_initialization(err_msg("PreserveFramePointer cannot be disabled for ROP-protection"));
+    }
+    PreserveFramePointer = true;
   }
 
 #ifdef COMPILER2

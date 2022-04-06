@@ -202,7 +202,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
     }
 
-    private void permits(AlgorithmParameters ap, ConstraintsParameters cp)
+    public void permits(AlgorithmParameters ap, ConstraintsParameters cp)
         throws CertPathValidatorException {
 
         switch (ap.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
@@ -783,7 +783,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             for (String usage : usages) {
 
                 boolean match = false;
-                switch (usage.toLowerCase()) {
+                switch (usage.toLowerCase(Locale.ENGLISH)) {
                     case "tlsserver":
                         match = variant.equals(Validator.VAR_TLS_SERVER);
                         break;

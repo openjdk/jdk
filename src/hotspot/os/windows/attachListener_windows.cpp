@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
-#include "services/dtraceAttacher.hpp"
 
 #include <windows.h>
 #include <signal.h>             // SIGBREAK
@@ -155,7 +154,7 @@ class Win32AttachOperation: public AttachOperation {
   }
 
  public:
-  void Win32AttachOperation::complete(jint result, bufferedStream* result_stream);
+  void complete(jint result, bufferedStream* result_stream);
 };
 
 

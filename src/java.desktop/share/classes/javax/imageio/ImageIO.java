@@ -277,9 +277,9 @@ public final class ImageIO {
      *
      * @see File#createTempFile(String, String, File)
      *
-     * @exception SecurityException if the security manager denies
+     * @throws SecurityException if the security manager denies
      * access to the directory.
-     * @exception IllegalArgumentException if {@code cacheDir} is
+     * @throws IllegalArgumentException if {@code cacheDir} is
      * non-{@code null} but is not a directory.
      *
      * @see #getCacheDirectory
@@ -326,9 +326,9 @@ public final class ImageIO {
      *
      * @return an {@code ImageInputStream}, or {@code null}.
      *
-     * @exception IllegalArgumentException if {@code input}
+     * @throws IllegalArgumentException if {@code input}
      * is {@code null}.
-     * @exception IOException if a cache file is needed but cannot be
+     * @throws IOException if a cache file is needed but cannot be
      * created.
      *
      * @see javax.imageio.spi.ImageInputStreamSpi
@@ -388,9 +388,9 @@ public final class ImageIO {
      * @return an {@code ImageOutputStream}, or
      * {@code null}.
      *
-     * @exception IllegalArgumentException if {@code output} is
+     * @throws IllegalArgumentException if {@code output} is
      * {@code null}.
-     * @exception IOException if a cache file is needed but cannot be
+     * @throws IOException if a cache file is needed but cannot be
      * created.
      *
      * @see javax.imageio.spi.ImageOutputStreamSpi
@@ -637,7 +637,7 @@ public final class ImageIO {
      *
      * @return an {@code Iterator} containing {@code ImageReader}s.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * {@code null}.
      *
      * @see javax.imageio.spi.ImageReaderSpi#canDecodeInput
@@ -697,7 +697,7 @@ public final class ImageIO {
      * @return an {@code Iterator} containing
      * {@code ImageReader}s.
      *
-     * @exception IllegalArgumentException if {@code formatName}
+     * @throws IllegalArgumentException if {@code formatName}
      * is {@code null}.
      *
      * @see javax.imageio.spi.ImageReaderSpi#getFormatNames
@@ -732,7 +732,7 @@ public final class ImageIO {
      * @return an {@code Iterator} containing
      * {@code ImageReader}s.
      *
-     * @exception IllegalArgumentException if {@code fileSuffix}
+     * @throws IllegalArgumentException if {@code fileSuffix}
      * is {@code null}.
      *
      * @see javax.imageio.spi.ImageReaderSpi#getFileSuffixes
@@ -767,7 +767,7 @@ public final class ImageIO {
      * @return an {@code Iterator} containing
      * {@code ImageReader}s.
      *
-     * @exception IllegalArgumentException if {@code MIMEType} is
+     * @throws IllegalArgumentException if {@code MIMEType} is
      * {@code null}.
      *
      * @see javax.imageio.spi.ImageReaderSpi#getMIMETypes
@@ -880,7 +880,7 @@ public final class ImageIO {
      * @return an {@code Iterator} containing
      * {@code ImageWriter}s.
      *
-     * @exception IllegalArgumentException if {@code formatName} is
+     * @throws IllegalArgumentException if {@code formatName} is
      * {@code null}.
      *
      * @see javax.imageio.spi.ImageWriterSpi#getFormatNames
@@ -914,7 +914,7 @@ public final class ImageIO {
      *
      * @return an {@code Iterator} containing {@code ImageWriter}s.
      *
-     * @exception IllegalArgumentException if {@code fileSuffix} is
+     * @throws IllegalArgumentException if {@code fileSuffix} is
      * {@code null}.
      *
      * @see javax.imageio.spi.ImageWriterSpi#getFileSuffixes
@@ -948,7 +948,7 @@ public final class ImageIO {
      *
      * @return an {@code Iterator} containing {@code ImageWriter}s.
      *
-     * @exception IllegalArgumentException if {@code MIMEType} is
+     * @throws IllegalArgumentException if {@code MIMEType} is
      * {@code null}.
      *
      * @see javax.imageio.spi.ImageWriterSpi#getMIMETypes
@@ -995,7 +995,7 @@ public final class ImageIO {
      *
      * @return an {@code ImageWriter}, or null.
      *
-     * @exception IllegalArgumentException if {@code reader} is
+     * @throws IllegalArgumentException if {@code reader} is
      * {@code null}.
      *
      * @see #getImageReader(ImageWriter)
@@ -1075,7 +1075,7 @@ public final class ImageIO {
      *
      * @return an {@code ImageReader}, or null.
      *
-     * @exception IllegalArgumentException if {@code writer} is
+     * @throws IllegalArgumentException if {@code writer} is
      * {@code null}.
      *
      * @see #getImageWriter(ImageReader)
@@ -1151,7 +1151,7 @@ public final class ImageIO {
      *
      * @return an {@code Iterator} containing {@code ImageWriter}s.
      *
-     * @exception IllegalArgumentException if any parameter is
+     * @throws IllegalArgumentException if any parameter is
      * {@code null}.
      *
      * @see javax.imageio.spi.ImageWriterSpi#canEncodeImage(ImageTypeSpecifier)
@@ -1238,7 +1238,7 @@ public final class ImageIO {
      * @return an {@code Iterator} containing
      * {@code ImageTranscoder}s.
      *
-     * @exception IllegalArgumentException if {@code reader} or
+     * @throws IllegalArgumentException if {@code reader} or
      * {@code writer} is {@code null}.
      */
     public static Iterator<ImageTranscoder>
@@ -1295,9 +1295,9 @@ public final class ImageIO {
      * @return a {@code BufferedImage} containing the decoded
      * contents of the input, or {@code null}.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * {@code null}.
-     * @exception IOException if an error occurs during reading or when not
+     * @throws IOException if an error occurs during reading or when not
      * able to create required ImageInputStream.
      */
     public static BufferedImage read(File input) throws IOException {
@@ -1346,9 +1346,9 @@ public final class ImageIO {
      * @return a {@code BufferedImage} containing the decoded
      * contents of the input, or {@code null}.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * {@code null}.
-     * @exception IOException if an error occurs during reading or when not
+     * @throws IOException if an error occurs during reading or when not
      * able to create required ImageInputStream.
      */
     public static BufferedImage read(InputStream input) throws IOException {
@@ -1390,9 +1390,9 @@ public final class ImageIO {
      * @return a {@code BufferedImage} containing the decoded
      * contents of the input, or {@code null}.
      *
-     * @exception IllegalArgumentException if {@code input} is
+     * @throws IllegalArgumentException if {@code input} is
      * {@code null}.
-     * @exception IOException if an error occurs during reading or when not
+     * @throws IOException if an error occurs during reading or when not
      * able to create required ImageInputStream.
      */
     public static BufferedImage read(URL input) throws IOException {
@@ -1443,9 +1443,9 @@ public final class ImageIO {
      * @return a {@code BufferedImage} containing the decoded
      * contents of the input, or {@code null}.
      *
-     * @exception IllegalArgumentException if {@code stream} is
+     * @throws IllegalArgumentException if {@code stream} is
      * {@code null}.
-     * @exception IOException if an error occurs during reading.
+     * @throws IOException if an error occurs during reading.
      */
     public static BufferedImage read(ImageInputStream stream)
         throws IOException {
@@ -1489,9 +1489,9 @@ public final class ImageIO {
      *
      * @return {@code false} if no appropriate writer is found.
      *
-     * @exception IllegalArgumentException if any parameter is
+     * @throws IllegalArgumentException if any parameter is
      * {@code null}.
-     * @exception IOException if an error occurs during writing.
+     * @throws IOException if an error occurs during writing.
      */
     public static boolean write(RenderedImage im,
                                 String formatName,
@@ -1522,9 +1522,9 @@ public final class ImageIO {
      *
      * @return {@code false} if no appropriate writer is found.
      *
-     * @exception IllegalArgumentException if any parameter is
+     * @throws IllegalArgumentException if any parameter is
      * {@code null}.
-     * @exception IOException if an error occurs during writing or when not
+     * @throws IOException if an error occurs during writing or when not
      * able to create required ImageOutputStream.
      */
     public static boolean write(RenderedImage im,
@@ -1570,9 +1570,9 @@ public final class ImageIO {
      *
      * @return {@code false} if no appropriate writer is found.
      *
-     * @exception IllegalArgumentException if any parameter is
+     * @throws IllegalArgumentException if any parameter is
      * {@code null}.
-     * @exception IOException if an error occurs during writing or when not
+     * @throws IOException if an error occurs during writing or when not
      * able to create required ImageOutputStream.
      */
     public static boolean write(RenderedImage im,

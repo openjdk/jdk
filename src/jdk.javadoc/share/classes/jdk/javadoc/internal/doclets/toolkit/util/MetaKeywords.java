@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  * field names to be included as meta keywords in the HTML header
  * of class pages.  These keywords improve search results
  * on browsers that look for keywords.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class MetaKeywords {
 
@@ -93,7 +88,7 @@ public class MetaKeywords {
      */
     protected List<String> getClassKeyword(TypeElement typeElement) {
         ArrayList<String> metakeywords = new ArrayList<>(1);
-        String cltypelower = utils.isInterface(typeElement) ? "interface" : "class";
+        String cltypelower = utils.isPlainInterface(typeElement) ? "interface" : "class";
         metakeywords.add(utils.getFullyQualifiedName(typeElement) + " " + cltypelower);
         return metakeywords;
     }
@@ -117,9 +112,9 @@ public class MetaKeywords {
      */
     public List<String> getMetaKeywordsForModule(ModuleElement mdle) {
         if (options.keywords()) {
-            return Arrays.asList(mdle.getQualifiedName() + " " + "module");
+            return List.of(mdle.getQualifiedName() + " " + "module");
         } else {
-            return Collections.emptyList();
+            return List.of();
         }
     }
 

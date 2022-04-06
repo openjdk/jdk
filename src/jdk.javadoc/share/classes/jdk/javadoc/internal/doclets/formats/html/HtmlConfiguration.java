@@ -76,11 +76,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
  * Also do the error checking on the options used. For example it is illegal to
  * use "-helpfile" option when already "-nohelp" option is used.
  * </p>
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlConfiguration extends BaseConfiguration {
 

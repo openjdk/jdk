@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1299,9 +1299,9 @@ public class UnitTest {
         // *** TESTS FOR ANNOTATION INHERITANCE AND ENUMERATING DECLARED ANNOTATIONS
 
         // Inheritance tests
-        checkInheritence(Grandpa.class, true, true);
-        checkInheritence(Dad.class,     true, false);
-        checkInheritence(Son.class,     true, true);
+        checkInheritance(Grandpa.class, true, true);
+        checkInheritance(Dad.class,     true, false);
+        checkInheritance(Son.class,     true, true);
 
         // Declared annotations tests
         checkDeclaredAnnotations(Grandpa.class, true, true);
@@ -3531,7 +3531,7 @@ public class UnitTest {
     }
 
     // Verification method for inheritance test
-    static void checkInheritence(AnnotatedElement e, boolean shouldHaveFoo, boolean shouldHaveBar) {
+    static void checkInheritance(AnnotatedElement e, boolean shouldHaveFoo, boolean shouldHaveBar) {
         numTests++;
         try {
             boolean hasFoo = e.isAnnotationPresent(Foo.class);

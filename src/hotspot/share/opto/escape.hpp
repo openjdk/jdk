@@ -232,7 +232,8 @@ public:
 
 #ifndef PRODUCT
   NodeType node_type() const { return (NodeType)_type;}
-  void dump(bool print_state=true) const;
+  void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
+  void dump_header(bool print_state=true, outputStream* out=tty) const;
 #endif
 
 };
@@ -429,21 +430,26 @@ private:
   int find_init_values_phantom(JavaObjectNode* ptn);
 
   // Set the escape state of an object and its fields.
-  void set_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc) {
+  void set_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
+                        NOT_PRODUCT(COMMA const char* reason)) {
     // Don't change non-escaping state of NULL pointer.
     if (ptn != null_obj) {
       if (ptn->escape_state() < esc) {
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, false, reason));
         ptn->set_escape_state(esc);
       }
       if (ptn->fields_escape_state() < esc) {
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
     }
   }
-  void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc) {
+  void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
+                               NOT_PRODUCT(COMMA const char* reason)) {
     // Don't change non-escaping state of NULL pointer.
     if (ptn != null_obj) {
       if (ptn->fields_escape_state() < esc) {
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
     }
@@ -568,6 +574,24 @@ private:
 
   // Compute the escape information
   bool compute_escape();
+
+  void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
+#ifndef PRODUCT
+    if (_compile->directive()->TraceEscapeAnalysisOption) {
+      assert(ptn != nullptr, "should not be null");
+      ptn->dump_header(true);
+      tty->print_cr("is NSR. %s", reason);
+    }
+#endif
+    ptn->set_scalar_replaceable(false);
+  }
+
+#ifndef PRODUCT
+  void trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields, const char* reason) const;
+  const char* trace_propagate_message(PointsToNode* from) const;
+  const char* trace_arg_escape_message(CallNode* call) const;
+  const char* trace_merged_message(PointsToNode* other) const;
+#endif
 
 public:
   ConnectionGraph(Compile *C, PhaseIterGVN *igvn, int iteration);

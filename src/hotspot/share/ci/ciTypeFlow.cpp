@@ -727,7 +727,8 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
   }
   ciConstant con = str->get_constant();
   if (con.is_valid()) {
-    BasicType basic_type = con.basic_type();
+    int index = str->get_constant_pool_index();
+    BasicType basic_type = str->get_basic_type_for_constant_at(index);
     if (is_reference_type(basic_type)) {
       ciObject* obj = con.as_object();
       if (obj->is_null_object()) {
@@ -737,11 +738,12 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
         push_object(obj->klass());
       }
     } else {
+      assert(basic_type == con.basic_type() || con.basic_type() == T_OBJECT,
+             "not a boxed form: %s vs %s", type2name(basic_type), type2name(con.basic_type()));
       push_translate(ciType::make(basic_type));
     }
   } else {
-    // OutOfMemoryError in the CI while loading constant.
-    // Unresolved condy also lands here (not yet supported).
+    // OutOfMemoryError in the CI while loading a String constant.
     push_null();
     outer()->record_failure("ldc did not link");
   }
@@ -2458,7 +2460,7 @@ int ciTypeFlow::profiled_count(ciTypeFlow::Loop* loop) {
     return 0;
   }
   ciTypeFlow::Block* tail = loop->tail();
-  if (tail->control() == -1) {
+  if (tail->control() == -1 || tail->has_trap()) {
     return 0;
   }
 

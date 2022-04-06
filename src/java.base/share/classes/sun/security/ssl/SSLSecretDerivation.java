@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
             HKDF hkdf = new HKDF(hashAlg.name);
             return hkdf.expand(secret, hkdfInfo, hashAlg.hashLength, algorithm);
         } catch (GeneralSecurityException gse) {
-            throw (SSLHandshakeException) new SSLHandshakeException(
-                "Could not generate secret").initCause(gse);
+            throw new SSLHandshakeException("Could not generate secret", gse);
         }
     }
 

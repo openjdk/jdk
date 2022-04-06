@@ -392,6 +392,23 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
   return obj == NULL? NULL: get_object(obj)->as_instance();
 }
 
+ciInstanceKlass* ciEnv::get_box_klass_for_primitive_type(BasicType type) {
+  switch (type) {
+    case T_BOOLEAN: return Boolean_klass();
+    case T_BYTE   : return Byte_klass();
+    case T_CHAR   : return Character_klass();
+    case T_SHORT  : return Short_klass();
+    case T_INT    : return Integer_klass();
+    case T_LONG   : return Long_klass();
+    case T_FLOAT  : return Float_klass();
+    case T_DOUBLE : return Double_klass();
+
+    default:
+      assert(false, "not a primitive: %s", type2name(type));
+      return NULL;
+  }
+}
+
 ciInstance* ciEnv::ArrayIndexOutOfBoundsException_instance() {
   if (_ArrayIndexOutOfBoundsException_instance == NULL) {
     _ArrayIndexOutOfBoundsException_instance
@@ -651,53 +668,74 @@ ciKlass* ciEnv::get_klass_by_index(const constantPoolHandle& cpool,
 }
 
 // ------------------------------------------------------------------
-// ciEnv::get_constant_by_index_impl
+// ciEnv::unbox_primitive_value
 //
-// Implementation of get_constant_by_index().
-ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
-                                             int pool_index, int cache_index,
-                                             ciInstanceKlass* accessor) {
-  bool ignore_will_link;
-  int index = pool_index;
-  if (cache_index >= 0) {
-    assert(index < 0, "only one kind of index at a time");
-    index = cpool->object_to_cp_index(cache_index);
-    oop obj = cpool->resolved_references()->obj_at(cache_index);
-    if (obj != NULL) {
-      if (obj == Universe::the_null_sentinel()) {
-        return ciConstant(T_OBJECT, get_object(NULL));
-      }
-      BasicType bt = T_OBJECT;
-      if (cpool->tag_at(index).is_dynamic_constant()) {
-        bt = Signature::basic_type(cpool->uncached_signature_ref_at(index));
-      }
-      if (!is_reference_type(bt)) {
-        // we have to unbox the primitive value
-        if (!is_java_primitive(bt)) {
-          return ciConstant();
-        }
-        jvalue value;
-        BasicType bt2 = java_lang_boxing_object::get_value(obj, &value);
-        assert(bt2 == bt, "");
-        switch (bt2) {
-        case T_DOUBLE:  return ciConstant(value.d);
-        case T_FLOAT:   return ciConstant(value.f);
-        case T_LONG:    return ciConstant(value.j);
-        case T_INT:     return ciConstant(bt2, value.i);
-        case T_SHORT:   return ciConstant(bt2, value.s);
-        case T_BYTE:    return ciConstant(bt2, value.b);
-        case T_CHAR:    return ciConstant(bt2, value.c);
-        case T_BOOLEAN: return ciConstant(bt2, value.z);
-        default:  return ciConstant();
-        }
-      }
-      ciObject* ciobj = get_object(obj);
-      if (ciobj->is_array()) {
-        return ciConstant(T_ARRAY, ciobj);
+// Unbox a primitive and return it as a ciConstant.
+ciConstant ciEnv::unbox_primitive_value(ciObject* cibox, BasicType expected_bt) {
+  jvalue value;
+  BasicType bt = java_lang_boxing_object::get_value(cibox->get_oop(), &value);
+  if (bt != expected_bt && expected_bt != T_ILLEGAL) {
+    assert(false, "type mismatch: %s vs %s", type2name(expected_bt), cibox->klass()->name()->as_klass_external_name());
+    return ciConstant();
+  }
+  switch (bt) {
+    case T_BOOLEAN: return ciConstant(bt, value.z);
+    case T_BYTE:    return ciConstant(bt, value.b);
+    case T_SHORT:   return ciConstant(bt, value.s);
+    case T_CHAR:    return ciConstant(bt, value.c);
+    case T_INT:     return ciConstant(bt, value.i);
+    case T_LONG:    return ciConstant(value.j);
+    case T_FLOAT:   return ciConstant(value.f);
+    case T_DOUBLE:  return ciConstant(value.d);
+
+    default:
+      assert(false, "not a primitive type: %s", type2name(bt));
+      return ciConstant();
+  }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::get_resolved_constant
+//
+ciConstant ciEnv::get_resolved_constant(const constantPoolHandle& cpool, int obj_index) {
+  assert(obj_index >= 0, "");
+  oop obj = cpool->resolved_references()->obj_at(obj_index);
+  if (obj == NULL) {
+    // Unresolved constant. It is resolved when the corresponding slot contains a non-null reference.
+    // Null constant is represented as a sentinel (non-null) value.
+    return ciConstant();
+  } else if (obj == Universe::the_null_sentinel()) {
+    return ciConstant(T_OBJECT, get_object(NULL));
+  } else {
+    ciObject* ciobj = get_object(obj);
+    if (ciobj->is_array()) {
+      return ciConstant(T_ARRAY, ciobj);
+    } else {
+      int cp_index = cpool->object_to_cp_index(obj_index);
+      BasicType bt = cpool->basic_type_for_constant_at(cp_index);
+      if (is_java_primitive(bt)) {
+        assert(cpool->tag_at(cp_index).is_dynamic_constant(), "sanity");
+        return unbox_primitive_value(ciobj, bt);
       } else {
         assert(ciobj->is_instance(), "should be an instance");
         return ciConstant(T_OBJECT, ciobj);
       }
+    }
+  }
+}
+
+// ------------------------------------------------------------------
+// ciEnv::get_constant_by_index_impl
+//
+// Implementation of get_constant_by_index().
+ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
+                                             int index, int obj_index,
+                                             ciInstanceKlass* accessor) {
+  bool ignore_will_link;
+  if (obj_index >= 0) {
+    ciConstant con = get_resolved_constant(cpool, obj_index);
+    if (con.is_valid()) {
+      return con;
     }
   }
   constantTag tag = cpool->tag_at(index);
@@ -711,35 +749,29 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     return ciConstant((jdouble)cpool->double_at(index));
   } else if (tag.is_string()) {
     EXCEPTION_CONTEXT;
-    oop string = NULL;
-    assert(cache_index >= 0, "should have a cache index");
-    string = cpool->string_at(index, cache_index, THREAD);
+    assert(obj_index >= 0, "should have an object index");
+    oop string = cpool->string_at(index, obj_index, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       record_out_of_memory_failure();
       return ciConstant();
     }
-    ciObject* constant = get_object(string);
-    if (constant->is_array()) {
-      return ciConstant(T_ARRAY, constant);
-    } else {
-      assert (constant->is_instance(), "must be an instance, or not? ");
-      return ciConstant(T_OBJECT, constant);
-    }
+    ciInstance* constant = get_object(string)->as_instance();
+    return ciConstant(T_OBJECT, constant);
   } else if (tag.is_unresolved_klass_in_error()) {
     return ciConstant(T_OBJECT, get_unloaded_klass_mirror(NULL));
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
-    assert (klass->is_instance_klass() || klass->is_array_klass(),
-            "must be an instance or array klass ");
     return ciConstant(T_OBJECT, klass->java_mirror());
   } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    assert(obj_index >= 0, "should have an object index");
     ciSymbol* signature = get_symbol(cpool->method_type_signature_at(index));
     ciObject* ciobj = get_unloaded_method_type_constant(signature);
     return ciConstant(T_OBJECT, ciobj);
   } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    assert(obj_index >= 0, "should have an object index");
     int ref_kind        = cpool->method_handle_ref_kind_at(index);
     int callee_index    = cpool->method_handle_klass_index_at(index);
     ciKlass* callee     = get_klass_by_index_impl(cpool, callee_index, ignore_will_link, accessor);
@@ -748,7 +780,8 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     ciObject* ciobj     = get_unloaded_method_handle_constant(callee, name, signature, ref_kind);
     return ciConstant(T_OBJECT, ciobj);
   } else if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
-    return ciConstant(); // not supported
+    assert(obj_index >= 0, "should have an object index");
+    return ciConstant(T_OBJECT, unloaded_ciinstance()); // unresolved dynamic constant
   } else {
     assert(false, "unknown tag: %d (%s)", tag.value(), tag.internal_name());
     return ciConstant();

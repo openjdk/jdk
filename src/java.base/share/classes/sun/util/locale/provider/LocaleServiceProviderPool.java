@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,7 +369,7 @@ public final class LocaleServiceProviderPool {
                         "A locale(" + locale + ") has non-empty extensions, but has illformed fields.");
 
                 // Fallback - script field will be lost.
-                lookupLocale = new Locale(locale.getLanguage(), locale.getCountry(), locale.getVariant());
+                lookupLocale = Locale.of(locale.getLanguage(), locale.getCountry(), locale.getVariant());
             }
         }
         return lookupLocale;

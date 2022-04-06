@@ -35,6 +35,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.plugins.jpeg.JPEGImageReadParam;
 import javax.imageio.plugins.jpeg.JPEGQTable;
 import javax.imageio.plugins.jpeg.JPEGHuffmanTable;
+import com.sun.imageio.plugins.common.SimpleCMYKColorSpace;
 
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -163,6 +164,12 @@ public class JPEGImageReader extends ImageReader {
 
     /** If we need to post-convert in Java, convert with this op */
     private ColorConvertOp convert = null;
+
+    /** If reading CMYK as an Image, flip the bytes */
+    private boolean invertCMYK = false;
+
+    /** Whether to read as a raster */
+    private boolean readAsRaster = false;
 
     /** The image we are going to fill */
     private BufferedImage image = null;
@@ -487,9 +494,9 @@ public class JPEGImageReader extends ImageReader {
     /**
      * Sets the input stream to the start of the requested image.
      * <pre>
-     * @exception IllegalStateException if the input source has not been
+     * @throws IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if the supplied index is
+     * @throws IndexOutOfBoundsException if the supplied index is
      * out of bounds.
      * </pre>
      */
@@ -938,6 +945,32 @@ public class JPEGImageReader extends ImageReader {
         ArrayList<ImageTypeProducer> list = new ArrayList<ImageTypeProducer>(1);
 
         switch (colorSpaceCode) {
+        case JPEG.JCS_YCCK:
+        case JPEG.JCS_CMYK:
+            // There's no standard CMYK ColorSpace in JDK so raw.getType()
+            // will return null so skip that.
+            // And we can't add RGB because the number of bands is different.
+            // So need to create our own special that is 4 channels and uses
+            // the iccCS ColorSpace based on profile data in the image, and
+            // if there is none, on the internal CMYKColorSpace class
+            if (iccCS == null) {
+                iccCS = SimpleCMYKColorSpace.getInstance();
+            }
+            if (iccCS != null) {
+                list.add(new ImageTypeProducer(colorSpaceCode) {
+                    @Override
+                    protected ImageTypeSpecifier produce() {
+                        int [] bands = {0, 1, 2, 3};
+                        return ImageTypeSpecifier.createInterleaved
+                         (iccCS,
+                          bands,
+                          DataBuffer.TYPE_BYTE,
+                          false,
+                          false);
+                    }
+                });
+            }
+            break;
         case JPEG.JCS_GRAYSCALE:
             list.add(raw);
             list.add(getImageType(JPEG.JCS_RGB));
@@ -1019,6 +1052,8 @@ public class JPEGImageReader extends ImageReader {
         int csType = cs.getType();
         convert = null;
         switch (outColorSpaceCode) {
+        case JPEG.JCS_CMYK:  // Its CMYK in the file
+            break;
         case JPEG.JCS_GRAYSCALE:  // Its gray in the file
             if  (csType == ColorSpace.TYPE_RGB) { // We want RGB
                 // IJG can do this for us more efficiently
@@ -1144,6 +1179,8 @@ public class JPEGImageReader extends ImageReader {
     private Raster readInternal(int imageIndex,
                                 ImageReadParam param,
                                 boolean wantRaster) throws IOException {
+
+        readAsRaster = wantRaster;
         readHeader(imageIndex, false);
 
         WritableRaster imRas = null;
@@ -1185,6 +1222,16 @@ public class JPEGImageReader extends ImageReader {
             setOutColorSpace(structPointer, colorSpaceCode);
             image = null;
         }
+
+         // Adobe seems to have decided that the bytes in CMYK JPEGs
+         // should be stored inverted. So we need some extra logic to
+         // flip them in that case. Don't flip for the raster case
+         // so code that is reading these as rasters today won't
+         // see a change in behaviour.
+         invertCMYK =
+             (!wantRaster &&
+              ((colorSpaceCode == JPEG.JCS_YCCK) ||
+               (colorSpaceCode == JPEG.JCS_CMYK)));
 
         // Create an intermediate 1-line Raster that will hold the decoded,
         // subsampled, clipped, band-selected image data in a single
@@ -1363,6 +1410,21 @@ public class JPEGImageReader extends ImageReader {
      * After the copy, we notify update listeners.
      */
     private void acceptPixels(int y, boolean progressive) {
+
+        /*
+         * CMYK JPEGs seems to be universally inverted at the byte level.
+         * Fix this here before storing.
+         * For "compatibility" don't do this if the target is a raster.
+         * Need to do this here in case the application is listening
+         * for line-by-line updates to the image.
+         */
+        if (invertCMYK) {
+            byte[] data = ((DataBufferByte)raster.getDataBuffer()).getData();
+            for (int i = 0, len = data.length; i < len; i++) {
+                data[i] = (byte)(0x0ff - (data[i] & 0xff));
+            }
+        }
+
         if (convert != null) {
             convert.filter(raster, raster);
         }
