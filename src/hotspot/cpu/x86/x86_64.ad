@@ -8688,7 +8688,7 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct udivI_rReg(rax_RegI rax, no_rax_rdx_RegI div, rFlagsReg cr, rdx_RegI rdx)
+instruct udivI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div, rFlagsReg cr)
 %{
   match(Set rax (UDivI rax div));
   effect(KILL rdx, KILL cr);
@@ -8701,7 +8701,7 @@ instruct udivI_rReg(rax_RegI rax, no_rax_rdx_RegI div, rFlagsReg cr, rdx_RegI rd
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct udivL_rReg(rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg cr, rdx_RegL rdx)
+instruct udivL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg cr)
 %{
   match(Set rax (UDivL rax div));
   effect(KILL rdx, KILL cr);
@@ -8756,8 +8756,8 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 %}
 
 // Unsigned integer DIVMOD with Register, both quotient and mod results
-instruct udivModI_rReg_divmod(rax_RegI rax, no_rax_rdx_RegI div, no_rax_rdx_RegI tmp, 
-              rFlagsReg cr, rdx_RegI rdx)
+instruct udivModI_rReg_divmod(rax_RegI rax, no_rax_rdx_RegI tmp, rdx_RegI rdx,
+                              no_rax_rdx_RegI div, rFlagsReg cr)
 %{
   match(UDivModI rax div);
   effect(TEMP tmp, KILL cr);
@@ -8773,8 +8773,8 @@ instruct udivModI_rReg_divmod(rax_RegI rax, no_rax_rdx_RegI div, no_rax_rdx_RegI
 %}
 
 // Unsigned long DIVMOD with Register, both quotient and mod results
-instruct udivModL_rReg_divmod(rax_RegL rax, no_rax_rdx_RegL div, no_rax_rdx_RegL tmp, 
-                              rFlagsReg cr, rdx_RegL rdx)
+instruct udivModL_rReg_divmod(rax_RegL rax, no_rax_rdx_RegL tmp, rdx_RegL rdx,
+                              no_rax_rdx_RegL div, rFlagsReg cr)
 %{
   match(UDivModL rax div);
   effect(TEMP tmp, KILL cr);
@@ -8893,7 +8893,7 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct umodI_rReg(rdx_RegI rdx, no_rax_rdx_RegI div, rFlagsReg cr, rax_RegI rax)
+instruct umodI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div, rFlagsReg cr)
 %{
   match(Set rdx (UModI rax div));
   effect(KILL rax, KILL cr);
@@ -8906,7 +8906,7 @@ instruct umodI_rReg(rdx_RegI rdx, no_rax_rdx_RegI div, rFlagsReg cr, rax_RegI ra
   ins_pipe(ialu_reg_reg_alu0);
 %}
 
-instruct umodL_rReg(rdx_RegL rdx, no_rax_rdx_RegL div, rFlagsReg cr, rax_RegL rax)
+instruct umodL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg cr)
 %{
   match(Set rdx (UModL rax div));
   effect(KILL rax, KILL cr);

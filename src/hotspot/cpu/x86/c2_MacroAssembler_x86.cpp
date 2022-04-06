@@ -4549,8 +4549,9 @@ void C2_MacroAssembler::udivI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movl(rdx, rax);
   subl(rdx, divisor);
-  if (VM_Version::supports_bmi1()) andnl(rax, rdx, rax);
-  else {
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rdx, rax);
+  } else {
     notl(rdx);
     andl(rax, rdx);
   }
@@ -4572,8 +4573,9 @@ void C2_MacroAssembler::umodI(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) andnl(rax, rax, rdx);
-  else {
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rax, rdx);
+  } else {
     notl(rax);
     andl(rax, rdx);
   }
@@ -4600,8 +4602,9 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movl(rdx, rax);
   subl(rax, divisor);
-  if (VM_Version::supports_bmi1()) andnl(rax, rax, rdx);
-  else {
+  if (VM_Version::supports_bmi1()) {
+    andnl(rax, rax, rdx);
+  } else {
     notl(rax);
     andl(rax, rdx);
   }
@@ -4628,8 +4631,9 @@ void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.divideUnsigned()
   movq(rdx, rax);
   subq(rdx, divisor);
-  if (VM_Version::supports_bmi1()) andnq(rax, rdx, rax);
-  else {
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rdx, rax);
+  } else {
     notq(rdx);
     andq(rax, rdx);
   }
@@ -4651,8 +4655,9 @@ void C2_MacroAssembler::umodL(Register rax, Register divisor, Register rdx) {
   // See Hacker's Delight (2nd ed), section 9.3 which is implemented in java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) andnq(rax, rax, rdx);
-  else {
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rax, rdx);
+  } else {
     notq(rax);
     andq(rax, rdx);
   }
@@ -4678,8 +4683,9 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   // java.lang.Long.divideUnsigned() and java.lang.Long.remainderUnsigned()
   movq(rdx, rax);
   subq(rax, divisor);
-  if (VM_Version::supports_bmi1()) andnq(rax, rax, rdx);
-  else {
+  if (VM_Version::supports_bmi1()) {
+    andnq(rax, rax, rdx);
+  } else {
     notq(rax);
     andq(rax, rdx);
   }

@@ -12366,12 +12366,10 @@ void Assembler::idivq(Register src) {
   emit_int16((unsigned char)0xF7, (0xF8 | encode));
 }
 
-#ifdef _LP64
 void Assembler::divq(Register src) {
   int encode = prefixq_and_encode(src->encoding());
   emit_int16((unsigned char)0xF7, (0xF0 | encode));
 }
-#endif
 
 void Assembler::imulq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
