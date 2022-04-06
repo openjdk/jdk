@@ -201,6 +201,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_AryHashCode:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:

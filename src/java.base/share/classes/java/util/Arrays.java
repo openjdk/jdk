@@ -4294,6 +4294,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static int hashCode(int[] a) {
         if (a == null)
             return 0;
@@ -4321,6 +4322,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static int hashCode(short[] a) {
         if (a == null)
             return 0;
@@ -4348,6 +4350,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static int hashCode(char[] a) {
         if (a == null)
             return 0;
@@ -4375,6 +4378,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static int hashCode(byte[] a) {
         if (a == null)
             return 0;
@@ -4429,6 +4433,7 @@ public class Arrays {
      * @return a content-based hash code for {@code a}
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static int hashCode(float[] a) {
         if (a == null)
             return 0;

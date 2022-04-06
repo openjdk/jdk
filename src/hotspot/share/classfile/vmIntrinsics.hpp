@@ -297,6 +297,17 @@ class methodHandle;
   do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
    do_signature(equalsB_signature,                               "([B[B)Z")                                             \
                                                                                                                         \
+  do_intrinsic(_hashCodeI,                  java_util_Arrays,     hashCode_name,  hashCodeI_signature,           F_S)   \
+   do_signature(hashCodeI_signature,                             "([I)I")                                               \
+  do_intrinsic(_hashCodeS,                  java_util_Arrays,     hashCode_name,  hashCodeS_signature,           F_S)   \
+   do_signature(hashCodeS_signature,                             "([S)I")                                               \
+  do_intrinsic(_hashCodeC,                  java_util_Arrays,     hashCode_name,  hashCodeC_signature,           F_S)   \
+   do_signature(hashCodeC_signature,                             "([C)I")                                               \
+  do_intrinsic(_hashCodeB,                  java_util_Arrays,     hashCode_name,  hashCodeB_signature,           F_S)   \
+   do_signature(hashCodeB_signature,                             "([B)I")                                               \
+  do_intrinsic(_hashCodeF,                  java_util_Arrays,     hashCode_name,  hashCodeF_signature,           F_S)   \
+   do_signature(hashCodeF_signature,                             "([F)I")                                               \
+                                                                                                                        \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
    do_name(     compress_name,                                   "compress")                                            \
   do_intrinsic(_compressStringB,          java_lang_StringUTF16,  compress_name, indexOfI_signature,             F_S)   \
@@ -340,7 +351,6 @@ class methodHandle;
   do_intrinsic(_equalsU,                  java_lang_StringUTF16, equals_name, equalsB_signature,                 F_S)   \
   do_intrinsic(_hashCodeL,                java_lang_StringLatin1,hashCode_name, hashCodeB_signature,             F_S)   \
   do_intrinsic(_hashCodeU,                java_lang_StringUTF16, hashCode_name, hashCodeB_signature,             F_S)   \
-   do_signature(hashCodeB_signature,                             "([B)I")                                               \
                                                                                                                         \
   do_intrinsic(_isDigit,                  java_lang_CharacterDataLatin1, isDigit_name,      int_bool_signature,  F_R)   \
    do_name(     isDigit_name,                                           "isDigit")                                      \

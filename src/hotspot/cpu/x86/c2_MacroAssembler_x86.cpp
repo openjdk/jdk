@@ -2977,66 +2977,75 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
   bind(DONE_LABEL);
 } // stringL_indexof_char
 
-int C2_MacroAssembler::array_hashcode_elsize(BasicType eltype) {
+int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
-  case T_BYTE:
-    return sizeof(jbyte);
-  case T_CHAR:
-    return sizeof(jchar);
-  case T_INT:
-    return sizeof(jint);
+  case T_BYTE:  return sizeof(jbyte);
+  case T_SHORT: return sizeof(jshort);
+  case T_CHAR:  return sizeof(jchar);
+  case T_INT:   return sizeof(jint);
+  case T_FLOAT: return sizeof(jfloat);
   default:
     ShouldNotReachHere();
     return -1;
   }
 }
 
-void C2_MacroAssembler::array_hashcode_elload(Register dst, Address src, BasicType eltype) {
+void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
   switch (eltype) {
   case T_BYTE:
     movzbl(dst, src);
     break;
+  case T_SHORT:
   case T_CHAR:
     movzwl(dst, src);
     break;
+  case T_INT:
+  case T_FLOAT:
+    movl(dst, src);
+    break;
   default:
     ShouldNotReachHere();
   }
 }
 
-void C2_MacroAssembler::array_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype) {
-  load_vector(dst, src, array_hashcode_elsize(eltype) * 8);
+void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype) {
+  load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
 }
 
-void C2_MacroAssembler::array_hashcode_elvload(XMMRegister dst, ExternalAddress src, BasicType eltype) {
-  load_vector(dst, src, array_hashcode_elsize(eltype) * 8);
+void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype) {
+  load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
 }
 
-void C2_MacroAssembler::array_hashcode_elvcast(XMMRegister dst, BasicType eltype) {
+void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype) {
   switch (eltype) {
   case T_BYTE:
-    vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, eltype, T_INT);
+    vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_BYTE, T_INT);
     break;
+  case T_SHORT:
   case T_CHAR:
     vector_unsigned_cast(dst, dst, Assembler::AVX_256bit, T_SHORT, T_INT);
     break;
+  case T_INT:
+  case T_FLOAT:
+    // do nothing
+    break;
   default:
     ShouldNotReachHere();
   }
 }
 
-void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register result,
-                                         Register i, Register coef, Register tmp, XMMRegister vnext,
-                                         XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
-                                         XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
-                                         XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
-                                         BasicType eltype) {
+void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register result,
+                                        Register i, Register coef, Register tmp, XMMRegister vnext,
+                                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
+                                        BasicType eltype, bool is_string_hashcode) {
   ShortBranchVerifier sbv(this);
   assert(UseAVX >= 2, "AVX2 intrinsics are required");
 
   Label SHORT, SHORT_UNROLLED_LOOP_BEGIN, SHORT_UNROLLED_LOOP_END, SHORT_SCALAR_LOOP_BEGIN, SHORT_SCALAR_LOOP_END,
         LONG, LONG_SCALAR_LOOP_BEGIN, LONG_SCALAR_LOOP_END, LONG_VECTOR_LOOP_BEGIN, LONG_VECTOR_LOOP_END,
-        END;
+        NONNULL, END;
 
   // For "renaming" for readibility of the code
   Register bound;
@@ -3052,10 +3061,26 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
      -510534177,  1507551809,  -505558625,  -293403007,   129082719, -1796951359,  -196513505, -1807454463,
      1742810335,   887503681,    28629151,      923521,       29791,         961,          31,           1};
 
-  const int elsize = array_hashcode_elsize(eltype);
+  const int elsize = arrays_hashcode_elsize(eltype);
 
-  // int result = 0;
-  movl(result, 0);
+  int length_offset  = arrayOopDesc::length_offset_in_bytes();
+  int base_offset    = arrayOopDesc::base_offset_in_bytes(eltype);
+
+  if (!is_string_hashcode) {
+    testptr(ary1, ary1);
+    jcc(Assembler::notZero, NONNULL);
+
+    movl(result, 0);
+    jmp(END);
+
+    bind(NONNULL);
+
+    movl(cnt1, Address(ary1, length_offset));
+    lea(ary1, Address(ary1, base_offset));
+  }
+
+  // int result = 0|1;
+  movl(result, is_string_hashcode ? 0 : 1);
 
   // if (cnt1 == 0) {
   cmpl(cnt1, 0);
@@ -3090,8 +3115,8 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
     movl(tmp, result);
     shll(result, 5);
     subl(result, tmp);
-    // h += str1[i];
-    array_hashcode_elload(tmp, Address(str1, i, Address::times(elsize), idx*elsize), eltype);
+    // h += ary1[i];
+    arrays_hashcode_elload(tmp, Address(ary1, i, Address::times(elsize), idx*elsize), eltype);
     addl(result, tmp);
   }
 
@@ -3111,8 +3136,8 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
   movl(tmp, result);
   shll(result, 5);
   subl(result, tmp);
-  // h += str1[i];
-  array_hashcode_elload(tmp, Address(str1, i, Address::times(elsize)), eltype);
+  // h += ary1[i];
+  arrays_hashcode_elload(tmp, Address(ary1, i, Address::times(elsize)), eltype);
   addl(result, tmp);
 
   // i += 1;
@@ -3147,8 +3172,8 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
   cmpl(i, bound);
   jcc(Assembler::less, LONG_SCALAR_LOOP_END);
 
-  // result += coef * str1[i];
-  array_hashcode_elload(tmp, Address(str1, i, Address::times(elsize)), eltype);
+  // result += coef * ary1[i];
+  arrays_hashcode_elload(tmp, Address(ary1, i, Address::times(elsize)), eltype);
   imull(tmp, coef);
   addl(result, tmp);
 
@@ -3177,7 +3202,7 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
 
   // vcoef = IntVector.fromArray(I256, power_of_31_backwards, 1);
   for (int idx = 0; idx < 4; idx++) {
-    array_hashcode_elvload(vcoef[idx], ExternalAddress(address(&power_of_31_backwards[8*idx+1])), T_INT);
+    arrays_hashcode_elvload(vcoef[idx], ExternalAddress(address(&power_of_31_backwards[8*idx+1])), T_INT);
   }
 
   // vcoef *= coef
@@ -3197,11 +3222,11 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
   jcc(Assembler::less, LONG_VECTOR_LOOP_END);
 
   for (int idx = 0; idx < 4; idx++) {
-    array_hashcode_elvload(vtmp[idx], Address(str1, i, Address::times(elsize), 8*idx*elsize), eltype);
+    arrays_hashcode_elvload(vtmp[idx], Address(ary1, i, Address::times(elsize), 8*idx*elsize), eltype);
   }
-  // vresult += vcoef * str1[i+8*idx:i+8*idx+7];
+  // vresult += vcoef * ary1[i+8*idx:i+8*idx+7];
   for (int idx = 0; idx < 4; idx++) {
-    array_hashcode_elvcast(vtmp[idx], eltype);
+    arrays_hashcode_elvcast(vtmp[idx], eltype);
     vpmulld(vtmp[idx], vtmp[idx], vcoef[idx], Assembler::AVX_256bit);
     vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
   }
@@ -3227,7 +3252,7 @@ void C2_MacroAssembler::array_hashcode(Register str1, Register cnt1, Register re
 
   bind(END);
 
-} // array_hashcode
+} // arrays_hashcode
 
 // helper function for string_compare
 void C2_MacroAssembler::load_next_elements(Register elem1, Register elem2, Register str1, Register str2,

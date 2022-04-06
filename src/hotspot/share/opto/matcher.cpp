@@ -1067,6 +1067,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_AryHashCode:
     case Op_HasNegatives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
@@ -2257,6 +2258,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_AryHashCode:
     case Op_HasNegatives:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:

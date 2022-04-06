@@ -605,8 +605,8 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // TEMPORARY
   // if( is_simple_chain_rule(globals) )  return false;
 
-  // String.(compareTo/equals/indexOf/hashCode) and Arrays.equals use many memorys edges,
-  // but writes none
+  // String.(compareTo/equals/indexOf/hashCode) and Arrays.(equals/hashCode)
+  // use many memorys edges, but writes none
   if( _matrule && _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
@@ -614,7 +614,8 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
         strcmp(_matrule->_rChild->_opType,"HasNegatives" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
+        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ||
+        strcmp(_matrule->_rChild->_opType,"AryHashCode")==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
