@@ -789,7 +789,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
-     * Creates a new, empty LinkedHashMap suitable for the expected number of mappings.
+     * Creates a new, empty, insertion-ordered LinkedHashMap suitable for the expected number of mappings.
      * The returned map uses the default load factor of 0.75, and its initial capacity is
      * generally large enough so that the expected number of mappings can be added
      * without resizing the map.
