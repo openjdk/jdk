@@ -30,7 +30,6 @@ import javax.lang.model.element.Element;
 /**
  * The interface for writing annotation type required member output.
  */
-
 public interface AnnotationTypeMemberWriter extends MemberWriter {
 
     /**

@@ -44,7 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * be used with a method.  It is used to inherit documentation from overridden
  * and implemented methods.
  */
-
 public class InheritDocTaglet extends BaseTaglet {
 
     /**

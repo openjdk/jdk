@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 /**
  * A taglet that represents the @summary tag.
  */
-
 public class SummaryTaglet extends BaseTaglet {
 
     public SummaryTaglet() {

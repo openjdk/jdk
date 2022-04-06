@@ -35,7 +35,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 /**
  * A taglet that represents the @deprecated tag.
  */
-
 public class DeprecatedTaglet extends BaseTaglet {
 
     public DeprecatedTaglet() {
