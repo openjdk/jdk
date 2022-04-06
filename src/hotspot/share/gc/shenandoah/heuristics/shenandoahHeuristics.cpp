@@ -134,7 +134,7 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         candidates[cand_idx]._region = region;
         if (heap->mode()->is_generational() && (region->age() >= InitialTenuringThreshold)) {
           // Bias selection of regions that have reached tenure age
-          for (int i = region->age() - InitialTenuringThreshold; i >= 0; i--) {
+          for (uint j = region->age() - InitialTenuringThreshold; j > 0; j--) {
             garbage = (garbage + ShenandoahTenuredRegionUsageBias) * ShenandoahTenuredRegionUsageBias;
           }
         }
@@ -219,7 +219,6 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     size_t young_available = (free_affiliated_regions + young_generation->free_unaffiliated_regions()) * region_size_bytes;
 
     size_t regions_available_to_loan = 0;
-    size_t preapproved_evac_reserve_loan = 0;
 
     if (heap->mode()->is_generational()) {
       //  Now that we've primed the collection set, we can figure out how much memory to reserve for evacuation
@@ -239,8 +238,6 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       //
       young_evacuation_reserve -= heap->get_old_evac_reserve();
 
-      size_t old_region_borrow_count = 0;
-
       // Though we cannot know the evacuation_supplement until after we have computed the collection set, we do
       // know that every young-gen region added to the collection set will have a net positive impact on available
       // memory within young-gen, since each contributes a positive amount of garbage to available.  Thus, even
@@ -248,7 +245,6 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       // exceed young_available if there are empty regions available within old-gen to hold the results of evacuation.
 
       ShenandoahGeneration* old_generation = heap->old_generation();
-      ShenandoahYoungGeneration* young_generation = heap->young_generation();
 
       // Not all of what is currently available within young-gen can be reserved to hold the results of young-gen
       // evacuation.  This is because memory available within any heap region that is placed into the collection set
@@ -274,7 +270,6 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         } else {
           // No need to scale back young_evacuation_reserve.
         }
-        preapproved_evac_reserve_loan = loaned_region_request * region_size_bytes;
       } else {
         // No need scale back young_evacuation_reserve and no need to borrow from old-gen.  We may even have some
         // available_young_regions to support allocation pacing.
@@ -286,16 +281,10 @@ bool ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     }
 
     heap->set_young_evac_reserve(young_evacuation_reserve);
-    heap->reset_young_evac_expended();
 
     // Add young-gen regions into the collection set.  This is a virtual call, implemented differently by each
     // of the heuristics subclasses.
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
-    size_t young_evacuated_bytes = collection_set->get_young_bytes_reserved_for_evacuation();;
-    if (young_evacuated_bytes * ShenandoahEvacWaste < young_evacuation_reserve) {
-      young_evacuation_reserve = (size_t) (young_evacuated_bytes * ShenandoahEvacWaste);
-      heap->set_young_evac_reserve((size_t) young_evacuation_reserve);
-    }
 
     // Now compute the evacuation supplement, which is extra memory borrowed from old-gen that can be allocated
     // by mutators while GC is working on evacuation and update-refs.

@@ -388,16 +388,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   }
 
   static void validate_usage(const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
-    size_t generation_used;
-    if (generation->generation_mode() == YOUNG) {
-      // young_evac_expended is "usually zero".  If it is non-zero, this means we are doing evacuation or updating references
-      // and young-gen memory that holds the results of evacuation is being temporarily hidden from the usage accounting,
-      // so we add it back in here to make verification happy.
-      generation_used = generation->used() + ShenandoahHeap::heap()->get_young_evac_expended();
-    } else {
-      generation_used = generation->used();
-    }
-
+    size_t generation_used = generation->used();
     guarantee(stats.used() == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
               label, generation->name(),

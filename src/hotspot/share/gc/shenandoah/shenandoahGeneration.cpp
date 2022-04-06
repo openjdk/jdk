@@ -396,6 +396,7 @@ ShenandoahMarkingContext* ShenandoahGeneration::complete_marking_context() {
 }
 
 void ShenandoahGeneration::cancel_marking() {
+  log_info(gc)("Cancel marking: %s", name());
   if (is_concurrent_mark_in_progress()) {
     set_mark_incomplete();
   }

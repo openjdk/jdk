@@ -346,28 +346,20 @@ private:
   // two values are constant throughout each GC phases, we introduce a new service into ShenandoahGeneration.  This service
   // provides adjusted_available() based on an adjusted capacity.  At the start of evacuation, we adjust young capacity by
   // adding the amount to be borrowed from old-gen and subtracting the _young_evac_reserve, we adjust old capacity by
-  // subtracting the amount to be loaned to young-gen.  At the end of update-refs, we unadjust the capacity of each generation,
-  // and add _young_evac_expended to young-gen used.
+  // subtracting the amount to be loaned to young-gen.
   //
   // We always use adjusted capacities to determine permission to allocate within young and to promote into old.  Note
   // that adjusted capacities equal traditional capacities except during evacuation and update refs.
   //
-  // During evacuation, we assure that _young_evac_expended does not exceed _young_evac_reserve and that _old_evac_expended
-  // does not exceed _old_evac_reserve.  GCLAB allocations do not immediately affect used within the young generation
-  // since the adjusted capacity already accounts for the entire evacuation reserve.  Each GCLAB allocations increments
-  // _young_evac_expended rather than incrementing the affiliated generation's used value.
+  // During evacuation, we assure that _old_evac_expended does not exceed _old_evac_reserve.
   //
   // At the end of update references, we perform the following bookkeeping activities:
   //
   // 1. Unadjust the capacity within young-gen and old-gen to undo the effects of borrowing memory from old-gen.  Note that
   //    the entirety of the collection set is now available, so allocation capacity naturally increase at this time.
-  // 2. Increase young_gen->used() by _young_evac_expended.  This represents memory consumed by evacutions from young-gen.
-  // 3. Clear (reset to zero) _alloc_supplement_reserve, _young_evac_reserve, _old_evac_reserve, and _promotion_reserve
+  // 2. Clear (reset to zero) _alloc_supplement_reserve, _young_evac_reserve, _old_evac_reserve, and _promotion_reserve
   //
   // _young_evac_reserve and _old_evac_reserve are only non-zero during evacuation and update-references.
-  //
-  // Allocation of young GCLABs assures that _young_evac_expended + request-size < _young_evac_reserved.  If the allocation
-  //  is authorized, increment _young_evac_expended by request size.  This allocation ignores young_gen->available().
   //
   // Allocation of old GCLABs assures that _old_evac_expended + request-size < _old_evac_reserved.  If the allocation
   //  is authorized, increment _old_evac_expended by request size.  This allocation ignores old_gen->available().
@@ -386,7 +378,6 @@ private:
   size_t _old_evac_expended;           // Bytes of old-gen memory expended on old-gen evacuations
 
   size_t _young_evac_reserve;          // Bytes reserved within young-gen to hold evacuated objects from young-gen collection set
-  size_t _young_evac_expended;         // Bytes old-gen memory has been expended on young-gen evacuations
 
   size_t _captured_old_usage;          // What was old usage (bytes) when last captured?
 
@@ -456,10 +447,6 @@ public:
   // Returns previous value
   inline size_t set_young_evac_reserve(size_t new_val);
   inline size_t get_young_evac_reserve() const;
-
-  inline void reset_young_evac_expended();
-  inline size_t expend_young_evac(size_t increment);
-  inline size_t get_young_evac_expended() const;
 
   // Returns previous value.  This is a signed value because it is the amount borrowed minus the amount reserved for
   // young-gen evacuation.  In case we cannot borrow much, this value might be negative.

@@ -158,6 +158,7 @@ bool ShenandoahOldGeneration::is_concurrent_mark_in_progress() {
 
 void ShenandoahOldGeneration::cancel_marking() {
   if (is_concurrent_mark_in_progress()) {
+    log_info(gc)("Abandon satb buffers.");
     ShenandoahBarrierSet::satb_mark_queue_set().abandon_partial_marking();
   }
 
@@ -165,10 +166,10 @@ void ShenandoahOldGeneration::cancel_marking() {
 }
 
 void ShenandoahOldGeneration::transfer_pointers_from_satb() {
-  ShenandoahHeap *heap = ShenandoahHeap::heap();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   shenandoah_assert_safepoint();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
-
+  log_info(gc)("Transfer satb buffers.");
   uint nworkers = heap->workers()->active_workers();
   StrongRootsScope scope(nworkers);
 

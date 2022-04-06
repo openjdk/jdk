@@ -280,12 +280,10 @@ void ShenandoahDegenGC::op_degenerated() {
 
     heap->young_generation()->unadjust_available();
     heap->old_generation()->unadjust_available();
-    heap->young_generation()->increase_used(heap->get_young_evac_expended());
     // No need to old_gen->increase_used().  That was done when plabs were allocated, accounting for both old evacs and promotions.
 
     heap->set_alloc_supplement_reserve(0);
     heap->set_young_evac_reserve(0);
-    heap->reset_young_evac_expended();
     heap->set_old_evac_reserve(0);
     heap->reset_old_evac_expended();
     heap->set_promotion_reserve(0);

@@ -293,18 +293,9 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       r->set_update_watermark(r->top());
 
       if (r->affiliation() == ShenandoahRegionAffiliation::YOUNG_GENERATION) {
-        // This is either a GCLAB or it is a shared evacuation allocation.  In either case, we expend young evac.
-        // At end of update refs, we'll add expended young evac into young_gen->used.  We hide this usage
-        // from current accounting because memory reserved for evacuation is not part of adjusted capacity.
-        if (_heap->mode()->is_generational()) {
-          _heap->expend_young_evac(size * HeapWordSize);
-        } else {
-          // If we are not in generational mode, we still need to count this allocation as used memory.
-          _heap->young_generation()->increase_used(size * HeapWordSize);
-        }
+        _heap->young_generation()->increase_used(size * HeapWordSize);
       } else {
         assert(r->affiliation() == ShenandoahRegionAffiliation::OLD_GENERATION, "GC Alloc was not YOUNG so must be OLD");
-
         assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "old-gen allocations use PLAB or shared allocation");
         _heap->old_generation()->increase_used(size * HeapWordSize);
         // for plabs, we'll sort the difference between evac and promotion usage when we retire the plab

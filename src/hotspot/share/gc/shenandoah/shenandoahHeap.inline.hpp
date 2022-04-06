@@ -646,19 +646,6 @@ inline size_t ShenandoahHeap::get_young_evac_reserve() const {
   return _young_evac_reserve;
 }
 
-inline void ShenandoahHeap::reset_young_evac_expended() {
-  _young_evac_expended = 0;
-}
-
-inline size_t ShenandoahHeap::expend_young_evac(size_t increment) {
-  _young_evac_expended += increment;
-  return _young_evac_expended;
-}
-
-inline size_t ShenandoahHeap::get_young_evac_expended() const {
-  return _young_evac_expended;
-}
-
 inline intptr_t ShenandoahHeap::set_alloc_supplement_reserve(intptr_t new_val) {
   intptr_t orig = _alloc_supplement_reserve;
   _alloc_supplement_reserve = new_val;

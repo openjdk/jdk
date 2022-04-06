@@ -515,7 +515,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _old_evac_reserve(0),
   _old_evac_expended(0),
   _young_evac_reserve(0),
-  _young_evac_expended(0),
   _captured_old_usage(0),
   _previous_promotion(0),
   _cancel_requested_time(0),
@@ -1167,31 +1166,12 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   ShenandoahHeapLocker locker(lock());
   if (mode()->is_generational()) {
     if (req.affiliation() == YOUNG_GENERATION) {
-      if (req.type() == ShenandoahAllocRequest::_alloc_gclab) {
-        if (requested_bytes + get_young_evac_expended() > get_young_evac_reserve()) {
-          // This should only happen if evacuation waste is too low.  Rejecting one thread's request for GCLAB does not
-          // necessarily result in failure of the evacuation effort.  A different thread may be able to copy from-space object.
-
-          // TODO: Should we really fail here in the case that there is sufficient memory to allow us to allocate a gclab
-          // beyond the young_evac_reserve?  Seems it would be better to take away from mutator allocation budget if this
-          // prevents fall-back to full GC in order to recover from failed evacuation.
+      if (req.is_mutator_alloc()) {
+        if (requested_bytes >= young_generation()->adjusted_available()) {
+          // We know this is not a GCLAB.  This must be a TLAB or a shared allocation.  Reject the allocation request if
+          // exceeds established capacity limits.
           return nullptr;
         }
-        // else, there is sufficient memory to allocate this GCLAB so do nothing here.
-      } else if (req.is_gc_alloc()) {
-        // This is a shared alloc for purposes of evacuation.
-        if (requested_bytes + get_young_evac_expended() > get_young_evac_reserve()) {
-          // TODO: Should we really fail here in the case that there is sufficient memory to allow us to allocate a gclab
-          // beyond the young_evac_reserve?  Seems it would be better to take away from mutator allocation budget if this
-          // prevents fall-back to full GC in order to recover from failed evacuation.
-          return nullptr;
-        } else {
-          // There is sufficient memory to allocate this shared evacuation object.
-        }
-      }  else if (requested_bytes >= young_generation()->adjusted_available()) {
-        // We know this is not a GCLAB.  This must be a TLAB or a shared allocation.  Reject the allocation request if
-        // exceeds established capacity limits.
-        return nullptr;
       }
     } else {                    // reg.affiliation() == OLD_GENERATION
       assert(req.type() != ShenandoahAllocRequest::_alloc_gclab, "GCLAB pertains only to young-gen memory");
