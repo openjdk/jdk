@@ -33,7 +33,8 @@ import java.nio.charset.StandardCharsets;
 /*
  * @test
  * @bug 8236987
- * @summary Verifies ImageIcon constructor produces no output when the thread is interrupted
+ * @summary Verifies ImageIcon constructor produces no output when the
+ * thread is interrupted
  * @run main LoadInterruptTest
  */
 
