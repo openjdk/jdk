@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,6 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 /**
  * Build Class Hierarchy for all the Classes. This class builds the Class
  * Tree and the Interface Tree separately.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  *
  * @see java.util.HashMap
  * @see java.util.List
@@ -180,9 +175,9 @@ public class ClassTree {
                 processType(aClass, configuration, baseEnums, subEnums);
             } else if (utils.isClass(aClass)) {
                 processType(aClass, configuration, baseClasses, subClasses);
-            } else if (utils.isInterface(aClass)) {
+            } else if (utils.isPlainInterface(aClass)) {
                 processInterface(aClass);
-            } else if (utils.isAnnotationType(aClass)) {
+            } else if (utils.isAnnotationInterface(aClass)) {
                 processType(aClass, configuration, baseAnnotationTypes,
                     subAnnotationTypes);
             }
@@ -336,9 +331,9 @@ public class ClassTree {
     private SortedSet<TypeElement> directSubClasses0(TypeElement typeElement, boolean isEnum) {
         if (isEnum) {
             return get(subEnums, typeElement);
-        } else if (utils.isAnnotationType(typeElement)) {
+        } else if (utils.isAnnotationInterface(typeElement)) {
             return get(subAnnotationTypes, typeElement);
-        } else if (utils.isInterface(typeElement)) {
+        } else if (utils.isPlainInterface(typeElement)) {
             return get(subInterfaces, typeElement);
         } else if (utils.isClass(typeElement)) {
             return get(subClasses, typeElement);

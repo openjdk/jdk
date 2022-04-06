@@ -42,11 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  * is sub-classed by {@link PackageTreeWriter} and {@link TreeWriter} to
  * generate the Package Tree and global Tree(for all the classes and packages)
  * pages.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public abstract class AbstractTreeWriter extends HtmlDocletWriter {
 
@@ -117,7 +112,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
             var sectionHeading = HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING,
                     headingContent);
             var section = HtmlTree.SECTION(HtmlStyle.hierarchy, sectionHeading);
-            addLevelInfo(!utils.isInterface(firstTypeElement) ? firstTypeElement : null,
+            addLevelInfo(!utils.isPlainInterface(firstTypeElement) ? firstTypeElement : null,
                     sset, isEnums, section);
             content.add(section);
         }
@@ -137,14 +132,14 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     {
         SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.makeGeneralPurposeComparator());
         typeElement.getInterfaces().forEach(t -> interfaces.add(utils.asTypeElement(t)));
-        if (interfaces.size() > (utils.isInterface(typeElement) ? 1 : 0)) {
+        if (interfaces.size() > (utils.isPlainInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;
             for (TypeElement intf : interfaces) {
                 if (parent != intf) {
                     if (utils.isPublic(intf) || utils.isLinkable(intf)) {
                         if (isFirst) {
                             isFirst = false;
-                            if (utils.isInterface(typeElement)) {
+                            if (utils.isPlainInterface(typeElement)) {
                                 content.add(" (");
                                 content.add(contents.also);
                                 content.add(" extends ");
