@@ -49,7 +49,7 @@ public class TestSuperwordFailsUnrolling {
     }
 
     @Test
-    @IR(applyIf = { "UsePopCountInstruction", "true" }, counts = { IRNode.POPCOUNT_L, "10" })
+    @IR(applyIf = { "UsePopCountInstruction", "true" }, counts = { IRNode.POPCOUNT_L, ">=10" })
     private static int test(long[] array1, long[] array2) {
         v = 0;
         for (int i = 0; i < array1.length; i++) {

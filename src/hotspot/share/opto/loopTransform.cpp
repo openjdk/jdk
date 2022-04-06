@@ -3671,7 +3671,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       phase->has_range_checks(this);
     }
 
-    if (should_unroll && !should_peel && PostLoopMultiversioning) {
+    if (should_unroll && !should_peel && PostLoopMultiversioning &&
+        Matcher::has_predicated_vectors()) {
       // Try to setup multiversioning on main loops before they are unrolled
       if (cl->is_main_loop() && (cl->unrolled_count() == 1)) {
         phase->insert_scalar_rced_post_loop(this, old_new);

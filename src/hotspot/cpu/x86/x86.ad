@@ -2846,23 +2846,6 @@ instruct ShouldNotReachHere() %{
   ins_pipe(pipe_slow);
 %}
 
-// =================================EVEX special===============================
-// Existing partial implementation for post-loop multi-versioning computes
-// the mask corresponding to tail loop in K1 opmask register. This may then be
-// used for predicating instructions in loop body during last post-loop iteration.
-// TODO: Remove hard-coded K1 usage while fixing existing post-loop
-// multiversioning support.
-instruct setMask(rRegI dst, rRegI src, kReg_K1 mask) %{
-  predicate(PostLoopMultiversioning && Matcher::has_predicated_vectors());
-  match(Set dst (SetVectMaskI  src));
-  effect(TEMP dst);
-  format %{ "setvectmask   $dst, $src" %}
-  ins_encode %{
-    __ setvectmask($dst$$Register, $src$$Register, $mask$$KRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // ============================================================================
 
 instruct addF_reg(regF dst, regF src) %{
