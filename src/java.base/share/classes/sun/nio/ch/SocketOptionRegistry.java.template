@@ -125,6 +125,7 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_TTL));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_LOOP));
+/*
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
 #if defined(__linux__)
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MTU_DISCOVER));
@@ -134,6 +135,7 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET), new OptionKey(0, IP_DONTFRAG));
 #endif
 
+*/
 #ifdef AF_INET6
             // IPPROTO_IPV6 is 41
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_TOS,
@@ -144,12 +146,14 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MULTICAST_HOPS));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MULTICAST_LOOP));
+/*
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_DONTFRAGMENT,
 #if defined(__linux__) || defined(_WIN32)
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_MTU_DISCOVER));
 #else
                 StandardProtocolFamily.INET6), new OptionKey(41, IPV6_DONTFRAG));
 #endif
+*/
 #endif
 
             map.put(new RegistryKey(ExtendedSocketOption.PREFIX_SO_OOBINLINE,

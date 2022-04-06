@@ -199,6 +199,26 @@ public final class ExtendedSocketOptions {
         = new ExtSocketOption<UnixDomainPrincipal>
             ("SO_PEERCRED", UnixDomainPrincipal.class);
 
+    /**
+     * Disable IP packet fragmentation.
+     *
+     * <p> The value of this socket option is a {@code Boolean} that represents
+     * whether the option is enabled or disabled. When {@code true} fragmentation
+     * of outgoing IPv4 and IPv6 packets does not occur. This option can only be used
+     * with datagram sockets. When set, care must be taken to limit outgoing packet
+     * sizes to the {@link NetworkInterface.getMTU() local MTU}. Packets larger
+     * than this will be silently discarded.
+     *
+     * <p> Note, for IPv4 this option sets the DF (Do not Fragment) flag
+     * in the IP packet header. This instructs intermediate routers to not fragment
+     * the packet. IPv6 routers never fragment packets. Instead, fragmentation is
+     * handled by the sending and receiving nodes exclusively. Setting this option for
+     * an IPv6 socket ensures that packets to be sent are never fragmented, in which
+     * case, the local network MTU must be observed.
+     */
+    public static final SocketOption<Boolean> IP_DONTFRAGMENT =
+        new ExtSocketOption<Boolean>("IP_DONTFRAGMENT", Boolean.class);
+
     private static final PlatformSocketOptions platformSocketOptions =
             PlatformSocketOptions.get();
 
@@ -210,6 +230,7 @@ public final class ExtendedSocketOptions {
             platformSocketOptions.peerCredentialsSupported();
     private static final boolean incomingNapiIdOptSupported  =
             platformSocketOptions.incomingNapiIdSupported();
+
     private static final Set<SocketOption<?>> extendedOptions = options();
 
     static Set<SocketOption<?>> options() {
@@ -248,6 +269,8 @@ public final class ExtendedSocketOptions {
                     setQuickAckOption(fd, (boolean) value);
                 } else if (option == TCP_KEEPCOUNT) {
                     setTcpkeepAliveProbes(fd, (Integer) value);
+                } else if (option == IP_DONTFRAGMENT) {
+                    setIpDontFragment(fd, (Boolean) value);
                 } else if (option == TCP_KEEPIDLE) {
                     setTcpKeepAliveTime(fd, (Integer) value);
                 } else if (option == TCP_KEEPINTERVAL) {
@@ -277,6 +300,8 @@ public final class ExtendedSocketOptions {
                     return getQuickAckOption(fd);
                 } else if (option == TCP_KEEPCOUNT) {
                     return getTcpkeepAliveProbes(fd);
+                } else if (option == TCP_KEEPIDLE) {
+                    return getIpDontFragment(fd);
                 } else if (option == TCP_KEEPIDLE) {
                     return getTcpKeepAliveTime(fd);
                 } else if (option == TCP_KEEPINTERVAL) {
@@ -320,6 +345,11 @@ public final class ExtendedSocketOptions {
         platformSocketOptions.setTcpKeepAliveTime(fdAccess.get(fd), value);
     }
 
+    private static void setIpDontFragment(FileDescriptor fd, boolean value)
+            throws SocketException {
+        platformSocketOptions.setIpDontFragment(fdAccess.get(fd), value);
+    }
+
     private static void setTcpKeepAliveIntvl(FileDescriptor fd, int value)
             throws SocketException {
         platformSocketOptions.setTcpKeepAliveIntvl(fdAccess.get(fd), value);
@@ -327,6 +357,10 @@ public final class ExtendedSocketOptions {
 
     private static int getTcpkeepAliveProbes(FileDescriptor fd) throws SocketException {
         return platformSocketOptions.getTcpkeepAliveProbes(fdAccess.get(fd));
+    }
+
+    private static boolean getIpDontFragment(FileDescriptor fd) throws SocketException {
+        return platformSocketOptions.getIpDontFragment(fdAccess.get(fd));
     }
 
     private static int getTcpKeepAliveTime(FileDescriptor fd) throws SocketException {
@@ -413,6 +447,14 @@ public final class ExtendedSocketOptions {
 
         void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {
             throw new UnsupportedOperationException("unsupported TCP_KEEPINTVL option");
+        }
+
+        void setIpDontFragment(int fd, final boolean value) throws SocketException {
+            throw new UnsupportedOperationException("unsupported IP_DONTFRAGMENT option");
+        }
+
+        boolean getIpDontFragment(int fd) throws SocketException {
+            throw new UnsupportedOperationException("unsupported IP_DONTFRAGMENT option");
         }
 
         int getTcpkeepAliveProbes(int fd) throws SocketException {

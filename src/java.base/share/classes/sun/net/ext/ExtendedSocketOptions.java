@@ -96,7 +96,8 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isDatagramOption(SocketOption<?> option) {
-        if (option.name().startsWith("TCP_") || isUnixDomainOption(option)) {
+        if ((option.name().startsWith("TCP_") || isUnixDomainOption(option))
+            && !option.name().equals("IP_DONTFRAGMENT")) {
             return false;
         } else {
             return true;
@@ -108,7 +109,8 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isStreamOption(SocketOption<?> option, boolean server) {
-        if (option.name().startsWith("UDP_") || isUnixDomainOption(option)) {
+        if (option.name().startsWith("UDP_") || isUnixDomainOption(option)
+            || option.name().equals("IP_DONTFRAGMENT")) {
             return false;
         } else {
             return true;
