@@ -2553,7 +2553,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @since 19
      */
     static int calculateHashMapCapacity(int numMappings) {
-        return (int) Math.ceil(numMappings / 0.75);
+        return (int) Math.ceil(numMappings / (double) DEFAULT_LOAD_FACTOR);
     }
 
     /**
