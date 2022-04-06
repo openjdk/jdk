@@ -57,10 +57,10 @@ import jdk.internal.icu.lang.UCharacterDirection;
 import jdk.internal.icu.util.VersionInfo;
 
 /**
- * StringPrep API implements the StringPrep framework as described by
+ * StringPrep API implements the StingPrep framework as described by
  * <a href="http://www.ietf.org/rfc/rfc3454.txt">RFC 3454</a>.
  * StringPrep prepares Unicode strings for use in network protocols.
- * Profiles of StringPrep are set of rules and data according to which the
+ * Profiles of StingPrep are set of rules and data according to which the
  * Unicode Strings are prepared. Each profiles contains tables which describe
  * how a code point should be treated. The tables are broadly classied into
  * <ul>
