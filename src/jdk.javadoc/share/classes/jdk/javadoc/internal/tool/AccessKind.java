@@ -28,7 +28,6 @@ package jdk.javadoc.internal.tool;
 /**
  * The access value kinds.
  */
-
 public enum AccessKind {
     /** Limits access to public entities */
     PUBLIC,

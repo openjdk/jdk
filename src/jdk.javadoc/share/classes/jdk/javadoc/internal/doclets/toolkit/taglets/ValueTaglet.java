@@ -46,7 +46,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * is retrieved for the field that the inline tag appears on.  The name is specified
  * in the following format:  [fully qualified class name]#[constant field name].
  */
-
 public class ValueTaglet extends BaseTaglet {
 
     /**

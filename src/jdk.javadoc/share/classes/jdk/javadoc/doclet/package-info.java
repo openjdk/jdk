@@ -379,6 +379,5 @@
  * @see jdk.javadoc.doclet.Doclet
  * @see jdk.javadoc.doclet.DocletEnvironment
  * @since 9
-*/
-
+ */
 package jdk.javadoc.doclet;

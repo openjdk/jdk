@@ -38,7 +38,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * The enclosed text is interpreted as not containing HTML markup or
  * nested javadoc tags.
  */
-
 public class IndexTaglet extends BaseTaglet {
 
     IndexTaglet() {

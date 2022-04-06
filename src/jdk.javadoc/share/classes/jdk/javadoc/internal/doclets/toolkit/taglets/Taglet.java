@@ -35,7 +35,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 /**
  * This is the Taglet interface used internally within the doclet.
  */
-
 public interface Taglet {
     /**
      * Returns the set of allowed locations for a block tag handled by this taglet.

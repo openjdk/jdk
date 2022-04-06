@@ -83,7 +83,6 @@ import static javax.tools.DocumentationTool.Location.TAGLET_PATH;
 /**
  * Manages the {@code Taglet}s used by doclets.
  */
-
 public class TagletManager {
 
     /**

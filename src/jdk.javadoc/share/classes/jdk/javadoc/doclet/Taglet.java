@@ -75,7 +75,6 @@ import com.sun.source.doctree.DocTree;
  *      for the Standard Doclet</a>
  * @since 9
  */
-
 public interface Taglet {
 
     /**

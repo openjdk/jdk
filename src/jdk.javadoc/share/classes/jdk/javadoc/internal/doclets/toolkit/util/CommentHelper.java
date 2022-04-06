@@ -75,7 +75,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import static com.sun.source.doctree.DocTree.Kind.*;
 
 /**
- *  A utility class.
+ * A utility class.
  */
 public class CommentHelper {
     private final BaseConfiguration configuration;

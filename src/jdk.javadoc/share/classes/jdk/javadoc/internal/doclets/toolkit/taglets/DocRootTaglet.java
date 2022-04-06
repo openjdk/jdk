@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * used to get the relative path to the document's root output
  * directory.
  */
-
 public class DocRootTaglet extends BaseTaglet {
 
     /**
