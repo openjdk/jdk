@@ -27,7 +27,7 @@
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox javadoc.tester.*
- * @run main TestInheritDocInappropriateTag
+ * @run main TestInheritDocWithinInappropriateTag
  */
 
 import java.nio.file.Path;
@@ -35,10 +35,10 @@ import java.nio.file.Path;
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
-public class TestInheritDocInappropriateTag extends JavadocTester {
+public class TestInheritDocWithinInappropriateTag extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        new TestInheritDocInappropriateTag()
+        new TestInheritDocWithinInappropriateTag()
                 .runTests(m -> new Object[]{Path.of(m.getName())});
     }
 
@@ -77,22 +77,22 @@ public class TestInheritDocInappropriateTag extends JavadocTester {
         checkExit(Exit.OK);
         new OutputChecker(Output.OUT).setExpectOrdered(false).check(
                 """
-                        warning: @inheritDoc cannot be used in this context
+                        warning: @inheritDoc cannot be used within this tag
                              * {@summary {@inheritDoc}}
                                ^
                         """,
                 """
-                        warning: @inheritDoc cannot be used in this context
+                        warning: @inheritDoc cannot be used within this tag
                              * {@link Object#hashCode() {@inheritDoc}}
                                ^
                         """,
                 """
-                        warning: @inheritDoc cannot be used in this context
+                        warning: @inheritDoc cannot be used within this tag
                              * {@linkplain Object#hashCode() {@inheritDoc}}
                                ^
                         """,
                 """
-                        warning: @inheritDoc cannot be used in this context
+                        warning: @inheritDoc cannot be used within this tag
                              * {@index term {@inheritDoc}}
                                ^
                         """);

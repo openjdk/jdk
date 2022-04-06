@@ -88,7 +88,7 @@ public class InheritDocTaglet extends BaseTaglet {
                         : "");
                 //This tag does not support inheritance.
                 var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(holderTag);
-                messages.warning(path, "doclet.unsuitableInheritDocContext", message);
+                messages.warning(path, "doclet.inheritDocWithinInappropriateTag", message);
                 return replacement;
         }
         Input input = new DocFinder.Input(utils, e,
