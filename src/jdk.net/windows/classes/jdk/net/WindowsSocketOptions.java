@@ -24,6 +24,13 @@
  */
 package jdk.net;
 
+import java.net.SocketException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
+
+
+@SuppressWarnings("removal")
 class WindowsSocketOptions extends PlatformSocketOptions {
 
     public WindowsSocketOptions() {
@@ -40,7 +47,7 @@ class WindowsSocketOptions extends PlatformSocketOptions {
     }   
 
     private static native void setIpDontFragment0(int fd, boolean value) throws SocketException;
-    private static native int getTcpkeepAliveProbes0(int fd) throws SocketException;
+    private static native boolean getIpDontFragment0(int fd) throws SocketException;
     
     static {
         if (System.getSecurityManager() == null) {
