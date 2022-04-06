@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,45 @@ class OrderedPair {
   void print() { tty->print("  (%d, %d)", _p1->_idx, _p2->_idx); }
 
   static const OrderedPair initial;
+};
+
+// -----------------------VectorElementSizeStats-----------------------
+// Vector lane size statistics for loop vectorization with vector masks
+class VectorElementSizeStats {
+ private:
+  static const int NO_SIZE = -1;
+  static const int MIXED_SIZE = -2;
+  int* _stats;
+
+ public:
+  VectorElementSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) {
+    memset(_stats, 0, sizeof(int) * 4);
+  }
+
+  void record_size(int size) {
+    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
+    _stats[exact_log2(size)]++;
+  }
+
+  int smallest_size() {
+    for (int i = 0; i <= 3; i++) {
+      if (_stats[i] > 0) return (1 << i);
+    }
+    return NO_SIZE;
+  }
+
+  int largest_size() {
+    for (int i = 3; i >= 0; i--) {
+      if (_stats[i] > 0) return (1 << i);
+    }
+    return NO_SIZE;
+  }
+
+  int unique_size() {
+    int small = smallest_size();
+    int large = largest_size();
+    return (small == large) ? small : MIXED_SIZE;
+  }
 };
 
 // -----------------------------SuperWord---------------------------------
@@ -510,6 +549,8 @@ class SuperWord : public ResourceObj {
 
   // Convert packs into vector node operations
   bool output();
+  // Create vector mask for post loop vectorization
+  Node* create_post_loop_vmask();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?
@@ -572,7 +613,7 @@ class SuperWord : public ResourceObj {
 
 //------------------------------SWPointer---------------------------
 // Information about an address for dependence checking and vector alignment
-class SWPointer {
+class SWPointer : public ResourceObj {
  protected:
   MemNode*   _mem;           // My memory reference node
   SuperWord* _slp;           // SuperWord class
@@ -594,7 +635,7 @@ class SWPointer {
   IdealLoopTree*  lpt() const   { return _slp->lpt(); }
   PhiNode*        iv() const    { return _slp->iv();  } // Induction var
 
-  bool is_main_loop_member(Node* n) const;
+  bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
 
   // Match: k*iv + offset
@@ -657,6 +698,8 @@ class SWPointer {
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
+
+  static bool has_potential_dependence(GrowableArray<SWPointer*> swptrs);
 
   void print();
 

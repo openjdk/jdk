@@ -88,12 +88,6 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
  * This table generates all the data structures it needs for each
  * type, as its own view, and will present some form of this to the
  * doclet as and when required to.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own risk.
- * This code and its internal interfaces are subject to change or
- * deletion without notice.</b>
- *
  */
 
 public class VisibleMemberTable {

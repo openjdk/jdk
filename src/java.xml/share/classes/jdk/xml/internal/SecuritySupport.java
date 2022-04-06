@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,7 @@ public class SecuritySupport {
                 return ResourceBundle.getBundle(bundle, locale);
             } catch (MissingResourceException e) {
                 try {
-                    return ResourceBundle.getBundle(bundle, new Locale("en", "US"));
+                    return ResourceBundle.getBundle(bundle, Locale.US);
                 } catch (MissingResourceException e2) {
                     throw new MissingResourceException(
                             "Could not load any resource bundle by " + bundle, bundle, "");
