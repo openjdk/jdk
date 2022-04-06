@@ -32,6 +32,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LiteralTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+
 /**
  * An inline Taglet used to denote literal text.
  * For example, the text:
@@ -39,7 +40,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * displays as:
  * <blockquote>  {@literal a<B>c}  </blockquote>
  */
-
 public class LiteralTaglet extends BaseTaglet {
 
     LiteralTaglet() {

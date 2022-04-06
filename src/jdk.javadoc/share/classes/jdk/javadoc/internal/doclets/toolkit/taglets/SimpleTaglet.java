@@ -42,7 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A custom single-argument block tag.
  */
-
 public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**

@@ -901,8 +901,8 @@ public enum HtmlStyle {
     externalLink,
 
     /**
-     *  The class of a {@code section} element containing a hierarchical
-     *  tree view.
+     * The class of a {@code section} element containing a hierarchical
+     * tree view.
      */
     hierarchy,
 
