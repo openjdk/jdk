@@ -49,9 +49,6 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 /**
  * Build Class Hierarchy for all the Classes. This class builds the Class
  * Tree and the Interface Tree separately.
- *
- * @see java.util.HashMap
- * @see java.util.List
  */
 public class ClassTree {
 
@@ -250,7 +247,7 @@ public class ClassTree {
      * @param map the entire map.
      * @param superclass java.lang.Object or the super-interface.
      * @param typeElement sub-interface to be mapped.
-     * @returns boolean true if class added, false if class already processed.
+     * @return true if class added, false if class already processed.
      */
     private boolean add(Map<TypeElement, SortedSet<TypeElement>> map, TypeElement superclass, TypeElement typeElement) {
         SortedSet<TypeElement> sset = map.computeIfAbsent(superclass, s ->  new TreeSet<>(comparator));
@@ -268,7 +265,7 @@ public class ClassTree {
      *
      * @param map The entire map.
      * @param typeElement class for which the sub-class set is requested.
-     * @returns a list of sub classes.
+     * @return a set of sub classes.
      */
     private SortedSet<TypeElement> get(Map<TypeElement, SortedSet<TypeElement>> map, TypeElement typeElement) {
         return map.computeIfAbsent(typeElement, t ->  new TreeSet<>(comparator));

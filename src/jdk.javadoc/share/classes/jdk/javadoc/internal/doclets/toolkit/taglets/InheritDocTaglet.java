@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * An inline Taglet representing the {@code inheritDoc} tag. This tag should only
+ * An inline taglet representing the {@code {@inheritDoc}} tag. This tag should only
  * be used with a method.  It is used to inherit documentation from overridden
  * and implemented methods.
  */

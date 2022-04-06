@@ -34,7 +34,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An inline Taglet used to index word or a phrase.
+ * An inline taglet used to index a word or a phrase.
  * The enclosed text is interpreted as not containing HTML markup or
  * nested javadoc tags.
  */
