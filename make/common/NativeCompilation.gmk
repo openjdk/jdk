@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -389,6 +389,12 @@ define SetupCompileNativeFileBody
     $1_OBJ_DEPS := $$($1_SRC_FILE) $$($$($1_BASE)_COMPILE_VARDEPS_FILE) \
         $$($$($1_BASE)_EXTRA_DEPS) $$($1_VARDEPS_FILE)
     $1_COMPILE_OPTIONS := $$($1_FLAGS) $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)
+    # For reproducible builds with gcc ensure random symbol generation is seeded deterministically
+    ifeq ($(TOOLCHAIN_TYPE), gcc)
+       ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
+         $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
+       endif
+    endif
 
     $$($1_OBJ_JSON): $$($1_OBJ_DEPS)
 	$$(call WriteCompileCommandsFragment, $$@, $$(PWD), $$($1_SRC_FILE), \
@@ -1137,6 +1143,20 @@ define SetupNativeCompilationBody
         # There is no strlen function in make, but checking path depth is a
         # reasonable approximation.
         ifneq ($$(word 10, $$(subst /, ,$$(OUTPUTDIR))), )
+          $1_LINK_OBJS_RELATIVE := true
+          $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
+        endif
+      endif
+    endif
+
+    # For reproducible builds on linux, debuginfo objcopy of ASM objects
+    # always copies the absolute object path to the debuginfo, as ASM debug info
+    # paths do not get prefix mapped.
+    # So use relative paths to ensure a reproducible debuginfo and libs, when
+    # creating debug symbols. 
+    ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
+      ifeq ($(call isTargetOs, linux), true)
+        ifneq ($1_CREATE_DEBUGINFO_CMDS, )
           $1_LINK_OBJS_RELATIVE := true
           $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
         endif
