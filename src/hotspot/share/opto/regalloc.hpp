@@ -44,7 +44,7 @@ class PhaseRegAlloc : public Phase {
   static int _num_allocators;
 
 protected:
-  OptoRegPair  *_node_regs;
+  GrowableArray<OptoRegPair>  _node_regs;
   uint         _node_regs_max_index;
   VectorSet    _node_oops;         // Mapping from node indices to oopiness
 
@@ -57,18 +57,20 @@ public:
   uint _framesize;              // Size of frame in stack-slots. not counting preserve area
   OptoReg::Name _max_reg;       // Past largest register seen
   Matcher &_matcher;            // Convert Ideal to MachNodes
-  uint node_regs_max_index() const { return _node_regs_max_index; }
+  uint node_regs_max_index() const { return _node_regs.length(); }
+
+  bool has_regs() const { return _node_regs.length() > 0; }
 
   // Get the register associated with the Node
   OptoReg::Name get_reg_first( const Node *n ) const {
-    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
-    assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
-    return _node_regs[n->_idx].first();
+//    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
+//    assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
+    return _node_regs.at(n->_idx).first();
   }
   OptoReg::Name get_reg_second( const Node *n ) const {
-    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
-    assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
-    return _node_regs[n->_idx].second();
+//    debug_only( if( n->_idx >= _node_regs_max_index ) n->dump(); );
+//    assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
+    return _node_regs.at(n->_idx).second();
   }
 
   // Do all the real work of allocate
@@ -82,24 +84,24 @@ public:
 
   // Set the register associated with a new Node
   void set_bad( uint idx ) {
-    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
-    _node_regs[idx].set_bad();
+//    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
+    _node_regs.at_grow(idx).set_bad();
   }
   void set1( uint idx, OptoReg::Name reg ) {
-    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
-    _node_regs[idx].set1(reg);
+//    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
+    _node_regs.at_grow(idx).set1(reg);
   }
   void set2( uint idx, OptoReg::Name reg ) {
-    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
-    _node_regs[idx].set2(reg);
+//    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
+    _node_regs.at_grow(idx).set2(reg);
   }
   void set_pair( uint idx, OptoReg::Name hi, OptoReg::Name lo ) {
-    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
-    _node_regs[idx].set_pair(hi, lo);
+//    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
+    _node_regs.at_grow(idx).set_pair(hi, lo);
   }
   void set_ptr( uint idx, OptoReg::Name reg ) {
-    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
-    _node_regs[idx].set_ptr(reg);
+//    assert( idx < _node_regs_max_index, "Exceeded _node_regs array");
+    _node_regs.at_grow(idx).set_ptr(reg);
   }
   // Set and query if a node produces an oop
   void set_oop( const Node *n, bool );
@@ -114,9 +116,9 @@ public:
 
   // Get the register encoding associated with the Node
   int get_encode(const Node *n) const {
-    assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
-    OptoReg::Name first = _node_regs[n->_idx].first();
-    OptoReg::Name second = _node_regs[n->_idx].second();
+//    assert( n->_idx < _node_regs_max_index, "Exceeded _node_regs array");
+    OptoReg::Name first = _node_regs.at(n->_idx).first();
+    OptoReg::Name second = _node_regs.at(n->_idx).second();
     assert( !OptoReg::is_valid(second) || second == first+1, "" );
     assert(OptoReg::is_reg(first), "out of range");
     return Matcher::_regEncode[first];

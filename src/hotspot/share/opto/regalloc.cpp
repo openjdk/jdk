@@ -111,11 +111,12 @@ bool PhaseRegAlloc::is_oop( const Node *n ) const {
 // Allocate _node_regs table with at least "size" elements
 void PhaseRegAlloc::alloc_node_regs(int size) {
   _node_regs_max_index = size + (size >> 1) + NodeRegsOverflowSize;
-  _node_regs = NEW_RESOURCE_ARRAY( OptoRegPair, _node_regs_max_index );
-  // We assume our caller will fill in all elements up to size-1, so
-  // only the extra space we allocate is initialized here.
-  for( uint i = size; i < _node_regs_max_index; ++i )
-    _node_regs[i].set_bad();
+  _node_regs.at_grow(_node_regs_max_index-1).set_bad();
+//  _node_regs = NEW_RESOURCE_ARRAY( OptoRegPair, _node_regs_max_index );
+//  // We assume our caller will fill in all elements up to size-1, so
+//  // only the extra space we allocate is initialized here.
+//  for( uint i = size; i < _node_regs_max_index; ++i )
+//    _node_regs[i].set_bad();
 }
 
 #ifndef PRODUCT

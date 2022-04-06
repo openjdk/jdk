@@ -100,6 +100,9 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
   if (_was_up_in_prev_region.test(def->_idx)) {
     _was_up_in_prev_region.set(spill->_idx);
   }
+  if (def->_idx < (uint)_node_regs.length()) {
+    _node_regs.at_put_grow(spill->_idx, _node_regs.at(def->_idx));
+  }
   return spill;
 }
 
@@ -431,7 +434,9 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
   if (_was_up_in_prev_region.test(def->_idx)) {
     _was_up_in_prev_region.set(spill->_idx);
   }
-
+  if (def->_idx < (uint)_node_regs.length()) {
+    _node_regs.at_put_grow(spill->_idx, _node_regs.at(def->_idx));
+  }
 
   return spill;
 }
@@ -654,6 +659,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       n3 = n1;
       u3 = u1;
       int was_up_in_prev_region = n1 == NULL ? -1 :(_was_up_in_prev_region.test(n1->_idx) ? 1 : 0);
+      OptoRegPair node_reg;
+      if (n1 != NULL && n1->_idx < (uint)_node_regs.length() && _node_regs.at(n1->_idx).first() != OptoReg::Bad) {
+        node_reg = _node_regs.at(n1->_idx);
+      }
 
       // Compare inputs to see if a Phi is needed
       for( inpidx = 2; inpidx < b->num_preds(); inpidx++ ) {
@@ -687,6 +696,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
             was_up_in_prev_region = _was_up_in_prev_region.test(n2->_idx) ? 1 : 0;
           } else {
             assert(was_up_in_prev_region == _was_up_in_prev_region.test(n2->_idx) ? 1 : 0, "");
+          }
+          if (n2->_idx < (uint) _node_regs.length() && _node_regs.at(n2->_idx).first() != OptoReg::Bad) {
+            if (node_reg.first() == OptoReg::Bad) {
+              node_reg = _node_regs.at(n2->_idx);
+            } else {
+              assert(node_reg.first() == _node_regs.at(n2->_idx).first() && node_reg.second() == _node_regs.at(n2->_idx).second(), "");
+            }
           }
         }
       }  // End for all potential Phi inputs
@@ -727,6 +743,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
           if (was_up_in_prev_region == 1) {
             _was_up_in_prev_region.set(phi->_idx);
           }
+          _node_regs.at_put_grow(phi->_idx, node_reg);
 
           // add node to block & node_to_block mapping
           insert_proj(b, insidx++, phi, maxlrg++);
@@ -1259,6 +1276,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                   if (_was_up_in_prev_region.test(def->_idx)) {
                     _was_up_in_prev_region.set(spill->_idx);
                   }
+                  if (def->_idx < (uint)_node_regs.length()) {
+                    _node_regs.at_put_grow(spill->_idx, _node_regs.at(def->_idx));
+                  }
                   insert_proj( b, insidx, spill, maxlrg );
                   maxlrg++; insidx++;
                   // Then Split-DOWN as if previous Split was DEF
@@ -1447,6 +1467,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
               Node *spill = new MachSpillCopyNode(MachSpillCopyNode::MemToReg, use,use_rm,def_rm);
               if (_was_up_in_prev_region.test(use->_idx)) {
                 _was_up_in_prev_region.set(spill->_idx);
+              }
+              if (use->_idx < (uint)_node_regs.length()) {
+                _node_regs.at_put_grow(spill->_idx, _node_regs.at(use->_idx));
               }
               n->set_req(copyidx,spill);
               n->as_MachSpillCopy()->set_in_RegMask(def_rm);

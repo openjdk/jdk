@@ -820,6 +820,8 @@ private:
   friend class PhaseConservativeCoalesce;
 
   void compute_min_regions(const Block_List &blocks);
+
+  void record_regs();
 };
 
 #endif // SHARE_OPTO_CHAITIN_HPP

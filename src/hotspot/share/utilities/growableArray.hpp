@@ -400,7 +400,7 @@ public:
 
   void push(const E& elem) { append(elem); }
 
-  E at_grow(int i, const E& fill = E()) {
+  E& at_grow(int i, const E& fill = E()) {
     assert(0 <= i, "negative index");
     if (i >= this->_len) {
       if (i >= this->_max) grow(i);
