@@ -61,9 +61,9 @@ JNIEXPORT void JNICALL Java_jdk_net_WindowsSocketOptions_setIpDontFragment0
     optsetting = optval ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
 
     if (family == AF_INET) {
-        rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
+        rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optsetting, sizeof(optsetting));
     } else {
-        rv = setsockopt(fd, IPPROTO_IPV6, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
+        rv = setsockopt(fd, IPPROTO_IPV6, IP_MTU_DISCOVER, &optsetting, sizeof(optsetting));
     }
     handleError(env, rv, "set option IP_DONTFRAGMENT failed");
 }

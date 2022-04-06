@@ -194,14 +194,16 @@ JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_setIpDontFragment0
 (JNIEnv *env, jobject unused, jint fd, jboolean optval) {
     jint rv;
     jint family = socketFamily(fd);
+    jint value = optval ? 1 : 0;
+
     if (family == -1) {
         handleError(env, family, "get socket family failed");
         return;
     }
     if (family == AF_INET) {
-        rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &optval, sizeof (optval));
+        rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &value, sizeof(value));
     } else {
-        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &optval, sizeof (optval));
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &value, sizeof(value));
     }
     handleError(env, rv, "set option IP_DONTFRAGMENT failed");
 }

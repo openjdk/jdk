@@ -96,8 +96,7 @@ public abstract class ExtendedSocketOptions {
     }
 
     private static boolean isDatagramOption(SocketOption<?> option) {
-        if ((option.name().startsWith("TCP_") || isUnixDomainOption(option))
-            && !option.name().equals("IP_DONTFRAGMENT")) {
+        if (option.name().startsWith("TCP_") || isUnixDomainOption(option)) {
             return false;
         } else {
             return true;

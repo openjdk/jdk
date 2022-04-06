@@ -247,6 +247,7 @@ public final class ExtendedSocketOptions {
         if (peerCredentialsSupported) {
             options.add(SO_PEERCRED);
         }
+        options.add(IP_DONTFRAGMENT);
         return Collections.unmodifiableSet(options);
     }
 
@@ -300,7 +301,7 @@ public final class ExtendedSocketOptions {
                     return getQuickAckOption(fd);
                 } else if (option == TCP_KEEPCOUNT) {
                     return getTcpkeepAliveProbes(fd);
-                } else if (option == TCP_KEEPIDLE) {
+                } else if (option == IP_DONTFRAGMENT) {
                     return getIpDontFragment(fd);
                 } else if (option == TCP_KEEPIDLE) {
                     return getTcpKeepAliveTime(fd);
