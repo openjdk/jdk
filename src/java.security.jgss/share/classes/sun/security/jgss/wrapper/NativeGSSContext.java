@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.jgss.wrapper;
 
 import org.ietf.jgss.*;
+import java.lang.ref.Cleaner;
 import java.security.Provider;
 import sun.security.jgss.GSSHeader;
 import sun.security.jgss.GSSUtil;
@@ -212,6 +213,8 @@ class NativeGSSContext implements GSSContextSpi {
             }
             srcName = cred.getName();
         }
+
+        Cleaner.create().register(this, this::dispose);
     }
 
     // Constructor for context acceptor
@@ -232,6 +235,8 @@ class NativeGSSContext implements GSSContextSpi {
 
         // srcName and potentially targetName (when myCred is null)
         // will be set in GSSLibStub.acceptContext(...)
+
+        Cleaner.create().register(this, this::dispose);
     }
 
     // Constructor for imported context
@@ -259,6 +264,8 @@ class NativeGSSContext implements GSSContextSpi {
         if (GSSUtil.isSpNegoMech(mech) || GSSUtil.isKerberosMech(mech)) {
             doServicePermCheck();
         }
+
+        Cleaner.create().register(this, this::dispose);
     }
 
     public Provider getProvider() {
@@ -359,7 +366,7 @@ class NativeGSSContext implements GSSContextSpi {
         return isEstablished;
     }
 
-    public void dispose() throws GSSException {
+    public void dispose() {
         if (disposeCred != null) {
             disposeCred.dispose();
         }
@@ -637,11 +644,6 @@ class NativeGSSContext implements GSSContextSpi {
     }
     public boolean isInitiator() {
         return isInitiator;
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
     }
 
     public Object inquireSecContext(String type)

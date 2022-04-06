@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
+import java.lang.ref.Cleaner;
  * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
@@ -26,6 +27,7 @@
 package sun.security.jgss.wrapper;
 
 import org.ietf.jgss.*;
+import java.lang.ref.Cleaner;
 import java.security.Provider;
 import java.security.Security;
 import java.io.IOException;
@@ -94,6 +96,8 @@ public class GSSNameElement implements GSSNameSpi {
 
     private GSSNameElement() {
         printableName = "<DEFAULT ACCEPTOR>";
+
+        Cleaner.create().register(this, this::dispose);
     }
 
     // Warning: called by NativeUtil.c
@@ -106,6 +110,8 @@ public class GSSNameElement implements GSSNameSpi {
         pName = pNativeName;
         cStub = stub;
         setPrintables();
+
+        Cleaner.create().register(this, this::dispose);
     }
 
     GSSNameElement(byte[] nameBytes, Oid nameType, GSSLibStub stub)
@@ -178,6 +184,8 @@ public class GSSNameElement implements GSSNameSpi {
 
         SunNativeProvider.debug("Imported " + printableName + " w/ type " +
                                 printableType);
+
+        Cleaner.create().register(this, this::dispose);
     }
 
     private void setPrintables() throws GSSException {
@@ -288,10 +296,5 @@ public class GSSNameElement implements GSSNameSpi {
             cStub.releaseName(pName);
             pName = 0;
         }
-    }
-
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
     }
 }
