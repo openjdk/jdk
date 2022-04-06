@@ -138,31 +138,35 @@ public abstract class AbstractCompressExpandTest {
     }
 
     int[] contiguousMasksInt() {
-        int size = 32 * (32 + 1) / 2; // 528
+        int size = 32 * (32 + 1) / 2 + 1; // 528 + 1
         int[] masks = new int[size];
 
         int i = 0;
-        for (int len = 0; len < 32; len++) {
-            for (int pos = 0; pos < 32 - len; pos++) {
+        masks[i++] = 0;
+        for (int len = 1; len < 32; len++) {
+            for (int pos = 0; pos <= 32 - len; pos++) {
                 masks[i++] = ((1 << len) - 1) << pos;
             }
         }
+        masks[i++] = -1;
 
         assert i == masks.length;
         return masks;
     }
 
     long[] contiguousMasksLong() {
-        int size = 64 * (64 + 1) / 2; // 2080
+        int size = 64 * (64 + 1) / 2 + 1; // 2080 + 1
         long[] masks = new long[size];
 
 
         int i = 0;
-        for (int len = 0; len < 64; len++) {
-            for (int pos = 0; pos < 64 - len; pos++) {
+        masks[i++] = 0L;
+        for (int len = 1; len < 64; len++) {
+            for (int pos = 0; pos <= 64 - len; pos++) {
                 masks[i++] = ((1L << len) - 1) << pos;
             }
         }
+        masks[i++] = -1L;
 
         assert i == masks.length;
         return masks;
@@ -244,17 +248,22 @@ public abstract class AbstractCompressExpandTest {
         int[] values = rg.ints(SIZE).toArray();
 
         for (int i : values) {
+            assertContiguousMask(i, 0, 0L);
             for (int len = 0; len < 32; len++) {
                 for (int pos = 0; pos < 32 - len; pos++) {
                     int mask = ((1 << len) - 1) << pos;
 
-                    Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
-                    Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+                    assertContiguousMask(i, pos, mask);
                 }
             }
+            assertContiguousMask(i, 0, -1L);
         }
     }
 
+    void assertContiguousMask(int i, int pos, int mask) {
+        Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
+        Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+    }
 
     @Test(dataProvider = "maskLongProvider")
     public void testCompressLong(Supplier<long[]> maskProvider) {
@@ -331,15 +340,21 @@ public abstract class AbstractCompressExpandTest {
         long[] values = rg.longs(SIZE).toArray();
 
         for (long i : values) {
-            for (int len = 0; len < 64; len++) {
-                for (int pos = 0; pos < 64 - len; pos++) {
+            assertContiguousMask(i, 0, 0L);
+            for (int len = 1; len < 64; len++) {
+                for (int pos = 0; pos <= 64 - len; pos++) {
                     long mask = ((1L << len) - 1) << pos;
 
-                    Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
-                    Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
+                    assertContiguousMask(i, pos, mask);
                 }
             }
+            assertContiguousMask(i, 0, -1L);
         }
+    }
+
+    void assertContiguousMask(long i, int pos, long mask) {
+        Assert.assertEquals(actualCompress(i, mask), (i & mask) >>> pos);
+        Assert.assertEquals(actualExpand(i, mask), (i << pos) & mask);
     }
 
     static int normalizeCompressedValue(int i, int mask) {

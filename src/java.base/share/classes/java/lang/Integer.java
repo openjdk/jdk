@@ -1772,7 +1772,7 @@ public final class Integer extends Number
      * specified {@code int} value, {@code i}, in accordance with
      * the specified bit mask.
      * <p>
-     * For each one-bit value of the mask, {@code mb} say, from least
+     * For each one-bit value {@code mb} of the mask, from least
      * significant to most significant, the bit value of {@code i} at
      * the same bit location as {@code mb} is assigned to the compressed
      * value contiguously starting from the least significant bit location.
@@ -1819,7 +1819,7 @@ public final class Integer extends Number
      * specified {@code int} value, {@code i}, in accordance with
      * the specified bit mask.
      * <p>
-     * For each one-bit value of the mask, {@code mb} say, from least
+     * For each one-bit value {@code mb} of the mask, from least
      * significant to most significant, the next contiguous bit value
      * of {@code i} starting at the least significant bit is assigned
      * to the expanded value at the same bit location as {@code mb}.
