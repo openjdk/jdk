@@ -240,7 +240,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
     protected Content getSummaryLink(Element e) {
         AbstractMemberWriter writer = switch (e.getKind()) {
             case INTERFACE, CLASS, ENUM,
-                 ANNOTATION_TYPE, RECORD -> new NestedClassWriterImpl(this);
+                 ANNOTATION_TYPE, RECORD -> new NestedClassWriter(this);
             case FIELD -> new FieldWriterImpl(this);
             case METHOD -> new MethodWriterImpl(this);
             case CONSTRUCTOR -> new ConstructorWriterImpl(this);
