@@ -90,7 +90,7 @@ public class StringVector implements java.io.Serializable
   /**
    * Append a string onto the vector.
    *
-   * @param value Sting to add to the vector
+   * @param value String to add to the vector
    */
   public final void addElement(String value)
   {

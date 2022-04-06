@@ -3665,7 +3665,7 @@ country varies for each element:
 
 // Auxiliary, read an string specified as count + string
 static
-cmsBool  ReadCountAndSting(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsMLU* mlu, cmsUInt32Number* SizeOfTag, const char* Section)
+cmsBool  ReadCountAndString(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsMLU* mlu, cmsUInt32Number* SizeOfTag, const char* Section)
 {
     cmsUInt32Number Count;
     char* Text;
@@ -3695,7 +3695,7 @@ cmsBool  ReadCountAndSting(struct _cms_typehandler_struct* self, cmsIOHANDLER* i
 }
 
 static
-cmsBool  WriteCountAndSting(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsMLU* mlu, const char* Section)
+cmsBool  WriteCountAndString(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsMLU* mlu, const char* Section)
 {
  cmsUInt32Number TextSize;
  char* Text;
@@ -3719,11 +3719,11 @@ void *Type_CrdInfo_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, 
     cmsMLU* mlu = cmsMLUalloc(self ->ContextID, 5);
 
     *nItems = 0;
-    if (!ReadCountAndSting(self, io, mlu, &SizeOfTag, "nm")) goto Error;
-    if (!ReadCountAndSting(self, io, mlu, &SizeOfTag, "#0")) goto Error;
-    if (!ReadCountAndSting(self, io, mlu, &SizeOfTag, "#1")) goto Error;
-    if (!ReadCountAndSting(self, io, mlu, &SizeOfTag, "#2")) goto Error;
-    if (!ReadCountAndSting(self, io, mlu, &SizeOfTag, "#3")) goto Error;
+    if (!ReadCountAndString(self, io, mlu, &SizeOfTag, "nm")) goto Error;
+    if (!ReadCountAndString(self, io, mlu, &SizeOfTag, "#0")) goto Error;
+    if (!ReadCountAndString(self, io, mlu, &SizeOfTag, "#1")) goto Error;
+    if (!ReadCountAndString(self, io, mlu, &SizeOfTag, "#2")) goto Error;
+    if (!ReadCountAndString(self, io, mlu, &SizeOfTag, "#3")) goto Error;
 
     *nItems = 1;
     return (void*) mlu;
@@ -3740,11 +3740,11 @@ cmsBool  Type_CrdInfo_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* 
 
     cmsMLU* mlu = (cmsMLU*) Ptr;
 
-    if (!WriteCountAndSting(self, io, mlu, "nm")) goto Error;
-    if (!WriteCountAndSting(self, io, mlu, "#0")) goto Error;
-    if (!WriteCountAndSting(self, io, mlu, "#1")) goto Error;
-    if (!WriteCountAndSting(self, io, mlu, "#2")) goto Error;
-    if (!WriteCountAndSting(self, io, mlu, "#3")) goto Error;
+    if (!WriteCountAndString(self, io, mlu, "nm")) goto Error;
+    if (!WriteCountAndString(self, io, mlu, "#0")) goto Error;
+    if (!WriteCountAndString(self, io, mlu, "#1")) goto Error;
+    if (!WriteCountAndString(self, io, mlu, "#2")) goto Error;
+    if (!WriteCountAndString(self, io, mlu, "#3")) goto Error;
 
     return TRUE;
 
