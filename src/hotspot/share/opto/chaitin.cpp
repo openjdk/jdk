@@ -92,9 +92,6 @@ void LRG::dump() const {
   if( _msize_valid ) {
     if( _degree_valid && lo_degree() ) tty->print("Trivial ");
   }
-  if (_spilled_around_prev_region) {
-    tty->print("spill_around_prev_region");
-  }
   tty->print("Region = %d/%d, min region = %d", _region, _region2, _min_region);
 
   tty->cr();
@@ -208,7 +205,6 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
 #endif
        )
   , _live(0)
-  , _prev_region_node_limit(0)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
 #ifndef PRODUCT
@@ -634,7 +630,15 @@ void PhaseChaitin::Register_Allocate() {
     // LRGs of low degree are trivially colorable.
     Simplify(region);
 
-    // Select colors by re-inserting LRGs back into the IFG in reverse order.
+    if (UseNewCode3) {
+      tty->print_cr("XXXXXXXXXXXXXX simplified");
+      for (uint i = _simplified; i; i = lrgs(i)._next) {
+        tty->print("%d : ", i); lrgs(i).dump();
+      }
+      tty->print_cr("XXXXXXXXXXXXXX");
+    }
+
+      // Select colors by re-inserting LRGs back into the IFG in reverse order.
     // Return whether or not something spills.
     uint spills = Select(region);
 
@@ -740,7 +744,6 @@ void PhaseChaitin::Register_Allocate() {
       // Return whether or not something spills.
       spills = Select(region);
     }
-    _prev_region_node_limit = C->unique();
     if (regions.length() > 1) {
       _was_up_in_prev_region.clear();
       if (UseNewCode3) {
@@ -1082,10 +1085,6 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 //        if (block->_region == 1) {
 //          tty->print("XXX (def) %d", vreg); n->dump();
 //        }
-
-        if (_spilled_on_entry_to_prev_region.test(n->_idx) || _spilled_on_exit_to_prev_region.test(n->_idx)) {
-          lrg._spilled_around_prev_region = 1;
-        }
 
         uint block_region = block->_region;
 
@@ -1632,7 +1631,7 @@ void PhaseChaitin::Simplify(uint region) {
         IndexSetIterator elements(_ifg->neighbors(lo));
         uint datum;
         while ((datum = elements.next()) != 0) {
-          if (lrgs(datum)._risk_bias < region) {
+          if (lrgs(datum)._region < region) {
             continue;
           }
           lrgs(datum)._risk_bias = lo;
@@ -1693,8 +1692,7 @@ void PhaseChaitin::Simplify(uint region) {
     double area = lrgs(lo_score)._area;
     double cost = lrgs(lo_score)._cost;
     bool bound = lrgs(lo_score)._is_bound;
-    bool spilled_around_prev_region = lrgs(lo_score)._spilled_around_prev_region;
-//    uint region2 = lrgs(lo_score)._region2;
+    uint region2 = lrgs(lo_score)._region2;
     assert(lrgs(lo_score)._region >= region, "");
 
     // Find cheapest guy
@@ -1716,8 +1714,7 @@ void PhaseChaitin::Simplify(uint region) {
       double iarea = lrgs(i)._area;
       double icost = lrgs(i)._cost;
       bool ibound = lrgs(i)._is_bound;
-//      uint iregion2 = lrgs(i)._region2;
-      bool ispilled_around_prev_region = lrgs(i)._spilled_around_prev_region;
+      uint iregion2 = lrgs(i)._region2;
 
       // Compare cost/area of i vs cost/area of lo_score.  Smaller cost/area
       // wins.  Ties happen because all live ranges in question have spilled
@@ -1728,8 +1725,8 @@ void PhaseChaitin::Simplify(uint region) {
       // one block. In which case their area is 0 and score set to max.
       // In such case choose bound live range over unbound to free registers
       // or with smaller cost to spill.
-      if ((!ispilled_around_prev_region && spilled_around_prev_region) ||
-              (ispilled_around_prev_region == spilled_around_prev_region && (
+      if ((iregion2 < region2) ||
+              (iregion2 == region2 && (
            iscore < score ||
           (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
           (iscore == score && iarea == area &&
@@ -1739,7 +1736,7 @@ void PhaseChaitin::Simplify(uint region) {
         area = iarea;
         cost = icost;
         bound = ibound;
-        spilled_around_prev_region = ispilled_around_prev_region;
+        region2 = iregion2;
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
@@ -1768,7 +1765,9 @@ void PhaseChaitin::Simplify(uint region) {
     // Jam him on the lo-degree list, despite his high degree.
     // Maybe he'll get a color, and maybe he'll spill.
     // Only Select() will know.
-    lrgs(lo_score)._at_risk = true;
+    if (lrgs(lo_score)._region <= region) {
+      lrgs(lo_score)._at_risk = true;
+    }
     assert(lrgs(lo_score)._region >= region, "");
     _lo_degree = lo_score;
     lo_lrg->_next = 0;
@@ -1940,6 +1939,7 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg, int chunk ) {
 // everything going back is guaranteed a color.  Select that color.  If some
 // hi-degree LRG cannot get a color then we record that we must spill.
 uint PhaseChaitin::Select(uint region) {
+  _alternate = 0;
   Compile::TracePhase tp("chaitinSelect", &timers[_t_chaitinSelect]);
 
   uint spill_reg = LRG::SPILL_REG;
@@ -2058,6 +2058,10 @@ uint PhaseChaitin::Select(uint region) {
       RegMask avail_rm = lrg->mask();
 #endif
 
+      if (UseNewCode3) {
+        tty->print("YYY %d : ", lidx);  lrg->dump(); tty->print(" -> "); OptoReg::dump(reg); tty->cr();
+      }
+
       // Record selected register
       lrg->set_reg(reg);
 
@@ -2113,8 +2117,10 @@ uint PhaseChaitin::Select(uint region) {
       assert( !orig_mask.is_AllStack(), "All Stack does not spill" );
 
       assert(lrg->_region >= region, "");
-//      assert(lrg->_region2 <= region, "");
-      assert(!lrg->_spilled_around_prev_region, "");
+      if (!(lrg->_region2 <= region)) {
+        lrg->dump();
+      }
+      assert(lrg->_region2 <= region, "");
       // Assign the special spillreg register
       lrg->set_reg(OptoReg::Name(spill_reg++));
       // Do not empty the regmask; leave mask_size lying around

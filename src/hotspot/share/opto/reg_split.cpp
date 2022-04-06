@@ -817,10 +817,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
             assert(non_phi == 1, "");
             assert(b->num_preds() == 2, "");
-            assert(!lrgs(defidx)._spilled_around_prev_region, "");
+            assert(lrgs(defidx)._region2 <= region, "");
 
             if (0 && ((lrgs(defidx).is_singledef() && lrgs(defidx)._def->rematerialize()) || def->rematerialize())) {
-              _spilled_on_exit_to_prev_region.set(def->_idx);
               Node* n = lrgs(defidx).is_singledef()? lrgs(defidx)._def : def;
               Node* spill = split_Rematerialize(n, b, non_phi, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
               if( !spill ) return -1; // Bail out
@@ -833,7 +832,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 //              }
 //              assert(!def->rematerialize(), "");
               if (defup) {
-                _spilled_on_exit_to_prev_region.set(def->_idx);
                 Node* spill = get_spillcopy_wide(MachSpillCopyNode::RegionExit, def, NULL, 0);
                 if (!spill) return -1;        // Bailed out
                 // Insert SpillCopy before the USE, which uses the reaching DEF as
@@ -1499,7 +1497,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 //              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
 
               assert(b->_num_succs == 1, "");
-              assert(!lrgs(defidx)._spilled_around_prev_region, "");
+              assert(lrgs(defidx)._region2 <= region,  "");
 
               if (def->rematerialize() && 0) {
 //                assert(_was_up_in_prev_region.test(def->_idx), "");
@@ -1507,7 +1505,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                 if( !spill ) return -1; // Bail out
                 Reachblock[slidx] = spill;
                 UPblock[slidx] = _was_up_in_prev_region.test(def->_idx);
-                _spilled_on_entry_to_prev_region.set(spill->_idx);
               } else {
                 Node* spill = get_spillcopy_wide(MachSpillCopyNode::RegionEntry, def, NULL, 0);
                 if (!spill) return -1;        // Bailed out
@@ -1515,7 +1512,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
                 Reachblock[slidx] = spill;
                 UPblock[slidx] = _was_up_in_prev_region.test(def->_idx);
                 maxlrg++;
-                _spilled_on_entry_to_prev_region.set(spill->_idx);
               }
 
               //              ShouldNotReachHere();
