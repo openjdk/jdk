@@ -836,7 +836,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               currMin    = hb_len;
               currMin_ix = 0;
               used_topSizeBlocks++;
-              os::free((void*)blob_name);
               blob_name  = NULL; // indicate blob_name was consumed
             // This check roughly cuts 5000 iterations (JVM98, mixed, dbg, termination stats):
             } else if ((used_topSizeBlocks < alloc_topSizeBlocks) && (hb_len < currMin)) {
@@ -854,7 +853,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               currMin    = hb_len;
               currMin_ix = used_topSizeBlocks;
               used_topSizeBlocks++;
-              os::free((void*)blob_name);
               blob_name  = NULL; // indicate blob_name was consumed
             } else {
               // This check cuts total_iterations by a factor of 6 (JVM98, mixed, dbg, termination stats):
@@ -896,7 +894,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                       TopSizeArray[i].level       = comp_lvl;
                       TopSizeArray[i].type        = cbType;
                       used_topSizeBlocks++;
-                      os::free((void*)blob_name);
                       blob_name  = NULL; // indicate blob_name was consumed
                     } else { // no room for new entries, current block replaces entry for smallest block
                       //---<  Find last entry (entry for smallest remembered block)  >---
@@ -955,7 +952,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                           TopSizeArray[i].level       = comp_lvl;
                           TopSizeArray[i].type        = cbType;
                         }
-                        os::free((void*)blob_name);
                         blob_name  = NULL; // indicate blob_name was consumed
                       } // insane
                     }
