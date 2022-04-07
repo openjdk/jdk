@@ -43,11 +43,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A taglet that represents the {@code @param} tag.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     public enum ParamKind {
@@ -243,7 +238,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             if (dt != null) {
                 result.add(processParamTag(e, kind, writer, dt,
                         ch.getParameterName(dt), result.isEmpty()));
-            } else if (writer.configuration().utils.isExecutableElement(e)) {
+            } else if (writer.configuration().utils.isMethod(e)) {
                 result.add(getInheritedTagletOutput(kind, e, writer,
                         formalParameters.get(i), i, result.isEmpty()));
             }

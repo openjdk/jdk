@@ -75,7 +75,7 @@ import java.util.Set;
  * @see Annotation
  * @since 1.2
  */
-
+@SuppressWarnings("doclint:reference") // cross-module links
 public interface AttributedCharacterIterator extends CharacterIterator {
 
     /**

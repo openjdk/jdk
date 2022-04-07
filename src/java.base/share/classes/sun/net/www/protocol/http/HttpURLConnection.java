@@ -1739,7 +1739,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader (
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -1814,7 +1814,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     srvHdr = new AuthenticationHeader (
                             "WWW-Authenticate", responses,
-                            new HttpCallerInfo(url, authenticator),
+                            getHttpCallerInfo(url, authenticator),
                             dontUseNegotiate
                     );
 
@@ -2210,7 +2210,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     AuthenticationHeader authhdr = new AuthenticationHeader(
                             "Proxy-Authenticate",
                             responses,
-                            new HttpCallerInfo(url,
+                            getHttpCallerInfo(url,
                                                http.getProxyHostUsed(),
                                                http.getProxyPortUsed(),
                                                authenticator),
@@ -2277,6 +2277,21 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         // reset responses
         responses.reset();
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, String proxy, int port,
+                                               Authenticator authenticator) {
+        return new HttpCallerInfo(url, proxy, port, authenticator);
+    }
+
+    /**
+     * Overridden in https to also include the server certificate
+     */
+    protected HttpCallerInfo getHttpCallerInfo(URL url, Authenticator authenticator) {
+        return new HttpCallerInfo(url, authenticator);
     }
 
     static String connectRequestURI(URL url) {

@@ -204,7 +204,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
     /**
      * Returns whether the specified node is a leaf node.
      * The way the test is performed depends on the
-     * <code>askAllowsChildren</code> setting.
+     * <code>asksAllowsChildren</code> setting.
      *
      * @param node the node to check
      * @return true if the node is a leaf node
@@ -672,7 +672,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
      *          <code><em>Foo</em>Listener</code>s on this component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @throws ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *

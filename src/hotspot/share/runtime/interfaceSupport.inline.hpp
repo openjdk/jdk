@@ -54,7 +54,7 @@ class InterfaceSupport: AllStatic {
  public:
   static unsigned int _scavenge_alot_counter;
   static unsigned int _fullgc_alot_counter;
-  static int _fullgc_alot_invocation;
+  static intx _fullgc_alot_invocation;
 
   // Helper methods used to implement +ScavengeALot and +FullGCALot
   static void check_gc_alot() { if (ScavengeALot || FullGCALot) gc_alot(); }
@@ -210,7 +210,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
 
     if (SafepointMechanism::should_process(_thread, _allow_suspend)) {
       _pr(_thread);
-      SafepointMechanism::process_if_requested(_thread, _allow_suspend);
+      SafepointMechanism::process_if_requested(_thread, _allow_suspend, false /* check_async_exception */);
     }
   }
 };

@@ -40,8 +40,8 @@ void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   if (!CompressedOops::is_null(oop_or_narrowoop)) {
     oop o = CompressedOops::decode_not_null(oop_or_narrowoop);
     HeapRegion* hr = _g1h->heap_region_containing(o);
-    assert(!_g1h->is_in_cset(o) || hr->rem_set()->strong_code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
-    hr->add_strong_code_root(_nm);
+    assert(!_g1h->is_in_cset(o) || hr->rem_set()->code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
+    hr->add_code_root(_nm);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,6 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 /**
  * Build Class Hierarchy for all the Classes. This class builds the Class
  * Tree and the Interface Tree separately.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  *
  * @see java.util.HashMap
  * @see java.util.List
@@ -180,9 +175,9 @@ public class ClassTree {
                 processType(aClass, configuration, baseEnums, subEnums);
             } else if (utils.isClass(aClass)) {
                 processType(aClass, configuration, baseClasses, subClasses);
-            } else if (utils.isInterface(aClass)) {
+            } else if (utils.isPlainInterface(aClass)) {
                 processInterface(aClass);
-            } else if (utils.isAnnotationType(aClass)) {
+            } else if (utils.isAnnotationInterface(aClass)) {
                 processType(aClass, configuration, baseAnnotationTypes,
                     subAnnotationTypes);
             }
@@ -280,7 +275,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the sub-class set for the class passed.
+     * Return the sub-class set for the class passed.
      *
      * @param typeElement class whose sub-class set is required.
      */
@@ -289,7 +284,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the sub-interface set for the interface passed.
+     * Return the sub-interface set for the interface passed.
      *
      * @param typeElement interface whose sub-interface set is required.
      */
@@ -298,7 +293,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the set of classes which implement the interface passed.
+     * Return the set of classes which implement the interface passed.
      *
      * @param typeElement interface whose implementing-classes set is required.
      */
@@ -323,7 +318,7 @@ public class ClassTree {
     }
 
     /**
-     *  Return the sub-class/interface set for the class/interface passed.
+     * Return the sub-class/interface set for the class/interface passed.
      *
      * @param typeElement class/interface whose sub-class/interface set is required.
      * @param isEnum true if the subClasses should be forced to come from the
@@ -336,9 +331,9 @@ public class ClassTree {
     private SortedSet<TypeElement> directSubClasses0(TypeElement typeElement, boolean isEnum) {
         if (isEnum) {
             return get(subEnums, typeElement);
-        } else if (utils.isAnnotationType(typeElement)) {
+        } else if (utils.isAnnotationInterface(typeElement)) {
             return get(subAnnotationTypes, typeElement);
-        } else if (utils.isInterface(typeElement)) {
+        } else if (utils.isPlainInterface(typeElement)) {
             return get(subInterfaces, typeElement);
         } else if (utils.isClass(typeElement)) {
             return get(subClasses, typeElement);
@@ -374,16 +369,16 @@ public class ClassTree {
     }
 
     /**
-     *  Return a set of base classes. This will have only one element namely
-     *  the TypeElement for java.lang.Object, since this is the base class for all
-     *  classes.
+     * Return a set of base classes. This will have only one element namely
+     * the TypeElement for java.lang.Object, since this is the base class for all
+     * classes.
      */
     public SortedSet<TypeElement> baseClasses() {
         return baseClasses;
     }
 
     /**
-     *  Return the set of base interfaces. This is the set of interfaces
+     * Return the set of base interfaces. This is the set of interfaces
      * which do not have super-interface.
      */
     public SortedSet<TypeElement> baseInterfaces() {
@@ -391,8 +386,8 @@ public class ClassTree {
     }
 
     /**
-     *  Return the set of base enums. This is the set of enums
-     *  which do not have super-enums.
+     * Return the set of base enums. This is the set of enums
+     * which do not have super-enums.
      */
     public SortedSet<TypeElement> baseEnums() {
         return baseEnums;

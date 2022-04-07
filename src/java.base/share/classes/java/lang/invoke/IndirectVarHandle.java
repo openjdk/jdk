@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.function.BiFunction;
  * (using the method handle combinator API) and then repackaging the adapted method handles into a new, indirect
  * var handle.
  */
-/* package */ class IndirectVarHandle extends VarHandle {
+/* package */ final class IndirectVarHandle extends VarHandle {
 
     @Stable
     private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];

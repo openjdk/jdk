@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,6 +229,9 @@ class ClassLoader: AllStatic {
                                            bool check_for_duplicates);
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
                                            ClassPathEntry* entry);)
+
+  // cache the zip library handle
+  static void* _zip_handle;
  public:
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
@@ -253,9 +256,10 @@ class ClassLoader: AllStatic {
  private:
   static int  _libzip_loaded; // used to sync loading zip.
   static void release_load_zip_library();
-  static inline void load_zip_library_if_needed();
 
  public:
+  static inline void load_zip_library_if_needed();
+  static void* zip_library_handle() { return _zip_handle; }
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
                                                  const char *path, const struct stat* st,

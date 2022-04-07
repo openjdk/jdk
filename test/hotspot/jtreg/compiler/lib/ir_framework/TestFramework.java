@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.*;
+import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 import compiler.lib.ir_framework.shared.*;
 import compiler.lib.ir_framework.test.*;
 import jdk.test.lib.Platform;
@@ -603,11 +605,11 @@ public class TestFramework {
                 // Print stack trace otherwise
                 StringWriter errors = new StringWriter();
                 e.printStackTrace(new PrintWriter(errors));
-                builder.append(errors.toString());
+                builder.append(errors);
             }
             builder.append(System.lineSeparator());
         }
-        System.err.println(builder.toString());
+        System.err.println(builder);
         if (!VERBOSE && !REPORT_STDOUT && !TESTLIST && !EXCLUDELIST) {
             // Provide a hint to the user how to get additional output/debugging information.
             System.err.println(RERUN_HINT);

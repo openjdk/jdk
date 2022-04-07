@@ -280,19 +280,16 @@
  *
  * @run main/othervm -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
  *                   -Xint
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
  *
  * @run main/othervm -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
  *                   -Xbatch -XX:TieredStopAtLevel=1
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
  *
  * @run main/othervm -Xmx8g
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *                   -XX:ObjectAlignmentInBytes=32
  *                   -Xbatch -XX:-TieredCompilation
  *                   -javaagent:basicAgent.jar GetObjectSizeIntrinsicsTest GetObjectSizeIntrinsicsTest large
  */
@@ -312,8 +309,9 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
 
     static final int SMALL_ARRAY_SIZE = 1024;
 
-    // With int[] arrays, this overflows 4G boundary
-    static final int LARGE_ARRAY_SIZE = 1024*1024*1024 + 1024;
+    // These should overflow 4G size boundary
+    static final int LARGE_INT_ARRAY_SIZE = 1024*1024*1024 + 1024;
+    static final int LARGE_OBJ_ARRAY_SIZE = (4096/(int)REF_SIZE)*1024*1024 + 1024;
 
     final String mode;
 
@@ -446,16 +444,16 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     }
 
     private void testSize_localLargeIntArray() {
-        int[] arr = new int[LARGE_ARRAY_SIZE];
-        long expected = roundUp(4L*LARGE_ARRAY_SIZE + 16, OBJ_ALIGN);
+        int[] arr = new int[LARGE_INT_ARRAY_SIZE];
+        long expected = roundUp(4L*LARGE_INT_ARRAY_SIZE + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }
     }
 
     private void testSize_localLargeObjArray() {
-        Object[] arr = new Object[LARGE_ARRAY_SIZE];
-        long expected = roundUp(REF_SIZE*LARGE_ARRAY_SIZE + 16, OBJ_ALIGN);
+        Object[] arr = new Object[LARGE_OBJ_ARRAY_SIZE];
+        long expected = roundUp(REF_SIZE*LARGE_OBJ_ARRAY_SIZE + 16, OBJ_ALIGN);
         for (int c = 0; c < ITERS; c++) {
             assertEquals(expected, fInst.getObjectSize(arr));
         }

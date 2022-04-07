@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class Krb5NameElement
     /**
      * Instantiates a new Krb5NameElement object. Internally it stores the
      * information provided by the input parameters so that they may later
-     * be used for output when a printable representaion of this name is
+     * be used for output when a printable representation of this name is
      * needed in GSS-API format rather than in Kerberos format.
      *
      */
@@ -158,7 +158,7 @@ public class Krb5NameElement
 
         // Look for @ as in service@host
         // Assumes host name will not have an escaped '@'
-        int separatorPos = gssNameStr.lastIndexOf('@', gssNameStr.length());
+        int separatorPos = gssNameStr.lastIndexOf('@');
 
         // Not really a separator if it is escaped. Then this is just part
         // of the principal name or service name

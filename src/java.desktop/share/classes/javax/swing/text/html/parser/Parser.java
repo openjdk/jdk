@@ -75,7 +75,6 @@ import java.net.URL;
  * @author Arthur van Hoff
  * @author Sunita Mani
  */
-@SuppressWarnings("doclint:missing")
 public
 class Parser implements DTDConstants {
 
@@ -211,6 +210,8 @@ class Parser implements DTDConstants {
 
 
     /**
+     * Returns the line number of the line currently being parsed.
+     *
      * @return the line number of the line currently being parsed
      */
     protected int getCurrentLine() {
