@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,10 +164,6 @@ class FieldTable : public ResourceObj {
 
  public:
   FieldTable() : _table(new FieldInfoTable(this)), _lookup(NULL) {}
-  ~FieldTable() {
-    assert(_table != NULL, "invariant");
-    delete _table;
-  }
 
   traceid store(const ObjectSampleFieldInfo* field_info) {
     assert(field_info != NULL, "invariant");
@@ -178,6 +174,11 @@ class FieldTable : public ResourceObj {
 
   size_t size() const {
     return _table->cardinality();
+  }
+
+  void clear() {
+    assert(_table != NULL, "invariant");
+    delete _table;
   }
 
   template <typename T>
@@ -612,11 +613,6 @@ ObjectSampleWriter::ObjectSampleWriter(JfrCheckpointWriter& writer, EdgeStore* s
   assert(store != NULL, "invariant");
   assert(!store->is_empty(), "invariant");
   register_serializers();
-  sample_infos = NULL;
-  ref_infos = NULL;
-  array_infos = NULL;
-  field_infos = NULL;
-  root_infos = NULL;
 }
 
 ObjectSampleWriter::~ObjectSampleWriter() {
@@ -625,6 +621,15 @@ ObjectSampleWriter::~ObjectSampleWriter() {
   write_array_infos(_writer);
   write_field_infos(_writer);
   write_root_descriptors(_writer);
+
+  if (field_infos != NULL) {
+    field_infos->clear();
+    field_infos = NULL;
+  }
+  sample_infos = NULL;
+  ref_infos = NULL;
+  array_infos = NULL;
+  root_infos = NULL;
 }
 
 bool ObjectSampleWriter::operator()(StoredEdge& e) {
