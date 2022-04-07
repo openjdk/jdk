@@ -34,7 +34,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An inline Taglet used to denote literal text.
+ * An inline taglet used to denote literal text.
  * For example, the text:
  * <blockquote>  {@code {@literal a<B>c}}  </blockquote>
  * displays as:
