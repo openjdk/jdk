@@ -38,7 +38,6 @@ BitSet::BitMapFragmentTable::~BitMapFragmentTable() {
         free_entry(tmp);
       }
     }
-    free_buckets();
 }
 
 BitSet::BitSet() :
