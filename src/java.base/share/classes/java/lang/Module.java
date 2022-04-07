@@ -558,7 +558,8 @@ public final class Module implements AnnotatedElement {
      */
     public boolean isOpen(String pn, Module other) {
         Objects.requireNonNull(pn);
-        return implIsExportedOrOpen(pn, (other == null) ? EVERYONE_MODULE : other, /*open*/true);
+        Objects.requireNonNull(other);
+        return implIsExportedOrOpen(pn, other, /*open*/true);
     }
 
     /**
@@ -1653,7 +1654,11 @@ public final class Module implements AnnotatedElement {
             if (caller != this && caller != Object.class.getModule()) {
                 String pn = Resources.toPackageName(name);
                 if (getPackages().contains(pn)) {
-                    if (!isOpen(pn, caller)) {
+                    if (caller == null) {
+                        if (! isOpen(pn)) {
+                            return null;
+                        }
+                    } else if (!isOpen(pn, caller)) {
                         // package not open to caller
                         return null;
                     }
