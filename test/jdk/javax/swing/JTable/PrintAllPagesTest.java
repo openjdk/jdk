@@ -126,7 +126,7 @@ class PrintAllPages implements Runnable {
                 }
             };
             JScrollPane scrollpane = new JScrollPane(table);
-            table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));	    
+            table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));
 
             f = new JFrame("Table test");
             f.add(scrollpane);
@@ -134,7 +134,7 @@ class PrintAllPages implements Runnable {
             f.setLocationRelativeTo(null);
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             f.setVisible(true);
-            try { 
+            try {
                 table.print();
             } catch (Exception e) {}
         });
