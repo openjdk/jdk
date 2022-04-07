@@ -6585,7 +6585,7 @@ instruct countLeadingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI (LoadI src)));
   effect(KILL cr);
-
+  ins_cost(175);
   format %{ "lzcntl  $dst, $src\t# count leading zeros (int)" %}
   ins_encode %{
     __ lzcntl($dst$$Register, $src$$Address);
@@ -6634,7 +6634,7 @@ instruct countLeadingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL (LoadL src)));
   effect(KILL cr);
-
+  ins_cost(175);
   format %{ "lzcntq  $dst, $src\t# count leading zeros (long)" %}
   ins_encode %{
     __ lzcntq($dst$$Register, $src$$Address);
@@ -6683,7 +6683,7 @@ instruct countTrailingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI (LoadI src)));
   effect(KILL cr);
-
+  ins_cost(175);
   format %{ "tzcntl    $dst, $src\t# count trailing zeros (int)" %}
   ins_encode %{
     __ tzcntl($dst$$Register, $src$$Address);
@@ -6727,7 +6727,7 @@ instruct countTrailingZerosL_mem(rRegI dst, memory src, rFlagsReg cr) %{
   predicate(UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosL (LoadL src)));
   effect(KILL cr);
-
+  ins_cost(175);
   format %{ "tzcntq    $dst, $src\t# count trailing zeros (long)" %}
   ins_encode %{
     __ tzcntq($dst$$Register, $src$$Address);
@@ -9057,11 +9057,10 @@ instruct salI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct salI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 %{
-  // This is to match that of the memory variance
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (LShiftI src shift));
 
-  format %{ "shlxl    $dst, $src, $shift" %}
+  format %{ "shlxl   $dst, $src, $shift" %}
   ins_encode %{
     __ shlxl($dst$$Register, $src$$Register, $shift$$Register);
   %}
@@ -9070,10 +9069,10 @@ instruct salI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 
 instruct salI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (LShiftI (LoadI src) shift));
-
-  format %{ "shlxl    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "shlxl   $dst, $src, $shift" %}
   ins_encode %{
     __ shlxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
@@ -9161,11 +9160,10 @@ instruct sarI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct sarI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 %{
-  // This is to match that of the memory variance
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (RShiftI src shift));
 
-  format %{ "sarxl    $dst, $src, $shift" %}
+  format %{ "sarxl   $dst, $src, $shift" %}
   ins_encode %{
     __ sarxl($dst$$Register, $src$$Register, $shift$$Register);
   %}
@@ -9174,10 +9172,10 @@ instruct sarI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 
 instruct sarI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (RShiftI (LoadI src) shift));
-
-  format %{ "sarxl    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "sarxl   $dst, $src, $shift" %}
   ins_encode %{
     __ sarxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
@@ -9266,11 +9264,10 @@ instruct shrI_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct shrI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 %{
-  // This is to match that of the memory variance
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (URShiftI src shift));
 
-  format %{ "shrxl    $dst, $src, $shift" %}
+  format %{ "shrxl   $dst, $src, $shift" %}
   ins_encode %{
     __ shrxl($dst$$Register, $src$$Register, $shift$$Register);
   %}
@@ -9279,10 +9276,10 @@ instruct shrI_rReg_rReg(rRegI dst, rRegI src, rRegI shift)
 
 instruct shrI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (URShiftI (LoadI src) shift));
-
-  format %{ "shrxl    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "shrxl   $dst, $src, $shift" %}
   ins_encode %{
     __ shrxl($dst$$Register, $src$$Address, $shift$$Register);
   %}
@@ -9372,11 +9369,10 @@ instruct salL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct salL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 %{
-  // This is to match that of the memory variance
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (LShiftL src shift));
 
-  format %{ "shlxq    $dst, $src, $shift" %}
+  format %{ "shlxq   $dst, $src, $shift" %}
   ins_encode %{
     __ shlxq($dst$$Register, $src$$Register, $shift$$Register);
   %}
@@ -9385,10 +9381,10 @@ instruct salL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 
 instruct salL_mem_rReg(rRegL dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (LShiftL (LoadL src) shift));
-
-  format %{ "shlxq    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "shlxq   $dst, $src, $shift" %}
   ins_encode %{
     __ shlxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
@@ -9477,11 +9473,10 @@ instruct sarL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct sarL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 %{
-  // This is to match that of the memory variance
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (RShiftL src shift));
 
-  format %{ "sarxq    $dst, $src, $shift" %}
+  format %{ "sarxq   $dst, $src, $shift" %}
   ins_encode %{
     __ sarxq($dst$$Register, $src$$Register, $shift$$Register);
   %}
@@ -9490,10 +9485,10 @@ instruct sarL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 
 instruct sarL_mem_rReg(rRegL dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (RShiftL (LoadL src) shift));
-
-  format %{ "sarxq    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "sarxq   $dst, $src, $shift" %}
   ins_encode %{
     __ sarxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
@@ -9582,11 +9577,10 @@ instruct shrL_mem_CL(memory dst, rcx_RegI shift, rFlagsReg cr)
 
 instruct shrL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 %{
-  // This is to match that of the memory variance
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (URShiftL src shift));
 
-  format %{ "shrxq    $dst, $src, $shift" %}
+  format %{ "shrxq   $dst, $src, $shift" %}
   ins_encode %{
     __ shrxq($dst$$Register, $src$$Register, $shift$$Register);
   %}
@@ -9595,10 +9589,10 @@ instruct shrL_rReg_rReg(rRegL dst, rRegL src, rRegI shift)
 
 instruct shrL_mem_rReg(rRegL dst, memory src, rRegI shift)
 %{
-  predicate(VM_Version::supports_bmi2() && !n->in(2)->is_Con());
+  predicate(VM_Version::supports_bmi2());
   match(Set dst (URShiftL (LoadL src) shift));
-
-  format %{ "shrxq    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "shrxq   $dst, $src, $shift" %}
   ins_encode %{
     __ shrxq($dst$$Register, $src$$Address, $shift$$Register);
   %}
@@ -9650,7 +9644,7 @@ instruct rolI_immI8(rRegI dst, rRegI src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft src shift));
-  format %{ "rolxl    $dst, $src, $shift" %}
+  format %{ "rolxl   $dst, $src, $shift" %}
   ins_encode %{
     int shift = 32 - ($shift$$constant & 31);
     __ rorxl($dst$$Register, $src$$Register, shift);
@@ -9662,7 +9656,8 @@ instruct rolI_mem_immI8(rRegI dst, memory src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateLeft (LoadI src) shift));
-  format %{ "rolxl    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "rolxl   $dst, $src, $shift" %}
   ins_encode %{
     int shift = 32 - ($shift$$constant & 31);
     __ rorxl($dst$$Register, $src$$Address, shift);
@@ -9701,7 +9696,7 @@ instruct rorI_immI8(rRegI dst, rRegI src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight src shift));
-  format %{ "rorxl     $dst, $src, $shift" %}
+  format %{ "rorxl   $dst, $src, $shift" %}
   ins_encode %{
     __ rorxl($dst$$Register, $src$$Register, $shift$$constant);
   %}
@@ -9712,7 +9707,8 @@ instruct rorI_mem_immI8(rRegI dst, memory src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_INT);
   match(Set dst (RotateRight (LoadI src) shift));
-  format %{ "rorxl     $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "rorxl   $dst, $src, $shift" %}
   ins_encode %{
     __ rorxl($dst$$Register, $src$$Address, $shift$$constant);
   %}
@@ -9749,7 +9745,7 @@ instruct rolL_immI8(rRegL dst, rRegL src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft src shift));
-  format %{ "rolxq     $dst, $src, $shift" %}
+  format %{ "rolxq   $dst, $src, $shift" %}
   ins_encode %{
     int shift = 64 - ($shift$$constant & 63);
     __ rorxq($dst$$Register, $src$$Register, shift);
@@ -9761,7 +9757,8 @@ instruct rolL_mem_immI8(rRegL dst, memory src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateLeft (LoadL src) shift));
-  format %{ "rolxq     $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "rolxq   $dst, $src, $shift" %}
   ins_encode %{
     int shift = 64 - ($shift$$constant & 63);
     __ rorxq($dst$$Register, $src$$Address, shift);
@@ -9800,7 +9797,7 @@ instruct rorL_immI8(rRegL dst, rRegL src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight src shift));
-  format %{ "rorxq    $dst, $src, $shift" %}
+  format %{ "rorxq   $dst, $src, $shift" %}
   ins_encode %{
     __ rorxq($dst$$Register, $src$$Register, $shift$$constant);
   %}
@@ -9811,7 +9808,8 @@ instruct rorL_mem_immI8(rRegL dst, memory src, immI8 shift)
 %{
   predicate(VM_Version::supports_bmi2() && n->bottom_type()->basic_type() == T_LONG);
   match(Set dst (RotateRight (LoadL src) shift));
-  format %{ "rorxq    $dst, $src, $shift" %}
+  ins_cost(175);
+  format %{ "rorxq   $dst, $src, $shift" %}
   ins_encode %{
     __ rorxq($dst$$Register, $src$$Address, $shift$$constant);
   %}
