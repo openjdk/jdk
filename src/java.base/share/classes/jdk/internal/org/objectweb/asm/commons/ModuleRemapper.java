@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ModuleVisitor;
@@ -75,11 +76,11 @@ public class ModuleRemapper extends ModuleVisitor {
       * Constructs a new {@link ModuleRemapper}. <i>Subclasses must not use this constructor</i>.
       * Instead, they must use the {@link #ModuleRemapper(int,ModuleVisitor,Remapper)} version.
       *
-      * @param moduleVisitor the module visitor this remapper must deleted to.
+      * @param moduleVisitor the module visitor this remapper must delegate to.
       * @param remapper the remapper to use to remap the types in the visited module.
       */
     public ModuleRemapper(final ModuleVisitor moduleVisitor, final Remapper remapper) {
-        this(/* latest api = */ Opcodes.ASM8, moduleVisitor, remapper);
+        this(/* latest api = */ Opcodes.ASM9, moduleVisitor, remapper);
     }
 
     /**
@@ -87,9 +88,9 @@ public class ModuleRemapper extends ModuleVisitor {
       *
       * @param api the ASM API version supported by this remapper. Must be one of {@link
       *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5}, {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
-      * @param moduleVisitor the module visitor this remapper must deleted to.
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7}, {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8} or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM9}.
+      * @param moduleVisitor the module visitor this remapper must delegate to.
       * @param remapper the remapper to use to remap the types in the visited module.
       */
     protected ModuleRemapper(
@@ -151,3 +152,4 @@ public class ModuleRemapper extends ModuleVisitor {
         super.visitProvide(remapper.mapType(service), remappedProviders);
     }
 }
+

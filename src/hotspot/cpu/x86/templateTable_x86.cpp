@@ -152,7 +152,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators = 0) {
   assert(val == noreg || val == rax, "parameter is just for looks");
-  __ store_heap_oop(dst, val, rdx, rbx, decorators);
+  __ store_heap_oop(dst, val, rdx, rbx, LP64_ONLY(r8) NOT_LP64(rsi), decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -1067,7 +1067,7 @@ void TemplateTable::iastore() {
   __ access_store_at(T_INT, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_4,
                              arrayOopDesc::base_offset_in_bytes(T_INT)),
-                     rax, noreg, noreg);
+                     rax, noreg, noreg, noreg);
 }
 
 void TemplateTable::lastore() {
@@ -1081,7 +1081,7 @@ void TemplateTable::lastore() {
   __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY,
                      Address(rcx, rbx, Address::times_8,
                              arrayOopDesc::base_offset_in_bytes(T_LONG)),
-                     noreg /* ltos */, noreg, noreg);
+                     noreg /* ltos */, noreg, noreg, noreg);
 }
 
 
@@ -1095,7 +1095,7 @@ void TemplateTable::fastore() {
   __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_4,
                              arrayOopDesc::base_offset_in_bytes(T_FLOAT)),
-                     noreg /* ftos */, noreg, noreg);
+                     noreg /* ftos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::dastore() {
@@ -1108,7 +1108,7 @@ void TemplateTable::dastore() {
   __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_8,
                              arrayOopDesc::base_offset_in_bytes(T_DOUBLE)),
-                     noreg /* dtos */, noreg, noreg);
+                     noreg /* dtos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::aastore() {
@@ -1186,7 +1186,7 @@ void TemplateTable::bastore() {
   __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx,Address::times_1,
                              arrayOopDesc::base_offset_in_bytes(T_BYTE)),
-                     rax, noreg, noreg);
+                     rax, noreg, noreg, noreg);
 }
 
 void TemplateTable::castore() {
@@ -1199,7 +1199,7 @@ void TemplateTable::castore() {
   __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_2,
                              arrayOopDesc::base_offset_in_bytes(T_CHAR)),
-                     rax, noreg, noreg);
+                     rax, noreg, noreg, noreg);
 }
 
 
@@ -2197,7 +2197,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ bind(has_counters);
 
     Label no_mdo;
-    int increment = InvocationCounter::count_increment;
     if (ProfileInterpreter) {
       // Are we profiling?
       __ movptr(rbx, Address(rcx, in_bytes(Method::method_data_offset())));
@@ -2207,7 +2206,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
           in_bytes(InvocationCounter::counter_offset()));
       const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
-      __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
+      __ increment_mask_and_jump(mdo_backedge_counter, mask, rax,
           UseOnStackReplacement ? &backedge_counter_overflow : NULL);
       __ jmp(dispatch);
     }
@@ -2215,8 +2214,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // Increment backedge counter in MethodCounters*
     __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
     const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
-    __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
-        rax, false, Assembler::zero, UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+    __ increment_mask_and_jump(Address(rcx, be_offset), mask, rax,
+        UseOnStackReplacement ? &backedge_counter_overflow : NULL);
     __ bind(dispatch);
   }
 
@@ -3102,7 +3101,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(btos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_BYTE, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_BYTE, IN_HEAP, field, rax, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_bputfield, bc, rbx, true, byte_no);
     }
@@ -3117,7 +3116,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(ztos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_BOOLEAN, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_BOOLEAN, IN_HEAP, field, rax, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_zputfield, bc, rbx, true, byte_no);
     }
@@ -3148,7 +3147,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(itos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_INT, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_INT, IN_HEAP, field, rax, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_iputfield, bc, rbx, true, byte_no);
     }
@@ -3163,7 +3162,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(ctos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_CHAR, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_CHAR, IN_HEAP, field, rax, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_cputfield, bc, rbx, true, byte_no);
     }
@@ -3178,7 +3177,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(stos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_SHORT, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_SHORT, IN_HEAP, field, rax, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_sputfield, bc, rbx, true, byte_no);
     }
@@ -3194,7 +3193,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
     __ pop(ltos);
     if (!is_static) pop_and_check_object(obj);
     // MO_RELAXED: generate atomic store for the case of volatile field (important for x86_32)
-    __ access_store_at(T_LONG, IN_HEAP | MO_RELAXED, field, noreg /* ltos*/, noreg, noreg);
+    __ access_store_at(T_LONG, IN_HEAP | MO_RELAXED, field, noreg /* ltos*/, noreg, noreg, noreg);
 #ifdef _LP64
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_lputfield, bc, rbx, true, byte_no);
@@ -3211,7 +3210,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(ftos);
     if (!is_static) pop_and_check_object(obj);
-    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg);
+    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos */, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_fputfield, bc, rbx, true, byte_no);
     }
@@ -3230,7 +3229,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
     __ pop(dtos);
     if (!is_static) pop_and_check_object(obj);
     // MO_RELAXED: for the case of volatile field, in fact it adds no extra work for the underlying implementation
-    __ access_store_at(T_DOUBLE, IN_HEAP | MO_RELAXED, field, noreg /* dtos */, noreg, noreg);
+    __ access_store_at(T_DOUBLE, IN_HEAP | MO_RELAXED, field, noreg /* dtos */, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_dputfield, bc, rbx, true, byte_no);
     }
@@ -3373,31 +3372,31 @@ void TemplateTable::fast_storefield_helper(Address field, Register rax) {
     break;
   case Bytecodes::_fast_lputfield:
 #ifdef _LP64
-    __ access_store_at(T_LONG, IN_HEAP, field, noreg /* ltos */, noreg, noreg);
+    __ access_store_at(T_LONG, IN_HEAP, field, noreg /* ltos */, noreg, noreg, noreg);
 #else
   __ stop("should not be rewritten");
 #endif
     break;
   case Bytecodes::_fast_iputfield:
-    __ access_store_at(T_INT, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_INT, IN_HEAP, field, rax, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_zputfield:
-    __ access_store_at(T_BOOLEAN, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_BOOLEAN, IN_HEAP, field, rax, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_bputfield:
-    __ access_store_at(T_BYTE, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_BYTE, IN_HEAP, field, rax, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_sputfield:
-    __ access_store_at(T_SHORT, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_SHORT, IN_HEAP, field, rax, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_cputfield:
-    __ access_store_at(T_CHAR, IN_HEAP, field, rax, noreg, noreg);
+    __ access_store_at(T_CHAR, IN_HEAP, field, rax, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_fputfield:
-    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos*/, noreg, noreg);
+    __ access_store_at(T_FLOAT, IN_HEAP, field, noreg /* ftos*/, noreg, noreg, noreg);
     break;
   case Bytecodes::_fast_dputfield:
-    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos*/, noreg, noreg);
+    __ access_store_at(T_DOUBLE, IN_HEAP, field, noreg /* dtos*/, noreg, noreg, noreg);
     break;
   default:
     ShouldNotReachHere();

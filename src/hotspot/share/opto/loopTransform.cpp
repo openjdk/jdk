@@ -828,7 +828,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
       case Op_AryEq:
-      case Op_HasNegatives: {
+      case Op_CountPositives: {
         return false;
       }
 #if INCLUDE_RTM_OPT
@@ -970,6 +970,10 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_ModL: body_size += 30; break;
       case Op_DivL: body_size += 30; break;
       case Op_MulL: body_size += 10; break;
+      case Op_RoundF: body_size += 30; break;
+      case Op_RoundD: body_size += 30; break;
+      case Op_RoundVF: body_size += 30; break;
+      case Op_RoundVD: body_size += 30; break;
       case Op_PopCountVI:
       case Op_PopCountVL: {
         const TypeVect* vt = n->bottom_type()->is_vect();
@@ -981,7 +985,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
       case Op_AryEq:
-      case Op_HasNegatives: {
+      case Op_CountPositives: {
         // Do not unroll a loop with String intrinsics code.
         // String intrinsics are large and have loops.
         return false;
@@ -1954,6 +1958,12 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 }
 
 void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con) {
+  if (init->Opcode() == Op_CastII) {
+    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
+    // it can get in the way of type propagation
+    assert(((CastIINode*)init)->carry_dependency() && loop_head->skip_predicates() == init->in(0), "casted iv phi from pre loop expected");
+    init = init->in(1);
+  }
   // Search for skeleton predicates and update them according to the new stride
   Node* entry = ctrl;
   Node* prev_proj = ctrl;
@@ -3661,7 +3671,8 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
       phase->has_range_checks(this);
     }
 
-    if (should_unroll && !should_peel && PostLoopMultiversioning) {
+    if (should_unroll && !should_peel && PostLoopMultiversioning &&
+        Matcher::has_predicated_vectors()) {
       // Try to setup multiversioning on main loops before they are unrolled
       if (cl->is_main_loop() && (cl->unrolled_count() == 1)) {
         phase->insert_scalar_rced_post_loop(this, old_new);
@@ -4041,10 +4052,17 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  index = new AddPNode(base, base, index);
-  _igvn.register_new_node_with_optimizer(index);
-  Node* from = new AddPNode(base, index, offset);
+  Node* from = new AddPNode(base, base, index);
   _igvn.register_new_node_with_optimizer(from);
+  // For normal array fills, C2 uses two AddP nodes for array element
+  // addressing. But for array fills with Unsafe call, there's only one
+  // AddP node adding an absolute offset, so we do a NULL check here.
+  assert(offset != NULL || C->has_unsafe_access(),
+         "Only array fills with unsafe have no extra offset");
+  if (offset != NULL) {
+    from = new AddPNode(base, from, offset);
+    _igvn.register_new_node_with_optimizer(from);
+  }
   // Compute the number of elements to copy
   Node* len = new SubINode(head->limit(), head->init_trip());
   _igvn.register_new_node_with_optimizer(len);

@@ -136,10 +136,11 @@ void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); 
 void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); }
 
 // type test operations that doesn't require inclusion of oop.inline.hpp.
-bool oopDesc::is_instance_noinline()          const { return is_instance();            }
-bool oopDesc::is_array_noinline()             const { return is_array();               }
-bool oopDesc::is_objArray_noinline()          const { return is_objArray();            }
-bool oopDesc::is_typeArray_noinline()         const { return is_typeArray();           }
+bool oopDesc::is_instance_noinline()    const { return is_instance();    }
+bool oopDesc::is_instanceRef_noinline() const { return is_instanceRef(); }
+bool oopDesc::is_array_noinline()       const { return is_array();       }
+bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
+bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 
 void* oopDesc::load_klass_raw(oop obj) {
   // TODO: Remove method altogether and replace with calls to obj->klass() ?

@@ -116,7 +116,7 @@ static const char* env_list[] = {
   "DYLD_INSERT_LIBRARIES",
 
   // defined on Windows
-  "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR",
+  "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR", "TMP", "TEMP",
 
   (const char *)0
 };
@@ -911,7 +911,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP("printing code blobs if possible")
 
-     if (_verbose && _context) {
+     if (_verbose) {
        const int printed_capacity = max_error_log_print_code;
        address printed[printed_capacity];
        printed[0] = nullptr;
@@ -930,7 +930,8 @@ void VMError::report(outputStream* st, bool _verbose) {
              printed_len++;
            }
          } else {
-           frame fr = os::fetch_frame_from_context(_context);
+           frame fr = _context ? os::fetch_frame_from_context(_context)
+                               : os::current_frame();
            while (printed_len < limit && fr.pc() != nullptr) {
              if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
                printed_len++;

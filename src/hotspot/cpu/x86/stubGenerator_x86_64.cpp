@@ -2848,7 +2848,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(to_element_addr, rax_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
     __ increment(count);               // increment the count toward zero
     __ jcc(Assembler::zero, L_do_card_marks);
 

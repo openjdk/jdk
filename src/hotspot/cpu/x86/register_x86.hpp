@@ -26,6 +26,9 @@
 #define CPU_X86_REGISTER_X86_HPP
 
 #include "asm/register.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -161,6 +164,18 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
   const char* sub_word_name(int offset) const;
+
+  // Actually available XMM registers for use, depending on actual CPU capabilities
+  // and flags.
+  static int available_xmm_registers() {
+    int num_xmm_regs = XMMRegisterImpl::number_of_registers;
+#ifdef _LP64
+    if (UseAVX < 3) {
+      num_xmm_regs /= 2;
+    }
+#endif
+    return num_xmm_regs;
+  }
 };
 
 
@@ -271,5 +286,34 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_kpr;
 
 };
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_Register(exact_log2(first)) : noreg;
+}
+
+template <>
+inline Register AbstractRegSet<Register>::last() {
+  if (_bitset == 0) { return noreg; }
+  uint32_t last = 31 - count_leading_zeros(_bitset);
+  return as_Register(last);
+}
+
+template <>
+inline XMMRegister AbstractRegSet<XMMRegister>::first() {
+  uint32_t first = _bitset & -_bitset;
+  return first ? as_XMMRegister(exact_log2(first)) : xnoreg;
+}
+
+template <>
+inline XMMRegister AbstractRegSet<XMMRegister>::last() {
+  if (_bitset == 0) { return xnoreg; }
+  uint32_t last = 31 - count_leading_zeros(_bitset);
+  return as_XMMRegister(last);
+}
+
+typedef AbstractRegSet<Register> RegSet;
+typedef AbstractRegSet<XMMRegister> XMMRegSet;
 
 #endif // CPU_X86_REGISTER_X86_HPP
