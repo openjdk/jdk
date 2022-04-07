@@ -765,6 +765,8 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             Method* method = nm->method();
             if (nm->is_in_use() || nm->is_not_entrant()) {
               blob_name = os::strdup(method->name_and_sig_as_C_string());
+            } else {
+              blob_name = os::strdup(cb->name());
             }
 
             nm_size    = nm->total_size();
