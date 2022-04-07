@@ -108,6 +108,8 @@ public class AccessibleJTreePCESourceTest {
             }
         }
         System.out.println(
-            "Test Passed: When tree node is expanded/collapsed, PropertyChangeEventSource is the Node");
+            "Test Passed: When tree node is expanded/collapsed, "
+            + "PropertyChangeEventSource is the Node");
     }
 }
+
