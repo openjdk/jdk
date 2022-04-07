@@ -26,36 +26,36 @@
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/virtualspace.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
 class G1MapperWorkers : AllStatic {
-  static WorkGang* _work_gang;
-  static WorkGang* work_gang() {
-    if (_work_gang == NULL) {
-      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers);
-      _work_gang->initialize_workers();
-      _work_gang->update_active_workers(MaxWorkers);
+  static WorkerThreads* _workers;
+  static WorkerThreads* workers() {
+    if (_workers == NULL) {
+      _workers = new WorkerThreads("G1 Small Workers", MaxWorkers);
+      _workers->initialize_workers();
+      _workers->set_active_workers(MaxWorkers);
     }
-    return _work_gang;
+    return _workers;
   }
 
 public:
   static const uint MaxWorkers = 4;
-  static void run_task(AbstractGangTask* task) {
-    work_gang()->run_task(task);
+  static void run_task(WorkerTask* task) {
+    workers()->run_task(task);
   }
 };
-WorkGang* G1MapperWorkers::_work_gang = NULL;
+WorkerThreads* G1MapperWorkers::_workers = NULL;
 
-class G1TestCommitUncommit : public AbstractGangTask {
+class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;
   uint _claim_id;
 public:
   G1TestCommitUncommit(G1RegionToSpaceMapper* mapper) :
-      AbstractGangTask("Stress mapper"),
+      WorkerTask("Stress mapper"),
       _mapper(mapper),
       _claim_id(0) { }
 
@@ -97,7 +97,12 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
   G1MapperWorkers::run_task(&task);
 }
 
+#if defined(_WINDOWS)
+// See JDK-8283899.
+TEST_VM(G1RegionToSpaceMapper, DISABLED_largeStressAdjacent) {
+#else
 TEST_VM(G1RegionToSpaceMapper, largeStressAdjacent) {
+#endif
   // Fake a heap with 2m regions and create a BOT like mapper. This
   // will give a G1RegionsLargerThanCommitSizeMapper to stress.
   uint num_regions = G1MapperWorkers::MaxWorkers;

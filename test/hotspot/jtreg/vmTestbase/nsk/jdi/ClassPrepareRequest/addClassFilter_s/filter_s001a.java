@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.ClassPrepareRequest.addClassFilter_s;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -98,13 +97,13 @@ public class filter_s001a {
 //------------------------------------------------------  section tested
 
                 case 0:
-                Thread1filter_s001a thread1 = new Thread1filter_s001a("thread1");
+                Thread thread1 = JDIThreadFactory.newThread(new Thread1filter_s001a("thread1"));
                 log1("new filter_s001a().run1(thread1);");
                 new filter_s001a().run1(thread1);
                 break;
 
                 case 1:
-                Thread2filter_s001a thread2 = new Thread2filter_s001a("thread2");
+                Thread thread2 = JDIThreadFactory.newThread(new Thread2filter_s001a("thread2"));
                 log1("new filter_s001a().run1(thread2);");
                 new filter_s001a().run1(thread2);
 
@@ -146,7 +145,7 @@ public class filter_s001a {
 
 }
 
-class Thread1filter_s001a extends Thread {
+class Thread1filter_s001a extends NamedTask {
 
     class TestClass10{
         int var10 = 0;
@@ -155,34 +154,28 @@ class Thread1filter_s001a extends Thread {
         int var11 = 0;
     }
 
-    String tName = null;
-
     public Thread1filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         TestClass11 obj1 = new TestClass11();
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
 
-class Thread2filter_s001a extends Thread {
-
-    String tName = null;
+class Thread2filter_s001a extends NamedTask {
 
     public Thread2filter_s001a(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_s001a.log1("  'run': enter  :: threadName == " + tName);
+        filter_s001a.log1("  'run': enter  :: threadName == " + getName());
         filter_s001aTestClass21 obj2 = new filter_s001aTestClass21();
-        filter_s001a.log1("  'run': exit   :: threadName == " + tName);
+        filter_s001a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

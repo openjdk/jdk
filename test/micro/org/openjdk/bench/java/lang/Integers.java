@@ -53,17 +53,20 @@ public class Integers {
     private int size;
 
     private String[] strings;
+    private int[] intsTiny;
     private int[] intsSmall;
     private int[] intsBig;
 
     @Setup
     public void setup() {
-        Random r = new Random(0);
-        strings = new String[size];
+        Random r  = new Random(0);
+        strings   = new String[size];
+        intsTiny  = new int[size];
         intsSmall = new int[size];
-        intsBig = new int[size];
+        intsBig   = new int[size];
         for (int i = 0; i < size; i++) {
             strings[i] = "" + (r.nextInt(10000) - (5000));
+            intsTiny[i] = r.nextInt(99);
             intsSmall[i] = 100 * i + i + 103;
             intsBig[i] = ((100 * i + i) << 24) + 4543 + i * 4;
         }
@@ -87,6 +90,14 @@ public class Integers {
     @Benchmark
     public void toStringSmall(Blackhole bh) {
         for (int i : intsSmall) {
+            bh.consume(Integer.toString(i));
+        }
+    }
+
+    /** Performs toString on very small values, just one or two digits. */
+    @Benchmark
+    public void toStringTiny(Blackhole bh) {
+        for (int i : intsTiny) {
             bh.consume(Integer.toString(i));
         }
     }

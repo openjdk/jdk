@@ -166,7 +166,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
-    Atomic::inc(&_linkage_errors);
+    Atomic::inc(&_linkage_errors, memory_order_relaxed);
   }
 
   assert(h_exception->is_a(vmClasses::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
@@ -242,18 +242,12 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
       java_lang_Throwable::fill_in_stack_trace(exception, method);
     }
     // Increment counter for hs_err file reporting
-    Atomic::inc(&Exceptions::_stack_overflow_errors);
+    Atomic::inc(&Exceptions::_stack_overflow_errors, memory_order_relaxed);
   } else {
     // if prior exception, throw that one instead
     exception = Handle(THREAD, THREAD->pending_exception());
   }
   _throw(THREAD, file, line, exception);
-}
-
-void Exceptions::throw_unsafe_access_internal_error(JavaThread* thread, const char* file, int line, const char* message) {
-  Handle h_exception = new_exception(thread, vmSymbols::java_lang_InternalError(), message);
-  java_lang_InternalError::set_during_unsafe_access(h_exception());
-  _throw(thread, file, line, h_exception, message);
 }
 
 void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
@@ -461,13 +455,13 @@ volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
 
 void Exceptions::count_out_of_memory_exceptions(Handle exception) {
-  if (exception() == Universe::out_of_memory_error_metaspace()) {
-     Atomic::inc(&_out_of_memory_error_metaspace_errors);
-  } else if (exception() == Universe::out_of_memory_error_class_metaspace()) {
-     Atomic::inc(&_out_of_memory_error_class_metaspace_errors);
+  if (Universe::is_out_of_memory_error_metaspace(exception())) {
+     Atomic::inc(&_out_of_memory_error_metaspace_errors, memory_order_relaxed);
+  } else if (Universe::is_out_of_memory_error_class_metaspace(exception())) {
+     Atomic::inc(&_out_of_memory_error_class_metaspace_errors, memory_order_relaxed);
   } else {
      // everything else reported as java heap OOM
-     Atomic::inc(&_out_of_memory_error_java_heap_errors);
+     Atomic::inc(&_out_of_memory_error_java_heap_errors, memory_order_relaxed);
   }
 }
 
@@ -538,7 +532,11 @@ void Exceptions::debug_check_abort(const char *value_string, const char* message
       strstr(value_string, AbortVMOnException)) {
     if (AbortVMOnExceptionMessage == NULL || (message != NULL &&
         strstr(message, AbortVMOnExceptionMessage))) {
-      fatal("Saw %s, aborting", value_string);
+      if (message == NULL) {
+        fatal("Saw %s, aborting", value_string);
+      } else {
+        fatal("Saw %s: %s, aborting", value_string, message);
+      }
     }
   }
 }

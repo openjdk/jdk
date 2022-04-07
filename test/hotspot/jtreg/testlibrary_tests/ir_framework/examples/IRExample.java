@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 package ir_framework.examples;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 /*
  * @test
@@ -95,8 +95,8 @@ public class IRExample {
     // Only apply this rule if the VM flag UseZGC is true
     @IR(applyIf = {"UseZGC", "true"}, failOn = IRNode.LOAD)
     // We can also use comparators (<, <=, >, >=, !=, =) to restrict the rules.
-    // This rule is only applied if the loop unroll limit is 10 or greater.
-    @IR(applyIf = {"LoopUnrollLimit", ">= 10"}, failOn = IRNode.LOAD)
+    // This rule is only applied if TypeProfileLevel is 100 or greater.
+    @IR(applyIf = {"TypeProfileLevel", ">= 100"}, failOn = IRNode.LOAD)
     public void goodFailOn() {
         iFld = 42; // No load, no loop, no store to iFld2, no store to class Foo
     }

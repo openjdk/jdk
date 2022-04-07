@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,7 @@
   static const bool int_in_long = false;
 #endif
 
+
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
@@ -165,20 +166,7 @@
 
   // Does the CPU supports vector unsigned comparison instructions?
   static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
-    int vlen_in_bytes = vlen * type2aelembytes(bt);
-    if ((UseAVX > 2) && (VM_Version::supports_avx512vl() || vlen_in_bytes == 64))
-      return true;
-    else {
-      // instruction set supports only signed comparison
-      // so need to zero extend to higher integral type and perform comparison
-      // cannot cast long to higher integral type
-      // and on avx1 cannot cast 128 bit integral vectors to higher size
-
-      if ((bt != T_LONG)  &&
-          ((UseAVX >= 2) || (vlen_in_bytes <= 8)))
-        return true;
-    }
-    return false;
+    return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
@@ -190,6 +178,18 @@
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
       return true;
+  }
+
+  // Implements a variant of EncodeISOArrayNode that encode ASCII only
+  static const bool supports_encode_ascii_array = true;
+
+  // Returns pre-selection estimated cost of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default: return 0;
+      case Op_PopCountVI: return VM_Version::supports_avx512_vpopcntdq() ? 0 : 50;
+      case Op_PopCountVL: return VM_Version::supports_avx512_vpopcntdq() ? 0 : 40;
+    }
   }
 
 #endif // CPU_X86_MATCHER_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class ExtraButtonDrag extends Frame {
                 //XToolkit: extra buttons should report MOVED events only
                 //WToolkit: extra buttons should report DRAGGED events only
                 if (i > 2){ //extra buttons only
-                    if (tk.equals("sun.awt.X11.XToolkit") || tk.equals("sun.awt.motif.MToolkit")) {
+                    if (tk.equals("sun.awt.X11.XToolkit")) {
                         if (!moved || dragged) {
                             throw new RuntimeException("Test failed."+ tk +" Button = " +(i+1) + " moved = "+moved +" : dragged = " +dragged);
                         }
@@ -152,4 +152,3 @@ public class ExtraButtonDrag extends Frame {
     }
 
 }
-

@@ -629,7 +629,7 @@ double G1Policy::logged_cards_processing_time() const {
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark) {
+void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure) {
   G1GCPhaseTimes* p = phase_times();
 
   double start_time_sec = phase_times()->cur_collection_start_sec();
@@ -637,8 +637,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   double pause_time_ms = (end_time_sec - start_time_sec) * 1000.0;
 
   G1GCPauseType this_pause = collector_state()->young_gc_pause_type(concurrent_operation_is_full_mark);
-
-  bool update_stats = should_update_gc_stats();
 
   if (G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause)) {
     record_concurrent_mark_init_end();
@@ -654,6 +652,10 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     app_time_ms = 1.0;
   }
 
+  // Evacuation failures skew the timing too much to be considered for some statistics updates.
+  // We make the assumption that these are rare.
+  bool update_stats = !evacuation_failure;
+
   if (update_stats) {
     // We maintain the invariant that all objects allocated by mutator
     // threads will be allocated out of eden regions. So, we can use
@@ -668,7 +670,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
   }
 
-  record_pause(this_pause, start_time_sec, end_time_sec);
+  record_pause(this_pause, start_time_sec, end_time_sec, evacuation_failure);
 
   if (G1GCPauseTypeHelper::is_last_young_pause(this_pause)) {
     assert(!G1GCPauseTypeHelper::is_concurrent_start_pause(this_pause),
@@ -891,9 +893,9 @@ void G1Policy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-void G1Policy::record_young_gc_pause_end() {
+void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
   phase_times()->record_gc_pause_end();
-  phase_times()->print();
+  phase_times()->print(evacuation_failed);
 }
 
 double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards,
@@ -1176,12 +1178,6 @@ void G1Policy::maybe_start_marking() {
   }
 }
 
-bool G1Policy::should_update_gc_stats() {
-  // Evacuation failures skew the timing too much to be considered for statistics updates.
-  // We make the assumption that these are rare.
-  return !_g1h->evacuation_failed();
-}
-
 void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_time_sec, double end_time_sec) {
 
   double pause_time_sec = end_time_sec - start_time_sec;
@@ -1199,13 +1195,14 @@ void G1Policy::update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_t
 
 void G1Policy::record_pause(G1GCPauseType gc_type,
                             double start,
-                            double end) {
+                            double end,
+                            bool evacuation_failure) {
   // Manage the MMU tracker. For some reason it ignores Full GCs.
   if (gc_type != G1GCPauseType::FullGC) {
     _mmu_tracker->add_pause(start, end);
   }
 
-  if (should_update_gc_stats()) {
+  if (!evacuation_failure) {
     update_gc_pause_time_ratios(gc_type, start, end);
   }
 
@@ -1316,7 +1313,6 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
   num_optional_regions = 0;
   uint num_expensive_regions = 0;
 
-  double predicted_old_time_ms = 0.0;
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
@@ -1347,7 +1343,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
     if (num_initial_regions < min_old_cset_length) {
-      predicted_old_time_ms += predicted_time_ms;
+      predicted_initial_time_ms += predicted_time_ms;
       num_initial_regions++;
       // Record the number of regions added with no time remaining
       if (time_remaining_ms == 0.0) {
@@ -1361,7 +1357,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
     } else {
       // Keep adding regions to old set until we reach the optional threshold
       if (time_remaining_ms > optional_threshold_ms) {
-        predicted_old_time_ms += predicted_time_ms;
+        predicted_initial_time_ms += predicted_time_ms;
         num_initial_regions++;
       } else if (time_remaining_ms > 0) {
         // Keep adding optional regions until time is up.
@@ -1385,7 +1381,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
   }
 
   log_debug(gc, ergo, cset)("Finish choosing collection set old regions. Initial: %u, optional: %u, "
-                            "predicted old time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
+                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
                             num_initial_regions, num_optional_regions,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
 }
@@ -1448,17 +1444,19 @@ bool G1Policy::preventive_collection_required(uint alloc_region_count) {
   uint required_regions = (uint)(get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
                                 get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
 
-  if (required_regions > _g1h->num_free_regions() - alloc_region_count) {
-    log_debug(gc, ergo, cset)("Preventive GC, insufficient free regions. Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free %u Alloc %u",
-            required_regions,
-            eden_count,
-            (uint)get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
-            _g1h->survivor_regions_count(),
-            (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_survivor),
-            _g1h->old_regions_count(),
-            (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old),
-            _g1h->num_free_regions(),
-            alloc_region_count);
+  if (required_regions > _g1h->num_free_or_available_regions() - alloc_region_count) {
+    log_debug(gc, ergo, cset)("Preventive GC, insufficient free or available regions. "
+                              "Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free or Avail %u (Free %u) Alloc %u",
+                              required_regions,
+                              eden_count,
+                              (uint)get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
+                              _g1h->survivor_regions_count(),
+                              (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_survivor),
+                              _g1h->old_regions_count(),
+                              (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old),
+                              _g1h->num_free_or_available_regions(),
+                              _g1h->num_free_regions(),
+                              alloc_region_count);
 
     return true;
   }
@@ -1504,7 +1502,6 @@ void G1Policy::update_survival_estimates_for_next_collection() {
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   start_adding_survivor_regions();
 
-  HeapRegion* last = NULL;
   for (GrowableArrayIterator<HeapRegion*> it = survivors->regions()->begin();
        it != survivors->regions()->end();
        ++it) {
@@ -1515,8 +1512,6 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
     // the incremental collection set for the next evacuation
     // pause.
     _collection_set->add_survivor_regions(curr);
-
-    last = curr;
   }
   stop_adding_survivor_regions();
 

@@ -116,7 +116,7 @@ public:
       oop obj = cast_to_oop(dead_start);
       obj->set_mark(obj->mark().set_marked());
 
-      assert(dead_length == (size_t)obj->size(), "bad filler object size");
+      assert(dead_length == obj->size(), "bad filler object size");
       log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
           p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
 

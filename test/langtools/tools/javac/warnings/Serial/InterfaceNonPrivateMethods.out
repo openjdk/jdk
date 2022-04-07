@@ -1,0 +1,9 @@
+InterfaceNonPrivateMethods.java:13:21: compiler.warn.non.private.method.weaker.access
+InterfaceNonPrivateMethods.java:15:21: compiler.warn.non.private.method.weaker.access
+InterfaceNonPrivateMethods.java:16:21: compiler.warn.non.private.method.weaker.access
+InterfaceNonPrivateMethods.java:20:31: compiler.warn.default.ineffective
+InterfaceNonPrivateMethods.java:23:31: compiler.warn.default.ineffective
+InterfaceNonPrivateMethods.java:29:29: compiler.warn.non.private.method.weaker.access
+InterfaceNonPrivateMethods.java:33:29: compiler.warn.non.private.method.weaker.access
+InterfaceNonPrivateMethods.java:37:29: compiler.warn.non.private.method.weaker.access
+8 warnings

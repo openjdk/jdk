@@ -26,6 +26,55 @@
 
 <Metadata>
 
+  <!-- Internal events are only to be used during development, i.e. temporary time measurements, without the need 
+       to modify .jfc files etc. Code that commits an internal event should NEVER be checked in.
+
+       Example usage:
+
+       #include "jfr/jfrEvents.hpp"
+
+       void foo() {
+         EventDuration event;
+         bar();
+         baz();
+         event.commit();
+       }
+
+       $ make images
+       $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...  
+       ...
+       $ jfr print dump.jfr
+
+       Programmatic access:
+       try (var rf = new RecordingFile(Path.of("dump.jfr)) {
+           while (rf.hasMoreEvents()) {
+               RecordedEvent e = rf.readEvent();
+               System.out.println(e.getName() + " " + e.getDuration()));
+           }
+       };
+  !-->
+
+  <Event name="Duration" category="Java Virtual Machine, Internal" label="Duration" startTime="true" thread="true" stackTrace="false" internal="true">
+  </Event>
+
+  <Event name="Instant" category="Java Virtual Machine, Internal" label="Instant" startTime="false" thread="true" stackTrace="false" internal="true">
+  </Event>
+
+  <Event name="Value" category="Java Virtual Machine, Internal" label="Value" startTime="false" thread="true" stackTrace="false" internal="true">
+    <Field type="ulong" name="value" label="Value"/>
+  </Event>
+
+  <Event name="Text" category="Java Virtual Machine, Internal" label="Text" startTime="false" thread="true" stackTrace="false" internal="true">
+    <Field type="string" name="text" label="Text"/>
+  </Event>
+  
+  <Event name="ZThreadDebug" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" description="Temporary latency measurements used during development and debugging of ZGC" thread="true" internal="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <!-- Ordinary and experimental events !-->
+  
   <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">
     <Field type="Thread" name="thread" label="New Java Thread" />
     <Field type="Thread" name="parentThread" label="Parent Java Thread" />
@@ -1079,6 +1128,13 @@
   <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">
     <Field type="uint" name="lockCount" label="Lock Count" description="The number of Java threads in a critical section when the GC locker is started" />
     <Field type="uint" name="stallCount" label="Stall Count" description="The number of Java threads stalled by the GC locker" />
+  </Event>
+
+  <Event name="FinalizerStatistics" category="Java Application, Statistics" label="Finalizer Statistics" description="Per class statistics about finalizers" thread="false" startTime="false" period="endChunk">
+    <Field type="Class" name="finalizableClass" label="Class Overriding Finalize" />
+    <Field type="Symbol" name="codeSource" label="Code Source" description="URL from where the class was loaded" />
+    <Field type="ulong" name="objects" label="Finalizable Objects on Heap" description="Number of objects on heap that can be finalized" />
+    <Field type="ulong" name="totalFinalizersRun" label="Finalizers Run" description="Total number of finalizers run since JVM start" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

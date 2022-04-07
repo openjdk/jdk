@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -866,6 +866,7 @@ public class SpNegoContext implements GSSContextSpi {
             mechContext.requestMutualAuth(mutualAuthState);
             mechContext.requestReplayDet(replayDetState);
             mechContext.requestSequenceDet(sequenceDetState);
+            mechContext.setChannelBinding(channelBinding);
             if (mechContext instanceof GSSContextImpl) {
                 ((GSSContextImpl)mechContext).requestDelegPolicy(
                         delegPolicyState);
@@ -899,6 +900,7 @@ public class SpNegoContext implements GSSContextSpi {
                 myCred.getInternalCred());
             }
             mechContext = factory.manager.createContext(cred);
+            mechContext.setChannelBinding(channelBinding);
         }
 
         // pass token to mechanism acceptSecContext

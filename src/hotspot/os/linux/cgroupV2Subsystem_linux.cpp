@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  */
 int CgroupV2Subsystem::cpu_shares() {
   GET_CONTAINER_INFO(int, _unified, "/cpu.weight",
-                     "Raw value for CPU shares is: %d", "%d", shares);
+                     "Raw value for CPU Shares is: %d", "%d", shares);
   // Convert default value of 100 to no shares setup
   if (shares == 100) {
     log_debug(os, container)("CPU Shares is: %d", -1);
@@ -249,3 +249,16 @@ jlong CgroupV2Subsystem::pids_max() {
   return limit_from_str(pidsmax_str);
 }
 
+/* pids_current
+ *
+ * The number of tasks currently in the cgroup (and its descendants) of the process
+ *
+ * return:
+ *    current number of tasks
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV2Subsystem::pids_current() {
+  GET_CONTAINER_INFO(jlong, _unified, "/pids.current",
+                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+  return pids_current;
+}

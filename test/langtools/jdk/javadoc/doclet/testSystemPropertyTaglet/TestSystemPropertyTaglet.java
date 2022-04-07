@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,12 +179,13 @@ public class TestSystemPropertyTaglet extends JavadocTester {
                        <dd>System Property</dd>""",
                    """
                        <dt><a href="mymodule/mypackage/MyError.html#test.\
-                       property" class="search-tag-link">test.property</a> - Search tag in error mypackage.MyError</dt>
+                       property" class="search-tag-link">test.property</a> - Search tag in exception class mypackage.MyE\
+                       rror</dt>
                        <dd>System Property</dd>""",
                    """
                        <dt><a href="mymodule/mypackage/MyException.html#t\
-                       est.property" class="search-tag-link">test.property</a> - Search tag in exception mypackage.MyExc\
-                       eption</dt>
+                       est.property" class="search-tag-link">test.property</a> - Search tag in exception class mypackage\
+                       .MyException</dt>
                        <dd>System Property</dd>""",
                    """
                        <dt><a href="mymodule/mypackage/MyInterface.html#t\
@@ -273,19 +274,20 @@ public class TestSystemPropertyTaglet extends JavadocTester {
                         {"l":"test.property","h":"class mypackage.MyClass","d":"System Property","u":"my\
                         module/mypackage/MyClass.html#test.property"}""",
                     """
-                        {"l":"test.property","h":"enum class mypackage.MyEnum","d":"System Property","u":"mymo\
-                        dule/mypackage/MyEnum.html#test.property"}""",
+                        {"l":"test.property","h":"enum class mypackage.MyEnum","d":"System Property","u"\
+                        :"mymodule/mypackage/MyEnum.html#test.property"}""",
                     """
-                        {"l":"test.property","h":"error mypackage.MyError","d":"System Property","u":"my\
-                        module/mypackage/MyError.html#test.property"}""",
+                        {"l":"test.property","h":"exception class mypackage.MyError","d":"System Propert\
+                        y","u":"mymodule/mypackage/MyError.html#test.property"}""",
                     """
-                        {"l":"test.property","h":"exception mypackage.MyException","d":"System Property"\
-                        ,"u":"mymodule/mypackage/MyException.html#test.property"}""",
+                        {"l":"test.property","h":"exception class mypackage.MyException","d":"System Pro\
+                        perty","u":"mymodule/mypackage/MyException.html#test.property"}""",
                     """
                         {"l":"test.property","h":"interface mypackage.MyInterface","d":"System Property"\
                         ,"u":"mymodule/mypackage/MyInterface.html#test.property"}""",
                     """
-                        {"l":"test.property","h":"module mymodule","d":"System Property","u":"mymodule/module-summary.html#test.property"}""",
+                        {"l":"test.property","h":"module mymodule","d":"System Property","u":"mymodule/m\
+                        odule-summary.html#test.property"}""",
                     """
                         {"l":"test.property","h":"mypackage.MyAnnotation.value()","d":"System Property",\
                         "u":"mymodule/mypackage/MyAnnotation.html#test.property-1"}""",

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.hpp"
@@ -55,6 +56,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/utf8.hpp"
+#if INCLUDE_G1GC
+#include "gc/g1/g1CollectedHeap.hpp"
+#endif
 
 // We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;
@@ -67,9 +71,18 @@ const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 #if INCLUDE_CDS_JAVA_HEAP
 inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
-  assert(sizeof(narrowOop) == sizeof(offset), "must be");
-  narrowOop v = CompressedOops::narrow_oop_cast(offset);
-  return HeapShared::decode_from_archive(v);
+  if (UseCompressedOops) {
+    assert(sizeof(narrowOop) == sizeof(offset), "must be");
+    narrowOop v = CompressedOops::narrow_oop_cast(offset);
+    return HeapShared::decode_from_archive(v);
+  } else {
+    intptr_t dumptime_oop = (uintptr_t)offset;
+    assert(dumptime_oop != 0, "null strings cannot be interned");
+    intptr_t runtime_oop = dumptime_oop +
+                           (intptr_t)FileMapInfo::current_info()->header()->heap_begin() +
+                           (intptr_t)HeapShared::runtime_delta();
+    return (oop)cast_to_oop(runtime_oop);
+  }
 }
 
 typedef CompactHashtable<
@@ -538,18 +551,19 @@ void StringTable::rehash_table() {
 }
 
 // Statistics
-static int literal_size(oop obj) {
-  // NOTE: this would over-count if (pre-JDK8)
-  // java_lang_Class::has_offset_field() is true and the String.value array is
-  // shared by several Strings. However, starting from JDK8, the String.value
-  // array is not shared anymore.
+static size_t literal_size(oop obj) {
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == vmClasses::String_klass()) {
-    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
-  } else {
-    return obj->size();
   }
+
+  size_t word_size = obj->size();
+
+  if (obj->klass() == vmClasses::String_klass()) {
+    // This may overcount if String.value arrays are shared.
+    word_size += java_lang_String::value(obj)->size();
+  }
+
+  return word_size * HeapWordSize;
 }
 
 struct SizeFunc : StackObj {
@@ -745,6 +759,16 @@ oop StringTable::create_archived_string(oop s) {
 
 class CopyToArchive : StackObj {
   CompactHashtableWriter* _writer;
+private:
+  u4 compute_delta(oop s) {
+    HeapWord* start = G1CollectedHeap::heap()->reserved().start();
+    intx offset = ((address)(void*)s) - ((address)(void*)start);
+    assert(offset >= 0, "must be");
+    if (offset > 0xffffffff) {
+      fatal("too large");
+    }
+    return (u4)offset;
+  }
 public:
   CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
@@ -756,7 +780,11 @@ public:
     }
 
     // add to the compact table
-    _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
+    if (UseCompressedOops) {
+      _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
+    } else {
+      _writer->add(hash, compute_delta(new_s));
+    }
     return true;
   }
 };
@@ -770,7 +798,6 @@ void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_
   // Copy the interned strings into the "string space" within the java heap
   CopyToArchive copier(&writer);
   dumped_interned_strings->iterate(&copier);
-
   writer.dump(&_shared_table, "string");
 }
 

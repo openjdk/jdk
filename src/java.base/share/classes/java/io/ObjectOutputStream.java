@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,13 @@
 
 package java.io;
 
-import java.io.ObjectStreamClass.WeakClassKey;
-import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import static java.io.ObjectStreamClass.processQueue;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -83,9 +79,10 @@ import sun.reflect.misc.ReflectUtil;
  *      oos.close();
  * </pre>
  *
- * <p>Classes that require special handling during the serialization and
- * deserialization process must implement special methods with these exact
- * signatures:
+ * <p>Serializable classes that require special handling during the
+ * serialization and deserialization process should implement methods
+ * with the following signatures:
+ *
  * <br>
  * <pre>
  * private void readObject(java.io.ObjectInputStream stream)
@@ -95,6 +92,12 @@ import sun.reflect.misc.ReflectUtil;
  * private void readObjectNoData()
  *     throws ObjectStreamException;
  * </pre>
+ *
+ * <p>The method name, modifiers, return type, and number and type of
+ * parameters must match exactly for the method to be used by
+ * serialization or deserialization. The methods should only be
+ * declared to throw checked exceptions consistent with these
+ * signatures.
  *
  * <p>The writeObject method is responsible for writing the state of the object
  * for its particular class so that the corresponding readObject method can
@@ -169,12 +172,13 @@ public class ObjectOutputStream
 
     private static class Caches {
         /** cache of subclass security audit results */
-        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
-            new ConcurrentHashMap<>();
-
-        /** queue for WeakReferences to audited subclasses */
-        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
-            new ReferenceQueue<>();
+        static final ClassValue<Boolean> subclassAudits =
+            new ClassValue<>() {
+                @Override
+                protected Boolean computeValue(Class<?> type) {
+                    return auditSubclass(type);
+                }
+            };
     }
 
     /** filter stream for handling block data conversion */
@@ -652,10 +656,11 @@ public class ObjectOutputStream
      * stream.  Subclasses of ObjectOutputStream may override this method to
      * customize the way in which class descriptors are written to the
      * serialization stream.  The corresponding method in ObjectInputStream,
-     * {@code readClassDescriptor}, should then be overridden to
+     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be overridden to
      * reconstitute the class descriptor from its custom stream representation.
      * By default, this method writes class descriptors according to the format
-     * defined in the Object Serialization specification.
+     * defined in the <a href="{@docRoot}/../specs/serialization/index.html">
+     * <cite>Java Object Serialization Specification</cite></a>.
      *
      * <p>Note that this method will only be called if the ObjectOutputStream
      * is not using the old serialization stream format (set by calling
@@ -711,10 +716,7 @@ public class ObjectOutputStream
         if (buf == null) {
             throw new NullPointerException();
         }
-        int endoff = off + len;
-        if (off < 0 || len < 0 || endoff > buf.length || endoff < 0) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(off, len, buf.length);
         bout.write(buf, off, len, false);
     }
 
@@ -1060,13 +1062,7 @@ public class ObjectOutputStream
         if (sm == null) {
             return;
         }
-        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
-        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
-        Boolean result = Caches.subclassAudits.get(key);
-        if (result == null) {
-            result = auditSubclass(cl);
-            Caches.subclassAudits.putIfAbsent(key, result);
-        }
+        boolean result = Caches.subclassAudits.get(cl);
         if (!result) {
             sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
         }

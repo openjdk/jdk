@@ -805,6 +805,7 @@ public class TreeInfo {
     public static List<JCTree> pathFor(final JCTree node, final JCCompilationUnit unit) {
         class Result extends Error {
             static final long serialVersionUID = -5942088234594905625L;
+            @SuppressWarnings("serial") // List not statically Serilizable
             List<JCTree> path;
             Result(List<JCTree> path) {
                 this.path = path;
@@ -1383,4 +1384,10 @@ public class TreeInfo {
 
     public record PatternPrimaryType(Type type, boolean unconditional) {}
 
+    public static boolean expectedExhaustive(JCSwitch tree) {
+        return tree.patternSwitch ||
+               tree.cases.stream()
+                         .flatMap(c -> c.labels.stream())
+                         .anyMatch(l -> TreeInfo.isNull(l));
+    }
 }

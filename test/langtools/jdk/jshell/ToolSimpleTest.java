@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -744,7 +744,8 @@ public class ToolSimpleTest extends ReplToolTesting {
 
     @Test
     public void testCompoundStart() {
-        test(new String[]{"--startup", "DEFAULT", "--startup", "PRINTING"},
+        test(new String[]{"-R", "-Duser.language=en", "-R", "-Duser.country=US",
+                          "--startup", "DEFAULT", "--startup", "PRINTING"},
                 (a) -> assertCommand(a, "printf(\"%4.2f\", Math.PI)",
                         "", "", null, "3.14", "")
         );

@@ -69,7 +69,7 @@ import java.net.URI;
  * @since 1.6
  */
 
-public abstract class HttpExchange implements AutoCloseable {
+public abstract class HttpExchange implements AutoCloseable, Request {
 
     /**
      * Constructor for subclasses to call.
@@ -78,19 +78,8 @@ public abstract class HttpExchange implements AutoCloseable {
     }
 
     /**
-     * Returns an immutable {@link Headers} containing the HTTP headers that
-     * were included with this request.
-     *
-     * <p> The keys in this {@code Headers} are the header names, while the
-     * values are a {@link java.util.List} of
-     * {@linkplain java.lang.String Strings} containing each value that was
-     * included in the request, in the order they were included. Header fields
-     * appearing multiple times are represented as multiple string values.
-     *
-     * <p> The keys in {@code Headers} are case-insensitive.
-     *
-     * @return a read-only {@code Headers} which can be used to access request
-     *         headers.
+     * {@inheritDoc}
+     * @return {@inheritDoc}
      */
     public abstract Headers getRequestHeaders();
 
@@ -111,16 +100,14 @@ public abstract class HttpExchange implements AutoCloseable {
     public abstract Headers getResponseHeaders();
 
     /**
-     * Returns the request {@link URI}.
-     *
-     * @return the request {@code URI}
+     * {@inheritDoc}
+     * @return {@inheritDoc}
      */
     public abstract URI getRequestURI();
 
     /**
-     * Returns the request method.
-     *
-     * @return the request method
+     * {@inheritDoc}
+     * @return {@inheritDoc}
      */
     public abstract String getRequestMethod();
 

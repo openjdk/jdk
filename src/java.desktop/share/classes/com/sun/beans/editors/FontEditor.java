@@ -220,6 +220,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     }
 
     private Font font;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private Toolkit toolkit;
     private String sampleText = "Abcde...";
 

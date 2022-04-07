@@ -25,6 +25,7 @@
 
 package sun.security.pkcs11;
 
+import java.lang.ref.Cleaner;
 import java.math.BigInteger;
 
 import java.io.InputStream;
@@ -73,7 +74,7 @@ import static sun.security.pkcs11.P11Util.*;
 
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-import static sun.security.pkcs11.wrapper.PKCS11Exception.*;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 import sun.security.rsa.RSAKeyFactory;
 
@@ -231,6 +232,8 @@ final class P11KeyStore extends KeyStoreSpi {
         private PasswordCallbackHandler(char[] password) {
             if (password != null) {
                 this.password = password.clone();
+                Cleaner.create().register(this,
+                        () -> Arrays.fill(this.password, ' '));
             }
         }
 
@@ -241,14 +244,6 @@ final class P11KeyStore extends KeyStoreSpi {
             }
             PasswordCallback pc = (PasswordCallback)callbacks[0];
             pc.setPassword(password);  // this clones the password if not null
-        }
-
-        @SuppressWarnings("deprecation")
-        protected void finalize() throws Throwable {
-            if (password != null) {
-                Arrays.fill(password, ' ');
-            }
-            super.finalize();
         }
     }
 
@@ -757,7 +752,7 @@ final class P11KeyStore extends KeyStoreSpi {
             Throwable cause = e.getCause();
             if (cause instanceof PKCS11Exception) {
                 PKCS11Exception pe = (PKCS11Exception) cause;
-                if (pe.getErrorCode() == CKR_PIN_INCORRECT) {
+                if (pe.match(CKR_PIN_INCORRECT)) {
                     // if password is wrong, the cause of the IOException
                     // should be an UnrecoverableKeyException
                     throw new IOException("load failed",
@@ -2330,7 +2325,7 @@ final class P11KeyStore extends KeyStoreSpi {
                         cka_label = new String(attrs[0].getCharArray());
                     }
                 } catch (PKCS11Exception pe) {
-                    if (pe.getErrorCode() != CKR_ATTRIBUTE_TYPE_INVALID) {
+                    if (!pe.match(CKR_ATTRIBUTE_TYPE_INVALID)) {
                         throw pe;
                     }
 
@@ -2371,7 +2366,7 @@ final class P11KeyStore extends KeyStoreSpi {
                                     (session.id(), handle, trustedAttr);
                             cka_trusted = trustedAttr[0].getBoolean();
                         } catch (PKCS11Exception pe) {
-                            if (pe.getErrorCode() == CKR_ATTRIBUTE_TYPE_INVALID) {
+                            if (pe.match(CKR_ATTRIBUTE_TYPE_INVALID)) {
                                 // XXX  NSS, ibutton, sca1000
                                 CKA_TRUSTED_SUPPORTED = false;
                                 if (debug != null) {

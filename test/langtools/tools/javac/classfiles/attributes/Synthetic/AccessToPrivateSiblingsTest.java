@@ -43,14 +43,12 @@
  * 3. access method for private method function().
  * 4. getter/setter for private field staticVar.
  * 5. access method for private method staticFunction().
- * 6. field this in Inner1.
- * 7. constructor for Inner*.
+ * 6. constructor for Inner*.
  */
 @ExpectedClass(className = "AccessToPrivateSiblingsTest", expectedMethods = "<init>()")
 @ExpectedClass(className = "AccessToPrivateSiblingsTest$Inner1",
         expectedMethods = {"function()", "<init>(AccessToPrivateSiblingsTest)"},
-        expectedFields = "var",
-        expectedNumberOfSyntheticFields = 1)
+        expectedFields = "var")
 @ExpectedClass(className = "AccessToPrivateSiblingsTest$Inner2",
         expectedMethods = "<init>(AccessToPrivateSiblingsTest)",
         expectedNumberOfSyntheticFields = 1)

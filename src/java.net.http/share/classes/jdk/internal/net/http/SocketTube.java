@@ -226,7 +226,7 @@ final class SocketTube implements FlowTube {
      * signaled. It is the responsibility of the code triggered by
      * {@code signalEvent} to resume the event if required.
      */
-    private static abstract class SocketFlowEvent extends AsyncEvent {
+    private abstract static class SocketFlowEvent extends AsyncEvent {
         final SocketChannel channel;
         final int defaultInterest;
         volatile int interestOps;

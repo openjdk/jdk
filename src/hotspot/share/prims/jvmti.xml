@@ -6861,7 +6861,7 @@ class C2 extends C1 implements I2 {
         <ul>
         <li>By loading and deriving a class from a <code>class</code> file representation
             using a class loader (see <vmspec chapter="5.3"/>).</li>
-        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
+        <li>By invoking <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>
             that creates a hidden class or interface from a <code>class</code> file representation.</li>
         <li>By invoking methods in certain Java SE Platform APIs such as reflection.</li>
          </ul>
@@ -6923,7 +6923,7 @@ class C2 extends C1 implements I2 {
         <code>class_count_ptr</code>, and the array itself via
         <code>classes_ptr</code>.
         <p/>
-        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
+        See <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6973,7 +6973,7 @@ class C2 extends C1 implements I2 {
           <code>"L" + N + "." +  S + ";"</code>
           where <code>N</code> is the binary name encoded in internal form (JVMS 4.2.1)
           indicated by the <code>class</code> file passed to
-          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte[],boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
+          <externallink id="../api/java.base/java/lang/invoke/MethodHandles.Lookup.html#defineHiddenClass(byte%5B%5D,boolean,java.lang.invoke.MethodHandles.Lookup.ClassOption...)">Lookup::defineHiddenClass</externallink>,
           and <code>S</code> is an unqualified name.
           The returned name is not a type descriptor and does not conform to JVMS 4.3.2.
           For example, com.foo.Foo/AnySuffix is "Lcom/foo/Foo.AnySuffix;"

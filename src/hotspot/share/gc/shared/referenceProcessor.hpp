@@ -28,7 +28,7 @@
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/instanceRefKlass.hpp"
 
@@ -37,6 +37,27 @@ class ReferencePolicy;
 class ReferenceProcessorPhaseTimes;
 class RefProcTask;
 class RefProcProxyTask;
+
+// Provides a callback to the garbage collector to set the given value to the
+// discovered field of the j.l.ref.Reference instance. This is called during STW
+// reference processing when iterating over the discovered lists for all
+// discovered references.
+// Typically garbage collectors may just call the barrier, but for some garbage
+// collectors the barrier environment (e.g. card table) may not be set up correctly
+// at the point of invocation.
+class EnqueueDiscoveredFieldClosure {
+public:
+  // For the given j.l.ref.Reference discovered field address, set the discovered
+  // field to value and apply any barriers to it.
+  virtual void enqueue(HeapWord* discovered_field_addr, oop value) = 0;
+};
+
+// EnqueueDiscoveredFieldClosure that executes the default barrier on the discovered
+// field of the j.l.ref.Reference with the given value.
+class BarrierEnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
+public:
+  void enqueue(HeapWord* discovered_field_addr, oop value) override;
+};
 
 // List of discovered references.
 class DiscoveredList {
@@ -66,7 +87,6 @@ private:
 
 // Iterator for the list of discovered references.
 class DiscoveredListIterator {
-private:
   DiscoveredList&    _refs_list;
   HeapWord*          _prev_discovered_addr;
   oop                _prev_discovered;
@@ -78,6 +98,7 @@ private:
 
   OopClosure*        _keep_alive;
   BoolObjectClosure* _is_alive;
+  EnqueueDiscoveredFieldClosure* _enqueue;
 
   DEBUG_ONLY(
   oop                _first_seen; // cyclic linked list check
@@ -89,7 +110,8 @@ private:
 public:
   inline DiscoveredListIterator(DiscoveredList&    refs_list,
                                 OopClosure*        keep_alive,
-                                BoolObjectClosure* is_alive);
+                                BoolObjectClosure* is_alive,
+                                EnqueueDiscoveredFieldClosure* enqueue);
 
   // End Of List.
   inline bool has_next() const { return _current_discovered != NULL; }
@@ -255,12 +277,14 @@ private:
   size_t process_discovered_list_work(DiscoveredList&    refs_list,
                                       BoolObjectClosure* is_alive,
                                       OopClosure*        keep_alive,
+                                      EnqueueDiscoveredFieldClosure* enqueue,
                                       bool               do_enqueue_and_clear);
 
   // Keep alive followers of referents for FinalReferences. Must only be called for
   // those.
   size_t process_final_keep_alive_work(DiscoveredList& refs_list,
-                                       OopClosure* keep_alive);
+                                       OopClosure* keep_alive,
+                                       EnqueueDiscoveredFieldClosure* enqueue);
 
 
   void setup_policy(bool always_clear) {
@@ -280,18 +304,19 @@ public:
     setup_policy(always_clear);
   }
 
-  // "Preclean" all the discovered reference lists by removing references that
-  // are active (e.g. due to the mutator calling enqueue()) or with NULL or
-  // strongly reachable referents.
-  // The first argument is a predicate on an oop that indicates
-  // its (strong) reachability and the fourth is a closure that
-  // may be used to incrementalize or abort the precleaning process.
-  // The caller is responsible for taking care of potential
-  // interference with concurrent operations on these lists
-  // (or predicates involved) by other threads.
+  // "Preclean" all the discovered reference lists by removing references whose
+  // referents are NULL or strongly reachable (`is_alive` returns true).
+  // Note: when a referent is strongly reachable, we assume it's already marked
+  // through, so this method doesn't perform (and doesn't need to) any marking
+  // work at all. Currently, this assumption holds because G1 uses SATB and the
+  // marking status of an object is *not* updated when `Reference.get()` is
+  // called.
+  // `yield` is a closure that may be used to incrementalize or abort the
+  // precleaning process. The caller is responsible for taking care of
+  // potential interference with concurrent operations on these lists (or
+  // predicates involved) by other threads.
   void preclean_discovered_references(BoolObjectClosure* is_alive,
-                                      OopClosure*        keep_alive,
-                                      VoidClosure*       complete_gc,
+                                      EnqueueDiscoveredFieldClosure* enqueue,
                                       YieldClosure*      yield,
                                       GCTimer*           gc_timer);
 
@@ -306,8 +331,7 @@ private:
   // Returns whether the operation should be aborted.
   bool preclean_discovered_reflist(DiscoveredList&    refs_list,
                                    BoolObjectClosure* is_alive,
-                                   OopClosure*        keep_alive,
-                                   VoidClosure*       complete_gc,
+                                   EnqueueDiscoveredFieldClosure* enqueue,
                                    YieldClosure*      yield);
 
   // round-robin mod _num_queues (not: _not_ mod _max_num_queues)
@@ -350,7 +374,7 @@ public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      uint mt_processing_degree = 1,
-                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
+                     uint mt_discovery_degree  = 1,
                      bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = NULL);
 
@@ -394,13 +418,8 @@ public:
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
 
-  void verify_list(DiscoveredList& ref_list);
-
   // Discover a Reference object, using appropriate discovery criteria
   virtual bool discover_reference(oop obj, ReferenceType rt);
-
-  // Has discovered references that need handling
-  bool has_discovered_references();
 
   // Process references found during GC (called by the garbage collector)
   ReferenceProcessorStats
@@ -542,7 +561,8 @@ protected:
   void process_discovered_list(uint worker_id,
                                ReferenceType ref_type,
                                BoolObjectClosure* is_alive,
-                               OopClosure* keep_alive);
+                               OopClosure* keep_alive,
+                               EnqueueDiscoveredFieldClosure* enqueue);
 public:
   RefProcTask(ReferenceProcessor& ref_processor,
               ReferenceProcessorPhaseTimes* phase_times)
@@ -552,6 +572,7 @@ public:
   virtual void rp_work(uint worker_id,
                        BoolObjectClosure* is_alive,
                        OopClosure* keep_alive,
+                       EnqueueDiscoveredFieldClosure* enqueue,
                        VoidClosure* complete_gc) = 0;
 };
 
@@ -561,7 +582,7 @@ public:
  * of RefProcTask that will handle reference processing in a generic way for Serial,
  * Parallel and G1. This proxy will add the relevant closures, task terminators etc.
  */
-class RefProcProxyTask : public AbstractGangTask {
+class RefProcProxyTask : public WorkerTask {
 protected:
   const uint _max_workers;
   RefProcTask* _rp_task;
@@ -570,7 +591,7 @@ protected:
   bool _marks_oops_alive;
 
 public:
-  RefProcProxyTask(const char* name, uint max_workers) : AbstractGangTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
+  RefProcProxyTask(const char* name, uint max_workers) : WorkerTask(name), _max_workers(max_workers), _rp_task(nullptr),_tm(RefProcThreadModel::Single), _queue_count(0), _marks_oops_alive(false) {}
 
   void prepare_run_task(RefProcTask& rp_task, uint queue_count, RefProcThreadModel tm, bool marks_oops_alive) {
     _rp_task = &rp_task;

@@ -88,6 +88,7 @@ public class EventNames {
     public static final String RedefineClasses = PREFIX + "RedefineClasses";
     public static final String RetransformClasses = PREFIX + "RetransformClasses";
     public static final String ClassRedefinition = PREFIX + "ClassRedefinition";
+    public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
 
     // This event is hard to test
     public final static String ReservedStackActivation = PREFIX + "ReservedStackActivation";

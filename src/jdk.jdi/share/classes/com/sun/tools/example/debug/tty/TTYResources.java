@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"dbgtrace command value must be an integer:", "dbgtrace command value must be an integer: {0}"},
         {"Deferring.", "Deferring {0}.\nIt will be set after the class is loaded."},
         {"End of stack.", "End of stack."},
+        {"EOF", "EOF"},
         {"Error popping frame", "Error popping frame - {0}"},
         {"Error reading file", "Error reading ''{0}'' - {1}"},
         {"Error redefining class to file", "Error redefining {0} to {1} - {2}"},
@@ -260,6 +261,9 @@ public class TTYResources extends java.util.ListResourceBundle {
          "    <class_id>.<method>[(argument_type,...)]"
         },
         {"Removed:", "Removed: {0}"},
+        {"repeat is on", "Repeat is on"},
+        {"repeat is off", "Repeat is off"},
+        {"repeat usage", "Usage: repeat <on|off>"},
         {"Requested stack frame is no longer active:", "Requested stack frame is no longer active: {0,number,integer}"},
         {"run <args> command is valid only with launched VMs", "'run <args>' command is valid only with launched VMs"},
         {"run", "run {0}"},
@@ -308,7 +312,6 @@ public class TTYResources extends java.util.ListResourceBundle {
         {"Thread has been resumed", "Thread has been resumed"},
         {"Thread not suspended", "Thread not suspended"},
         {"thread group number description name", "{0,number,integer}. {1} {2}"},
-        {"Threadgroup name not specified.", "Threadgroup name not specified."},
         {"<thread_id> option not valid until the VM is started with the run command",
          "<thread_id> option not valid until the VM is started with the run command"},
         {"Threads must be suspended", "Threads must be suspended"},
@@ -350,7 +353,7 @@ public class TTYResources extends java.util.ListResourceBundle {
              "\n" +
              "run [class [args]]        -- start execution of application's main class\n" +
              "\n" +
-             "threads [threadgroup]     -- list threads\n" +
+             "threads [threadgroup]     -- list threads in threadgroup. Use current threadgroup if none specified.\n" +
              "thread <thread id>        -- set default thread\n" +
              "suspend [thread id(s)]    -- suspend threads (default: all)\n" +
              "resume [thread id(s)]     -- resume threads (default: all)\n" +
@@ -373,7 +376,8 @@ public class TTYResources extends java.util.ListResourceBundle {
              "fields <class id>         -- list a class's fields\n" +
              "\n" +
              "threadgroups              -- list threadgroups\n" +
-             "threadgroup <name>        -- set current threadgroup\n" +
+             "threadgroup <name>        -- set current threadgroup to <name>\n" +
+             "threadgroup               -- set current threadgroup back to the top level threadgroup\n" +
              "\n" +
              "stop [go|thread] [<thread_id>] <at|in> <location>\n" +
              "                          -- set a breakpoint\n" +
@@ -436,6 +440,8 @@ public class TTYResources extends java.util.ListResourceBundle {
              "\n" +
              "!!                        -- repeat last command\n" +
              "<n> <command>             -- repeat command n times\n" +
+             "repeat                    -- show whether GDB-style empty command repetition is enabled\n" +
+             "repeat <on|off>           -- enable/disable GDB-style repetition\n" +
              "# <command>               -- discard (no-op)\n" +
              "help (or ?)               -- list commands\n" +
              "dbgtrace [flag]           -- same as dbgtrace command line option\n" +
@@ -471,8 +477,9 @@ public class TTYResources extends java.util.ListResourceBundle {
              "    -dbgtrace [flags] print info for debugging {0}\n" +
              "    -tclient          run the application in the HotSpot(TM) Client Compiler\n" +
              "    -tserver          run the application in the HotSpot(TM) Server Compiler\n" +
+             "    -R<option>        forward <option> to debuggee process if launched by jdb, otherwise ignored\n" +
              "\n" +
-             "options forwarded to debuggee process:\n" +
+             "options forwarded to debuggee process if lauched by jdb (shorthand instead of using -R):\n" +
              "    -v -verbose[:class|gc|jni]\n" +
              "                      turn on verbose mode\n" +
              "    -D<name>=<value>  set a system property\n" +

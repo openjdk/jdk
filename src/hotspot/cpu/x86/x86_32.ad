@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -260,17 +260,7 @@ source %{
 // instructions, to allow sign-masking or sign-bit flipping.  They allow
 // fast versions of NegF/NegD and AbsF/AbsD.
 
-void reg_mask_init() {
-  if (Matcher::has_predicated_vectors()) {
-    // Post-loop multi-versioning expects mask to be present in K1 register, till the time
-    // its fixed, RA should not be allocting K1 register, this shall prevent any accidental
-    // curruption of value held in K1 register.
-    if (PostLoopMultiversioning) {
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
-    }
-  }
-}
+void reg_mask_init() {}
 
 // Note: 'double' and 'long long' have 32-bits alignment on x86.
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
@@ -755,6 +745,7 @@ static enum RC rc_class( OptoReg::Name reg ) {
     assert(UseSSE < 2, "shouldn't be used in SSE2+ mode");
     return rc_float;
   }
+  if (r->is_KRegister()) return rc_kreg;
   assert(r->is_XMMRegister(), "must be");
   return rc_xmm;
 }
@@ -1249,26 +1240,6 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     return size;
   }
 
-  assert( size > 0, "missed a case" );
-
-  // --------------------------------------------------------------------
-  // Check for second bits still needing moving.
-  if( src_second == dst_second )
-    return size;               // Self copy; no move
-  assert( src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad" );
-
-  // Check for second word int-int move
-  if( src_second_rc == rc_int && dst_second_rc == rc_int )
-    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size, st);
-
-  // Check for second word integer store
-  if( src_second_rc == rc_int && dst_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
-
-  // Check for second word integer load
-  if( dst_second_rc == rc_int && src_second_rc == rc_stack )
-    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
-
   // AVX-512 opmask specific spilling.
   if (src_first_rc == rc_stack && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
@@ -1305,6 +1276,26 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
     return 0;
   }
+
+  assert( size > 0, "missed a case" );
+
+  // --------------------------------------------------------------------
+  // Check for second bits still needing moving.
+  if( src_second == dst_second )
+    return size;               // Self copy; no move
+  assert( src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad" );
+
+  // Check for second word int-int move
+  if( src_second_rc == rc_int && dst_second_rc == rc_int )
+    return impl_mov_helper(cbuf,do_size,src_second,dst_second,size, st);
+
+  // Check for second word integer store
+  if( src_second_rc == rc_int && dst_second_rc == rc_stack )
+    return impl_helper(cbuf,do_size,false,ra_->reg2offset(dst_second),src_second,0x89,"MOV ",size, st);
+
+  // Check for second word integer load
+  if( dst_second_rc == rc_int && src_second_rc == rc_stack )
+    return impl_helper(cbuf,do_size,true ,ra_->reg2offset(src_second),dst_second,0x8B,"MOV ",size, st);
 
   Unimplemented();
   return 0; // Mute compiler
@@ -6659,6 +6650,7 @@ instruct unnecessary_membar_volatile() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
 
   size(0);
@@ -7203,6 +7195,7 @@ instruct castLL( eRegL dst ) %{
 %}
 
 instruct castFF( regF dst ) %{
+  predicate(UseSSE >= 1);
   match(Set dst (CastFF dst));
   format %{ "#castFF of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7211,6 +7204,25 @@ instruct castFF( regF dst ) %{
 %}
 
 instruct castDD( regD dst ) %{
+  predicate(UseSSE >= 2);
+  match(Set dst (CastDD dst));
+  format %{ "#castDD of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castFF_PR( regFPR dst ) %{
+  predicate(UseSSE < 1);
+  match(Set dst (CastFF dst));
+  format %{ "#castFF of $dst" %}
+  ins_encode( /*empty encoding*/ );
+  ins_cost(0);
+  ins_pipe( empty );
+%}
+
+instruct castDD_PR( regDPR dst ) %{
+  predicate(UseSSE < 2);
   match(Set dst (CastDD dst));
   format %{ "#castDD of $dst" %}
   ins_encode( /*empty encoding*/ );
@@ -7803,9 +7815,9 @@ instruct divI_eReg(eAXRegI rax, eDXRegI rdx, eCXRegI div, eFlagsReg cr) %{
 %}
 
 // Divide Register Long
-instruct divL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct divL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (DivL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -7851,9 +7863,9 @@ instruct modI_eReg(eDXRegI rdx, eAXRegI rax, eCXRegI div, eFlagsReg cr) %{
 %}
 
 // Remainder Register Long
-instruct modL_eReg( eADXRegL dst, eRegL src1, eRegL src2, eFlagsReg cr, eCXRegI cx, eBXRegI bx ) %{
+instruct modL_eReg(eADXRegL dst, eRegL src1, eRegL src2) %{
   match(Set dst (ModL src1 src2));
-  effect( KILL cr, KILL cx, KILL bx );
+  effect(CALL);
   ins_cost(10000);
   format %{ "PUSH   $src1.hi\n\t"
             "PUSH   $src1.lo\n\t"
@@ -12100,34 +12112,34 @@ instruct array_equalsC_evex(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                      regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
+instruct count_positives(eSIRegP ary1, eCXRegI len, eAXRegI result,
+                         regD tmp1, regD tmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx512vlbw() || !VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, knoreg, knoreg);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct has_negatives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
-                           regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
+instruct count_positives_evex(eSIRegP ary1, eCXRegI len, eAXRegI result,
+                              regD tmp1, regD tmp2, kReg ktmp1, kReg ktmp2, eBXRegI tmp3, eFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && VM_Version::supports_bmi2());
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, TEMP ktmp1, TEMP ktmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
 
-  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  format %{ "countPositives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ has_negatives($ary1$$Register, $len$$Register,
-                     $result$$Register, $tmp3$$Register,
-                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
+    __ count_positives($ary1$$Register, $len$$Register,
+                       $result$$Register, $tmp3$$Register,
+                       $tmp1$$XMMRegister, $tmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -12199,18 +12211,35 @@ instruct string_inflate_evex(Universe dummy, eSIRegP src, eDIRegP dst, eDXRegI l
 instruct encode_iso_array(eSIRegP src, eDIRegP dst, eDXRegI len,
                           regD tmp1, regD tmp2, regD tmp3, regD tmp4,
                           eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
 
-  format %{ "Encode array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
+  format %{ "Encode iso array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
                         $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
-                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, false);
   %}
   ins_pipe( pipe_slow );
 %}
 
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(eSIRegP src, eDIRegP dst, eDXRegI len,
+                            regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                            eCXRegI tmp5, eAXRegI result, eFlagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "Encode ascii array $src,$dst,$len -> $result    // KILL ECX, EDX, $tmp1, $tmp2, $tmp3, $tmp4, ESI, EDI " %}
+  ins_encode %{
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
+                        $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                        $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register, true);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions
@@ -12571,7 +12600,6 @@ instruct jmpCon(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -12587,7 +12615,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12602,7 +12629,6 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12612,66 +12638,6 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// mask version
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cr);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop    $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, eFlagsRegUCF cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(300);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}
@@ -13091,6 +13057,24 @@ instruct cmovLL_mem_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegL dst, load_lo
   ins_pipe( pipe_cmov_reg_long );
 %}
 
+instruct cmovLL_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegL dst, eRegL src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  ins_cost(400);
+  expand %{
+    cmovLL_reg_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovLL_mem_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegL dst, load_long_memory src) %{
+  match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  ins_cost(500);
+  expand %{
+    cmovLL_mem_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
 // Compare 2 longs and CMOVE ints.
 instruct cmovII_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, rRegI dst, rRegI src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
@@ -13112,7 +13096,25 @@ instruct cmovII_mem_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, rRegI dst, memory 
   ins_pipe( pipe_cmov_mem );
 %}
 
-// Compare 2 longs and CMOVE ints.
+instruct cmovII_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_LTGE(cmp, flags, dst, src);
+  %}
+%}
+
+// Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
@@ -13121,6 +13123,16 @@ instruct cmovPP_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, eRegP dst, eRegP s
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_LTGE(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13275,7 +13287,25 @@ instruct cmovII_mem_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, rRegI dst, memory 
   ins_pipe( pipe_cmov_mem );
 %}
 
-// Compare 2 longs and CMOVE ints.
+instruct cmovII_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_EQNE(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_EQNE(cmp, flags, dst, src);
+  %}
+%}
+
+// Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
@@ -13284,6 +13314,16 @@ instruct cmovPP_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, eRegP dst, eRegP s
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_EQNE(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13431,22 +13471,18 @@ instruct cmovLL_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL 
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst src)));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(400);
-  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
-            "CMOV$cmp $dst.hi,$src.hi" %}
-  opcode(0x0F,0x40);
-  ins_encode( enc_cmov(cmp), RegReg_Lo2( dst, src ), enc_cmov(cmp), RegReg_Hi2( dst, src ) );
-  ins_pipe( pipe_cmov_reg_long );
+  expand %{
+    cmovLL_reg_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 instruct cmovLL_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegL dst, load_long_memory src) %{
   match(Set dst (CMoveL (Binary cmp flags) (Binary dst (LoadL src))));
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   ins_cost(500);
-  format %{ "CMOV$cmp $dst.lo,$src.lo\n\t"
-            "CMOV$cmp $dst.hi,$src.hi+4" %}
-  opcode(0x0F,0x40);
-  ins_encode( enc_cmov(cmp), RegMem(dst, src), enc_cmov(cmp), RegMem_Hi(dst, src) );
-  ins_pipe( pipe_cmov_reg_long );
+  expand %{
+    cmovLL_mem_LEGT(cmp, flags, dst, src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE ints.
@@ -13470,6 +13506,24 @@ instruct cmovII_mem_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, rRegI dst,
   ins_pipe( pipe_cmov_mem );
 %}
 
+instruct cmovII_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, rRegI dst, rRegI src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovII_reg_LEGT(cmp, flags, dst, src);
+  %}
+%}
+
+instruct cmovII_mem_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, rRegI dst, memory src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveI (Binary cmp flags) (Binary dst (LoadI src))));
+  ins_cost(250);
+  expand %{
+    cmovII_mem_LEGT(cmp, flags, dst, src);
+  %}
+%}
+
 // Compare 2 longs and CMOVE ptrs.
 instruct cmovPP_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegP dst, eRegP src) %{
   predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
@@ -13479,6 +13533,16 @@ instruct cmovPP_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, eRegP dst,
   opcode(0x0F,0x40);
   ins_encode( enc_cmov(cmp), RegReg( dst, src ) );
   ins_pipe( pipe_cmov_reg );
+%}
+
+// Compare 2 unsigned longs and CMOVE ptrs.
+instruct cmovPP_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegP dst, eRegP src) %{
+  predicate(VM_Version::supports_cmov() && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
+  match(Set dst (CMoveP (Binary cmp flags) (Binary dst src)));
+  ins_cost(200);
+  expand %{
+    cmovPP_reg_LEGT(cmp,flags,dst,src);
+  %}
 %}
 
 // Compare 2 longs and CMOVE doubles
@@ -13710,7 +13774,40 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct mask_all_evexL_LT32(kReg dst, eRegL src) %{
+  predicate(Matcher::vector_length(n) <= 32);
+  match(Set dst (MaskAll src));
+  format %{ "mask_all_evexL_LE32 $dst, $src \t" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation($dst$$KRegister, $src$$Register, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
+instruct mask_all_evexL_GT32(kReg dst, eRegL src, kReg ktmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP ktmp);
+  format %{ "mask_all_evexL_GT32 $dst, $src \t! using $ktmp as TEMP " %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation32($dst$$KRegister, $src$$Register, $ktmp$$KRegister, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_all_evexI_GT32(kReg dst, rRegI src, kReg ktmp) %{
+  predicate(Matcher::vector_length(n) > 32);
+  match(Set dst (MaskAll src));
+  effect(TEMP ktmp);
+  format %{ "mask_all_evexI_GT32 $dst, $src \t! using $ktmp as TEMP" %}
+  ins_encode %{
+    int mask_len = Matcher::vector_length(this);
+    __ vector_maskall_operation32($dst$$KRegister, $src$$Register, $ktmp$$KRegister, mask_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // ============================================================================
 // Safepoint Instruction

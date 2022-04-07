@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,22 +250,29 @@ public class ClassFinder {
             supplementaryFlags = new HashMap<>();
         }
 
-        Long flags = supplementaryFlags.get(c.packge());
+        PackageSymbol packge = c.packge();
+
+        Long flags = supplementaryFlags.get(packge);
         if (flags == null) {
             long newFlags = 0;
             try {
-                JRTIndex.CtSym ctSym = jrtIndex.getCtSym(c.packge().flatName());
-                Profile minProfile = Profile.DEFAULT;
-                if (ctSym.proprietary)
+                ModuleSymbol owningModule = packge.modle;
+                if (owningModule == syms.noModule) {
+                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                    Profile minProfile = Profile.DEFAULT;
+                    if (ctSym.proprietary)
+                        newFlags |= PROPRIETARY;
+                    if (ctSym.minProfile != null)
+                        minProfile = Profile.lookup(ctSym.minProfile);
+                    if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+                        newFlags |= NOT_IN_PROFILE;
+                    }
+                } else if (owningModule.name == names.jdk_unsupported) {
                     newFlags |= PROPRIETARY;
-                if (ctSym.minProfile != null)
-                    minProfile = Profile.lookup(ctSym.minProfile);
-                if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
-                    newFlags |= NOT_IN_PROFILE;
                 }
             } catch (IOException ignore) {
             }
-            supplementaryFlags.put(c.packge(), flags = newFlags);
+            supplementaryFlags.put(packge, flags = newFlags);
         }
         return flags;
     }
@@ -285,10 +292,16 @@ public class ClassFinder {
                 ClassSymbol c = (ClassSymbol) sym;
                 dependencies.push(c, CompletionCause.CLASS_READER);
                 annotate.blockAnnotations();
-                c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
+                Scope.ErrorScope members = new Scope.ErrorScope(c);
+                c.members_field = members; // make sure it's always defined
                 completeOwners(c.owner);
                 completeEnclosing(c);
-                fillIn(c);
+                //if an enclosing class is completed from the source,
+                //this class might have been completed already as well,
+                //avoid attempts to re-complete it:
+                if (c.members_field == members) {
+                    fillIn(c);
+                }
             } finally {
                 annotate.unblockAnnotationsNoFlush();
                 dependencies.pop();

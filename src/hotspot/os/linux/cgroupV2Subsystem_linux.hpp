@@ -80,6 +80,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
     jlong pids_max();
+    jlong pids_current();
 
     const char * container_type() {
       return "cgroupv2";

@@ -27,7 +27,7 @@
 
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
@@ -532,10 +532,6 @@ class ContiguousSpace: public CompactibleSpace {
 
   // Debugging
   virtual void verify() const;
-
-  // Used to increase collection frequency.  "factor" of 0 means entire
-  // space.
-  void allocate_temporary_filler(int factor);
 };
 
 

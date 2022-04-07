@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -110,7 +110,17 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(int, SoftwarePrefetchHintDistance, -1,                        \
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
-          range(-1, 4096)
+          range(-1, 4096)                                               \
+  product(ccstr, OnSpinWaitInst, "none", DIAGNOSTIC,                    \
+          "The instruction to use to implement "                        \
+          "java.lang.Thread.onSpinWait()."                              \
+          "Options: none, nop, isb, yield.")                            \
+  product(uint, OnSpinWaitInstCount, 1, DIAGNOSTIC,                     \
+          "The number of OnSpinWaitInst instructions to generate."      \
+          "It cannot be used with OnSpinWaitInst=none.")                \
+          range(1, 99)                                                  \
+  product(ccstr, UseBranchProtection, "none",                           \
+          "Branch Protection to use: none, standard, pac-ret")          \
 
 // end of ARCH_FLAGS
 

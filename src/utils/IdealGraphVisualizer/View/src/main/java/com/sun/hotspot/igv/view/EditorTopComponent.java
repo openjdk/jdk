@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputNode;
+import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Properties.PropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
@@ -36,9 +37,9 @@ import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.services.DiagramProvider;
-import com.sun.hotspot.igv.svg.BatikSVG;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
 import java.awt.event.HierarchyBoundsListener;
@@ -48,10 +49,21 @@ import java.awt.event.KeyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.border.Border;
+import org.apache.batik.dom.GenericDOMImplementation;
+import org.apache.batik.svggen.SVGGeneratorContext;
+import org.apache.batik.svggen.SVGGraphics2D;
+import com.lowagie.text.Document;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfTemplate;
+import com.lowagie.text.pdf.PdfGraphics2D;
+import org.w3c.dom.DOMImplementation;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.actions.RedoAction;
@@ -81,7 +93,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private DiagramViewer scene;
     private InstanceContent content;
     private InstanceContent graphContent;
+    private EnableSeaLayoutAction seaLayoutAction;
     private EnableBlockLayoutAction blockLayoutAction;
+    private EnableCFGLayoutAction cfgLayoutAction;
     private OverviewAction overviewAction;
     private HideDuplicatesAction hideDuplicatesAction;
     private PredSuccAction predSuccAction;
@@ -103,30 +117,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         @Override
         public void export(File f) {
 
-            Graphics2D svgGenerator = BatikSVG.createGraphicsObject();
-
-            if (svgGenerator == null) {
-                NotifyDescriptor message = new NotifyDescriptor.Message("For export to SVG files the Batik SVG Toolkit must be intalled.", NotifyDescriptor.ERROR_MESSAGE);
-                DialogDisplayer.getDefault().notifyLater(message);
+            String lcFileName = f.getName().toLowerCase();
+            if (lcFileName.endsWith(".pdf")) {
+                exportToPDF(scene, f);
+            } else if (lcFileName.endsWith(".svg")) {
+                exportToSVG(scene, f);
             } else {
-                scene.paint(svgGenerator);
-                FileOutputStream os = null;
-                try {
-                    os = new FileOutputStream(f);
-                    Writer out = new OutputStreamWriter(os, UTF_8);
-                    BatikSVG.printToStream(svgGenerator, out, true);
-                } catch (FileNotFoundException e) {
-                    NotifyDescriptor message = new NotifyDescriptor.Message("For export to SVG files the Batik SVG Toolkit must be intalled.", NotifyDescriptor.ERROR_MESSAGE);
-                    DialogDisplayer.getDefault().notifyLater(message);
-                } finally {
-                    if (os != null) {
-                        try {
-                            os.close();
-                        } catch (IOException e) {
-                        }
-                    }
-                }
-
+                NotifyDescriptor message = new NotifyDescriptor.Message("Unknown image file extension: expected either '.pdf' or '.svg'", NotifyDescriptor.ERROR_MESSAGE);
+                DialogDisplayer.getDefault().notifyLater(message);
             }
         }
     };
@@ -244,12 +242,31 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(ShowAllAction.get(ZoomInAction.class));
         toolBar.add(ShowAllAction.get(ZoomOutAction.class));
 
+        toolBar.addSeparator();
+        ButtonGroup layoutButtons = new ButtonGroup();
+
+        seaLayoutAction = new EnableSeaLayoutAction();
+        JToggleButton button = new JToggleButton(seaLayoutAction);
+        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
+        layoutButtons.add(button);
+        toolBar.add(button);
+        seaLayoutAction.addPropertyChangeListener(this);
+
         blockLayoutAction = new EnableBlockLayoutAction();
-        JToggleButton button = new JToggleButton(blockLayoutAction);
-        button.setSelected(false);
+        button = new JToggleButton(blockLayoutAction);
+        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
+        layoutButtons.add(button);
         toolBar.add(button);
         blockLayoutAction.addPropertyChangeListener(this);
 
+        cfgLayoutAction = new EnableCFGLayoutAction();
+        button = new JToggleButton(cfgLayoutAction);
+        button.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        layoutButtons.add(button);
+        toolBar.add(button);
+        cfgLayoutAction.addPropertyChangeListener(this);
+
+        toolBar.addSeparator();
         overviewAction = new OverviewAction();
         overviewButton = new JToggleButton(overviewAction);
         overviewButton.setSelected(false);
@@ -514,6 +531,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         setSelectedFigures(list);
     }
 
+    public void setSelectedNodes(InputBlock b) {
+        List<Figure> list = new ArrayList<>();
+        for (Figure f : getModel().getDiagramToView().getFigures()) {
+            if (f.getBlock() == b) {
+                list.add(f);
+            }
+        }
+        setSelectedFigures(list);
+    }
+
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() == this.predSuccAction) {
@@ -526,9 +553,15 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             } else {
                 showScene();
             }
+        } else if (evt.getSource() == this.seaLayoutAction) {
+            boolean b = seaLayoutAction.isSelected();
+            this.getModel().setShowSea(b);
         } else if (evt.getSource() == this.blockLayoutAction) {
-            boolean b = (Boolean) blockLayoutAction.getValue(EnableBlockLayoutAction.STATE);
+            boolean b = blockLayoutAction.isSelected();
             this.getModel().setShowBlocks(b);
+        } else if (evt.getSource() == this.cfgLayoutAction) {
+            boolean b = cfgLayoutAction.isSelected();
+            this.getModel().setShowCFG(b);
         } else if (evt.getSource() == this.hideDuplicatesAction) {
             boolean b = (Boolean) hideDuplicatesAction.getValue(HideDuplicatesAction.STATE);
             this.getModel().setHideDuplicates(b);
@@ -639,5 +672,47 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     @Override
     protected Object writeReplace() throws ObjectStreamException {
         throw new NotSerializableException();
-}
+    }
+
+    private static void exportToPDF(DiagramViewer scene, File f) {
+        int width = scene.getBounds().width;
+        int height = scene.getBounds().height;
+        com.lowagie.text.Document document = new Document(new Rectangle(width, height));
+        PdfWriter writer = null;
+        try {
+            writer = PdfWriter.getInstance(document, new FileOutputStream(f));
+            writer.setCloseStream(true);
+            document.open();
+            PdfContentByte contentByte = writer.getDirectContent();
+            PdfTemplate template = contentByte.createTemplate(width, height);
+            PdfGraphics2D pdfGenerator = new PdfGraphics2D(contentByte, width, height);
+            scene.paint(pdfGenerator);
+            pdfGenerator.dispose();
+            contentByte.addTemplate(template, 0, 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
+
+    private static void exportToSVG(DiagramViewer scene, File f) {
+        DOMImplementation dom = GenericDOMImplementation.getDOMImplementation();
+        org.w3c.dom.Document document = dom.createDocument("http://www.w3.org/2000/svg", "svg", null);
+        SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
+        ctx.setEmbeddedFontsOn(true);
+        SVGGraphics2D svgGenerator = new SVGGraphics2D(ctx, true);
+        scene.paint(svgGenerator);
+        try (FileOutputStream os = new FileOutputStream(f)) {
+            Writer out = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+            svgGenerator.stream(out, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

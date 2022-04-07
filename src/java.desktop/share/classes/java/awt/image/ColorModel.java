@@ -1618,26 +1618,6 @@ public abstract class ColorModel implements Transparency{
     }
 
     /**
-     * Disposes of system resources associated with this
-     * {@code ColorModel} once this {@code ColorModel} is no
-     * longer referenced.
-     *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void finalize() {
-    }
-
-
-    /**
      * Returns a {@code Raster} representing the alpha channel of an
      * image, extracted from the input {@code Raster}, provided that
      * pixel values of this {@code ColorModel} represent color and

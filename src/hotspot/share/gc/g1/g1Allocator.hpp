@@ -223,9 +223,6 @@ protected:
   // Regions allocated for the current archive range.
   GrowableArray<HeapRegion*> _allocated_regions;
 
-  // The number of bytes used in the current range.
-  size_t _summary_bytes_used;
-
   // Current allocation window within the current region.
   HeapWord* _bottom;
   HeapWord* _top;
@@ -243,7 +240,6 @@ public:
     _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
                                                          ResourceObj::C_HEAP),
                         2), mtGC),
-    _summary_bytes_used(0),
     _bottom(NULL),
     _top(NULL),
     _max(NULL) { }
@@ -261,19 +257,6 @@ public:
   // aligning to the requested alignment.
   void complete_archive(GrowableArray<MemRegion>* ranges,
                         size_t end_alignment_in_bytes);
-
-  // The number of bytes allocated by this allocator.
-  size_t used() {
-    return _summary_bytes_used;
-  }
-
-  // Clear the count of bytes allocated in prior G1 regions. This
-  // must be done when recalculate_use is used to reset the counter
-  // for the generic allocator, since it counts bytes in all G1
-  // regions, including those still associated with this allocator.
-  void clear_used() {
-    _summary_bytes_used = 0;
-  }
 };
 
 #endif // SHARE_GC_G1_G1ALLOCATOR_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 8211806
+ * @bug 8211806 8277881
  * @summary TLS 1.3 handshake server name indication is missing on a session resume
  * @run main/othervm ResumeTLS13withSNI
  */
@@ -338,6 +338,9 @@ public class ResumeTLS13withSNI {
 
         // Get the legacy session length and skip that many bytes
         int sessIdLen = Byte.toUnsignedInt(resCliHello.get());
+        if (sessIdLen == 0) {
+            throw new Exception("SessionID field empty");
+        }
         resCliHello.position(resCliHello.position() + sessIdLen);
 
         // Skip over all the cipher suites

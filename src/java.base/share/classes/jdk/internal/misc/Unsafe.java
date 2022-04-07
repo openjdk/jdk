@@ -3395,7 +3395,10 @@ public final class Unsafe {
      * @since 1.8
      */
     @IntrinsicCandidate
-    public native void loadFence();
+    public final void loadFence() {
+        // If loadFence intrinsic is not available, fall back to full fence.
+        fullFence();
+    }
 
     /**
      * Ensures that loads and stores before the fence will not be reordered with
@@ -3406,11 +3409,13 @@ public final class Unsafe {
      *
      * Provides a StoreStore barrier followed by a LoadStore barrier.
      *
-     *
      * @since 1.8
      */
     @IntrinsicCandidate
-    public native void storeFence();
+    public final void storeFence() {
+        // If storeFence intrinsic is not available, fall back to full fence.
+        fullFence();
+    }
 
     /**
      * Ensures that loads and stores before the fence will not be reordered
@@ -3441,15 +3446,13 @@ public final class Unsafe {
      * Ensures that stores before the fence will not be reordered with
      * stores after the fence.
      *
-     * @implNote
-     * This method is operationally equivalent to {@link #storeFence()}.
-     *
      * @since 9
      */
+    @IntrinsicCandidate
     public final void storeStoreFence() {
+        // If storeStoreFence intrinsic is not available, fall back to storeFence.
         storeFence();
     }
-
 
     /**
      * Throws IllegalAccessError; for use by the VM for access control

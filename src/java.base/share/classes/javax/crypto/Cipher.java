@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,7 +340,7 @@ public class Cipher {
                                            "format:" + transformation);
         }
         if ((parts[0] == null) || (parts[0].isEmpty())) {
-            throw new NoSuchAlgorithmException("Invalid transformation:" +
+            throw new NoSuchAlgorithmException("Invalid transformation: " +
                                    "algorithm not specified-"
                                    + transformation);
         }
@@ -1174,7 +1174,7 @@ public class Cipher {
     }
 
     // check if opmode is one of the defined constants
-    // throw InvalidParameterExeption if not
+    // throw InvalidParameterException if not
     private static void checkOpmode(int opmode) {
         if ((opmode < ENCRYPT_MODE) || (opmode > UNWRAP_MODE)) {
             throw new InvalidParameterException("Invalid operation mode");
@@ -2833,7 +2833,7 @@ public class Cipher {
                 break;
             default:
                 // should never happen
-                sb.append("error:").append(Integer.toString(opmode));
+                sb.append("error:").append(opmode);
         }
         sb.append(", algorithm from: ").append(getProviderName());
         return sb.toString();

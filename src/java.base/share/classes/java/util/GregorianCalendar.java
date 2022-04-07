@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,7 +624,7 @@ public class GregorianCalendar extends Calendar {
      */
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
-        gdate = (BaseCalendar.Date) gcal.newCalendarDate(zone);
+        gdate = gcal.newCalendarDate(zone);
         setTimeInMillis(System.currentTimeMillis());
     }
 
@@ -698,7 +698,7 @@ public class GregorianCalendar extends Calendar {
     GregorianCalendar(int year, int month, int dayOfMonth,
                       int hourOfDay, int minute, int second, int millis) {
         super();
-        gdate = (BaseCalendar.Date) gcal.newCalendarDate(getZone());
+        gdate = gcal.newCalendarDate(getZone());
         this.set(YEAR, year);
         this.set(MONTH, month);
         this.set(DAY_OF_MONTH, dayOfMonth);
@@ -736,7 +736,7 @@ public class GregorianCalendar extends Calendar {
      */
     GregorianCalendar(TimeZone zone, Locale locale, boolean flag) {
         super(zone, locale);
-        gdate = (BaseCalendar.Date) gcal.newCalendarDate(getZone());
+        gdate = gcal.newCalendarDate(getZone());
     }
 
 /////////////////
@@ -2370,7 +2370,7 @@ public class GregorianCalendar extends Calendar {
         } else {
             // Handle Julian calendar dates.
             calsys = getJulianCalendarSystem();
-            cdate = (BaseCalendar.Date) jcal.newCalendarDate(getZone());
+            cdate = jcal.newCalendarDate(getZone());
             jcal.getCalendarDateFromFixedDate(cdate, fixedDate);
             Era e = cdate.getEra();
             if (e == jeras[0]) {
@@ -3109,7 +3109,7 @@ public class GregorianCalendar extends Calendar {
             return (int)(next1 - month1);
         }
         if (cdate != gdate) {
-            date = (BaseCalendar.Date) gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
+            date = gcal.newCalendarDate(TimeZone.NO_TIMEZONE);
         }
         gcal.getCalendarDateFromFixedDate(date, next1);
         next1 = getFixedDateMonth1(date, next1);
@@ -3198,7 +3198,7 @@ public class GregorianCalendar extends Calendar {
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
         if (gdate == null) {
-            gdate = (BaseCalendar.Date) gcal.newCalendarDate(getZone());
+            gdate = gcal.newCalendarDate(getZone());
             cachedFixedDate = Long.MIN_VALUE;
         }
         setGregorianChange(gregorianCutover);

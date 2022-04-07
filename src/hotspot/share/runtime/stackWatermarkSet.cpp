@@ -128,6 +128,15 @@ void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind
   // will always update the poll values when waking up from a safepoint.
 }
 
+bool StackWatermarkSet::processing_started(JavaThread* jt) {
+  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+    if (!current->processing_started()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void StackWatermarkSet::finish_processing(JavaThread* jt, void* context, StackWatermarkKind kind) {
   StackWatermark* watermark = get(jt, kind);
   if (watermark != NULL) {

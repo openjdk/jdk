@@ -60,7 +60,8 @@ void DiscoveredList::clear() {
 
 DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
                                                OopClosure*        keep_alive,
-                                               BoolObjectClosure* is_alive):
+                                               BoolObjectClosure* is_alive,
+                                               EnqueueDiscoveredFieldClosure* enqueue):
   _refs_list(refs_list),
   _prev_discovered_addr(refs_list.adr_head()),
   _prev_discovered(NULL),
@@ -70,6 +71,7 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
   _referent(NULL),
   _keep_alive(keep_alive),
   _is_alive(is_alive),
+  _enqueue(enqueue),
 #ifdef ASSERT
   _first_seen(refs_list.head()),
 #endif

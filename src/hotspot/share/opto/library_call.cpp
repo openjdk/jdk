@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,6 +261,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_labs:
   case vmIntrinsics::_datan2:
   case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
@@ -268,10 +269,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dcopySign:
   case vmIntrinsics::_fcopySign:
   case vmIntrinsics::_dsignum:
+  case vmIntrinsics::_roundF:
+  case vmIntrinsics::_roundD:
   case vmIntrinsics::_fsignum:                  return inline_math_native(intrinsic_id());
-
-  case vmIntrinsics::_min:
-  case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
 
   case vmIntrinsics::_notify:
   case vmIntrinsics::_notifyAll:
@@ -286,6 +286,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_multiplyExactI:           return inline_math_multiplyExactI();
   case vmIntrinsics::_multiplyExactL:           return inline_math_multiplyExactL();
   case vmIntrinsics::_multiplyHigh:             return inline_math_multiplyHigh();
+  case vmIntrinsics::_unsignedMultiplyHigh:     return inline_math_unsignedMultiplyHigh();
   case vmIntrinsics::_negateExactI:             return inline_math_negateExactI();
   case vmIntrinsics::_negateExactL:             return inline_math_negateExactL();
   case vmIntrinsics::_subtractExactI:           return inline_math_subtractExactI(false /* subtract */);
@@ -466,6 +467,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
@@ -591,7 +593,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
-    return inline_encodeISOArray();
+    return inline_encodeISOArray(false);
+  case vmIntrinsics::_encodeAsciiArray:
+    return inline_encodeISOArray(true);
 
   case vmIntrinsics::_updateCRC32:
     return inline_updateCRC32();
@@ -615,8 +619,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isCompileConstant:
     return inline_isCompileConstant();
 
-  case vmIntrinsics::_hasNegatives:
-    return inline_hasNegatives();
+  case vmIntrinsics::_countPositives:
+    return inline_countPositives();
 
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
@@ -628,11 +632,21 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isWhitespace:
     return inline_character_compare(intrinsic_id());
 
+  case vmIntrinsics::_min:
+  case vmIntrinsics::_max:
+  case vmIntrinsics::_min_strict:
+  case vmIntrinsics::_max_strict:
+    return inline_min_max(intrinsic_id());
+
   case vmIntrinsics::_maxF:
   case vmIntrinsics::_minF:
   case vmIntrinsics::_maxD:
   case vmIntrinsics::_minD:
-    return inline_fp_min_max(intrinsic_id());
+  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_minF_strict:
+  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_minD_strict:
+      return inline_fp_min_max(intrinsic_id());
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -640,8 +654,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(2);
   case vmIntrinsics::_VectorTernaryOp:
     return inline_vector_nary_operation(3);
-  case vmIntrinsics::_VectorBroadcastCoerced:
-    return inline_vector_broadcast_coerced();
+  case vmIntrinsics::_VectorFromBitsCoerced:
+    return inline_vector_frombits_coerced();
   case vmIntrinsics::_VectorShuffleIota:
     return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
@@ -650,8 +664,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_shuffle_to_vector();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
+  case vmIntrinsics::_VectorLoadMaskedOp:
+    return inline_vector_mem_masked_operation(/*is_store*/false);
   case vmIntrinsics::_VectorStoreOp:
     return inline_vector_mem_operation(/*is_store=*/true);
+  case vmIntrinsics::_VectorStoreMaskedOp:
+    return inline_vector_mem_masked_operation(/*is_store=*/true);
   case vmIntrinsics::_VectorGatherOp:
     return inline_vector_gather_scatter(/*is_scatter*/ false);
   case vmIntrinsics::_VectorScatterOp:
@@ -995,13 +1013,13 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//------------------------------inline_hasNegatives------------------------------
-bool LibraryCallKit::inline_hasNegatives() {
+//------------------------------inline_countPositives------------------------------
+bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
 
-  assert(callee()->signature()->size() == 3, "hasNegatives has 3 parameters");
+  assert(callee()->signature()->size() == 3, "countPositives has 3 parameters");
   // no receiver since it is static method
   Node* ba         = argument(0);
   Node* offset     = argument(1);
@@ -1015,7 +1033,7 @@ bool LibraryCallKit::inline_hasNegatives() {
     return true;
   }
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
-  Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
+  Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
   return true;
 }
@@ -1076,7 +1094,6 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
-  clear_upper_avx();
   return true;
 }
 
@@ -1590,15 +1607,19 @@ Node* LibraryCallKit::round_double_node(Node* n) {
 // public static double Math.sqrt(double)
 // public static double Math.log(double)
 // public static double Math.log10(double)
+// public static double Math.round(double)
 bool LibraryCallKit::inline_double_math(vmIntrinsics::ID id) {
   Node* arg = round_double_node(argument(0));
   Node* n = NULL;
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
-  case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
+                              n = new SqrtDNode(C, control(),  arg);  break;
   case vmIntrinsics::_ceil:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_ceil); break;
   case vmIntrinsics::_floor:  n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_floor); break;
   case vmIntrinsics::_rint:   n = RoundDoubleModeNode::make(_gvn, arg, RoundDoubleModeNode::rmode_rint); break;
+  case vmIntrinsics::_roundD: n = new RoundDNode(arg); break;
   case vmIntrinsics::_dcopySign: n = CopySignDNode::make(_gvn, arg, round_double_node(argument(2))); break;
   case vmIntrinsics::_dsignum: n = SignumDNode::make(_gvn, arg); break;
   default:  fatal_unexpected_iid(id);  break;
@@ -1620,6 +1641,7 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   case vmIntrinsics::_labs:   n = new AbsLNode(                arg);  break;
   case vmIntrinsics::_fcopySign: n = new CopySignFNode(arg, argument(1)); break;
   case vmIntrinsics::_fsignum: n = SignumFNode::make(_gvn, arg); break;
+  case vmIntrinsics::_roundF: n = new RoundFNode(arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -1735,10 +1757,14 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
 
     // These intrinsics are supported on all hardware
+  case vmIntrinsics::_roundD: return Matcher::match_rule_supported(Op_RoundD) ? inline_double_math(id) : false;
   case vmIntrinsics::_ceil:
   case vmIntrinsics::_floor:
   case vmIntrinsics::_rint:   return Matcher::match_rule_supported(Op_RoundDoubleMode) ? inline_double_math(id) : false;
-  case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_double_math(id) : false;
+
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsqrt_strict:
+                              return Matcher::match_rule_supported(Op_SqrtD) ? inline_double_math(id) : false;
   case vmIntrinsics::_dabs:   return Matcher::has_match_rule(Op_AbsD)   ? inline_double_math(id) : false;
   case vmIntrinsics::_fabs:   return Matcher::match_rule_supported(Op_AbsF)   ? inline_math(id) : false;
   case vmIntrinsics::_iabs:   return Matcher::match_rule_supported(Op_AbsI)   ? inline_math(id) : false;
@@ -1755,6 +1781,7 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_fcopySign: return inline_math(id);
   case vmIntrinsics::_dsignum: return Matcher::match_rule_supported(Op_SignumD) ? inline_double_math(id) : false;
   case vmIntrinsics::_fsignum: return Matcher::match_rule_supported(Op_SignumF) ? inline_math(id) : false;
+  case vmIntrinsics::_roundF: return Matcher::match_rule_supported(Op_RoundF) ? inline_math(id) : false;
 
    // These intrinsics are not yet correctly implemented
   case vmIntrinsics::_datan2:
@@ -1865,6 +1892,11 @@ bool LibraryCallKit::inline_math_multiplyHigh() {
   return true;
 }
 
+bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
+  set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
+  return true;
+}
+
 Node*
 LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
   // These are the candidate return value:
@@ -1875,7 +1907,7 @@ LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
     return xvalue;
   }
 
-  bool want_max = (id == vmIntrinsics::_max);
+  bool want_max = (id == vmIntrinsics::_max || id == vmIntrinsics::_max_strict);
 
   const TypeInt* txvalue = _gvn.type(xvalue)->isa_int();
   const TypeInt* tyvalue = _gvn.type(yvalue)->isa_int();
@@ -2686,6 +2718,9 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       return true;
     case vmIntrinsics::_storeFence:
       insert_mem_bar(Op_StoreFence);
+      return true;
+    case vmIntrinsics::_storeStoreFence:
+      insert_mem_bar(Op_StoreStoreFence);
       return true;
     case vmIntrinsics::_fullFence:
       insert_mem_bar(Op_MemBarVolatile);
@@ -4882,8 +4917,8 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
 }
 
 //-------------inline_encodeISOArray-----------------------------------
-// encode char[] to byte[] in ISO_8859_1
-bool LibraryCallKit::inline_encodeISOArray() {
+// encode char[] to byte[] in ISO_8859_1 or ASCII
+bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   assert(callee()->signature()->size() == 5, "encodeISOArray has 5 parameters");
   // no receiver since it is static method
   Node *src         = argument(0);
@@ -4918,7 +4953,7 @@ bool LibraryCallKit::inline_encodeISOArray() {
   // 'dst_start' points to dst array + scaled offset
 
   const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length);
+  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
   set_memory(res_mem, mtype);
@@ -5399,7 +5434,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
         Node* obja_adr_mem = memory(C->get_alias_index(obja_adr_t));
         Node* objb_adr_mem = memory(C->get_alias_index(objb_adr_t));
 
-        Node* vmask      = _gvn.transform(new VectorMaskGenNode(ConvI2X(casted_length), TypeVect::VECTMASK, elem_bt));
+        Node* vmask      = _gvn.transform(VectorMaskGenNode::make(ConvI2X(casted_length), elem_bt));
         Node* vload_obja = _gvn.transform(new LoadVectorMaskedNode(control(), obja_adr_mem, obja_adr, obja_adr_t, vt, vmask));
         Node* vload_objb = _gvn.transform(new LoadVectorMaskedNode(control(), objb_adr_mem, objb_adr, objb_adr_t, vt, vmask));
         Node* result     = _gvn.transform(new VectorCmpMaskedNode(vload_obja, vload_objb, vmask, TypeInt::INT));
@@ -6203,7 +6238,7 @@ Node * LibraryCallKit::get_key_start_from_aescrypt_object(Node *aescrypt_object)
   if (objSessionK == NULL) {
     return (Node *) NULL;
   }
-  Node* objAESCryptKey = load_array_element(control(), objSessionK, intcon(0), TypeAryPtr::OOPS);
+  Node* objAESCryptKey = load_array_element(objSessionK, intcon(0), TypeAryPtr::OOPS, /* set_ctrl */ true);
 #else
   Node* objAESCryptKey = load_field_from_object(aescrypt_object, "K", "[I");
 #endif // PPC64
@@ -6767,7 +6802,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* state = load_field_from_object(ghash_object, "state", "[J");
 
   if (embeddedCipherObj == NULL || counter == NULL || subkeyHtbl == NULL || state == NULL) {
-      return false;
+    return false;
   }
   // cast it to what we know it will be at runtime
   const TypeInstPtr* tinst = _gvn.type(gctr_object)->isa_instptr();
@@ -6783,11 +6818,11 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   // we need to get the start of the aescrypt_object's expanded key array
   Node* k_start = get_key_start_from_aescrypt_object(aescrypt_object);
   if (k_start == NULL) return false;
-
   // similarly, get the start address of the r vector
   Node* cnt_start = array_element_address(counter, intcon(0), T_BYTE);
   Node* state_start = array_element_address(state, intcon(0), T_LONG);
   Node* subkeyHtbl_start = array_element_address(subkeyHtbl, intcon(0), T_LONG);
+
 
   // Call the stub, passing params
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
@@ -6798,6 +6833,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));
   set_result(retvalue);
+
   return true;
 }
 
@@ -7032,12 +7068,16 @@ bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_maxF:
   case vmIntrinsics::_minF:
+  case vmIntrinsics::_maxF_strict:
+  case vmIntrinsics::_minF_strict:
     assert(callee()->signature()->size() == 2, "minF/maxF has 2 parameters of size 1 each.");
     a = argument(0);
     b = argument(1);
     break;
   case vmIntrinsics::_maxD:
   case vmIntrinsics::_minD:
+  case vmIntrinsics::_maxD_strict:
+  case vmIntrinsics::_minD_strict:
     assert(callee()->signature()->size() == 4, "minD/maxD has 2 parameters of size 2 each.");
     a = round_double_node(argument(0));
     b = round_double_node(argument(2));
@@ -7047,11 +7087,25 @@ bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
     break;
   }
   switch (id) {
-  case vmIntrinsics::_maxF:  n = new MaxFNode(a, b);  break;
-  case vmIntrinsics::_minF:  n = new MinFNode(a, b);  break;
-  case vmIntrinsics::_maxD:  n = new MaxDNode(a, b);  break;
-  case vmIntrinsics::_minD:  n = new MinDNode(a, b);  break;
-  default:  fatal_unexpected_iid(id);  break;
+  case vmIntrinsics::_maxF:
+  case vmIntrinsics::_maxF_strict:
+    n = new MaxFNode(a, b);
+    break;
+  case vmIntrinsics::_minF:
+  case vmIntrinsics::_minF_strict:
+    n = new MinFNode(a, b);
+    break;
+  case vmIntrinsics::_maxD:
+  case vmIntrinsics::_maxD_strict:
+    n = new MaxDNode(a, b);
+    break;
+  case vmIntrinsics::_minD:
+  case vmIntrinsics::_minD_strict:
+    n = new MinDNode(a, b);
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
   }
   set_result(_gvn.transform(n));
   return true;

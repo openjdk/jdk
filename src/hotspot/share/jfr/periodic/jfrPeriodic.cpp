@@ -37,6 +37,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
@@ -472,10 +473,14 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
 }
 
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
+#if INCLUDE_MANAGEMENT
   EventClassLoadingStatistics event;
   event.set_loadedClassCount(ClassLoadingService::loaded_class_count());
   event.set_unloadedClassCount(ClassLoadingService::unloaded_class_count());
   event.commit();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event ClassLoadingStatistics. The required jvm feature 'management' is missing.");
+#endif
 }
 
 class JfrClassLoaderStatsClosure : public ClassLoaderStatsClosure {
@@ -635,12 +640,19 @@ TRACE_REQUEST_FUNC(CodeSweeperConfiguration) {
   event.commit();
 }
 
-
 TRACE_REQUEST_FUNC(ShenandoahHeapRegionInformation) {
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     VM_ShenandoahSendHeapRegionInfoEvents op;
     VMThread::execute(&op);
   }
+#endif
+}
+
+TRACE_REQUEST_FUNC(FinalizerStatistics) {
+#if INCLUDE_MANAGEMENT
+  JfrFinalizerStatisticsEvent::generate_events();
+#else
+  log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
 }

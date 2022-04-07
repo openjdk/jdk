@@ -93,7 +93,7 @@ typedef unsigned int uintptr_t;
 #define max(a, b)   (((a)>(b)) ? (a) : (b))
 
 // ADLC components
-#include "arena.hpp"
+#include "adlArena.hpp"
 #include "opto/adlcVMDeps.hpp"
 #include "filebuff.hpp"
 #include "dict2.hpp"

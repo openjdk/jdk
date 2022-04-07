@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import sun.security.x509.*;
  * number. Other unique combinations include the issuer, subject,
  * subjectKeyIdentifier and/or the subjectPublicKey criteria.
  * <p>
- * Please refer to <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * Please refer to <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a> for
  * definitions of the X.509 certificate extensions mentioned below.
  * <p>
@@ -1763,10 +1763,10 @@ public class X509CertSelector implements CertSelector {
         StringBuilder sb = new StringBuilder();
         sb.append("X509CertSelector: [\n");
         if (x509Cert != null) {
-            sb.append("  Certificate: " + x509Cert.toString() + "\n");
+            sb.append("  Certificate: " + x509Cert + "\n");
         }
         if (serialNumber != null) {
-            sb.append("  Serial Number: " + serialNumber.toString() + "\n");
+            sb.append("  Serial Number: " + serialNumber + "\n");
         }
         if (issuer != null) {
             sb.append("  Issuer: " + getIssuerAsString() + "\n");
@@ -1775,12 +1775,10 @@ public class X509CertSelector implements CertSelector {
             sb.append("  Subject: " + getSubjectAsString() + "\n");
         }
         sb.append("  matchAllSubjectAltNames flag: "
-                  + String.valueOf(matchAllSubjectAltNames) + "\n");
+                  + matchAllSubjectAltNames + "\n");
         if (subjectAlternativeNames != null) {
             sb.append("  SubjectAlternativeNames:\n");
-            Iterator<List<?>> i = subjectAlternativeNames.iterator();
-            while (i.hasNext()) {
-                List<?> list = i.next();
+            for (List<?> list : subjectAlternativeNames) {
                 sb.append("    type " + list.get(0) +
                           ", name " + list.get(1) + "\n");
             }
@@ -1797,35 +1795,34 @@ public class X509CertSelector implements CertSelector {
         }
         if (certificateValid != null) {
             sb.append("  Certificate Valid: " +
-                      certificateValid.toString() + "\n");
+                      certificateValid + "\n");
         }
         if (privateKeyValid != null) {
             sb.append("  Private Key Valid: " +
-                      privateKeyValid.toString() + "\n");
+                      privateKeyValid + "\n");
         }
         if (subjectPublicKeyAlgID != null) {
             sb.append("  Subject Public Key AlgID: " +
-                      subjectPublicKeyAlgID.toString() + "\n");
+                      subjectPublicKeyAlgID + "\n");
         }
         if (subjectPublicKey != null) {
             sb.append("  Subject Public Key: " +
-                      subjectPublicKey.toString() + "\n");
+                      subjectPublicKey + "\n");
         }
         if (keyUsage != null) {
             sb.append("  Key Usage: " + keyUsageToString(keyUsage) + "\n");
         }
         if (keyPurposeSet != null) {
             sb.append("  Extended Key Usage: " +
-                      keyPurposeSet.toString() + "\n");
+                      keyPurposeSet + "\n");
         }
         if (policy != null) {
-            sb.append("  Policy: " + policy.toString() + "\n");
+            sb.append("  Policy: " + policy + "\n");
         }
         if (pathToGeneralNames != null) {
             sb.append("  Path to names:\n");
-            Iterator<GeneralNameInterface> i = pathToGeneralNames.iterator();
-            while (i.hasNext()) {
-                sb.append("    " + i.next() + "\n");
+            for (GeneralNameInterface pathToGeneralName : pathToGeneralNames) {
+                sb.append("    " + pathToGeneralName + "\n");
             }
         }
         sb.append("]");
@@ -2148,7 +2145,7 @@ public class X509CertSelector implements CertSelector {
                 debug.println("X509CertSelector.match: private key usage not "
                     + "within validity date; ext.NOT_BEFORE: "
                     + time + "; X509CertSelector: "
-                    + this.toString());
+                    + this);
                 e2.printStackTrace();
             }
             return false;
@@ -2156,7 +2153,7 @@ public class X509CertSelector implements CertSelector {
             if (debug != null) {
                 debug.println("X509CertSelector.match: IOException in "
                     + "private key usage check; X509CertSelector: "
-                    + this.toString());
+                    + this);
                 e4.printStackTrace();
             }
             return false;
@@ -2399,10 +2396,8 @@ public class X509CertSelector implements CertSelector {
             }
             if ((debug != null) && Debug.isOn("certpath")) {
                 debug.println("X509CertSelector.match pathToNames:\n");
-                Iterator<GeneralNameInterface> i =
-                                        pathToGeneralNames.iterator();
-                while (i.hasNext()) {
-                    debug.println("    " + i.next() + "\n");
+                for (GeneralNameInterface pathToGeneralName : pathToGeneralNames) {
+                    debug.println("    " + pathToGeneralName + "\n");
                 }
             }
 
@@ -2439,9 +2434,7 @@ public class X509CertSelector implements CertSelector {
         for (Iterator<GeneralSubtree> t = excluded.iterator(); t.hasNext(); ) {
             GeneralSubtree tree = t.next();
             GeneralNameInterface excludedName = tree.getName().getName();
-            Iterator<GeneralNameInterface> i = pathToGeneralNames.iterator();
-            while (i.hasNext()) {
-                GeneralNameInterface pathToName = i.next();
+            for (GeneralNameInterface pathToName : pathToGeneralNames) {
                 if (excludedName.getType() == pathToName.getType()) {
                     switch (pathToName.constrains(excludedName)) {
                     case GeneralNameInterface.NAME_WIDENS:
@@ -2468,9 +2461,7 @@ public class X509CertSelector implements CertSelector {
          * If not, return false. However, if no subtrees of a given type
          * are listed, all names of that type are permitted.
          */
-        Iterator<GeneralNameInterface> i = pathToGeneralNames.iterator();
-        while (i.hasNext()) {
-            GeneralNameInterface pathToName = i.next();
+        for (GeneralNameInterface pathToName : pathToGeneralNames) {
             Iterator<GeneralSubtree> t = permitted.iterator();
             boolean permittedNameFound = false;
             boolean nameTypeFound = false;

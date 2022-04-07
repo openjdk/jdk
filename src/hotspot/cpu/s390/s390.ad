@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2022 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -697,27 +697,18 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 }
 
 static inline void z_emit16(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 16), "instruction too large");
-  *((unsigned short*)(cbuf.insts_end())) = (unsigned short)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned short));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 2);
 }
 
 static inline void z_emit32(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value < (1L << 32), "instruction too large");
-  *((unsigned int*)(cbuf.insts_end())) = (unsigned int)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned int));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 4);
 }
 
 static inline void z_emit48(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 48), "instruction too large");
-  value = value<<16;
-  memcpy(cbuf.insts_end(), (unsigned char*)&value, 6);
-  cbuf.set_insts_end(cbuf.insts_end() + 6);
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 6);
 }
 
 static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
@@ -726,19 +717,9 @@ static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
     value = (long)((unsigned long)((unsigned int)value));
   }
 
-  if (value < (1L << 16)) { // 2-byte instruction
-    z_emit16(cbuf, value);
-    return 2;
-  }
-
-  if (value < (1L << 32)) { // 4-byte instruction, might be unaligned store
-    z_emit32(cbuf, value);
-    return 4;
-  }
-
-  // 6-byte instruction, probably unaligned store.
-  z_emit48(cbuf, value);
-  return 6;
+  C2_MacroAssembler _masm(&cbuf);
+  int len = __ emit_instruction((unsigned long)value, 0);
+  return len;
 }
 
 // Check effective address (at runtime) for required alignment.
@@ -1536,11 +1517,15 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
 
-const TypeVect* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
   return NULL;
 }
 
@@ -5055,6 +5040,7 @@ instruct membar_CPUOrder() %{
 
 instruct membar_storestore() %{
   match(MemBarStoreStore);
+  match(StoreStoreFence);
   ins_cost(0);
   size(0);
   format %{ "MEMBAR-storestore (empty)" %}
@@ -10225,7 +10211,7 @@ instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tm
   format %{ "String Compress $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, false);
+                       $tmp$$Register, false, false);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10268,27 +10254,41 @@ instruct string_inflate_const(Universe dummy, iRegP src, iRegP dst, iRegI tmp, i
 %}
 
 // StringCoding.java intrinsics
-instruct has_negatives(rarg5RegP ary1, iRegI len, iRegI result, roddRegI oddReg, revenRegI evenReg, iRegI tmp, flagsReg cr) %{
-  match(Set result (HasNegatives ary1 len));
-  effect(TEMP_DEF result, USE_KILL ary1, TEMP oddReg, TEMP evenReg, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+instruct count_positives(iRegP ary1, iRegI len, iRegI result, iRegI tmp, flagsReg cr) %{
+  match(Set result (CountPositives ary1 len));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "has negatives byte[] $ary1($len) -> $result" %}
+  format %{ "count positives byte[] $ary1($len) -> $result" %}
   ins_encode %{
-    __ has_negatives($result$$Register, $ary1$$Register, $len$$Register,
-                     $oddReg$$Register, $evenReg$$Register, $tmp$$Register);
+    __ count_positives($result$$Register, $ary1$$Register, $len$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_class_dummy);
 %}
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
+  predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
-  format %{ "Encode array $src->$dst($len) -> $result" %}
+  format %{ "Encode iso array $src->$dst($len) -> $result" %}
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
-                       $tmp$$Register, true);
+                       $tmp$$Register, true, false);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// encode char[] to byte[] in ASCII
+instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tmp, flagsReg cr) %{
+  predicate(((EncodeISOArrayNode*)n)->is_ascii());
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp, KILL cr); // R0, R1 are killed, too.
+  ins_cost(300);
+  format %{ "Encode ascii array $src->$dst($len) -> $result" %}
+  ins_encode %{
+    __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
+                       $tmp$$Register, true, true);
   %}
   ins_pipe(pipe_class_dummy);
 %}

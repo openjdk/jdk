@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -495,6 +495,7 @@ public class Deflater {
      * @param output the buffer for the compressed data
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
+     * @throws ReadOnlyBufferException if the given output buffer is read-only
      * @since 11
      */
     public int deflate(ByteBuffer output) {
@@ -674,6 +675,7 @@ public class Deflater {
      *         the output buffer
      *
      * @throws IllegalArgumentException if the flush mode is invalid
+     * @throws ReadOnlyBufferException if the given output buffer is read-only
      * @since 11
      */
     public int deflate(ByteBuffer output, int flush) {
@@ -891,6 +893,16 @@ public class Deflater {
         assert Thread.holdsLock(zsRef);
         if (zsRef.address() == 0)
             throw new NullPointerException("Deflater has been closed");
+    }
+
+    /**
+     * Returns the value of 'finish' flag.
+     * 'finish' will be set to true if def.finish() method is called.
+     */
+    boolean shouldFinish() {
+        synchronized (zsRef) {
+            return finish;
+        }
     }
 
     private static native long init(int level, int strategy, boolean nowrap);

@@ -80,9 +80,7 @@ public class IsMatureTest {
                     "Multiple times invoked method should have method data");
             // The method may or may not be mature if it's compiled with limited profile.
             if (compLevel != CompilerWhiteBoxTest.COMP_LEVEL_LIMITED_PROFILE) {
-               /* a method is not mature in Xcomp mode with tiered compilation disabled,
-                 see NonTieredCompPolicy::is_mature */
-               Asserts.assertEQ(isMature, !(Platform.isComp() && !TIERED),
+               Asserts.assertEQ(isMature, !Platform.isComp(),
                        "Unexpected isMature state for multiple times invoked method");
             }
         }

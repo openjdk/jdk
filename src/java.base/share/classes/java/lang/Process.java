@@ -845,7 +845,7 @@ public abstract class Process {
      * A nested class to delay looking up the Charset for the native encoding.
      */
     private static class CharsetHolder {
-        private final static Charset nativeCharset;
+        private static final Charset nativeCharset;
         static {
             Charset cs;
             try {

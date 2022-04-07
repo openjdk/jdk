@@ -31,7 +31,7 @@
 #include "gc/z/zWorkers.hpp"
 #include "runtime/java.hpp"
 
-class ZWorkersInitializeTask : public AbstractGangTask {
+class ZWorkersInitializeTask : public WorkerTask {
 private:
   const uint     _nworkers;
   uint           _started;
@@ -39,7 +39,7 @@ private:
 
 public:
   ZWorkersInitializeTask(uint nworkers) :
-      AbstractGangTask("ZWorkersInitializeTask"),
+      WorkerTask("ZWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
       _lock() {}
@@ -66,20 +66,20 @@ ZWorkers::ZWorkers() :
              UseDynamicNumberOfGCThreads ? ConcGCThreads : MAX2(ConcGCThreads, ParallelGCThreads)) {
 
   if (UseDynamicNumberOfGCThreads) {
-    log_info_p(gc, init)("GC Workers: %u (dynamic)", _workers.total_workers());
+    log_info_p(gc, init)("GC Workers: %u (dynamic)", _workers.max_workers());
   } else {
-    log_info_p(gc, init)("GC Workers: %u/%u (static)", ConcGCThreads, _workers.total_workers());
+    log_info_p(gc, init)("GC Workers: %u/%u (static)", ConcGCThreads, _workers.max_workers());
   }
 
   // Initialize worker threads
   _workers.initialize_workers();
-  _workers.update_active_workers(_workers.total_workers());
-  if (_workers.active_workers() != _workers.total_workers()) {
+  _workers.set_active_workers(_workers.max_workers());
+  if (_workers.active_workers() != _workers.max_workers()) {
     vm_exit_during_initialization("Failed to create ZWorkers");
   }
 
   // Execute task to register threads as workers
-  ZWorkersInitializeTask task(_workers.total_workers());
+  ZWorkersInitializeTask task(_workers.max_workers());
   _workers.run_task(&task);
 }
 
@@ -89,13 +89,13 @@ uint ZWorkers::active_workers() const {
 
 void ZWorkers::set_active_workers(uint nworkers) {
   log_info(gc, task)("Using %u workers", nworkers);
-  _workers.update_active_workers(nworkers);
+  _workers.set_active_workers(nworkers);
 }
 
 void ZWorkers::run(ZTask* task) {
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
   ZStatWorkers::at_start();
-  _workers.run_task(task->gang_task());
+  _workers.run_task(task->worker_task());
   ZStatWorkers::at_end();
 }
 
@@ -104,12 +104,12 @@ void ZWorkers::run_all(ZTask* task) {
   const uint prev_active_workers = _workers.active_workers();
 
   // Execute task using all workers
-  _workers.update_active_workers(_workers.total_workers());
+  _workers.set_active_workers(_workers.max_workers());
   log_debug(gc, task)("Executing Task: %s, Active Workers: %u", task->name(), active_workers());
-  _workers.run_task(task->gang_task());
+  _workers.run_task(task->worker_task());
 
   // Restore number of active workers
-  _workers.update_active_workers(prev_active_workers);
+  _workers.set_active_workers(prev_active_workers);
 }
 
 void ZWorkers::threads_do(ThreadClosure* tc) const {

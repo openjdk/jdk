@@ -34,8 +34,7 @@ void GCLogPrecious::initialize() {
   _lines = new (ResourceObj::C_HEAP, mtGC) stringStream();
   _temp = new (ResourceObj::C_HEAP, mtGC) stringStream();
   _lock = new Mutex(Mutex::event, /* The lowest lock rank I could find */
-                    "GCLogPrecious Lock",
-                    Mutex::_safepoint_check_never);
+                    "GCLogPrecious Lock");
 }
 
 void GCLogPrecious::vwrite_inner(LogTargetHandle log, const char* format, va_list args) {

@@ -312,6 +312,11 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     }
 
     @Override
+    public long getPidsCurrent() {
+        return getLongVal("pids.current");
+    }
+
+    @Override
     public long getBlkIOServiceCount() {
         return sumTokensIOStat(CgroupV2Subsystem::lineToRandWIOs);
     }

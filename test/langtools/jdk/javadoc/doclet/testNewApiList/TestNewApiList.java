@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468
+ * @bug      8263468 8269401
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -109,8 +109,7 @@ public class TestNewApiList extends JavadocTester {
                 <li><a href="#interface">Interfaces</a></li>
                 <li><a href="#class">Classes</a></li>
                 <li><a href="#enum-class">Enum Classes</a></li>
-                <li><a href="#exception">Exceptions</a></li>
-                <li><a href="#error">Errors</a></li>
+                <li><a href="#exception-class">Exception Classes</a></li>
                 <li><a href="#record-class">Record Classes</a></li>
                 <li><a href="#annotation-interface">Annotation Interfaces</a></li>
                 <li><a href="#field">Fields</a></li>
@@ -215,39 +214,31 @@ public class TestNewApiList extends JavadocTester {
                 <div class="block">Test enum class.</div>
                 </div>""",
             """
-                <div id="exception">
+                <div id="exception-class">
                 <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="exc\
-                eption-tab0" role="tab" aria-selected="true" aria-controls="exception.tabpanel" tabi\
-                ndex="0" onkeydown="switchTab(event)" onclick="show('exception', 'exception', 2)" cl\
-                ass="active-table-tab">New Exceptions</button><button id="exception-tab6" role="tab"\
-                 aria-selected="false" aria-controls="exception.tabpanel" tabindex="-1" onkeydown="s\
-                witchTab(event)" onclick="show('exception', 'exception-tab6', 2)" class="table-tab">\
-                Added in 0.9</button></div>
-                <div id="exception.tabpanel" role="tabpanel">
-                <div class="summary-table two-column-summary" aria-labelledby="exception-tab0">
-                <div class="table-header col-first">Exceptions</div>
+                eption-class-tab0" role="tab" aria-selected="true" aria-controls="exception-class.ta\
+                bpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('exception-class', '\
+                exception-class', 2)" class="active-table-tab">New Exception Classes</button><button\
+                 id="exception-class-tab3" role="tab" aria-selected="false" aria-controls="exception\
+                -class.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('exception\
+                -class', 'exception-class-tab3', 2)" class="table-tab">Added in 2.0b</button><button\
+                 id="exception-class-tab6" role="tab" aria-selected="false" aria-controls="exception\
+                -class.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('exception\
+                -class', 'exception-class-tab6', 2)" class="table-tab">Added in 0.9</button></div>
+                <div id="exception-class.tabpanel" role="tabpanel">
+                <div class="summary-table two-column-summary" aria-labelledby="exception-class-tab0">
+                <div class="table-header col-first">Exception Class</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color exception exception-tab6"><a href="\
-                mdl/pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
-                <div class="col-last even-row-color exception exception-tab6">
-                <div class="block">Test exception class.</div>
-                </div>""",
-            """
-                <div id="error">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="err\
-                or-tab0" role="tab" aria-selected="true" aria-controls="error.tabpanel" tabindex="0"\
-                 onkeydown="switchTab(event)" onclick="show('error', 'error', 2)" class="active-tabl\
-                e-tab">New Errors</button><button id="error-tab3" role="tab" aria-selected="false" a\
-                ria-controls="error.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="sh\
-                ow('error', 'error-tab3', 2)" class="table-tab">Added in 2.0b</button></div>
-                <div id="error.tabpanel" role="tabpanel">
-                <div class="summary-table two-column-summary" aria-labelledby="error-tab0">
-                <div class="table-header col-first">Errors</div>
-                <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color error error-tab3"><a href="mdl/pkg/\
-                TestError.html" title="class in pkg">pkg.TestError</a></div>
-                <div class="col-last even-row-color error error-tab3">
+                <div class="col-summary-item-name even-row-color exception-class exception-class-tab\
+                3"><a href="mdl/pkg/TestError.html" title="class in pkg">pkg.TestError</a></div>
+                <div class="col-last even-row-color exception-class exception-class-tab3">
                 <div class="block">Test error class.</div>
+                </div>
+                <div class="col-summary-item-name odd-row-color exception-class exception-class-tab6\
+                "><a href="mdl/pkg/TestException.html" title="class in pkg">pkg.TestException</a></d\
+                iv>
+                <div class="col-last odd-row-color exception-class exception-class-tab6">
+                <div class="block">Test exception class.</div>
                 </div>""",
             """
                 <div id="record-class">

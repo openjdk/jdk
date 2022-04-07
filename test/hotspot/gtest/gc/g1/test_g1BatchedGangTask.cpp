@@ -24,30 +24,30 @@
 
 #include "precompiled.hpp"
 
-#include "gc/g1/g1BatchedGangTask.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/g1/g1BatchedTask.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "runtime/atomic.hpp"
 #include "unittest.hpp"
 
-class G1BatchedGangTaskWorkers : AllStatic {
-  static WorkGang* _work_gang;
-  static WorkGang* work_gang() {
-    if (_work_gang == nullptr) {
-      _work_gang = new WorkGang("G1 Small Workers", MaxWorkers);
-      _work_gang->initialize_workers();
-      _work_gang->update_active_workers(MaxWorkers);
+class G1BatchedTaskWorkers : AllStatic {
+  static WorkerThreads* _workers;
+  static WorkerThreads* workers() {
+    if (_workers == nullptr) {
+      _workers = new WorkerThreads("G1 Small Workers", MaxWorkers);
+      _workers->initialize_workers();
+      _workers->set_active_workers(MaxWorkers);
     }
-    return _work_gang;
+    return _workers;
   }
 
 public:
   static const uint MaxWorkers = 4;
-  static void run_task(AbstractGangTask* task) {
-    work_gang()->run_task(task);
+  static void run_task(WorkerTask* task) {
+    workers()->run_task(task);
   }
 };
 
-WorkGang* G1BatchedGangTaskWorkers::_work_gang = nullptr;
+WorkerThreads* G1BatchedTaskWorkers::_workers = nullptr;
 
 class G1TestSubTask : public G1AbstractSubTask {
   mutable uint _phase;
@@ -96,7 +96,7 @@ public:
     return 1.0;
   }
 
-  // Called by G1BatchedGangTask to provide information about the the maximum
+  // Called by G1BatchedTask to provide information about the the maximum
   // number of workers for all subtasks after it has been determined.
   void set_max_workers(uint max_workers) override {
     assert(max_workers >= 1, "must be");
@@ -140,18 +140,18 @@ public:
   }
 };
 
-class G1TestBatchedGangTask : public G1BatchedGangTask {
+class G1TestBatchedTask : public G1BatchedTask {
 public:
-  G1TestBatchedGangTask() : G1BatchedGangTask("Batched Gang Test Task", nullptr) {
+  G1TestBatchedTask() : G1BatchedTask("Batched Test Task", nullptr) {
     add_serial_task(new G1SerialTestSubTask());
     add_parallel_task(new G1ParallelTestSubTask());
   }
 };
 
-TEST_VM(G1BatchedGangTask, check) {
-  G1TestBatchedGangTask task;
+TEST_VM(G1BatchedTask, check) {
+  G1TestBatchedTask task;
   uint tasks = task.num_workers_estimate();
   ASSERT_EQ(tasks, 3u);
-  task.set_max_workers(G1BatchedGangTaskWorkers::MaxWorkers);
-  G1BatchedGangTaskWorkers::run_task(&task);
+  task.set_max_workers(G1BatchedTaskWorkers::MaxWorkers);
+  G1BatchedTaskWorkers::run_task(&task);
 }

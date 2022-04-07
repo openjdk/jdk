@@ -169,8 +169,9 @@ public class TestPostParseCallDevirtualization {
     }
 
     @Run(test = "testMethodHandleCallWithLoop")
+    @Warmup(5000)
     public void checkTestMethodHandleCallWithLoop() throws Throwable {
-        Asserts.assertEquals(testMethodHandleCallWithLoop(), 42);
+        Asserts.assertEquals( (int)mh2.invokeExact(), 42);
     }
 
     @Test
@@ -194,7 +195,8 @@ public class TestPostParseCallDevirtualization {
     }
 
     @Run(test = "testMethodHandleCallWithCCP")
+    @Warmup(5000)
     public void checkTestMethodHandleCallWithCCP() throws Throwable {
-        Asserts.assertEquals(testMethodHandleCallWithCCP(), 42);
+        Asserts.assertEquals( (int)mh2.invokeExact(), 42);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
  */
 package sun.util.locale.provider;
 
+import java.time.DateTimeException;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 
@@ -63,10 +66,21 @@ public class JavaTimeDateTimePatternImpl extends JavaTimeDateTimePatternProvider
     @Override
     public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType, Locale locale) {
         LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale);
-        String pattern = lr.getJavaTimeDateTimePattern(
-                timeStyle, dateStyle, calType);
-        return pattern;
+        return lr.getJavaTimeDateTimePattern(timeStyle, dateStyle, calType);
+    }
 
+    @Override
+    public String getJavaTimeDateTimePattern(String requestedTemplate, String calType, Locale locale) {
+        LocaleProviderAdapter lpa = LocaleProviderAdapter.getResourceBundleBased();
+        return ((ResourceBundleBasedAdapter)lpa).getCandidateLocales("", locale).stream()
+                .map(lpa::getLocaleResources)
+                .map(lr -> lr.getLocalizedPattern(requestedTemplate, calType))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .or(() -> calType.equals("generic") ? Optional.empty():
+                        Optional.of(getJavaTimeDateTimePattern(requestedTemplate, "generic", locale)))
+                .orElseThrow(() -> new DateTimeException("Requested template \"" + requestedTemplate +
+                        "\" cannot be resolved in the locale \"" + locale + "\""));
     }
 
     @Override

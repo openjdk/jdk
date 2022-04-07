@@ -130,14 +130,14 @@ Jvm* AppLauncher::createJvmLauncher() const {
             PropertyName::arguments, args);
     }
 
+    std::unique_ptr<Jvm> jvm(new Jvm());
+
     if (!libEnvVariableContainsAppDir()) {
-        SysInfo::setEnvVariable(libEnvVarName, SysInfo::getEnvVariable(
+        (*jvm).addEnvVariable(libEnvVarName, SysInfo::getEnvVariable(
                 std::nothrow, libEnvVarName)
                 + FileUtils::pathSeparator
                 + appDirPath);
     }
-
-    std::unique_ptr<Jvm> jvm(new Jvm());
 
     (*jvm)
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))

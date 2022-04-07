@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -75,7 +74,6 @@ abstract class AbstractDCmd {
         try {
             boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
             if (log) {
-                System.out.println(arg);
                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing " + this.getClass().getSimpleName() + ": " + arg);
             }
             ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);
@@ -170,7 +168,7 @@ abstract class AbstractDCmd {
 
     protected final List<Recording> getRecordings() {
         List<Recording> list = new ArrayList<>(getFlightRecorder().getRecordings());
-        Collections.sort(list, Comparator.comparing(Recording::getId));
+        list.sort(Comparator.comparingLong(Recording::getId));
         return list;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1381,8 +1381,7 @@ public class LogManager {
 
         String fname = getConfigurationFileName();
         try (final InputStream in = new FileInputStream(fname)) {
-            final BufferedInputStream bin = new BufferedInputStream(in);
-            readConfiguration(bin);
+            readConfiguration(in);
         }
     }
 
@@ -1877,8 +1876,7 @@ public class LogManager {
 
         String fname = getConfigurationFileName();
         try (final InputStream in = new FileInputStream(fname)) {
-            final BufferedInputStream bin = new BufferedInputStream(in);
-            updateConfiguration(bin, mapper);
+            updateConfiguration(in, mapper);
         }
     }
 
@@ -2558,13 +2556,14 @@ public class LogManager {
 
     /**
      * String representation of the
-     * {@link javax.management.ObjectName} for the management interface
+     * {@link java.management/javax.management.ObjectName} for the management interface
      * for the logging facility.
      *
-     * @see java.lang.management.PlatformLoggingMXBean
+     * @see java.management/java.lang.management.PlatformLoggingMXBean
      *
      * @since 1.5
      */
+    @SuppressWarnings("doclint:reference")
     public static final String LOGGING_MXBEAN_NAME
         = "java.util.logging:type=Logging";
 
@@ -2575,14 +2574,15 @@ public class LogManager {
      *
      * @deprecated {@code java.util.logging.LoggingMXBean} is deprecated and
      *      replaced with {@code java.lang.management.PlatformLoggingMXBean}. Use
-     *      {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
+     *      {@link java.management/java.lang.management.ManagementFactory#getPlatformMXBean(Class)
      *      ManagementFactory.getPlatformMXBean}(PlatformLoggingMXBean.class)
      *      instead.
      *
-     * @see java.lang.management.PlatformLoggingMXBean
+     * @see java.management/java.lang.management.PlatformLoggingMXBean
      * @since 1.5
      */
     @Deprecated(since="9")
+    @SuppressWarnings("doclint:reference")
     public static synchronized LoggingMXBean getLoggingMXBean() {
         return Logging.getInstance();
     }

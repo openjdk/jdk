@@ -44,13 +44,13 @@ using metaspace::Settings;
 //  Note: We use TEST_VM_ASSERT_MSG. However, an assert is only triggered if allocation
 //  guards are enabled; if guards are disabled for the gtests, this test would fail.
 //  So for that case, we trigger a fake assert.
-TEST_VM_ASSERT_MSG(metaspace, test_overwriter, ".*failed: Corrupt block") {
+TEST_VM_ASSERT_MSG(metaspace, test_overwriter, ".*Metaspace corruption.*") {
 
   if (Settings::use_allocation_guard()) {
     MetaspaceGtestContext context;
     MetaspaceTestArena* arena = context.create_arena(Metaspace::StandardMetaspaceType);
     // We allocate two blocks. We then write over the end of the first block, which
-    //  should corrupt the eyecatcher at the start of the second block.
+    //  should corrupt the fence between the two blocks.
     // Note: there is of course no guarantee that blocks allocated sequentially are neighbors;
     //  but in this case (clean standard-sized test arena and very small allocations) it can
     //  be safely assumed).
@@ -59,10 +59,9 @@ TEST_VM_ASSERT_MSG(metaspace, test_overwriter, ".*failed: Corrupt block") {
     p1[8] = (MetaWord)0x9345; // Overwriter
     // Now we delete the arena (as happens during class unloading); this will check all
     // block canaries and should trigger an assert (see MetaspaceArena::verify_allocation_guards()).
-    tty->print_cr("Death test, please ignore the following \"Corrupt block\" printout.");
     delete arena;
   } else {
-    assert(false, "Corrupt block fake message to satisfy tests");
+    assert(false, "Metaspace corruption - please ignore this, fake message to satisfy tests");
   }
 
 }

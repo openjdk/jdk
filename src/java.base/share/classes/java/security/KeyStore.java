@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -867,10 +867,8 @@ public class KeyStore {
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new KeyStoreException(type + " not found", nsae);
-        } catch (NoSuchProviderException nspe) {
-            throw new KeyStoreException(type + " not found", nspe);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            throw new KeyStoreException(type + " not found", e);
         }
     }
 
@@ -1018,6 +1016,34 @@ public class KeyStore {
     public final String getType()
     {
         return this.type;
+    }
+
+    /**
+     * Retrieves the attributes associated with the given alias.
+     *
+     * @param alias the alias name
+     * @return an unmodifiable {@code Set} of attributes. This set is
+     *      empty if the {@code KeyStoreSpi} implementation has not overridden
+     *      {@link KeyStoreSpi#engineGetAttributes(String)}, or the given
+     *      alias does not exist, or there are no attributes associated
+     *      with the alias. This set may also be empty for
+     *      {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      entries that contain protected attributes and are only available
+     *      through the {@link Entry#getAttributes} method after the entry
+     *      is extracted.
+     *
+     * @throws KeyStoreException if the keystore has not been initialized
+     * (loaded).
+     * @throws NullPointerException if {@code alias} is {@code null}
+     *
+     * @since 18
+     */
+    public final Set<Entry.Attribute> getAttributes(String alias)
+            throws KeyStoreException {
+        if (!initialized) {
+            throw new KeyStoreException("Uninitialized keystore");
+        }
+        return keyStoreSpi.engineGetAttributes(Objects.requireNonNull(alias));
     }
 
     /**
@@ -1384,7 +1410,9 @@ public class KeyStore {
      * integrity with the given password.
      *
      * @param stream the output stream to which this keystore is written.
-     * @param password the password to generate the keystore integrity check
+     * @param password the password to generate the keystore integrity check.
+     *                 May be {@code null} if the keystore does not support
+     *                 or require an integrity check.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).

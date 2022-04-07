@@ -35,6 +35,9 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import javadoc.tester.JavadocTester;
 
@@ -200,9 +203,9 @@ public class TestRelativeLinks extends JavadocTester {
     }
 
     private void touch(String file) {
-        File f = new File(outputDir, file);
+        Path f = outputDir.resolve(file);
         out.println("touch " + f);
-        try (FileOutputStream fos = new FileOutputStream(f)) {
+        try (OutputStream fos = Files.newOutputStream(f)) {
         } catch (IOException e) {
             checking("Touch file");
             failed("Error creating file: " + e);

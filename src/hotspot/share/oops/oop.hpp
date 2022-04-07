@@ -31,7 +31,9 @@
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include <type_traits>
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
 // the format of Java objects so the fields can be accessed from C++.
@@ -57,7 +59,14 @@ class oopDesc {
     narrowKlass _compressed_klass;
   } _metadata;
 
+  // There may be ordering constraints on the initialization of fields that
+  // make use of the C++ copy/assign incorrect.
+  NONCOPYABLE(oopDesc);
+
  public:
+  // Must be trivial; see verifying static assert after the class.
+  oopDesc() = default;
+
   inline markWord  mark()          const;
   inline markWord  mark_acquire()  const;
   inline markWord* mark_addr() const;
@@ -82,44 +91,41 @@ class oopDesc {
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
   // For klass field compression
-  inline int klass_gap() const;
-  inline void set_klass_gap(int z);
   static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
-  static int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
 
   // Returns the actual oop size of the object
-  inline int size();
+  inline size_t size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
-  inline int size_given_klass(Klass* klass);
+  inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
-  inline bool is_instance()            const;
-  inline bool is_array()               const;
-  inline bool is_objArray()            const;
-  inline bool is_typeArray()           const;
+  inline bool is_instance()    const;
+  inline bool is_instanceRef() const;
+  inline bool is_array()       const;
+  inline bool is_objArray()    const;
+  inline bool is_typeArray()   const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()          const;
-  bool is_array_noinline()             const;
-  bool is_objArray_noinline()          const;
-  bool is_typeArray_noinline()         const;
+  bool is_instance_noinline()    const;
+  bool is_instanceRef_noinline() const;
+  bool is_array_noinline()       const;
+  bool is_objArray_noinline()    const;
+  bool is_typeArray_noinline()   const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
 
  public:
-  // field addresses in oop
-  inline void* field_addr(int offset) const;
-
-  // Need this as public for garbage collection.
-  template <class T> inline T* obj_field_addr(int offset) const;
+  template<typename T>
+  inline T* field_addr(int offset) const;
 
   template <typename T> inline size_t field_offset(T* p) const;
 
@@ -266,10 +272,10 @@ class oopDesc {
   inline void oop_iterate(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl);
+  inline size_t oop_iterate_size(OopClosureType* cl);
 
   template <typename OopClosureType>
-  inline int oop_iterate_size(OopClosureType* cl, MemRegion mr);
+  inline size_t oop_iterate_size(OopClosureType* cl, MemRegion mr);
 
   template <typename OopClosureType>
   inline void oop_iterate_backwards(OopClosureType* cl);
@@ -310,5 +316,12 @@ class oopDesc {
   DEBUG_ONLY(bool get_UseParallelGC();)
   DEBUG_ONLY(bool get_UseG1GC();)
 };
+
+// An oopDesc is not initialized via a constructor.  Space is allocated in
+// the Java heap, and static functions provided here on HeapWord* are used
+// to fill in certain parts of that memory.  The allocated memory is then
+// treated as referring to an oopDesc.  For that to be valid, the oopDesc
+// class must have a trivial default constructor (C++14 3.8/1).
+static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
 
 #endif // SHARE_OOPS_OOP_HPP

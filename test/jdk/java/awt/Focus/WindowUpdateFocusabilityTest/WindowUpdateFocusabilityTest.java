@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,6 @@ public class WindowUpdateFocusabilityTest {
     }
 
     public void start() {
-        if ("sun.awt.motif.MToolkit".equals(Toolkit.getDefaultToolkit().getClass().getName())) {
-            System.out.println("No testing on Motif.");
-            return;
-        }
-
         test(new Frame("Frame owner"));
         Frame dialog_owner = new Frame("dialog's owner");
         test(new Dialog(dialog_owner));

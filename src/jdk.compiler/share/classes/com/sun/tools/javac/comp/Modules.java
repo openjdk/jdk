@@ -329,7 +329,7 @@ public class Modules extends JCTree.Visitor {
                 }
             }
             sym.completer = getSourceCompleter(toplevel);
-            sym.module_info.sourcefile = toplevel.sourcefile;
+            sym.module_info.classfile = sym.module_info.sourcefile = toplevel.sourcefile;
             decl.sym = sym;
 
             if (multiModuleMode || modules.isEmpty()) {

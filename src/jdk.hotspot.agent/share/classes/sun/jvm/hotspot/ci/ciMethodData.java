@@ -46,13 +46,11 @@ public class ciMethodData extends ciMetadata implements MethodDataInterface<ciKl
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type      = db.lookupType("ciMethodData");
     origField = type.getField("_orig");
-    currentMileageField = new CIntField(type.getCIntegerField("_current_mileage"), 0);
     argReturnedField = new CIntField(type.getCIntegerField("_arg_returned"), 0);
     argStackField = new CIntField(type.getCIntegerField("_arg_stack"), 0);
     argLocalField = new CIntField(type.getCIntegerField("_arg_local"), 0);
     eflagsField = new CIntField(type.getCIntegerField("_eflags"), 0);
     hintDiField = new CIntField(type.getCIntegerField("_hint_di"), 0);
-    currentMileageField = new CIntField(type.getCIntegerField("_current_mileage"), 0);
     dataField = type.getAddressField("_data");
     extraDataSizeField = new CIntField(type.getCIntegerField("_extra_data_size"), 0);
     dataSizeField = new CIntField(type.getCIntegerField("_data_size"), 0);
@@ -63,7 +61,6 @@ public class ciMethodData extends ciMetadata implements MethodDataInterface<ciKl
   }
 
   private static Field origField;
-  private static CIntField currentMileageField;
   private static CIntField argReturnedField;
   private static CIntField argStackField;
   private static CIntField argLocalField;
@@ -141,7 +138,7 @@ public class ciMethodData extends ciMetadata implements MethodDataInterface<ciKl
   }
 
   int currentMileage() {
-    return (int)currentMileageField.getValue(getAddress());
+    return 0;
   }
 
   boolean outOfBounds(int dataIndex) {

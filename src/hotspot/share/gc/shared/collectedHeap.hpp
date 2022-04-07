@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 // class defines the functions that a heap must implement, and contains
 // infrastructure common to all heaps.
 
-class AbstractGangTask;
+class WorkerTask;
 class AdaptiveSizePolicy;
 class BarrierSet;
 class GCHeapLog;
@@ -59,13 +59,26 @@ class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
-class WorkGang;
+class WorkerThreads;
 class nmethod;
 
-class ParallelObjectIterator : public CHeapObj<mtGC> {
+class ParallelObjectIteratorImpl : public CHeapObj<mtGC> {
 public:
+  virtual ~ParallelObjectIteratorImpl() {}
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
-  virtual ~ParallelObjectIterator() {}
+};
+
+// User facing parallel object iterator. This is a StackObj, which ensures that
+// the _impl is allocated and deleted in the scope of this object. This ensures
+// the life cycle of the implementation is as required by ThreadsListHandle,
+// which is sometimes used by the root iterators.
+class ParallelObjectIterator : public StackObj {
+  ParallelObjectIteratorImpl* _impl;
+
+public:
+  ParallelObjectIterator(uint thread_num);
+  ~ParallelObjectIterator();
+  void object_iterate(ObjectClosure* cl, uint worker_id);
 };
 
 //
@@ -77,11 +90,12 @@ public:
 //   ShenandoahHeap
 //   ZCollectedHeap
 //
-class CollectedHeap : public CHeapObj<mtInternal> {
+class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
   friend class MemAllocator;
+  friend class ParallelObjectIterator;
 
  private:
   GCHeapLog* _gc_heap_log;
@@ -143,6 +157,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
 
+  static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
@@ -249,9 +264,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
-  oop obj_allocate(Klass* klass, int size, TRAPS);
-  virtual oop array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS);
-  oop class_allocate(Klass* klass, int size, TRAPS);
+  oop obj_allocate(Klass* klass, size_t size, TRAPS);
+  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
+  oop class_allocate(Klass* klass, size_t size, TRAPS);
 
   // Utilities for turning raw memory into filler objects.
   //
@@ -275,7 +290,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  virtual size_t min_dummy_object_size() const;
+  static constexpr size_t min_dummy_object_size() {
+    return oopDesc::header_size();
+  }
+
   size_t tlab_alloc_reserve() const;
 
   // Some heaps may offer a contiguous region for shared non-blocking
@@ -384,10 +402,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
-  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num) {
+ protected:
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return NULL;
   }
 
+ public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 
@@ -461,15 +481,16 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // this collector.  The default implementation returns false.
   virtual bool supports_concurrent_gc_breakpoints() const;
 
-  // Provides a thread pool to SafepointSynchronize to use
-  // for parallel safepoint cleanup.
-  // GCs that use a GC worker thread pool may want to share
-  // it for use during safepoint cleanup. This is only possible
-  // if the GC can pause and resume concurrent work (e.g. G1
-  // concurrent marking) for an intermittent non-GC safepoint.
-  // If this method returns NULL, SafepointSynchronize will
-  // perform cleanup tasks serially in the VMThread.
-  virtual WorkGang* safepoint_workers() { return NULL; }
+  // Workers used in non-GC safepoints for parallel safepoint cleanup. If this
+  // method returns NULL, cleanup tasks are done serially in the VMThread. See
+  // `SafepointSynchronize::do_cleanup_tasks` for details.
+  // GCs using a GC worker thread pool inside GC safepoints may opt to share
+  // that pool with non-GC safepoints, avoiding creating extraneous threads.
+  // Such sharing is safe, because GC safepoints and non-GC safepoints never
+  // overlap. For example, `G1CollectedHeap::workers()` (for GC safepoints) and
+  // `G1CollectedHeap::safepoint_workers()` (for non-GC safepoints) return the
+  // same thread-pool.
+  virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
   // and Release*Critical() family of functions. If supported, the GC
@@ -485,6 +506,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // (usually as a snapshot of the old generation).
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return NULL; }
+  virtual void complete_loaded_archive_space(MemRegion archive_space) { }
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

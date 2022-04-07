@@ -1762,7 +1762,7 @@ final class UrlDeserializedState {
 
     String reconstituteUrlString() {
 
-        // pre-compute length of StringBuffer
+        // pre-compute length of StringBuilder
         int len = protocol.length() + 1;
         if (authority != null && !authority.isEmpty())
             len += 2 + authority.length();

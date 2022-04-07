@@ -224,6 +224,7 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
     return false;
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke") ||
+      holder->is_in_package("java/lang/reflect") || holder->is_in_package("jdk/internal/reflect") ||
       holder->is_in_package("jdk/internal/foreign") || holder->is_in_package("jdk/incubator/foreign") ||
       holder->is_in_package("jdk/internal/vm/vector") || holder->is_in_package("jdk/incubator/vector") ||
       holder->is_in_package("java/lang"))

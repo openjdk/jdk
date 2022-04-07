@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspace/allocationGuard.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
@@ -182,12 +181,6 @@ size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
   // Metaspace allocations are aligned to word size.
   byte_size = align_up(byte_size, AllocationAlignmentByteSize);
 
-  // If we guard allocations, we need additional space for a prefix.
-#ifdef ASSERT
-  if (Settings::use_allocation_guard()) {
-    byte_size += align_up(prefix_size(), AllocationAlignmentByteSize);
-  }
-#endif
   size_t raw_word_size = byte_size / BytesPerWord;
   assert(raw_word_size * BytesPerWord == byte_size, "Sanity");
   return raw_word_size;

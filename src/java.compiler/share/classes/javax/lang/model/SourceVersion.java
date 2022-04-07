@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import java.util.HashSet;
  * <p>Note that additional source version constants will be added to
  * model future releases of the language.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
  */
 public enum SourceVersion {
@@ -59,10 +56,15 @@ public enum SourceVersion {
      *  10: local-variable type inference (var)
      *  11: local-variable syntax for lambda parameters
      *  12: no changes (switch expressions in preview)
-     *  13: no changes (switch expressions and text blocks in preview)
+     *  13: no changes (text blocks in preview; switch expressions in
+     *      second preview)
      *  14: switch expressions (pattern matching and records in
-     *      preview, text blocks in preview again)
-     *  15: text blocks (records and pattern matching in preview again)
+     *      preview; text blocks in second preview)
+     *  15: text blocks (sealed classes in preview; records and pattern
+     *      matching in second preview)
+     *  16: records and pattern matching (sealed classes in second preview)
+     *  17: sealed classes, floating-point always strict
+     *  18: TBD
      */
 
     /**
@@ -184,6 +186,7 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 12.
+     * No major changes from the prior release.
      *
      * @since 12
      */
@@ -192,6 +195,7 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 13.
+     * No major changes from the prior release.
      *
      * @since 13
      */
@@ -221,8 +225,8 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 16.
      *
-     * Additions in this release include pattern matching for {@code
-     * instanceof} and records.
+     * Additions in this release include records and pattern matching
+     * for {@code instanceof}.
      *
      * @since 16
      */
@@ -245,7 +249,15 @@ public enum SourceVersion {
      *
      * @since 18
      */
-    RELEASE_18;
+    RELEASE_18,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 19.
+     *
+     * @since 19
+     */
+    RELEASE_19;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -254,7 +266,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_18;
+        return RELEASE_19;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -269,7 +281,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(18, intVersion)):
+            valueOf("RELEASE_" + Math.min(19, intVersion)):
             RELEASE_10;
     }
 
@@ -305,8 +317,8 @@ public enum SourceVersion {
      * Character#isJavaIdentifierStart(int)} returns {@code true},
      * followed only by characters for which {@link
      * Character#isJavaIdentifierPart(int)} returns {@code true}.
-     * This pattern matches regular identifiers, keywords, restricted
-     * keywords, restricted identifiers and the literals {@code "true"},
+     * This pattern matches regular identifiers, keywords, contextual
+     * keywords, and the literals {@code "true"},
      * {@code "false"}, {@code "null"}.
      *
      * The method returns {@code false} for all other strings.
@@ -352,8 +364,8 @@ public enum SourceVersion {
      * {@code false} for keywords, boolean literals, and the null
      * literal in any segment.
      *
-     * This method returns {@code true} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>.
+     * This method returns {@code true} for <i>contextual
+     * keywords</i>.
      *
      * @param name the string to check
      * @return {@code true} if this string is a
@@ -378,8 +390,8 @@ public enum SourceVersion {
      * {@code false} for keywords, boolean literals, and the null
      * literal in any segment.
      *
-     * This method returns {@code true} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>.
+     * This method returns {@code true} for <i>contextual
+     * keywords</i>.
      *
      * @param name the string to check
      * @param version the version to use
@@ -402,8 +414,8 @@ public enum SourceVersion {
     /**
      * Returns whether or not {@code s} is a keyword, boolean literal,
      * or null literal in the latest source version.
-     * This method returns {@code false} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>.
+     * This method returns {@code false} for <i>contextual
+     * keywords</i>.
      *
      * @param s the string to check
      * @return {@code true} if {@code s} is a keyword, or boolean
@@ -419,8 +431,8 @@ public enum SourceVersion {
     /**
      * Returns whether or not {@code s} is a keyword, boolean literal,
      * or null literal in the given source version.
-     * This method returns {@code false} for <i>restricted
-     * keywords</i> and <i>restricted identifiers</i>.
+     * This method returns {@code false} for <i>contextual
+     * keywords</i>.
      *
      * @param s the string to check
      * @param version the version to use
@@ -490,6 +502,60 @@ public enum SourceVersion {
 
         default:
             return false;
+        }
+    }
+
+    /**
+     * {@return the latest source version that is usable under the
+     * runtime version argument} If the runtime version's {@linkplain
+     * Runtime.Version#feature() feature} is greater than the feature
+     * of the {@linkplain #runtimeVersion() runtime version} of the
+     * {@linkplain #latest() latest source version}, an {@code
+     * IllegalArgumentException} is thrown.
+     *
+     * <p>Because the source versions of the Java programming language
+     * have so far followed a linear progression, only the feature
+     * component of a runtime version is queried to determine the
+     * mapping to a source version. If that linearity changes in the
+     * future, other components of the runtime version may influence
+     * the result.
+     *
+     * @apiNote
+     * An expression to convert from a string value, for example
+     * {@code "17"}, to the corresponding source version, {@code
+     * RELEASE_17}, is:
+     *
+     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     *
+     * @param rv runtime version to map to a source version
+     * @throws IllegalArgumentException if the feature of version
+     * argument is greater than the feature of the platform version.
+     * @since 18
+     */
+    public static SourceVersion valueOf(Runtime.Version rv) {
+        // Could also implement this as a switch where a case was
+        // added with each new release.
+        return valueOf("RELEASE_" + rv.feature());
+    }
+
+    /**
+     * {@return the least runtime version that supports this source
+     * version; otherwise {@code null}} The returned runtime version
+     * has a {@linkplain Runtime.Version#feature() feature} large
+     * enough to support this source version and has no other elements
+     * set.
+     *
+     * Source versions greater than or equal to {@link RELEASE_6}
+     * have non-{@code null} results.
+     * @since 18
+     */
+    public Runtime.Version runtimeVersion() {
+        // The javax.lang.model API was added in JDK 6; for now,
+        // limiting supported range to 6 and up.
+        if (this.compareTo(RELEASE_6) >= 0) {
+            return Runtime.Version.parse(Integer.toString(ordinal()));
+        } else {
+            return null;
         }
     }
 }

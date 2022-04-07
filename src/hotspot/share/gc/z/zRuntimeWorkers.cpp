@@ -30,7 +30,7 @@
 #include "gc/z/zThread.hpp"
 #include "runtime/java.hpp"
 
-class ZRuntimeWorkersInitializeTask : public AbstractGangTask {
+class ZRuntimeWorkersInitializeTask : public WorkerTask {
 private:
   const uint     _nworkers;
   uint           _started;
@@ -38,7 +38,7 @@ private:
 
 public:
   ZRuntimeWorkersInitializeTask(uint nworkers) :
-      AbstractGangTask("ZRuntimeWorkersInitializeTask"),
+      WorkerTask("ZRuntimeWorkersInitializeTask"),
       _nworkers(nworkers),
       _started(0),
       _lock() {}
@@ -61,22 +61,22 @@ ZRuntimeWorkers::ZRuntimeWorkers() :
     _workers("RuntimeWorker",
              ParallelGCThreads) {
 
-  log_info_p(gc, init)("Runtime Workers: %u", _workers.total_workers());
+  log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
 
   // Initialize worker threads
   _workers.initialize_workers();
-  _workers.update_active_workers(_workers.total_workers());
-  if (_workers.active_workers() != _workers.total_workers()) {
+  _workers.set_active_workers(_workers.max_workers());
+  if (_workers.active_workers() != _workers.max_workers()) {
     vm_exit_during_initialization("Failed to create ZRuntimeWorkers");
   }
 
   // Execute task to reduce latency in early safepoints,
   // which otherwise would have to take on any warmup costs.
-  ZRuntimeWorkersInitializeTask task(_workers.total_workers());
+  ZRuntimeWorkersInitializeTask task(_workers.max_workers());
   _workers.run_task(&task);
 }
 
-WorkGang* ZRuntimeWorkers::workers() {
+WorkerThreads* ZRuntimeWorkers::workers() {
   return &_workers;
 }
 

@@ -69,7 +69,7 @@ public class CacertsLimit {
                 throw new Exception(
                         "There are too many trusted CAs in cacerts. The " +
                         "certificate_authorities extension cannot be used " +
-                        "for TLS connections.  Please rethink about the size" +
+                        "for TLS connections.  Please rethink about the size " +
                         "of the cacerts, or have a release note for the " +
                         "impacted behaviors");
             } else if (sizeAccount > 0x4000) {

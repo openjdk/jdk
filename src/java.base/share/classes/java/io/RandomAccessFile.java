@@ -553,6 +553,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
     public void write(byte[] b, int off, int len) throws IOException {
         writeBytes(b, off, len);

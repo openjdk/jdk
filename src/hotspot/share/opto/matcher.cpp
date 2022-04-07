@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method(PHASE_BEFORE_MATCHING);
+  C->print_method(PHASE_BEFORE_MATCHING, 1);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.
@@ -434,6 +434,24 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
+const int Matcher::scalable_predicate_reg_slots() {
+  assert(Matcher::has_predicated_vectors() && Matcher::supports_scalable_vector(),
+        "scalable predicate vector should be supported");
+  int vector_reg_bit_size = Matcher::scalable_vector_reg_size(T_BYTE) << LogBitsPerByte;
+  // We assume each predicate register is one-eighth of the size of
+  // scalable vector register, one mask bit per vector byte.
+  int predicate_reg_bit_size = vector_reg_bit_size >> 3;
+  // Compute number of slots which is required when scalable predicate
+  // register is spilled. E.g. if scalable vector register is 640 bits,
+  // predicate register is 80 bits, which is 2.5 * slots.
+  // We will round up the slot number to power of 2, which is required
+  // by find_first_set().
+  int slots = predicate_reg_bit_size & (BitsPerInt - 1)
+              ? (predicate_reg_bit_size >> LogBitsPerInt) + 1
+              : predicate_reg_bit_size >> LogBitsPerInt;
+  return round_up_power_of_2(slots);
+}
+
 #define NOF_STACK_MASKS (3*13)
 
 // Create the initial stack mask used by values spilling to the stack.
@@ -542,6 +560,8 @@ void Matcher::init_first_stack_mask() {
   if (Matcher::has_predicated_vectors()) {
     *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
      idealreg2spillmask[Op_RegVectMask]->OR(aligned_stack_mask);
+  } else {
+    *idealreg2spillmask[Op_RegVectMask] = RegMask::Empty;
   }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
@@ -614,6 +634,21 @@ void Matcher::init_first_stack_mask() {
   if (Matcher::supports_scalable_vector()) {
     int k = 1;
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
+    if (Matcher::has_predicated_vectors()) {
+      // Exclude last input arg stack slots to avoid spilling vector register there,
+      // otherwise RegVectMask spills could stomp over stack slots in caller frame.
+      for (; (in >= init_in) && (k < scalable_predicate_reg_slots()); k++) {
+        scalable_stack_mask.Remove(in);
+        in = OptoReg::add(in, -1);
+      }
+
+      // For RegVectMask
+      scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
+      assert(scalable_stack_mask.is_AllStack(), "should be infinite stack");
+      *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
+      idealreg2spillmask[Op_RegVectMask]->OR(scalable_stack_mask);
+    }
+
     // Exclude last input arg stack slots to avoid spilling vector register there,
     // otherwise vector spills could stomp over stack slots in caller frame.
     for (; (in >= init_in) && (k < scalable_vector_reg_size(T_FLOAT)); k++) {
@@ -1031,7 +1066,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
     case Op_StrInflatedCopy:
@@ -2217,7 +2252,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
@@ -2228,6 +2263,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_MacroLogicV:
     case Op_LoadVectorMasked:
     case Op_VectorCmpMasked:
+    case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2273,6 +2309,29 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
 }
 
 void Matcher::find_shared_post_visit(Node* n, uint opcode) {
+  if (n->is_predicated_vector()) {
+    // Restructure into binary trees for Matching.
+    if (n->req() == 4) {
+      n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
+      n->set_req(2, n->in(3));
+      n->del_req(3);
+    } else if (n->req() == 5) {
+      n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
+      n->set_req(2, new BinaryNode(n->in(3), n->in(4)));
+      n->del_req(4);
+      n->del_req(3);
+    } else if (n->req() == 6) {
+      Node* b3 = new BinaryNode(n->in(4), n->in(5));
+      Node* b2 = new BinaryNode(n->in(3), b3);
+      Node* b1 = new BinaryNode(n->in(2), b2);
+      n->set_req(2, b1);
+      n->del_req(5);
+      n->del_req(4);
+      n->del_req(3);
+    }
+    return;
+  }
+
   switch(opcode) {       // Handle some opcodes special
     case Op_StorePConditional:
     case Op_StoreIConditional:
@@ -2412,8 +2471,18 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_LoadVectorGatherMasked:
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
+      n->set_req(MemNode::ValueIn, pair);
+      n->del_req(MemNode::ValueIn+1);
+      break;
+    }
+    case Op_StoreVectorScatterMasked: {
+      Node* pair = new BinaryNode(n->in(MemNode::ValueIn+1), n->in(MemNode::ValueIn+2));
+      n->set_req(MemNode::ValueIn+1, pair);
+      n->del_req(MemNode::ValueIn+2);
+      pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);
       n->del_req(MemNode::ValueIn+1);
       break;

@@ -188,8 +188,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
 
         final PopupFactory popupFactory = PopupFactory.getSharedInstance();
-        if (popupFactory != null && popupFactory instanceof ScreenPopupFactory) {
-            ((ScreenPopupFactory)popupFactory).setActive(false);
+        if (popupFactory instanceof ScreenPopupFactory spf) {
+            spf.setActive(false);
         }
 
         super.uninitialize();

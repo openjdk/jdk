@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,7 +660,7 @@
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
   volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
-  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         long)                                  \
+  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         int64_t)                               \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
                                                                                                                                      \
@@ -704,7 +704,6 @@
   nonstatic_field(ThreadShadow,                _pending_exception,                            oop)                                   \
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
-  nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
@@ -717,8 +716,6 @@
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
-  nonstatic_field(JavaThread,                  _async_exception_condition,                    JavaThread::AsyncExceptionCondition)   \
-  nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
@@ -729,6 +726,7 @@
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
+  nonstatic_field(JavaThread,                  _active_handles,                               JNIHandleBlock*)                       \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
@@ -825,7 +823,6 @@
   nonstatic_field(ciMethodData,                _arg_local,                                    intx)                                  \
   nonstatic_field(ciMethodData,                _arg_stack,                                    intx)                                  \
   nonstatic_field(ciMethodData,                _arg_returned,                                 intx)                                  \
-  nonstatic_field(ciMethodData,                _current_mileage,                              int)                                   \
   nonstatic_field(ciMethodData,                _orig,                                         MethodData::CompilerCounters)          \
                                                                                                                                      \
   nonstatic_field(ciField,                     _holder,                                       ciInstanceKlass*)                      \
@@ -886,10 +883,14 @@
   c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
   c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
   c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
-  c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
-  c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
-  c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
+  c2_nonstatic_field(Compile,                  _options,                                      const Options)                         \
   c2_nonstatic_field(Compile,                  _ilt,                                          InlineTree*)                           \
+                                                                                                                                     \
+  c2_nonstatic_field(Options,                  _subsume_loads,                                const bool)                            \
+  c2_nonstatic_field(Options,                  _do_escape_analysis,                           const bool)                            \
+  c2_nonstatic_field(Options,                  _eliminate_boxing,                             const bool)                            \
+  c2_nonstatic_field(Options,                  _do_locks_coarsening,                          const bool)                            \
+  c2_nonstatic_field(Options,                  _install_code,                                 const bool)                            \
                                                                                                                                      \
   c2_nonstatic_field(InlineTree,               _caller_jvms,                                  JVMState*)                             \
   c2_nonstatic_field(InlineTree,               _method,                                       ciMethod*)                             \
@@ -1197,6 +1198,7 @@
   declare_integer_type(ssize_t)                                           \
   declare_integer_type(intx)                                              \
   declare_integer_type(intptr_t)                                          \
+  declare_integer_type(int64_t)                                           \
   declare_unsigned_integer_type(uintx)                                    \
   declare_unsigned_integer_type(uintptr_t)                                \
   declare_unsigned_integer_type(uint8_t)                                  \
@@ -1442,6 +1444,7 @@
                                                                           \
   declare_c2_toplevel_type(Matcher)                                       \
   declare_c2_toplevel_type(Compile)                                       \
+  declare_c2_toplevel_type(Options)                                       \
   declare_c2_toplevel_type(InlineTree)                                    \
   declare_c2_toplevel_type(OptoRegPair)                                   \
   declare_c2_toplevel_type(JVMState)                                      \
@@ -1554,7 +1557,6 @@
   declare_c2_type(ConvL2INode, Node)                                      \
   declare_c2_type(CastX2PNode, Node)                                      \
   declare_c2_type(CastP2XNode, Node)                                      \
-  declare_c2_type(SetVectMaskINode, Node)                                 \
   declare_c2_type(MemBarNode, MultiNode)                                  \
   declare_c2_type(MemBarAcquireNode, MemBarNode)                          \
   declare_c2_type(MemBarReleaseNode, MemBarNode)                          \
@@ -1671,6 +1673,7 @@
   declare_c2_type(MulFNode, MulNode)                                      \
   declare_c2_type(MulDNode, MulNode)                                      \
   declare_c2_type(MulHiLNode, Node)                                       \
+  declare_c2_type(UMulHiLNode, Node)                                      \
   declare_c2_type(AndINode, MulINode)                                     \
   declare_c2_type(AndLNode, MulLNode)                                     \
   declare_c2_type(LShiftINode, Node)                                      \
@@ -1752,9 +1755,11 @@
   declare_c2_type(MulVFNode, VectorNode)                                  \
   declare_c2_type(MulReductionVFNode, ReductionNode)                      \
   declare_c2_type(MulVDNode, VectorNode)                                  \
-  declare_c2_type(NegVINode, VectorNode)                                  \
-  declare_c2_type(NegVFNode, VectorNode)                                  \
-  declare_c2_type(NegVDNode, VectorNode)                                  \
+  declare_c2_type(NegVNode, VectorNode)                                   \
+  declare_c2_type(NegVINode, NegVNode)                                    \
+  declare_c2_type(NegVLNode, NegVNode)                                    \
+  declare_c2_type(NegVFNode, NegVNode)                                    \
+  declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
   declare_c2_type(CMoveVFNode, VectorNode)                                \
@@ -1763,6 +1768,7 @@
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
   declare_c2_type(PopCountVINode, VectorNode)                             \
+  declare_c2_type(PopCountVLNode, VectorNode)                             \
   declare_c2_type(LShiftVBNode, VectorNode)                               \
   declare_c2_type(LShiftVSNode, VectorNode)                               \
   declare_c2_type(LShiftVINode, VectorNode)                               \
@@ -1841,10 +1847,17 @@
   declare_c2_type(VectorCastL2XNode, VectorNode)                          \
   declare_c2_type(VectorCastF2XNode, VectorNode)                          \
   declare_c2_type(VectorCastD2XNode, VectorNode)                          \
+  declare_c2_type(VectorUCastB2XNode, VectorNode)                         \
+  declare_c2_type(VectorUCastS2XNode, VectorNode)                         \
+  declare_c2_type(VectorUCastI2XNode, VectorNode)                         \
   declare_c2_type(VectorInsertNode, VectorNode)                           \
   declare_c2_type(VectorUnboxNode, VectorNode)                            \
   declare_c2_type(VectorReinterpretNode, VectorNode)                      \
   declare_c2_type(VectorMaskCastNode, VectorNode)                         \
+  declare_c2_type(MaskAllNode, VectorNode)                                \
+  declare_c2_type(AndVMaskNode, VectorNode)                               \
+  declare_c2_type(OrVMaskNode, VectorNode)                                \
+  declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
   declare_c2_type(VectorTestNode, Node)                                   \
@@ -1951,7 +1964,6 @@
   declare_toplevel_type(JavaThread*)                                      \
   declare_toplevel_type(JavaThread *const *const)                         \
   declare_toplevel_type(java_lang_Class)                                  \
-  declare_integer_type(JavaThread::AsyncExceptionCondition)               \
   declare_integer_type(JavaThread::TerminatedTypes)                       \
   declare_toplevel_type(jbyte*)                                           \
   declare_toplevel_type(jbyte**)                                          \
@@ -2106,12 +2118,6 @@
   declare_constant(JVM_CONSTANT_MethodTypeInError)                        \
   declare_constant(JVM_CONSTANT_DynamicInError)                           \
   declare_constant(JVM_CONSTANT_InternalMax)                              \
-                                                                          \
-  /*****************************/                                         \
-  /* Thread::SuspendFlags enum */                                         \
-  /*****************************/                                         \
-                                                                          \
-  declare_constant(JavaThread::_has_async_exception)                      \
                                                                           \
   /*******************/                                                   \
   /* JavaThreadState */                                                   \

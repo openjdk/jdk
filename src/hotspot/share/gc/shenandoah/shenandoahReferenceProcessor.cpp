@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -337,7 +338,6 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   // Add reference to discovered list
-  assert(worker_id != ShenandoahThreadLocalData::INVALID_WORKER_ID, "need valid worker ID");
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
   if (discovered_head == NULL) {
@@ -361,7 +361,7 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
   }
 
   log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
-  uint worker_id = ShenandoahThreadLocalData::worker_id(Thread::current());
+  uint worker_id = WorkerThread::worker_id();
   _ref_proc_thread_locals->inc_encountered(type);
 
   if (UseCompressedOops) {
@@ -453,18 +453,18 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
 void ShenandoahReferenceProcessor::work() {
   // Process discovered references
   uint max_workers = ShenandoahHeap::heap()->max_workers();
-  uint worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
+  uint worker_id = Atomic::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
   while (worker_id < max_workers) {
     if (UseCompressedOops) {
       process_references<narrowOop>(_ref_proc_thread_locals[worker_id], worker_id);
     } else {
       process_references<oop>(_ref_proc_thread_locals[worker_id], worker_id);
     }
-    worker_id = Atomic::add(&_iterate_discovered_list_id, 1U) - 1;
+    worker_id = Atomic::add(&_iterate_discovered_list_id, 1U, memory_order_relaxed) - 1;
   }
 }
 
-class ShenandoahReferenceProcessorTask : public AbstractGangTask {
+class ShenandoahReferenceProcessorTask : public WorkerTask {
 private:
   bool const                          _concurrent;
   ShenandoahPhaseTimings::Phase const _phase;
@@ -472,7 +472,7 @@ private:
 
 public:
   ShenandoahReferenceProcessorTask(ShenandoahPhaseTimings::Phase phase, bool concurrent, ShenandoahReferenceProcessor* reference_processor) :
-    AbstractGangTask("ShenandoahReferenceProcessorTask"),
+    WorkerTask("ShenandoahReferenceProcessorTask"),
     _concurrent(concurrent),
     _phase(phase),
     _reference_processor(reference_processor) {
@@ -491,7 +491,7 @@ public:
   }
 };
 
-void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent) {
+void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent) {
 
   Atomic::release_store_fence(&_iterate_discovered_list_id, 0U);
 

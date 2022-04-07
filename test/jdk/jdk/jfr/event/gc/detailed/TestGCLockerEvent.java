@@ -26,6 +26,7 @@
  * @test TestGCLockerEvent
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.gc.G1
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

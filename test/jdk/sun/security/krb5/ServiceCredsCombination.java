@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
  * @summary default principal can act as anyone
  */
 
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -122,10 +122,10 @@ public class ServiceCredsCombination {
         }
         final GSSManager man = GSSManager.getInstance();
         try {
-            String result = Subject.doAs(
-                    subj, new PrivilegedExceptionAction<String>() {
+            String result = Subject.callAs(
+                    subj, new Callable<String>() {
                 @Override
-                public String run() throws GSSException {
+                public String call() throws GSSException {
                     GSSCredential cred = man.createCredential(
                             a == null ? null : man.createName(r(a), null),
                             GSSCredential.INDEFINITE_LIFETIME,
@@ -139,7 +139,7 @@ public class ServiceCredsCombination {
                 throw new Exception("Check failed: getInstance(" + a
                         + ") has name " + result + ", not " + b);
             }
-        } catch (PrivilegedActionException e) {
+        } catch (CompletionException e) {
             if (!"NOCRED".equals(b)) {
                 throw new Exception("Check failed: getInstance(" + a
                         + ") is null " + ", but not one with name " + b);

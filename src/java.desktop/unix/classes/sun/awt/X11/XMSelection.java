@@ -318,9 +318,7 @@ public class  XMSelection {
             log.fine("Selection Changed : Screen = " + screen + "Event =" + ev);
         }
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
+            for (XMSelectionListener disp : listeners) {
                 disp.selectionChanged(screen, this, ev.get_window(), ev);
             }
         }
@@ -331,11 +329,8 @@ public class  XMSelection {
             log.fine("Owner dead : Screen = " + screen + "Event =" + de);
         }
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
+            for (XMSelectionListener disp : listeners) {
                 disp.ownerDeath(screen, this, de.get_window());
-
             }
         }
     }
@@ -357,10 +352,8 @@ public class  XMSelection {
 
     synchronized void dispatchOwnerChangedEvent(XEvent ev, int screen, long owner, long data, long timestamp) {
         if (listeners != null) {
-            Iterator<XMSelectionListener> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                XMSelectionListener disp = iter.next();
-                disp.ownerChanged(screen,this, owner, data, timestamp);
+            for (XMSelectionListener disp : listeners) {
+                disp.ownerChanged(screen, this, owner, data, timestamp);
             }
         }
     }
