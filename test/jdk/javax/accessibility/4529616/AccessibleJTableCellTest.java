@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @bug 4529616
- * @summary AccessibleJTableCell.isShowing() returns false 
+ * @summary AccessibleJTableCell.isShowing() returns false
  * when the cell is actually on the screen.
  * @run main AccessibleJTableCellTest
  */
@@ -72,7 +72,7 @@ public class AccessibleJTableCellTest {
         SwingUtilities.invokeAndWait(() -> isShowing
             .set(jTable.getAccessibleContext().getAccessibleChild(i)
                 .getAccessibleContext().getAccessibleComponent().isShowing()));
-        
+
         return isShowing.get();
     }
 
