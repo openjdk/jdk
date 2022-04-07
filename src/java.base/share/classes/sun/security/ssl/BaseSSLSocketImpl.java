@@ -63,7 +63,6 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
         this.consumedInput = null;
     }
 
-
     BaseSSLSocketImpl(Socket socket) {
         super();
         this.self = socket;
