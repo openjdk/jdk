@@ -29,6 +29,7 @@
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;
+import java.awt.print.PrinterException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
@@ -46,6 +47,7 @@ import javax.swing.WindowConstants;
 public class PrintAllPagesTest {
     static JFrame f;
     static JDialog dialog;
+    static JTable table;
     static boolean testResult = false;
     static CountDownLatch latch = new CountDownLatch(1);
 
@@ -55,7 +57,16 @@ public class PrintAllPagesTest {
             SwingUtilities.invokeAndWait(() -> {
                 createUI();
                 printAllPagesTest();
-           });
+            });
+
+            Thread.sleep(1000);
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    table.print();
+                } catch (PrinterException e) {
+                    throw new RuntimeException("Printing failed: " + e);
+                }
+            });
 
             // wait for latch to complete
             boolean ret = false;
@@ -101,7 +112,7 @@ public class PrintAllPagesTest {
                 return Integer.valueOf(0 == col ? row + 1 : row * col);
             }
         };
-        JTable table = new JTable(dataModel);
+        table = new JTable(dataModel);
         JScrollPane scrollpane = new JScrollPane(table);
         table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));
 
@@ -111,9 +122,6 @@ public class PrintAllPagesTest {
         f.setLocationRelativeTo(null);
         f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.setVisible(true);
-        try {
-            table.print();
-        } catch (Exception e) {}
     }
 
     private static void createUI() {
