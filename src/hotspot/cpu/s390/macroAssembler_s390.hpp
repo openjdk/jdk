@@ -248,8 +248,9 @@ class MacroAssembler: public Assembler {
   // Crypto instructions.
   // Being interruptible, these instructions need a retry-loop.
   void cksm(Register crcBuff, Register srcBuff);
-  void km( Register dstBuff, Register srcBuff);
-  void kmc(Register dstBuff, Register srcBuff);
+  void km(   Register dstBuff, Register srcBuff);
+  void kmc(  Register dstBuff, Register srcBuff);
+  void kmctr(Register dstBuff, Register ctrBuff, Register srcBuff);
   void kimd(Register srcBuff);
   void klmd(Register srcBuff);
   void kmac(Register srcBuff);
