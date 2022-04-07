@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,26 +504,24 @@ public class CommentUtils {
     }
 
     /**
-     * Returns a list containing the string for a given key in the doclet's resources,
-     * formatted with given arguments.
+     * {@return a list containing the string for a given key in the doclet's
+     * resources, formatted with given arguments}
      *
      * @param key the key for the desired string
-     * @param o0  string or tree argument to be formatted into the result
-     * @return a content tree for the text
+     * @param o0  string or DocTree argument to be formatted into the result
      */
     public List<? extends DocTree> getComment(String key, Object o0) {
         return getComment(key, o0, null, null);
     }
 
     /**
-     * Returns a list containing the string for a given key in the doclet's resources,
-     * formatted with given arguments.
+     * {@return a list containing the string for a given key in the doclet's
+     * resources, formatted with given arguments}
      *
-     * @param key the key for the desired string
-     * @param o0  string or tree argument to be formatted into the result
-     * @param o1  string or tree argument to be formatted into the result
-     * @param o2  string or tree argument to be formatted into the result
-     * @return a content tree for the text
+     * @param key the key for the desired strings
+     * @param o0  string or a DocTree argument to be formatted into the result
+     * @param o1  string or a DocTree argument to be formatted into the result
+     * @param o2  string or a DocTree argument to be formatted into the result
      */
     public List<? extends DocTree> getComment(String key, Object o0, Object o1, Object o2) {
         List<DocTree> l = new ArrayList<>();

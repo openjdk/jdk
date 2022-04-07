@@ -158,7 +158,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="any">{@code .}</th>
  *     <td headers="matches predef any">Any character (may or may not match <a href="#lt">line terminators</a>)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="digit">{@code \d}</th>
- *     <td headers="matches predef digit">A digit: {@code [0-9]}</td></tr>
+ *     <td headers="matches predef digit">A digit: {@code [0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
+ *  *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_digit">{@code \D}</th>
  *     <td headers="matches predef non_digit">A non-digit: {@code [^0-9]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="horiz_white">{@code \h}</th>
@@ -167,7 +168,9 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_horiz_white">{@code \H}</th>
  *     <td headers="matches predef non_horiz_white">A non-horizontal whitespace character: {@code [^\h]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="white">{@code \s}</th>
- *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]}</td></tr>
+ *     <td headers="matches predef white">A whitespace character: {@code [ \t\n\x0B\f\r]} if
+ *     <a href="#UNICODE_CHARACTER_CLASS"> UNICODE_CHARACTER_CLASS</a> is not set. See
+ *     <a href="#unicodesupport">Unicode Support</a>.</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_white">{@code \S}</th>
  *     <td headers="matches predef non_white">A non-whitespace character: {@code [^\s]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="vert_white">{@code \v}</th>
@@ -176,7 +179,8 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_vert_white">{@code \V}</th>
  *     <td headers="matches predef non_vert_white">A non-vertical whitespace character: {@code [^\v]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word">{@code \w}</th>
- *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]}</td></tr>
+ *     <td headers="matches predef word">A word character: {@code [a-zA-Z_0-9]} if <a href="#UNICODE_CHARACTER_CLASS">
+ *         UNICODE_CHARACTER_CLASS</a> is not set. See <a href="#unicodesupport">Unicode Support</a>. </td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word">{@code \W}</th>
  *     <td headers="matches predef non_word">A non-word character: {@code [^\w]}</td></tr>
  *
@@ -246,11 +250,12 @@ import jdk.internal.util.ArraysSupport;
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_line">{@code $}</th>
  *     <td headers="matches bounds end_line">The end of a line</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="word_boundary">{@code \b}</th>
- *     <td headers="matches bounds word_boundary">A word boundary</td></tr>
+ *     <td headers="matches bounds word_boundary">A word boundary: {@code (?:(?<=\w)(?=\W)|(?<=\W)(?=\w))} (the location
+ *     where a non-word character abuts a word character)</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="grapheme_cluster_boundary">{@code \b{g}}</th>
  *     <td headers="matches bounds grapheme_cluster_boundary">A Unicode extended grapheme cluster boundary</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="non_word_boundary">{@code \B}</th>
- *     <td headers="matches bounds non_word_boundary">A non-word boundary</td></tr>
+ *     <td headers="matches bounds non_word_boundary">A non-word boundary: {@code [^\b]}</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="begin_input">{@code \A}</th>
  *     <td headers="matches bounds begin_input">The beginning of the input</td></tr>
  * <tr><th style="vertical-align:top; font-weight:normal" id="end_prev_match">{@code \G}</th>
@@ -535,7 +540,7 @@ import jdk.internal.util.ArraysSupport;
  * that do not capture text and do not count towards the group total, or
  * <i>named-capturing</i> group.
  *
- * <h2> Unicode support </h2>
+ * <h2 id="unicodesupport"> Unicode support </h2>
  *
  * <p> This class is in conformance with Level 1 of <a
  * href="http://www.unicode.org/reports/tr18/"><i>Unicode Technical
@@ -4005,8 +4010,9 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 if (j < matcher.to)
                     return false;
+            } else {
+                matcher.hitEnd = true;
             }
-            matcher.hitEnd = true;
             return false;
         }
 
@@ -5376,7 +5382,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
 
         boolean isWord(int ch) {
             return useUWORD ? CharPredicates.WORD().is(ch)
-                            : (ch == '_' || Character.isLetterOrDigit(ch));
+                            : CharPredicates.ASCII_WORD().is(ch);
         }
 
         int check(Matcher matcher, int i, CharSequence seq) {

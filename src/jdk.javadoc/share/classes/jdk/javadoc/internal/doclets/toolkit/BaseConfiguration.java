@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ public abstract class BaseConfiguration {
     protected static final String sharedResourceBundleName =
             "jdk.javadoc.internal.doclets.toolkit.resources.doclets";
 
-    VisibleMemberCache visibleMemberCache = null;
+    private VisibleMemberCache visibleMemberCache;
 
     public PropertyUtils propertyUtils = null;
 
@@ -347,7 +347,7 @@ public abstract class BaseConfiguration {
         }
 
         // add entries for modules which may not have exported packages
-        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Collections.emptySet()));
+        modules.forEach(mdle -> modulePackages.computeIfAbsent(mdle, m -> Set.of()));
 
         modules.addAll(modulePackages.keySet());
         showModules = !modules.isEmpty();
@@ -709,7 +709,7 @@ public abstract class BaseConfiguration {
         return getOptions().allowScriptInComments();
     }
 
-    public synchronized VisibleMemberTable getVisibleMemberTable(TypeElement te) {
+    public VisibleMemberTable getVisibleMemberTable(TypeElement te) {
         return visibleMemberCache.getVisibleMemberTable(te);
     }
 

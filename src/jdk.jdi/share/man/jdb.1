@@ -1,4 +1,4 @@
-.\" Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -230,14 +230,24 @@ Runs the application in the Java HotSpot VM server.
 .RE
 .TP
 .B \f[CB]\-J\f[R]\f[I]option\f[R]
-Passes \f[I]option\f[R] to the JVM, where option is one of the options
-described on the reference page for the Java application launcher.
+Passes \f[I]option\f[R] to the JDB JVM, where option is one of the
+options described on the reference page for the Java application
+launcher.
 For example, \f[CB]\-J\-Xms48m\f[R] sets the startup memory to 48 MB.
 See \f[I]Overview of Java Options\f[R] in \f[B]java\f[R].
 .RS
 .RE
 .PP
 The following options are forwarded to the debuggee process:
+.TP
+.B \f[CB]\-R\f[R]\f[I]option\f[R]
+Passes \f[I]option\f[R] to the debuggee JVM, where option is one of the
+options described on the reference page for the Java application
+launcher.
+For example, \f[CB]\-R\-Xms48m\f[R] sets the startup memory to 48 MB.
+See \f[I]Overview of Java Options\f[R] in \f[B]java\f[R].
+.RS
+.RE
 .TP
 .B \f[CB]\-v\f[R] or \f[CB]\-verbose\f[R][\f[CB]:\f[R]\f[I]class\f[R]|\f[CB]gc\f[R]|\f[CB]jni\f[R]]
 Turns on the verbose mode.

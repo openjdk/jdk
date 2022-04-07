@@ -110,21 +110,28 @@ classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
     jvmtiError error;
     jvmtiEnv* env = trackingEnv;
 
-    if (gdata && gdata->assertOn) {
-        // Check this is not already tagged.
-        jlong tag;
-        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(env, klass, &tag);
-        if (error != JVMTI_ERROR_NONE) {
-            EXIT_ERROR(error, "Unable to GetTag with class trackingEnv");
-        }
-        JDI_ASSERT(tag == NOT_TAGGED);
-    }
-
     char* signature;
     error = classSignature(klass, &signature, NULL);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"signature");
     }
+
+    if (gdata && gdata->assertOn) {
+        // Check if already tagged.
+        jlong tag;
+        error = JVMTI_FUNC_PTR(trackingEnv, GetTag)(env, klass, &tag);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error, "Unable to GetTag with class trackingEnv");
+        }
+        if (tag != NOT_TAGGED) {
+            // If tagged, the old tag better be the same as the new.
+            char* oldSignature = (char*)jlong_to_ptr(tag);
+            JDI_ASSERT(strcmp(signature, oldSignature) == 0);
+            jvmtiDeallocate(signature);
+            return;
+        }
+    }
+
     error = JVMTI_FUNC_PTR(trackingEnv, SetTag)(env, klass, ptr_to_jlong(signature));
     if (error != JVMTI_ERROR_NONE) {
         jvmtiDeallocate(signature);

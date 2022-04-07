@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,11 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds all the system properties to the content tree.
+     * Adds all the system properties to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addSystemProperties(Content content) {
+    protected void addSystemProperties(Content target) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = Text.of(", ");
         Table table = new Table(HtmlStyle.summaryTable)
@@ -141,7 +141,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
             }
             table.addRow(propertyName, HtmlTree.DIV(HtmlStyle.block, separatedReferenceLinks));
         }
-        content.add(table);
+        target.add(table);
     }
 
     private Map<String, List<IndexItem>> groupSystemProperties() {

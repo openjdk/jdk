@@ -51,6 +51,7 @@
 <li><a href="#atomic">&lt;atomic&gt;</a></li>
 <li><a href="#uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#local-function-objects">Local Function Objects</a></li>
+<li><a href="#inheriting-constructors">Inheriting constructors</a></li>
 <li><a href="#additional-permitted-features">Additional Permitted Features</a></li>
 <li><a href="#excluded-features">Excluded Features</a></li>
 <li><a href="#undecided-features">Undecided Features</a></li>
@@ -68,7 +69,7 @@
 <p>Many of the guidelines mentioned here have (sometimes widespread) counterexamples in the HotSpot code base. Finding a counterexample is not sufficient justification for new code to follow the counterexample as a precedent, since readers of your code will rightfully expect your code to follow the greater bulk of precedents documented here.</p>
 <p>Occasionally a guideline mentioned here may be just out of synch with the actual HotSpot code base. If you find that a guideline is consistently contradicted by a large number of counterexamples, please bring it up for discussion and possible change. The architectural rule, of course, is &quot;When in Rome do as the Romans&quot;. Sometimes in the suburbs of Rome the rules are a little different; these differences can be pointed out here.</p>
 <p>Proposed changes should be discussed on the <a href="mailto:hotspot-dev@openjdk.java.net">HotSpot Developers</a> mailing list. Changes are likely to be cautious and incremental, since HotSpot coders have been using these guidelines for years.</p>
-<p>Substantive changes are approved by <a href="https://en.wikipedia.org/wiki/Rough_consensus">rough consensus</a> of the <a href="https://openjdk.java.net/census#hotspot">HotSpot Group</a> Members. The Group Lead determines whether consensus has been reached.</p>
+<p>Substantive changes are approved by <a href="https://www.rfc-editor.org/rfc/rfc7282.html">rough consensus</a> of the <a href="https://openjdk.java.net/census#hotspot">HotSpot Group</a> Members. The Group Lead determines whether consensus has been reached.</p>
 <p>Editorial changes (changes that only affect the description of HotSpot style, not its substance) do not require the full consensus gathering process. The normal HotSpot pull request process may be used for editorial changes, with the additional requirement that the requisite reviewers are also HotSpot Group Members.</p>
 <h2 id="structure-and-formatting">Structure and Formatting</h2>
 <h3 id="factoring-and-class-design">Factoring and Class Design</h3>
@@ -153,7 +154,7 @@
 <h3 id="whitespace">Whitespace</h3>
 <ul>
 <li><p>In general, don't change whitespace unless it improves readability or consistency. Gratuitous whitespace changes will make integrations and backports more difficult.</p></li>
-<li><p>Use One-True-Brace-Style. The opening brace for a function or class is normally at the end of the line; it is sometimes moved to the beginning of the next line for emphasis. Substatements are enclosed in braces, even if there is only a single statement. Extremely simple one-line statements may drop braces around a substatement.</p></li>
+<li><p>Use <a href="https://en.wikipedia.org/wiki/Indentation_style#Variant:_1TBS_(OTBS)">One-True-Brace-Style</a>. The opening brace for a function or class is normally at the end of the line; it is sometimes moved to the beginning of the next line for emphasis. Substatements are enclosed in braces, even if there is only a single statement. Extremely simple one-line statements may drop braces around a substatement.</p></li>
 <li><p>Indentation levels are two columns.</p></li>
 <li><p>There is no hard line length limit. That said, bear in mind that excessively long lines can cause difficulties. Some people like to have multiple side-by-side windows in their editors, and long lines may force them to choose among unpleasant options. They can use wide windows, reducing the number that can fit across the screen, and wasting a lot of screen real estate because most lines are not that long. Alternatively, they can have more windows across the screen, with long lines wrapping (or worse, requiring scrolling to see in their entirety), which is harder to read. Similar issues exist for side-by-side code reviews.</p></li>
 <li><p>Tabs are not allowed in code. Set your editor accordingly.<br> (Emacs: <code>(setq-default indent-tabs-mode nil)</code>.)</p></li>
@@ -210,7 +211,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <p>Rationale: Other than to implement exceptions (which HotSpot doesn't use), most potential uses of <a href="https://en.wikipedia.org/wiki/Run-time_type_information" title="Runtime Type Information">RTTI</a> are better done via virtual functions. Some of the remainder can be replaced by bespoke mechanisms. The cost of the additional runtime data structures needed to support <a href="https://en.wikipedia.org/wiki/Run-time_type_information" title="Runtime Type Information">RTTI</a> are deemed not worthwhile, given the alternatives.</p>
 <h3 id="memory-allocation">Memory Allocation</h3>
 <p>Do not use the standard global allocation and deallocation functions (operator new and related functions). Use of these functions by HotSpot code is disabled for some platforms.</p>
-<p>Rationale: HotSpot often uses &quot;resource&quot; or &quot;arena&quot; allocation. Even where heap allocation is used, the standard global functions are avoided in favor of wrappers around malloc and free that support the VM's Native Memory Tracking (NMT) feature.</p>
+<p>Rationale: HotSpot often uses &quot;resource&quot; or &quot;arena&quot; allocation. Even where heap allocation is used, the standard global functions are avoided in favor of wrappers around malloc and free that support the VM's Native Memory Tracking (NMT) feature. Typically, uses of the global operator new are inadvertent and therefore often associated with memory leaks.</p>
 <p>Native memory allocation failures are often treated as non-recoverable. The place where &quot;out of memory&quot; is (first) detected may be an innocent bystander, unrelated to the actual culprit.</p>
 <h3 id="class-inheritance">Class Inheritance</h3>
 <p>Use public single inheritance.</p>
@@ -270,8 +271,8 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <p>The underlying type of a <em>scoped-enum</em> should also be specified explicitly if conversions may be applied to values of that type.</p>
 <p>Due to bugs in certain (very old) compilers, there is widespread use of enums and avoidance of in-class initialization of static integral constant members. Compilers having such bugs are no longer supported. Except where an enum is semantically appropriate, new code should use integral constants.</p>
 <h3 id="thread_local">thread_local</h3>
-<p>Do not use <code>thread_local</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>); instead, use the HotSpot macro <code>THREAD_LOCAL</code>. The initializer must be a constant expression.</p>
-<p>As was discussed in the review for <a href="https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html">JDK-8230877</a>, <code>thread_local</code> allows dynamic initialization and destruction semantics. However, that support requires a run-time penalty for references to non-function-local <code>thread_local</code> variables defined in a different translation unit, even if they don't need dynamic initialization. Dynamic initialization and destruction of namespace-scoped thread local variables also has the same ordering problems as for ordinary namespace-scoped variables.</p>
+<p>Avoid use of <code>thread_local</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>); and instead, use the HotSpot macro <code>THREAD_LOCAL</code>, for which the initializer must be a constant expression. When <code>thread_local</code> must be used, use the Hotspot macro <code>APPROVED_CPP_THREAD_LOCAL</code> to indicate that the use has been given appropriate consideration.</p>
+<p>As was discussed in the review for <a href="https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html">JDK-8230877</a>, <code>thread_local</code> allows dynamic initialization and destruction semantics. However, that support requires a run-time penalty for references to non-function-local <code>thread_local</code> variables defined in a different translation unit, even if they don't need dynamic initialization. Dynamic initialization and destruction of non-local <code>thread_local</code> variables also has the same ordering problems as for ordinary non-local variables. So we avoid use of <code>thread_local</code> in general, limiting its use to only those cases where dynamic initialization or destruction are essential. See <a href="https://bugs.openjdk.java.net/browse/JDK-8282469">JDK-8282469</a> for further discussion.</p>
 <h3 id="nullptr">nullptr</h3>
 <p>Prefer <code>nullptr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf">n2431</a>) to <code>NULL</code>. Don't use (constexpr or literal) 0 for pointers.</p>
 <p>For historical reasons there are widespread uses of both <code>NULL</code> and of integer 0 as a pointer value.</p>
@@ -405,6 +406,10 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <ul>
 <li>Make () more optional for lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html">p1102r2</a>)</li>
 </ul>
+<h3 id="inheriting-constructors">Inheriting constructors</h3>
+<p>Do not use <em>inheriting constructors</em> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm">n2540</a>).</p>
+<p>C++11 provides simple syntax allowing a class to inherit the constructors of a base class. Unfortunately there are a number of problems with the original specification, and C++17 contains significant revisions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html" title="p0136r1">p0136r1</a> opens with a list of 8 Core Issues). Since HotSpot doesn't support use of C++17, use of inherited constructors could run into those problems. Such uses might also change behavior in a future HotSpot update to use C++17 or later, potentially in subtle ways that could lead to hard to diagnose problems. Because of this, HotSpot code must not use inherited constructors.</p>
+<p>Note that gcc7 provides the <code>-fnew-inheriting-ctors</code> option to use the <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html" title="p0136r1">p0136r1</a> semantics. This is enabled by default when using C++17 or later. It is also enabled by default for <code>fabi-version=11</code> (introduced by gcc7) or higher when using C++11/14, as the change is considered a Defect Report that applies to those versions. Earlier versions of gcc don't have that option, and other supported compilers may not have anything similar.</p>
 <h3 id="additional-permitted-features">Additional Permitted Features</h3>
 <ul>
 <li><p><code>constexpr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>) (<a href="https://isocpp.org/files/papers/N3652.html">n3652</a>)</p></li>
@@ -423,6 +428,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p><code>final</code> virtual specifiers for classes and virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p><code>override</code> virtual specifiers for virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p>Range-based <code>for</code> loops (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html">n2930</a>) (<a href="https://en.cppreference.com/w/cpp/language/range-for">range-for</a>)</p></li>
+<li><p>Unrestricted Unions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf">n2544</a>)</p></li>
 </ul>
 <h3 id="excluded-features">Excluded Features</h3>
 <ul>
@@ -438,7 +444,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p>Inline namespaces (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2535.htm">n2535</a>) — HotSpot makes very limited use of namespaces.</p></li>
 <li><p><code>using namespace</code> directives. In particular, don't use <code>using namespace std;</code> to avoid needing to qualify Standard Library names.</p></li>
 <li><p>Propagating exceptions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html">n2179</a>) — HotSpot does not permit the use of exceptions, so this feature isn't useful.</p></li>
-<li><p>Avoid namespace-scoped variables with non-constexpr initialization. In particular, avoid variables with types requiring non-trivial initialization or destruction. Initialization order problems can be difficult to deal with and lead to surprises, as can destruction ordering. HotSpot doesn't generally try to cleanup on exit, and running destructors at exit can also lead to problems.</p></li>
+<li><p>Avoid non-local variables with non-constexpr initialization. In particular, avoid variables with types requiring non-trivial initialization or destruction. Initialization order problems can be difficult to deal with and lead to surprises, as can destruction ordering. HotSpot doesn't generally try to cleanup on exit, and running destructors at exit can also lead to problems.</p></li>
 <li><p><code>[[deprecated]]</code> attribute (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3760.html">n3760</a>) — Not relevant in HotSpot code.</p></li>
 <li><p>Avoid most operator overloading, preferring named functions. When operator overloading is used, ensure the semantics conform to the normal expected behavior of the operation.</p></li>
 <li><p>Avoid most implicit conversion constructors and (implicit or explicit) conversion operators. (Note that conversion to <code>bool</code> isn't needed in HotSpot code because of the &quot;no implicit boolean&quot; guideline.)</p></li>

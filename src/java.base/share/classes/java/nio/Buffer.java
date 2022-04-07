@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,9 @@ import java.util.Spliterator;
  * @since 1.4
  */
 
-public abstract class Buffer {
+public abstract sealed class Buffer
+    permits ByteBuffer, CharBuffer, DoubleBuffer, FloatBuffer, IntBuffer,
+        LongBuffer, ShortBuffer {
     // Cached unsafe-access object
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
