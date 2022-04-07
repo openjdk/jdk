@@ -22,29 +22,40 @@
  */
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.Timer;
 
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 public class PassFailJFrame {
+
     private final static CountDownLatch latch = new CountDownLatch(1);
-    private static boolean failed = false;
-    private static String testFailedReason;
-    private static JTextArea instructionsText;
-    private final int maxRowLength;
-    private final int maxStringLength;
-    private final int timeoutMinutes;
+    private static volatile boolean failed = false;
+    private static volatile boolean timeout = false;
+    private static volatile String testFailedReason;
     private static JFrame frame;
+    private static final List<Frame> frameList = new ArrayList<>();
+    private static final Timer timer = new Timer(0, null);
+
+    public enum POSITION {HORIZONTAL, VERTICAL}
 
     /**
      * Constructs a JFrame with a given title & serves as test instructional
@@ -54,101 +65,156 @@ public class PassFailJFrame {
      * on the 'Fail' button and the reason for the failure should be
      * specified in the JDialog JTextArea.
      *
-     * @param title           title of the Frame.
-     * @param instructions    specified instruction that user should follow.
-     * @param maxRowLength    number of visible rows of the JTextArea where the
-     *                        instruction is show.
-     * @param maxStringLength number of columns of the instructional JTextArea
-     * @param timeoutMinutes  timeout of the test where time is specified in
-     *                        minutes.
-     * @throws HeadlessException
-     * @throws InterruptedException
-     * @throws InvocationTargetException
+     * @param title                title of the Frame.
+     * @param instructions         specified instruction that user should follow.
+     * @param rows                 number of visible rows of the JTextArea where the
+     *                             instruction is show.
+     * @param columns              Number of columns of the instructional
+     *                             JTextArea
+     * @param testTimeOutInMinutes timeout of the test where time is specified in
+     *                             minutes.
+     * @throws HeadlessException         HeadlessException
+     * @throws InterruptedException      exception thrown for invokeAndWait
+     * @throws InvocationTargetException exception thrown for invokeAndWait
      */
     public PassFailJFrame(String title, String instructions,
-                          int maxRowLength, int maxStringLength,
-                          int timeoutMinutes) throws HeadlessException,
+                          int rows, int columns,
+                          int testTimeOutInMinutes) throws HeadlessException,
             InterruptedException, InvocationTargetException {
-        this.maxRowLength = maxRowLength;
-        this.maxStringLength = maxStringLength;
-        this.timeoutMinutes = timeoutMinutes;
 
         if (isEventDispatchThread()) {
-            createUI(title, instructions, maxRowLength, maxStringLength, timeoutMinutes);
+            createUI(title, instructions, rows, columns, testTimeOutInMinutes);
         } else {
-            invokeAndWait(() -> {
-                createUI(title, instructions, maxRowLength, maxStringLength, timeoutMinutes);
-            });
+            invokeAndWait(() -> createUI(title, instructions, rows, columns,
+                    testTimeOutInMinutes));
         }
     }
 
     private static void createUI(String title, String instructions,
-                                 int maxRowLength, int maxStringLength,
-                                 int timeoutMinutes) {
+                                 int rows, int columns,
+                                 int timeoutInMinutes) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
-        instructionsText = new JTextArea(instructions, maxRowLength, maxStringLength);
+        JTextArea instructionsText = new JTextArea(instructions, rows, columns);
         instructionsText.setEditable(false);
-        instructionsText.setFocusable(false);
-        frame.add(instructionsText, BorderLayout.NORTH);
+        instructionsText.setLineWrap(true);
+
+        int testTimeout = (int) TimeUnit.MINUTES.toMillis(timeoutInMinutes);
+
+        final JLabel testTimeoutLabel = new JLabel(String.format("Test " +
+                "timeout: %s", convertMillisToTimeStr(testTimeout)), JLabel.CENTER);
+        final long startTime = System.currentTimeMillis();
+        timer.setDelay(1000);
+        timer.addActionListener((e) -> {
+            int leftTime = testTimeout - (int) (System.currentTimeMillis() - startTime);
+            if ((leftTime < 0) || failed) {
+                timer.stop();
+                testFailedReason = "Failure Reason:\n Timeout " +
+                        "User did not perform testing.";
+                timeout = true;
+                latch.countDown();
+            }
+            testTimeoutLabel.setText(String.format("Test timeout: %s", convertMillisToTimeStr(leftTime)));
+        });
+        timer.start();
+        frame.add(testTimeoutLabel, BorderLayout.NORTH);
+        frame.add(new JScrollPane(instructionsText), BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
-        btnPass.addActionListener((e) -> latch.countDown());
+        btnPass.addActionListener((e) -> {
+            latch.countDown();
+            timer.stop();
+        });
 
         JButton btnFail = new JButton("Fail");
-        btnFail.addActionListener((e) -> getFailureReason());
+        btnFail.addActionListener((e) -> {
+            getFailureReason();
+            timer.stop();
+        });
 
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                super.windowClosing(e);
+                testFailedReason = "Failure Reason:\n User closed the " +
+                        "instruction Frame";
+                failed = true;
+                latch.countDown();
+            }
+        });
+
         frame.add(buttonsPanel, BorderLayout.SOUTH);
         frame.pack();
-        frame.setLocation(10, 10);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
+        frameList.add(frame);
+    }
+
+    private static String convertMillisToTimeStr(long millis) {
+        if (millis < 0) {
+            return "00:00:00";
+        }
+        long hours = millis / 3600000;
+        long minutes = (millis - hours * 3600000) / 60000;
+        long seconds = (millis - hours * 3600000 - minutes * 60000) / 1000;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     /**
      * Wait for the user decision i,e user selects pass or fail button.
      * If user does not select pass or fail button then the test waits for
      * the specified timeoutMinutes period and the test gets timeout.
+     * Note: This method should be called from main() thread
      *
-     * @throws InterruptedException
-     * @throws InvocationTargetException
+     * @throws InterruptedException      exception thrown for invokeAndWait
+     * @throws InvocationTargetException exception thrown for invokeAndWait
      */
     public void awaitAndCheck() throws InterruptedException, InvocationTargetException {
-        boolean timeoutHappened = !latch.await(this.timeoutMinutes,
-                TimeUnit.MINUTES);
+        latch.await();
         if (isEventDispatchThread()) {
-            disposePassFailJFrame();
-        } else invokeAndWait(() -> disposePassFailJFrame());
+            disposeFrames();
+        } else invokeAndWait(PassFailJFrame::disposeFrames);
 
-        if (timeoutHappened) {
-            throw new RuntimeException("Test timed out!");
+        if (timeout) {
+            throw new RuntimeException(testFailedReason);
         }
+
         if (failed) {
             throw new RuntimeException("Test failed! : " + testFailedReason);
         }
+
+        System.out.println("Test passed!");
     }
 
-    public static void disposePassFailJFrame() {
-        if (frame != null) {
-            frame.dispose();
+    /**
+     * Dispose all the frame(s) i,e both the test instruction frame as
+     * well as the frame that is added via addTestFrame(Frame frame)
+     */
+    private static void disposeFrames() {
+        for (Frame f : frameList) {
+            f.dispose();
         }
     }
 
+    /**
+     * Read the test failure reason and add the reason to the test result
+     * example in the jtreg .jtr file.
+     */
     public static void getFailureReason() {
-        final JDialog dialog = new JDialog();
+        final JDialog dialog = new JDialog(frame, "Test Failure ", true);
         dialog.setTitle("Failure reason");
         JPanel jPanel = new JPanel(new BorderLayout());
         JTextArea jTextArea = new JTextArea(5, 20);
 
-        JButton okButton = new JButton("Ok");
+        JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            testFailedReason = jTextArea.getText();
-            failed = true;
-            dialog.dispose();
-            latch.countDown();
+            testFailedReason = "Failure Reason:\n" + jTextArea.getText();
+            dialog.setVisible(false);
         });
 
         jPanel.add(new JScrollPane(jTextArea), BorderLayout.CENTER);
@@ -158,9 +224,61 @@ public class PassFailJFrame {
 
         jPanel.add(okayBtnPanel, BorderLayout.SOUTH);
         dialog.add(jPanel);
-        dialog.setLocationRelativeTo(null);
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                super.windowClosing(e);
+                testFailedReason = "User closed the " +
+                        "dialog";
+            }
+        });
+
+        dialog.setLocationRelativeTo(frame);
         dialog.pack();
         dialog.setVisible(true);
+
+        failed = true;
+        dialog.dispose();
+        latch.countDown();
+    }
+
+    /**
+     * Position the instruction frame with testFrame ( testcase created
+     * frame) by the specified position
+     * Note: This method should be invoked from the method that creates
+     * testFrame
+     *
+     * @param testFrame test frame that the test is created
+     * @param position  position can be either HORIZONTAL (both test
+     *                  instruction frame and test frame as arranged side by
+     *                  side or VERTICAL ( both test instruction frame and
+     *                  test frame as arranged up and down)
+     */
+    public static void positionTestFrame(Frame testFrame, POSITION position) {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        if (position.equals(POSITION.HORIZONTAL)) {
+            int newX = ((screenSize.width / 2) - frame.getWidth());
+            frame.setLocation(newX, frame.getY());
+
+            testFrame.setLocation((frame.getLocation().x + frame.getWidth() + 5), frame.getY());
+        } else if (position.equals(POSITION.VERTICAL)) {
+            int newY = ((screenSize.height / 2) - frame.getHeight());
+            frame.setLocation(frame.getX(), newY);
+
+            testFrame.setLocation(frame.getX(),
+                    (frame.getLocation().y + frame.getHeight() + 5));
+        }
+    }
+
+    /**
+     * Add the testFrame to the frameList so that test instruction frame
+     * and testFrame and any other frame used in this test is disposed
+     * via disposeFrames()
+     *
+     * @param testFrame testFrame that needs to be disposed
+     */
+    public synchronized static void addTestFrame(Frame testFrame) {
+        frameList.add(testFrame);
     }
 }
 

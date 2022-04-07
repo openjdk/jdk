@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8022536
  * @library ../../regtesthelpers
@@ -30,6 +30,7 @@
  * @run main/manual PrintLatinCJKTest
  */
 
+import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.print.PageFormat;
@@ -70,18 +71,16 @@ public class PrintLatinCJKTest implements Printable {
                     ex.printStackTrace();
                 }
             });
-            frame.add("South", b);
+            frame.getContentPane().add(b, BorderLayout.SOUTH);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-        });
-    }
 
-    private static void disposeTestFrame() throws InterruptedException, InvocationTargetException {
-        invokeAndWait(() -> {
-            if (frame != null) {
-                frame.dispose();
-            }
+            // add the test frame to dispose
+            PassFailJFrame.addTestFrame(frame);
+
+            // Arrange the test instruction frame and test frame side by side
+            PassFailJFrame.positionTestFrame(frame, PassFailJFrame.POSITION.HORIZONTAL);
         });
     }
 
@@ -99,10 +98,9 @@ public class PrintLatinCJKTest implements Printable {
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
-                "Frame", info, 7, 30, 3);
-        PrintLatinCJKTest.showFrame();
+                "Frame", info, 10, 40, 5);
+        showFrame();
         passFailJFrame.awaitAndCheck();
-        PrintLatinCJKTest.disposeTestFrame();
     }
 }
 
