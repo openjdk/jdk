@@ -894,6 +894,19 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v2
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -903,8 +916,6 @@ jobs:
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
@@ -982,6 +993,19 @@ jobs:
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v2
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -991,8 +1015,6 @@ jobs:
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
@@ -1153,6 +1175,19 @@ jobs:
           Get-ChildItem "$HOME\bootjdk\$env:BOOT_JDK_VERSION\*\*" | Move-Item -Destination "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v2
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -1162,8 +1197,6 @@ jobs:
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
