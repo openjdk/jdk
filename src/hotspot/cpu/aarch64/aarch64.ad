@@ -1279,12 +1279,12 @@ class HandlerImpl {
   static int emit_deopt_handler(CodeBuffer& cbuf);
 
   static uint size_exception_handler() {
-    return MacroAssembler::far_branch_size();
+    return MacroAssembler::far_codestub_branch_size();
   }
 
   static uint size_deopt_handler() {
     // count one adr and one far branch instruction
-    return 4 * NativeInstruction::instruction_size;
+    return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
   }
 };
 
@@ -2398,7 +2398,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   __ adr(lr, __ pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
   return offset;
 }

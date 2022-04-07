@@ -126,7 +126,7 @@ static jobject sAccessibilityClass = NULL;
     /*
      * Here we should keep all the mapping between the accessibility roles and implementing classes
      */
-    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:51];
+    rolesMap = [[NSMutableDictionary alloc] initWithCapacity:50];
 
     [rolesMap setObject:@"ButtonAccessibility" forKey:@"pushbutton"];
     [rolesMap setObject:@"ImageAccessibility" forKey:@"icon"];
@@ -158,7 +158,6 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:@"TableAccessibility" forKey:@"table"];
     [rolesMap setObject:@"MenuBarAccessibility" forKey:@"menubar"];
     [rolesMap setObject:@"MenuAccessibility" forKey:@"menu"];
-    [rolesMap setObject:@"MenuItemAccessibility" forKey:@"menuitem"];
     [rolesMap setObject:@"MenuAccessibility" forKey:@"popupmenu"];
     [rolesMap setObject:@"ProgressIndicatorAccessibility" forKey:@"progressbar"];
 
@@ -186,7 +185,8 @@ static jobject sAccessibilityClass = NULL;
     [rolesMap setObject:IgnoreClassName forKey:@"viewport"];
     [rolesMap setObject:IgnoreClassName forKey:@"window"];
 
-    rowRolesMapForParent = [[NSMutableDictionary alloc] initWithCapacity:2];
+    rowRolesMapForParent = [[NSMutableDictionary alloc] initWithCapacity:3];
+    [rowRolesMapForParent setObject:@"MenuItemAccessibility" forKey:@"MenuAccessibility"];
 
     [rowRolesMapForParent setObject:@"ListRowAccessibility" forKey:@"ListAccessibility"];
     [rowRolesMapForParent setObject:@"OutlineRowAccessibility" forKey:@"OutlineAccessibility"];
