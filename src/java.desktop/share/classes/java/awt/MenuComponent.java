@@ -176,7 +176,7 @@ public abstract class MenuComponent implements java.io.Serializable {
 
     /**
      * Creates a {@code MenuComponent}.
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *    {@code GraphicsEnvironment.isHeadless}
      *    returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless

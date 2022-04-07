@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree.analysis;
 
 import java.util.List;
@@ -297,3 +298,4 @@ public abstract class Interpreter<V extends Value> {
       */
     public abstract V merge(V value1, V value2);
 }
+

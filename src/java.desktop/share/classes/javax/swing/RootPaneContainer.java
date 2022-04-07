@@ -103,7 +103,7 @@ public interface RootPaneContainer
      * Generally implemented with
      * <code>getRootPane().setContentPane(contentPane);</code>
      *
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *            exception) if the content pane parameter is null
      * @param contentPane the Container to use for the contents of this
      *        JRootPane
@@ -134,7 +134,7 @@ public interface RootPaneContainer
      *    getRootPane().setLayeredPane(layeredPane);</pre>
      *
      * @param layeredPane the layered pane
-     * @exception java.awt.IllegalComponentStateException (a runtime
+     * @throws java.awt.IllegalComponentStateException (a runtime
      *            exception) if the layered pane parameter is null
      * @see #getLayeredPane
      * @see JRootPane#getLayeredPane

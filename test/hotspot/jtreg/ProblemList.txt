@@ -94,7 +94,6 @@ gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 # :hotspot_runtime
 
 runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
-runtime/cds/DeterministicDump.java 8253495 generic-all
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
@@ -106,7 +105,7 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
-containers/docker/TestJcmd.java 8278102 linux-aarch64
+containers/docker/TestJcmd.java 8278102 linux-all
 
 #############################################################################
 
