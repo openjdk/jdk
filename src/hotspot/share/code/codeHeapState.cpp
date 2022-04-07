@@ -763,9 +763,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
           if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
             ResourceMark rm;
             Method* method = nm->method();
-            if (nm->is_not_entrant()) {
-              blob_name = os::strdup(method->name_and_sig_as_C_string());
-            } else if (nm->is_in_use()) {
+            if (nm->is_in_use() || nm->is_not_entrant()) {
               blob_name = os::strdup(method->name_and_sig_as_C_string());
             }
 
