@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_BITSET_HPP
-#define SHARE_UTILITIES_BITSET_HPP
+#ifndef SHARE_UTILITIES_OBJECTBITSET_HPP
+#define SHARE_UTILITIES_OBJECTBITSET_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
@@ -34,7 +34,7 @@
 class MemRegion;
 
 template<MEMFLAGS F>
-class BitSet : public CHeapObj<F> {
+class ObjectBitSet : public CHeapObj<F> {
   const static size_t _bitmap_granularity_shift = 26; // 64M
   const static size_t _bitmap_granularity_size = (size_t)1 << _bitmap_granularity_shift;
   const static size_t _bitmap_granularity_mask = _bitmap_granularity_size - 1;
@@ -80,8 +80,8 @@ class BitSet : public CHeapObj<F> {
   uintptr_t _last_fragment_granule;
 
  public:
-  BitSet();
-  ~BitSet();
+  ObjectBitSet();
+  ~ObjectBitSet();
 
   BitMap::idx_t addr_to_bit(uintptr_t addr) const;
 
@@ -99,7 +99,7 @@ class BitSet : public CHeapObj<F> {
 };
 
 template<MEMFLAGS F>
-class BitSet<F>::BitMapFragment : public CHeapObj<F> {
+class ObjectBitSet<F>::BitMapFragment : public CHeapObj<F> {
   CHeapBitMap _bits;
   BitMapFragment* _next;
 
@@ -115,4 +115,4 @@ public:
   }
 };
 
-#endif // SHARE_UTILITIES_BITSET_HPP
+#endif // SHARE_UTILITIES_OBJECTBITSET_HPP

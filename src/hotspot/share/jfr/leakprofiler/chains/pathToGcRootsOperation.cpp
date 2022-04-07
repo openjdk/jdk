@@ -45,7 +45,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "utilities/bitset.inline.hpp"
+#include "utilities/objectBitSet.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs) :
@@ -84,7 +84,7 @@ void PathToGcRootsOperation::doit() {
   assert(_cutoff_ticks > 0, "invariant");
 
   // The bitset used for marking is dimensioned as a function of the heap size
-  BitSet<mtTracing> mark_bits;
+  ObjectBitSet<mtTracing> mark_bits;
 
   // The edge queue is dimensioned as a fraction of the heap size
   const size_t edge_queue_reservation_size = edge_queue_memory_reservation();

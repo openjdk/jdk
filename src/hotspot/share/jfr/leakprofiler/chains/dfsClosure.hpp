@@ -28,11 +28,11 @@
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
 
-template<MEMFLAGS F>
-class BitSet;
 class Edge;
 class EdgeStore;
 class EdgeQueue;
+template<MEMFLAGS F>
+class ObjectBitSet;
 
 // Class responsible for iterating the heap depth-first
 class DFSClosure : public BasicOopIterateClosure {
@@ -42,13 +42,13 @@ class DFSClosure : public BasicOopIterateClosure {
   static UnifiedOopRef _reference_stack[max_dfs_depth];
 
   EdgeStore* _edge_store;
-  BitSet<mtTracing>* _mark_bits;
+  ObjectBitSet<mtTracing>* _mark_bits;
   const Edge*_start_edge;
   size_t _max_depth;
   size_t _depth;
   bool _ignore_root_set;
 
-  DFSClosure(EdgeStore* edge_store, BitSet<mtTracing>* mark_bits, const Edge* start_edge);
+  DFSClosure(EdgeStore* edge_store, ObjectBitSet<mtTracing>* mark_bits, const Edge* start_edge);
 
   void add_chain();
   void closure_impl(UnifiedOopRef reference, const oop pointee);
@@ -56,8 +56,8 @@ class DFSClosure : public BasicOopIterateClosure {
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
 
-  static void find_leaks_from_edge(EdgeStore* edge_store, BitSet<mtTracing>* mark_bits, const Edge* start_edge);
-  static void find_leaks_from_root_set(EdgeStore* edge_store, BitSet<mtTracing>* mark_bits);
+  static void find_leaks_from_edge(EdgeStore* edge_store, ObjectBitSet<mtTracing>* mark_bits, const Edge* start_edge);
+  static void find_leaks_from_root_set(EdgeStore* edge_store, ObjectBitSet<mtTracing>* mark_bits);
   void do_root(UnifiedOopRef ref);
 
   virtual void do_oop(oop* ref);

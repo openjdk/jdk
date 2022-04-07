@@ -35,12 +35,12 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
-#include "utilities/bitset.inline.hpp"
+#include "utilities/objectBitSet.inline.hpp"
 
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
-                                      BitSet<mtTracing>* mark_bits,
+                                      ObjectBitSet<mtTracing>* mark_bits,
                                       const Edge* start_edge) {
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL," invariant");
@@ -52,7 +52,7 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
-                                          BitSet<mtTracing>* mark_bits) {
+                                          ObjectBitSet<mtTracing>* mark_bits) {
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL, "invariant");
 
@@ -68,7 +68,7 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
 }
 
-DFSClosure::DFSClosure(EdgeStore* edge_store, BitSet<mtTracing>* mark_bits, const Edge* start_edge)
+DFSClosure::DFSClosure(EdgeStore* edge_store, ObjectBitSet<mtTracing>* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
 }

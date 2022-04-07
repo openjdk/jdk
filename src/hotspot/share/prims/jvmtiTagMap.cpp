@@ -65,7 +65,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "utilities/bitset.inline.hpp"
+#include "utilities/objectBitSet.inline.hpp"
 #include "utilities/macros.hpp"
 
 bool JvmtiTagMap::_has_object_free_events = false;
@@ -1337,11 +1337,11 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
 // ObjectMarker's done() function to restore object headers.
 class ObjectMarker : public StackObj {
 private:
-  static BitSet<mtServiceability>* _bitset;
+  static ObjectBitSet<mtServiceability>* _bitset;
 public:
   ObjectMarker() {
     assert(_bitset == NULL, "don't initialize bitset twice");
-    _bitset = new BitSet<mtServiceability>();
+    _bitset = new ObjectBitSet<mtServiceability>();
   }
 
   ~ObjectMarker() {
@@ -1361,7 +1361,7 @@ public:
   }
 };
 
-BitSet<mtServiceability>* ObjectMarker::_bitset = NULL;
+ObjectBitSet<mtServiceability>* ObjectMarker::_bitset = NULL;
 
 // helper to map a jvmtiHeapReferenceKind to an old style jvmtiHeapRootKind
 // (not performance critical as only used for roots)

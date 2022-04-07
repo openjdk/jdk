@@ -22,23 +22,23 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_BITSET_INLINE_HPP
-#define SHARE_UTILITIES_BITSET_INLINE_HPP
+#ifndef SHARE_UTILITIES_OBJECTBITSET_INLINE_HPP
+#define SHARE_UTILITIES_OBJECTBITSET_INLINE_HPP
 
-#include "utilities/bitset.hpp"
+#include "utilities/objectBitSet.hpp"
 
 #include "memory/memRegion.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 template<MEMFLAGS F>
-BitSet<F>::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
+ObjectBitSet<F>::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
         _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, F, true /* clear */),
         _next(next) {
 }
 
 template<MEMFLAGS F>
-BitSet<F>::BitSet() :
+ObjectBitSet<F>::ObjectBitSet() :
         _bitmap_fragments(32),
         _fragment_list(NULL),
         _last_fragment_bits(NULL),
@@ -46,7 +46,7 @@ BitSet<F>::BitSet() :
 }
 
 template<MEMFLAGS F>
-BitSet<F>::~BitSet() {
+ObjectBitSet<F>::~ObjectBitSet() {
   BitMapFragment* current = _fragment_list;
   while (current != NULL) {
     BitMapFragment* next = current->next();
@@ -56,14 +56,14 @@ BitSet<F>::~BitSet() {
 }
 
 template<MEMFLAGS F>
-inline typename BitSet<F>::BitMapFragmentTable::Entry* BitSet<F>::BitMapFragmentTable::bucket(int i) const {
+inline typename ObjectBitSet<F>::BitMapFragmentTable::Entry* ObjectBitSet<F>::BitMapFragmentTable::bucket(int i) const {
   return (Entry*)BasicHashtable<F>::bucket(i);
 }
 
 template<MEMFLAGS F>
-inline typename BitSet<F>::BitMapFragmentTable::Entry* BitSet<F>::BitMapFragmentTable::new_entry(unsigned int hash,
-                                                                                                 uintptr_t key,
-                                                                                                 CHeapBitMap* value) {
+inline typename ObjectBitSet<F>::BitMapFragmentTable::Entry*
+  ObjectBitSet<F>::BitMapFragmentTable::new_entry(unsigned int hash, uintptr_t key, CHeapBitMap* value) {
+
   Entry* entry = (Entry*)BasicHashtable<F>::new_entry(hash);
   entry->_key = key;
   entry->_value = value;
@@ -71,14 +71,14 @@ inline typename BitSet<F>::BitMapFragmentTable::Entry* BitSet<F>::BitMapFragment
 }
 
 template<MEMFLAGS F>
-inline void BitSet<F>::BitMapFragmentTable::add(uintptr_t key, CHeapBitMap* value) {
+inline void ObjectBitSet<F>::BitMapFragmentTable::add(uintptr_t key, CHeapBitMap* value) {
   unsigned hash = hash_segment(key);
   Entry* entry = new_entry(hash, key, value);
   BasicHashtable<F>::add_entry(hash_to_index(hash), entry);
 }
 
 template<MEMFLAGS F>
-inline CHeapBitMap** BitSet<F>::BitMapFragmentTable::lookup(uintptr_t key) {
+inline CHeapBitMap** ObjectBitSet<F>::BitMapFragmentTable::lookup(uintptr_t key) {
   unsigned hash = hash_segment(key);
   int index = hash_to_index(hash);
   for (Entry* e = bucket(index); e != NULL; e = e->next()) {
@@ -90,12 +90,12 @@ inline CHeapBitMap** BitSet<F>::BitMapFragmentTable::lookup(uintptr_t key) {
 }
 
 template<MEMFLAGS F>
-inline BitMap::idx_t BitSet<F>::addr_to_bit(uintptr_t addr) const {
+inline BitMap::idx_t ObjectBitSet<F>::addr_to_bit(uintptr_t addr) const {
   return (addr & _bitmap_granularity_mask) >> LogMinObjAlignmentInBytes;
 }
 
 template<MEMFLAGS F>
-inline CHeapBitMap* BitSet<F>::get_fragment_bits(uintptr_t addr) {
+inline CHeapBitMap* ObjectBitSet<F>::get_fragment_bits(uintptr_t addr) {
   uintptr_t granule = addr >> _bitmap_granularity_shift;
   if (granule == _last_fragment_granule) {
     return _last_fragment_bits;
@@ -122,17 +122,17 @@ inline CHeapBitMap* BitSet<F>::get_fragment_bits(uintptr_t addr) {
 }
 
 template<MEMFLAGS F>
-inline void BitSet<F>::mark_obj(uintptr_t addr) {
+inline void ObjectBitSet<F>::mark_obj(uintptr_t addr) {
   CHeapBitMap* bits = get_fragment_bits(addr);
   const BitMap::idx_t bit = addr_to_bit(addr);
   bits->set_bit(bit);
 }
 
 template<MEMFLAGS F>
-inline bool BitSet<F>::is_marked(uintptr_t addr) {
+inline bool ObjectBitSet<F>::is_marked(uintptr_t addr) {
   CHeapBitMap* bits = get_fragment_bits(addr);
   const BitMap::idx_t bit = addr_to_bit(addr);
   return bits->at(bit);
 }
 
-#endif // SHARE_UTILITIES_BITSET_INLINE_HPP
+#endif // SHARE_UTILITIES_OBJECTBITSET_INLINE_HPP
