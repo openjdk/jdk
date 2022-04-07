@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test
  * @key headful
  * @bug 4529616
- * @summary AccessibleJTableCell.isShowing() returns false when the cell on the screen
+ * @summary AccessibleJTableCell.isShowing() returns false 
+ * when the cell is actually on the screen.
  * @run main AccessibleJTableCellTest
  */
 
 import java.awt.Robot;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JFrame;
 import javax.swing.JTable;
@@ -39,25 +41,24 @@ public class AccessibleJTableCellTest {
     private static JTable jTable;
     private static JFrame jFrame;
 
-    private static Object[][] rowData = {
-        { "01", "02", "03", "04", "05" },
-        { "11", "12", "13", "14", "15" },
-        { "21", "22", "23", "24", "25" },
-        { "31", "32", "33", "34", "35" },
-        { "41", "42", "43", "44", "45" } };
+    private static Object[][] rowData = { { "01", "02", "03", "04", "05" },
+        { "11", "12", "13", "14", "15" }, { "21", "22", "23", "24", "25" },
+        { "31", "32", "33", "34", "35" }, { "41", "42", "43", "44", "45" } };
 
     private static Object[] colNames = { "1", "2", "3", "4", "5" };
 
     private static void doTest() throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> createGUI());
+
             Robot robot = new Robot();
             robot.setAutoDelay(500);
             robot.waitForIdle();
+
             for (int i = 0; i <= colNames.length - 1; i++) {
-                if (!jTable.getAccessibleContext().getAccessibleChild(i).getAccessibleContext()
-                    .getAccessibleComponent().isShowing()) {
-                    throw new RuntimeException("Assertion Failed: JTable accessible child " + i
+                if (!isJTableCellShowing(i)) {
+                    throw new RuntimeException(
+                        "Assertion Failed: JTable accessible child " + i
                         + " isShowing returns false");
                 }
             }
@@ -66,11 +67,21 @@ public class AccessibleJTableCellTest {
         }
     }
 
+    private static boolean isJTableCellShowing(int i) throws Exception {
+        AtomicBoolean isShowing = new AtomicBoolean();
+        SwingUtilities.invokeAndWait(() -> isShowing
+            .set(jTable.getAccessibleContext().getAccessibleChild(i)
+                .getAccessibleContext().getAccessibleComponent().isShowing()));
+        
+        return isShowing.get();
+    }
+
     private static void createGUI() {
         jTable = new JTable(rowData, colNames);
         jFrame = new JFrame();
         jFrame.setBounds(100, 100, 300, 300);
         jFrame.getContentPane().add(jTable);
+        jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
     }
 
@@ -79,4 +90,3 @@ public class AccessibleJTableCellTest {
         System.out.println("Test Passed");
     }
 }
-
