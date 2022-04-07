@@ -125,16 +125,18 @@ public class EtchedBorder extends AbstractBorder
 
     private void paintBorderRect(Graphics g, Color c, int w, int h, int stkWidth) {
         g.setColor(c);
-        g.drawRect(stkWidth/2, stkWidth/2, w-1-stkWidth, h-1-stkWidth);
+        g.drawRect(stkWidth/2, stkWidth/2, w-(2*stkWidth), h-(2*stkWidth));
     }
 
     private void paintBorderShadow(Graphics g, Color c, int w, int h, int stkWidth) {
         g.setColor(c);
-        g.drawLine(stkWidth, h-3, stkWidth, 1);
-        g.drawLine(1, stkWidth, w-3, stkWidth);
+        g.drawLine((3*stkWidth/2), h-(3*stkWidth/2), (3*stkWidth/2), (3*stkWidth/2)); // left line
+        g.drawLine((3*stkWidth/2), (3*stkWidth/2), w-(3*stkWidth/2), (3*stkWidth/2)); // top line
 
-        g.drawLine(0, h-stkWidth, w-1, h-stkWidth);
-        g.drawLine(w-stkWidth, h-1, w-stkWidth, 0);
+        g.drawLine(0, h-(stkWidth-stkWidth/2),
+                w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2)); // bottom line
+        g.drawLine(w-(stkWidth-stkWidth/2), h-(stkWidth-stkWidth/2),
+                w-(stkWidth-stkWidth/2), stkWidth/2); // right line
     }
 
     /**
@@ -162,18 +164,16 @@ public class EtchedBorder extends AbstractBorder
             ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
         }
 
-        int w = (int) (at.getScaleX()*width);
-        int h = (int) (at.getScaleY()*height);
+        int w = (int) Math.floor(at.getScaleX()*width-1);
+        int h = (int) Math.floor(at.getScaleY()*height-1);
 
-        g.translate((int) (at.getScaleX()*x+at.getTranslateX()),
-                (int) (at.getScaleY()*y+at.getTranslateY()));
+        g.translate((int) Math.ceil(at.getScaleX()*x+at.getTranslateX()),
+                (int) Math.ceil(at.getScaleY()*y+at.getTranslateY()));
 
-        // Drawing the border last prevents the shadow from overdrawing the border
         paintBorderShadow(g, (etchType == LOWERED) ? getHighlightColor(c)
                                                     : getShadowColor(c), w, h, stkWidth);
         paintBorderRect(g, (etchType == LOWERED) ? getShadowColor(c)
                                                     : getHighlightColor(c), w, h, stkWidth);
-
 
         g.translate(-((int) (at.getScaleX()*x+at.getTranslateX())),
                 -((int) (at.getScaleY()*y+at.getTranslateY())));
