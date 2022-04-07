@@ -2249,7 +2249,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   Handle _initial_object;
   GrowableArray<oop>* _visit_stack;                 // the visit stack
 
-  JVMTIBitSet* _bitset;
+  JVMTIBitSet _bitset;
 
   bool _following_object_refs;                      // are we following object references
 
@@ -2318,9 +2318,8 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _reporting_primitive_array_values = false;
   _reporting_string_values = false;
   _visit_stack = create_visit_stack();
-  _bitset = new ObjectBitSet<mtServiceability>();
 
-  CallbackInvoker::initialize_for_basic_heap_walk(tag_map, _visit_stack, user_data, callbacks, _bitset);
+  CallbackInvoker::initialize_for_basic_heap_walk(tag_map, _visit_stack, user_data, callbacks, &_bitset);
 }
 
 VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
@@ -2335,8 +2334,7 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != NULL);;
   _reporting_string_values = (callbacks.string_primitive_value_callback() != NULL);;
   _visit_stack = create_visit_stack();
-  _bitset = new ObjectBitSet<mtServiceability>();
-  CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, _visit_stack, user_data, callbacks, _bitset);
+  CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, _visit_stack, user_data, callbacks, &_bitset);
 }
 
 VM_HeapWalkOperation::~VM_HeapWalkOperation() {
@@ -2345,7 +2343,6 @@ VM_HeapWalkOperation::~VM_HeapWalkOperation() {
     delete _visit_stack;
     _visit_stack = NULL;
   }
-  delete _bitset;
 }
 
 // an array references its class and has a reference to
@@ -2773,8 +2770,8 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
 //
 bool VM_HeapWalkOperation::visit(oop o) {
   // mark object as visited
-  assert(!_bitset->is_marked(o), "can't visit same object more than once");
-  _bitset->mark_obj(o);
+  assert(!_bitset.is_marked(o), "can't visit same object more than once");
+  _bitset.mark_obj(o);
 
   // instance
   if (o->is_instance()) {
@@ -2827,7 +2824,7 @@ void VM_HeapWalkOperation::doit() {
     // visited or the callback asked to terminate the iteration.
     while (!visit_stack()->is_empty()) {
       oop o = visit_stack()->pop();
-      if (!_bitset->is_marked(o)) {
+      if (!_bitset.is_marked(o)) {
         if (!visit(o)) {
           break;
         }

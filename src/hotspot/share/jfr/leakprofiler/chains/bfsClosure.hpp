@@ -25,16 +25,13 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_BFSCLOSURE_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_BFSCLOSURE_HPP
 
+#include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
 #include "memory/iterator.hpp"
 
 class Edge;
 class EdgeStore;
 class EdgeQueue;
-template<MEMFLAGS F>
-class ObjectBitSet;
-
-typedef ObjectBitSet<mtTracing> JFRBitSet;
 
 // Class responsible for iterating the heap breadth-first
 class BFSClosure : public BasicOopIterateClosure {
