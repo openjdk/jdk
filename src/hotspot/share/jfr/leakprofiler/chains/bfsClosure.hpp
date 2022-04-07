@@ -34,12 +34,14 @@ class EdgeQueue;
 template<MEMFLAGS F>
 class ObjectBitSet;
 
+typedef ObjectBitSet<mtTracing> JFRBitSet;
+
 // Class responsible for iterating the heap breadth-first
 class BFSClosure : public BasicOopIterateClosure {
  private:
   EdgeQueue* _edge_queue;
   EdgeStore* _edge_store;
-  ObjectBitSet<mtTracing>* _mark_bits;
+  JFRBitSet* _mark_bits;
   const Edge* _current_parent;
   mutable size_t _current_frontier_level;
   mutable size_t _next_frontier_idx;
@@ -66,7 +68,7 @@ class BFSClosure : public BasicOopIterateClosure {
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }
 
-  BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, ObjectBitSet<mtTracing>* mark_bits);
+  BFSClosure(EdgeQueue* edge_queue, EdgeStore* edge_store, JFRBitSet* mark_bits);
   void process();
   void do_root(UnifiedOopRef ref);
 
