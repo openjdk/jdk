@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.annotation.Native;
@@ -1795,11 +1796,7 @@ public final class Integer extends Number
         for (int j = 0; j < 5; j++) {
             // Parallel prefix
             // Mask prefix identifies bits of the mask that have an odd number of 0's to the right
-            int maskPrefix = maskCount  ^ (maskCount  << 1);
-            maskPrefix = maskPrefix ^ (maskPrefix << 2);
-            maskPrefix = maskPrefix ^ (maskPrefix << 4);
-            maskPrefix = maskPrefix ^ (maskPrefix << 8);
-            maskPrefix = maskPrefix ^ (maskPrefix << 16);
+            int maskPrefix = parallelSuffix(maskCount);
             // Bits to move
             int maskMove = maskPrefix & mask;
             // Compress mask
@@ -1839,51 +1836,52 @@ public final class Integer extends Number
         int maskCount = ~mask << 1;
         int maskPrefix = parallelSuffix(maskCount);
         // Bits to move
-        int part1 = maskPrefix & mask;
+        int maskMove1 = maskPrefix & mask;
         // Compress mask
-        mask = (mask ^ part1) | (part1 >>> (1 << 0));
+        mask = (mask ^ maskMove1) | (maskMove1 >>> (1 << 0));
         maskCount = maskCount & ~maskPrefix;
 
         maskPrefix = parallelSuffix(maskCount);
         // Bits to move
-        int part2 = maskPrefix & mask;
+        int maskMove2 = maskPrefix & mask;
         // Compress mask
-        mask = (mask ^ part2) | (part2 >>> (1 << 1));
+        mask = (mask ^ maskMove2) | (maskMove2 >>> (1 << 1));
         maskCount = maskCount & ~maskPrefix;
 
         maskPrefix = parallelSuffix(maskCount);
         // Bits to move
-        int part3 = maskPrefix & mask;
+        int maskMove3 = maskPrefix & mask;
         // Compress mask
-        mask = (mask ^ part3) | (part3 >>> (1 << 2));
+        mask = (mask ^ maskMove3) | (maskMove3 >>> (1 << 2));
         maskCount = maskCount & ~maskPrefix;
 
         maskPrefix = parallelSuffix(maskCount);
         // Bits to move
-        int part4 = maskPrefix & mask;
+        int maskMove4 = maskPrefix & mask;
         // Compress mask
-        mask = (mask ^ part4) | (part4 >>> (1 << 3));
+        mask = (mask ^ maskMove4) | (maskMove4 >>> (1 << 3));
         maskCount = maskCount & ~maskPrefix;
 
         maskPrefix = parallelSuffix(maskCount);
         // Bits to move
-        int part5 = maskPrefix & mask;
+        int maskMove5 = maskPrefix & mask;
 
         int t = i << (1 << 4);
-        i = (i & ~part5) | (t & part5);
+        i = (i & ~maskMove5) | (t & maskMove5);
         t = i << (1 << 3);
-        i = (i & ~part4) | (t & part4);
+        i = (i & ~maskMove4) | (t & maskMove4);
         t = i << (1 << 2);
-        i = (i & ~part3) | (t & part3);
+        i = (i & ~maskMove3) | (t & maskMove3);
         t = i << (1 << 1);
-        i = (i & ~part2) | (t & part2);
+        i = (i & ~maskMove2) | (t & maskMove2);
         t = i << (1 << 0);
-        i = (i & ~part1) | (t & part1);
+        i = (i & ~maskMove1) | (t & maskMove1);
 
         // Clear irrelevant bits
         return i & originalMask;
     }
 
+    @ForceInline
     private static int parallelSuffix(int maskCount) {
         int maskPrefix = maskCount ^ (maskCount << 1);
         maskPrefix = maskPrefix ^ (maskPrefix << 2);
