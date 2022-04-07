@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 
 /**
  * Writes annotation interface member documentation in HTML format.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     implements AnnotationTypeMemberWriter, MemberSummaryWriter {
@@ -92,24 +87,24 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
 
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content memberSummaryTree) {
+            Content content) {
         switch (kind) {
-            case OPTIONAL -> memberSummaryTree.add(selectComment(
+            case OPTIONAL -> content.add(selectComment(
                     MarkerComments.START_OF_ANNOTATION_TYPE_OPTIONAL_MEMBER_SUMMARY,
                     MarkerComments.START_OF_ANNOTATION_INTERFACE_OPTIONAL_MEMBER_SUMMARY));
-            case REQUIRED -> memberSummaryTree.add(selectComment(
+            case REQUIRED -> content.add(selectComment(
                     MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
                     MarkerComments.START_OF_ANNOTATION_INTERFACE_REQUIRED_MEMBER_SUMMARY));
             case ANY -> throw new UnsupportedOperationException("unsupported member kind");
         }
-        Content memberTree = new ContentBuilder();
-        writer.addSummaryHeader(this, memberTree);
-        return memberTree;
+        Content c = new ContentBuilder();
+        writer.addSummaryHeader(this, c);
+        return c;
     }
 
     @Override
-    public Content getMemberTreeHeader() {
-        return writer.getMemberTreeHeader();
+    public Content getMemberHeader() {
+        return writer.getMemberHeader();
     }
 
     @Override
@@ -131,21 +126,21 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public Content getAnnotationDetailsTreeHeader() {
-        Content memberDetailsTree = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
+    public Content getAnnotationDetailsHeader() {
+        Content memberDetails = new ContentBuilder();
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.annotationTypeDetailsLabel);
-        memberDetailsTree.add(heading);
-        return memberDetailsTree;
+        memberDetails.add(heading);
+        return memberDetails;
     }
 
     @Override
-    public Content getAnnotationDocTreeHeader(Element member) {
-        Content annotationDocTree = new ContentBuilder();
-        Content heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
+    public Content getAnnotationHeaderContent(Element member) {
+        Content content = new ContentBuilder();
+        var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(member)));
-        annotationDocTree.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, annotationDocTree)
+        content.add(heading);
+        return HtmlTree.SECTION(HtmlStyle.detail, content)
                 .setId(htmlIds.forMember(typeElement, (ExecutableElement) member));
     }
 
@@ -158,40 +153,40 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public void addDeprecated(Element member, Content annotationDocTree) {
-        addDeprecatedInfo(member, annotationDocTree);
+    public void addDeprecated(Element member, Content target) {
+        addDeprecatedInfo(member, target);
     }
 
     @Override
-    public void addPreview(Element member, Content contentTree) {
-        addPreviewInfo(member, contentTree);
+    public void addPreview(Element member, Content content) {
+        addPreviewInfo(member, content);
     }
 
     @Override
-    public void addComments(Element member, Content annotationDocTree) {
-        addComment(member, annotationDocTree);
+    public void addComments(Element member, Content annotationContent) {
+        addComment(member, annotationContent);
     }
 
     @Override
-    public void addTags(Element member, Content annotationDocTree) {
-        writer.addTagsInfo(member, annotationDocTree);
+    public void addTags(Element member, Content annotationContent) {
+        writer.addTagsInfo(member, annotationContent);
     }
 
     @Override
-    public Content getAnnotationDetails(Content annotationDetailsTreeHeader, Content annotationDetailsTree) {
-        Content annotationDetails = new ContentBuilder(annotationDetailsTreeHeader, annotationDetailsTree);
-        return getMemberTree(HtmlTree.SECTION(HtmlStyle.memberDetails, annotationDetails));
+    public Content getAnnotationDetails(Content annotationDetailsHeader, Content annotationDetails) {
+        Content c = new ContentBuilder(annotationDetailsHeader, annotationDetails);
+        return getMember(HtmlTree.SECTION(HtmlStyle.memberDetails, c));
     }
 
     @Override
-    public void addSummaryLabel(Content memberTree) {
-        HtmlTree label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
+    public void addSummaryLabel(Content content) {
+        var label = HtmlTree.HEADING(Headings.TypeDeclaration.SUMMARY_HEADING,
                 switch (kind) {
                     case REQUIRED -> contents.annotateTypeRequiredMemberSummaryLabel;
                     case OPTIONAL -> contents.annotateTypeOptionalMemberSummaryLabel;
                     case ANY -> throw new UnsupportedOperationException("unsupported member kind");
                 });
-        memberTree.add(label);
+        content.add(label);
     }
 
     /**
@@ -227,27 +222,27 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    public void addInheritedSummaryLabel(TypeElement typeElement, Content inheritedTree) {
+    public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
     }
 
     @Override
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
-                                  Content tdSummary) {
+                                  Content content) {
         Content memberLink = writer.getDocLink(context, utils.getEnclosingTypeElement(member), member,
                 name(member), HtmlStyle.memberNameLink);
-        Content code = HtmlTree.CODE(memberLink);
-        tdSummary.add(code);
+        var code = HtmlTree.CODE(memberLink);
+        content.add(code);
     }
 
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement,
-            Element member, Content linksTree) {
+            Element member, Content target) {
         //Not applicable.
     }
 
     @Override
-    protected void addSummaryType(Element member, Content tdSummaryType) {
-        addModifierAndType(member, getType(member), tdSummaryType);
+    protected void addSummaryType(Element member, Content content) {
+        addModifiersAndType(member, getType(member), content);
     }
 
     @Override
@@ -268,15 +263,15 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 : member.asType();
     }
 
-    public void addDefaultValueInfo(Element member, Content annotationDocTree) {
-        if (utils.isAnnotationType(member)) {
+    public void addDefaultValueInfo(Element member, Content annotationContent) {
+        if (utils.isAnnotationInterface(member.getEnclosingElement())) {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {
-                Content dl = HtmlTree.DL(HtmlStyle.notes);
+                var dl = HtmlTree.DL(HtmlStyle.notes);
                 dl.add(HtmlTree.DT(contents.default_));
                 dl.add(HtmlTree.DD(Text.of(value.toString())));
-                annotationDocTree.add(dl);
+                annotationContent.add(dl);
             }
         }
     }

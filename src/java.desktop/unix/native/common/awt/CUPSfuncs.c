@@ -172,12 +172,7 @@ Java_sun_print_CUPSPrinter_getCupsServer(JNIEnv *env,
     jstring cServer = NULL;
     const char* server = j2d_cupsServer();
     if (server != NULL) {
-        // Is this a local domain socket?
-        if (strncmp(server, "/", 1) == 0) {
-            cServer = JNU_NewStringPlatform(env, "localhost");
-        } else {
-            cServer = JNU_NewStringPlatform(env, server);
-        }
+        cServer = JNU_NewStringPlatform(env, server);
     }
     return cServer;
 }
@@ -217,6 +212,57 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinter(JNIEnv *env,
     }
     j2d_cupsFreeDests(num_dests, dests);
     return cDefPrinter;
+}
+
+/*
+ * Returns list of default local printers
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_sun_print_CUPSPrinter_getCupsDefaultPrinters(JNIEnv *env,
+                                                        jobject printObj)
+{
+    cups_dest_t *dests;
+    int i, j, num_dests;
+    jstring utf_str;
+    jclass cls;
+    jobjectArray nameArray = NULL;
+
+    cls = (*env)->FindClass(env, "java/lang/String");
+    CHECK_NULL_RETURN(cls, NULL);
+
+    num_dests = j2d_cupsGetDests(&dests);
+
+    if (dests == NULL) {
+        return NULL;
+    }
+
+    nameArray = (*env)->NewObjectArray(env, num_dests, cls, NULL);
+    if (nameArray == NULL) {
+        j2d_cupsFreeDests(num_dests, dests);
+        DPRINTF("CUPSfuncs::bad alloc new array\n", "")
+        return NULL;
+    }
+
+    for (i = 0; i < num_dests; i++) {
+            utf_str = JNU_NewStringPlatform(env, dests[i].name);
+            if (utf_str == NULL) {
+                for (j = i - 1; j >= 0; j--) {
+                    utf_str = (*env)->GetObjectArrayElement(env, nameArray, j);
+                    (*env)->SetObjectArrayElement(env, nameArray, j, NULL);
+                    (*env)->DeleteLocalRef(env, utf_str);
+                    utf_str = NULL;
+                }
+                j2d_cupsFreeDests(num_dests, dests);
+                (*env)->DeleteLocalRef(env, nameArray);
+                DPRINTF("CUPSfuncs::bad alloc new string ->name\n", "")
+                return NULL;
+            }
+            (*env)->SetObjectArrayElement(env, nameArray, i, utf_str);
+            (*env)->DeleteLocalRef(env, utf_str);
+    }
+
+    j2d_cupsFreeDests(num_dests, dests);
+    return nameArray;
 }
 
 /*
