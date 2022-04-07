@@ -208,7 +208,6 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels);
-        tree.guard = translate(tree.guard);
         tree.stats = translate(tree.stats);
         result = tree;
     }
@@ -361,6 +360,7 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitBindingPattern(JCBindingPattern tree) {
         tree.var = translate(tree.var);
+        tree.guard = translate(tree.guard);
         result = tree;
     }
 
@@ -372,6 +372,7 @@ public class TreeTranslator extends JCTree.Visitor {
     @Override
     public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
         tree.pattern = translate(tree.pattern);
+        tree.guard = translate(tree.guard);
         result = tree;
     }
 

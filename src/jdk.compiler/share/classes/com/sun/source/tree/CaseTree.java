@@ -87,15 +87,6 @@ public interface CaseTree extends Tree {
     List<? extends StatementTree> getStatements();
 
     /**
-     * The guard for the case.
-     *
-     * @return the guard
-     * @since 19
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    ExpressionTree getGuard();
-
-    /**
      * For case with kind {@linkplain CaseKind#RULE},
      * returns the statement or expression after the arrow.
      * Returns {@code null} for case with kind

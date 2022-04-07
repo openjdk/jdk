@@ -197,7 +197,7 @@ public class SwitchErrors {
     void test8269146a2(Integer i) {
         switch (i) {
             //error - illegal combination of pattern and constant:
-            case Integer o, 1 when o != null:
+            case Integer o when o != null, 1:
                 break;
             default:
                 break;
@@ -222,14 +222,14 @@ public class SwitchErrors {
     void test8269301a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case 1, Integer o, default when o != null:
+            case 1, Integer o when o != null, default:
                 break;
         }
     }
     void test8269301b(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case Integer o, 1, default when o != null:
+            case Integer o when o != null, 1, default:
                 break;
         }
     }

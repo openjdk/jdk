@@ -1502,11 +1502,6 @@ public class JavacParser implements Parser {
                 nextToken();
             };
         }
-        JCExpression guard = null;
-        if (token.kind == IDENTIFIER && token.name() == names.when) {
-            nextToken();
-            guard = term(EXPR | NOLAMBDA);
-        }
         List<JCStatement> stats = null;
         JCTree body = null;
         CaseTree.CaseKind kind;
@@ -1532,7 +1527,7 @@ public class JavacParser implements Parser {
                 kind = JCCase.STATEMENT;
                 break;
         }
-        caseExprs.append(toP(F.at(casePos).Case(kind, pats.toList(), guard, stats, body)));
+        caseExprs.append(toP(F.at(casePos).Case(kind, pats.toList(), stats, body)));
         return caseExprs.toList();
     }
 
@@ -3006,11 +3001,6 @@ public class JavacParser implements Parser {
                 nextToken();
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
             };
-            JCExpression guard = null;
-            if (token.kind == IDENTIFIER && token.name() == names.when) {
-                nextToken();
-                guard = term(EXPR | NOLAMBDA);
-            }
             CaseTree.CaseKind caseKind;
             JCTree body = null;
             if (token.kind == ARROW) {
@@ -3028,7 +3018,7 @@ public class JavacParser implements Parser {
                 caseKind = JCCase.STATEMENT;
                 stats = blockStatements();
             }
-            c = F.at(pos).Case(caseKind, pats.toList(), guard, stats, body);
+            c = F.at(pos).Case(caseKind, pats.toList(), stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
             return cases.append(c).toList();
@@ -3053,7 +3043,7 @@ public class JavacParser implements Parser {
                 caseKind = JCCase.STATEMENT;
                 stats = blockStatements();
             }
-            c = F.at(pos).Case(caseKind, List.of(defaultPattern), null, stats, body);
+            c = F.at(pos).Case(caseKind, List.of(defaultPattern), stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
             return cases.append(c).toList();
@@ -3080,7 +3070,12 @@ public class JavacParser implements Parser {
                               analyzePattern(lookahead) == PatternResult.PATTERN;
             if (pattern) {
                 checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                return parsePattern(patternPos, mods, null);
+                JCPattern p = parsePattern(patternPos, mods, null);
+                if (token.kind == IDENTIFIER && token.name() == names.when) {
+                    nextToken();
+                    p.guard = term(EXPR | NOLAMBDA);
+                }
+                return p;
             } else {
                 return term(EXPR | NOLAMBDA);
             }

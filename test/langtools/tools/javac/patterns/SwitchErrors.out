@@ -31,21 +31,13 @@ SwitchErrors.java:160:18: compiler.err.pattern.dominated
 SwitchErrors.java:172:18: compiler.err.pattern.expected
 SwitchErrors.java:178:78: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
 SwitchErrors.java:184:73: compiler.err.cant.resolve.location: kindname.variable, n, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:191:36: compiler.err.cant.resolve.location: kindname.variable, o, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:193:13: compiler.err.total.pattern.and.default
 SwitchErrors.java:191:21: compiler.err.flows.through.to.pattern
-SwitchErrors.java:200:36: compiler.err.cant.resolve.location: kindname.variable, o, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:202:13: compiler.err.total.pattern.and.default
-SwitchErrors.java:200:29: compiler.err.flows.through.from.pattern
-SwitchErrors.java:218:18: compiler.err.total.pattern.and.default
-SwitchErrors.java:218:29: compiler.err.flows.through.from.pattern
-SwitchErrors.java:225:45: compiler.err.cant.resolve.location: kindname.variable, o, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:225:21: compiler.err.total.pattern.and.default
-SwitchErrors.java:225:32: compiler.err.flows.through.from.pattern
-SwitchErrors.java:232:45: compiler.err.cant.resolve.location: kindname.variable, o, , , (compiler.misc.location: kindname.class, SwitchErrors, null)
-SwitchErrors.java:232:18: compiler.err.total.pattern.and.default
-SwitchErrors.java:232:29: compiler.err.flows.through.from.pattern
-SwitchErrors.java:232:32: compiler.err.flows.through.from.pattern
+SwitchErrors.java:200:44: compiler.err.pattern.dominated
+SwitchErrors.java:218:29: compiler.err.total.pattern.and.default
+SwitchErrors.java:225:21: compiler.err.flows.through.to.pattern
+SwitchErrors.java:225:47: compiler.err.flows.through.from.pattern
+SwitchErrors.java:232:44: compiler.err.pattern.dominated
+SwitchErrors.java:232:47: compiler.err.flows.through.from.pattern
 SwitchErrors.java:244:18: compiler.err.duplicate.total.pattern
 SwitchErrors.java:9:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:15:9: compiler.err.not.exhaustive.statement
@@ -61,4 +53,4 @@ SwitchErrors.java:164:9: compiler.err.not.exhaustive.statement
 SwitchErrors.java:237:9: compiler.err.not.exhaustive.statement
 - compiler.note.preview.filename: SwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-61 errors
+53 errors

@@ -397,7 +397,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     public R visitCase(CaseTree node, P p) {
         R r = scan(node.getExpressions(), p);
-        r = scanAndReduce(node.getGuard(), p, r);
         if (node.getCaseKind() == CaseTree.CaseKind.RULE)
             r = scanAndReduce(node.getBody(), p, r);
         else
@@ -772,7 +771,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitBindingPattern(BindingPatternTree node, P p) {
-        return scan(node.getVariable(), p);
+        R r = scan(node.getVariable(), p);
+        r = scanAndReduce(node.getGuard(), p, r);
+        return r;
     }
 
     /**
@@ -834,7 +835,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        return scan(node.getPattern(), p);
+        R r = scan(node.getPattern(), p);
+        r = scanAndReduce(node.getGuard(), p, r);
+        return r;
     }
 
     /**

@@ -1784,46 +1784,39 @@ public class Attr extends JCTree.Visitor {
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
                         checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
+                        JCExpression guard = ((JCPattern) pat).guard;
+                        if (guard != null) {
+                            MatchBindings afterPattern = matchBindings;
+                            Env<AttrContext> bodyEnv = bindingEnv(env, matchBindings.bindingsWhenTrue);
+                            try {
+                                attribExpr(guard, bodyEnv, syms.booleanType);
+                            } finally {
+                                bodyEnv.info.scope.leave();
+                            }
+                            matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
+                        }
+                        boolean unconditional = TreeInfo.unconditionalCaseLabel(pat);
+                        boolean isTotal = unconditional &&
+                                          !patternType.isErroneous() &&
+                                          types.isSubtype(types.erasure(seltype), patternType);
+                        if (isTotal) {
+                            if (hasTotalPattern) {
+                                log.error(pat.pos(), Errors.DuplicateTotalPattern);
+                            } else if (hasDefault) {
+                                log.error(pat.pos(), Errors.TotalPatternAndDefault);
+                            }
+                            hasTotalPattern = true;
+                        }
+                        if (!patternType.isErroneous()) {
+                            coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
+                            if (unconditional) {
+                                coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
+                            }
+                        }
                     }
                     currentBindings = matchBindingsComputer.switchCase(pat, currentBindings, matchBindings);
                 }
-                if (c.guard != null) {
-                    MatchBindings afterPattern = currentBindings;
-                    Env<AttrContext> bodyEnv = bindingEnv(env, currentBindings.bindingsWhenTrue);
-                    try {
-                        attribExpr(c.guard, bodyEnv, syms.booleanType);
-                    } finally {
-                        bodyEnv.info.scope.leave();
-                    }
-                    currentBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
-                }
 
-                Optional<JCCaseLabel> patternCandidate =
-                        c.labels.stream().filter(label -> label.isPattern()).findAny();
-
-                if (patternCandidate.isPresent()) {
-                    boolean unconditional = TreeInfo.unconditionalCase(c);
-                    JCPattern pat = (JCPattern) patternCandidate.get();
-                    var primary = TreeInfo.primaryPatternType(pat);
-                    Type patternType = types.erasure(primary.type());
-                    boolean isTotal = unconditional &&
-                                      !patternType.isErroneous() &&
-                                      types.isSubtype(types.erasure(seltype), patternType);
-                    if (isTotal) {
-                        if (hasTotalPattern) {
-                            log.error(pat.pos(), Errors.DuplicateTotalPattern);
-                        } else if (hasDefault) {
-                            log.error(pat.pos(), Errors.TotalPatternAndDefault);
-                        }
-                        hasTotalPattern = true;
-                    }
-                    if (!patternType.isErroneous()) {
-                        coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
-                        if (unconditional) {
-                            coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
-                        }
-                    }
-                }
                 Env<AttrContext> caseEnv =
                         bindingEnv(switchEnv, c, currentBindings.bindingsWhenTrue);
                 try {

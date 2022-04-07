@@ -291,9 +291,9 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels, JCExpression guard,
+    public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
                        List<JCStatement> stats, JCTree body) {
-        JCCase tree = new JCCase(caseKind, labels, guard, stats, body);
+        JCCase tree = new JCCase(caseKind, labels, stats, body);
         tree.pos = pos;
         return tree;
     }

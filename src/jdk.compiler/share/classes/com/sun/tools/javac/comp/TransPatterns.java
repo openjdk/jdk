@@ -401,8 +401,8 @@ public class TransPatterns extends TreeTranslator {
                     try {
                         currentValue = temp;
                         JCExpression test = (JCExpression) this.<JCTree>translate(p);
-                        if (c.guard != null) {
-                            test = makeBinary(Tag.AND, test, translate(c.guard));
+                        if (((JCPattern) p).guard != null) {
+                            test = makeBinary(Tag.AND, test, translate(((JCPattern) p).guard));
                         }
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);

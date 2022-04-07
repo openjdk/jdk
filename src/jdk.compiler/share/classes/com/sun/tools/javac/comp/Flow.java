@@ -669,14 +669,12 @@ public class Flow {
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
-                boolean unconditional = TreeInfo.unconditionalCase(c);
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    if (unconditional) {
+                    if (TreeInfo.unconditionalCaseLabel(pat)) {
                         handleConstantCaseLabel(constants, pat);
                     }
                 }
-                scanStat(c.guard);
                 scanStats(c.stats);
                 if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
@@ -714,14 +712,12 @@ public class Flow {
             for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
                 alive = Liveness.ALIVE;
                 JCCase c = l.head;
-                boolean unconditional = TreeInfo.unconditionalCase(c);
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
-                    if (unconditional) {
+                    if (TreeInfo.unconditionalCaseLabel(pat)) {
                         handleConstantCaseLabel(constants, pat);
                     }
                 }
-                scanStat(c.guard);
                 scanStats(c.stats);
                 if (alive == Liveness.ALIVE) {
                     if (c.caseKind == JCCase.RULE) {
@@ -1279,7 +1275,6 @@ public class Flow {
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 scan(c.labels);
-                scan(c.guard);
                 scan(c.stats);
             }
             if (tree.hasTag(SWITCH_EXPRESSION)) {
@@ -2484,7 +2479,6 @@ public class Flow {
                     l = l.tail;
                     c = l.head;
                 }
-                scanPattern(c.guard);
                 scan(c.stats);
                 if (c.completesNormally && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
@@ -2859,8 +2853,9 @@ public class Flow {
 
         @Override
         public void visitBindingPattern(JCBindingPattern tree) {
-            super.visitBindingPattern(tree);
+            scan(tree.var);
             initParam(tree.var);
+            scan(tree.guard);
         }
 
         void referenced(Symbol sym) {
@@ -2952,7 +2947,7 @@ public class Flow {
                             }
                             break;
                         }
-                    case CASE:
+                    case BINDINGPATTERN, PARENTHESIZEDPATTERN:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -2987,7 +2982,7 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case CASE -> Fragments.Guard;
+                case BINDINGPATTERN, PARENTHESIZEDPATTERN -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
@@ -3027,8 +3022,8 @@ public class Flow {
         }
 
         @Override
-        public void visitCase(JCCase tree) {
-            scan(tree.labels);
+        public void visitBindingPattern(JCBindingPattern tree) {
+            scan(tree.var);
             JCTree prevTree = currentTree;
             try {
                 currentTree = tree;
@@ -3036,7 +3031,18 @@ public class Flow {
             } finally {
                 currentTree = prevTree;
             }
-            scan(tree.body);
+        }
+
+        @Override
+        public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
+            scan(tree.pattern);
+            JCTree prevTree = currentTree;
+            try {
+                currentTree = tree;
+                scan(tree.guard);
+            } finally {
+                currentTree = prevTree;
+            }
         }
 
         @Override

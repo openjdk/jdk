@@ -28,6 +28,8 @@
  * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics --enable-preview -source ${jdk.version} GuardsErrors.java
  */
 
+//TODO: tests and error recovery for misplaced guards
+
 public class GuardsErrors {
 
     void typeTestPatternSwitchTest(Object o, int check) {

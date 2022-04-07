@@ -3634,7 +3634,7 @@ public class Lower extends TreeTranslator {
                                             : syms.incompatibleClassChangeErrorType;
             JCThrow thr = make.Throw(makeNewClass(exception,
                                                   List.nil()));
-            JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), null, List.of(thr), null);
+            JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
             cases = cases.prepend(c);
         }
 
@@ -3661,7 +3661,6 @@ public class Lower extends TreeTranslator {
                     while (patterns.tail.nonEmpty()) {
                         convertedCases.append(make_at(c.pos()).Case(JCCase.STATEMENT,
                                                            List.of(patterns.head),
-                                                           null,
                                                            List.nil(),
                                                            null));
                         patterns = patterns.tail;
@@ -3756,7 +3755,7 @@ public class Lower extends TreeTranslator {
                     VarSymbol label = (VarSymbol)TreeInfo.symbol((JCExpression) c.labels.head);
                     pat = map.forConstant(label);
                 }
-                newCases.append(make.Case(JCCase.STATEMENT, List.of(pat), null, c.stats, null));
+                newCases.append(make.Case(JCCase.STATEMENT, List.of(pat), c.stats, null));
             } else {
                 newCases.append(c);
             }
@@ -3926,7 +3925,7 @@ public class Lower extends TreeTranslator {
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
 
-                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), null, lb.toList(), null));
+                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), lb.toList(), null));
             }
 
             switch1.cases = caseBuffer.toList();
@@ -3957,7 +3956,7 @@ public class Lower extends TreeTranslator {
                 }
 
                 lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel()) : List.of(caseExpr),
-                                    null, oneCase.stats, null));
+                                    oneCase.stats, null));
             }
 
             if (tree.hasTag(SWITCH)) {

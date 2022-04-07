@@ -1369,9 +1369,13 @@ public class TreeInfo {
                          .anyMatch(l -> TreeInfo.isNull(l));
     }
 
-    public static boolean unconditionalCase(JCCase cse) {
-        if (cse.guard != null && cse.guard.type.hasTag(BOOLEAN)) {
-            var constValue = cse.guard.type.constValue();
+    public static boolean unconditionalCaseLabel(JCCaseLabel cse) {
+        if (!cse.isPattern()) {
+            return true;
+        }
+        JCExpression guard = ((JCPattern) cse).guard;
+        if (guard != null && guard.type.hasTag(BOOLEAN)) {
+            var constValue = guard.type.constValue();
             return constValue != null && ((int) constValue) == 1;
         }
         return true;
