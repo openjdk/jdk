@@ -44,139 +44,109 @@ import javax.swing.table.TableModel;
 import javax.swing.WindowConstants;
 
 public class PrintAllPagesTest {
-
-    public static void main(String[] args) throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        PrintAllPages test = new PrintAllPages(latch);
-        Thread T1 = new Thread(test);
-        T1.start();
-
-        // wait for latch to complete
-        boolean ret = false;
-        try {
-            ret = latch.await(5, TimeUnit.MINUTES);
-        } catch (InterruptedException ie) {
-            throw ie;
-        }
-        if (!ret) {
-            test.dispose();
-            throw new RuntimeException(" User has not executed the test");
-        }
-
-        if (test.testResult == false) {
-            throw new RuntimeException("Only 1st page is printed out of multiple pages");
-        }
-    }
-}
-
-class PrintAllPages implements Runnable {
     static JFrame f;
     static JDialog dialog;
-    public boolean testResult = false;
-    private final CountDownLatch latch;
+    static boolean testResult = false;
+    static CountDownLatch latch = new CountDownLatch(1);
 
-    public PrintAllPages(CountDownLatch latch) throws Exception {
-        this.latch = latch;
-    }
+    public static void main(String[] args) throws Exception {
 
-    @Override
-    public void run() {
         try {
-            createUI();
-            printAllPagesTest();
-        } catch (Exception ex) {
-            if (f != null) {
-                f.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                createUI();
+                printAllPagesTest();
+           });
+
+            // wait for latch to complete
+            boolean ret = false;
+            ret = latch.await(5, TimeUnit.MINUTES);
+
+            if (!ret) {
+                throw new RuntimeException(" User has not executed the test");
             }
-            latch.countDown();
-            throw new RuntimeException("createUI Failed: " + ex.getMessage());
+
+            if (testResult == false) {
+                throw new RuntimeException("Only 1st page is printed out of multiple pages");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                dispose();		
+            });
         }
-
     }
 
-    public void dispose() {
-        dialog.dispose();
-        f.dispose();
+    private static void dispose() {
+        if (dialog != null) {
+            dialog.dispose();
+        }
+        if (f != null) {
+            f.dispose();
+        }	
     }
 
-    private static void printAllPagesTest() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            TableModel dataModel = new AbstractTableModel() {
-                @Override
-                public int getColumnCount() {
-                    return 10;
-                }
-
-                @Override
-                public int getRowCount() {
-                    return 1000;
-                }
-
-                @Override
-                public Object getValueAt(int row, int col) {
-                    return Integer.valueOf(0 == col ? row + 1 : row * col);
-                }
-            };
-            JTable table = new JTable(dataModel) {
-                @Override
-                public Rectangle getBounds() {
-                    Rectangle bounds = super.getBounds();
-                    return bounds;
-                }
-            };
-            JScrollPane scrollpane = new JScrollPane(table);
-            table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));
-
-            f = new JFrame("Table test");
-            f.add(scrollpane);
-            f.setSize(1000, 800);
-            f.setLocationRelativeTo(null);
-            f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            f.setVisible(true);
-            try {
-                table.print();
-            } catch (Exception e) {}
-        });
-    }
-
-    private final void createUI() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
+    private static void printAllPagesTest() {
+        TableModel dataModel = new AbstractTableModel() {
             @Override
-            public void run() {
-
-                String description
-                        = " INSTRUCTIONS:\n"
-                        + " A JTable will be shown.\n"
-                        + " If only 1 page is printed,\n "
-                        + " then press fail else press pass";
-
-                dialog = new JDialog();
-                dialog.setTitle("textselectionTest");
-                JTextArea textArea = new JTextArea(description);
-                textArea.setEditable(false);
-                final JButton passButton = new JButton("PASS");
-                passButton.addActionListener((e) -> {
-                    testResult = true;
-                    dispose();
-                    latch.countDown();
-                });
-                final JButton failButton = new JButton("FAIL");
-                failButton.addActionListener((e) -> {
-                    testResult = false;
-                    dispose();
-                    latch.countDown();
-                });
-                JPanel mainPanel = new JPanel(new BorderLayout());
-                mainPanel.add(textArea, BorderLayout.CENTER);
-                JPanel buttonPanel = new JPanel(new FlowLayout());
-                buttonPanel.add(passButton);
-                buttonPanel.add(failButton);
-                mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-                dialog.add(mainPanel);
-                dialog.pack();
-                dialog.setVisible(true);
+            public int getColumnCount() {
+                return 10;
             }
+
+            @Override
+            public int getRowCount() {
+                return 1000;
+            }
+
+            @Override
+            public Object getValueAt(int row, int col) {
+                return Integer.valueOf(0 == col ? row + 1 : row * col);
+            }
+        };
+        JTable table = new JTable(dataModel);
+        JScrollPane scrollpane = new JScrollPane(table);
+        table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));
+
+        f = new JFrame("Table test");
+        f.add(scrollpane);
+        f.setSize(1000, 800);
+        f.setLocationRelativeTo(null);
+        f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        f.setVisible(true);
+        try {
+            table.print();
+        } catch (Exception e) {}
+    }
+
+    private static void createUI() {
+        String description
+                = " INSTRUCTIONS:\n"
+                + " A JTable will be shown.\n"
+                + " If only 1 page is printed,\n "
+                + " then press fail else press pass";
+
+        dialog = new JDialog();
+        dialog.setTitle("textselectionTest");
+        JTextArea textArea = new JTextArea(description);
+        textArea.setEditable(false);
+        final JButton passButton = new JButton("PASS");
+        passButton.addActionListener((e) -> {
+            testResult = true;
+            dispose();
+            latch.countDown();
         });
+        final JButton failButton = new JButton("FAIL");
+        failButton.addActionListener((e) -> {
+            testResult = false;
+            dispose();
+            latch.countDown();
+        });
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(textArea, BorderLayout.CENTER);
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(passButton);
+        buttonPanel.add(failButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.add(mainPanel);
+        dialog.pack();
+        dialog.setVisible(true);
     }
 }
