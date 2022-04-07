@@ -1780,6 +1780,53 @@ public final class Integer extends Number
      * All the upper remaining bits of the compressed value are set
      * to zero.
      *
+     * @apiNote
+     * Consider the simple case of compressing the digits of a hexadecimal
+     * value:
+     * {@snippet lang="java" :
+     * // Compressing drink to food
+     * compress(0xCAFEBABE, 0xFF00FFF0) == 0xCABAB
+     * }
+     * The mask {@code 0xFF00FFF0} selects the 1'st, 2'nd, 3'rd, 6'th and
+     * 7'th digits of {@code 0xCAFEBABE}. The selected digits occur in the
+     * resulting compressed value contiguously from the 0'th digit in the
+     * same order.
+     * <p>
+     * The following identities all return {@code true} and are helpful to
+     * understand the behaviour of {@code compress}:
+     * {@snippet lang="java" :
+     * // Returns 1 if the n'th bit is set
+     * compress(x, 1 << n) == (x >> n & 1)
+     *
+     * // Logical shift right
+     * compress(x, -1 << n) == x >>> n
+     *
+     * // Any bits not covered by the mask are ignored
+     * compress(x, m) == compress(x & m, m)
+     *
+     * // Compressing a value by itself
+     * compress(m, m) == (m == -1 || m == 0) ? m : (1 << bitCount(m)) - 1
+     *
+     * // Expanding then compressing with the same mask
+     * compress(expand(x, m), m) == x & compress(m, m)
+     * }
+     * <p>
+     * The Sheep And Goats (SAG) operation (see Hacker's Delight, section 7.7)
+     * can be implemented as follows:
+     * {@snippet lang="java" :
+     * int compressLeft(int i, int mask) {
+     *     return Integer.reverse(
+     *         Integer.compress(Integer.reverse(i), Integer.reverse(mask)));
+     * }
+     *
+     * int sag(int i, int mask) {
+     *     return compressLeft(i, mask) | Integer.compress(i, ~mask);
+     * }
+     *
+     * // Separate the sheep from the goats
+     * sag(0xCAFEBABE, 0xFF00FFF0) == 0xCABABFEE
+     * }
+     *
      * @param i the value whose bits are to be compressed
      * @param mask the bit mask
      * @return the compressed value
@@ -1821,6 +1868,52 @@ public final class Integer extends Number
      * of {@code i} starting at the least significant bit is assigned
      * to the expanded value at the same bit location as {@code mb}.
      * All other remaining bits of the expanded value are set to zero.
+     *
+     * @apiNote
+     * Consider the simple case of expanding the digits of a hexadecimal
+     * value:
+     * {@snippet lang="java" :
+     * expand(0x0000CABAB, 0xFF00FFF0) == 0xCA00BAB0
+     * }
+     * The mask {@code 0xFF00FFF0} selects the first five digits of
+     * {@code 0x0000CABAB}. The selected digits occur in the resulting
+     * expanded value in order at the 1'st, 2'nd, 3'rd, 6'th and 7'th
+     * positions.
+     * <p>
+     * The following identities all return {@code true} and are helpful to
+     * understand the behaviour of {@code expand}`:
+     * {@snippet lang="java" :
+     * // Logically shift right the first bit
+     * expand(x, 1 << n) == (x & 1) << n
+     *
+     * // Logically shift right
+     * expand(x, -1 << n) == x << n
+     *
+     * // Expanding all bits returns the mask
+     * expand(-1, m) == m
+     *
+     * // Any bits not covered by the mask are ignored
+     * expand(x, m) == expand(x, m) & m
+     *
+     * // Compressing then expanding with the same mask
+     * expand(compress(x, m), m) == x & m
+     * }
+     * <p>
+     * The select operation for determining the position of the {@code n}'th
+     * one-bit in an {@code int} value can be implemented as follows:
+     * {@snippet lang="java" :
+     * int select(int i, int n) {
+     *     // the n'th one-bit in i (the mask)
+     *     int nthBit = Integer.expand(1 << n, i);
+     *     // the position of the n'th one-bit in i
+     *     return Integer.numberOfTrailingZeros(nthBit);
+     * }
+     *
+     * // The 0'th one-bit is at the 1'st bit position
+     * select(0b10101010_10101010, 0) == 1
+     * // The 3'rd one-bit is at the 7'th bit position
+     * select(0b10101010_10101010, 3) == 7
+     * }
      *
      * @param i the value whose bits are to be expanded
      * @param mask the bit mask
