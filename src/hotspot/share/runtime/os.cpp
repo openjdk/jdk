@@ -1676,8 +1676,8 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
 }
 
 static void assert_nonempty_range(const char* addr, size_t bytes) {
-  assert(addr != nullptr && bytes > 0, "invalid range (" PTR_FORMAT ", " SIZE_FORMAT ")",
-         p2i(addr), bytes);
+  assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(addr), p2i(addr + bytes));
 }
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
