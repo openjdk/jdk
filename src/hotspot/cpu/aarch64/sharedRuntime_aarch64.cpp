@@ -2009,6 +2009,37 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   return nm;
 }
 
+#if defined(AARCH64)
+mintrinsic* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
+                                                const methodHandle& method,
+                                                int compile_id,
+                                                BasicType* in_sig_bt,
+                                                VMRegPair* in_regs,
+                                                BasicType ret_type) {
+  assert(method->is_method_handle_intrinsic(), "only intrinsic");
+  assert(method->is_native(), "different from native method");
+  vmIntrinsics::ID iid = method->intrinsic_id();
+  intptr_t start = (intptr_t)__ pc();
+  int vep_offset = ((intptr_t)__ pc()) - start;
+
+  // First instruction must be a nop as it may need to be patched on deoptimisation
+  __ nop();
+  gen_special_dispatch(masm,
+                       method,
+                       in_sig_bt,
+                       in_regs);
+  int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
+  __ flush();
+  int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
+  return mintrinsic::new_mintrinsic(method,
+                                       compile_id,
+                                       masm->code(),
+                                       vep_offset,
+                                       frame_complete,
+                                       stack_slots / VMRegImpl::slots_per_word);
+}
+#endif
+
 // this function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {

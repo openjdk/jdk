@@ -2329,16 +2329,36 @@ nmethodLocker::nmethodLocker(address pc) {
 // should pass zombie_ok == true.
 void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
   if (cm == NULL)  return;
-  nmethod* nm = cm->as_nmethod();
-  Atomic::inc(&nm->_lock_count);
-  assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
+  if (cm->is_nmethod()) {
+    nmethod* nm = cm->as_nmethod();
+    Atomic::inc(&nm->_lock_count);
+    assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
+  }
+#if defined(AARCH64)
+  else
+  {
+    mintrinsic* nm = (mintrinsic*)cm;
+    Atomic::inc(&nm->_lock_count);
+    assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method: %p", nm);
+  }
+#endif
 }
 
 void nmethodLocker::unlock_nmethod(CompiledMethod* cm) {
   if (cm == NULL)  return;
-  nmethod* nm = cm->as_nmethod();
-  Atomic::dec(&nm->_lock_count);
-  assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
+  if (cm->is_nmethod()) {
+    nmethod* nm = cm->as_nmethod();
+    Atomic::dec(&nm->_lock_count);
+    assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
+  }
+#if defined(AARCH64)
+  else
+  {
+    mintrinsic* nm = (mintrinsic*)cm;
+    Atomic::dec(&nm->_lock_count);
+    assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
+  }
+#endif
 }
 
 
@@ -3571,4 +3591,389 @@ const char* nmethod::jvmci_name() {
   }
   return NULL;
 }
+#endif
+
+#if defined(AARCH64)
+mintrinsic::mintrinsic(
+  Method* method,
+  CompilerType type,
+  int mintrinsic_size,
+  int compile_id,
+  CodeOffsets* offsets,
+  CodeBuffer* code_buffer,
+  int frame_size):
+  CompiledMethod(method, "native mintrinsic", type, mintrinsic_size, sizeof(mintrinsic), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, nullptr, false) {
+  {
+    int scopes_data_offset   = 0;
+    int deoptimize_offset    = 0;
+    int deoptimize_mh_offset = 0;
+
+    debug_only(NoSafepointVerifier nsv;)
+    assert_locked_or_safepoint(CodeCache_lock);
+
+    init_defaults();
+    _entry_bci               = InvocationEntryBci;
+    // We have no exception handler or deopt handler make the
+    // values something that will never match a pc like the nmethod vtable entry
+    _exception_offset        = 0;
+    _orig_pc_offset          = 0;
+
+    _consts_offset           = data_offset();
+    _stub_offset             = data_offset();
+    _oops_offset             = data_offset();
+    assert(code_buffer->total_oop_size() == 0, "no oops");
+    _metadata_offset         = _oops_offset         + align_up(code_buffer->total_oop_size(), oopSize);
+    assert(code_buffer->total_metadata_size() == 0, "no metadata");
+    scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
+    _scopes_pcs_offset       = scopes_data_offset;
+    _dependencies_offset     = _scopes_pcs_offset;
+    _native_invokers_offset  = _dependencies_offset;
+    _handler_table_offset    = _native_invokers_offset;
+    _nul_chk_table_offset    = _handler_table_offset;
+#if INCLUDE_JVMCI
+    _speculations_offset     = _nul_chk_table_offset;
+    _jvmci_data_offset       = _speculations_offset;
+    _nmethod_end_offset      = _jvmci_data_offset;
+#else
+    _nmethod_end_offset      = _nul_chk_table_offset;
+#endif
+    _compile_id              = compile_id;
+    _comp_level              = CompLevel_none;
+    _entry_point             = code_begin()          + offsets->value(CodeOffsets::Entry);
+    _verified_entry_point    = code_begin()          + offsets->value(CodeOffsets::Verified_Entry);
+    _osr_entry_point         = NULL;
+    _exception_cache         = NULL;
+    _pc_desc_container.reset_to(NULL);
+
+    _scopes_data_begin = (address) this + scopes_data_offset;
+    _deopt_handler_begin = (address) this + deoptimize_offset;
+    _deopt_mh_handler_begin = (address) this + deoptimize_mh_offset;
+
+    code_buffer->copy_code_and_locs_to(this);
+    // code_buffer->copy_values_to(this);
+    if (!code_buffer->oop_recorder()->is_unused()) {
+      //code_buffer->oop_recorder()->copy_values_to(this);
+      assert(this->oops_size() == 0, "invariant");
+      assert(this->metadata_size() == 0, "invariant");
+    }
+
+    CodeCache::commit(this);
+  }
+
+  if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
+    ttyLocker ttyl;  // keep the following output all in one block
+    // This output goes directly to the tty, not the compiler log.
+    // To enable tools to match it up with the compilation activity,
+    // be sure to tag this tty output with the compile ID.
+    if (xtty != NULL) {
+      xtty->begin_head("print_native_nmethod");
+      xtty->method(_method);
+      xtty->stamp();
+      xtty->end_head(" address='" INTPTR_FORMAT "'", (intptr_t) this);
+    }
+    // Print the header part, then print the requested information.
+    // This is both handled in decode2(), called via print_code() -> decode()
+    if (PrintNativeNMethods) {
+      tty->print_cr("-------------------------- Assembly (native nmethod) ---------------------------");
+      print_code();
+      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+    } else {
+      print(); // print the header part only.
+    }
+#if defined(SUPPORT_DATA_STRUCTS)
+    if (AbstractDisassembler::show_structs()) {
+      if (PrintRelocations) {
+        print_relocations();
+        tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
+      }
+    }
+#endif
+    if (xtty != NULL) {
+      xtty->tail("print_native_nmethod");
+    }
+  }
+}
+
+mintrinsic* mintrinsic::new_mintrinsic(const methodHandle& method,
+  int compile_id,
+  CodeBuffer *code_buffer,
+  int vep_offset,
+  int frame_complete,
+  int frame_size) {
+  code_buffer->finalize_oop_references(method);
+  // create nmethod
+  mintrinsic* nm = NULL;
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    int native_mintrinsic_size = CodeBlob::allocation_size(code_buffer, sizeof(mintrinsic));
+
+    CodeOffsets offsets;
+    offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
+    offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+    nm = new (native_mintrinsic_size, CompLevel_none)
+    mintrinsic(method(), compiler_none, native_mintrinsic_size,
+            compile_id, &offsets,
+            code_buffer, frame_size);
+    // NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
+  }
+
+  if (nm != NULL) {
+    // verify nmethod
+    debug_only(nm->verify();) // might block
+
+    nm->log_new_nmethod();
+  }
+  return nm;
+}
+
+void* mintrinsic::operator new(size_t size, int nmethod_size, int comp_level) throw () {
+  return CodeCache::allocate(nmethod_size, CodeBlobType::NonNMethod);
+}
+
+// This is called at the end of the strong tracing/marking phase of a
+// GC to unload an nmethod if it contains otherwise unreachable
+// oops.
+
+void mintrinsic::do_unloading(bool unloading_occurred) {
+  // Make sure the oop's ready to receive visitors
+  assert(!is_zombie() && !is_unloaded(),
+         "should not call follow on zombie or unloaded nmethod");
+
+  {
+    guarantee(unload_nmethod_caches(unloading_occurred),
+              "Should not need transition stubs");
+  }
+}
+
+void mintrinsic::init_defaults() {
+  _state                      = not_installed;
+  _lock_count                 = 0;
+
+  _osr_link                = NULL;
+#if INCLUDE_RTM_OPT
+  _rtm_state               = NoRTM;
+#endif
+}
+
+void mintrinsic::metadata_do(MetadataClosure* f) {
+  // Visit the metadata section
+  assert(metadata_begin() == metadata_end(), "no metadata");
+
+  // Visit metadata not embedded in the other places.
+  if (_method != NULL) f->do_metadata(_method);
+}
+
+CompiledStaticCall* mintrinsic::compiledStaticCall_at(Relocation* call_site) const {
+  return CompiledDirectStaticCall::at(call_site);
+}
+
+CompiledStaticCall* mintrinsic::compiledStaticCall_at(address call_site) const {
+  return CompiledDirectStaticCall::at(call_site);
+}
+
+CompiledStaticCall* mintrinsic::compiledStaticCall_before(address return_addr) const {
+  return CompiledDirectStaticCall::before(return_addr);
+}
+
+NativeCallWrapper* mintrinsic::call_wrapper_at(address call) const {
+  return new DirectNativeCallWrapper((NativeCall*) call);
+}
+
+NativeCallWrapper* mintrinsic::call_wrapper_before(address return_pc) const {
+  return new DirectNativeCallWrapper(nativeCall_before(return_pc));
+}
+
+address mintrinsic::call_instruction_address(address pc) const {
+  if (NativeCall::is_call_before(pc)) {
+    NativeCall *ncall = nativeCall_before(pc);
+    return ncall->instruction_address();
+  }
+  return NULL;
+}
+
+const char* mintrinsic::compile_kind() const {
+  if (is_osr_method())     return "osr";
+  if (method() != NULL && is_native_method())  return "c2n";
+  return NULL;
+}
+
+address* mintrinsic::orig_pc_addr(const frame* fr) {
+  return (address*) ((address)fr->unextended_sp() + _orig_pc_offset);
+}
+
+oop mintrinsic::oop_at(int index) const {
+  if (index == 0) {
+    return NULL;
+  }
+  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(oop_addr_at(index));
+}
+
+bool mintrinsic::can_convert_to_zombie() {
+  // Note that this is called when the sweeper has observed the nmethod to be
+  // not_entrant. However, with concurrent code cache unloading, the state
+  // might have moved on to unloaded if it is_unloading(), due to racing
+  // concurrent GC threads.
+  assert(is_not_entrant() || is_unloading() ||
+         !Thread::current()->is_Code_cache_sweeper_thread(),
+         "must be a non-entrant method if called from sweeper");
+
+  // Since the nmethod sweeper only does partial sweep the sweeper's traversal
+  // count can be greater than the stack traversal count before it hits the
+  // nmethod for the second time.
+  // If an is_unloading() nmethod is still not_entrant, then it is not safe to
+  // convert it to zombie due to GC unloading interactions. However, if it
+  // has become unloaded, then it is okay to convert such nmethods to zombie.
+  return 1 < NMethodSweeper::traversal_count() &&
+         !is_locked_by_vm() && (!is_unloading() || is_unloaded());
+}
+
+bool mintrinsic::try_transition(int new_state_int) {
+  signed char new_state = new_state_int;
+#ifdef ASSERT
+  if (new_state != unloaded) {
+    assert_lock_strong(CompiledMethod_lock);
+  }
+#endif
+  for (;;) {
+    signed char old_state = Atomic::load(&_state);
+    if (old_state >= new_state) {
+      // Ensure monotonicity of transitions.
+      return false;
+    }
+    if (Atomic::cmpxchg(&_state, old_state, new_state) == old_state) {
+      return true;
+    }
+  }
+}
+
+void mintrinsic::log_identity(xmlStream* log) const {
+  log->print(" compile_id='%d'", compile_id());
+  const char* nm_kind = compile_kind();
+  if (nm_kind != NULL)  log->print(" compile_kind='%s'", nm_kind);
+  log->print(" compiler='%s'", compiler_name());
+  if (TieredCompilation) {
+    log->print(" level='%d'", comp_level());
+  }
+#if INCLUDE_JVMCI
+  if (jvmci_nmethod_data() != NULL) {
+    const char* jvmci_name = jvmci_nmethod_data()->name();
+    if (jvmci_name != NULL) {
+      log->print(" jvmci_mirror_name='");
+      log->text("%s", jvmci_name);
+      log->print("'");
+    }
+  }
+#endif
+}
+
+void mintrinsic::print() const {
+  ttyLocker ttyl;   // keep the following output all in one block
+  print(tty);
+}
+
+void mintrinsic::print(outputStream* st) const {
+  ResourceMark rm;
+
+  st->print("Compiled method ");
+
+  if (is_compiled_by_c1()) {
+    st->print("(c1) ");
+  } else if (is_compiled_by_c2()) {
+    st->print("(c2) ");
+  } else if (is_compiled_by_jvmci()) {
+    st->print("(JVMCI) ");
+  } else {
+    st->print("(n/a) ");
+  }
+
+  print_on(st, NULL);
+
+  if (WizardMode) {
+    st->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
+    st->print(" for method " INTPTR_FORMAT , p2i(method()));
+    st->print(" { ");
+    st->print_cr("%s ", state());
+    st->print_cr("}:");
+  }
+  if (size              () > 0) st->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(this),
+                                             p2i(this) + size(),
+                                             size());
+  if (relocation_size   () > 0) st->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(relocation_begin()),
+                                             p2i(relocation_end()),
+                                             relocation_size());
+  if (consts_size       () > 0) st->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(consts_begin()),
+                                             p2i(consts_end()),
+                                             consts_size());
+  if (insts_size        () > 0) st->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(insts_begin()),
+                                             p2i(insts_end()),
+                                             insts_size());
+  if (stub_size         () > 0) st->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(stub_begin()),
+                                             p2i(stub_end()),
+                                             stub_size());
+  if (oops_size         () > 0) st->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(oops_begin()),
+                                             p2i(oops_end()),
+                                             oops_size());
+  if (metadata_size     () > 0) st->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(metadata_begin()),
+                                             p2i(metadata_end()),
+                                             metadata_size());
+  if (scopes_data_size  () > 0) st->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(scopes_data_begin()),
+                                             p2i(scopes_data_end()),
+                                             scopes_data_size());
+  if (scopes_pcs_size   () > 0) st->print_cr(" scopes pcs     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(scopes_pcs_begin()),
+                                             p2i(scopes_pcs_end()),
+                                             scopes_pcs_size());
+  if (dependencies_size () > 0) st->print_cr(" dependencies   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(dependencies_begin()),
+                                             p2i(dependencies_end()),
+                                             dependencies_size());
+  if (handler_table_size() > 0) st->print_cr(" handler table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(handler_table_begin()),
+                                             p2i(handler_table_end()),
+                                             handler_table_size());
+  if (nul_chk_table_size() > 0) st->print_cr(" nul chk table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(nul_chk_table_begin()),
+                                             p2i(nul_chk_table_end()),
+                                             nul_chk_table_size());
+#if INCLUDE_JVMCI
+  if (speculations_size () > 0) st->print_cr(" speculations   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(speculations_begin()),
+                                             p2i(speculations_end()),
+                                             speculations_size());
+  if (jvmci_data_size   () > 0) st->print_cr(" JVMCI data     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                             p2i(jvmci_data_begin()),
+                                             p2i(jvmci_data_end()),
+                                             jvmci_data_size());
+#endif
+}
+
+void mintrinsic::print_on(outputStream* st, const char* msg) const {
+  if (st != NULL) {
+    ttyLocker ttyl;
+    if (WizardMode) {
+      // CompileTask::print(st, this, msg, /*short_form:*/ true);
+      st->print_cr(" (" INTPTR_FORMAT ")", p2i(this));
+    } else {
+      // CompileTask::print(st, this, msg, /*short_form:*/ false);
+    }
+  }
+}
+
+#ifndef PRODUCT  // RelocIterator does support printing only then.
+void mintrinsic::print_relocations() {
+  ResourceMark m;       // in case methods get printed via the debugger
+  tty->print_cr("relocations:");
+  RelocIterator iter(this);
+  iter.print();
+}
+#endif
+
 #endif

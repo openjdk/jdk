@@ -802,4 +802,210 @@ class nmethodLocker : public StackObj {
   }
 };
 
+#if defined(AARCH64)
+class mintrinsic : public CompiledMethod {
+ public:
+  static mintrinsic* new_mintrinsic(const methodHandle& method,
+                              int compile_id,
+                              CodeBuffer *code_buffer,
+                              int vep_offset,
+                              int frame_complete,
+                              int frame_size);
+
+  bool  is_in_use() const override                { assert(_state <= in_use, "invalid state"); return true; }
+  bool  is_not_entrant() const override           { return _state == not_entrant; }
+  bool  is_alive() const override                 { return _state < unloaded; }
+  bool  is_zombie() const override                { assert(_state != zombie, "invalid state"); return false; }
+  bool  is_unloaded() const override              { return _state == unloaded; }
+
+  int   comp_level() const override               { return _comp_level; }
+  int   compile_id() const override               { return _compile_id; }
+
+  address verified_entry_point() const            { return _verified_entry_point;    } // if klass is correct
+  void log_identity(xmlStream* log) const override;
+  void log_state_change() const override          { Unimplemented(); }
+  bool make_not_used() override     { assert(false, "invalid transition"); return false; }
+  bool make_not_entrant() override  { assert(false, "invalid transition"); return false; }
+  bool make_entrant() override      { assert(false, "invalid transition"); return false; }
+  bool make_zombie() override       { assert(false, "invalid transition"); return false; }
+
+  address entry_point() const override            { return _entry_point;             } // normal entry point
+  bool is_osr_method() const override             { return _entry_bci != InvocationEntryBci; }
+  int  osr_entry_bci() const override             { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
+
+  void print_pcs() override { }
+
+  // boundaries for different parts
+  oop   oop_at(int index) const override;
+  Metadata*     metadata_at(int index) const override     { return index == 0 ? NULL: *metadata_addr_at(index); }
+  address scopes_data_end       () const          { return           header_begin() + _scopes_pcs_offset    ; }
+  PcDesc* scopes_pcs_begin      () const          { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
+  PcDesc* scopes_pcs_end        () const          { return (PcDesc*)(header_begin() + _dependencies_offset) ; }
+  address consts_begin          () const          { return           header_begin() + _consts_offset        ; }
+  address consts_end            () const          { return           code_begin()                           ; }
+  address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
+  address stub_end              () const          { return           header_begin() + _oops_offset          ; }
+  address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
+  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
+  oop*    oops_begin            () const          { return (oop*)   (header_begin() + _oops_offset)         ; }
+  oop*    oops_end              () const          { return (oop*)   (header_begin() + _metadata_offset)     ; }
+
+  Metadata** metadata_begin   () const            { return (Metadata**)  (header_begin() + _metadata_offset); }
+  Metadata** metadata_end     () const            { return (Metadata**)  _scopes_data_begin; }
+
+  address dependencies_begin    () const          { return           header_begin() + _dependencies_offset  ; }
+  address dependencies_end      () const          { return           header_begin() + _native_invokers_offset ; }
+  RuntimeStub** native_invokers_begin() const     { return (RuntimeStub**)(header_begin() + _native_invokers_offset) ; }
+  RuntimeStub** native_invokers_end  () const     { return (RuntimeStub**)(header_begin() + _handler_table_offset); }
+  address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
+  address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
+  address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
+#if INCLUDE_JVMCI
+  address nul_chk_table_end     () const          { return           header_begin() + _speculations_offset  ; }
+  address speculations_begin    () const          { return           header_begin() + _speculations_offset  ; }
+  address speculations_end      () const          { return           header_begin() + _jvmci_data_offset   ; }
+  address jvmci_data_begin      () const          { return           header_begin() + _jvmci_data_offset    ; }
+  address jvmci_data_end        () const          { return           header_begin() + _nmethod_end_offset   ; }
+#else
+  address nul_chk_table_end     () const          { return           header_begin() + _nmethod_end_offset   ; }
+#endif
+
+  oop*  oop_addr_at(int index) const {  // for GC
+    // relocation indexes are biased by 1 (because 0 is reserved)
+    assert(index > 0 && index <= oops_count(), "must be a valid non-zero index");
+    return &oops_begin()[index - 1];
+  }
+
+  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
+
+  bool can_convert_to_zombie();
+  const char* compile_kind() const;
+  int get_state() const             { return _state; }
+
+  bool is_dependent_on_method(Method* dependee) override  { return false; }
+
+  NativeCallWrapper* call_wrapper_at(address call) const;
+  NativeCallWrapper* call_wrapper_before(address return_pc) const;
+  address call_instruction_address(address pc) const;
+
+  CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const override;
+  CompiledStaticCall* compiledStaticCall_at(address addr) const override;
+  CompiledStaticCall* compiledStaticCall_before(address addr) const override;
+
+  void make_unloaded()                            { assert(false, "invalid transition"); }
+
+  bool try_transition(int new_state);
+
+  bool make_in_use() {
+    return try_transition(in_use);
+  }
+
+#if INCLUDE_JVMCI
+  JVMCINMethodData* jvmci_nmethod_data() const {
+    return jvmci_data_size() == 0 ? NULL : (JVMCINMethodData*) jvmci_data_begin();
+  }
+#endif
+
+  void do_unloading(bool unloading_occurred) override;
+
+ protected:
+   void flush()                            { Unimplemented(); }
+
+  // Sizes
+  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
+  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
+  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
+#if INCLUDE_JVMCI
+  int speculations_size () const                  { return            speculations_end () -            speculations_begin (); }
+  int jvmci_data_size   () const                  { return            jvmci_data_end   () -            jvmci_data_begin   (); }
+#endif
+
+  int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
+  int metadata_count() const { assert(metadata_size() % wordSize == 0, ""); return (metadata_size() / wordSize) + 1; }
+
+  int data_offset() const                         { return _data_offset; }
+
+  bool is_unloading() override                    { return false; }
+
+  void init_defaults();
+
+  void metadata_do(MetadataClosure* f) override;
+  void log_new_nmethod() const                    {}
+
+  Metadata**  metadata_addr_at(int index) const {  // for GC
+    // relocation indexes are biased by 1 (because 0 is reserved)
+    assert(index > 0 && index <= metadata_count(), "must be a valid non-zero index");
+    return &metadata_begin()[index - 1];
+  }
+
+  int       _entry_bci;
+  nmethod*  _osr_link;
+
+  // offsets for entry points
+  address _entry_point;                      // entry point with class check
+  address _verified_entry_point;             // entry point without class check
+  address _osr_entry_point;                  // entry point for on stack replacement
+
+  // Offsets for different nmethod parts
+  int  _exception_offset;
+  // Offset of the unwind handler if it exists
+  int _unwind_handler_offset;
+
+  int _consts_offset;
+  int _stub_offset;
+  int _oops_offset;                       // offset to where embedded oop table begins (inside data)
+  int _metadata_offset;                   // embedded meta data table
+  int _scopes_data_offset;
+  int _scopes_pcs_offset;
+  int _dependencies_offset;
+  int _native_invokers_offset;
+  int _handler_table_offset;
+  int _nul_chk_table_offset;
+#if INCLUDE_JVMCI
+  int _speculations_offset;
+  int _jvmci_data_offset;
+#endif
+  int _nmethod_end_offset;
+
+  int _orig_pc_offset;
+
+  int _compile_id;
+  int _comp_level;
+
+  friend class nmethodLocker;
+
+  volatile jint _lock_count;
+  volatile signed char _state;
+
+ private:
+  mintrinsic(Method* method,
+          CompilerType type,
+          int nmethod_size,
+          int compile_id,
+          CodeOffsets* offsets,
+          CodeBuffer *code_buffer,
+          int frame_size);
+
+  // helper methods
+  void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+
+  address* orig_pc_addr(const frame* fr);
+
+  void verify() {}
+
+  void print()                          const;
+  void print(outputStream* st)          const;
+
+  virtual void print_on(outputStream* st) const { CodeBlob::print_on(st); }
+  virtual void print_on(outputStream* st, const char* msg) const;
+
+#if defined(SUPPORT_DATA_STRUCTS)
+  // print output in opt build for disassembler library
+  void print_relocations()                        PRODUCT_RETURN;
+#endif
+};
+
+#endif
+
 #endif // SHARE_CODE_NMETHOD_HPP

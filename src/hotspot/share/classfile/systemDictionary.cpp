@@ -2017,7 +2017,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
       // Generate a compiled form of the MH intrinsic.
       // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
-      AdapterHandlerLibrary::create_native_wrapper(m);
+      AdapterHandlerLibrary::create_method_handle_intrinsic_wrapper(m);
       // Check if have the compiled code.
       if (!m->has_compiled_code()) {
         THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
