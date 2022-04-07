@@ -31,8 +31,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import javax.net.ssl.*;
 
-import jdk.internal.ref.CleanerFactory;
-
 /**
  * Abstract base class for SSLSocketImpl.
  *
@@ -63,8 +61,6 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
         super();
         this.self = this;
         this.consumedInput = null;
-
-        CleanerFactory.cleaner().register(this, this::tryClose);
     }
 
 
@@ -72,16 +68,12 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
         super();
         this.self = socket;
         this.consumedInput = null;
-
-        CleanerFactory.cleaner().register(this, this::tryClose);
     }
 
     BaseSSLSocketImpl(Socket socket, InputStream consumed) {
         super();
         this.self = socket;
         this.consumedInput = consumed;
-
-        CleanerFactory.cleaner().register(this, this::tryClose);
     }
 
     //
@@ -268,27 +260,6 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
             return super.isOutputShutdown();
         } else {
             return self.isOutputShutdown();
-        }
-    }
-
-    /**
-     * Ensures that the SSL connection is closed down as cleanly
-     * as possible, in case the application forgets to do so.
-     * This allows SSL connections to be implicitly reclaimed,
-     * rather than forcing them to be explicitly reclaimed at
-     * the penalty of prematurely killing SSL sessions.
-     */
-    private void tryClose() {
-        try {
-            close();
-        } catch (IOException ioe) {
-            try {
-                if (self == this) {
-                    super.close();
-                }
-            } catch (IOException e) {
-                // ignore
-            }
         }
     }
 
