@@ -166,14 +166,13 @@ import jdk.internal.misc.Unsafe;
  * using a factory that may return {@code null}. However doing so may
  * cause unjoined tasks to never be executed.
  *
- * <p><b>Implementation notes:</b> This implementation restricts the
- * maximum number of running threads to 32767. Attempts to create
- * pools with greater than the maximum number result in
- * {@code IllegalArgumentException}.
- *
- * <p>This implementation rejects submitted tasks (that is, by throwing
- * {@link RejectedExecutionException}) only when the pool is shut down
- * or internal resources have been exhausted.
+ * @implNote This implementation restricts the maximum number of
+ * running threads to 32767. Attempts to create pools with greater
+ * than the maximum number result in {@code
+ * IllegalArgumentException}. Also, this implementation rejects
+ * submitted tasks (that is, by throwing {@link
+ * RejectedExecutionException}) only when the pool is shut down or
+ * internal resources have been exhausted.
  *
  * @since 1.7
  * @author Doug Lea
@@ -2921,11 +2920,13 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Applications include contexts in which the number of available
      * processors changes over time.
      *
+     * @implNote This implementation restricts the maximum number of
+     * running threads to 32767
+     *
      * @param size the target parallelism level
      * @return the previous parallelism level.
      * @throws IllegalArgumentException if size is less than 1 or
-     *         greater than the maximum supported by this
-     *         pool (currently 32767).
+     *         greater than the maximum supported by this pool.
      * @throws IllegalStateException if this is the{@link #commonPool()} and
      *         parallelism level was set by System property
      *         {@systemProperty java.util.concurrent.ForkJoinPool.common.parallelism}.
