@@ -2020,7 +2020,7 @@ public final class Long extends Number
      * positions.
      * <p>
      * The following identities all return {@code true} and are helpful to
-     * understand the behaviour of {@code expand}`:
+     * understand the behaviour of {@code expand}:
      * {@snippet lang="java" :
      * // Logically shift right the first bit
      * expand(x, 1 << n) == (x & 1) << n
