@@ -38,11 +38,12 @@ import sun.security.jgss.spi.GSSNameSpi;
  * @since 1.6
  */
 public class GSSCredElement implements GSSCredentialSpi {
+    private final Cleaner.Cleanable cleanable;
 
     private int usage;
-    long pCred; // Pointer to the gss_cred_id_t structure
+    final long pCred; // Pointer to the gss_cred_id_t structure
     private GSSNameElement name = null;
-    private GSSLibStub cStub;
+    private final GSSLibStub cStub;
 
     // Perform the necessary ServicePermission check on this cred
     @SuppressWarnings("removal")
@@ -70,8 +71,7 @@ public class GSSCredElement implements GSSCredentialSpi {
         cStub = GSSLibStub.getInstance(mech);
         usage = GSSCredential.INITIATE_ONLY;
         name = srcName;
-
-        Cleaner.create().register(this, this::dispose);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(cStub, pCred));
     }
 
     GSSCredElement(GSSNameElement name, int lifetime, int usage,
@@ -89,7 +89,7 @@ public class GSSCredElement implements GSSCredentialSpi {
             doServicePermCheck();
         }
 
-        Cleaner.create().register(this, this::dispose);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(cStub, pCred));
     }
 
     public Provider getProvider() {
@@ -98,9 +98,15 @@ public class GSSCredElement implements GSSCredentialSpi {
 
     public void dispose() {
         name = null;
-        if (pCred != 0) {
-            pCred = cStub.releaseCred(pCred);
-        }
+        cleanable.clean();
+    }
+
+    private static Runnable disposerFor(GSSLibStub stub, long pCredentials) {
+        return () -> {
+            if (stub != null && pCredentials != 0) {
+                stub.releaseCred(pCredentials);
+            }
+        };
     }
 
     public GSSNameElement getName() throws GSSException {

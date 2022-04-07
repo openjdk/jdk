@@ -47,6 +47,7 @@ import java.io.*;
  * @since 1.6
  */
 class NativeGSSContext implements GSSContextSpi {
+    private final Cleaner.Cleanable cleanable;
 
     private static final int GSS_C_DELEG_FLAG = 1;
     private static final int GSS_C_MUTUAL_FLAG = 2;
@@ -214,7 +215,7 @@ class NativeGSSContext implements GSSContextSpi {
             srcName = cred.getName();
         }
 
-        Cleaner.create().register(this, this::dispose);
+        this.cleanable = null;
     }
 
     // Constructor for context acceptor
@@ -236,7 +237,7 @@ class NativeGSSContext implements GSSContextSpi {
         // srcName and potentially targetName (when myCred is null)
         // will be set in GSSLibStub.acceptContext(...)
 
-        Cleaner.create().register(this, this::dispose);
+        this.cleanable = null;
     }
 
     // Constructor for imported context
@@ -265,7 +266,7 @@ class NativeGSSContext implements GSSContextSpi {
             doServicePermCheck();
         }
 
-        Cleaner.create().register(this, this::dispose);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pCtxt));
     }
 
     public Provider getProvider() {
@@ -377,10 +378,19 @@ class NativeGSSContext implements GSSContextSpi {
         srcName = null;
         targetName = null;
         delegatedCred = null;
-        if (pContext != 0) {
-            pContext = cStub.deleteContext(pContext);
+
+        if (pContext != 0 && cleanable != null) {
+            cleanable.clean();
             pContext = 0;
         }
+    }
+
+    private static Runnable disposerFor(GSSLibStub stub, long pContext) {
+        return () -> {
+            if (stub != null && pContext != 0) {
+                stub.deleteContext(pContext);
+            }
+        };
     }
 
     public int getWrapSizeLimit(int qop, boolean confReq,

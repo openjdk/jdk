@@ -6,7 +6,6 @@
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
-import java.lang.ref.Cleaner;
  * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
@@ -50,11 +49,12 @@ import javax.security.auth.kerberos.ServicePermission;
  */
 
 public class GSSNameElement implements GSSNameSpi {
+    private final Cleaner.Cleanable cleanable;
 
     long pName = 0; // Pointer to the gss_name_t structure
     private String printableName;
     private Oid printableType;
-    private GSSLibStub cStub;
+    final private GSSLibStub cStub;
 
     static final GSSNameElement DEF_ACCEPTOR = new GSSNameElement();
 
@@ -96,8 +96,8 @@ public class GSSNameElement implements GSSNameSpi {
 
     private GSSNameElement() {
         printableName = "<DEFAULT ACCEPTOR>";
-
-        Cleaner.create().register(this, this::dispose);
+        cleanable = null;
+        cStub = null;
     }
 
     // Warning: called by NativeUtil.c
@@ -111,7 +111,7 @@ public class GSSNameElement implements GSSNameSpi {
         cStub = stub;
         setPrintables();
 
-        Cleaner.create().register(this, this::dispose);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
     }
 
     GSSNameElement(byte[] nameBytes, Oid nameType, GSSLibStub stub)
@@ -185,7 +185,7 @@ public class GSSNameElement implements GSSNameSpi {
         SunNativeProvider.debug("Imported " + printableName + " w/ type " +
                                 printableType);
 
-        Cleaner.create().register(this, this::dispose);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
     }
 
     private void setPrintables() throws GSSException {
@@ -292,9 +292,17 @@ public class GSSNameElement implements GSSNameSpi {
     }
 
     public void dispose() {
-        if (pName != 0) {
-            cStub.releaseName(pName);
+        if (pName != 0 && cleanable != null) {
+            cleanable.clean();
             pName = 0;
         }
+    }
+
+    private static Runnable disposerFor(GSSLibStub stub, long pName) {
+        return () -> {
+            if (stub != null && pName != 0) {
+                stub.releaseName(pName);
+            }
+        };
     }
 }

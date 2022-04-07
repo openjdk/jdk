@@ -25,6 +25,7 @@
 package sun.security.jgss.wrapper;
 
 import org.ietf.jgss.*;
+import java.lang.ref.Cleaner;
 import javax.security.auth.kerberos.ServicePermission;
 
 /**
@@ -33,6 +34,8 @@ import javax.security.auth.kerberos.ServicePermission;
  * @since 1.6
  */
 class Krb5Util {
+    // A cleaner, shared within this module.
+    static final Cleaner cleaner = Cleaner.create();
 
     // Return the Kerberos TGS principal name using the domain
     // of the specified <code>name</code>
