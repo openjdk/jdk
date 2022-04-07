@@ -125,10 +125,6 @@ class FileDispatcherImpl extends FileDispatcher {
         return true;
     }
 
-    boolean transferToFileChannelNeedsPositionLock() {
-        return true;
-    }
-
     boolean canTransferToFromOverlappedMap() {
         return true;
     }

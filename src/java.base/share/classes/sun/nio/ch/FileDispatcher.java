@@ -67,8 +67,6 @@ abstract class FileDispatcher extends NativeDispatcher {
 
     abstract boolean transferToDirectlyNeedsPositionLock();
 
-    abstract boolean transferToFileChannelNeedsPositionLock();
-
     abstract boolean canTransferToFromOverlappedMap();
 
     abstract int setDirectIO(FileDescriptor fd, String path);

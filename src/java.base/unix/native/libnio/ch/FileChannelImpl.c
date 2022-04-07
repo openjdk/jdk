@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #if defined(__linux__)
+#include <dlfcn.h>
 #include <sys/sendfile.h>
 #elif defined(_AIX)
 #include <string.h>
@@ -47,8 +48,15 @@
 #include "nio.h"
 #include "nio_util.h"
 #include "sun_nio_ch_FileChannelImpl.h"
-#include "java_lang_Integer.h"
+#include "java_lang_Long.h"
 #include <assert.h>
+
+#if defined(__linux__)
+typedef ssize_t copy_file_range_func(int fd_in, off64_t *off_in,
+                                     int fd_out, off64_t *off_out,
+                                     size_t len, unsigned int flags);
+static copy_file_range_func* my_copy_file_range_func = NULL;
+#endif
 
 static jfieldID chan_fd;        /* jobject 'fd' in sun.nio.ch.FileChannelImpl */
 
@@ -57,6 +65,9 @@ Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 {
     jlong pageSize = sysconf(_SC_PAGESIZE);
     chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
+#if defined(__linux__)
+    my_copy_file_range_func = (copy_file_range_func*)dlsym(RTLD_DEFAULT, "copy_file_range");
+#endif
     return pageSize;
 }
 
@@ -169,7 +180,14 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 
 #if defined(__linux__)
     off64_t offset = (off64_t)position;
-    jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
+    jlong n;
+    if (my_copy_file_range_func != NULL) {
+        size_t len = (size_t)count;
+        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
+        if (n >= 0)
+            return n;
+    }
+    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;
@@ -256,67 +274,10 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_maxDirectTransferSize0(JNIEnv* env, jobject this)
 {
 #if defined(LINUX)
-    return 0x7ffff000; // 2,147,479,552 maximum for sendfile()
+    return my_copy_file_range_func != NULL ?
+           java_lang_Long_MAX_VALUE : // maximum value of type ssize_t
+           0x7ffff000;                // 2,147,479,552 maximum for sendfile()
 #else
-    return java_lang_Integer_MAX_VALUE;
-#endif
-}
-
-#if defined(__APPLE__)
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-#define READ_WRITE_TRANSFER_SIZE 32768
-
-long transfer_read_write(JNIEnv* env, jint src, jlong position, jlong count,
-                         jint dst)
-{
-    char buf[READ_WRITE_TRANSFER_SIZE];
-
-    ssize_t tw = 0;
-    off_t offset = (off_t)position;
-    while (tw < count) {
-        ssize_t remaining = count - tw;
-        ssize_t nr = remaining < READ_WRITE_TRANSFER_SIZE ?
-            remaining : READ_WRITE_TRANSFER_SIZE;
-        RESTARTABLE(pread((int)src, &buf, nr, offset), nr);
-        if (nr <= 0) {
-            break;
-        }
-        offset += nr;
-
-        ssize_t nw;
-        RESTARTABLE(write((int)dst, &buf, nr), nw);
-        tw += nw;
-        if (nw != nr)
-            return tw;
-    }
-
-    return tw;
-}
-#endif
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_transferToFileChannel0(JNIEnv *env,
-                                                       jobject this,
-                                                       jobject srcFDO,
-                                                       jlong position,
-                                                       jlong count,
-                                                       jobject dstFDO)
-{
-    jint srcFD = fdval(env, srcFDO);
-    jint dstFD = fdval(env, dstFDO);
-
-#if defined(__linux__)
-    // Once the Linux kernel version used for the JDK production build is at
-    // least 5.3, copy_file_range(2) could be used here.
-    return IOS_UNSUPPORTED;
-#elif defined(__APPLE__)
-    return transfer_read_write(env, srcFD, position, count, dstFD);
-#else
-    return IOS_UNSUPPORTED;
+    return java_lang_Long_MAX_VALUE;
 #endif
 }
