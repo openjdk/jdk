@@ -25,8 +25,9 @@
  * @test
  * @key headful
  * @bug 4670319
- * @summary AccessibleJTree should fire a PropertyChangeEvent using a AccessibleJTreeNode as source.
- * @run main AccessibleJTrePCESourceTest
+ * @summary AccessibleJTree should fire a PropertyChangeEvent
+ * using a AccessibleJTreeNode as source.
+ * @run main AccessibleJTreePCESourceTest
  */
 
 import java.awt.Robot;
@@ -37,17 +38,17 @@ import javax.swing.JFrame;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 
-public class AccessibleJTrePCESourceTest {
+public class AccessibleJTreePCESourceTest {
     private static JTree jTree;
     private static JFrame jFrame;
 
-    private static ArrayList<PropertyChangeEvent> eventsList = new ArrayList<PropertyChangeEvent>();
+    private static ArrayList<PropertyChangeEvent> eventsList =
+        new ArrayList<PropertyChangeEvent>();
 
     private static void doTest() throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> createGUI());
             Robot robot = new Robot();
-            robot.setAutoDelay(500);
             robot.waitForIdle();
 
             expand(1);
@@ -96,11 +97,13 @@ public class AccessibleJTrePCESourceTest {
             String state = obj.getNewValue().toString();
 
             if ((state.equals("expanded") || state.equals("collapsed"))
-                && (obj.getPropertyName().toString()).equals("AccessibleState")) {
-                if (!(obj.getSource().getClass().getName())
-                    .equals("javax.swing.JTree$AccessibleJTree$AccessibleJTreeNode")) {
-                    throw new RuntimeException("Test Failed: When tree node is " + state
-                        + ", PropertyChangeEventSource is " + obj.getSource().getClass().getName());
+                && (obj.getPropertyName().toString())
+                .equals("AccessibleState")) {
+                if (!(obj.getSource().getClass().getName()).equals(
+                    "javax.swing.JTree$AccessibleJTree$AccessibleJTreeNode")) {
+                    throw new RuntimeException("Test Failed: When tree node is "
+                        + state + ", PropertyChangeEventSource is "
+                        + obj.getSource().getClass().getName());
                 }
             }
         }
@@ -108,4 +111,3 @@ public class AccessibleJTrePCESourceTest {
             "Test Passed: When tree node is expanded/collapsed, PropertyChangeEventSource is the Node");
     }
 }
-
