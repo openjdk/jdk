@@ -403,6 +403,8 @@ public final class ExtendedSocketOptions {
                 return newInstance("jdk.net.LinuxSocketOptions");
             } else if (osname.startsWith("Mac")) {
                 return newInstance("jdk.net.MacOSXSocketOptions");
+            } else if (osname.startsWith("Windows")) {
+                return newInstance("jdk.net.WindowsSocketOptions");
             } else {
                 return new PlatformSocketOptions();
             }
