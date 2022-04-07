@@ -2009,7 +2009,7 @@ public final class Long extends Number
         // Bits to move
         long part5 = maskPrefix & mask;
         // Compress mask
-        mask = (mask ^ part4) | (part4 >>> (1 << 4));
+        mask = (mask ^ part5) | (part5 >>> (1 << 4));
         maskCount = maskCount & ~maskPrefix;
 
         maskPrefix = parallelSuffix(maskCount);
