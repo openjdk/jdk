@@ -33,6 +33,12 @@
 
 class MemRegion;
 
+/*
+ * ObjectBitSet is a sparse bitmap for marking objects in the Java heap.
+ * It holds one bit per ObjAlignmentInBytes-aligned address. Its underlying backing memory is
+ * allocated on-demand only, in fragments covering 64M heap ranges. Fragments are never deleted
+ * during the lifetime of the ObjectBitSet. The underlying memory is allocated from C-Heap.
+ */
 template<MEMFLAGS F>
 class ObjectBitSet : public CHeapObj<F> {
   const static size_t _bitmap_granularity_shift = 26; // 64M
