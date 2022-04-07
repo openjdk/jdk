@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,16 +132,17 @@ public class ManualTestFrame extends JFrame {
 
     /**
      * Show a test control frame which allows a user to either pass or fail the test.
-     * @param testName
-     * @param headerText
-     * @param instructions
+     *
+     * @param testName     name of the testcase
+     * @param headerText   information to the user to wait for the test frame.
+     * @param instructions test instruction for the user
      * @return Returning supplier blocks till the test is passed or failed by the user.
-     * @throws InterruptedException
-     * @throws InvocationTargetException
+     * @throws InterruptedException      exception
+     * @throws InvocationTargetException exception
      */
     public static Supplier<TestResult> showUI(String testName,
                                               String headerText,
-                                              Consumer<JEditorPane> instructions , int timeout)
+                                              Consumer<JEditorPane> instructions)
             throws InterruptedException, InvocationTargetException {
         AtomicReference<TestResult> resultContainer = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
@@ -158,6 +159,8 @@ public class ManualTestFrame extends JFrame {
         });
         return () -> {
             try {
+		int timeout = Integer.getInteger("timeout", 3);
+                System.out.println("timeout value : " + timeout);
                 if (!latch.await(timeout, TimeUnit.MINUTES)) {
                     throw new RuntimeException("Timeout : User failed to " +
                             "take decision on the test result.");
@@ -173,11 +176,11 @@ public class ManualTestFrame extends JFrame {
      * Checks the TestResult after user interacted with the manual TestFrame
      * and the test UI.
      *
-     * @param result
+     * @param result   Instance of the TestResult
      * @param testName name of the testcase
-     * @throws IOException
+     * @throws IOException exception
      */
-    public static void handleResult(TestResult result , String testName) throws IOException {
+    public static void handleResult(TestResult result, String testName) throws IOException {
         if (result != null) {
             System.err.println("Failure reason: \n" + result.getFailureDescription());
             if (result.getScreenCapture() != null) {
@@ -189,7 +192,8 @@ public class ManualTestFrame extends JFrame {
             if (e != null) {
                 throw new RuntimeException(e);
             } else {
-                if (!result.getStatus()) throw new RuntimeException("Test failed!");
+                if (!result.getStatus())
+                    throw new RuntimeException("Test failed!");
             }
         } else {
             throw new RuntimeException("No result returned!");

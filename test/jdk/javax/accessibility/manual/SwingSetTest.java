@@ -34,7 +34,7 @@ public class SwingSetTest {
         Supplier<TestResult> resultSupplier = ManualTestFrame.showUI(args[0],
                 "Wait for SwingSet2 to load, follow the instructions, select pass or fail. " +
                         "Do not close windows manually.",
-                testInstructionProvider , 10);
+                testInstructionProvider);
 
         String swingSetJar = System.getenv("SWINGSET2_JAR");
         if (swingSetJar == null) {

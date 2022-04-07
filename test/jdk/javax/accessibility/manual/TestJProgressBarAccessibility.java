@@ -103,8 +103,8 @@ public class TestJProgressBarAccessibility {
 
         Supplier<TestResult> resultSupplier = ManualTestFrame.showUI(
                 "JProgressBar " +
-                        "Accessibility Test" , "Wait until the Test UI is " +
-                        "seen" , testInstProvider , 3);
+                        "Accessibility Test", "Wait until the Test UI is " +
+                        "seen", testInstProvider);
 
         // Create and show TestUI
         createTestUI();
