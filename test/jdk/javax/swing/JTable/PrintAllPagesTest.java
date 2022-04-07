@@ -70,7 +70,7 @@ public class PrintAllPagesTest {
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
-                dispose();		
+                dispose();
             });
         }
     }
@@ -81,7 +81,7 @@ public class PrintAllPagesTest {
         }
         if (f != null) {
             f.dispose();
-        }	
+        }
     }
 
     private static void printAllPagesTest() {
