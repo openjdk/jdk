@@ -1973,35 +1973,74 @@ public final class Long extends Number
      */
     // @IntrinsicCandidate
     public static long expand(long i, long mask) {
-        long[] array = new long[6];
         // Save original mask
         long originalMask = mask;
         // Count 0's to right
         long maskCount = ~mask << 1;
-        for (int j = 0; j < 6; j++) {
-            // Parallel suffix
-            long maskPrefix = maskCount ^ (maskCount << 1);
-            maskPrefix = maskPrefix ^ (maskPrefix << 2);
-            maskPrefix = maskPrefix ^ (maskPrefix << 4);
-            maskPrefix = maskPrefix ^ (maskPrefix << 8);
-            maskPrefix = maskPrefix ^ (maskPrefix << 16);
-            maskPrefix = maskPrefix ^ (maskPrefix << 32);
-            // Bits to move
-            long maskMove = maskPrefix & mask;
-            array[j] = maskMove;
-            // Compress mask
-            mask = (mask ^ maskMove) | (maskMove >>> (1 << j));
-            maskCount = maskCount & ~maskPrefix;
-        }
+        long maskPrefix = parallelSuffix(maskCount);
+        // Bits to move
+        long part1 = maskPrefix & mask;
+        // Compress mask
+        mask = (mask ^ part1) | (part1 >>> (1 << 0));
+        maskCount = maskCount & ~maskPrefix;
 
-        for (int j = 5; j >= 0; j--) {
-            long maskMove = array[j];
-            long t = i << (1 << j);
-            i = (i & ~maskMove) | (t & maskMove);
-        }
+        maskPrefix = parallelSuffix(maskCount);
+        // Bits to move
+        long part2 = maskPrefix & mask;
+        // Compress mask
+        mask = (mask ^ part2) | (part2 >>> (1 << 1));
+        maskCount = maskCount & ~maskPrefix;
+
+        maskPrefix = parallelSuffix(maskCount);
+        // Bits to move
+        long part3 = maskPrefix & mask;
+        // Compress mask
+        mask = (mask ^ part3) | (part3 >>> (1 << 2));
+        maskCount = maskCount & ~maskPrefix;
+
+        maskPrefix = parallelSuffix(maskCount);
+        // Bits to move
+        long part4 = maskPrefix & mask;
+        // Compress mask
+        mask = (mask ^ part4) | (part4 >>> (1 << 3));
+        maskCount = maskCount & ~maskPrefix;
+
+        maskPrefix = parallelSuffix(maskCount);
+        // Bits to move
+        long part5 = maskPrefix & mask;
+        // Compress mask
+        mask = (mask ^ part4) | (part4 >>> (1 << 4));
+        maskCount = maskCount & ~maskPrefix;
+
+        maskPrefix = parallelSuffix(maskCount);
+        // Bits to move
+        long part6 = maskPrefix & mask;
+
+        long t = i << (1 << 5);
+        i = (i & ~part6) | (t & part6);
+        t = i << (1 << 4);
+        i = (i & ~part5) | (t & part5);
+        t = i << (1 << 3);
+        i = (i & ~part4) | (t & part4);
+        t = i << (1 << 2);
+        i = (i & ~part3) | (t & part3);
+        t = i << (1 << 1);
+        i = (i & ~part2) | (t & part2);
+        t = i << (1 << 0);
+        i = (i & ~part1) | (t & part1);
 
         // Clear irrelevant bits
         return i & originalMask;
+    }
+
+    private static long parallelSuffix(long maskCount) {
+        long maskPrefix = maskCount ^ (maskCount << 1);
+        maskPrefix = maskPrefix ^ (maskPrefix << 2);
+        maskPrefix = maskPrefix ^ (maskPrefix << 4);
+        maskPrefix = maskPrefix ^ (maskPrefix << 8);
+        maskPrefix = maskPrefix ^ (maskPrefix << 16);
+        maskPrefix = maskPrefix ^ (maskPrefix << 32);
+        return maskPrefix;
     }
 
     /**
