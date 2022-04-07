@@ -68,6 +68,8 @@
 #include "utilities/objectBitSet.inline.hpp"
 #include "utilities/macros.hpp"
 
+typedef ObjectBitSet<mtServiceability> JVMTIBitSet;
+
 bool JvmtiTagMap::_has_object_free_events = false;
 
 // create a JvmtiTagMap
@@ -1332,37 +1334,6 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
 
-// Stack allocated class to help ensure that ObjectMarker is used
-// correctly. Constructor initializes ObjectMarker, destructor calls
-// ObjectMarker's done() function to restore object headers.
-class ObjectMarker : public StackObj {
-private:
-  static ObjectBitSet<mtServiceability>* _bitset;
-public:
-  ObjectMarker() {
-    assert(_bitset == NULL, "don't initialize bitset twice");
-    _bitset = new ObjectBitSet<mtServiceability>();
-  }
-
-  ~ObjectMarker() {
-    assert(_bitset != NULL, "bitset must be initialized");
-    delete _bitset;
-    _bitset = NULL;
-  }
-
-  static void mark(oop o) {
-    assert(_bitset != NULL, "bitset must be initialized");
-    _bitset->mark_obj(o);
-  }
-
-  static bool is_marked(oop o) {
-    assert(_bitset != NULL, "bitset must be initialized");
-    return _bitset->is_marked(o);
-  }
-};
-
-ObjectBitSet<mtServiceability>* ObjectMarker::_bitset = NULL;
-
 // helper to map a jvmtiHeapReferenceKind to an old style jvmtiHeapRootKind
 // (not performance critical as only used for roots)
 static jvmtiHeapRootKind toJvmtiHeapRootKind(jvmtiHeapReferenceKind kind) {
@@ -1495,6 +1466,7 @@ class CallbackInvoker : AllStatic {
   static JvmtiTagMap* _tag_map;
   static const void* _user_data;
   static GrowableArray<oop>* _visit_stack;
+  static JVMTIBitSet* _bitset;
 
   // accessors
   static JvmtiTagMap* tag_map()                        { return _tag_map; }
@@ -1504,7 +1476,7 @@ class CallbackInvoker : AllStatic {
   // if the object hasn't been visited then push it onto the visit stack
   // so that it will be visited later
   static inline bool check_for_visit(oop obj) {
-    if (!ObjectMarker::is_marked(obj)) visit_stack()->push(obj);
+    if (!_bitset->is_marked(obj)) visit_stack()->push(obj);
     return true;
   }
 
@@ -1535,13 +1507,15 @@ class CallbackInvoker : AllStatic {
   static void initialize_for_basic_heap_walk(JvmtiTagMap* tag_map,
                                              GrowableArray<oop>* visit_stack,
                                              const void* user_data,
-                                             BasicHeapWalkContext context);
+                                             BasicHeapWalkContext context,
+                                             JVMTIBitSet* bitset);
 
   // initialize for advanced mode
   static void initialize_for_advanced_heap_walk(JvmtiTagMap* tag_map,
                                                 GrowableArray<oop>* visit_stack,
                                                 const void* user_data,
-                                                AdvancedHeapWalkContext context);
+                                                AdvancedHeapWalkContext context,
+                                                JVMTIBitSet* bitset);
 
    // functions to report roots
   static inline bool report_simple_root(jvmtiHeapReferenceKind kind, oop o);
@@ -1574,31 +1548,36 @@ AdvancedHeapWalkContext CallbackInvoker::_advanced_context;
 JvmtiTagMap* CallbackInvoker::_tag_map;
 const void* CallbackInvoker::_user_data;
 GrowableArray<oop>* CallbackInvoker::_visit_stack;
+JVMTIBitSet* CallbackInvoker::_bitset;
 
 // initialize for basic heap walk (IterateOverReachableObjects et al)
 void CallbackInvoker::initialize_for_basic_heap_walk(JvmtiTagMap* tag_map,
                                                      GrowableArray<oop>* visit_stack,
                                                      const void* user_data,
-                                                     BasicHeapWalkContext context) {
+                                                     BasicHeapWalkContext context,
+                                                     JVMTIBitSet* bitset) {
   _tag_map = tag_map;
   _visit_stack = visit_stack;
   _user_data = user_data;
   _basic_context = context;
   _advanced_context.invalidate();       // will trigger assertion if used
   _heap_walk_type = basic;
+  _bitset = bitset;
 }
 
 // initialize for advanced heap walk (FollowReferences)
 void CallbackInvoker::initialize_for_advanced_heap_walk(JvmtiTagMap* tag_map,
                                                         GrowableArray<oop>* visit_stack,
                                                         const void* user_data,
-                                                        AdvancedHeapWalkContext context) {
+                                                        AdvancedHeapWalkContext context,
+                                                        JVMTIBitSet* bitset) {
   _tag_map = tag_map;
   _visit_stack = visit_stack;
   _user_data = user_data;
   _advanced_context = context;
   _basic_context.invalidate();      // will trigger assertion if used
   _heap_walk_type = advanced;
+  _bitset = bitset;
 }
 
 
@@ -2270,6 +2249,8 @@ class VM_HeapWalkOperation: public VM_Operation {
   Handle _initial_object;
   GrowableArray<oop>* _visit_stack;                 // the visit stack
 
+  JVMTIBitSet* _bitset;
+
   bool _following_object_refs;                      // are we following object references
 
   bool _reporting_primitive_fields;                 // optional reporting
@@ -2337,9 +2318,9 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _reporting_primitive_array_values = false;
   _reporting_string_values = false;
   _visit_stack = create_visit_stack();
+  _bitset = new ObjectBitSet<mtServiceability>();
 
-
-  CallbackInvoker::initialize_for_basic_heap_walk(tag_map, _visit_stack, user_data, callbacks);
+  CallbackInvoker::initialize_for_basic_heap_walk(tag_map, _visit_stack, user_data, callbacks, _bitset);
 }
 
 VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
@@ -2354,8 +2335,8 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != NULL);;
   _reporting_string_values = (callbacks.string_primitive_value_callback() != NULL);;
   _visit_stack = create_visit_stack();
-
-  CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, _visit_stack, user_data, callbacks);
+  _bitset = new ObjectBitSet<mtServiceability>();
+  CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, _visit_stack, user_data, callbacks, _bitset);
 }
 
 VM_HeapWalkOperation::~VM_HeapWalkOperation() {
@@ -2364,6 +2345,7 @@ VM_HeapWalkOperation::~VM_HeapWalkOperation() {
     delete _visit_stack;
     _visit_stack = NULL;
   }
+  delete _bitset;
 }
 
 // an array references its class and has a reference to
@@ -2791,8 +2773,8 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
 //
 bool VM_HeapWalkOperation::visit(oop o) {
   // mark object as visited
-  assert(!ObjectMarker::is_marked(o), "can't visit same object more than once");
-  ObjectMarker::mark(o);
+  assert(!_bitset->is_marked(o), "can't visit same object more than once");
+  _bitset->mark_obj(o);
 
   // instance
   if (o->is_instance()) {
@@ -2821,7 +2803,6 @@ bool VM_HeapWalkOperation::visit(oop o) {
 
 void VM_HeapWalkOperation::doit() {
   ResourceMark rm;
-  ObjectMarker marker;
   ClassFieldMapCacheMark cm;
 
   JvmtiTagMap::check_hashmaps_for_heapwalk();
@@ -2846,7 +2827,7 @@ void VM_HeapWalkOperation::doit() {
     // visited or the callback asked to terminate the iteration.
     while (!visit_stack()->is_empty()) {
       oop o = visit_stack()->pop();
-      if (!ObjectMarker::is_marked(o)) {
+      if (!_bitset->is_marked(o)) {
         if (!visit(o)) {
           break;
         }
