@@ -84,7 +84,7 @@ public class TrustAnchor {
      * The name constraints are specified as a byte array. This byte array
      * should contain the DER encoded form of the name constraints, as they
      * would appear in the NameConstraints structure defined in
-     * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>
+     * <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      * and X.509. The ASN.1 definition of this structure appears below.
      *
      * <pre>{@code

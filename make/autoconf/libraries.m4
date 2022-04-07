@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,12 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
          test "x$OPENJDK_TARGET_CPU" = xsh); then
       BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
     fi
+  fi
+
+  # Because RISC-V only has word-sized atomics, it requries libatomic where
+  # other common architectures do not.  So link libatomic by default.
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_CPU" = xriscv64; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
   fi
 
   # perfstat lib

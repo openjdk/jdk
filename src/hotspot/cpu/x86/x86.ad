@@ -1468,6 +1468,16 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_RoundVF:
+      if (UseAVX < 2) { // enabled for AVX2 only
+        return false;
+      }
+      break;
+    case Op_RoundVD:
+      if (UseAVX < 3) {
+        return false;  // enabled for AVX3 only
+      }
+      break;
     case Op_CompareAndSwapL:
 #ifdef _LP64
     case Op_CompareAndSwapP:
@@ -1570,6 +1580,12 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_VectorMaskToLong:
       if (!is_LP64 || UseAVX < 1) {
          return false;
+      }
+      break;
+    case Op_RoundF:
+    case Op_RoundD:
+      if (!is_LP64) {
+        return false;
       }
       break;
     case Op_CopySignD:
@@ -1814,6 +1830,11 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       if (bt == T_LONG && !VM_Version::supports_avx512dq()) {
+        return false;
+      }
+      break;
+    case Op_RoundVD:
+      if (!VM_Version::supports_avx512dq()) {
         return false;
       }
       break;
@@ -7173,13 +7194,14 @@ instruct vcastFtoD_reg(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
+
+instruct castFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
   predicate(!VM_Version::supports_avx512vl() &&
             Matcher::vector_length_in_bytes(n) < 64 &&
             Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP scratch, KILL cr);
-  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3 and $xtmp4 as TEMP" %}
+  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vector_castF2I_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
@@ -7189,13 +7211,13 @@ instruct vcastFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, ve
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+instruct castFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
   predicate((VM_Version::supports_avx512vl() ||
              Matcher::vector_length_in_bytes(n) == 64) &&
              Matcher::vector_element_basic_type(n) == T_INT);
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1 and $ktmp2 as TEMP" %}
+  format %{ "vector_cast_f2i $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
@@ -7216,11 +7238,11 @@ instruct vcastDtoF_reg(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vcastDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+instruct castDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorCastD2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_cast_d2l $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1 and $ktmp2 as TEMP" %}
+  format %{ "vector_cast_d2l $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vector_castD2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
@@ -7246,6 +7268,56 @@ instruct vucast(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
+instruct vround_float_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vl() &&
+            Matcher::vector_length_in_bytes(n) < 64 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (RoundVF src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4, TEMP scratch, KILL cr);
+  format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $xtmp3, $xtmp4 and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
+    __ vector_round_float_avx($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                              $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister,
+                              ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround_float_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+  predicate((VM_Version::supports_avx512vl() ||
+             Matcher::vector_length_in_bytes(n) == 64) &&
+             Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (RoundVF src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
+  format %{ "vector_round_float $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
+    __ vector_round_float_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                               $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                               ExternalAddress(vector_float_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vround_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (RoundVD src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
+  format %{ "vector_round_long $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    InternalAddress new_mxcsr = $constantaddress((jint)0x3F80);
+    __ vector_round_double_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                                $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                                ExternalAddress(vector_double_signflip()), new_mxcsr, $scratch$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
 // --------------------------------- VectorMaskCmp --------------------------------------
 
 instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{

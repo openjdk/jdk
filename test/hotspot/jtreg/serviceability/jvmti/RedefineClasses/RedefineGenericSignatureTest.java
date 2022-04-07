@@ -29,7 +29,6 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.instrument
  * @library /test/lib
- * @run compile -g RedefineGenericSignatureTest.java
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar --add-opens=java.base/java.lang=ALL-UNNAMED RedefineGenericSignatureTest
  */
@@ -140,7 +139,7 @@ public class RedefineGenericSignatureTest {
     }
 
     private byte[] getNewClassBytes() {
-        byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource, "-g");
+        byte[] bytecode = InMemoryJavaCompiler.compile(GenericSignatureTarget.class.getName(), newTargetClassSource);
 
         ClassWriter cw = new ClassWriter(0);
         ClassReader cr = new ClassReader(bytecode);
