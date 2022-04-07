@@ -1790,10 +1790,6 @@ void Arguments::set_heap_size() {
       reasonable_max = MAX2(reasonable_max, (julong)MinHeapSize);
     }
 
-    log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
-    FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);
-  }
-
 #ifdef _LP64
     if (UseCompressedOops || UseCompressedClassPointers) {
       // HeapBaseMinAddress can be greater than default but not less than.
@@ -1839,6 +1835,10 @@ void Arguments::set_heap_size() {
       }
     }
 #endif // _LP64
+
+    log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
+    FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);
+  }
 
   // If the minimum or initial heap_size have not been set or requested to be set
   // ergonomically, set them accordingly.
