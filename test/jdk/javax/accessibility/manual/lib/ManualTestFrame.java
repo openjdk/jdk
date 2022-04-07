@@ -159,7 +159,7 @@ public class ManualTestFrame extends JFrame {
         });
         return () -> {
             try {
-		int timeout = Integer.getInteger("timeout", 3);
+                int timeout = Integer.getInteger("timeout", 10);
                 System.out.println("timeout value : " + timeout);
                 if (!latch.await(timeout, TimeUnit.MINUTES)) {
                     throw new RuntimeException("Timeout : User failed to " +
