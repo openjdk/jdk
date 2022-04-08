@@ -81,9 +81,9 @@ public class TestUseCompressedOopsFlagsWithUlimit {
 
   public static void main(String args[]) throws Exception {
     // Tests
-    // 1. Verify that MaxRAMPercentage overrides UseCompressedOops Ergo
+    // 1. Verify that UseCompressedOops Ergo follows ulimit -v setting.
     // 2. Verify that UseCompressedOops forces compressed oops limit even
-    //    when other flags are specified.
+    //    when ulimit -v are specified.
 
     long oneG = 1L * 1024L * 1024L * 1024L;
 
