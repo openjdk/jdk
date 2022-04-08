@@ -150,57 +150,57 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration[] getConfigurations() {
         if (configs == null) {
-            makeConfigurations();
+            XToolkit.awtLock();
+            try {
+                makeConfigurations();
+            } finally {
+                XToolkit.awtUnlock();
+            }
         }
         return configs.clone();
     }
 
     private void makeConfigurations() {
-        XToolkit.awtLock();
-        try {
-            if (configs == null) {
-                int i = 1;  // Index 0 is always the default config
-                int num = getNumConfigs(screen);
-                GraphicsConfiguration[] ret = new GraphicsConfiguration[num];
-                if (defaultConfig == null) {
-                    ret[0] = getDefaultConfiguration();
-                } else {
-                    ret[0] = defaultConfig;
-                }
-
-                boolean glxSupported = X11GraphicsEnvironment.isGLXAvailable();
-                boolean xrenderSupported = X11GraphicsEnvironment.isXRenderAvailable();
-
-                boolean dbeSupported = isDBESupported();
-                if (dbeSupported && doubleBufferVisuals == null) {
-                    doubleBufferVisuals = new HashSet<>();
-                    getDoubleBufferVisuals(screen);
-                }
-                for (; i < num; i++) {
-                    int visNum = getConfigVisualId(i, screen);
-                    int depth = getConfigDepth(i, screen);
-                    if (glxSupported) {
-                        ret[i] = GLXGraphicsConfig.getConfig(this, visNum);
-                    }
-                    if (ret[i] == null) {
-                        boolean doubleBuffer =
-                                (dbeSupported &&
-                                        doubleBufferVisuals.contains(Integer.valueOf(visNum)));
-
-                        if (xrenderSupported) {
-                            ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,
-                                    getConfigColormap(i, screen), doubleBuffer);
-                        } else {
-                            ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
-                                    getConfigColormap(i, screen),
-                                    doubleBuffer);
-                        }
-                    }
-                }
-                configs = ret;
+        if (configs == null) {
+            int i = 1;  // Index 0 is always the default config
+            int num = getNumConfigs(screen);
+            GraphicsConfiguration[] ret = new GraphicsConfiguration[num];
+            if (defaultConfig == null) {
+                ret[0] = getDefaultConfiguration();
+            } else {
+                ret[0] = defaultConfig;
             }
-        } finally {
-            XToolkit.awtUnlock();
+
+            boolean glxSupported = X11GraphicsEnvironment.isGLXAvailable();
+            boolean xrenderSupported = X11GraphicsEnvironment.isXRenderAvailable();
+
+            boolean dbeSupported = isDBESupported();
+            if (dbeSupported && doubleBufferVisuals == null) {
+                doubleBufferVisuals = new HashSet<>();
+                getDoubleBufferVisuals(screen);
+            }
+            for (; i < num; i++) {
+                int visNum = getConfigVisualId(i, screen);
+                int depth = getConfigDepth(i, screen);
+                if (glxSupported) {
+                    ret[i] = GLXGraphicsConfig.getConfig(this, visNum);
+                }
+                if (ret[i] == null) {
+                    boolean doubleBuffer =
+                            (dbeSupported &&
+                                    doubleBufferVisuals.contains(Integer.valueOf(visNum)));
+
+                    if (xrenderSupported) {
+                        ret[i] = XRGraphicsConfig.getConfig(this, visNum, depth,
+                                getConfigColormap(i, screen), doubleBuffer);
+                    } else {
+                        ret[i] = X11GraphicsConfig.getConfig(this, visNum, depth,
+                                getConfigColormap(i, screen),
+                                doubleBuffer);
+                    }
+                }
+            }
+            configs = ret;
         }
     }
 
@@ -240,54 +240,54 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration getDefaultConfiguration() {
         if (defaultConfig == null) {
-            makeDefaultConfiguration();
+            XToolkit.awtLock();
+            try {
+                makeDefaultConfiguration();
+            } finally {
+                XToolkit.awtUnlock();
+            }
         }
         return defaultConfig;
     }
 
     private void makeDefaultConfiguration() {
-        XToolkit.awtLock();
-        try {
-            if (defaultConfig == null) {
-                int visNum = getConfigVisualId(0, screen);
-                if (X11GraphicsEnvironment.isGLXAvailable()) {
-                    defaultConfig = GLXGraphicsConfig.getConfig(this, visNum);
-                    if (X11GraphicsEnvironment.isGLXVerbose()) {
-                        if (defaultConfig != null) {
-                            System.out.print("OpenGL pipeline enabled");
-                        } else {
-                            System.out.print("Could not enable OpenGL pipeline");
-                        }
-                        System.out.println(" for default config on screen " +
-                                screen);
-                    }
-                }
-                if (defaultConfig == null) {
-                    int depth = getConfigDepth(0, screen);
-                    boolean doubleBuffer = false;
-                    if (isDBESupported() && doubleBufferVisuals == null) {
-                        doubleBufferVisuals = new HashSet<>();
-                        getDoubleBufferVisuals(screen);
-                        doubleBuffer =
-                                doubleBufferVisuals.contains(Integer.valueOf(visNum));
-                    }
-
-                    if (X11GraphicsEnvironment.isXRenderAvailable()) {
-                        if (X11GraphicsEnvironment.isXRenderVerbose()) {
-                            System.out.println("XRender pipeline enabled");
-                        }
-                        defaultConfig = XRGraphicsConfig.getConfig(this, visNum,
-                                depth, getConfigColormap(0, screen),
-                                doubleBuffer);
+        if (defaultConfig == null) {
+            int visNum = getConfigVisualId(0, screen);
+            if (X11GraphicsEnvironment.isGLXAvailable()) {
+                defaultConfig = GLXGraphicsConfig.getConfig(this, visNum);
+                if (X11GraphicsEnvironment.isGLXVerbose()) {
+                    if (defaultConfig != null) {
+                        System.out.print("OpenGL pipeline enabled");
                     } else {
-                        defaultConfig = X11GraphicsConfig.getConfig(this, visNum,
-                                depth, getConfigColormap(0, screen),
-                                doubleBuffer);
+                        System.out.print("Could not enable OpenGL pipeline");
                     }
+                    System.out.println(" for default config on screen " +
+                            screen);
                 }
             }
-        } finally {
-            XToolkit.awtUnlock();
+            if (defaultConfig == null) {
+                int depth = getConfigDepth(0, screen);
+                boolean doubleBuffer = false;
+                if (isDBESupported() && doubleBufferVisuals == null) {
+                    doubleBufferVisuals = new HashSet<>();
+                    getDoubleBufferVisuals(screen);
+                    doubleBuffer =
+                            doubleBufferVisuals.contains(Integer.valueOf(visNum));
+                }
+
+                if (X11GraphicsEnvironment.isXRenderAvailable()) {
+                    if (X11GraphicsEnvironment.isXRenderVerbose()) {
+                        System.out.println("XRender pipeline enabled");
+                    }
+                    defaultConfig = XRGraphicsConfig.getConfig(this, visNum,
+                            depth, getConfigColormap(0, screen),
+                            doubleBuffer);
+                } else {
+                    defaultConfig = X11GraphicsConfig.getConfig(this, visNum,
+                            depth, getConfigColormap(0, screen),
+                            doubleBuffer);
+                }
+            }
         }
     }
 
