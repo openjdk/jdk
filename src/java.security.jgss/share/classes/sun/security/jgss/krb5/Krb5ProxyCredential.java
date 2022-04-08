@@ -45,7 +45,7 @@ import javax.security.auth.kerberos.KerberosTicket;
  * @since 1.8
  */
 
-public final class Krb5ProxyCredential
+final class Krb5ProxyCredential
     implements Krb5CredElement {
 
     public final Krb5InitCredential self;   // the middle server

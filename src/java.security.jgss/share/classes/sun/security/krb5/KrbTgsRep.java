@@ -40,7 +40,7 @@ import java.io.IOException;
  * This class encapsulates a TGS-REP that is sent from the KDC to the
  * Kerberos client.
  */
-public final class KrbTgsRep extends KrbKdcRep {
+final class KrbTgsRep extends KrbKdcRep {
     private TGSRep rep;
     private Credentials creds;
     private Credentials additionalCreds;
@@ -121,7 +121,7 @@ public final class KrbTgsRep extends KrbKdcRep {
     /**
      * Return the credentials that were contained in this KRB-TGS-REP.
      */
-    public Credentials getCreds() {
+    Credentials getCreds() {
         return creds;
     }
 

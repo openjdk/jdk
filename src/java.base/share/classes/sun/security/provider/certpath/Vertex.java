@@ -46,7 +46,7 @@ import sun.security.x509.X509CertImpl;
  * @author      Sean Mullan
  * @since       1.4
  */
-public final class Vertex {
+final class Vertex {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private X509Certificate cert;

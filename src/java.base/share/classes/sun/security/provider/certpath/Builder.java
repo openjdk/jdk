@@ -50,7 +50,7 @@ import sun.security.x509.X509CertImpl;
  * @author      Yassir Elley
  */
 
-public abstract sealed class Builder permits ForwardBuilder {
+abstract class Builder {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private Set<String> matchingPolicies;

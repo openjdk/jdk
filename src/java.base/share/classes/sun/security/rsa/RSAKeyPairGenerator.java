@@ -47,7 +47,7 @@ import static sun.security.util.SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZ
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public abstract sealed class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
+abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
     private static final BigInteger SQRT_2048;
     private static final BigInteger SQRT_3072;
