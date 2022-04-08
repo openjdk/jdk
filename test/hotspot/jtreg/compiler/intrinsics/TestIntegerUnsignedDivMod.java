@@ -31,9 +31,6 @@
 
 package compiler.intrinsics;
 import compiler.lib.ir_framework.*;
-import java.util.random.RandomGenerator;
-import java.util.random.RandomGeneratorFactory;
-
 
 public class TestIntegerUnsignedDivMod {
     private int BUFFER_SIZE;
@@ -52,7 +49,6 @@ public class TestIntegerUnsignedDivMod {
         MAX_UNSIGNED_INT - 1L,
         MAX_UNSIGNED_INT,
     };
-    private RandomGenerator rng;
 
     public static void main(String args[]) {
         TestFramework.run(TestIntegerUnsignedDivMod.class);

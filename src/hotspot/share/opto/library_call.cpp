@@ -2203,23 +2203,23 @@ bool LibraryCallKit::inline_divmod_methods(vmIntrinsics::ID id) {
       zero_check_int(argument(1));
       // Compile-time detect of null-exception?
       if (stopped()) return false;
-      n = new UDivINode(NULL, argument(0), argument(1));
+      n = new UDivINode(control(), argument(0), argument(1));
       break;
     case vmIntrinsics::_divideUnsigned_l:
       zero_check_long(argument(2));
       // Compile-time detect of null-exception?
       if (stopped()) return false;
-      n = new UDivLNode(NULL, argument(0), argument(2));  break;
+      n = new UDivLNode(control(), argument(0), argument(2));  break;
     case vmIntrinsics::_remainderUnsigned_i:
       zero_check_int(argument(1));
       // Compile-time detect of null-exception?
       if (stopped()) return false;
-      n = new UModINode(NULL, argument(0), argument(1));  break;
+      n = new UModINode(control(), argument(0), argument(1));  break;
     case vmIntrinsics::_remainderUnsigned_l:
       zero_check_long(argument(2));
       // Compile-time detect of null-exception?
       if (stopped()) return false;
-      n = new UModLNode(NULL, argument(0), argument(2));  break;
+      n = new UModLNode(control(), argument(0), argument(2));  break;
     default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
