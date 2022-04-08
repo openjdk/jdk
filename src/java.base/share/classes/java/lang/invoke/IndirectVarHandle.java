@@ -82,11 +82,6 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    boolean isDirect() {
-        return false;
-    }
-
-    @Override
     VarHandle asDirect() {
         return directTarget;
     }
@@ -100,6 +95,15 @@ import java.util.function.BiFunction;
         return hasInvokeExactBehavior()
             ? this
             : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+    }
+
+    @ForceInline
+    boolean checkExactAccessMode(VarHandle.AccessDescriptor ad) {
+        if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
+            throwWrongMethodTypeException(ad);
+        }
+        // return false to indicate this is an IndirectVarHandle
+        return false;
     }
 
     @Override
