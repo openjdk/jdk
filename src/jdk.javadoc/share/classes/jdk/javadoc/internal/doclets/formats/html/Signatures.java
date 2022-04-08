@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementKindVisitor14;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -66,7 +65,7 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 public class Signatures {
 
     public static Content getModuleSignature(ModuleElement mdle, ModuleWriterImpl moduleWriter) {
-        Content signature = HtmlTree.DIV(HtmlStyle.moduleSignature);
+        var signature = HtmlTree.DIV(HtmlStyle.moduleSignature);
         Content annotations = moduleWriter.getAnnotationInfo(mdle, true);
         if (!annotations.isEmpty()) {
             signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
@@ -76,7 +75,7 @@ public class Signatures {
                 ? "open module" : "module";
         signature.add(label);
         signature.add(" ");
-        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
         nameSpan.add(mdle.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -86,13 +85,13 @@ public class Signatures {
         if (pkg.isUnnamed()) {
             return Text.EMPTY;
         }
-        Content signature = HtmlTree.DIV(HtmlStyle.packageSignature);
+        var signature = HtmlTree.DIV(HtmlStyle.packageSignature);
         Content annotations = pkgWriter.getAnnotationInfo(pkg, true);
         if (!annotations.isEmpty()) {
             signature.add(HtmlTree.SPAN(HtmlStyle.annotations, annotations));
         }
         signature.add("package ");
-        HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+        var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
         nameSpan.add(pkg.getQualifiedName().toString());
         signature.add(nameSpan);
         return signature;
@@ -106,7 +105,7 @@ public class Signatures {
         private final HtmlConfiguration configuration;
         private Content modifiers;
 
-        private static final Set<String> previewModifiers = Collections.emptySet();
+        private static final Set<String> previewModifiers = Set.of();
 
          TypeSignature(TypeElement typeElement, HtmlDocletWriter writer) {
              this.typeElement = typeElement;
@@ -129,7 +128,7 @@ public class Signatures {
             }
             content.add(HtmlTree.SPAN(HtmlStyle.modifiers, modifiers));
 
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             Content className = Text.of(utils.getSimpleName(typeElement));
             if (configuration.getOptions().linkSource()) {
                 writer.addSrcLink(typeElement, className, nameSpan);
@@ -146,10 +145,10 @@ public class Signatures {
             if (utils.isRecord(typeElement)) {
                 content.add(getRecordComponents());
             }
-            if (!utils.isAnnotationType(typeElement)) {
-                Content extendsImplements = new HtmlTree(TagName.SPAN)
+            if (!utils.isAnnotationInterface(typeElement)) {
+                var extendsImplements = new HtmlTree(TagName.SPAN)
                         .setStyle(HtmlStyle.extendsImplements);
-                if (!utils.isInterface(typeElement)) {
+                if (!utils.isPlainInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
                         content.add(DocletConstants.NL);
@@ -170,7 +169,7 @@ public class Signatures {
                         }
                         if (isFirst) {
                             extendsImplements.add(DocletConstants.NL);
-                            extendsImplements.add(utils.isInterface(typeElement) ? "extends " : "implements ");
+                            extendsImplements.add(utils.isPlainInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
                             extendsImplements.add(", ");
@@ -190,7 +189,7 @@ public class Signatures {
                     .filter(t -> utils.isLinkable(utils.asTypeElement(t)))
                     .toList();
             if (!linkablePermits.isEmpty()) {
-                Content permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
+                var permitsSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.permits);
                 boolean isFirst = true;
                 for (TypeMirror type : linkablePermits) {
                     if (isFirst) {
@@ -379,7 +378,7 @@ public class Signatures {
         /**
          * Set the type parameters for an executable member.
          *
-         * @param typeParameters the content tree containing the type parameters to add.
+         * @param typeParameters the type parameters to add.
          * @return this instance
          */
         MemberSignature setTypeParameters(Content typeParameters) {
@@ -390,7 +389,7 @@ public class Signatures {
         /**
          * Set the return type for an executable member.
          *
-         * @param returnType the content tree containing the return type to add.
+         * @param returnType the return type to add.
          * @return this instance
          */
         MemberSignature setReturnType(Content returnType) {
@@ -412,33 +411,33 @@ public class Signatures {
         /**
          * Set the parameter information of an executable member.
          *
-         * @param paramTree the content tree containing the parameter information.
+         * @param content the parameter information.
          * @return this instance
          */
-        MemberSignature setParameters(Content paramTree) {
-            this.parameters = paramTree;
+        MemberSignature setParameters(Content content) {
+            this.parameters = content;
             return this;
         }
 
         /**
          * Set the exception information of an executable member.
          *
-         * @param exceptionTree the content tree containing the exception information
+         * @param content the exception information
          * @return this instance
          */
-        MemberSignature setExceptions(Content exceptionTree) {
-            this.exceptions = exceptionTree;
+        MemberSignature setExceptions(Content content) {
+            this.exceptions = content;
             return this;
         }
 
         /**
          * Set the annotation information of a member.
          *
-         * @param annotationTree the content tree containing the exception information
+         * @param content the exception information
          * @return this instance
          */
-        MemberSignature setAnnotations(Content annotationTree) {
-            this.annotations = annotationTree;
+        MemberSignature setAnnotations(Content content) {
+            this.annotations = content;
             return this;
         }
 
@@ -473,7 +472,7 @@ public class Signatures {
             }
 
             // Name
-            HtmlTree nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
+            var nameSpan = new HtmlTree(TagName.SPAN).setStyle(HtmlStyle.elementName);
             if (memberWriter.options.linkSource()) {
                 Content name = Text.of(memberWriter.name(element));
                 memberWriter.writer.addSrcLink(element, name, nameSpan);
@@ -491,12 +490,12 @@ public class Signatures {
         }
 
         /**
-         * Adds the modifier for the member. The modifiers are ordered as specified
+         * Adds the modifiers for the member. The modifiers are ordered as specified
          * by <em>The Java Language Specification</em>.
          *
-         * @param htmlTree the content tree to which the modifier information will be added
+         * @param target the content to which the modifier information will be added
          */
-        private void appendModifiers(Content htmlTree) {
+        private void appendModifiers(Content target) {
             Set<Modifier> set = new TreeSet<>(element.getModifiers());
 
             // remove the ones we really don't need
@@ -508,7 +507,7 @@ public class Signatures {
             // interface methods and fields.
             if ((utils.isField(element) || utils.isMethod(element))) {
                 Element te = element.getEnclosingElement();
-                if (utils.isInterface(te) || utils.isAnnotationType(te)) {
+                if (utils.isInterface(te)) {
                     // Remove the implicit abstract and public modifiers
                     if (utils.isMethod(element)) {
                         set.remove(ABSTRACT);
@@ -518,7 +517,7 @@ public class Signatures {
             }
             if (!set.isEmpty()) {
                 String mods = set.stream().map(Modifier::toString).collect(Collectors.joining(" "));
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.modifiers, Text.of(mods)))
+                target.add(HtmlTree.SPAN(HtmlStyle.modifiers, Text.of(mods)))
                         .add(Entity.NO_BREAK_SPACE);
             }
         }
@@ -526,30 +525,30 @@ public class Signatures {
         /**
          * Appends the type parameter information to the HTML tree.
          *
-         * @param htmlTree          the HTML tree
+         * @param target            the HTML tree
          * @param lastLineSeparator index of last line separator in the HTML tree
          * @return the new index of the last line separator
          */
-        private int appendTypeParameters(Content htmlTree, int lastLineSeparator) {
+        private int appendTypeParameters(Content target, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
             // depending of combined length of type parameters and return type.
             int typeParamLength = typeParameters.charCount();
 
             if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.typeParametersLong, typeParameters));
+                target.add(HtmlTree.SPAN(HtmlStyle.typeParametersLong, typeParameters));
             } else {
-                htmlTree.add(HtmlTree.SPAN(HtmlStyle.typeParameters, typeParameters));
+                target.add(HtmlTree.SPAN(HtmlStyle.typeParameters, typeParameters));
             }
 
-            int lineLength = htmlTree.charCount() - lastLineSeparator;
+            int lineLength = target.charCount() - lastLineSeparator;
             int newLastLineSeparator = lastLineSeparator;
 
             // sum below includes length of modifiers plus type params added above
             if (lineLength + returnType.charCount() > RETURN_TYPE_MAX_LINE_LENGTH) {
-                htmlTree.add(DocletConstants.NL);
-                newLastLineSeparator = htmlTree.charCount();
+                target.add(DocletConstants.NL);
+                newLastLineSeparator = target.charCount();
             } else {
-                htmlTree.add(Entity.NO_BREAK_SPACE);
+                target.add(Entity.NO_BREAK_SPACE);
             }
 
             return newLastLineSeparator;
@@ -558,25 +557,25 @@ public class Signatures {
         /**
          * Appends the parameters and exceptions information to the HTML tree.
          *
-         * @param htmlTree          the HTML tree
+         * @param target            the HTML tree
          * @param lastLineSeparator the index of the last line separator in the HTML tree
          */
-        private void appendParametersAndExceptions(Content htmlTree, int lastLineSeparator) {
+        private void appendParametersAndExceptions(Content target, int lastLineSeparator) {
             // Record current position for indentation of exceptions
-            int indentSize = htmlTree.charCount() - lastLineSeparator;
+            int indentSize = target.charCount() - lastLineSeparator;
 
             if (parameters.charCount() == 2) {
                 // empty parameters are added without packing
-                htmlTree.add(parameters);
+                target.add(parameters);
             } else {
-                htmlTree.add(new HtmlTree(TagName.WBR))
+                target.add(new HtmlTree(TagName.WBR))
                         .add(HtmlTree.SPAN(HtmlStyle.parameters, parameters));
             }
 
             // Exceptions
             if (exceptions != null && !exceptions.isEmpty()) {
                 CharSequence indent = " ".repeat(Math.max(0, indentSize + 1 - 7));
-                htmlTree.add(DocletConstants.NL)
+                target.add(DocletConstants.NL)
                         .add(indent)
                         .add("throws ")
                         .add(HtmlTree.SPAN(HtmlStyle.exceptions, exceptions));
