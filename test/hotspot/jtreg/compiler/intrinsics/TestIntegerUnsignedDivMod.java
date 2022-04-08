@@ -43,7 +43,7 @@ public class TestIntegerUnsignedDivMod {
     private int[] remainders;
     final long MAX_UNSIGNED_INT = Integer.toUnsignedLong(0xffff_ffff);
     long[] inRange = {
-        //0L,
+        0L,
         1L,
         2L,
         2147483646L,   // MAX_VALUE - 1
