@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class Bug4762201
         public static void main(String[] arg)
         {
                 int result = 0;
-                Locale loc = new Locale("zh","CN");
+                Locale loc = Locale.of("zh","CN");
                 Date now = new Date();
 
                 DateFormat df =

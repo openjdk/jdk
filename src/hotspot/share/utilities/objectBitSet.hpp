@@ -74,6 +74,7 @@ class ObjectBitSet : public CHeapObj<F> {
 
   public:
     BitMapFragmentTable(int table_size) : BasicHashtable<F>(table_size, sizeof(Entry)) {}
+    ~BitMapFragmentTable();
     void add(uintptr_t key, CHeapBitMap* value);
     CHeapBitMap** lookup(uintptr_t key);
   };

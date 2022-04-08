@@ -63,7 +63,8 @@
  * <ul>
  * <li> {@code strictfp} on a class or interface
  * <li> {@code final} on a parameter
- * <li> {@code protected}, {@code private}, and {@code static} on classes and interfaces
+ * <li> {@code protected}, {@code private}, and {@code static} on
+ *      classes and interfaces
  * </ul>
  *
  * Some elements which are {@linkplain
@@ -86,19 +87,20 @@
  * code is not syntactically well-formed or has some other
  * irrecoverable error that could not be removed by the generation of
  * new classes or interfaces, a model may or may not be provided as a
- * quality of implementation issue.  If a program is syntactically
- * valid but erroneous in some other fashion, any returned model must
- * have no less information than if all the method bodies in the
- * program were replaced by {@code "throw new RuntimeException();"}.
- * If a program refers to a missing class or interface Xyz, the
- * returned model must contain no less information than if the
- * declaration of class or interface Xyz were assumed to be {@code
- * "class Xyz {}"}, {@code "interface Xyz {}"}, {@code "enum Xyz {}"},
- * {@code "@interface Xyz {}"}, or {@code "record Xyz {}"}. If a
- * program refers to a missing class or interface {@code Xyz<K1,
- * ... ,Kn>}, the returned model must contain no less information than
- * if the declaration of Xyz were assumed to be {@code "class Xyz<T1,
- * ... ,Tn> {}"} or {@code "interface Xyz<T1, ... ,Tn> {}"}
+ * quality of implementation issue.  If a program for a class or
+ * interface is syntactically valid but erroneous in some other
+ * fashion, any returned model must have no less information than if
+ * all the method bodies in the program were replaced by {@code "throw
+ * new RuntimeException();"}.  If a program refers to a missing class
+ * or interface Xyz, the returned model must contain no less
+ * information than if the declaration of class or interface Xyz were
+ * assumed to be {@code "class Xyz {}"}, {@code "interface Xyz {}"},
+ * {@code "enum Xyz {}"}, {@code "@interface Xyz {}"}, or {@code
+ * "record Xyz {}"}. If a program refers to a missing class or
+ * interface {@code Xyz<K1, ... ,Kn>}, the returned model must contain
+ * no less information than if the declaration of Xyz were assumed to
+ * be {@code "class Xyz<T1, ... ,Tn> {}"} or {@code "interface Xyz<T1,
+ * ... ,Tn> {}"}
  *
  * <p> Unless otherwise specified in a particular implementation, the
  * collections returned by methods in this package should be expected
