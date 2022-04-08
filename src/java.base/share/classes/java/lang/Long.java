@@ -1926,11 +1926,11 @@ public final class Long extends Number
      * // Compressing drink to food
      * compress(0xCAFEBABE, 0xFF00FFF0) == 0xCABAB
      * }
-     * Starting from the least significant digit at position 0 from the
-     * right, the mask {@code 0xFF00FFF0} selects digits at positions 1, 2,
-     * 3, 6 and 7 of {@code 0xCAFEBABE}. The selected digits occur in the
-     * resulting compressed value contiguously from digit position 0 in
-     * the same order.
+     * Starting from the least significant hexadecimal digit at position 0
+     * from the right, the mask {@code 0xFF00FFF0} selects hexadecimal digits
+     * at positions 1, 2, 3, 6 and 7 of {@code 0xCAFEBABE}. The selected digits
+     * occur in the resulting compressed value contiguously from digit position
+     * 0 in the same order.
      * <p>
      * The following identities all return {@code true} and are helpful to
      * understand the behaviour of {@code compress}:
@@ -2018,10 +2018,10 @@ public final class Long extends Number
      * {@snippet lang="java" :
      * expand(0x0000CABAB, 0xFF00FFF0) == 0xCA00BAB0
      * }
-     * Starting from the least significant digit at position 0 from the
-     * right, the mask {@code 0xFF00FFF0} selects the first five digits of
-     * {@code 0x0000CABAB}. The selected digits occur in the resulting
-     * expanded value in order at positions 1, 2, 3, 6, and 7.
+     * Starting from the least significant hexadecimal digit at position 0
+     * from the right, the mask {@code 0xFF00FFF0} selects the first five
+     * hexadecimal digits of {@code 0x0000CABAB}. The selected digits occur
+     * in the resulting expanded value in order at positions 1, 2, 3, 6, and 7.
      * <p>
      * The following identities all return {@code true} and are helpful to
      * understand the behaviour of {@code expand}:
