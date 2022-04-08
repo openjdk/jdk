@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,10 +241,11 @@ public class CheckZombieLockTest {
             }
 
             if (supportsLocking) {
-                FileChannel fc = FileChannel.open(Paths.get(lock.getAbsolutePath()),
+                handler2 = null;
+                try (FileChannel fc = FileChannel.open(Paths.get(lock.getAbsolutePath()),
                     StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND,
-                    StandardOpenOption.WRITE);
-                try {
+                    StandardOpenOption.WRITE)) {
+
                     if (fc.tryLock() != null) {
                         System.out.println("locked: " + lock);
                         handler2 = createFileHandler(writableDir);
@@ -261,6 +262,7 @@ public class CheckZombieLockTest {
                         throw new RuntimeException("Failed to lock: " + lock);
                     }
                 } finally {
+                    if (handler2 != null) handler2.close();
                     delete(lock);
                 }
             }
