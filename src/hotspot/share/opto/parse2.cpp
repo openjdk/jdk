@@ -194,7 +194,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
         // If we have already recompiled with the range-check-widening
         // heroic optimization turned off, then we must really be throwing
         // range check exceptions.
-        builtin_throw(Deoptimization::Reason_range_check, idx);
+        builtin_throw(Deoptimization::Reason_range_check);
       }
     }
   }

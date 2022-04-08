@@ -907,8 +907,8 @@ VMINMAX_PREDICATE(min, MinV, sve_fmin, sve_smin)
 VMINMAX_PREDICATE(max, MaxV, sve_fmax, sve_smax)
 
 dnl
-dnl VFMLA($1           $2    $3         )
-dnl VFMLA(name_suffix, size, min_vec_len)
+dnl VFMLA($1           $2  )
+dnl VFMLA(name_suffix, size)
 define(`VFMLA', `
 // dst_src1 = dst_src1 + src2 * src3
 instruct vfmla$1(vReg dst_src1, vReg src2, vReg src3) %{
@@ -924,15 +924,15 @@ instruct vfmla$1(vReg dst_src1, vReg src2, vReg src3) %{
 %}')dnl
 dnl
 // vector fmla
-VFMLA(F, S, 4)
-VFMLA(D, D, 2)
+VFMLA(F, S)
+VFMLA(D, D)
 
 dnl
-dnl VFMLA_PREDICATE($1,   $2  )
-dnl VFMLA_PREDICATE(type, size)
-define(`VFMLA_PREDICATE', `
+dnl VFMAD_PREDICATE($1           $2  )
+dnl VFMAD_PREDICATE(name_suffix, size)
+define(`VFMAD_PREDICATE', `
 // dst_src1 = dst_src1 * src2 + src3
-instruct vfmla$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
+instruct vfmad$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaV$1 (Binary dst_src1 src2) (Binary src3 pg)));
   ins_cost(SVE_COST);
@@ -944,19 +944,37 @@ instruct vfmla$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
-// vector fmla - predicated
-VFMLA_PREDICATE(F, S)
-VFMLA_PREDICATE(D, D)
+// vector fmad - predicated
+VFMAD_PREDICATE(F, S)
+VFMAD_PREDICATE(D, D)
 
 dnl
-dnl VFMLS($1           $2    $3         )
-dnl VFMLS(name_suffix, size, min_vec_len)
-define(`VFMLS', `
+dnl VFMLS1($1           $2  )
+dnl VFMLS1(name_suffix, size)
+define(`VFMLS1', `
 // dst_src1 = dst_src1 + -src2 * src3
-// dst_src1 = dst_src1 + src2 * -src3
-instruct vfmls$1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0);
+// The NegV$1 must not be predicated.
+instruct vfmls`$1'1(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
   match(Set dst_src1 (FmaV$1 dst_src1 (Binary (NegV$1 src2) src3)));
+  ins_cost(SVE_COST);
+  format %{ "sve_fmls $dst_src1, $src2, $src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_fmls(as_FloatRegister($dst_src1$$reg), __ $2,
+         ptrue, as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl VFMLS2($1           $2  )
+dnl VFMLS2(name_suffix, size)
+define(`VFMLS2', `
+// dst_src1 = dst_src1 + src2 * -src3
+// The NegV$1 must not be predicated.
+instruct vfmls`$1'2(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(2)->in(2)->as_Vector()->is_predicated_vector());
   match(Set dst_src1 (FmaV$1 dst_src1 (Binary src2 (NegV$1 src3))));
   ins_cost(SVE_COST);
   format %{ "sve_fmls $dst_src1, $src2, $src3\t # vector (sve) ($2)" %}
@@ -968,18 +986,63 @@ instruct vfmls$1(vReg dst_src1, vReg src2, vReg src3) %{
 %}')dnl
 dnl
 // vector fmls
-VFMLS(F, S, 4)
-VFMLS(D, D, 2)
+VFMLS1(F, S)
+VFMLS2(F, S)
+VFMLS1(D, D)
+VFMLS2(D, D)
 
 dnl
-dnl VFNMLA($1           $2    $3         )
-dnl VFNMLA(name_suffix, size, min_vec_len)
-define(`VFNMLA', `
+dnl VFMSB_PREDICATE($1           $2  )
+dnl VFMSB_PREDICATE(name_suffix, size)
+define(`VFMSB_PREDICATE', `
+// dst_src1 = dst_src1 * -src2 + src3
+// The NegV$1 must not be predicated.
+instruct vfmsb$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(1)->in(2)->as_Vector()->is_predicated_vector());
+  match(Set dst_src1 (FmaV$1 (Binary dst_src1 (NegV$1 src2)) (Binary src3 pg)));
+  ins_cost(SVE_COST);
+  format %{ "sve_fmsb $dst_src1, $pg, $src2, $src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_fmsb(as_FloatRegister($dst_src1$$reg), __ $2, as_PRegister($pg$$reg),
+         as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// vector fmsb - predicated
+VFMSB_PREDICATE(F, S)
+VFMSB_PREDICATE(D, D)
+
+dnl
+dnl VFNMLA1($1           $2  )
+dnl VFNMLA1(name_suffix, size)
+define(`VFNMLA1', `
 // dst_src1 = -dst_src1 + -src2 * src3
-// dst_src1 = -dst_src1 + src2 * -src3
-instruct vfnmla$1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0);
+// The NegV$1 must not be predicated.
+instruct vfnmla`$1'1(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(1)->as_Vector()->is_predicated_vector() &&
+            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
   match(Set dst_src1 (FmaV$1 (NegV$1 dst_src1) (Binary (NegV$1 src2) src3)));
+  ins_cost(SVE_COST);
+  format %{ "sve_fnmla $dst_src1, $src2, $src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_fnmla(as_FloatRegister($dst_src1$$reg), __ $2,
+         ptrue, as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl VFNMLA2($1           $2  )
+dnl VFNMLA2(name_suffix, size)
+define(`VFNMLA2', `
+// dst_src1 = -dst_src1 + src2 * -src3
+// The NegV$1 must not be predicated.
+instruct vfnmla`$1'2(vReg dst_src1, vReg src2, vReg src3) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(1)->as_Vector()->is_predicated_vector() &&
+            !n->in(2)->in(2)->as_Vector()->is_predicated_vector());
   match(Set dst_src1 (FmaV$1 (NegV$1 dst_src1) (Binary src2 (NegV$1 src3))));
   ins_cost(SVE_COST);
   format %{ "sve_fnmla $dst_src1, $src2, $src3\t # vector (sve) ($2)" %}
@@ -991,16 +1054,44 @@ instruct vfnmla$1(vReg dst_src1, vReg src2, vReg src3) %{
 %}')dnl
 dnl
 // vector fnmla
-VFNMLA(F, S, 4)
-VFNMLA(D, D, 2)
+VFNMLA1(F, S)
+VFNMLA2(F, S)
+VFNMLA1(D, D)
+VFNMLA2(D, D)
 
 dnl
-dnl VFNMLS($1           $2    $3         )
-dnl VFNMLS(name_suffix, size, min_vec_len)
+dnl VFNMAD_PREDICATE($1           $2  )
+dnl VFNMAD_PREDICATE(name_suffix, size)
+define(`VFNMAD_PREDICATE', `
+// dst_src1 = -src3 + dst_src1 * -src2
+// The NegV$1 must not be predicated.
+instruct vfnmad$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(1)->in(2)->as_Vector()->is_predicated_vector() &&
+            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  match(Set dst_src1 (FmaV$1 (Binary dst_src1 (NegV$1 src2)) (Binary (NegV$1 src3) pg)));
+  ins_cost(SVE_COST);
+  format %{ "sve_fnmad $dst_src1, $pg, $src2, $src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_fnmad(as_FloatRegister($dst_src1$$reg), __ $2, as_PRegister($pg$$reg),
+         as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// vector fnmad - predicated
+VFNMAD_PREDICATE(F, S)
+VFNMAD_PREDICATE(D, D)
+
+dnl
+dnl VFNMLS($1           $2  )
+dnl VFNMLS(name_suffix, size)
 define(`VFNMLS', `
 // dst_src1 = -dst_src1 + src2 * src3
+// The NegV$1 must not be predicated.
 instruct vfnmls$1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0);
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(1)->as_Vector()->is_predicated_vector());
   match(Set dst_src1 (FmaV$1 (NegV$1 dst_src1) (Binary src2 src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmls $dst_src1, $src2, $src3\t # vector (sve) ($2)" %}
@@ -1012,12 +1103,35 @@ instruct vfnmls$1(vReg dst_src1, vReg src2, vReg src3) %{
 %}')dnl
 dnl
 // vector fnmls
-VFNMLS(F, S, 4)
-VFNMLS(D, D, 2)
+VFNMLS(F, S)
+VFNMLS(D, D)
 
 dnl
-dnl VMLA($1           $2    $3         )
-dnl VMLA(name_suffix, size, min_vec_len)
+dnl VFNMSB_PREDICATE($1           $2  )
+dnl VFNMSB_PREDICATE(name_suffix, size)
+define(`VFNMSB_PREDICATE', `
+// dst_src1 = -src3 + dst_src1 * src2
+// The NegV$1 must not be predicated.
+instruct vfnmsb$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
+  predicate(UseFMA && UseSVE > 0 &&
+            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  match(Set dst_src1 (FmaV$1 (Binary dst_src1 src2) (Binary (NegV$1 src3) pg)));
+  ins_cost(SVE_COST);
+  format %{ "sve_fnmsb $dst_src1, $pg, $src2, $src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_fnmsb(as_FloatRegister($dst_src1$$reg), __ $2, as_PRegister($pg$$reg),
+         as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// vector fnmsb - predicated
+VFNMSB_PREDICATE(F, S)
+VFNMSB_PREDICATE(D, D)
+
+dnl
+dnl VMLA($1           $2  )
+dnl VMLA(name_suffix, size)
 define(`VMLA', `
 // dst_src1 = dst_src1 + src2 * src3
 instruct vmla$1(vReg dst_src1, vReg src2, vReg src3)
@@ -1034,14 +1148,38 @@ instruct vmla$1(vReg dst_src1, vReg src2, vReg src3)
 %}')dnl
 dnl
 // vector mla
-VMLA(B, B, 16)
-VMLA(S, H, 8)
-VMLA(I, S, 4)
-VMLA(L, D, 2)
+VMLA(B, B)
+VMLA(S, H)
+VMLA(I, S)
+VMLA(L, D)
 
 dnl
-dnl VMLS($1           $2    $3         )
-dnl VMLS(name_suffix, size, min_vec_len)
+dnl VMLA_PREDICATE($1           $2  )
+dnl VMLA_PREDICATE(name_suffix, size)
+define(`VMLA_PREDICATE', `
+// dst_src1 = dst_src1 + src2 * src3
+instruct vmla$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg)
+%{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (AddV$1 (Binary dst_src1 (MulV$1 src2 src3)) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_mla $dst_src1, $pg, src2, src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_mla(as_FloatRegister($dst_src1$$reg), __ $2, as_PRegister($pg$$reg),
+         as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// vector mla - predicated
+VMLA_PREDICATE(B, B)
+VMLA_PREDICATE(S, H)
+VMLA_PREDICATE(I, S)
+VMLA_PREDICATE(L, D)
+
+dnl
+dnl VMLS($1           $2  )
+dnl VMLS(name_suffix, size)
 define(`VMLS', `
 // dst_src1 = dst_src1 - src2 * src3
 instruct vmls$1(vReg dst_src1, vReg src2, vReg src3)
@@ -1058,10 +1196,34 @@ instruct vmls$1(vReg dst_src1, vReg src2, vReg src3)
 %}')dnl
 dnl
 // vector mls
-VMLS(B, B, 16)
-VMLS(S, H, 8)
-VMLS(I, S, 4)
-VMLS(L, D, 2)
+VMLS(B, B)
+VMLS(S, H)
+VMLS(I, S)
+VMLS(L, D)
+
+dnl
+dnl VMLS_PREDICATE($1           $2  )
+dnl VMLS_PREDICATE(name_suffix, size)
+define(`VMLS_PREDICATE', `
+// dst_src1 = dst_src1 - src2 * src3
+instruct vmls$1_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg)
+%{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 (SubV$1 (Binary dst_src1 (MulV$1 src2 src3)) pg));
+  ins_cost(SVE_COST);
+  format %{ "sve_mls $dst_src1, $pg, src2, src3\t # vector (sve) ($2)" %}
+  ins_encode %{
+    __ sve_mls(as_FloatRegister($dst_src1$$reg), __ $2, as_PRegister($pg$$reg),
+         as_FloatRegister($src2$$reg), as_FloatRegister($src3$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// vector mls - predicated
+VMLS_PREDICATE(B, B)
+VMLS_PREDICATE(S, H)
+VMLS_PREDICATE(I, S)
+VMLS_PREDICATE(L, D)
 
 dnl
 dnl BINARY_OP_TRUE_PREDICATE($1,        $2,      $3,   $4,          $5  )

@@ -1244,8 +1244,10 @@ void set_signal_handler(int sig, bool do_check = true) {
   }
 #endif
 
-  // Save handler setup for later checking
-  vm_handlers.set(sig, &sigAct);
+  // Save handler setup for possible later checking
+  if (do_check) {
+    vm_handlers.set(sig, &sigAct);
+  }
   do_check_signal_periodically[sig] = do_check;
 
   int ret = sigaction(sig, &sigAct, &oldAct);

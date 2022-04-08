@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm;
 
 /**
@@ -110,18 +111,14 @@ public abstract class MethodVisitor {
       * @param methodVisitor the method visitor to which this visitor must delegate method calls. May
       *     be null.
       */
-    @SuppressWarnings("deprecation")
     public MethodVisitor(final int api, final MethodVisitor methodVisitor) {
-        if (api != Opcodes.ASM8
+        if (api != Opcodes.ASM9
+                && api != Opcodes.ASM8
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4
-                && api != Opcodes.ASM9_EXPERIMENTAL) {
+                && api != Opcodes.ASM4) {
             throw new IllegalArgumentException("Unsupported api " + api);
-        }
-        if (api == Opcodes.ASM9_EXPERIMENTAL) {
-            Constants.checkAsmExperimental(this);
         }
         this.api = api;
         this.mv = methodVisitor;
@@ -815,3 +812,4 @@ public abstract class MethodVisitor {
         }
     }
 }
+
