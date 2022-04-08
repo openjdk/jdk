@@ -39,14 +39,8 @@ volatile bool GCLocker::_needs_gc       = false;
 unsigned int GCLocker::_total_collections = 0;
 
 #ifdef ASSERT
-volatile jint GCLocker::_debug_jni_lock_count = 0;
-#endif
-
-
-#ifdef ASSERT
 void GCLocker::verify_critical_count() {
   if (SafepointSynchronize::is_at_safepoint()) {
-    assert(!needs_gc() || _debug_jni_lock_count == _jni_lock_count, "must agree");
     int count = 0;
     // Count the number of threads with critical operations in progress
     JavaThreadIteratorWithHandle jtiwh;
@@ -66,17 +60,6 @@ void GCLocker::verify_critical_count() {
     }
     assert(_jni_lock_count == count, "must be equal");
   }
-}
-
-// In debug mode track the locking state at all times
-void GCLocker::increment_debug_jni_lock_count() {
-  assert(_debug_jni_lock_count >= 0, "bad value");
-  Atomic::inc(&_debug_jni_lock_count);
-}
-
-void GCLocker::decrement_debug_jni_lock_count() {
-  assert(_debug_jni_lock_count > 0, "bad value");
-  Atomic::dec(&_debug_jni_lock_count);
 }
 #endif
 
@@ -139,15 +122,13 @@ void GCLocker::jni_lock(JavaThread* thread) {
     ml.wait();
   }
   thread->enter_critical();
-  _jni_lock_count++;
-  increment_debug_jni_lock_count();
+  // _jni_lock_count++;
 }
 
 void GCLocker::jni_unlock(JavaThread* thread) {
   assert(thread->in_last_critical(), "should be exiting critical region");
   MutexLocker mu(JNICritical_lock);
   _jni_lock_count--;
-  decrement_debug_jni_lock_count();
   thread->exit_critical();
   if (needs_gc() && !is_active_internal()) {
     // We're the last thread out. Request a GC.

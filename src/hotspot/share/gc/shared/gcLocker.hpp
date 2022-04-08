@@ -46,12 +46,6 @@ class GCLocker: public AllStatic {
   static volatile bool _needs_gc;        // heap is filling, we need a GC
   static uint _total_collections;        // value for _gc_locker collection
 
-#ifdef ASSERT
-  // This lock count is updated for all operations and is used to
-  // validate the jni_lock_count that is computed during safepoints.
-  static volatile jint _debug_jni_lock_count;
-#endif
-
   // At a safepoint, visit all threads and count the number of active
   // critical sections.  This is used to ensure that all active
   // critical sections are exited before a new one is started.
@@ -84,10 +78,6 @@ class GCLocker: public AllStatic {
     // is_active.
     return needs_gc() && is_active_internal();
   }
-
-  // In debug mode track the locking state at all times
-  static void increment_debug_jni_lock_count() NOT_DEBUG_RETURN;
-  static void decrement_debug_jni_lock_count() NOT_DEBUG_RETURN;
 
   // Set the current lock count
   static void set_jni_lock_count(int count) {

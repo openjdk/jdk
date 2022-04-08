@@ -37,7 +37,6 @@ void GCLocker::lock_critical(JavaThread* thread) {
       jni_lock(thread);
       return;
     }
-    increment_debug_jni_lock_count();
   }
   thread->enter_critical();
 }
@@ -50,7 +49,6 @@ void GCLocker::unlock_critical(JavaThread* thread) {
       jni_unlock(thread);
       return;
     }
-    decrement_debug_jni_lock_count();
   }
   thread->exit_critical();
 }
