@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ public class Binder extends DebugeeBinder {
         Debugee debugee = null;
 
         String classPath = null;
-//        classPath = System.getProperty("java.class.path");
+        classPath = System.getProperty("java.class.path");
 
         prepareForPipeConnection(argumentHandler);
 
@@ -687,6 +687,7 @@ public class Binder extends DebugeeBinder {
     private Map<String,? extends Argument> setupLaunchingConnector(LaunchingConnector connector,
                                                 String classToExecute,
                                                 String classPath) {
+        display("ClassPath: " + classPath);
         display("LaunchingConnector:");
         display("    name: " + connector.name());
         display("    description: " + connector.description());
@@ -709,6 +710,10 @@ public class Binder extends DebugeeBinder {
         }
 
         String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(rawArgs, quote);
+
+        if(System.getProperty("main.wrapper") != null) {
+            cmdline = MainWrapper.class.getName() + " " + System.getProperty("main.wrapper") + " " + cmdline;
+        }
 
         arg = (Connector.StringArgument) arguments.get("main");
         arg.setValue(cmdline);
@@ -735,6 +740,10 @@ public class Binder extends DebugeeBinder {
             arg.setValue(argumentHandler.getLaunchExecName());
         }
 
+        // This flag is needed so VirtualThread.allThreads() includes known vthreads.
+        arg = (Connector.StringArgument) arguments.get("enumeratevthreads");
+        arg.setValue("y");
+
         String vmArgs = "";
 
         String vmUserArgs = argumentHandler.getLaunchOptions();
@@ -743,11 +752,15 @@ public class Binder extends DebugeeBinder {
             vmArgs = vmUserArgs;
         }
 
-/*
+        /* Need --enable-preview on the debuggee in order to support virtual threads. */
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+        if (vthreadMode) {
+            vmArgs += " --enable-preview";
+        }
+
         if (classPath != null) {
             vmArgs += " -classpath " + quote + classPath + quote;
         }
- */
 
         if (vmArgs.length() > 0) {
             arg = (Connector.StringArgument) arguments.get("options");

@@ -606,6 +606,7 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(c_rarg1);
+  dec_held_monitor_count(rthread);
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -648,6 +649,7 @@ void InterpreterMacroAssembler::remove_activation(
 
       push(state);
       unlock_object(c_rarg1);
+      dec_held_monitor_count(rthread);
       pop(state);
 
       if (install_monitor_exception) {

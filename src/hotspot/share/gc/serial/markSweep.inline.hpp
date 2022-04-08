@@ -29,11 +29,14 @@
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/nmethod.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/serial/serialStringDedup.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
@@ -49,6 +52,8 @@ inline void MarkSweep::mark_object(oop obj) {
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markWord mark = obj->mark();
   obj->set_mark(markWord::prototype().set_marked());
+
+  ContinuationGCSupport::transform_stack_chunk(obj);
 
   if (obj->mark_must_be_preserved(mark)) {
     preserve_mark(obj, mark);
@@ -81,6 +86,8 @@ inline void MarkAndPushClosure::do_oop(oop* p)               { do_oop_work(p); }
 inline void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 inline void MarkAndPushClosure::do_klass(Klass* k)           { MarkSweep::follow_klass(k); }
 inline void MarkAndPushClosure::do_cld(ClassLoaderData* cld) { MarkSweep::follow_cld(cld); }
+inline void MarkAndPushClosure::do_method(Method* m)         { m->record_gc_epoch(); }
+inline void MarkAndPushClosure::do_nmethod(nmethod* nm)      { nm->follow_nmethod(this); }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);

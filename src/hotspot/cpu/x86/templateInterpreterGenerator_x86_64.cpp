@@ -449,7 +449,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   address entry_point = __ pc();
 
-  __ movptr(rax, Address(r15_thread, JavaThread::threadObj_offset()));
+  __ movptr(rax, Address(r15_thread, JavaThread::vthread_offset()));
 
   __ resolve_oop_handle(rax, rscratch1);
 

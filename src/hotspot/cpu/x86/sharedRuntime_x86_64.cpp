@@ -28,6 +28,7 @@
 #endif
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
@@ -44,6 +45,7 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -936,6 +938,8 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
+  __ push_cont_fastpath(r15_thread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+
   // 6243940 We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that
   // happens we don't want to take a safepoint because the
@@ -1424,6 +1428,106 @@ static void verify_oop_args(MacroAssembler* masm,
   }
 }
 
+// defined in stubGenerator_x86_64.cpp
+OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
+void fill_continuation_entry(MacroAssembler* masm);
+void continuation_enter_cleanup(MacroAssembler* masm);
+
+// enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
+// On entry: c_rarg1 -- the continuation object
+//           c_rarg2 -- isContinue
+//           c_rarg3 -- isVirtualThread
+static void gen_continuation_enter(MacroAssembler* masm,
+                                 const methodHandle& method,
+                                 const BasicType* sig_bt,
+                                 const VMRegPair* regs,
+                                 int& exception_offset,
+                                 OopMapSet*oop_maps,
+                                 int& frame_complete,
+                                 int& stack_slots) {
+  //verify_oop_args(masm, method, sig_bt, regs);
+  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
+                         relocInfo::static_call_type);
+
+  stack_slots = 2; // will be overwritten
+  address start = __ pc();
+
+  Label call_thaw, exit;
+
+  __ push(rbp);
+  if (PreserveFramePointer) {
+    __ mov(rbp, rsp);
+  }
+
+  //BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  //bs->nmethod_entry_barrier(masm);
+  OopMap* map = continuation_enter_setup(masm, stack_slots);  // kills rax
+
+  // Frame is now completed as far as size and linkage.
+  frame_complete =__ pc() - start;
+  // if isContinue == 0
+  //   _enterSP = sp
+  // end
+
+  fill_continuation_entry(masm); // kills rax
+
+  __ cmpl(c_rarg2, 0);
+  __ jcc(Assembler::notEqual, call_thaw);
+
+  int up = align_up((intptr_t) __ pc() + 1, 4) - (intptr_t) (__ pc() + 1);
+  if (up > 0) {
+    __ nop(up);
+  }
+
+  address mark = __ pc();
+  __ call(resolve);
+  oop_maps->add_gc_map(__ pc() - start, map);
+  __ post_call_nop();
+
+  __ jmp(exit);
+
+  __ bind(call_thaw);
+
+  __ movptr(rbx, (intptr_t) StubRoutines::cont_thaw());
+  __ call(rbx);
+  oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
+  ContinuationEntry::return_pc_offset = __ pc() - start;
+  __ post_call_nop();
+
+  __ bind(exit);
+  continuation_enter_cleanup(masm);
+  __ pop(rbp);
+  __ ret(0);
+
+  /// exception handling
+
+  exception_offset = __ pc() - start;
+
+  continuation_enter_cleanup(masm);
+  __ pop(rbp);
+
+  __ movptr(rbx, rax); // save the exception
+  __ movptr(c_rarg0, Address(rsp, 0));
+
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address,
+        SharedRuntime::exception_handler_for_return_address),
+      r15_thread, c_rarg0);
+  __ mov(rdi, rax);
+  __ movptr(rax, rbx);
+  __ mov(rbx, rdi);
+  __ pop(rdx);
+
+  // continue at exception handler (return address removed)
+  // rax: exception
+  // rbx: exception handler
+  // rdx: throwing pc
+  __ verify_oop(rax);
+  __ jmp(rbx);
+
+  CodeBuffer* cbuf = masm->code_section()->outer();
+  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+}
+
 static void gen_special_dispatch(MacroAssembler* masm,
                                  const methodHandle& method,
                                  const BasicType* sig_bt,
@@ -1505,6 +1609,37 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
                                                 BasicType ret_type) {
+  if (method->is_continuation_enter_intrinsic()) {
+    vmIntrinsics::ID iid = method->intrinsic_id();
+    intptr_t start = (intptr_t)__ pc();
+    int vep_offset = ((intptr_t)__ pc()) - start;
+    int exception_offset = 0;
+    int frame_complete = 0;
+    int stack_slots = 0;
+    OopMapSet* oop_maps =  new OopMapSet();
+    gen_continuation_enter(masm,
+                         method,
+                         in_sig_bt,
+                         in_regs,
+                         exception_offset,
+                         oop_maps,
+                         frame_complete,
+                         stack_slots);
+    __ flush();
+    nmethod* nm = nmethod::new_native_nmethod(method,
+                                              compile_id,
+                                              masm->code(),
+                                              vep_offset,
+                                              frame_complete,
+                                              stack_slots,
+                                              in_ByteSize(-1),
+                                              in_ByteSize(-1),
+                                              oop_maps,
+                                              exception_offset);
+    ContinuationEntry::set_enter_nmethod(nm);
+    return nm;
+  }
+
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -1949,7 +2084,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     // Slow path will re-enter here
-
     __ bind(lock_done);
   }
 
@@ -2087,7 +2221,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     __ bind(done);
-
   }
   {
     SkipIfEqual skip(masm, &DTraceMethodProbes, false);
@@ -2861,7 +2994,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // address of the call in order to generate an oopmap. Hence, we do all the
   // work outselves.
 
-  __ set_last_Java_frame(noreg, noreg, NULL);
+  __ set_last_Java_frame(noreg, noreg, NULL);  // JavaFrameAnchor::capture_last_Java_pc() will get the pc from the return address, which we store next:
 
   // The return address must always be correct so that frame constructor never
   // sees an invalid pc.

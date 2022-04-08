@@ -32,6 +32,7 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
@@ -176,14 +177,7 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
       // skipping the intermediate round to HeapWordSize.
       s = align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
 
-      // UseParallelGC and UseG1GC can change the length field
-      // of an "old copy" of an object array in the young gen so it indicates
-      // the grey portion of an already copied array. This will cause the first
-      // disjunct below to fail if the two comparands are computed across such
-      // a concurrent change.
-      assert((s == klass->oop_size(this)) ||
-             (Universe::is_gc_active() && is_objArray() && is_forwarded() && (get_UseParallelGC() || get_UseG1GC())),
-             "wrong array object size");
+      assert(s == klass->oop_size(this) || size_might_change(), "wrong array object size");
     } else {
       // Must be zero, so bite the bullet and take the virtual call.
       s = klass->oop_size(this);
@@ -195,11 +189,12 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
-bool oopDesc::is_instance()    const { return klass()->is_instance_klass();           }
-bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass(); }
-bool oopDesc::is_array()       const { return klass()->is_array_klass();              }
-bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();           }
-bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();          }
+bool oopDesc::is_instance()    const { return klass()->is_instance_klass();             }
+bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass();   }
+bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_klass(); }
+bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
+bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();             }
+bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();            }
 
 template<typename T>
 T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }

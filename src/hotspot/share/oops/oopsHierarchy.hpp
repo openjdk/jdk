@@ -45,6 +45,7 @@ typedef void* OopOrNarrowOopStar;
 
 typedef class oopDesc*                    oop;
 typedef class   instanceOopDesc*            instanceOop;
+typedef class     stackChunkOopDesc*          stackChunkOop;
 typedef class   arrayOopDesc*               arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
 typedef class     typeArrayOopDesc*           typeArrayOop;
@@ -143,6 +144,7 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
    };
 
 DEF_OOP(instance);
+DEF_OOP(stackChunk);
 DEF_OOP(array);
 DEF_OOP(objArray);
 DEF_OOP(typeArray);
@@ -177,6 +179,7 @@ class   InstanceKlass;
 class     InstanceMirrorKlass;
 class     InstanceClassLoaderKlass;
 class     InstanceRefKlass;
+class     InstanceStackChunkKlass;
 class   ArrayKlass;
 class     ObjArrayKlass;
 class     TypeArrayKlass;

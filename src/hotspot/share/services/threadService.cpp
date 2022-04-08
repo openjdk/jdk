@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -611,7 +612,6 @@ void StackFrameInfo::print_on(outputStream* st) const {
     oop o = _locked_monitors->at(i).resolve();
     st->print_cr("\t- locked <" INTPTR_FORMAT "> (a %s)", p2i(o), o->klass()->external_name());
   }
-
 }
 
 // Iterate through monitor cache to find JNI locked monitors
@@ -659,16 +659,23 @@ ThreadStackTrace::~ThreadStackTrace() {
   }
 }
 
-void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHashtable* table) {
+void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHashtable* table, bool full) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
   if (_thread->has_last_Java_frame()) {
     RegisterMap reg_map(_thread);
-    vframe* start_vf = _thread->last_java_vframe(&reg_map);
+
+    // If full, we want to print both vthread and carrier frames
+    vframe* start_vf = !full && _thread->is_vthread_mounted()
+      ? _thread->carrier_last_java_vframe(&reg_map)
+      : _thread->last_java_vframe(&reg_map);
     int count = 0;
     for (vframe* f = start_vf; f; f = f->sender() ) {
       if (maxDepth >= 0 && count == maxDepth) {
         // Skip frames if more than maxDepth
+        break;
+      }
+      if (!full && f->is_vthread_entry()) {
         break;
       }
       if (f->is_java_frame()) {
@@ -892,7 +899,13 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   oop blocker_object = NULL;
   oop blocker_object_owner = NULL;
 
-  if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
+  if (thread->is_vthread_mounted() && thread->vthread() != threadObj) { // ThreadSnapshot only captures platform threads
+    _thread_status = JavaThreadStatus::IN_OBJECT_WAIT;
+    oop vthread = thread->vthread();
+    assert(vthread != NULL, "");
+    blocker_object = vthread;
+    blocker_object_owner = vthread;
+  } else if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
       _thread_status == JavaThreadStatus::IN_OBJECT_WAIT ||
       _thread_status == JavaThreadStatus::IN_OBJECT_WAIT_TIMED) {
 
@@ -916,10 +929,7 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
         blocker_object_owner = owner->threadObj();
       }
     }
-  }
-
-  // Support for JSR-166 locks
-  if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
+  } else if (_thread_status == JavaThreadStatus::PARKED || _thread_status == JavaThreadStatus::PARKED_TIMED) {
     blocker_object = thread->current_park_blocker();
     if (blocker_object != NULL && blocker_object->is_a(vmClasses::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass())) {
       blocker_object_owner = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(blocker_object);
@@ -947,9 +957,9 @@ ThreadSnapshot::~ThreadSnapshot() {
 }
 
 void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
-                                             ObjectMonitorsHashtable* table) {
+                                             ObjectMonitorsHashtable* table, bool full) {
   _stack_trace = new ThreadStackTrace(_thread, with_locked_monitors);
-  _stack_trace->dump_stack_at_safepoint(max_depth, table);
+  _stack_trace->dump_stack_at_safepoint(max_depth, table, full);
 }
 
 

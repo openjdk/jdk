@@ -50,7 +50,7 @@ public:
 
   // Oop fields (and metadata) iterators
   //
-  // The InstanceClassLoaderKlass iterators also visit the CLD pointer (or mirror of hidden klasses.)
+  // The InstanceClassLoaderKlass iterators also visit the CLD pointer
 
   // Forward iteration
   // Iterate over the oop fields and metadata.

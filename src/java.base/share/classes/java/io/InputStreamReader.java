@@ -28,8 +28,8 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.util.Objects;
 import sun.nio.cs.StreamDecoder;
-
 
 /**
  * An InputStreamReader is a bridge from byte streams to character streams: It
@@ -61,7 +61,6 @@ import sun.nio.cs.StreamDecoder;
  */
 
 public class InputStreamReader extends Reader {
-
     private final StreamDecoder sd;
 
     /**
@@ -73,9 +72,8 @@ public class InputStreamReader extends Reader {
      * @see Charset#defaultCharset()
      */
     public InputStreamReader(InputStream in) {
-        super(in);
-        sd = StreamDecoder.forInputStreamReader(in, this,
-                Charset.defaultCharset()); // ## check lock object
+        Objects.requireNonNull(in);
+        sd = StreamDecoder.forInputStreamReader(in, lock, Charset.defaultCharset());
     }
 
     /**
@@ -93,10 +91,9 @@ public class InputStreamReader extends Reader {
     public InputStreamReader(InputStream in, String charsetName)
         throws UnsupportedEncodingException
     {
-        super(in);
-        if (charsetName == null)
-            throw new NullPointerException("charsetName");
-        sd = StreamDecoder.forInputStreamReader(in, this, charsetName);
+        Objects.requireNonNull(in);
+        Objects.requireNonNull(charsetName, "charsetName");
+        sd = StreamDecoder.forInputStreamReader(in, lock, charsetName);
     }
 
     /**
@@ -108,10 +105,9 @@ public class InputStreamReader extends Reader {
      * @since 1.4
      */
     public InputStreamReader(InputStream in, Charset cs) {
-        super(in);
-        if (cs == null)
-            throw new NullPointerException("charset");
-        sd = StreamDecoder.forInputStreamReader(in, this, cs);
+        Objects.requireNonNull(in);
+        Objects.requireNonNull(cs, "charset");
+        sd = StreamDecoder.forInputStreamReader(in, lock, cs);
     }
 
     /**
@@ -123,10 +119,8 @@ public class InputStreamReader extends Reader {
      * @since 1.4
      */
     public InputStreamReader(InputStream in, CharsetDecoder dec) {
-        super(in);
-        if (dec == null)
-            throw new NullPointerException("charset decoder");
-        sd = StreamDecoder.forInputStreamReader(in, this, dec);
+        Objects.requireNonNull(dec, "charset decoder");
+        sd = StreamDecoder.forInputStreamReader(in, lock, dec);
     }
 
     /**

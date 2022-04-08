@@ -231,6 +231,10 @@ bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
 }
 
+bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
+  return !is_in_young(p);
+}
+
 // There are two levels of allocation policy here.
 //
 // When an allocation request fails, the requesting thread must invoke a VM

@@ -41,6 +41,7 @@ import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
 import java.util.List;
 import nsk.share.Log;
+import nsk.share.MainWrapper;
 
 public class JDIBase {
 

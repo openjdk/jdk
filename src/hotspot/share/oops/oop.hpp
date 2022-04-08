@@ -99,7 +99,7 @@ class oopDesc {
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
 
-  // Returns the actual oop size of the object
+  // Returns the actual oop size of the object in machine words
   inline size_t size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
@@ -109,6 +109,7 @@ class oopDesc {
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()    const;
   inline bool is_instanceRef() const;
+  inline bool is_stackChunk()  const;
   inline bool is_array()       const;
   inline bool is_objArray()    const;
   inline bool is_typeArray()   const;
@@ -116,6 +117,7 @@ class oopDesc {
   // type test operations that don't require inclusion of oop.inline.hpp.
   bool is_instance_noinline()    const;
   bool is_instanceRef_noinline() const;
+  bool is_stackChunk_noinline()  const;
   bool is_array_noinline()       const;
   bool is_objArray_noinline()    const;
   bool is_typeArray_noinline()   const;
@@ -312,9 +314,7 @@ class oopDesc {
   static void* load_klass_raw(oop obj);
   static void* load_oop_raw(oop obj, int offset);
 
-  // Avoid include gc_globals.hpp in oop.inline.hpp
-  DEBUG_ONLY(bool get_UseParallelGC();)
-  DEBUG_ONLY(bool get_UseG1GC();)
+  DEBUG_ONLY(bool size_might_change();)
 };
 
 // An oopDesc is not initialized via a constructor.  Space is allocated in

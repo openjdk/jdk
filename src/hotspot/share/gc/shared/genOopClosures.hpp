@@ -33,6 +33,8 @@ class CardTableRS;
 class CardTableBarrierSet;
 class DefNewGeneration;
 class KlassRemSet;
+class Method;
+class nmethod;
 
 #if INCLUDE_SERIALGC
 
@@ -116,6 +118,8 @@ class FilteringClosure: public OopIterateClosure {
   virtual bool do_metadata()            { assert(!_cl->do_metadata(), "assumption broken, must change to 'return _cl->do_metadata()'"); return false; }
   virtual void do_klass(Klass*)         { ShouldNotReachHere(); }
   virtual void do_cld(ClassLoaderData*) { ShouldNotReachHere(); }
+  virtual void do_method(Method*)       { ShouldNotReachHere(); }
+  virtual void do_nmethod(nmethod*)     { ShouldNotReachHere(); }
 };
 
 #if INCLUDE_SERIALGC

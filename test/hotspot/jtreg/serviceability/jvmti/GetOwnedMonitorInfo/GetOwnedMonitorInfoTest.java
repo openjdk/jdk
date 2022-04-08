@@ -27,8 +27,8 @@
  * @bug 8185164
  * @summary Checks that a contended monitor does not show up in the list of owned monitors
  * @requires vm.jvmti
- * @compile GetOwnedMonitorInfoTest.java
- * @run main/othervm/native -agentlib:GetOwnedMonitorInfoTest GetOwnedMonitorInfoTest
+ * @compile --enable-preview -source ${jdk.version} GetOwnedMonitorInfoTest.java
+ * @run main/othervm/native --enable-preview -agentlib:GetOwnedMonitorInfoTest GetOwnedMonitorInfoTest
  */
 
 import java.io.PrintStream;
@@ -50,9 +50,15 @@ public class GetOwnedMonitorInfoTest {
     private static native boolean hasEventPosted();
 
     public static void main(String[] args) throws Exception {
+        runTest(true);
+        runTest(false);
+    }
+
+    public static void runTest(boolean isVirtual) throws Exception {
+        var threadFactory = isVirtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory();
         final GetOwnedMonitorInfoTest lock = new GetOwnedMonitorInfoTest();
 
-        Thread t1 = new Thread(() -> {
+        Thread t1 = threadFactory.newThread(() -> {
             synchronized (lock) {
                 System.out.println("Thread in sync section: "
                                    + Thread.currentThread().getName());

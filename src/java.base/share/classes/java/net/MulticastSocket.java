@@ -121,10 +121,9 @@ public class MulticastSocket extends DatagramSocket {
      * Create a MulticastSocket that delegates to the given delegate if not null.
      * @param delegate the delegate, can be null.
      */
-    MulticastSocket(MulticastSocket delegate)  {
+    MulticastSocket(MulticastSocket delegate) {
         super(delegate);
     }
-
 
     /**
      * Constructs a multicast socket and binds it to any available port

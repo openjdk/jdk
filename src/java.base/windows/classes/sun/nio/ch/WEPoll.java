@@ -52,6 +52,9 @@ class WEPoll {
      *     epoll_data_t data;
      * }
      */
+    static {
+        IOUtil.load();
+    }
     private static final int SIZEOF_EPOLLEVENT   = eventSize();
     private static final int OFFSETOF_EVENTS     = eventsOffset();
     private static final int OFFSETOF_SOCK       = dataOffset();
@@ -139,8 +142,4 @@ class WEPoll {
         throws IOException;
 
     static native void close(long h);
-
-    static {
-        IOUtil.load();
-    }
 }

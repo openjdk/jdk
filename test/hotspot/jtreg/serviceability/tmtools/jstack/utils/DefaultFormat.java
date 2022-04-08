@@ -53,7 +53,7 @@ import java.util.regex.MatchResult;
 public class DefaultFormat implements Format {
 
     protected String threadInfoPattern() {
-        return "^\"(.*)\"\\s(#\\d+\\s|)(daemon\\s|)prio=(.+)\\s(os_prio=(.+)\\s|)tid=(.+)\\snid=(.+)\\s("
+        return "^\"(.*)\"\\s(#\\d+\\s|)\\[(\\d+)\\]\\s(daemon\\s|)prio=(.+)\\s(os_prio=(.+)\\s|)tid=(.+)\\snid=(.+)\\s("
                 + Consts.UNKNOWN
                 + "|runnable|sleeping|waiting\\son\\scondition|in\\sObject\\.wait\\(\\)|waiting\\sfor\\smonitor\\sentry)((.*))$";
     }
@@ -176,12 +176,12 @@ public class DefaultFormat implements Format {
 
         result.setThreadName(res.group(1));
 
-        result.setType(res.group(3));
+        result.setType(res.group(4));
 
-        result.setPriority(res.group(4));
-        result.setTid(res.group(7));
-        result.setNid(res.group(8));
-        result.setStatus(res.group(9));
+        result.setPriority(res.group(5));
+        result.setTid(res.group(8));
+        result.setNid(res.group(9));
+        result.setStatus(res.group(10));
 
         s.close();
         return result;

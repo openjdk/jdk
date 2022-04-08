@@ -107,14 +107,23 @@ class StackValue : public ResourceObj {
     }
   }
 
-  static StackValue* create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
   static BasicLock*  resolve_monitor_lock(const frame* fr, Location location);
+
+  template<typename RegisterMapT>
+  static StackValue* create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv);
+
+  template<typename RegisterMapT>
+  static address stack_value_address(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv);
 
 #ifndef PRODUCT
  public:
   // Printing
   void print_on(outputStream* st) const;
 #endif
+
+ private:
+   template<typename RegisterMapT>
+   static StackValue* create_stack_value(ScopeValue* sv, address value_addr, const RegisterMapT* reg_map);
 };
 
 #endif // SHARE_RUNTIME_STACKVALUE_HPP

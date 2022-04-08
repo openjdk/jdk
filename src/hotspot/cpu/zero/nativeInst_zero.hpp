@@ -41,6 +41,7 @@
 // - - NativeReturnX (return with argument)
 // - - NativePushConst
 // - - NativeTstRegMem
+// - - NativeDeoptInstruction
 
 // The base class for different kinds of native instruction abstractions.
 // Provides the primitive operations to manipulate code relative to this.
@@ -209,5 +210,36 @@ inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   ShouldNotCallThis();
   return NULL;
 }
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { Unimplemented(); return false; }
+  int displacement() const { Unimplemented(); return 0; }
+  void patch(jint diff) { Unimplemented(); }
+  void make_deopt() { Unimplemented(); }
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  Unimplemented();
+  return NULL;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+public:
+  address instruction_address() const       { Unimplemented(); return NULL; }
+  address next_instruction_address() const  { Unimplemented(); return NULL; }
+
+  void  verify() { Unimplemented(); }
+
+  static bool is_deopt_at(address instr) {
+    Unimplemented();
+    return false;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos) {
+    Unimplemented();
+  }
+};
 
 #endif // CPU_ZERO_NATIVEINST_ZERO_HPP

@@ -1069,7 +1069,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     if (thread->thread_state() == _thread_in_Java) {
 #ifndef ARM
       // arm32 doesn't have this
-      if (overflow_state->in_stack_reserved_zone(addr)) {
+      // vthreads don't support this
+      if (!thread->is_vthread_mounted() && overflow_state->in_stack_reserved_zone(addr)) {
         frame fr;
         if (get_frame_at_stack_banging_point(thread, pc, ucVoid, &fr)) {
           assert(fr.is_java_frame(), "Must be a Java frame");

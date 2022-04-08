@@ -63,6 +63,7 @@ public abstract class Metadata extends VMObject {
     metadataConstructor.addMapping("InstanceMirrorKlass", InstanceMirrorKlass.class);
     metadataConstructor.addMapping("InstanceRefKlass", InstanceRefKlass.class);
     metadataConstructor.addMapping("InstanceClassLoaderKlass", InstanceClassLoaderKlass.class);
+    metadataConstructor.addMapping("InstanceStackChunkKlass", InstanceStackChunkKlass.class);
     metadataConstructor.addMapping("TypeArrayKlass", TypeArrayKlass.class);
     metadataConstructor.addMapping("ObjArrayKlass", ObjArrayKlass.class);
     metadataConstructor.addMapping("Method", Method.class);

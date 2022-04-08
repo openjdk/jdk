@@ -69,7 +69,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isAvailable", (char*)"()Z", (void*)jfr_is_available,
       (char*)"getTimeConversionFactor", (char*)"()D", (void*)jfr_time_conv_factor,
       (char*)"getTypeId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_type_id,
-      (char*)"getEventWriter", (char*)"()Ljava/lang/Object;", (void*)jfr_get_event_writer,
+      (char*)"getEventWriter", (char*)"()Ljdk/jfr/internal/EventWriter;", (void*)jfr_get_event_writer,
       (char*)"newEventWriter", (char*)"()Ljdk/jfr/internal/EventWriter;", (void*)jfr_new_event_writer,
       (char*)"flush", (char*)"(Ljdk/jfr/internal/EventWriter;II)Z", (void*)jfr_event_writer_flush,
       (char*)"flush", (char*)"()V", (void*)jfr_flush,

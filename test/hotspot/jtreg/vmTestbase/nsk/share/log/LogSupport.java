@@ -46,6 +46,12 @@ public class LogSupport implements Log {
 
         public LogSupport(PrintStream out) {
                 this.out = out;
+                // pre-load all classes used by Thread.sleep()
+                // to don't hit OOME in OOME handler
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ie) {
+                }
         }
 
         protected void logObject(Object o) {

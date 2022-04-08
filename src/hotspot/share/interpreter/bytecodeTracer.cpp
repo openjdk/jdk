@@ -170,6 +170,10 @@ BytecodeClosure* BytecodeTracer::std_closure() {
 
 
 void BytecodeTracer::trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
+  if (_closure == NULL) {
+    return;
+  }
+
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
     ttyLocker ttyl;  // 5065316: keep the following output coherent
     // The ttyLocker also prevents races between two threads
@@ -189,6 +193,10 @@ void BytecodeTracer::trace(const methodHandle& method, address bcp, uintptr_t to
 }
 
 void BytecodeTracer::trace(const methodHandle& method, address bcp, outputStream* st) {
+  if (_closure == NULL) {
+    return;
+  }
+
   ttyLocker ttyl;  // 5065316: keep the following output coherent
   _closure->trace(method, bcp, st);
 }

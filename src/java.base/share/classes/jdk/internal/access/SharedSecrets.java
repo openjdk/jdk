@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.security.ProtectionDomain;
 import java.security.Signature;
@@ -60,6 +62,8 @@ public class SharedSecrets {
     private static JavaLangRefAccess javaLangRefAccess;
     private static JavaLangReflectAccess javaLangReflectAccess;
     private static JavaIOAccess javaIOAccess;
+    private static JavaIOPrintStreamAccess javaIOPrintStreamAccess;
+    private static JavaIOPrintWriterAccess javaIOPrintWriterAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
     private static JavaIOFilePermissionAccess javaIOFilePermissionAccess;
     private static JavaIORandomAccessFileAccess javaIORandomAccessFileAccess;
@@ -72,6 +76,7 @@ public class SharedSecrets {
     private static JavaNetURLAccess javaNetURLAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaUtilCollectionAccess javaUtilCollectionAccess;
+    private static JavaUtilConcurrentTLRAccess javaUtilConcurrentTLRAccess;
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
@@ -94,6 +99,19 @@ public class SharedSecrets {
             } catch (ClassNotFoundException e) {}
         }
         return access;
+    }
+
+    public static void setJavaUtilConcurrentTLRAccess(JavaUtilConcurrentTLRAccess access) {
+        javaUtilConcurrentTLRAccess = access;
+    }
+
+    public static JavaUtilConcurrentTLRAccess getJavaUtilConcurrentTLRAccess() {
+        if (javaUtilConcurrentTLRAccess == null) {
+            try {
+                Class.forName("java.util.concurrent.ThreadLocalRandom$Access", true, null);
+            } catch (ClassNotFoundException e) {}
+        }
+        return javaUtilConcurrentTLRAccess;
     }
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
@@ -239,6 +257,32 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(Console.class);
             access = javaIOAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaIOCPrintWriterAccess(JavaIOPrintWriterAccess a) {
+        javaIOPrintWriterAccess = a;
+    }
+
+    public static JavaIOPrintWriterAccess getJavaIOPrintWriterAccess() {
+        var access = javaIOPrintWriterAccess;
+        if (access == null) {
+            ensureClassInitialized(PrintWriter.class);
+            access = javaIOPrintWriterAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaIOCPrintStreamAccess(JavaIOPrintStreamAccess a) {
+        javaIOPrintStreamAccess = a;
+    }
+
+    public static JavaIOPrintStreamAccess getJavaIOPrintStreamAccess() {
+        var access = javaIOPrintStreamAccess;
+        if (access == null) {
+            ensureClassInitialized(PrintStream.class);
+            access = javaIOPrintStreamAccess;
         }
         return access;
     }

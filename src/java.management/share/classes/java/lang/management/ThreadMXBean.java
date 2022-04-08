@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,15 @@ package java.lang.management;
 import java.util.Map;
 
 /**
- * The management interface for the thread system of
- * the Java virtual machine.
+ * The management interface for the thread system of the Java virtual machine.
+ *
+ * <p> {@code ThreadMXBean} supports monitoring and management of
+ * <a href="{@docRoot}/java.base/java/lang/Thread.html#platform-threads">
+ * platform threads</a> in the Java virtual machine. Platform threads are
+ * typically mapped to kernel threads scheduled by the operating system.
+ * {@code ThreadMXBean} does not support monitoring or management of
+ * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">
+ * virtual threads</a>.
  *
  * <p> A Java virtual machine has a single instance of the implementation
  * class of this interface.  This instance implementing this interface is
@@ -50,10 +57,10 @@ import java.util.Map;
  * {@link PlatformManagedObject#getObjectName} method.
  *
  * <h2>Thread ID</h2>
- * Thread ID is a positive long value returned by calling the
- * {@link java.lang.Thread#getId} method for a thread.
- * The thread ID is unique during its lifetime.  When a thread
- * is terminated, this thread ID may be reused.
+ * Thread ID is a positive long value returned by calling the thread's
+ * {@link Thread#threadId() threadId()} method.
+ * The thread ID is unique during its lifetime.  When the thread terminates,
+ * its thread ID may be reused.
  *
  * <p> Some methods in this interface take a thread ID or an array
  * of thread IDs as the input parameter and return per-thread information.
@@ -123,38 +130,43 @@ import java.util.Map;
 
 public interface ThreadMXBean extends PlatformManagedObject {
     /**
-     * Returns the current number of live threads including both
+     * Returns the current number of live platform threads including both
      * daemon and non-daemon threads.
+     * The count does not include virtual threads.
      *
-     * @return the current number of live threads.
+     * @return the current number of live platform threads.
      */
     public int getThreadCount();
 
     /**
-     * Returns the peak live thread count since the Java virtual machine
-     * started or peak was reset.
+     * Returns the peak live platform thread count since the Java virtual
+     * machine started or peak was reset.
+     * The count does not include virtual threads.
      *
-     * @return the peak live thread count.
+     * @return the peak live platform thread count.
      */
     public int getPeakThreadCount();
 
     /**
-     * Returns the total number of threads created and also started
+     * Returns the total number of platform threads created and also started
      * since the Java virtual machine started.
+     * The count does not include virtual threads.
      *
-     * @return the total number of threads started.
+     * @return the total number of platform threads started.
      */
     public long getTotalStartedThreadCount();
 
     /**
-     * Returns the current number of live daemon threads.
+     * Returns the current number of live platform threads that are daemon threads.
+     * The count does not include virtual threads.
      *
-     * @return the current number of live daemon threads.
+     * @return the current number of live platform threads that are daemon threads.
      */
     public int getDaemonThreadCount();
 
     /**
-     * Returns all live thread IDs.
+     * Returns the threadIDs of all live platform threads.
+     * The thread IDs of virtual threads are not included.
      * Some threads included in the returned array
      * may have been terminated when this method returns.
      *
@@ -181,9 +193,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * in the returned {@code ThreadInfo} object will
      * be empty.
      *
-     * If a thread of the given ID is not alive or does not exist,
-     * this method will return {@code null}.  A thread is alive if
-     * it has been started and has not yet died.
+     * If a thread of the given ID is a virtual thread, is not alive, or does
+     * not exist, then this method will return {@code null}. A thread is
+     * alive if it has been started and has not yet terminated.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
@@ -195,8 +207,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *
      * @return a {@link ThreadInfo} object for the thread of the given ID
      * with no stack trace, no locked monitor and no synchronizer info;
-     * {@code null} if the thread of the given ID is not alive or
-     * it does not exist.
+     * {@code null} if the thread of the given ID is a virtual thread,
+     * is not alive, or it does not exist.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws SecurityException if a security manager
@@ -218,10 +230,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * The stack trace, locked monitors, and locked synchronizers
      * in each {@code ThreadInfo} object will be empty.
      *
-     * If a thread of a given ID is not alive or does not exist,
-     * the corresponding element in the returned array will
+     * If a thread of the given ID is a virtual thread, is not alive, or does
+     * not exist, the corresponding element in the returned array will
      * contain {@code null}.  A thread is alive if
-     * it has been started and has not yet died.
+     * it has been started and has not yet terminated.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
@@ -262,9 +274,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * {@code StackTraceElement}.
      *
      * <p>
-     * If a thread of the given ID is not alive or does not exist,
-     * this method will return {@code null}.  A thread is alive if
-     * it has been started and has not yet died.
+     * If a thread of the given ID is a virtual thread, is not alive, or does
+     * not exist, this method will return {@code null}. A thread is alive if
+     * it has been started and has not yet terminated.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
@@ -279,8 +291,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *
      * @return a {@link ThreadInfo} of the thread of the given ID
      * with no locked monitor and synchronizer info.
-     * {@code null} if the thread of the given ID is not alive or
-     * it does not exist.
+     * {@code null} if the thread of the given ID is a virtual thread, is
+     * not alive or it does not exist.
      *
      * @throws IllegalArgumentException if {@code id <= 0}.
      * @throws IllegalArgumentException if {@code maxDepth is negative}.
@@ -313,10 +325,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * This method returns an array of the {@code ThreadInfo} objects,
      * each is the thread information about the thread with the same index
      * as in the {@code ids} array.
-     * If a thread of the given ID is not alive or does not exist,
-     * {@code null} will be set in the corresponding element
+     * If a thread of the given ID is a virtual thread, is not alive, or does
+     * not exist, {@code null} will be set in the corresponding element
      * in the returned array.  A thread is alive if
-     * it has been started and has not yet died.
+     * it has been started and has not yet terminated.
      *
      * <p>
      * <b>MBeanServer access</b>:<br>
@@ -397,7 +409,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * This is a convenience method for local management use and is
      * equivalent to calling:
      * <blockquote><pre>
-     *   {@link #getThreadCpuTime getThreadCpuTime}(Thread.currentThread().getId());
+     *   {@link #getThreadCpuTime getThreadCpuTime}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
      * @return the total CPU time for the current thread if CPU time
@@ -424,7 +436,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * This is a convenience method for local management use and is
      * equivalent to calling:
      * <blockquote><pre>
-     *   {@link #getThreadUserTime getThreadUserTime}(Thread.currentThread().getId());
+     *   {@link #getThreadUserTime getThreadUserTime}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
      * @return the user-level CPU time for the current thread if CPU time
@@ -450,10 +462,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * the thread has executed in user mode or system mode.
      *
      * <p>
-     * If the thread of the specified ID is not alive or does not exist,
-     * this method returns {@code -1}. If CPU time measurement
+     * If the thread of the specified ID is a virtual thread, is not alive or
+     * does not exist, this method returns {@code -1}. If CPU time measurement
      * is disabled, this method returns {@code -1}.
-     * A thread is alive if it has been started and has not yet died.
+     * A thread is alive if it has been started and has not yet terminated.
      * <p>
      * If CPU time measurement is enabled after the thread has started,
      * the Java virtual machine implementation may choose any time up to
@@ -485,10 +497,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * not necessarily nanoseconds accuracy.
      *
      * <p>
-     * If the thread of the specified ID is not alive or does not exist,
-     * this method returns {@code -1}. If CPU time measurement
+     * If the thread of the specified ID is a virtual thread, is not alive, or
+     * does not exist, this method returns {@code -1}. If CPU time measurement
      * is disabled, this method returns {@code -1}.
-     * A thread is alive if it has been started and has not yet died.
+     * A thread is alive if it has been started and has not yet terminated.
      * <p>
      * If CPU time measurement is enabled after the thread has started,
      * the Java virtual machine implementation may choose any time up to
@@ -594,6 +606,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * <p>
      * This method is designed for troubleshooting use, but not for
      * synchronization control.  It might be an expensive operation.
+     * Its behavior with cycles involving virtual threads is not defined
+     * in this release.
      * <p>
      * This method finds deadlocks involving only object monitors.
      * To find deadlocks involving both object monitors and
@@ -637,6 +651,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * <p>
      * This method is designed for troubleshooting use, but not for
      * synchronization control.  It might be an expensive operation.
+     * Its behavior with cycles involving virtual threads is not defined
+     * in this release.
      *
      * @return an array of IDs of the threads that are
      * deadlocked waiting for object monitors or ownable synchronizers, if any;
@@ -750,10 +766,10 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * This method returns an array of the {@code ThreadInfo} objects,
      * each is the thread information about the thread with the same index
      * as in the {@code ids} array.
-     * If a thread of the given ID is not alive or does not exist,
-     * {@code null} will be set in the corresponding element
+     * If a thread of the given ID is a virtual thread, is not alive, or does
+     * not exist, {@code null} will be set in the corresponding element
      * in the returned array.  A thread is alive if
-     * it has been started and has not yet died.
+     * it has been started and has not yet terminated.
      * <p>
      * If a thread does not lock any object monitor or {@code lockedMonitors}
      * is {@code false}, the returned {@code ThreadInfo} object will have an
@@ -823,7 +839,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
     /**
      * Returns the thread info for all live threads with stack trace
      * and synchronization information.
-     * This is equivalent to calling:
+     * The thread IDs of virtual threads are not included.
+     * This method is equivalent to calling:
      * <blockquote>
      * {@link #dumpAllThreads(boolean, boolean, int)
      * dumpAllThreads(lockedMonitors, lockedSynchronizers, Integer.MAX_VALUE)}
@@ -864,6 +881,7 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * and synchronization information.
      * if {@code maxDepth == 0}, no stack trace of the thread
      * will be dumped.
+     * The thread IDs of virtual threads are not included.
      * Some threads included in the returned array
      * may have been terminated when this method returns.
      *

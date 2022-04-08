@@ -38,6 +38,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
 
 import sun.hotspot.WhiteBox;
 
@@ -48,7 +49,6 @@ final class MyClass {
 
 public class TestHiddenClassIsAlive {
 
-
     public static void main(String[] args) throws Throwable {
         byte[] classBytes = readClassFile("MyClass.class");
         Lookup lookup = MethodHandles.lookup();
@@ -56,6 +56,7 @@ public class TestHiddenClassIsAlive {
         if (!WhiteBox.getWhiteBox().isClassAlive("MyClass")) {
             throw new RuntimeException("Hidden class should be alive");
         }
+        Reference.reachabilityFence(c);
     }
 
     static byte[] readClassFile(String classFileName) throws Exception {

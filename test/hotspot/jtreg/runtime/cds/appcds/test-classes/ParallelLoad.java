@@ -116,7 +116,7 @@ public class ParallelLoad {
 class ParallelLoadWatchdog extends Thread {
     public void run() {
         try {
-            long timeout = (long) (20 * 1000 * ParallelLoad.timeoutFactor);
+            long timeout = (long) (40 * 1000 * ParallelLoad.timeoutFactor);
             Thread.sleep(timeout);
             System.out.println("ParallelLoadWatchdog: Timeout reached: timeout(ms) = " + timeout);
             System.exit(1);
@@ -224,4 +224,3 @@ class ParallelLoadThread extends Thread {
         }
     }
 }
-

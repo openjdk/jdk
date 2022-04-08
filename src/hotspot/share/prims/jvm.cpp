@@ -65,10 +65,11 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiThreadState.hpp"
+#include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -85,6 +86,7 @@
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vmOperations.hpp"
@@ -532,12 +534,12 @@ JVM_END
 // java.lang.StackTraceElement //////////////////////////////////////////////
 
 
-JVM_ENTRY(void, JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject throwable))
-  Handle exception(THREAD, JNIHandles::resolve(throwable));
+JVM_ENTRY(void, JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject backtrace, jint depth))
+  Handle backtraceh(THREAD, JNIHandles::resolve(backtrace));
   objArrayOop st = objArrayOop(JNIHandles::resolve(elements));
   objArrayHandle stack_trace(THREAD, st);
   // Fill in the allocated stack trace
-  java_lang_Throwable::get_stack_trace_elements(exception, stack_trace, CHECK);
+  java_lang_Throwable::get_stack_trace_elements(depth, backtraceh, stack_trace, CHECK);
 JVM_END
 
 
@@ -552,14 +554,15 @@ JVM_END
 
 
 JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
-                                     jint skip_frames, jint frame_count, jint start_index,
-                                     jobjectArray frames))
+                                     jint skip_frames, jobject contScope, jobject cont,
+                                     jint frame_count, jint start_index, jobjectArray frames))
   if (!thread->has_last_Java_frame()) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: no stack trace", NULL);
   }
 
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
-
+  Handle contScope_h(THREAD, JNIHandles::resolve(contScope));
+  Handle cont_h(THREAD, JNIHandles::resolve(cont));
   // frames array is a Class<?>[] array when only getting caller reference,
   // and a StackFrameInfo[] array (or derivative) otherwise. It should never
   // be null.
@@ -571,8 +574,8 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers", NULL);
   }
 
-  oop result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
-                               start_index, frames_array_h, CHECK_NULL);
+  oop result = StackWalk::walk(stackStream_h, mode, skip_frames, contScope_h, cont_h,
+                               frame_count, start_index, frames_array_h, CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
 JVM_END
 
@@ -593,7 +596,16 @@ JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, 
 
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
   return StackWalk::fetchNextBatch(stackStream_h, mode, anchor, frame_count,
-                                   start_index, frames_array_h, THREAD);
+                                  start_index, frames_array_h, THREAD);
+JVM_END
+
+JVM_ENTRY(void, JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, jobjectArray frames, jobject cont))
+    objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
+    objArrayHandle frames_array_h(THREAD, fa);
+    Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
+    Handle cont_h(THREAD, JNIHandles::resolve_non_null(cont));
+
+    StackWalk::setContinuation(stackStream_h, anchor, frames_array_h, cont_h, THREAD);
 JVM_END
 
 // java.lang.Object ///////////////////////////////////////////////
@@ -692,6 +704,12 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_IsFinalizationEnabled(JNIEnv * env))
   return InstanceKlass::is_finalization_enabled();
+JVM_END
+
+// jdk.internal.vm.Continuation /////////////////////////////////////////////////////
+
+JVM_ENTRY(void, JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls))
+  CONT_RegisterNativeMethods(env, cls);
 JVM_END
 
 // java.io.File ///////////////////////////////////////////////////////////////
@@ -2956,14 +2974,7 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
               os::native_thread_creation_failed_msg());
   }
 
-#if INCLUDE_JFR
-  if (Jfr::is_recording() && EventThreadStart::is_enabled() &&
-      EventThreadStart::is_stacktrace_enabled()) {
-    JfrThreadLocal* tl = native_thread->jfr_thread_local();
-    // skip Thread.start() and Thread.start0()
-    tl->set_cached_stack_trace_id(JfrStackTraceRepository::record(thread, 2));
-  }
-#endif
+  JFR_ONLY(Jfr::on_java_thread_start(thread, native_thread);)
 
   Thread::start(native_thread);
 
@@ -3061,13 +3072,6 @@ JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   os::naked_yield();
 JVM_END
 
-static void post_thread_sleep_event(EventThreadSleep* event, jlong millis) {
-  assert(event != NULL, "invariant");
-  assert(event->should_commit(), "invariant");
-  event->set_time(millis);
-  event->commit();
-}
-
 JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   if (millis < 0) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
@@ -3082,7 +3086,6 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
   JavaThreadSleepState jtss(thread);
 
   HOTSPOT_THREAD_SLEEP_BEGIN(millis);
-  EventThreadSleep event;
 
   if (millis == 0) {
     os::naked_yield();
@@ -3093,9 +3096,6 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
       // An asynchronous exception (e.g., ThreadDeathException) could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
-        if (event.should_commit()) {
-          post_thread_sleep_event(&event, millis);
-        }
         HOTSPOT_THREAD_SLEEP_END(1);
 
         // TODO-FIXME: THROW_MSG returns which means we will not call set_state()
@@ -3105,16 +3105,30 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     }
     thread->osthread()->set_state(old_state);
   }
-  if (event.should_commit()) {
-    post_thread_sleep_event(&event, millis);
-  }
   HOTSPOT_THREAD_SLEEP_END(0);
 JVM_END
 
-JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))
+JVM_ENTRY(jobject, JVM_CurrentCarrierThread(JNIEnv* env, jclass threadClass))
   oop jthread = thread->threadObj();
   assert(jthread != NULL, "no current thread!");
   return JNIHandles::make_local(THREAD, jthread);
+JVM_END
+
+JVM_ENTRY(jobject, JVM_CurrentThread(JNIEnv* env, jclass threadClass))
+  oop theThread = thread->vthread();
+  assert(theThread != (oop)NULL, "no current thread!");
+  return JNIHandles::make_local(THREAD, theThread);
+JVM_END
+
+JVM_ENTRY(void, JVM_SetCurrentThread(JNIEnv* env, jobject thisThread,
+                                     jobject theThread))
+  oop threadObj = JNIHandles::resolve(theThread);
+  thread->set_vthread(threadObj);
+  JFR_ONLY(Jfr::on_set_current_thread(thread, threadObj);)
+JVM_END
+
+JVM_ENTRY(jlong, JVM_GetNextThreadIdOffset(JNIEnv* env, jclass threadClass))
+  return ThreadIdentifier::unsafe_offset();
 JVM_END
 
 JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
@@ -3127,7 +3141,6 @@ JVM_ENTRY(void, JVM_Interrupt(JNIEnv* env, jobject jthread))
   }
 JVM_END
 
-
 // Return true iff the current thread has locked the object passed in
 
 JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
@@ -3138,6 +3151,10 @@ JVM_ENTRY(jboolean, JVM_HoldsLock(JNIEnv* env, jclass threadClass, jobject obj))
   return ObjectSynchronizer::current_thread_holds_lock(thread, h_obj);
 JVM_END
 
+JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
+  oop trace = java_lang_Thread::async_get_stack_trace(JNIHandles::resolve(jthread), THREAD);
+  return JNIHandles::make_local(THREAD, trace);
+JVM_END
 
 JVM_ENTRY(void, JVM_DumpAllStacks(JNIEnv* env, jclass))
   VM_PrintThreads op;
@@ -3160,6 +3177,24 @@ JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring na
     const char *thread_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
     os::set_native_thread_name(thread_name);
   }
+JVM_END
+
+JVM_ENTRY(jobject, JVM_ScopeLocalCache(JNIEnv* env, jclass threadClass))
+  oop theCache = thread->scopeLocalCache();
+  if (theCache) {
+    arrayOop objs = arrayOop(theCache);
+    assert(objs->length() == ScopeLocalCacheSize * 2, "wrong length");
+  }
+  return JNIHandles::make_local(THREAD, theCache);
+JVM_END
+
+JVM_ENTRY(void, JVM_SetScopeLocalCache(JNIEnv* env, jclass threadClass,
+                                   jobject theCache))
+  arrayOop objs = arrayOop(JNIHandles::resolve(theCache));
+  if (objs != NULL) {
+    assert(objs->length() == ScopeLocalCacheSize * 2, "wrong length");
+  }
+  thread->set_scopeLocalCache(objs);
 JVM_END
 
 // java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
@@ -3449,6 +3484,11 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
   return Threads::is_supported_jni_version_including_1_1(version);
+JVM_END
+
+
+JVM_LEAF(jboolean, JVM_IsPreviewEnabled(JNIEnv *env))
+  return Arguments::enable_preview() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 
@@ -3895,3 +3935,109 @@ JVM_LEAF(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
 
+JVM_ENTRY(void, JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboolean first_mount))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  JvmtiVTMTDisabler::start_VTMT(vthread, true);
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+JVM_ENTRY(void, JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean first_mount))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  oop vt = JNIHandles::resolve(vthread);
+
+  thread->rebind_to_jvmti_thread_state_of(vt);
+
+  {
+    MutexLocker mu(JvmtiThreadState_lock);
+    JvmtiThreadState* state = thread->jvmti_thread_state();
+    if (state != NULL && state->is_pending_interp_only_mode()) {
+      JvmtiEventController::enter_interp_only_mode();
+    }
+  }
+  assert(thread->is_in_VTMT(), "VTMT sanity check");
+  JvmtiVTMTDisabler::finish_VTMT(vthread, true);
+  if (first_mount) {
+    // thread start
+    if (JvmtiExport::can_support_virtual_threads()) {
+      JvmtiEventController::thread_started(thread);
+      if (JvmtiExport::should_post_vthread_start()) {
+        JvmtiExport::post_vthread_start(vthread);
+      }
+    } else { // compatibility for vthread unaware agents: legacy thread_start
+      if (PostVirtualThreadCompatibleLifecycleEvents &&
+          JvmtiExport::should_post_thread_life()) {
+        // JvmtiEventController::thread_started is called here
+        JvmtiExport::post_thread_start(thread);
+      }
+    }
+  }
+  if (JvmtiExport::should_post_vthread_mount()) {
+    JvmtiExport::post_vthread_mount(vthread);
+  }
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+JVM_ENTRY(void, JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmount))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  HandleMark hm(thread);
+  Handle ct(thread, thread->threadObj());
+
+  if (JvmtiExport::should_post_vthread_unmount()) {
+    JvmtiExport::post_vthread_unmount(vthread);
+  }
+  if (last_unmount) {
+    if (JvmtiExport::can_support_virtual_threads()) {
+      if (JvmtiExport::should_post_vthread_end()) {
+        JvmtiExport::post_vthread_end(vthread);
+      }
+    } else { // compatibility for vthread unaware agents: legacy thread_end
+      if (PostVirtualThreadCompatibleLifecycleEvents &&
+          JvmtiExport::should_post_thread_life()) {
+        JvmtiExport::post_thread_end(thread);
+      }
+    }
+  }
+
+  assert(!thread->is_in_VTMT(), "VTMT sanity check");
+  JvmtiVTMTDisabler::start_VTMT(vthread, false);
+
+  if (last_unmount && thread->jvmti_thread_state() != NULL) {
+    JvmtiExport::cleanup_thread(thread);
+    thread->set_jvmti_thread_state(NULL);
+    oop vt = JNIHandles::resolve(vthread);
+    java_lang_Thread::set_jvmti_thread_state(vt, NULL);
+  }
+  thread->rebind_to_jvmti_thread_state_of(ct());
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  assert(thread->is_in_VTMT(), "VTMT sanity check");
+  JvmtiVTMTDisabler::finish_VTMT(vthread, false);
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END

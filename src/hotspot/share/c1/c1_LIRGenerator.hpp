@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,8 +255,10 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_isPrimitive(Intrinsic* x);
   void do_getModifiers(Intrinsic* x);
   void do_getClass(Intrinsic* x);
-  void do_currentThread(Intrinsic* x);
   void do_getObjectSize(Intrinsic* x);
+  void do_currentCarrierThread(Intrinsic* x);
+  void do_scopeLocalCache(Intrinsic* x);
+  void do_vthread(Intrinsic* x);
   void do_FmaIntrinsic(Intrinsic* x);
   void do_MathIntrinsic(Intrinsic* x);
   void do_LibmIntrinsic(Intrinsic* x);
@@ -269,6 +271,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_update_CRC32C(Intrinsic* x);
   void do_vectorizedMismatch(Intrinsic* x);
   void do_blackhole(Intrinsic* x);
+  void do_continuation_doYield(Intrinsic* x);
 
  public:
   LIR_Opr call_runtime(BasicTypeArray* signature, LIRItemList* args, address entry, ValueType* result_type, CodeEmitInfo* info);

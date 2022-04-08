@@ -29,6 +29,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -342,6 +343,8 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     // restoration. This way we don't have to walk the young-gen to locate
     // these promotion-failed objs.
     _preserved_marks->push_always(obj, obj_mark);
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
   }  else {
     // We lost, someone else "owns" this object
     guarantee(obj->is_forwarded(), "Object must be forwarded if the cas failed.");

@@ -25,6 +25,7 @@
 package java.lang;
 
 import java.util.*;
+import java.util.concurrent.RejectedExecutionException;
 
 /*
  * Class to track and run user level shutdown hooks registered through
@@ -97,9 +98,15 @@ class ApplicationShutdownHooks {
             threads = hooks.keySet();
             hooks = null;
         }
-
         for (Thread hook : threads) {
-            hook.start();
+            try {
+                hook.start();
+            } catch (IllegalThreadStateException ignore) {
+                // already started
+            } catch (RejectedExecutionException ignore) {
+                // scheduler shutdown?
+                assert hook.isVirtual();
+            }
         }
         for (Thread hook : threads) {
             while (true) {

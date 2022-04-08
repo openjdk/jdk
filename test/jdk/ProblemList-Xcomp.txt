@@ -28,3 +28,11 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
+
+com/sun/crypto/provider/Cipher/AEAD/GCMBufferTest.java 8283022 generic-all
+
+############################################################################
+
+# Loom specific
+
+java/lang/ref/ReferenceEnqueue.java                    8284236 generic-all

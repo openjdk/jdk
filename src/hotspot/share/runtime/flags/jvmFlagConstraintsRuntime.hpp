@@ -37,6 +37,7 @@
   f(intx,   ObjectAlignmentInBytesConstraintFunc)     \
   f(intx,   ContendedPaddingWidthConstraintFunc)      \
   f(intx,   PerfDataSamplingIntervalFunc)             \
+  f(intx,   ScopeLocalCacheSizeConstraintFunc)        \
   f(uintx,  VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)
 

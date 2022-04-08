@@ -59,7 +59,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should be two abc (s1 and ss)";
   ASSERT_EQ(hij->refcount(), hijcount) << "should only have one hij now (s2)";
 
-  s1 = s1; // self assignment
+  s1 = *&s1; // self assignment
   ASSERT_EQ(s1->refcount(), abccount + 1) << "should still be two abc (s1 and ss)";
 
   TempNewSymbol s3;

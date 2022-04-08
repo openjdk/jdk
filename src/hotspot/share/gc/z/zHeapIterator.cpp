@@ -190,6 +190,10 @@ public:
     NativeAccessClosure cl(_context);
     cld->oops_do(&cl, ClassLoaderData::_claim_other);
   }
+
+  // Don't follow loom stack metadata; it's already followed in other ways through CLDs
+  virtual void do_nmethod(nmethod* nm) {}
+  virtual void do_method(Method* m) {}
 };
 
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :

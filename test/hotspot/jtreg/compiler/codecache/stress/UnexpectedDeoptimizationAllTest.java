@@ -43,6 +43,20 @@
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
  *                   -XX:+SegmentedCodeCache
  *                   compiler.codecache.stress.UnexpectedDeoptimizationAllTest
+  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:-SegmentedCodeCache
+ *                   --enable-preview -DhelperVirtualThread=true
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationAllTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom
+ *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
+ *                   -XX:+SegmentedCodeCache
+ *                   --enable-preview -DhelperVirtualThread=true
+ *                   compiler.codecache.stress.UnexpectedDeoptimizationAllTest
  */
 
 package compiler.codecache.stress;
