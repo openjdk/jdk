@@ -1926,15 +1926,16 @@ public final class Long extends Number
      * // Compressing drink to food
      * compress(0xCAFEBABE, 0xFF00FFF0) == 0xCABAB
      * }
-     * The mask {@code 0xFF00FFF0} selects the 1'st, 2'nd, 3'rd, 6'th and
-     * 7'th digits of {@code 0xCAFEBABE}. The selected digits occur in the
-     * resulting compressed value contiguously from the 0'th digit in the
-     * same order.
+     * Starting from the least significant digit at position 0 from the
+     * right, the mask {@code 0xFF00FFF0} selects digits at positions 1, 2,
+     * 3, 6 and 7 of {@code 0xCAFEBABE}. The selected digits occur in the
+     * resulting compressed value contiguously from digit position 0 in
+     * the same order.
      * <p>
      * The following identities all return {@code true} and are helpful to
      * understand the behaviour of {@code compress}:
      * {@snippet lang="java" :
-     * // Returns 1 if the n'th bit is set
+     * // Returns 1 if the bit at position n is one
      * compress(x, 1 << n) == (x >> n & 1)
      *
      * // Logical shift right
@@ -1954,6 +1955,9 @@ public final class Long extends Number
      * can be implemented as follows:
      * {@snippet lang="java" :
      * long compressLeft(long i, long mask) {
+     *     // This implementation follows the description in Hacker's Delight which
+     *     // is informative. A more optimal implementation is:
+     *     //   Long.compress(i, mask) << -Long.bitCount(m)
      *     return Long.reverse(
      *         Long.compress(Long.reverse(i), Long.reverse(mask)));
      * }
@@ -2014,15 +2018,15 @@ public final class Long extends Number
      * {@snippet lang="java" :
      * expand(0x0000CABAB, 0xFF00FFF0) == 0xCA00BAB0
      * }
-     * The mask {@code 0xFF00FFF0} selects the first five digits of
+     * Starting from the least significant digit at position 0 from the
+     * right, the mask {@code 0xFF00FFF0} selects the first five digits of
      * {@code 0x0000CABAB}. The selected digits occur in the resulting
-     * expanded value in order at the 1'st, 2'nd, 3'rd, 6'th and 7'th
-     * positions.
+     * expanded value in order at positions 1, 2, 3, 6, and 7.
      * <p>
      * The following identities all return {@code true} and are helpful to
      * understand the behaviour of {@code expand}:
      * {@snippet lang="java" :
-     * // Logically shift right the first bit
+     * // Logically shift right the bit at position 0
      * expand(x, 1 << n) == (x & 1) << n
      *
      * // Logically shift right
@@ -2038,19 +2042,19 @@ public final class Long extends Number
      * expand(compress(x, m), m) == x & m
      * }
      * <p>
-     * The select operation for determining the position of the {@code n}'th
-     * one-bit in a {@code long} value can be implemented as follows:
+     * The select operation for determining the position of the one-bit with
+     * index {@code n} in a {@code long} value can be implemented as follows:
      * {@snippet lang="java" :
      * long select(long i, long n) {
-     *     // the n'th one-bit in i (the mask)
+     *     // the one-bit in i (the mask) with index n
      *     long nthBit = Long.expand(1 << n, i);
-     *     // the position of the n'th one-bit in i
+     *     // the bit position of the one-bit with index n
      *     return Long.numberOfTrailingZeros(nthBit);
      * }
      *
-     * // The 0'th one-bit is at the 1'st bit position
+     * // The one-bit with index 0 is at bit position 1
      * select(0b10101010_10101010, 0) == 1
-     * // The 3'rd one-bit is at the 7'th bit position
+     * // The one-bit with index 3 is at bit position 7
      * select(0b10101010_10101010, 3) == 7
      * }
      *
