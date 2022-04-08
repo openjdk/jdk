@@ -115,6 +115,7 @@ public class PrintAllPagesTest {
         f = new JFrame("Table test");
         f.add(scrollpane);
         f.setSize(1000, 800);
+        f.setUndecorated(true);
         f.setLocationRelativeTo(null);
         f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         f.setVisible(true);
@@ -148,6 +149,7 @@ public class PrintAllPagesTest {
         buttonPanel.add(failButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
         dialog.add(mainPanel);
+        dialog.setUndecorated(true);
         dialog.pack();
         dialog.setVisible(true);
     }
