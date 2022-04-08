@@ -3249,10 +3249,11 @@ public final class String
      */
     @ForceInline
     static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
+        final int delimiterLength = delimiter.length();
         int icoder = prefix.coder() | suffix.coder();
         long len = (long) prefix.length() + suffix.length();
         if (size > 1) { // when there are more than one element, size - 1 delimiters will be emitted
-            len += (long) (size - 1) * delimiter.length();
+            len += (long) (size - 1) * delimiterLength;
             icoder |= delimiter.coder();
         }
         // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
@@ -3272,14 +3273,29 @@ public final class String
 
         int off = 0;
         prefix.getBytes(value, off, coder); off += prefix.length();
-        if (size > 0) {
-            var el = elements[0];
+        if (size > 1) {
+            String el = elements[0];
             el.getBytes(value, off, coder); off += el.length();
-            for (int i = 1; i < size; i++) {
-                delimiter.getBytes(value, off, coder); off += delimiter.length();
+            final int delimiterBytesBegin = off << coder;
+            delimiter.getBytes(value, off, coder); off += delimiterLength;
+            el = elements[1];
+            el.getBytes(value, off, coder); off += el.length();
+            final int delimiterLengthWithCoder = (delimiterLength << coder);
+            for (int i = 2; i < size; i++) {
+                System.arraycopy(
+                        value,
+                        delimiterBytesBegin,
+                        value,
+                        off << coder,
+                        delimiterLengthWithCoder
+                );
+                off += delimiterLength;
                 el = elements[i];
                 el.getBytes(value, off, coder); off += el.length();
             }
+        } else if (size == 1) {
+            String el = elements[0];
+            el.getBytes(value, off, coder); off += el.length();
         }
         suffix.getBytes(value, off, coder);
         // assert off + suffix.length() == value.length >> coder;
