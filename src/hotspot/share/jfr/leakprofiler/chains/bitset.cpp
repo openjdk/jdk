@@ -30,14 +30,14 @@ BitSet::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) 
 }
 
 BitSet::BitMapFragmentTable::~BitMapFragmentTable() {
-    for (int index = 0; index < table_size(); index ++) {
-      Entry* e = bucket(index);
-      while (e != nullptr) {
-        Entry* tmp = e;
-        e = e->next();
-        free_entry(tmp);
-      }
+  for (int index = 0; index < table_size(); index ++) {
+    Entry* e = bucket(index);
+    while (e != nullptr) {
+      Entry* tmp = e;
+      e = e->next();
+      free_entry(tmp);
     }
+  }
 }
 
 BitSet::BitSet() :
