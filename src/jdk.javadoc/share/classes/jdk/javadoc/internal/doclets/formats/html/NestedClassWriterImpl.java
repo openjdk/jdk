@@ -41,11 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 
 /**
  * Writes nested class documentation in HTML format.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class NestedClassWriterImpl extends AbstractMemberWriter
     implements MemberSummaryWriter {
@@ -82,7 +77,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
-        Content label = utils.isInterface(member) ?
+        Content label = utils.isPlainInterface(member) ?
                 contents.interfaceLabel : contents.classLabel;
 
         return new TableHeader(contents.modifierAndTypeLabel, label, contents.descriptionLabel);
@@ -104,11 +99,11 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
         Content classLink = writer.getPreQualifiedClassLink(HtmlLinkInfo.Kind.MEMBER, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
-            label = Text.of(utils.isInterface(typeElement)
+            label = Text.of(utils.isPlainInterface(typeElement)
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Declared_In_Class"));
         } else {
-            label = Text.of(utils.isInterface(typeElement)
+            label = Text.of(utils.isPlainInterface(typeElement)
                     ? resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Interface")
                     : resources.getText("doclet.Nested_Classes_Interfaces_Inherited_From_Class"));
         }

@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.util.ArrayList;
@@ -147,7 +148,7 @@ public class AnalyzerAdapter extends MethodVisitor {
             final String name,
             final String descriptor,
             final MethodVisitor methodVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, owner, access, name, descriptor, methodVisitor);
+        this(/* latest api = */ Opcodes.ASM9, owner, access, name, descriptor, methodVisitor);
         if (getClass() != AnalyzerAdapter.class) {
             throw new IllegalStateException();
         }
@@ -157,8 +158,8 @@ public class AnalyzerAdapter extends MethodVisitor {
       * Constructs a new {@link AnalyzerAdapter}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link
+      *     Opcodes#ASM8} or {@link Opcodes#ASM9}.
       * @param owner the owner's class name.
       * @param access the method's access flags (see {@link Opcodes}).
       * @param name the method's name.
@@ -938,3 +939,4 @@ public class AnalyzerAdapter extends MethodVisitor {
         labels = null;
     }
 }
+
