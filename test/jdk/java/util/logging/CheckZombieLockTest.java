@@ -244,8 +244,7 @@ public class CheckZombieLockTest {
 
             if (supportsLocking) {
                 handler2 = null;
-                try (FileChannel fc = FileChannel.open(Paths.get(lock.getAbsolutePath()),
-                        CREATE_NEW, APPEND, WRITE)) {
+                try (FileChannel fc = FileChannel.open(lock.toPath(), CREATE_NEW, APPEND, WRITE)) {
 
                     if (fc.tryLock() != null) {
                         System.out.println("locked: " + lock);
