@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2626,9 +2626,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     }
 
                     imported = true;
-                } catch (UnsupportedFlavorException ufe) {
-                } catch (BadLocationException ble) {
-                } catch (IOException ioe) {
+                } catch (UnsupportedFlavorException | IOException | BadLocationException ex) {
                 }
             }
             return imported;
@@ -2694,8 +2692,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                             richText = sw.toString();
                         }
                     }
-                } catch (BadLocationException ble) {
-                } catch (IOException ioe) {
+                } catch (BadLocationException | IOException ex) {
                 }
             }
 

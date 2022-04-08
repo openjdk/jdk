@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1881,10 +1881,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 getHTMLEditorKit(editor).insertHTML(doc, offset, html,
                                                     popDepth, pushDepth,
                                                     addTag);
-            } catch (IOException ioe) {
-                throw new RuntimeException("Unable to insert: " + ioe);
-            } catch (BadLocationException ble) {
-                throw new RuntimeException("Unable to insert: " + ble);
+            } catch (IOException | BadLocationException e) {
+                throw new RuntimeException("Unable to insert: " + e);
             }
         }
 

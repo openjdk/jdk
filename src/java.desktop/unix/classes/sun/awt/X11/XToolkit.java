@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1376,9 +1376,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                         awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
                     }
                 }
-            } catch (NumberFormatException nf) {
-                awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
-            } catch (NullPointerException npe) {
+            } catch (NumberFormatException | NullPointerException e) {
                 awt_multiclick_time = AWT_MULTICLICK_DEFAULT_TIME;
             }
         } finally {

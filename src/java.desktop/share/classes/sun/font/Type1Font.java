@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,15 +208,13 @@ public class Type1Font extends FileFont {
                 bbuf.position(0);
                 bufferRef = new WeakReference<>(bbuf);
                 fc.close();
-            } catch (NullPointerException e) {
-                throw new FontFormatException(e.toString());
             } catch (ClosedChannelException e) {
                 /* NIO I/O is interruptible, recurse to retry operation.
                  * Clear interrupts before recursing in case NIO didn't.
                  */
                 Thread.interrupted();
                 return getBuffer();
-            } catch (IOException e) {
+            } catch (NullPointerException | IOException e) {
                 throw new FontFormatException(e.toString());
             }
         }
@@ -245,7 +243,6 @@ public class Type1Font extends FileFont {
             });
             fc = raf.getChannel();
             while (buffer.remaining() > 0 && fc.read(buffer) != -1) {}
-        } catch (NullPointerException npe) {
         } catch (ClosedChannelException e) {
             try {
                 if (raf != null) {
@@ -259,7 +256,7 @@ public class Type1Font extends FileFont {
              */
             Thread.interrupted();
             readFile(buffer);
-        } catch (IOException e) {
+        } catch (NullPointerException | IOException e) {
         } finally  {
             if (raf != null) {
                 try {
@@ -345,8 +342,6 @@ public class Type1Font extends FileFont {
                 } else {
                     throw new FontFormatException("bad pfb file");
                 }
-            } catch (BufferUnderflowException bue) {
-                throw new FontFormatException(bue.toString());
             } catch (Exception e) {
                 throw new FontFormatException(e.toString());
             }

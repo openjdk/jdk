@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -709,9 +709,7 @@ public class BasicSpinnerUI extends SpinnerUI
                         spinner.setValue(value);
                         select(spinner);
                     }
-                } catch (IllegalArgumentException iae) {
-                    UIManager.getLookAndFeel().provideErrorFeedback(spinner);
-                } catch (ParseException pe) {
+                } catch (IllegalArgumentException | ParseException ex) {
                     UIManager.getLookAndFeel().provideErrorFeedback(spinner);
                 }
             }

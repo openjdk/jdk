@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,11 +118,7 @@ class Metacity implements SynthConstants {
             try {
                 INSTANCE = new Metacity(themeName);
             } catch (FileNotFoundException ex) {
-            } catch (IOException ex) {
-                logError(themeName, ex);
-            } catch (ParserConfigurationException ex) {
-                logError(themeName, ex);
-            } catch (SAXException ex) {
+            } catch (IOException | ParserConfigurationException | SAXException ex) {
                 logError(themeName, ex);
             }
             }
@@ -606,8 +602,6 @@ class Metacity implements SynthConstants {
                             }
                         }
                     }
-                } catch (MalformedURLException ex) {
-                    // OK to just ignore. We'll use a fallback theme.
                 } catch (IOException ex) {
                     // OK to just ignore. We'll use a fallback theme.
                 }
