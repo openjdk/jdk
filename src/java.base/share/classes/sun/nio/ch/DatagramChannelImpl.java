@@ -457,7 +457,6 @@ class DatagramChannelImpl
             }
             set.add(StandardSocketOptions.SO_BROADCAST);
             set.add(StandardSocketOptions.IP_TOS);
-            //set.add(StandardSocketOptions.IP_DONTFRAGMENT);
             set.add(StandardSocketOptions.IP_MULTICAST_IF);
             set.add(StandardSocketOptions.IP_MULTICAST_TTL);
             set.add(StandardSocketOptions.IP_MULTICAST_LOOP);

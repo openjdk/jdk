@@ -430,14 +430,6 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
         return;
     }
 
-    if (level == IPPROTO_IPV6 && (opt == IPV6_MTU_DISCOVER)) {
-        if (arg != 0) {
-            arg = IP_PMTUDISC_DO;
-        } else {
-            arg = IP_PMTUDISC_DONT;
-        }
-    }
-
     if (mayNeedConversion) {
         n = NET_SetSockOpt(fdval(env, fdo), level, opt, parg, arglen);
     } else {
