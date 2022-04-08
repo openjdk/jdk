@@ -826,9 +826,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 throw ce;
             } else if (throwable instanceof SSLHandshakeException) {
                 // special case for SSLHandshakeException
-                SSLHandshakeException he = new SSLHandshakeException(msg);
-                he.initCause(throwable);
-                throw he;
+                throw new SSLHandshakeException(msg, throwable);
             } else if (throwable instanceof SSLException) {
                 // any other SSLException is wrapped in a plain
                 // SSLException

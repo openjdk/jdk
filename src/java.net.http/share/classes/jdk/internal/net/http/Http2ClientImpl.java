@@ -101,7 +101,7 @@ class Http2ClientImpl {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
                 try {
-                    if (connection.closed || !connection.reserveStream(true)) {
+                    if (!connection.isOpen() || !connection.reserveStream(true)) {
                         if (debug.on())
                             debug.log("removing found closed or closing connection: %s", connection);
                         deleteConnection(connection);
@@ -153,7 +153,7 @@ class Http2ClientImpl {
      */
     boolean offerConnection(Http2Connection c) {
         if (debug.on()) debug.log("offering to the connection pool: %s", c);
-        if (c.closed || c.finalStream()) {
+        if (!c.isOpen() || c.finalStream()) {
             if (debug.on())
                 debug.log("skipping offered closed or closing connection: %s", c);
             return false;
@@ -164,6 +164,11 @@ class Http2ClientImpl {
             if (stopping) {
                 if (debug.on()) debug.log("stopping - closing connection: %s", c);
                 close(c);
+                return false;
+            }
+            if (!c.isOpen()) {
+                if (debug.on())
+                    debug.log("skipping offered closed or closing connection: %s", c);
                 return false;
             }
             Http2Connection c1 = connections.putIfAbsent(key, c);

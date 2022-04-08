@@ -468,7 +468,7 @@ public:
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
 
-  static RegSet call_clobbered_registers();
+  static RegSet call_clobbered_gp_registers();
 
   void push_p(PRegSet regs, Register stack) { if (regs.bits()) push_p(regs.bits(), stack); }
   void pop_p(PRegSet regs, Register stack) { if (regs.bits()) pop_p(regs.bits(), stack); }
@@ -1072,13 +1072,18 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
+  // Check if branches to the the non nmethod section require a far jump
+  static bool codestub_branch_needs_far_jump() {
+    return CodeCache::max_distance_to_non_nmethod() > branch_range;
+  }
+
   // Jumps that can reach anywhere in the code cache.
   // Trashes tmp.
   void far_call(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
-  void far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
+  int far_jump(Address entry, CodeBuffer *cbuf = NULL, Register tmp = rscratch1);
 
-  static int far_branch_size() {
-    if (far_branches()) {
+  static int far_codestub_branch_size() {
+    if (codestub_branch_needs_far_jump()) {
       return 3 * 4;  // adrp, add, br
     } else {
       return 4;
@@ -1234,7 +1239,7 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper = false);
 
-  address has_negatives(Register ary1, Register len, Register result);
+  address count_positives(Register ary1, Register len, Register result);
 
   address arrays_equals(Register a1, Register a2, Register result, Register cnt1,
                         Register tmp1, Register tmp2, Register tmp3, int elem_size);

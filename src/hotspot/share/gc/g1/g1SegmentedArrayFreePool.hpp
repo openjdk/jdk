@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,12 @@ public:
 
 // A set of free lists holding freed segments for use by G1SegmentedArray,
 // e.g. G1CardSetAllocators::SegmentedArray
-template<MEMFLAGS flag>
 class G1SegmentedArrayFreePool {
   // The global free pool.
   static G1SegmentedArrayFreePool _freelist_pool;
 
   const uint _num_free_lists;
-  G1SegmentedArrayFreeList<flag>* _free_lists;
+  G1SegmentedArrayFreeList* _free_lists;
 
 public:
   static G1SegmentedArrayFreePool* free_list_pool() { return &_freelist_pool; }
@@ -76,7 +75,7 @@ public:
   explicit G1SegmentedArrayFreePool(uint num_free_lists);
   ~G1SegmentedArrayFreePool();
 
-  G1SegmentedArrayFreeList<flag>* free_list(uint i) {
+  G1SegmentedArrayFreeList* free_list(uint i) {
     assert(i < _num_free_lists, "must be");
     return &_free_lists[i];
   }
@@ -91,12 +90,11 @@ public:
 
 // Data structure containing current in-progress state for returning memory to the
 // operating system for a single G1SegmentedArrayFreeList.
-template<MEMFLAGS flag>
-class G1SegmentedArrayFreePool<flag>::G1ReturnMemoryProcessor : public CHeapObj<mtGC> {
-  G1SegmentedArrayFreeList<flag>* _source;
+class G1SegmentedArrayFreePool::G1ReturnMemoryProcessor : public CHeapObj<mtGC> {
+  G1SegmentedArrayFreeList* _source;
   size_t _return_to_vm_size;
 
-  G1SegmentedArraySegment<flag>* _first;
+  G1SegmentedArraySegment* _first;
   size_t _unlinked_bytes;
   size_t _num_unlinked;
 
@@ -108,7 +106,7 @@ public:
   // Updates the instance members about the given free list for
   // the purpose of giving back memory. Only necessary members are updated,
   // e.g. if there is nothing to return to the VM, do not set the source list.
-  void visit_free_list(G1SegmentedArrayFreeList<flag>* source);
+  void visit_free_list(G1SegmentedArrayFreeList* source);
 
   bool finished_return_to_vm() const { return _return_to_vm_size == 0; }
   bool finished_return_to_os() const { return _first == nullptr; }

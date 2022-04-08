@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
@@ -104,7 +103,6 @@ PatchingStub::PatchID LIR_Assembler::patching_id(CodeEmitInfo* info) {
 
 LIR_Assembler::LIR_Assembler(Compilation* c):
    _masm(c->masm())
- , _bs(BarrierSet::barrier_set())
  , _compilation(c)
  , _frame_map(c->frame_map())
  , _current_block(NULL)
@@ -691,10 +689,6 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       comp_fl2i(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
       break;
 
-    case lir_cmove:
-      cmove(op->condition(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->type());
-      break;
-
     case lir_shl:
     case lir_shr:
     case lir_ushr:
@@ -756,6 +750,17 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
   }
 }
 
+void LIR_Assembler::emit_op4(LIR_Op4* op) {
+  switch(op->code()) {
+    case lir_cmove:
+      cmove(op->condition(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->type(), op->in_opr3(), op->in_opr4());
+      break;
+
+    default:
+      Unimplemented();
+      break;
+  }
+}
 
 void LIR_Assembler::build_frame() {
   _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());

@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm;
 
 final class RecordComponentWriter extends RecordComponentVisitor {
@@ -125,7 +126,7 @@ final class RecordComponentWriter extends RecordComponentVisitor {
             final String name,
             final String descriptor,
             final String signature) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
         this.symbolTable = symbolTable;
         this.nameIndex = symbolTable.addConstantUtf8(name);
         this.descriptorIndex = symbolTable.addConstantUtf8(descriptor);
@@ -254,3 +255,4 @@ final class RecordComponentWriter extends RecordComponentVisitor {
         attributePrototypes.addAttributes(firstAttribute);
     }
 }
+

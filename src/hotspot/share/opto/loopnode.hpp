@@ -246,11 +246,14 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
+  // The eventual count of vectorizable packs in slp
+  int _slp_vector_pack_count;
+
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0) {
+      _slp_maximum_unroll_factor(0), _slp_vector_pack_count(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -327,6 +330,8 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
+  void set_slp_pack_count(int pack_count)    { _slp_vector_pack_count = pack_count; }
+  int  slp_pack_count() const                { return _slp_vector_pack_count; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -546,7 +551,8 @@ class LoopLimitNode : public Node {
 // Support for strip mining
 class OuterStripMinedLoopNode : public LoopNode {
 private:
-  CountedLoopNode* inner_loop() const;
+  static void fix_sunk_stores(CountedLoopEndNode* inner_cle, LoopNode* inner_cl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
 public:
   OuterStripMinedLoopNode(Compile* C, Node *entry, Node *backedge)
     : LoopNode(entry, backedge) {
@@ -562,6 +568,15 @@ public:
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
   void adjust_strip_mined_loop(PhaseIterGVN* igvn);
+
+  void remove_outer_loop_and_safepoint(PhaseIterGVN* igvn) const;
+
+  void transform_to_counted_loop(PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  static Node* register_new_node(Node* node, LoopNode* ctrl, PhaseIterGVN* igvn, PhaseIdealLoop* iloop);
+
+  Node* register_control(Node* node, Node* loop, Node* idom, PhaseIterGVN* igvn,
+                         PhaseIdealLoop* iloop);
 };
 
 class OuterStripMinedLoopEndNode : public IfNode {
@@ -1661,9 +1676,6 @@ public:
   Node* clamp(Node* R, Node* L, Node* H);
 
   bool safe_for_if_replacement(const Node* dom) const;
-
-  void strip_mined_nest_back_to_counted_loop(IdealLoopTree* loop, const BaseCountedLoopNode* head, Node* back_control,
-                                             IfNode*&exit_test, SafePointNode*&safepoint);
 
   void push_pinned_nodes_thru_region(IfNode* dom_if, Node* region);
 

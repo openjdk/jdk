@@ -1081,15 +1081,12 @@ private:
   void cmpb(Address dst, int imm8);
 
   void cmpl(Address dst, int32_t imm32);
-
-  void cmp(Register dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
   void cmpl(Register dst, Register src);
   void cmpl(Register dst, Address src);
 
   void cmpq(Address dst, int32_t imm32);
   void cmpq(Address dst, Register src);
-
   void cmpq(Register dst, int32_t imm32);
   void cmpq(Register dst, Register src);
   void cmpq(Register dst, Address src);
@@ -1152,6 +1149,7 @@ private:
   void cvtss2sd(XMMRegister dst, Address src);
 
   // Convert with Truncation Scalar Double-Precision Floating-Point Value to Doubleword Integer
+  void cvtsd2siq(Register dst, XMMRegister src);
   void cvttsd2sil(Register dst, Address src);
   void cvttsd2sil(Register dst, XMMRegister src);
   void cvttsd2siq(Register dst, Address src);
@@ -1160,6 +1158,7 @@ private:
   // Convert with Truncation Scalar Single-Precision Floating-Point Value to Doubleword Integer
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
+  void cvtss2sil(Register dst, XMMRegister src);
 
   // Convert vector double to int
   void cvttpd2dq(XMMRegister dst, XMMRegister src);
@@ -1169,6 +1168,7 @@ private:
   void vcvtpd2ps(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert vector float and int
+  void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert vector long to vector FP
@@ -1176,6 +1176,7 @@ private:
   void evcvtqq2pd(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert vector double to long
+  void evcvtpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttpd2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Evex casts with truncation
@@ -1933,9 +1934,16 @@ private:
   // Interleave Low Doublewords
   void punpckldq(XMMRegister dst, XMMRegister src);
   void punpckldq(XMMRegister dst, Address src);
+  void vpunpckldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  // Interleave High Doublewords
+  void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Interleave Low Quadwords
   void punpcklqdq(XMMRegister dst, XMMRegister src);
+
+  // Vector sum of absolute difference.
+  void vpsadbw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
 #ifndef _LP64 // no 32bit push/pop on amd64
   void pushl(Address src);
@@ -2092,9 +2100,10 @@ private:
   void subss(XMMRegister dst, Address src);
   void subss(XMMRegister dst, XMMRegister src);
 
-  void testb(Register dst, int imm8);
   void testb(Address dst, int imm8);
+  void testb(Register dst, int imm8);
 
+  void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);
   void testl(Register dst, Register src);
   void testl(Register dst, Address src);
