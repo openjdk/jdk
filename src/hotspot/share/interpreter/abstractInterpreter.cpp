@@ -151,6 +151,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
       case vmIntrinsics::_dsqrt_strict:      return native;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
+      case vmIntrinsics::_Continuation_doYield: return java_lang_continuation_doYield;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
@@ -164,6 +165,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
   // Native method?
   if (m->is_native()) {
+    if (m->is_continuation_enter_intrinsic()) {
+      return zerolocals;
+    }
     assert(!m->is_method_handle_intrinsic(), "overlapping bits here, watch out");
     return m->is_synchronized() ? native_synchronized : native;
   }

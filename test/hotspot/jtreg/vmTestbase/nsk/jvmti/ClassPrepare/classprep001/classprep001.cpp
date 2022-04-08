@@ -55,7 +55,7 @@ typedef struct {
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
-static jboolean printdump = JNI_FALSE;
+static jboolean printdump = JNI_TRUE;
 static size_t eventsCount = 0;
 static size_t eventsExpected = 0;
 static class_info classes[] = {

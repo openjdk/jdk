@@ -49,6 +49,7 @@
   template(Verify)                                \
   template(HeapDumper)                            \
   template(CollectForMetadataAllocation)          \
+  template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
   template(GenCollectFull)                        \
   template(GenCollectForAllocation)               \
@@ -70,8 +71,12 @@
   template(GetObjectMonitorUsage)                 \
   template(GetAllStackTraces)                     \
   template(GetThreadListStackTraces)              \
+  template(VirtualThreadGetStackTrace)            \
+  template(VirtualThreadGetFrameCount)            \
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
+  template(VirtualThreadGetOrSetLocal)            \
+  template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \

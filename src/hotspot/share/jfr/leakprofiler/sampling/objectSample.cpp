@@ -32,6 +32,7 @@ void ObjectSample::reset() {
   set_stack_trace_id(0);
   set_stack_trace_hash(0);
   release_references();
+  _virtual_thread = false;
 }
 
 const oop ObjectSample::object() const {

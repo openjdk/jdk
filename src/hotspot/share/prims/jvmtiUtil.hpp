@@ -56,7 +56,7 @@ public:
       return _event_threaded[num];
     }
     if (num >= EXT_MIN_EVENT_TYPE_VAL && num <= EXT_MAX_EVENT_TYPE_VAL) {
-      return false;
+      return (num != EXT_EVENT_CLASS_UNLOAD);
     }
     ShouldNotReachHere();
     return false;

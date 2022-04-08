@@ -77,8 +77,9 @@ class SinkChannelImpl
         return fdVal;
     }
 
-    SinkChannelImpl(SelectorProvider sp, FileDescriptor fd) {
+    SinkChannelImpl(SelectorProvider sp, FileDescriptor fd) throws IOException {
         super(sp);
+        IOUtil.configureBlocking(fd, false);
         this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
     }
@@ -123,8 +124,12 @@ class SinkChannelImpl
             if (!tryClose()) {
                 long th = thread;
                 if (th != 0) {
-                    nd.preClose(fd);
-                    NativeThread.signal(th);
+                    if (NativeThread.isVirtualThread(th)) {
+                        Poller.stopPoll(fdVal);
+                    } else {
+                        nd.preClose(fd);
+                        NativeThread.signal(th);
+                    }
                 }
             }
         }

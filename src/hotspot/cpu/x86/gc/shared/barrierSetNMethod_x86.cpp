@@ -174,6 +174,15 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   cmp->set_immediate(disarmed_value());
 }
 
+void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+  if (!supports_entry_barrier(nm)) {
+    return;
+  }
+
+  NativeNMethodCmpBarrier* cmp = native_nmethod_barrier(nm);
+  cmp->set_immediate(arm_value);
+}
+
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
     return false;

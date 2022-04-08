@@ -78,6 +78,14 @@ public class TestLookForUntestedEvents {
             "ContainerMemoryUsage", "ContainerIOUsage")
     );
 
+    // Virtual thread events, covered by a different test
+    private static final Set<String> virtualThreadEvents = Set.of(
+            "jdk.VirtualThreadStart",
+            "jdk.VirtualThreadEnd",
+            "jdk.VirtualThreadPinned",
+            "jdk.VirtualThreadSubmitFailed"
+    );
+
     // This is a "known failure list" for this test.
     // NOTE: if the event is not covered, a bug should be open, and bug number
     // noted in the comments for this set.
@@ -124,6 +132,7 @@ public class TestLookForUntestedEvents {
         eventsNotCoveredByTest.removeAll(coveredGcEvents);
         eventsNotCoveredByTest.removeAll(coveredContainerEvents);
         eventsNotCoveredByTest.removeAll(knownNotCoveredEvents);
+        eventsNotCoveredByTest.removeAll(virtualThreadEvents);
 
         if (!eventsNotCoveredByTest.isEmpty()) {
             print(MSG_SEPARATOR + " Events not covered by test");

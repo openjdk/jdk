@@ -45,6 +45,7 @@ extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI stati
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
+extern Monitor* JvmtiVTMT_lock;                  // a lock for Virtual Thread Mount Transition (VTMT) management
 extern Monitor* Heap_lock;                       // a lock on the heap
 #ifdef INCLUDE_PARALLELGC
 extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap

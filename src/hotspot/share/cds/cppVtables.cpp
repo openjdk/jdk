@@ -31,6 +31,7 @@
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -57,6 +58,7 @@
   f(InstanceClassLoaderKlass) \
   f(InstanceMirrorKlass) \
   f(InstanceRefKlass) \
+  f(InstanceStackChunkKlass) \
   f(Method) \
   f(ObjArrayKlass) \
   f(TypeArrayKlass)

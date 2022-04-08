@@ -74,8 +74,6 @@ public class VM {
 
     /**
      * Waits for the init level to get the given value.
-     *
-     * @see java.lang.ref.Finalizer
      */
     public static void awaitInitLevel(int value) throws InterruptedException {
         synchronized (lock) {

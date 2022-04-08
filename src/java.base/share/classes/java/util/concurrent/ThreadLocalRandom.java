@@ -50,6 +50,8 @@ import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import jdk.internal.access.JavaUtilConcurrentTLRAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.*;
 import jdk.internal.misc.Unsafe;
@@ -218,7 +220,7 @@ public final class ThreadLocalRandom extends Random {
     final long nextSeed() {
         Thread t; long r; // read and update per-thread seed
         U.putLong(t = Thread.currentThread(), SEED,
-                  r = U.getLong(t, SEED) + (t.getId() << 1) + GOLDEN_GAMMA);
+                  r = U.getLong(t, SEED) + (t.threadId() << 1) + GOLDEN_GAMMA);
         return r;
     }
 
@@ -300,6 +302,12 @@ public final class ThreadLocalRandom extends Random {
     static final void eraseThreadLocals(Thread thread) {
         U.putReference(thread, THREADLOCALS, null);
         U.putReference(thread, INHERITABLETHREADLOCALS, null);
+        // Ideally we should also clear the Thread's ScopedCache, but it is
+        // in the VM-internal JavaThread structure. This method is called so
+        // early in the lifetime of a ForkJoinPool thread that we don't expect
+        // any ScopeLocals to have yet been bound by this thread, so the
+        // ScopedCache should be empty at this point.
+        // U.putReference(thread, INHERITABLESCOPELOCALBINDINGS, null);
     }
 
     static final void setInheritedAccessControlContext(Thread thread,
@@ -398,6 +406,19 @@ public final class ThreadLocalRandom extends Random {
     private static final AtomicLong seeder
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
+
+    // used by ScopeLocal
+    private static class Access {
+        static {
+            SharedSecrets.setJavaUtilConcurrentTLRAccess(
+                new JavaUtilConcurrentTLRAccess() {
+                    public int nextSecondaryThreadLocalRandomSeed() {
+                        return nextSecondarySeed();
+                    }
+                }
+            );
+        }
+    }
 
     // at end of <clinit> to survive static initialization circularity
     static {

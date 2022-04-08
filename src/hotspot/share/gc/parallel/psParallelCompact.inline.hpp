@@ -30,6 +30,7 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -100,6 +101,7 @@ inline bool PSParallelCompact::mark_obj(oop obj) {
   const size_t obj_size = obj->size();
   if (mark_bitmap()->mark_obj(obj, obj_size)) {
     _summary_data.add_obj(obj, obj_size);
+    ContinuationGCSupport::transform_stack_chunk(obj);
     return true;
   } else {
     return false;

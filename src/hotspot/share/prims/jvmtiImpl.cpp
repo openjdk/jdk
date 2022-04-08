@@ -41,6 +41,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -52,7 +53,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/vframe.hpp"
+#include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/exceptions.hpp"
@@ -424,79 +425,23 @@ void  JvmtiCurrentBreakpoints::listener_fun(void *this_obj, address *cache) {
 
 ///////////////////////////////////////////////////////////////
 //
-// class VM_GetOrSetLocal
+// class VM_BaseGetOrSetLocal
 //
 
+const jvalue VM_BaseGetOrSetLocal::_DEFAULT_VALUE = {0L};
 // Constructor for non-object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type)
-  : _thread(thread)
-  , _calling_thread(NULL)
-  , _depth(depth)
-  , _index(index)
-  , _type(type)
-  , _jvf(NULL)
-  , _set(false)
-  , _eb(false, NULL, NULL)
-  , _result(JVMTI_ERROR_NONE)
-{
-}
 
-// Constructor for object or non-object setter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value)
-  : _thread(thread)
-  , _calling_thread(NULL)
+VM_BaseGetOrSetLocal::VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth,
+                                           jint index, BasicType type, jvalue value, bool set)
+  : _calling_thread(calling_thread)
   , _depth(depth)
   , _index(index)
   , _type(type)
   , _value(value)
   , _jvf(NULL)
-  , _set(true)
-  , _eb(type == T_OBJECT, JavaThread::current(), thread)
+  , _set(set)
   , _result(JVMTI_ERROR_NONE)
 {
-}
-
-// Constructor for object getter
-VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index)
-  : _thread(thread)
-  , _calling_thread(calling_thread)
-  , _depth(depth)
-  , _index(index)
-  , _type(T_OBJECT)
-  , _jvf(NULL)
-  , _set(false)
-  , _eb(true, calling_thread, thread)
-  , _result(JVMTI_ERROR_NONE)
-{
-}
-
-vframe *VM_GetOrSetLocal::get_vframe() {
-  if (!_thread->has_last_Java_frame()) {
-    return NULL;
-  }
-  RegisterMap reg_map(_thread);
-  vframe *vf = _thread->last_java_vframe(&reg_map);
-  int d = 0;
-  while ((vf != NULL) && (d < _depth)) {
-    vf = vf->java_sender();
-    d++;
-  }
-  return vf;
-}
-
-javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
-  vframe* vf = get_vframe();
-  if (vf == NULL) {
-    _result = JVMTI_ERROR_NO_MORE_FRAMES;
-    return NULL;
-  }
-  javaVFrame *jvf = (javaVFrame*)vf;
-
-  if (!vf->is_java_frame()) {
-    _result = JVMTI_ERROR_OPAQUE_FRAME;
-    return NULL;
-  }
-  return jvf;
 }
 
 // Check that the klass is assignable to a type with the given signature.
@@ -504,7 +449,7 @@ javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
 // But the type class can be forced to load/initialize eagerly in such a case.
 // This may cause unexpected consequences like CFLH or class-init JVMTI events.
 // It is better to avoid such a behavior.
-bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* thread) {
+bool VM_BaseGetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* thread) {
   assert(ty_sign != NULL, "type signature must not be NULL");
   assert(thread != NULL, "thread must not be NULL");
   assert(klass != NULL, "klass must not be NULL");
@@ -542,8 +487,18 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
 //   JVMTI_ERROR_TYPE_MISMATCH
 // Returns: 'true' - everything is Ok, 'false' - error code
 
-bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
+bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   Method* method = jvf->method();
+  if (!method->has_localvariable_table()) {
+    // Just to check index boundaries
+    jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
+    if (_index < 0 || _index + extra_slot >= method->max_locals()) {
+      _result = JVMTI_ERROR_INVALID_SLOT;
+      return false;
+    }
+    return true;
+  }
+
   jint num_entries = method->localvariable_table_length();
   if (num_entries == 0) {
     _result = JVMTI_ERROR_INVALID_SLOT;
@@ -605,7 +560,7 @@ bool VM_GetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   return true;
 }
 
-bool VM_GetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
+bool VM_BaseGetOrSetLocal::check_slot_type_no_lvt(javaVFrame* jvf) {
   Method* method = jvf->method();
   jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
 
@@ -648,11 +603,17 @@ bool VM_GetOrSetLocal::doit_prologue() {
   return true;
 }
 
-void VM_GetOrSetLocal::doit() {
-  _jvf = _jvf == NULL ? get_java_vframe() : _jvf;
+void VM_BaseGetOrSetLocal::doit() {
+  _jvf = get_java_vframe();
   if (_jvf == NULL) {
     return;
   };
+
+  frame fr = _jvf->fr();
+  if (_set && _depth != 0 && Continuation::is_frame_in_continuation(_jvf->thread(), fr)) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME; // deferred locals currently unsupported in continuations
+    return;
+  }
 
   Method* method = _jvf->method();
   if (getting_receiver()) {
@@ -687,6 +648,11 @@ void VM_GetOrSetLocal::doit() {
     // possible the compiler emitted some locals as constant values,
     // meaning they are not mutable.
     if (can_be_deoptimized(_jvf)) {
+      // continuation can't be unmounted at this point (it was checked/reported in get_java_vframe)
+      if (Continuation::is_frame_in_continuation(_jvf->thread(), fr)) {
+        _result = JVMTI_ERROR_OPAQUE_FRAME; // can't deoptimize for top continuation frame
+        return;
+      }
 
       // Schedule deoptimization so that eventually the local
       // update will be written to an interpreter frame.
@@ -755,18 +721,154 @@ void VM_GetOrSetLocal::doit() {
   }
 }
 
-
-bool VM_GetOrSetLocal::allow_nested_vm_operations() const {
+bool VM_BaseGetOrSetLocal::allow_nested_vm_operations() const {
   return true; // May need to deoptimize
 }
 
+
+///////////////////////////////////////////////////////////////
+//
+// class VM_GetOrSetLocal
+//
+
+// Constructor for non-object getter
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type)
+  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false),
+    _thread(thread),
+    _eb(false, NULL, NULL)
+{
+}
+
+// Constructor for object or non-object setter
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value)
+  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true),
+    _thread(thread),
+    _eb(type == T_OBJECT, JavaThread::current(), thread)
+{
+}
+
+// Constructor for object getter
+VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index)
+  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false),
+    _thread(thread),
+    _eb(true, calling_thread, thread)
+{
+}
+
+vframe *VM_GetOrSetLocal::get_vframe() {
+  if (!_thread->has_last_Java_frame()) {
+    return NULL;
+  }
+  RegisterMap reg_map(_thread, true, true, true);
+  vframe *vf = JvmtiEnvBase::get_cthread_last_java_vframe(_thread, &reg_map);
+  int d = 0;
+  while ((vf != NULL) && (d < _depth)) {
+    vf = vf->java_sender();
+    d++;
+  }
+  return vf;
+}
+
+javaVFrame *VM_GetOrSetLocal::get_java_vframe() {
+  vframe* vf = get_vframe();
+  if (vf == NULL) {
+    _result = JVMTI_ERROR_NO_MORE_FRAMES;
+    return NULL;
+  }
+  javaVFrame *jvf = (javaVFrame*)vf;
+
+  if (!vf->is_java_frame()) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return NULL;
+  }
+  return jvf;
+}
 
 VM_GetReceiver::VM_GetReceiver(
     JavaThread* thread, JavaThread* caller_thread, jint depth)
     : VM_GetOrSetLocal(thread, caller_thread, depth, 0) {}
 
-/////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////
+//
+// class VM_VirtualThreadGetOrSetLocal
+//
+
+// Constructor for non-object getter
+VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
+                                                             jint index, BasicType type)
+  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, _DEFAULT_VALUE, false)
+{
+  _env = env;
+  _vthread_h = vthread_h;
+}
+
+// Constructor for object or non-object setter
+VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
+                                                             jint index, BasicType type, jvalue value)
+  : VM_BaseGetOrSetLocal((JavaThread*)NULL, depth, index, type, value, true)
+{
+  _env = env;
+  _vthread_h = vthread_h;
+}
+
+// Constructor for object getter
+VM_VirtualThreadGetOrSetLocal::VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
+                                                             jint depth, int index)
+  : VM_BaseGetOrSetLocal(calling_thread, depth, index, T_OBJECT, _DEFAULT_VALUE, false)
+{
+  _env = env;
+  _vthread_h = vthread_h;
+}
+
+javaVFrame *VM_VirtualThreadGetOrSetLocal::get_java_vframe() {
+  Thread* cur_thread = Thread::current();
+  oop cont = java_lang_VirtualThread::continuation(_vthread_h());
+  assert(cont != NULL, "vthread contintuation must not be NULL");
+
+  javaVFrame* jvf = NULL;
+  JavaThread* java_thread = JvmtiEnvBase::get_JavaThread_or_null(_vthread_h());
+  bool is_cont_mounted = (java_thread != NULL);
+
+  if (is_cont_mounted) {
+    vframeStream vfs(java_thread);
+
+    if (!vfs.at_end()) {
+      jvf = vfs.asJavaVFrame();
+      jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
+    }
+  } else {
+    vframeStream vfs(cont);
+
+    if (!vfs.at_end()) {
+      jvf = vfs.asJavaVFrame();
+      jvf = JvmtiEnvBase::check_and_skip_hidden_frames(_vthread_h(), jvf);
+    }
+  }
+  int d = 0;
+  while ((jvf != NULL) && (d < _depth)) {
+    jvf = jvf->java_sender();
+    d++;
+  }
+
+  if (d < _depth || jvf == NULL) {
+    _result = JVMTI_ERROR_NO_MORE_FRAMES;
+    return NULL;
+  }
+
+  if ((_set && !is_cont_mounted) || !jvf->is_java_frame()) {
+    _result = JVMTI_ERROR_OPAQUE_FRAME;
+    return NULL;
+  }
+  return jvf;
+}
+
+VM_VirtualThreadGetReceiver::VM_VirtualThreadGetReceiver(
+    JvmtiEnv* env, Handle vthread_h, JavaThread* caller_thread, jint depth)
+    : VM_VirtualThreadGetOrSetLocal(env, vthread_h, caller_thread, depth, 0) {}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
 //
 // class JvmtiSuspendControl - see comments in jvmtiImpl.hpp
 //

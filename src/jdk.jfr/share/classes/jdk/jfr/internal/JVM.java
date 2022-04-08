@@ -29,6 +29,7 @@ import java.util.List;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
+import jdk.jfr.internal.EventWriter;
 import jdk.jfr.internal.handlers.EventHandler;
 
 /**
@@ -438,7 +439,7 @@ public final class JVM {
      * @return thread local EventWriter
      */
     @IntrinsicCandidate
-    public static native Object getEventWriter();
+    public static native EventWriter getEventWriter();
 
     /**
      * Create a new EventWriter

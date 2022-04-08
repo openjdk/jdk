@@ -136,6 +136,7 @@ private:
   jint          _parameter_count;
   jint          _constants_size;
 
+  bool          _has_monitors;
   bool          _has_wide_vector;
 
   MarkId        _next_call_type;

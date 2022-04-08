@@ -75,6 +75,8 @@ public:
   virtual bool do_metadata();
   virtual void do_klass(Klass* k);
   virtual void do_cld(ClassLoaderData* cld);
+  virtual void do_method(Method* m);
+  virtual void do_nmethod(nmethod* nm);
 };
 
 class G1AdjustClosure : public BasicOopIterateClosure {

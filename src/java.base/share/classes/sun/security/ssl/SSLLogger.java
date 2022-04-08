@@ -354,7 +354,7 @@ public final class SSLLogger {
                 Object[] messageFields = {
                     logger.loggerName,
                     level.getName(),
-                    Utilities.toHexString(Thread.currentThread().getId()),
+                    Utilities.toHexString(Thread.currentThread().threadId()),
                     Thread.currentThread().getName(),
                     dateTimeFormat.format(Instant.now()),
                     formatCaller(),
@@ -371,7 +371,7 @@ public final class SSLLogger {
             Object[] messageFields = {
                     logger.loggerName,
                     level.getName(),
-                    Utilities.toHexString(Thread.currentThread().getId()),
+                    Utilities.toHexString(Thread.currentThread().threadId()),
                     Thread.currentThread().getName(),
                     dateTimeFormat.format(Instant.now()),
                     formatCaller(),

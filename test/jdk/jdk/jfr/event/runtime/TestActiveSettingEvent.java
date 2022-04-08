@@ -205,6 +205,11 @@ public final class TestActiveSettingEvent {
         settingValues.put(EventNames.X509Validation + "#threshold", "0 ns");
         settingValues.put(EventNames.ProcessStart + "#threshold", "0 ns");
         settingValues.put(EventNames.Deserialization + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadStart + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadEnd + "#stackTrace", "false");
+        settingValues.put(EventNames.VirtualThreadEnd + "#threshold", "0 ns");
+        settingValues.put(EventNames.VirtualThreadPinned + "#threshold", "20 ms");
+        settingValues.put(EventNames.VirtualThreadSubmitFailed + "#threshold", "0 ns");
 
         try (Recording recording = new Recording(c)) {
             Map<Long, EventType> eventTypes = new HashMap<>();

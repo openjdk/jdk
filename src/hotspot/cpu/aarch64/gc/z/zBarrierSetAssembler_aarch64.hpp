@@ -76,6 +76,8 @@ public:
                                              Register tmp,
                                              Label& slowpath);
 
+  virtual bool nmethod_code_patching() { return false; }
+
 #ifdef COMPILER1
   void generate_c1_load_barrier_test(LIR_Assembler* ce,
                                      LIR_Opr ref) const;

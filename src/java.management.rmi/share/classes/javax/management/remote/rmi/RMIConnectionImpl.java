@@ -1550,7 +1550,9 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         public ClassLoader run() {
             Thread currentThread = Thread.currentThread();
             ClassLoader old = currentThread.getContextClassLoader();
-            currentThread.setContextClassLoader(classLoader);
+            if (classLoader != old) {
+                currentThread.setContextClassLoader(classLoader);
+            }
             return old;
         }
     }

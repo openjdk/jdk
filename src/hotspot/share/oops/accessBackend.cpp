@@ -27,6 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 
@@ -203,4 +204,18 @@ namespace AccessInternal {
   void arraycopy_conjoint_atomic<void>(void* src, void* dst, size_t length) {
     Copy::conjoint_memory_atomic(src, dst, length);
   }
+
+#ifdef ASSERT
+  void check_access_thread_state() {
+    Thread* thread = Thread::current();
+    if (!thread->is_Java_thread()) {
+      return;
+    }
+
+    JavaThread* java_thread = JavaThread::cast(thread);
+    JavaThreadState state = java_thread->thread_state();
+    assert(state == _thread_in_vm || state == _thread_in_Java || state == _thread_new,
+           "Wrong thread state for accesses: %d", (int)state);
+  }
+#endif
 }

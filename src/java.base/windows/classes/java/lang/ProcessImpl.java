@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.misc.Blocker;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
@@ -558,7 +559,12 @@ final class ProcessImpl extends Process {
     private static native int getExitCodeProcess(long handle);
 
     public int waitFor() throws InterruptedException {
-        waitForInterruptibly(handle);
+        long comp = Blocker.begin();
+        try {
+            waitForInterruptibly(handle);
+        } finally {
+            Blocker.end(comp);
+        }
         if (Thread.interrupted())
             throw new InterruptedException();
         return exitValue();
@@ -582,7 +588,12 @@ final class ProcessImpl extends Process {
                 // if wraps around then wait a long while
                 msTimeout = Integer.MAX_VALUE;
             }
-            waitForTimeoutInterruptibly(handle, msTimeout);
+            long comp = Blocker.begin();
+            try {
+                waitForTimeoutInterruptibly(handle, msTimeout);
+            } finally {
+                Blocker.end(comp);
+            }
             if (Thread.interrupted())
                 throw new InterruptedException();
             if (getExitCodeProcess(handle) != STILL_ACTIVE) {

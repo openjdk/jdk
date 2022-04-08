@@ -26,9 +26,14 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "utilities/debug.hpp"
 
-StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames) : _reg_map(thread, update, process_frames) {
+StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process_frames, bool allow_missing_reg) : _reg_map(thread, update, process_frames) {
   assert(thread->has_last_Java_frame(), "sanity check");
   _fr = thread->last_frame();
   _is_done = false;
+#ifndef PRODUCT
+  if (allow_missing_reg) {
+    _reg_map.set_skip_missing(true);
+  }
+#endif
 }
 

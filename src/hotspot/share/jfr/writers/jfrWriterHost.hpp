@@ -90,6 +90,7 @@ class WriterHost : public WriterPolicyImpl {
   void write(const JfrTickspan& time);
   void write_bytes(const void* buf, intptr_t len);
   void write_utf8_u2_len(const char* value);
+  void write_empty_string();
   template <typename T>
   void write_padded_at_offset(T value, int64_t offset);
   template <typename T>

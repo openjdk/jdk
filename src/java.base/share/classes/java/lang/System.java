@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
@@ -62,6 +63,7 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -78,8 +80,13 @@ import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
 import jdk.internal.util.SystemProps;
+import jdk.internal.vm.Continuation;
+import jdk.internal.vm.ContinuationScope;
+import jdk.internal.vm.StackableScope;
+import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.ChangesCurrentThread;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -2033,12 +2040,12 @@ public final class System {
     /**
      * Create PrintStream for stdout/err based on encoding.
      */
-    private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
+    private static PrintStream newPrintStream(OutputStream out, String enc) {
         if (enc != null) {
-            return new PrintStream(new BufferedOutputStream(fos, 128), true,
+            return new PrintStream(new BufferedOutputStream(out, 128), true,
                                    Charset.forName(enc, UTF_8.INSTANCE));
         }
-        return new PrintStream(new BufferedOutputStream(fos, 128), true);
+        return new PrintStream(new BufferedOutputStream(out, 128), true);
     }
 
     /**
@@ -2159,11 +2166,6 @@ public final class System {
         // classes are used.
         VM.initializeOSEnvironment();
 
-        // The main thread is not added to its thread group in the same
-        // way as other threads; we must do it ourselves here.
-        Thread current = Thread.currentThread();
-        current.getThreadGroup().add(current);
-
         // Subsystems that are invoked during initialization can invoke
         // VM.isBooted() in order to avoid doing things that should
         // wait until the VM is fully initialized. The initialization level
@@ -2171,6 +2173,9 @@ public final class System {
         // initialization has completed.
         // IMPORTANT: Ensure that this remains the last initialization action!
         VM.initLevel(1);
+
+        // start Finalizer and Reference Handler threads
+        SharedSecrets.getJavaLangRefAccess().startThreads();
     }
 
     // @see #initPhase2()
@@ -2178,6 +2183,7 @@ public final class System {
 
     /*
      * Invoked by VM.  Phase 2 module system initialization.
+     *
      * Only classes in java.base can be loaded in this phase.
      *
      * @param printToStderr print exceptions to stderr rather than stdout
@@ -2491,6 +2497,104 @@ public final class System {
             @Override
             public void exit(int statusCode) {
                 Shutdown.exit(statusCode);
+            }
+
+            public Thread[] getAllThreads() {
+                return Thread.getAllThreads();
+            }
+
+            public ThreadContainer threadContainer(Thread thread) {
+                return thread.threadContainer();
+            }
+
+            public void start(Thread thread, ThreadContainer container) {
+                thread.start(container);
+            }
+
+            public StackableScope headStackableScope(Thread thread) {
+                return thread.headStackableScopes();
+            }
+
+            public void setHeadStackableScope(StackableScope scope) {
+                Thread.setHeadStackableScope(scope);
+            }
+
+            public Thread currentCarrierThread() {
+                return Thread.currentCarrierThread();
+            }
+
+            @ChangesCurrentThread
+            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
+                Thread thread = Thread.currentThread();
+                if (thread.isVirtual()) {
+                    Thread carrier = Thread.currentCarrierThread();
+                    carrier.setCurrentThread(carrier);
+                    try {
+                        return task.call();
+                    } finally {
+                        carrier.setCurrentThread(thread);
+                    }
+                } else {
+                    return task.call();
+                }
+            }
+
+            public <T> T getCarrierThreadLocal(ThreadLocal<T> local) {
+                return local.getCarrierThreadLocal();
+            }
+
+            public <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value) {
+                local.setCarrierThreadLocal(value);
+            }
+
+            public Object[] scopeLocalCache() {
+                return Thread.scopeLocalCache();
+            }
+
+            public void setScopeLocalCache(Object[] cache) {
+                Thread.setScopeLocalCache(cache);
+            }
+
+            public Object scopeLocalBindings() {
+                return Thread.scopeLocalBindings();
+            }
+
+            public void setScopeLocalBindings(Object bindings) {
+                Thread.setScopeLocalBindings(bindings);
+            }
+
+            public Continuation getContinuation(Thread thread) {
+                return thread.getContinuation();
+            }
+
+            public void setContinuation(Thread thread, Continuation continuation) {
+                thread.setContinuation(continuation);
+            }
+
+            public ContinuationScope virtualThreadContinuationScope() {
+                return VirtualThread.continuationScope();
+            }
+
+            public void parkVirtualThread() {
+                VirtualThread.park();
+            }
+
+            public void parkVirtualThread(long nanos) {
+                VirtualThread.parkNanos(nanos);
+            }
+
+            public void unparkVirtualThread(Thread thread) {
+                if (thread instanceof VirtualThread vthread) {
+                    vthread.unpark();
+                } else {
+                    throw new IllegalArgumentException("Not a virtual thread");
+                }
+            }
+
+            public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
+                                                      ContinuationScope contScope,
+                                                      Continuation continuation) {
+                return StackWalker.newInstance(options, null, contScope, continuation);
             }
         });
     }

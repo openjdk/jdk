@@ -63,6 +63,14 @@ inline void G1MarkAndPushClosure::do_cld(ClassLoaderData* cld) {
   _marker->follow_cld(cld);
 }
 
+inline void G1MarkAndPushClosure::do_method(Method* m) {
+  m->record_gc_epoch();
+}
+
+inline void G1MarkAndPushClosure::do_nmethod(nmethod* nm) {
+  nm->follow_nmethod(this);
+}
+
 template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {

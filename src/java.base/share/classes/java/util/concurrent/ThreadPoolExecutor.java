@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import jdk.internal.vm.SharedThreadContainer;
 
 /**
  * An {@link ExecutorService} that executes each submitted task using
@@ -478,6 +479,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private final Condition termination = mainLock.newCondition();
 
     /**
+     * The thread container for the worker threads.
+     */
+    private final SharedThreadContainer container;
+
+    /**
      * Tracks largest attained pool size. Accessed only under
      * mainLock.
      */
@@ -726,6 +732,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     } finally {
                         ctl.set(ctlOf(TERMINATED, 0));
                         termination.signalAll();
+                        container.close();
                     }
                     return;
                 }
@@ -942,7 +949,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     mainLock.unlock();
                 }
                 if (workerAdded) {
-                    t.start();
+                    container.start(t);
                     workerStarted = true;
                 }
             }
@@ -1309,6 +1316,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         this.keepAliveTime = unit.toNanos(keepAliveTime);
         this.threadFactory = threadFactory;
         this.handler = handler;
+
+        String name = getClass().getName() + "@" + System.identityHashCode(this);
+        this.container = SharedThreadContainer.create(name);
     }
 
     /**

@@ -77,7 +77,7 @@ final class Printer {
     private static void println(String s) {
         String prepend = "";
         if (SHOW_THREADID) {
-            prepend = "thread "  + Thread.currentThread().getId() + " " + prepend;
+            prepend = "thread "  + Thread.currentThread().threadId() + " " + prepend;
         }
         if (SHOW_TIMESTAMP) {
             if (startTime == 0) {

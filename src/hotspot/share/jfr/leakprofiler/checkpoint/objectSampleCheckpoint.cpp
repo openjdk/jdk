@@ -84,10 +84,10 @@ static void add_to_unloaded_thread_set(traceid tid) {
   JfrMutablePredicate<traceid, compare_traceid>::test(unloaded_thread_id_set, tid);
 }
 
-void ObjectSampleCheckpoint::on_thread_exit(JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+void ObjectSampleCheckpoint::on_thread_exit(traceid tid) {
+  assert(tid != 0, "invariant");
   if (LeakProfiler::is_running()) {
-    add_to_unloaded_thread_set(jt->jfr_thread_local()->thread_id());
+    add_to_unloaded_thread_set(tid);
   }
 }
 
@@ -329,7 +329,7 @@ static void write_type_set_blob(const ObjectSample* sample, JfrCheckpointWriter&
 
 static void write_thread_blob(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
   assert(sample->has_thread(), "invariant");
-  if (has_thread_exited(sample->thread_id())) {
+  if (sample->is_virtual_thread() || has_thread_exited(sample->thread_id())) {
     write_blob(sample->thread(), writer, reset);
   }
 }

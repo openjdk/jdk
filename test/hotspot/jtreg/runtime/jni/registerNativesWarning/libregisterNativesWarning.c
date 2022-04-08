@@ -27,7 +27,7 @@
 
 /*
  * We will replace:
- *   java/lang/Thread.java:    public static native void yield();
+ *   java/lang/Thread.java:    private static native void yield0();
  *
  * as it is simple and innocuous.
  */
@@ -41,7 +41,7 @@ Java_TestRegisterNativesWarning_test
 (JNIEnv *env, jclass cls, jclass jlThread) {
   JNINativeMethod nativeMethods[] = {
     {
-      (char*) "yield",  // name
+      (char*) "yield0", // name
       (char*) "()V",    // sig
       (void*) myYield   // native method ptr
     }

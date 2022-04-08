@@ -217,6 +217,7 @@ private:
   u2                _max_stack;                  // Maximum number of entries on the expression stack
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
+  u2                _num_stack_arg_slots;        // Number of arguments passed on the stack even when compiled
   u2                _orig_method_idnum;          // Original unique identification number for the method
 
   // Constructor
@@ -490,6 +491,10 @@ public:
   // size of parameters
   int  size_of_parameters() const                { return _size_of_parameters; }
   void set_size_of_parameters(int size)          { _size_of_parameters = size; }
+
+  // Number of arguments passed on the stack even when compiled
+  int  num_stack_arg_slots() const               { return _num_stack_arg_slots; }
+  void set_num_stack_arg_slots(int n)            { _num_stack_arg_slots = n; }
 
   // result type (basic type of return value)
   BasicType result_type() const                  { assert(_result_type >= T_BOOLEAN, "Must be set");

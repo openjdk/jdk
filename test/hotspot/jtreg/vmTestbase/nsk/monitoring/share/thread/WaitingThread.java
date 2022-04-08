@@ -36,7 +36,8 @@ public class WaitingThread extends RecursiveMonitoringThread {
         private Object readyLock = new Object();
         private static final String[] expectedMethods = {
                 "nsk.monitoring.share.thread.WaitingThread.runInside",
-                "java.lang.Object.wait"
+                "java.lang.Object.wait",
+                "java.lang.Object.wait0"
         };
 
         public WaitingThread(Log log, RunType recursionType, int maxDepth) {

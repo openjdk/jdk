@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/assembler.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -37,7 +38,9 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 // Implementation of SignatureIterator
 
@@ -113,6 +116,30 @@ ReferenceArgumentCount::ReferenceArgumentCount(Symbol* signature)
   do_parameters_on(this);  // non-virtual template execution
 }
 
+#ifdef ASSERT
+static int compute_num_stack_arg_slots(Symbol* signature, int sizeargs, bool is_static) {
+  ResourceMark rm;
+  BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
+  VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, sizeargs);
+
+  int sig_index = 0;
+  if (!is_static) {
+    sig_bt[sig_index++] = T_OBJECT; // 'this'
+  }
+  for (SignatureStream ss(signature); !ss.at_return_type(); ss.next()) {
+    BasicType t = ss.type();
+    assert(type2size[t] == 1 || type2size[t] == 2, "size is 1 or 2");
+    sig_bt[sig_index++] = t;
+    if (type2size[t] == 2) {
+      sig_bt[sig_index++] = T_VOID;
+    }
+  }
+  assert(sig_index == sizeargs, "sig_index: %d sizeargs: %d", sig_index, sizeargs);
+
+  return SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+}
+#endif
+
 void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   // See if we fingerprinted this method already
   if (_method != NULL) {
@@ -138,6 +165,7 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
 
   // Note:  This will always take the slow path, since _fp==zero_fp.
   initialize_accumulator();
+  initialize_calling_convention(static_flag);
   do_parameters_on(this);
   assert(fp_is_valid_type(_return_type, true), "bad result type");
 
@@ -148,6 +176,12 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   } else {
     _param_size += 1;  // this is the convention for Method::compute_size_of_parameters
   }
+
+  _stack_arg_slots = align_up(_stack_arg_slots, 2);
+#ifdef ASSERT
+  int dbg_stack_arg_slots = compute_num_stack_arg_slots(_signature, _param_size, static_flag);
+  assert(_stack_arg_slots == dbg_stack_arg_slots, "fingerprinter: %d full: %d", _stack_arg_slots, dbg_stack_arg_slots);
+#endif
 
   // Detect overflow.  (We counted _param_size correctly.)
   if (_method == NULL && _param_size > fp_max_size_of_parameters) {
@@ -170,6 +204,50 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
   if (_method != NULL) {
     _method->constMethod()->set_fingerprint(_fingerprint);
   }
+}
+
+void Fingerprinter::initialize_calling_convention(bool static_flag) {
+  _int_args = 0;
+  _fp_args = 0;
+
+  if (!static_flag) { // `this` takes up an int register
+    _int_args++;
+  }
+}
+
+void Fingerprinter::do_type_calling_convention(BasicType type) {
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  switch (type) {
+  case T_VOID:
+    break;
+  case T_BOOLEAN:
+  case T_CHAR:
+  case T_BYTE:
+  case T_SHORT:
+  case T_INT:
+  case T_LONG:
+  case T_OBJECT:
+  case T_ARRAY:
+  case T_ADDRESS:
+    if (_int_args < Argument::n_int_register_parameters_j) {
+      _int_args++;
+    } else {
+      _stack_arg_slots += 2;
+    }
+    break;
+  case T_FLOAT:
+  case T_DOUBLE:
+    if (_fp_args < Argument::n_float_register_parameters_j) {
+      _fp_args++;
+    } else {
+      _stack_arg_slots += 2;
+    }
+    break;
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+#endif // x64 or aarch64
 }
 
 // Implementation of SignatureStream

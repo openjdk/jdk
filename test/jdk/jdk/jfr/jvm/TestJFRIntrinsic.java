@@ -54,9 +54,14 @@ import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
 public class TestJFRIntrinsic {
-
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    public Class<?> eventWriterClazz;
     public Object eventWriter;
+
+    TestJFRIntrinsic() throws Exception {
+        // the intrinsic is premised on this class being loaded already - the event writer object is massaged heavily before returning
+        eventWriterClazz = Class.forName("jdk.jfr.internal.EventWriter", true, TestJFRIntrinsic.class.getClassLoader());
+    }
 
     public static void main(String... args) throws Exception {
         JVM.getJVM().createNativeJFR();

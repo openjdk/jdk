@@ -46,6 +46,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
@@ -703,6 +704,11 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
       entry_at(cpci)->initialize_resolved_reference_index(ref);
     }
   }
+}
+
+// Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
+void ConstantPoolCache::record_gc_epoch() {
+  _gc_epoch = Continuations::gc_epoch();
 }
 
 void ConstantPoolCache::verify_just_initialized() {

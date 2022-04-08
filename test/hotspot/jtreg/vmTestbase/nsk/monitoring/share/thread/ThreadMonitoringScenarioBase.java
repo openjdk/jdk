@@ -94,7 +94,7 @@ public abstract class ThreadMonitoringScenarioBase implements LogAware, ThreadMo
         protected boolean checkStackTraceElement(StackTraceElement element, String[] expectedMethods) {
                 String name = element.getClassName() + "." + element.getMethodName();
                 for (String method : expectedMethods)
-                        if (method.equals(name))
+                        if (name.startsWith(method))
                                 return true;
                 return false;
         }

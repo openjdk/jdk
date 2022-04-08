@@ -39,6 +39,9 @@ class objArrayOopDesc : public arrayOopDesc {
   friend class Runtime1;
   friend class psPromotionManager;
   friend class CSetMarkWordClosure;
+  friend class Continuation;
+  template <typename T>
+  friend class RawOopWriter;
 
   template <class T> T* obj_at_addr(int index) const;
 

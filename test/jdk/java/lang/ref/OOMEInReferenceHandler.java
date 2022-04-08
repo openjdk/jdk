@@ -82,6 +82,8 @@ public class OOMEInReferenceHandler {
          Object referent = new Object();
          WeakReference<Object> weakRef = new WeakReference<>(referent, refQueue);
 
+         // Allow thread.sleep() to pre-allocate ThreadSleepEvent object
+         Thread.sleep(1L);
          Object waste = fillHeap();
 
          referenceHandlerThread.interrupt();

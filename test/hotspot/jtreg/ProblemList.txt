@@ -107,6 +107,8 @@ applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 
+runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id0 8272791 generic-all
+
 #############################################################################
 
 # :hotspot_serviceability
@@ -173,3 +175,25 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
 #############################################################################
+
+# Loom specific
+
+compiler/c2/4998314/Test.java                                                8284109 generic-all
+compiler/c2/irTests/DivLNodeIdealizationTests.java                           8284115 generic-all
+
+runtime/Thread/StopAtExit.java                                               8283610 generic-all
+
+runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java                 8283555 generic-all
+
+serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java        8279663 windows-all
+serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java          8264699 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id0  8280914 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1  8280914 generic-all
+serviceability/jvmti/events/FramePop/framepop02/framepop02.java#id1          8283818 generic-all
+
+# Stratum mismatch
+vmTestbase/vm/mlvm/indy/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
+vmTestbase/vm/mlvm/meth/func/jdi/breakpointOtherStratum/Test.java            8276713 generic-all
+
+gc/metaspace/TestPerfCountersAndMemoryPools.java                             8278109 generic-all
+vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java                         8284234 generic-all

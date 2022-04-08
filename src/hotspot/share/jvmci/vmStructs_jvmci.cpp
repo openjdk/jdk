@@ -171,6 +171,7 @@
   nonstatic_field(JVMCICompileState,           _compilation_ticks,                            jint)                                  \
                                                                                                                                      \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
+  nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
@@ -190,6 +191,7 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           int)                                   \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
@@ -335,6 +337,8 @@
   static_field(StubRoutines,                _vectorizedMismatch,                              address)                               \
   static_field(StubRoutines,                _bigIntegerRightShiftWorker,                      address)                               \
   static_field(StubRoutines,                _bigIntegerLeftShiftWorker,                       address)                               \
+  static_field(StubRoutines,                _cont_doYield,                                    address)                               \
+  static_field(StubRoutines,                _cont_thaw,                                       address)                               \
                                                                                                                                      \
   nonstatic_field(Thread,                   _tlab,                                            ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                   _allocated_bytes,                                 jlong)                                 \
@@ -618,6 +622,7 @@
   declare_constant(Method::_hidden)                                       \
   declare_constant(Method::_intrinsic_candidate)                          \
   declare_constant(Method::_reserved_stack_access)                        \
+  declare_constant(Method::_changes_current_thread)                       \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::invalid_vtable_index)                          \

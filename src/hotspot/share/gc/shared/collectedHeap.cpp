@@ -61,6 +61,7 @@
 class ClassLoaderData;
 
 size_t CollectedHeap::_filler_array_max_size = 0;
+size_t CollectedHeap::_stack_chunk_max_size = 0;
 
 class GCMessage : public FormatBuffer<1024> {
  public:
@@ -278,6 +279,7 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   assert(Heap_lock->is_locked(), "Precondition#2");
   GCCauseSetter gcs(this, cause);
   switch (cause) {
+    case GCCause::_codecache_GC_threshold:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
     case GCCause::_metadata_GC_threshold : {

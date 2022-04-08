@@ -139,6 +139,9 @@ public:
   uintptr_t remap_object(uintptr_t addr);
   void relocate();
 
+  // Continuations
+  bool is_allocating(uintptr_t addr) const;
+
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
   ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers, bool visit_weaks);

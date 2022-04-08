@@ -251,6 +251,9 @@ abstract public class Debugee extends DebugeeProcess {
             if (thread.name().equals(name))
                 return thread;
         }
+        if ("Virtual".equals(System.getProperty("main.wrapper"))) {
+            return null;
+        }
         throw new JDITestRuntimeException("** Thread IS NOT found ** : " + name);
     }
 

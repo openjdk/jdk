@@ -28,6 +28,7 @@
 #include "memory/iterator.hpp"
 
 #include "classfile/classLoaderData.hpp"
+#include "code/nmethod.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -35,6 +36,7 @@
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
+#include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
@@ -50,6 +52,15 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_cld(ClassLoaderData* cld)
 inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
   ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
+}
+
+inline void ClaimMetadataVisitingOopIterateClosure::do_nmethod(nmethod* nm) {
+  nm->follow_nmethod(this);
+}
+
+inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
+  // Mark interpreted frames for marking_cycle
+  m->record_gc_epoch();
 }
 
 // Implementation of the non-virtual do_oop dispatch.
@@ -169,6 +180,25 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
   call_do_cld(&OopClosureType::do_cld, &OopIterateClosure::do_cld, closure, cld);
 }
 
+// Implementation of the non-virtual do_derived_oop dispatch.
+
+template <typename Receiver, typename Base, typename DerivedOopClosureType>
+static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
+call_do_derived_oop(void (Receiver::*)(oop*, derived_pointer*), void (Base::*)(oop*, derived_pointer*), DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
+  closure->do_derived_oop(base, derived);
+}
+
+template <typename Receiver, typename Base, typename DerivedOopClosureType>
+static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
+call_do_derived_oop(void (Receiver::*)(oop*, derived_pointer*), void (Base::*)(oop*, derived_pointer*), DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
+  closure->DerivedOopClosureType::do_derived_oop(base, derived);
+}
+
+template <typename DerivedOopClosureType>
+inline void Devirtualizer::do_derived_oop(DerivedOopClosureType* closure, oop* base, derived_pointer* derived) {
+  call_do_derived_oop(&DerivedOopClosureType::do_derived_oop, &DerivedOopClosure::do_derived_oop, closure, base, derived);
+}
+
 // Dispatch table implementation for *Klass::oop_oop_iterate
 //
 // It allows for a single call to do a multi-dispatch to an optimized version
@@ -252,6 +282,7 @@ private:
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
+      set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
@@ -314,6 +345,7 @@ private:
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
+      set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
@@ -376,6 +408,7 @@ private:
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
+      set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }

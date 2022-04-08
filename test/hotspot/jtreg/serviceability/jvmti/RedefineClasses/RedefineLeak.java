@@ -63,6 +63,7 @@ public class RedefineLeak {
     }
 
     public static void premain(String agentArgs, Instrumentation inst) throws Exception {
+        System.gc();
         LoggingTransformer t = new LoggingTransformer();
         inst.addTransformer(t, true);
         {

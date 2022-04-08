@@ -46,7 +46,7 @@ public abstract class ServerCommunicatorAdmin {
                                         "JMX-Server-Admin-Timeout",
                                         0,
                                         false);
-            t.setName("JMX server connection timeout " + t.getId());
+            t.setName("JMX server connection timeout " + t.threadId());
             // If you change this name you will need to change a unit test
             // (NoServerTimeoutTest)
             t.setDaemon(true);

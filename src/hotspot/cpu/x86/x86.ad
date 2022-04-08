@@ -2658,10 +2658,10 @@ static inline jlong high_bit_set(BasicType bt) {
 encode %{
 
   enc_class call_epilog %{
+    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      C2_MacroAssembler _masm(&cbuf);
       Label L;
       __ cmpptr(Address(rsp, framesize), (int32_t)0xbadb100d);
       __ jccb(Assembler::equal, L);

@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
@@ -424,5 +424,22 @@ oop ClassAllocator::initialize(HeapWord* mem) const {
   assert(_word_size > 0, "oop_size must be positive.");
   mem_clear(mem);
   java_lang_Class::set_oop_size(mem, _word_size);
+  return finish(mem);
+}
+
+// Does the minimal amount of initialization needed for a TLAB allocation.
+// We don't need to do a full initialization, as such an allocation need not be immediately walkable.
+oop StackChunkAllocator::initialize(HeapWord* mem) const {
+  assert(_stack_size > 0, "");
+  assert(_stack_size <= max_jint, "");
+  assert(_word_size > _stack_size, "");
+
+  // zero out fields (but not the stack)
+  const size_t hs = oopDesc::header_size();
+  Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
+
+  jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
+  jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);
+
   return finish(mem);
 }

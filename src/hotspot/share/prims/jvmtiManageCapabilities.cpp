@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -129,6 +130,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_current_contended_monitor = 1;
   jc.can_generate_early_vmstart = 1;
   jc.can_generate_early_class_hook_events = 1;
+  jc.can_support_virtual_threads = 1;
   return jc;
 }
 
@@ -269,6 +271,10 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
   // return the result
   either(current, desired, result);
 
+  // special case for virtual thread events
+  // TBD: There can be a performance impact after check for can_support_virtual_threads has been removed.
+  java_lang_VirtualThread::set_notify_jvmti_events(true);
+
   update();
 
   return JVMTI_ERROR_NONE;
@@ -370,8 +376,10 @@ void JvmtiManageCapabilities::update() {
   JvmtiExport::set_can_post_method_entry(avail.can_generate_method_entry_events);
   JvmtiExport::set_can_post_method_exit(avail.can_generate_method_exit_events ||
                                         avail.can_generate_frame_pop_events);
+  JvmtiExport::set_can_post_frame_pop(avail.can_generate_frame_pop_events);
   JvmtiExport::set_can_pop_frame(avail.can_pop_frame);
   JvmtiExport::set_can_force_early_return(avail.can_force_early_return);
+  JvmtiExport::set_can_support_virtual_threads(avail.can_support_virtual_threads);
   JvmtiExport::set_should_clean_up_heap_objects(avail.can_generate_breakpoint_events);
   JvmtiExport::set_can_get_owned_monitor_info(avail.can_get_owned_monitor_info ||
                                               avail.can_get_owned_monitor_stack_depth_info);
@@ -465,6 +473,8 @@ void JvmtiManageCapabilities:: print(const jvmtiCapabilities* cap) {
     log_trace(jvmti)("can_generate_early_vmstart");
   if (cap->can_generate_early_class_hook_events)
     log_trace(jvmti)("can_generate_early_class_hook_events");
+  if (cap->can_support_virtual_threads)
+    log_trace(jvmti)("can_support_virtual_threads");
 }
 
 #endif
