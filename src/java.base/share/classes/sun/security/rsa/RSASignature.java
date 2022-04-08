@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import sun.security.x509.AlgorithmId;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public abstract class RSASignature extends SignatureSpi {
+public abstract sealed class RSASignature extends SignatureSpi {
 
     // we sign an ASN.1 SEQUENCE of AlgorithmId and digest
     // it has the form 30:xx:30:xx:[digestOID]:05:00:04:xx:[digest]
