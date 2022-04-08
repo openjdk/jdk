@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <new>
 
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -736,6 +737,7 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
   }
 
   log_develop_info(dwarf)("No address descriptor found containing offset_in_library.");
+  assert(false, "No address descriptor found containing offset_in_library.");
   return false;
 }
 
@@ -925,6 +927,7 @@ bool DwarfFile::DebugAbbrev::find_debug_line_offset(const uint64_t abbrev_code) 
   }
 
   log_develop_info(dwarf)(".debug_line offset not found");
+  assert(false, ".debug_line offset not found");
   return false;
 }
 
@@ -995,6 +998,7 @@ bool DwarfFile::DebugAbbrev::read_attribute_specifications(const bool is_DW_TAG_
   }
 
   log_develop_info(dwarf)(".debug_abbrev section appears to be corrupted");
+  assert(false, ".debug_abbrev section appears to be corrupted");
   return false;
 }
 
@@ -1290,6 +1294,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const
   bool first_in_sequence = true;
   while (_reader.has_bytes_left()) {
     if (!apply_opcode()) {
+      assert(false, "Could not apply opcode");
       return false;
     }
 
@@ -1323,6 +1328,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const
   }
 
   log_develop_debug(dwarf)("Did not find an entry in the line number information matrix that matches " PTR32_FORMAT, _offset_in_library);
+  assert(false, "Did not find an entry in the line number information matrix that matches " PTR32_FORMAT, _offset_in_library);
   return false;
 }
 
@@ -1337,18 +1343,18 @@ bool DwarfFile::LineNumberProgram::apply_opcode() {
   if (opcode == 0) {
     // Extended opcodes start with a zero byte.
     if (!apply_extended_opcode()) {
+      assert(false, "Could not apply extended opcode");
       return false;
     }
   } else if (opcode <= 12) {
     // 12 standard opcodes in DWARF 3 and 4.
     if (!apply_standard_opcode(opcode)) {
+      assert(false, "Could not apply standard opcode");
       return false;
     }
   } else {
     // Special opcodes range from 13 until 255.
-    if (!apply_special_opcode(opcode)) {
-      return false;
-    }
+    apply_special_opcode(opcode);
   }
   return true;
 }
@@ -1402,6 +1408,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
       break;
     default:
       log_develop_info(dwarf)("Unknown extended opcode");
+      assert(false, "Unknown extended opcode");
       return false;
   }
   return true;
@@ -1508,13 +1515,14 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       break;
     default:
       log_develop_info(dwarf)("Unknown standard opcode");
+      assert(false, "Unknown standard opcode");
       return false;
   }
   return true;
 }
 
 // Specified in section 6.2.5.1 of the DWARF 4 spec.
-bool DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
+void DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
   uintptr_t old_address = _state->_address;
   uint32_t old_line = _state->_line;
   uint8_t adjusted_opcode = opcode - _header._opcode_base;
@@ -1530,7 +1538,6 @@ bool DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
   _state->_basic_block = false;
   _state->_prologue_end = false;
   _state->_epilogue_begin = false;
-  return true;
 }
 
 bool DwarfFile::LineNumberProgram::does_offset_match_entry(const uintptr_t previous_address, const uint32_t previous_file,

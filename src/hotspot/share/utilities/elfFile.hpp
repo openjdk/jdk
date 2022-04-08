@@ -820,7 +820,7 @@ class DwarfFile : public ElfFile {
     bool apply_opcode();
     bool apply_extended_opcode();
     bool apply_standard_opcode(uint8_t opcode);
-    bool apply_special_opcode(uint8_t opcode);
+    void apply_special_opcode(const uint8_t opcode);
     bool does_offset_match_entry(uintptr_t previous_address, uint32_t previous_file, uint32_t previous_line);
     void print_and_store_prev_entry(uint32_t previous_file, uint32_t previous_line);
     bool get_filename_from_header(uint32_t file_index, char* filename, size_t filename_len);

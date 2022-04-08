@@ -54,9 +54,7 @@ bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const 
 }
 
 bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len, int* line, bool is_pc_after_call) {
-  if (filename == nullptr || filename_len <= 0 || line == nullptr) {
-    return false;
-  }
+  assert(filename != nullptr && filename_len > 0 && line != nullptr, "Argument error");
   filename[0] = '\0';
   *line = -1;
 
