@@ -60,8 +60,8 @@ PARSEPROPERTIES_SRC := $(addprefix \
     $(MODULE_SRC)/share/classes/$(PARSEPROPERTIES_PACKAGE)/, \
     $(PARSEPROPERTIES_FILES))
 
-PARSEPROPERTIES_ARGS := $(foreach file, $(PARSEPROPERTIES_FILES), \
-    -compile $(MODULE_SRC)/share/classes/$(PARSEPROPERTIES_PACKAGE)/$(file) \
+PARSEPROPERTIES_ARGS := $(foreach file, $(PARSEPROPERTIES_SRC), \
+    -compile $(file) \
     $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$(PARSEPROPERTIES_PACKAGE)/)
 
 $(eval $(call SetupExecute, PARSEPROPERTIES, \
