@@ -25,7 +25,6 @@
  * @test
  * @bug 8243099
  * @modules jdk.net
- * @library /test/lib
  * @run main/othervm DontFragmentTest ipv4
  * @run main/othervm DontFragmentTest ipv6
  */
@@ -38,7 +37,6 @@ import java.util.stream.*;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static jdk.net.ExtendedSocketOptions.IP_DONTFRAGMENT;
-import jdk.test.lib.NetworkConfiguration;
 
 public class DontFragmentTest {
 
@@ -50,36 +48,9 @@ public class DontFragmentTest {
         }
     }
 
-    /**
-     * Get a local address attached to interface with an MTU and of the given family
-     */
-    static InetAddress getLocalAddress(StandardProtocolFamily family) throws IOException {
-        return switch (family) {
-            case INET -> NetworkConfiguration.probe()
-                .ip4Interfaces()
-                .filter(n -> getMTU(n) > 0)
-                .flatMap(NetworkInterface::inetAddresses)
-                .filter(a -> !a.isLoopbackAddress())
-                .filter(a -> a instanceof Inet4Address)
-                .collect(Collectors.toList())
-                .get(0);
-
-            case INET6 -> NetworkConfiguration.probe()
-                .ip6Interfaces()
-                .filter(n -> getMTU(n) > 0)
-                .flatMap(NetworkInterface::inetAddresses)
-                .filter(a -> !a.isLoopbackAddress())
-                .filter(a -> a instanceof Inet6Address)
-                .collect(Collectors.toList())
-                .get(0);
-
-            default -> throw new IllegalArgumentException();
-        };
-    }
-
     static ByteBuffer read(Selector sel, DatagramChannel chan, boolean succeed) throws Exception {
         int n = sel.select(1000);
-        ByteBuffer b = ByteBuffer.allocate(16 * 1024);
+        ByteBuffer b = ByteBuffer.allocate(32 * 1024);
         System.out.println("n = " + n);
         if (n > 0)
             sel.selectedKeys().clear();
@@ -109,10 +80,17 @@ public class DontFragmentTest {
         }
     }
 
-    static void write(ByteBuffer buf, DatagramChannel chan) throws IOException {
+    static void write(ByteBuffer buf, DatagramChannel chan, boolean succeed) throws IOException {
         System.out.printf("write %d bytes\n", buf.remaining());
-        chan.write(buf);
-        buf.clear(); // reset pointers so can be written again
+        try {
+            chan.write(buf);
+        } catch (IOException e) {
+            if (succeed)
+                throw e;
+            System.out.println("WRITE exception: " + e.toString());
+        } finally {
+            buf.clear(); // reset pointers so can be written again
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -125,7 +103,9 @@ public class DontFragmentTest {
         c1.register(sel, SelectionKey.OP_READ, null);
 
         int port = ((InetSocketAddress)(c1.getLocalAddress())).getPort();
-        InetAddress iaddr = getLocalAddress(fam);
+        //InetAddress iaddr = getLocalAddress(fam);
+        InetAddress iaddr = fam == INET ? InetAddress.getByName("127.0.0.1")
+                                        : InetAddress.getByName("::1");
         System.out.println("Local address: " + iaddr);
         InetSocketAddress addr = new InetSocketAddress(iaddr, port);
         NetworkInterface nif = NetworkInterface.getByInetAddress(iaddr);
@@ -133,16 +113,17 @@ public class DontFragmentTest {
         System.out.println("MTU is " + mtu);
         assert mtu > 0;
         int large_size = mtu + 20;
-        int small_size = mtu - 20;
+        int small_size = mtu - 80;
         ByteBuffer small = ByteBuffer.allocate(small_size);
         ByteBuffer large = ByteBuffer.allocate(large_size);
 
         DatagramChannel c2 = DatagramChannel.open(fam);
         c2.bind(new InetSocketAddress(iaddr, 0));
         c2.connect(addr);
+        System.out.println("Connected to " + addr);
 
         // large buffer should succeed, before option set
-        write(large, c2);
+        write(large, c2, true);
         read(sel, c1, true);
 
         if (c2.getOption(IP_DONTFRAGMENT)) {
@@ -153,11 +134,12 @@ public class DontFragmentTest {
             throw new RuntimeException("IP_DONTFRAGMENT should be set");
         }
         // small buffer should succeed, after option set
-        write(small, c2);
+        //write(ByteBuffer.allocate(16000), c2);
+        write(small, c2, true);
         read(sel, c1, true);
 
         // large buffer should fail, after option set
-        write(large, c2);
+        write(large, c2, false);
         read(sel, c1, false);
     }
 }

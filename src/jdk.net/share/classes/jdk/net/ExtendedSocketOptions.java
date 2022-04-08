@@ -207,7 +207,7 @@ public final class ExtendedSocketOptions {
      * of outgoing IPv4 and IPv6 packets does not occur. This option can only be used
      * with datagram sockets. When set, care must be taken to limit outgoing packet
      * sizes to the {@link NetworkInterface.getMTU() local MTU}. Packets larger
-     * than this will be discarded either silently or with an exception thrown.
+     * than this may be discarded either silently or with an exception thrown.
      *
      * <p> Note, for IPv4 this option sets the DF (Do not Fragment) flag
      * in the IP packet header. This instructs intermediate routers to not fragment
