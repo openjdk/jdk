@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ public final class ParseUtil {
         char c = s.charAt(0);
         for (int i = 0; i < n;) {
             assert c == s.charAt(i);
-            if (c != '%') {
+            if (!isEscaped(s, i)) {
                 sb.append(c);
                 if (++i >= n)
                     break;
@@ -207,7 +207,7 @@ public final class ParseUtil {
                 if (i >= n)
                     break;
                 c = s.charAt(i);
-                if (c != '%')
+                if (!isEscaped(s, i))
                     break;
             }
             bb.flip();
