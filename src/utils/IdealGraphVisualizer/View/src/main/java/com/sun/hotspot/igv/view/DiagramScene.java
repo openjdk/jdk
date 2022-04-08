@@ -709,7 +709,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
             }
         }
         m.setSubManager(new LinearLayoutManager(figureRank));
-        Set<Block> visibleBlocks = new HashSet<Block>();
+        Set<Block> visibleBlocks = new HashSet<>();
         for (Block b : diagram.getBlocks()) {
             BlockWidget w = getWidget(b.getInputBlock());
             if (w.isVisible()) {
@@ -812,8 +812,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         if (getModel().getShowCFG()) {
             for (BlockConnection c : diagram.getBlockConnections()) {
                 if (isVisible(c)) {
-                    SceneAnimator anim = animator;
-                    processOutputSlot(lastLineCache, null, Collections.singletonList(c), 0, null, null, offx2, offy2, anim);
+                    processOutputSlot(lastLineCache, null, Collections.singletonList(c), 0, null, null, offx2, offy2, animator);
                 }
             }
         }
