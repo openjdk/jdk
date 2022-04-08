@@ -343,6 +343,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin-tests${{ matrix.artifact }}
@@ -358,7 +359,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -808,6 +809,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_linux-x86_bin-tests${{ matrix.artifact }}
@@ -823,7 +825,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -1248,6 +1250,7 @@ jobs:
         run: echo ("imageroot=" + (Get-ChildItem -Path $HOME/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_windows-x64_bin${{ matrix.artifact }} -Filter release -Recurse -ErrorAction SilentlyContinue -Force).DirectoryName) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Run tests
+        id: run_tests
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
@@ -1266,7 +1269,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
             Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
@@ -1643,6 +1646,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_macos-x64_bin-tests${{ matrix.artifact }}
@@ -1658,7 +1662,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
