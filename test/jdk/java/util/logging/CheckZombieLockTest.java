@@ -50,6 +50,8 @@ import java.util.UUID;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import static java.nio.file.StandardOpenOption.*;
+
 public class CheckZombieLockTest {
 
     private static final String WRITABLE_DIR = "writable-lockfile-dir";
@@ -243,8 +245,7 @@ public class CheckZombieLockTest {
             if (supportsLocking) {
                 handler2 = null;
                 try (FileChannel fc = FileChannel.open(Paths.get(lock.getAbsolutePath()),
-                    StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND,
-                    StandardOpenOption.WRITE)) {
+                        CREATE_NEW, APPEND, WRITE)) {
 
                     if (fc.tryLock() != null) {
                         System.out.println("locked: " + lock);
@@ -322,17 +323,12 @@ public class CheckZombieLockTest {
 
         // try to determine whether file locking is supported
         final String uniqueFileName = UUID.randomUUID().toString()+".lck";
-        try {
-            FileChannel fc = FileChannel.open(Paths.get(writableDir.getAbsolutePath(),
-                    uniqueFileName),
-                    StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND,
-                    StandardOpenOption.DELETE_ON_CLOSE);
+        try (FileChannel fc = FileChannel.open(Paths.get(writableDir.getAbsolutePath(),
+                    uniqueFileName), CREATE_NEW, APPEND, DELETE_ON_CLOSE)) {
             try {
                 fc.tryLock();
-            } catch(IOException x) {
+            } catch (IOException x) {
                 supportsLocking = false;
-            } finally {
-                fc.close();
             }
         } catch (IOException t) {
             // should not happen
