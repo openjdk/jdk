@@ -60,13 +60,9 @@ public class SharedStubToInterpTest {
         command.add(testClassName);
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(command);
-
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
-
         analyzer.shouldHaveExitValue(0);
-
         System.out.println(analyzer.getOutput());
-
         checkOutput(analyzer);
     }
 
