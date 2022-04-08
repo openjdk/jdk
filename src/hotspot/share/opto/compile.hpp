@@ -103,7 +103,6 @@ enum LoopOptsMode {
   LoopOptsVerify
 };
 
-typedef unsigned int node_idx_t;
 class NodeCloneInfo {
  private:
   uint64_t _idx_clone_orig;
