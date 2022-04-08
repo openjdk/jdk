@@ -30,8 +30,12 @@ include Execute.gmk
 $(eval $(call SetupVersionProperties, JAVAC_VERSION, \
     com/sun/tools/javac/resources/version.properties))
 
-$(eval $(call SetupCompilePropertiesLangtools, COMPILE_PROPERTIES, \
-    $(JAVAC_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JAVAC_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)
 

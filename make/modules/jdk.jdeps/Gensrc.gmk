@@ -32,7 +32,11 @@ $(eval $(call SetupVersionProperties, JAVAP_VERSION, \
 $(eval $(call SetupVersionProperties, JDEPS_VERSION,\
     com/sun/tools/jdeps/resources/version.properties))
 
-$(eval $(call SetupCompilePropertiesLangtools, COMPILE_PROPERTIES, \
-    $(JDEPS_VERSION) $(JAVAP_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JDEPS_VERSION) $(JAVAP_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)

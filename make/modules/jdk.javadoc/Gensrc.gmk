@@ -29,7 +29,11 @@ include GensrcProperties.gmk
 $(eval $(call SetupVersionProperties, JAVADOC_VERSION,\
     jdk/javadoc/internal/tool/resources/version.properties))
 
-$(eval $(call SetupCompilePropertiesLangtools, COMPILE_PROPERTIES, \
-    $(JAVADOC_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JAVADOC_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)

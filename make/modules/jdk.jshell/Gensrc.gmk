@@ -29,7 +29,11 @@ include GensrcProperties.gmk
 $(eval $(call SetupVersionProperties, JSHELL_VERSION, \
     jdk/internal/jshell/tool/resources/version.properties))
 
-$(eval $(call SetupCompilePropertiesLangtools, COMPILE_PROPERTIES, \
-    $(JSHELL_VERSION)))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(TOPDIR)/src/$(MODULE)/share/classes, \
+    EXTRA_FILES := $(JSHELL_VERSION), \
+    CLASS := java.util.ListResourceBundle, \
+    TYPE := langtools, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)
