@@ -1827,7 +1827,7 @@ encode %{
   %}
 
   enc_class ClearInstMark %{
-    __ set_inst_mark();
+    __ clear_inst_mark();
   %}
 
   // Emit primary opcode

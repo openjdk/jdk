@@ -10230,7 +10230,6 @@ void Assembler::fstp_x(Address adr) {
 void Assembler::emit_operand32(Register reg, Address adr) {
   assert(reg->encoding() < 8, "no extended registers");
   assert(!adr.base_needs_rex() && !adr.index_needs_rex(), "no extended registers");
-  InstructionMark im(this);
   emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp,
                adr._rspec);
 }
