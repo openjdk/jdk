@@ -31,6 +31,6 @@ private:
 
 public:
   void flush_bundle(bool start_new_bundle) {}
-  static bool supports_shared_stubs() { return false; }
+  static bool supports_shared_stubs() { return true; }
 
 #endif // CPU_X86_CODEBUFFER_X86_HPP
