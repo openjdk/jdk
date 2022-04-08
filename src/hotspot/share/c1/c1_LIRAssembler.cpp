@@ -447,6 +447,11 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
   rt_call(op->result_opr(), op->addr(), op->arguments(), op->tmp(), op->info());
 }
 
+static bool can_use_shared_stub_for(LIR_OpJavaCall* op) {
+  return CodeBuffer::supports_shared_stubs() &&
+         op->method()->is_loaded() &&
+         (op->code() == lir_static_call || op->method()->is_final_method());
+}
 
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
@@ -454,8 +459,9 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   // must align calls sites, otherwise they can't be updated atomically
   align_call(op->code());
 
-  if (CodeBuffer::supports_shared_stubs() && op->code() == lir_static_call
-      && op->method()->is_loaded()) {
+  if (can_use_shared_stub_for(op)) {
+    // Postpone creating a stub to the interpreter.
+    // It might be shared among calls of the same Java method.
     _masm->code()->shared_stub_to_interp_for(op->method()->get_Method(), pc());
   } else {
     emit_static_call_stub();
