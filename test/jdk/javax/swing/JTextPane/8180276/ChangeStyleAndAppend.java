@@ -57,7 +57,7 @@ public class ChangeStyleAndAppend extends JFrame {
             try {
                 Document doc = this.getDocument();
                 doc.insertString(doc.getLength(), s + System.lineSeparator(), null);
-            } catch(BadLocationException e) {
+            } catch (BadLocationException e) {
                 System.err.println(e);
             }
         }

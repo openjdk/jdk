@@ -339,10 +339,9 @@ public class DefaultEditorKit extends EditorKit {
                 for (int counter = last; counter < maxCounter; counter++) {
                     if (array[counter] == '\n') {
                         if (counter > last) {
-                            if(array[counter-1] == '\r') {
+                            if (array[counter - 1] == '\r') {
                                 out.write(array, last, counter - last - 1);
-                            }
-                            else {
+                            } else {
                                 out.write(array, last, counter - last);
                             }
                         }
