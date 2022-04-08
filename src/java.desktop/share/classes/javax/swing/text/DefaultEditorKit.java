@@ -342,8 +342,7 @@ public class DefaultEditorKit extends EditorKit {
                             if(array[counter-1] == '\r') {
                                 out.write(array, last, counter - last - 1);
                             }
-                            else
-                            {
+                            else {
                                 out.write(array, last, counter - last);
                             }
                         }
