@@ -872,6 +872,14 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
   return TypeInt::INT;
 }
 
+//------------------------------Idealize---------------------------------------
+Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  return NULL;
+}
+
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
@@ -901,6 +909,13 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
   // Otherwise we give up all hope
   return TypeLong::LONG;
+}
+
+//------------------------------Idealize---------------------------------------
+Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+  return NULL;
 }
 
 
@@ -1068,6 +1083,13 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   return TypeInt::make( i1->get_con() % i2->get_con() );
 }
 
+//=============================================================================
+//------------------------------Idealize---------------------------------------
+Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  return NULL;
+}
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
@@ -1277,6 +1299,14 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
   }
 
   return TypeF::make(jfloat_cast(xr));
+}
+
+//=============================================================================
+//------------------------------Idealize---------------------------------------
+Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  // Check for dead control input
+  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  return NULL;
 }
 
 

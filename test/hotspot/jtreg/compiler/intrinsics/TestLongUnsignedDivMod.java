@@ -26,32 +26,86 @@
 * @summary Test x86_64 intrinsic for divideUnsigned() and remainderUnsigned() methods for Long
 * @requires os.arch=="amd64" | os.arch=="x86_64"
 * @library /test/lib /
-* @run driver compiler.intrinsics.TestLongDivMod
+* @run driver compiler.intrinsics.TestLongUnsignedDivMod
 */
 
 package compiler.intrinsics;
 import compiler.lib.ir_framework.*;
-import java.util.random.RandomGenerator;
-import java.util.random.RandomGeneratorFactory;
+import java.math.*;
 
+public class TestLongUnsignedDivMod {
+    private int BUFFER_SIZE;
+    private long[] dividends;
+    private long[] divisors;
+    private long[] quotients;
+    private long[] remainders;
+    long TWO_31 = 1L << Integer.SIZE - 1;
+        long TWO_32 = 1L << Integer.SIZE;
+    long TWO_33 = 1L << Integer.SIZE + 1;
+    BigInteger NINETEEN = BigInteger.valueOf(19L);
+    BigInteger TWO_63 = BigInteger.ONE.shiftLeft(Long.SIZE - 1);
+    BigInteger TWO_64 = BigInteger.ONE.shiftLeft(Long.SIZE);
+    BigInteger[] inRange = {
+            BigInteger.ZERO,
+            BigInteger.ONE,
+            BigInteger.TEN,
+            NINETEEN,
 
-public class TestLongDivMod {
-    private final int BUFFER_SIZE = 1024;
-    private long[] dividends = new long[BUFFER_SIZE];
-    private long[] divisors = new long[BUFFER_SIZE];
-    private long[] quotients =  new long[BUFFER_SIZE];
-    private long[] remainders =  new long[BUFFER_SIZE];
-    private RandomGenerator rng;
+            BigInteger.valueOf(TWO_31 - 19L),
+            BigInteger.valueOf(TWO_31 - 10L),
+            BigInteger.valueOf(TWO_31 - 1L),
+            BigInteger.valueOf(TWO_31),
+            BigInteger.valueOf(TWO_31 + 1L),
+            BigInteger.valueOf(TWO_31 + 10L),
+            BigInteger.valueOf(TWO_31 + 19L),
+
+            BigInteger.valueOf(TWO_32 - 19L),
+            BigInteger.valueOf(TWO_32 - 10L),
+            BigInteger.valueOf(TWO_32 - 1L),
+            BigInteger.valueOf(TWO_32),
+            BigInteger.valueOf(TWO_32 + 1L),
+            BigInteger.valueOf(TWO_32 + 10L),
+            BigInteger.valueOf(TWO_32 - 19L),
+
+            BigInteger.valueOf(TWO_33 - 19L),
+            BigInteger.valueOf(TWO_33 - 10L),
+            BigInteger.valueOf(TWO_33 - 1L),
+            BigInteger.valueOf(TWO_33),
+            BigInteger.valueOf(TWO_33 + 1L),
+            BigInteger.valueOf(TWO_33 + 10L),
+            BigInteger.valueOf(TWO_33 + 19L),
+
+            TWO_63.subtract(NINETEEN),
+            TWO_63.subtract(BigInteger.TEN),
+            TWO_63.subtract(BigInteger.ONE),
+            TWO_63,
+            TWO_63.add(BigInteger.ONE),
+            TWO_63.add(BigInteger.TEN),
+            TWO_63.add(NINETEEN),
+
+            TWO_64.subtract(NINETEEN),
+            TWO_64.subtract(BigInteger.TEN),
+            TWO_64.subtract(BigInteger.ONE),
+    };
 
     public static void main(String args[]) {
-        TestFramework.run(TestLongDivMod.class);
+        TestFramework.run(TestLongUnsignedDivMod.class);
     }
 
-    public TestLongDivMod() {
-        rng = RandomGeneratorFactory.getDefault().create(0);
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            dividends[i] = rng.nextLong();
-            divisors[i] = rng.nextLong();
+    public TestLongUnsignedDivMod() {
+        BUFFER_SIZE = inRange.length * inRange.length;
+        dividends = new long[BUFFER_SIZE];
+        divisors = new long[BUFFER_SIZE];
+        quotients = new long[BUFFER_SIZE];
+        remainders = new long[BUFFER_SIZE];
+
+        int idx = 0;
+        for (int i = 0; i < inRange.length; i++) {
+            for (int j = 0; j < inRange.length; j++){
+                dividends[idx] = inRange[i].longValue();
+                divisors[idx] = inRange[j].longValue();
+                idx++;
+            }
         }
     }
 
@@ -60,7 +114,11 @@ public class TestLongDivMod {
     @IR(counts = {"UDivL", ">= 1"}) // Atleast one UDivL node is generated if intrinsic is used
     public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            quotients[i] = Long.divideUnsigned(dividends[i], divisors[i]);
+            try {
+                quotients[i] = Long.divideUnsigned(dividends[i], divisors[i]);
+            } catch(ArithmeticException ea) {
+                ; // expected
+            }
         }
         checkResult("divideUnsigned");
     }
@@ -70,7 +128,11 @@ public class TestLongDivMod {
     @IR(counts = {"UModL", ">= 1"}) // Atleast one UModL node is generated if intrinsic is used
     public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            remainders[i] = Long.remainderUnsigned(dividends[i], divisors[i]);
+            try {
+                remainders[i] = Long.remainderUnsigned(dividends[i], divisors[i]);
+            } catch(ArithmeticException ea) {
+                ; // expected
+            }
         }
         checkResult("remainderUnsigned");
     }
@@ -81,7 +143,11 @@ public class TestLongDivMod {
     @IR(counts = {"UDivModL", ">= 1"}) // Atleast one UDivModL node is generated if intrinsic is used
     public void testDivModUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            divmod(dividends[i], divisors[i], i);
+            try {
+                divmod(dividends[i], divisors[i], i);
+            } catch(ArithmeticException ea) {
+                ; // expected
+            }
         }
         checkResult("divmodUnsigned");
     }
@@ -93,8 +159,12 @@ public class TestLongDivMod {
 
     public void checkResult(String mode) {
         for (int i=0; i < BUFFER_SIZE; i++) {
-            long quo =  divideUnsigned(dividends[i], divisors[i]);
-            long rem = remainderUnsigned(dividends[i], divisors[i]);
+            if (divisors[i] == 0) continue;
+            BigInteger dividend = toUnsignedBigInteger(dividends[i]);
+            BigInteger divisor = toUnsignedBigInteger(divisors[i]);
+
+            long quo = dividend.divide(divisor).longValue();
+            long rem = dividend.remainder(divisor).longValue();
             boolean mismatch;
             switch (mode) {
                 case "divideUnsigned": mismatch = (quotients[i] != quo); break;
@@ -124,22 +194,17 @@ public class TestLongDivMod {
         return sb.toString();
     }
 
+    private BigInteger toUnsignedBigInteger(long i) {
+        if (i >= 0L)
+            return BigInteger.valueOf(i);
+        else {
+            int upper = (int) (i >>> 32);
+            int lower = (int) i;
 
-    private long divideUnsigned(long dividend, long divisor) {
-        if (divisor >= 0) {
-            final long q = (dividend >>> 1) / divisor << 1;
-            final long r = dividend - q * divisor;
-            return q + ((r | ~(r - divisor)) >>> (Long.SIZE - 1));
+            // return (upper << 32) + lower
+            return (BigInteger.valueOf(Integer.toUnsignedLong(upper))).shiftLeft(32).
+                add(BigInteger.valueOf(Integer.toUnsignedLong(lower)));
         }
-        return (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1);
     }
 
-    private long remainderUnsigned(long dividend, long divisor) {
-        if (divisor >= 0) {
-            final long q = (dividend >>> 1) / divisor << 1;
-            final long r = dividend - q * divisor;
-            return r - ((~(r - divisor) >> (Long.SIZE - 1)) & divisor);
-        }
-        return dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor);
-    }
 }

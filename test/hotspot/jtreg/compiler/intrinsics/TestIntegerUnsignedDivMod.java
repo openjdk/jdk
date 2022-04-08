@@ -26,7 +26,7 @@
 * @summary Test x86_64 intrinsic for divideUnsigned() and remainderUnsigned() methods for Integer
 * @requires os.arch=="amd64" | os.arch=="x86_64"
 * @library /test/lib /
-* @run driver compiler.intrinsics.TestIntegerDivMod
+* @run driver compiler.intrinsics.TestIntegerUnsignedDivMod
 */
 
 package compiler.intrinsics;
@@ -35,23 +35,43 @@ import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 
 
-public class TestIntegerDivMod {
-    private final int BUFFER_SIZE = 1024;
-    private int[] dividends = new int[BUFFER_SIZE];
-    private int[] divisors = new int[BUFFER_SIZE];
-    private int[] quotients =  new int[BUFFER_SIZE];
-    private int[] remainders =  new int[BUFFER_SIZE];
+public class TestIntegerUnsignedDivMod {
+    private int BUFFER_SIZE;
+    private int[] dividends;
+    private int[] divisors;
+    private int[] quotients;
+    private int[] remainders;
+    final long MAX_UNSIGNED_INT = Integer.toUnsignedLong(0xffff_ffff);
+    long[] inRange = {
+        //0L,
+        1L,
+        2L,
+        2147483646L,   // MAX_VALUE - 1
+        2147483647L,   // MAX_VALUE
+        2147483648L,   // MAX_VALUE + 1
+        MAX_UNSIGNED_INT - 1L,
+        MAX_UNSIGNED_INT,
+    };
     private RandomGenerator rng;
 
     public static void main(String args[]) {
-        TestFramework.run(TestIntegerDivMod.class);
+        TestFramework.run(TestIntegerUnsignedDivMod.class);
     }
 
-    public TestIntegerDivMod() {
-        rng = RandomGeneratorFactory.getDefault().create(0);
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            dividends[i] = rng.nextInt();
-            divisors[i] = rng.nextInt();
+    public TestIntegerUnsignedDivMod() {
+        BUFFER_SIZE = inRange.length * inRange.length;
+        dividends = new int[BUFFER_SIZE];
+        divisors = new int[BUFFER_SIZE];
+        quotients = new int[BUFFER_SIZE];
+        remainders = new int[BUFFER_SIZE];
+
+        int idx = 0;
+        for (int i = 0; i < inRange.length; i++) {
+            for (int j = 0; j < inRange.length; j++){
+                dividends[idx] = (int) inRange[i];
+                divisors[idx] = (int) inRange[j];
+                idx++;
+            }
         }
     }
 
@@ -60,7 +80,11 @@ public class TestIntegerDivMod {
     @IR(counts = {"UDivI", ">= 1"}) // Atleast one UDivI node is generated if intrinsic is used
     public void testDivideUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            quotients[i] = Integer.divideUnsigned(dividends[i], divisors[i]);
+            try {
+                quotients[i] = Integer.divideUnsigned(dividends[i], divisors[i]);
+            } catch(ArithmeticException ea) {
+                ; // expected
+            }
         }
         checkResult("divideUnsigned");
     }
@@ -70,7 +94,11 @@ public class TestIntegerDivMod {
     @IR(counts = {"UModI", ">= 1"}) // Atleast one UModI node is generated if intrinsic is used
     public void testRemainderUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            remainders[i] = Integer.remainderUnsigned(dividends[i], divisors[i]);
+            try {
+                remainders[i] = Integer.remainderUnsigned(dividends[i], divisors[i]);
+            } catch(ArithmeticException ea) {
+                ; // expected
+            }
         }
         checkResult("remainderUnsigned");
     }
@@ -81,7 +109,11 @@ public class TestIntegerDivMod {
     @IR(counts = {"UDivModI", ">= 1"}) // Atleast one UDivModI node is generated if intrinsic is used
     public void testDivModUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            divmod(dividends[i], divisors[i], i);
+            try {
+                divmod(dividends[i], divisors[i], i);
+            } catch(ArithmeticException ea) {
+                ; // expected
+            }
         }
         checkResult("divmodUnsigned");
     }
@@ -93,9 +125,9 @@ public class TestIntegerDivMod {
 
     public void checkResult(String mode) {
         for (int i=0; i < BUFFER_SIZE; i++) {
+            if (divisors[i] == 0) continue;
             long dividend = Integer.toUnsignedLong(dividends[i]);
             long divisor = Integer.toUnsignedLong(divisors[i]);
-
             int quo =  (int) (dividend / divisor);
             int rem = (int) (dividend % divisor);
             boolean mismatch;
@@ -126,4 +158,5 @@ public class TestIntegerDivMod {
         }
         return sb.toString();
     }
+
 }
