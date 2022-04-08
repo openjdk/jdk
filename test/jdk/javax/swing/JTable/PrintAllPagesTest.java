@@ -47,8 +47,9 @@ public class PrintAllPagesTest {
     static JFrame f;
     static JDialog dialog;
     static JTable table;
-    static boolean testResult = false;
-    static CountDownLatch latch = new CountDownLatch(1);
+    static volatile boolean testResult = false;
+    final static CountDownLatch latch = new CountDownLatch(1);
+    static  boolean ret = false;
 
     public static void main(String[] args) throws Exception {
 
@@ -61,15 +62,19 @@ public class PrintAllPagesTest {
             Thread.sleep(1000);
             SwingUtilities.invokeAndWait(() -> {
                 try {
-                    table.print();
+                    ret = table.print();
                 } catch (PrinterException e) {
                     throw new RuntimeException("Printing failed: " + e);
                 }
             });
 
+            if (!testResult) {
+                throw new RuntimeException("Only 1st page is printed out of multiple pages");
+            }
+
             // wait for latch to complete
             if (!latch.await(5, TimeUnit.MINUTES)) {
-                throw new RuntimeException(" User has not executed the test");
+                throw new RuntimeException("Test timed out");
             }
 
             if (!testResult) {
