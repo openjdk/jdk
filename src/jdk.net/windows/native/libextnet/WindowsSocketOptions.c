@@ -86,8 +86,20 @@ JNIEXPORT void JNICALL Java_jdk_net_WindowsSocketOptions_setIpDontFragment0
 JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
 (JNIEnv *env, jobject unused, jint fd) {
     int optval, rv, sz = sizeof(optval);
-    rv = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, (char *)&optval, &sz);
-    handleError(env, rv, "get option IP_DONTFRAGMENT failed");
-    return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
+    jint family = socketFamily(fd);
+    if (family == -1) {
+        handleError(env, family, "get socket family failed");
+        return JNI_FALSE;
+    }
+
+    if (family == AF_INET) {
+        rv = getsockopt(fd, IPPROTO_IP, IP_DONTFRAGMENT, (char *)&optval, &sz);
+        handleError(env, rv, "get option IP_DONTFRAGMENT failed");
+	return optval;
+    } else {
+        rv = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, (char *)&optval, &sz);
+        handleError(env, rv, "get option IP_DONTFRAGMENT failed");
+        return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
+    }
 }
 
