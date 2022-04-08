@@ -1311,6 +1311,13 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   call(AddressLiteral(entry, rh));
 }
 
+void MacroAssembler::emit_static_call_stub() {
+  // Static stub relocation also tags the Method* in the code-stream.
+  mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  // This is recognized as unresolved by relocs/nativeinst/ic code.
+  jump(RuntimeAddress(pc()));
+}
+
 // Implementation of call_VM versions
 
 void MacroAssembler::call_VM(Register oop_result,

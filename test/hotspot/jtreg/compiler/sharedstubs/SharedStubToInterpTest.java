@@ -28,7 +28,7 @@
  * @bug 8280481
  * @library /test/lib
  *
- * @requires os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64"
  *
  * @run driver compiler.sharedstubs.SharedStubToInterpTest c2 StaticMethodTest
  * @run driver compiler.sharedstubs.SharedStubToInterpTest c1 StaticMethodTest
@@ -104,7 +104,7 @@ public class SharedStubToInterpTest {
         }
 
         // Shared static stubs are put after Deopt Handler Code.
-        match = skipTo(iter, "[Deopt Handler Code]");
+        match = skipTo(iter, "{runtime_call DeoptimizationBlob}");
         if (match == null) {
             throw new RuntimeException("The start of Deopt Handler Code not found");
         }
