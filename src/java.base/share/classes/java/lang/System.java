@@ -134,7 +134,7 @@ public final class System {
      * specified by the host environment or user. The encoding used
      * in the conversion from characters to bytes is equivalent to
      * {@link Console#charset()} if the {@code Console} exists,
-     * {@link Charset#defaultCharset()} otherwise.
+     * <a href="#stdout.encoding">stdout.encoding</a> otherwise.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -155,7 +155,7 @@ public final class System {
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
      * @see     Console#charset()
-     * @see     Charset#defaultCharset()
+     * @see     <a href="#stdout.encoding">stdout.encoding</a>
      */
     public static final PrintStream out = null;
 
@@ -172,10 +172,10 @@ public final class System {
      * destination that is typically not continuously monitored.
      * The encoding used in the conversion from characters to bytes is
      * equivalent to {@link Console#charset()} if the {@code Console}
-     * exists, {@link Charset#defaultCharset()} otherwise.
+     * exists, <a href="#stderr.encoding">stderr.encoding</a> otherwise.
      *
      * @see     Console#charset()
-     * @see     Charset#defaultCharset()
+     * @see     <a href="#stderr.encoding">stderr.encoding</a>
      */
     public static final PrintStream err = null;
 
@@ -768,6 +768,16 @@ public final class System {
      * <tr><th scope="row">{@systemProperty native.encoding}</th>
      *     <td>Character encoding name derived from the host environment and/or
      *     the user's settings. Setting this system property has no effect.</td></tr>
+     * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
+     *     <td>Character encoding name for {@link System#out System.out}.
+     *     The property may be set on the command line to the value
+     *     {@code UTF-8}. Setting the property to a value other than {@code UTF-8}
+     *     leads to unspecified behavior.
+     * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
+     *     <td>Character encoding name for {@link System#err System.err}.
+     *     The property may be set on the command line to the value
+     *     {@code UTF-8}. Setting the property to a value other than {@code UTF-8}
+     *     leads to unspecified behavior.
      * </tbody>
      * </table>
      * <p>
@@ -2144,11 +2154,11 @@ public final class System {
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
         setIn0(new BufferedInputStream(fdIn));
-        // sun.stdout/err.encoding are set when the VM is associated with the terminal,
-        // thus they are equivalent to Console.charset(), otherwise the encoding
-        // defaults to native.encoding
-        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding", StaticProperty.nativeEncoding())));
-        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding", StaticProperty.nativeEncoding())));
+        // stdout/err.encoding are set when the VM is associated with the terminal,
+        // thus they are equivalent to Console.charset(), otherwise the encodings
+        // of those properties default to native.encoding
+        setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
+        setErr0(newPrintStream(fdErr, props.getProperty("stderr.encoding")));
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
