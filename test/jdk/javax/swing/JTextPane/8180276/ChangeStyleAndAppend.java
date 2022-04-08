@@ -63,8 +63,7 @@ public class ChangeStyleAndAppend extends JFrame {
         }
     }
 
-    void disposeUI()
-    {
+    void disposeUI() {
         controlDialog.dispose();
         this.dispose();
     }
@@ -160,14 +159,10 @@ public class ChangeStyleAndAppend extends JFrame {
 
         frame[0].onCompletion(frame[0].testResult);
     }
-    private void onCompletion(AtomicReference<Boolean> res)
-    {
+    private void onCompletion(AtomicReference<Boolean> res) {
         disposeUI();
-        if (res.toString() == "false")
-        {
+        if (res.toString() == "false") {
             throw new RuntimeException("Test Failed");
         }
     }
 }
-
-
