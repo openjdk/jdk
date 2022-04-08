@@ -335,7 +335,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
             loadStatus = mTracker.statusID(id, false);
             mTracker.removeImage(image, id);
 
-            if (interrupted && ((loadStatus & MediaTracker.LOADING )!= 0)) {
+            if (interrupted && ((loadStatus & MediaTracker.LOADING) != 0)) {
                 loadStatus = MediaTracker.ABORTED;
             }
 
