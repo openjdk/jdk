@@ -60,7 +60,7 @@ public class CalendarDataTest {
 
     public static void main(String... args) throws Exception {
         // world
-        Calendar cal = Calendar.getInstance(new Locale("", "001"));
+        Calendar cal = Calendar.getInstance(Locale.of("", "001"));
         checkResult("001",
             cal.getFirstDayOfWeek(),
             cal.getMinimalDaysInFirstWeek());
@@ -71,7 +71,7 @@ public class CalendarDataTest {
                 IntStream.range(0x41, 0x5b)
                     .mapToObj(c2 -> String.valueOf((char)c1) + String.valueOf((char)c2))
                     .forEach(region -> {
-                        Calendar c = Calendar.getInstance(new Locale("", region));
+                        Calendar c = Calendar.getInstance(Locale.of("", region));
                         checkResult(region,
                                 c.getFirstDayOfWeek(),
                                 c.getMinimalDaysInFirstWeek());
