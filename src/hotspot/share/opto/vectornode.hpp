@@ -1296,17 +1296,6 @@ class ExtractDNode : public ExtractNode {
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------SetVectMaskINode-------------------------------
-// Provide a mask for a vector predicate machine
-class SetVectMaskINode : public Node {
-public:
-  SetVectMaskINode(Node *c, Node *in1) : Node(c, in1) {}
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return TypeInt::INT; }
-  virtual uint ideal_reg() const { return Op_RegI; }
-  virtual const Type *Value(PhaseGVN *phase) const { return TypeInt::INT; }
-};
-
 //------------------------------MacroLogicVNode-------------------------------
 // Vector logical operations packing node.
 class MacroLogicVNode : public VectorNode {

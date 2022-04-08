@@ -41,11 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
  * field names to be included as meta keywords in the HTML header
  * of class pages.  These keywords improve search results
  * on browsers that look for keywords.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class MetaKeywords {
 

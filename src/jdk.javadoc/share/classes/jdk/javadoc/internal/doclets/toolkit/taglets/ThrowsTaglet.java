@@ -53,12 +53,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A taglet that represents the @throws tag.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A taglet that represents the {@code @throws} tag.
  */
 public class ThrowsTaglet extends BaseTaglet
     implements InheritableTaglet {
