@@ -42,7 +42,8 @@ public class SynchronizerLockingThreads implements ThreadMonitoringScenario, Log
                 "nsk.monitoring.share.thread.SynchronizerLockingThreads$Thread1.B",
                 "nsk.monitoring.share.thread.SynchronizerLockingThreads$Thread1.C",
                 "nsk.monitoring.share.thread.SynchronizerLockingThreads$Thread1.D",
-                "java.lang.Object.wait"
+                "java.lang.Object.wait",
+                "java.lang.Object.wait0"
         };
         private static final String[] expectedMethodsThread2 = {
                 "nsk.monitoring.share.thread.SynchronizerLockingThreads$Thread2.runInside"

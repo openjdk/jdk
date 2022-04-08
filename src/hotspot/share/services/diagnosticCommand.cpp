@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,7 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
@@ -358,7 +359,7 @@ void PrintSystemPropertiesDCmd::execute(DCmdSource source, TRAPS) {
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
 
-  Symbol* signature = vmSymbols::serializePropertiesToByteArray_signature();
+  Symbol* signature = vmSymbols::void_byte_array_signature();
   JavaCalls::call_static(&result,
                          ik,
                          vmSymbols::serializePropertiesToByteArray_name(),
@@ -1086,3 +1087,77 @@ void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   }
 }
 #endif // INCLUDE_JVMTI
+
+ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
+                                           DCmdWithParser(output, heap),
+  _overwrite("-overwrite", "May overwrite existing file", "BOOLEAN", false, "false"),
+  _format("-format", "Output format (\"plain\" or \"json\")", "STRING", false, "plain"),
+  _filepath("filepath", "The file path to the output file", "STRING", true) {
+  _dcmdparser.add_dcmd_option(&_overwrite);
+  _dcmdparser.add_dcmd_option(&_format);
+  _dcmdparser.add_dcmd_argument(&_filepath);
+}
+
+int ThreadDumpToFileDCmd::num_arguments() {
+  ResourceMark rm;
+  ThreadDumpToFileDCmd* dcmd = new ThreadDumpToFileDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+
+void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
+  bool json = (_format.value() != NULL) && (strcmp(_format.value(), "json") == 0);
+  char* path = _filepath.value();
+  bool overwrite = _overwrite.value();
+  Symbol* name = (json) ? vmSymbols::dumpThreadsToJson_name() : vmSymbols::dumpThreads_name();
+  dumpToFile(name, vmSymbols::string_bool_byte_array_signature(), path, overwrite, CHECK);
+}
+
+void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Handle h_path = java_lang_String::create_from_str(path, CHECK);
+
+  Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
+  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+  InstanceKlass* ik = InstanceKlass::cast(k);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // invoke the ThreadDump method to dump to file
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  args.push_oop(h_path);
+  args.push_int(overwrite ? JNI_TRUE : JNI_FALSE);
+  JavaCalls::call_static(&result,
+                         k,
+                         name,
+                         signature,
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // check that result is byte array
+  oop res = cast_to_oop(result.get_jobject());
+  assert(res->is_typeArray(), "just checking");
+  assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
+
+  // copy the bytes to the output stream
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output()->print_raw((const char*)addr, ba->length());
+}

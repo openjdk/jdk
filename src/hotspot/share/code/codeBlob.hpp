@@ -27,6 +27,7 @@
 
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "compiler/oopMap.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
@@ -106,6 +107,8 @@ protected:
   address    _relocation_begin;
   address    _relocation_end;
 
+  bool       _is_compiled;
+
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   bool                _caller_must_gc_arguments;
 
@@ -122,9 +125,8 @@ protected:
   }
 #endif // not PRODUCT
 
-  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
-  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
-
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled = false);
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled = false);
 public:
   // Only used by unit test.
   CodeBlob() : _type(compiler_none) {}
@@ -147,8 +149,9 @@ public:
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
-  virtual bool is_compiled() const                    { return false; }
-  virtual bool is_optimized_entry_blob() const                  { return false; }
+  virtual bool is_optimized_entry_blob() const        { return false; }
+  bool is_compiled() const                            { return _is_compiled; }
+  const bool* is_compiled_addr() const                { return &_is_compiled; }
 
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
   inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
@@ -217,7 +220,9 @@ public:
   // OopMap for frame
   ImmutableOopMapSet* oop_maps() const           { return _oop_maps; }
   void set_oop_maps(OopMapSet* p);
-  const ImmutableOopMap* oop_map_for_return_address(address return_address);
+
+  const ImmutableOopMap* oop_map_for_slot(int slot, address return_address) const;
+  const ImmutableOopMap* oop_map_for_return_address(address return_address) const;
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) = 0;
 
   // Frame support. Sizes are in word units.

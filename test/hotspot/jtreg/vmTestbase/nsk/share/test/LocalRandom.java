@@ -33,7 +33,8 @@ import nsk.share.TestFailure;
 public class LocalRandom {
     static {
         // ensure seed got printed out
-        Utils.getRandomInstance();
+        // TODO re-enalbe when monitor doesn't require to pin thread
+        // Utils.getRandomInstance();
     }
     private final static ThreadLocal<Random> random = new ThreadLocal<>() {
         protected Random initialValue() {

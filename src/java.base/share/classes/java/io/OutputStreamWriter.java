@@ -28,8 +28,8 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.util.Objects;
 import sun.nio.cs.StreamEncoder;
-
 
 /**
  * An OutputStreamWriter is a bridge from character streams to byte streams:
@@ -74,7 +74,6 @@ import sun.nio.cs.StreamEncoder;
  */
 
 public class OutputStreamWriter extends Writer {
-
     private final StreamEncoder se;
 
     /**
@@ -92,10 +91,9 @@ public class OutputStreamWriter extends Writer {
     public OutputStreamWriter(OutputStream out, String charsetName)
         throws UnsupportedEncodingException
     {
-        super(out);
-        if (charsetName == null)
-            throw new NullPointerException("charsetName");
-        se = StreamEncoder.forOutputStreamWriter(out, this, charsetName);
+        Objects.requireNonNull(out);
+        Objects.requireNonNull(charsetName, "charsetName");
+        se = StreamEncoder.forOutputStreamWriter(out, lock, charsetName);
     }
 
     /**
@@ -107,8 +105,8 @@ public class OutputStreamWriter extends Writer {
      * @see Charset#defaultCharset()
      */
     public OutputStreamWriter(OutputStream out) {
-        super(out);
-        se = StreamEncoder.forOutputStreamWriter(out, this,
+        Objects.requireNonNull(out);
+        se = StreamEncoder.forOutputStreamWriter(out, lock,
                 out instanceof PrintStream ps ? ps.charset() : Charset.defaultCharset());
     }
 
@@ -124,10 +122,9 @@ public class OutputStreamWriter extends Writer {
      * @since 1.4
      */
     public OutputStreamWriter(OutputStream out, Charset cs) {
-        super(out);
-        if (cs == null)
-            throw new NullPointerException("charset");
-        se = StreamEncoder.forOutputStreamWriter(out, this, cs);
+        Objects.requireNonNull(out);
+        Objects.requireNonNull(cs, "charset");
+        se = StreamEncoder.forOutputStreamWriter(out, lock, cs);
     }
 
     /**
@@ -142,10 +139,9 @@ public class OutputStreamWriter extends Writer {
      * @since 1.4
      */
     public OutputStreamWriter(OutputStream out, CharsetEncoder enc) {
-        super(out);
-        if (enc == null)
-            throw new NullPointerException("charset encoder");
-        se = StreamEncoder.forOutputStreamWriter(out, this, enc);
+        Objects.requireNonNull(out);
+        Objects.requireNonNull(enc, "charset encoder");
+        se = StreamEncoder.forOutputStreamWriter(out, lock, enc);
     }
 
     /**

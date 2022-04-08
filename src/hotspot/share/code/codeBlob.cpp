@@ -78,7 +78,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
   return size;
 }
 
-CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments) :
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled) :
   _type(type),
   _size(layout.size()),
   _header_size(layout.header_size()),
@@ -91,6 +91,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _data_end(layout.data_end()),
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
+  _is_compiled(compiled),
   _oop_maps(oop_maps),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
@@ -106,7 +107,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   S390_ONLY(_ctable_offset = 0;) // avoid uninitialized fields
 }
 
-CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb /*UNUSED*/, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb /*UNUSED*/, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled) :
   _type(type),
   _size(layout.size()),
   _header_size(layout.header_size()),
@@ -119,6 +120,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
   _data_end(layout.data_end()),
   _relocation_begin(layout.relocation_begin()),
   _relocation_end(layout.relocation_end()),
+  _is_compiled(compiled),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _name(name)
 {
@@ -211,7 +213,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   MemoryService::track_code_cache_memory_usage();
 }
 
-const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) {
+const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) const {
   assert(_oop_maps != NULL, "nope");
   return _oop_maps->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }

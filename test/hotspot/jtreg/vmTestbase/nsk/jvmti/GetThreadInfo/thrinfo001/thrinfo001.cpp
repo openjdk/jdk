@@ -45,7 +45,8 @@ static jvmtiThreadInfo inf;
 static info threads[] = {
     { "main", JVMTI_THREAD_NORM_PRIORITY, 0 },
     { "thread1", JVMTI_THREAD_MIN_PRIORITY + 2, 1 },
-    { "Thread-", JVMTI_THREAD_MIN_PRIORITY, 1 }
+    { "Thread-", JVMTI_THREAD_MIN_PRIORITY, 1 },
+    { "vthread", JVMTI_THREAD_NORM_PRIORITY, 1 }
 };
 
 #ifdef STATIC_BUILD
@@ -61,6 +62,7 @@ JNIEXPORT jint JNI_OnLoad_thrinfo001(JavaVM *jvm, char *options, void *reserved)
 #endif
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
+    jvmtiCapabilities caps;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
@@ -68,6 +70,13 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
+    memset(&caps, 0, sizeof(caps));
+    caps.can_support_virtual_threads = 1;
+    res = jvmti->AddCapabilities(&caps);
+    if (res != JVMTI_ERROR_NONE) {
+      printf("error in JVMTI AddCapabilities: %d\n", res);
+      return JNI_ERR;
+    }
     return JNI_OK;
 }
 

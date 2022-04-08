@@ -284,6 +284,8 @@ class LinkResolver: AllStatic {
                                            const constantPoolHandle& pool,
                                            int index, TRAPS);
 
+  static void resolve_continuation_enter(CallInfo& callinfo, TRAPS);
+
   static void resolve_field_access(fieldDescriptor& result,
                                    const constantPoolHandle& pool,
                                    int index,

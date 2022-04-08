@@ -190,7 +190,7 @@ public abstract class Transport {
                 ClassLoader savedCcl = Thread.currentThread().getContextClassLoader();
 
                 try {
-                    setContextClassLoader(ccl);
+                    if (ccl != savedCcl) setContextClassLoader(ccl);
                     currentTransport.set(this);
                     try {
                         java.security.AccessController.doPrivileged(
@@ -205,7 +205,7 @@ public abstract class Transport {
                         throw (IOException) pae.getException();
                     }
                 } finally {
-                    setContextClassLoader(savedCcl);
+                    if (ccl != savedCcl) setContextClassLoader(savedCcl);
                     currentTransport.set(null);
                 }
 

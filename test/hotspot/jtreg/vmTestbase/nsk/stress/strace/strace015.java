@@ -74,6 +74,7 @@ public class strace015 {
     static final int THRD_COUNT = 100;
     static final String[] EXPECTED_METHODS = {
             "java.lang.Object.wait",
+            "java.lang.Object.wait0",
             "nsk.stress.strace.strace015Thread.run",
             "nsk.stress.strace.strace015Thread.recursiveMethod1",
             "nsk.stress.strace.strace015Thread.recursiveMethod2"
@@ -223,7 +224,7 @@ public class strace015 {
     boolean checkElement(StackTraceElement element) {
         String name = element.getClassName() + "." + element.getMethodName();
         for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
+            if (name.startsWith(EXPECTED_METHODS[i]))
                 return true;
         }
         return false;

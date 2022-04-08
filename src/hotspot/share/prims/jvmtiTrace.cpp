@@ -277,7 +277,11 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   if (!thread->is_Java_thread()) {
     return thread->name();
   }
-  oop threadObj = JavaThread::cast(thread)->threadObj();
+  JavaThread* java_thread = JavaThread::cast(thread);
+  oop threadObj = java_thread->jvmti_vthread();
+  if (threadObj == NULL) {
+    threadObj = java_thread->threadObj();
+  }
   if (threadObj == NULL) {
     return "NULL";
   }

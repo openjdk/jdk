@@ -68,9 +68,14 @@ public:
   );
   virtual void barrier_stubs_init() {}
 
+  virtual bool nmethod_code_patching() { return true; }
+
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
 
+  static address patching_epoch_addr();
+  static void clear_patching_epoch();
+  static void increment_patching_epoch();
 };
 
 #endif // CPU_AARCH64_GC_SHARED_BARRIERSETASSEMBLER_AARCH64_HPP

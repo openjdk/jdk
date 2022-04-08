@@ -26,6 +26,8 @@
 package java.io;
 
 
+import jdk.internal.misc.InternalLock;
+
 import java.util.Objects;
 
 /**
@@ -49,16 +51,6 @@ import java.util.Objects;
  */
 
 public abstract class Writer implements Appendable, Closeable, Flushable {
-
-    /**
-     * Temporary buffer used to hold writes of strings and single characters
-     */
-    private char[] writeBuffer;
-
-    /**
-     * Size of writeBuffer, must be >= 1
-     */
-    private static final int WRITE_BUFFER_SIZE = 1024;
 
     /**
      * Returns a new {@code Writer} which discards all characters.  The
@@ -159,7 +151,17 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * synchronize on the writer itself.
      */
     protected Writer() {
-        this.lock = this;
+        // use InternalLock for trusted classes
+        Class<?> clazz = getClass();
+        if (clazz == OutputStreamWriter.class
+                || clazz == BufferedWriter.class
+                || clazz == FileWriter.class
+                || clazz == PrintWriter.class
+                || clazz == sun.nio.cs.StreamEncoder.class) {
+            this.lock = InternalLock.newLockOr(this);
+        } else {
+            this.lock = this;
+        }
     }
 
     /**
@@ -170,10 +172,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *         Object to synchronize on
      */
     protected Writer(Object lock) {
-        if (lock == null) {
-            throw new NullPointerException();
-        }
-        this.lock = lock;
+        this.lock = Objects.requireNonNull(lock);
     }
 
     /**
@@ -191,13 +190,9 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(int c) throws IOException {
-        synchronized (lock) {
-            if (writeBuffer == null){
-                writeBuffer = new char[WRITE_BUFFER_SIZE];
-            }
-            writeBuffer[0] = (char) c;
-            write(writeBuffer, 0, 1);
-        }
+        var writeBuffer = new char[1];
+        writeBuffer[0] = (char) c;
+        write(writeBuffer, 0, 1);
     }
 
     /**
@@ -276,19 +271,10 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(String str, int off, int len) throws IOException {
-        synchronized (lock) {
-            char cbuf[];
-            if (len <= WRITE_BUFFER_SIZE) {
-                if (writeBuffer == null) {
-                    writeBuffer = new char[WRITE_BUFFER_SIZE];
-                }
-                cbuf = writeBuffer;
-            } else {    // Don't permanently allocate very large buffers.
-                cbuf = new char[len];
-            }
-            str.getChars(off, (off + len), cbuf, 0);
-            write(cbuf, 0, len);
-        }
+        Objects.checkFromIndexSize(off, len, str.length());
+        char cbuf[] = new char[len];
+        str.getChars(off, (off + len), cbuf, 0);
+        write(cbuf, 0, len);
     }
 
     /**

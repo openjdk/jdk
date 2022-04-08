@@ -306,8 +306,8 @@ class StubGenerator: public StubCodeGenerator {
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, bool all) {
-  StubGenerator g(code, all);
+void StubGenerator_generate(CodeBuffer* code, int phase) {
+  StubGenerator g(code, phase);
 }
 
 EntryFrame *EntryFrame::build(const intptr_t*  parameters,

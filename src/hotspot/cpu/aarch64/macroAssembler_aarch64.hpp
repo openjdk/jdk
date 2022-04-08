@@ -687,6 +687,9 @@ public:
   // Alignment
   void align(int modulus);
 
+  // nop
+  void post_call_nop();
+
   // Stack frame creation/removal
   void enter(bool strip_ret_addr = false);
   void leave();
@@ -874,6 +877,12 @@ public:
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
+  void inc_held_monitor_count(Register java_thread);
+  void dec_held_monitor_count(Register java_thread);
+  void reset_held_monitor_count(Register java_thread);
+
   // Round up to a power of two
   void round_to(Register reg, int modulus);
 
@@ -986,6 +995,10 @@ public:
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 
+  void _assert_asm(Condition cc, const char* msg);
+#define assert_asm0(cc, msg) _assert_asm(cc, FILE_AND_LINE ": " msg)
+#define assert_asm(masm, command, cc, msg) DEBUG_ONLY(command; (masm)->_assert_asm(cc, FILE_AND_LINE ": " #command " " #cc ": " msg))
+
   // Stack overflow checking
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
@@ -1066,7 +1079,8 @@ private:
 public:
   // Calls
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
+  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;

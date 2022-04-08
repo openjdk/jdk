@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -302,7 +304,73 @@ public final class ProcessTools {
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
 
-        Collections.addAll(args, command);
+        boolean noModule = true;
+        for (String cmd: command) {
+            if (cmd.equals("-m")) {
+                noModule = false;
+            }
+        }
+
+        String[] doubleWordArgs = {"-cp", "-classpath", "--add-opens", "--class-path", "--upgrade-module-path",
+                                   "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path"};
+
+        String mainWrapper = System.getProperty("main.wrapper");
+        if (noModule && mainWrapper != null) {
+            if (mainWrapper.equalsIgnoreCase("virtual")) {
+                args.add("--enable-preview");
+            }
+            boolean skipNext = false;
+            boolean added = false;
+            for (String cmd : command) {
+                if (added) {
+                    args.add(cmd);
+                    continue;
+                }
+
+                if (skipNext) {
+                    skipNext = false;
+                    args.add(cmd);
+                    continue;
+                }
+                for (String dWArg : doubleWordArgs) {
+                    if (cmd.equals(dWArg)) {
+                        skipNext = true;
+                        args.add(cmd);
+                        continue;
+                    }
+                }
+                if (skipNext) {
+                    continue;
+                }
+                if (cmd.startsWith("-cp")) {
+                    skipNext = true;
+                    args.add(cmd);
+                    continue;
+                }
+                if (cmd.startsWith("--add-exports")) {
+                    skipNext = true;
+                    args.add(cmd);
+                    continue;
+                }
+                if (cmd.startsWith("--patch-module")) {
+                    skipNext = true;
+                    args.add(cmd);
+                    continue;
+                }
+                if (cmd.startsWith("-")) {
+                    args.add(cmd);
+                    continue;
+                }
+                args.add("jdk.test.lib.process.ProcessTools");
+                args.add(mainWrapper);
+                added = true;
+                // Should be main
+                // System.out.println("Wrapped TOFIND: " + cmd);
+                args.add(cmd);
+            }
+        } else {
+            Collections.addAll(args, command);
+        }
 
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
@@ -692,6 +760,78 @@ public final class ProcessTools {
                 stderrTask.get();
             } catch (ExecutionException e) {
             }
+        }
+    }
+
+    // ProcessTools as a wrapper
+    public static void main(String[] args) throws Throwable {
+        String wrapper = args[0];
+        String className = args[1];
+        String[] classArgs = new String[args.length - 2];
+        System.arraycopy(args, 2, classArgs, 0, args.length - 2);
+        Class c = Class.forName(className);
+        Method mainMethod = c.getMethod("main", new Class[] { String[].class });
+        mainMethod.setAccessible(true);
+
+        if (wrapper.equals("Virtual")) {
+            MainThreadGroup tg = new MainThreadGroup();
+            // TODO fix to set virtual scheduler group when become available
+            Thread vthread = startVirtualThread(() -> {
+                    try {
+                        mainMethod.invoke(null, new Object[] { classArgs });
+                    } catch (InvocationTargetException e) {
+                        tg.uncaughtThrowable = e.getCause();
+                    } catch (Throwable error) {
+                        tg.uncaughtThrowable = error;
+                    }
+                });
+            vthread.join();
+        } else if (wrapper.equals("Kernel")) {
+            MainThreadGroup tg = new MainThreadGroup();
+            Thread t = new Thread(tg, () -> {
+                    try {
+                        mainMethod.invoke(null, new Object[] { classArgs });
+                    } catch (InvocationTargetException e) {
+                        tg.uncaughtThrowable = e.getCause();
+                    } catch (Throwable error) {
+                        tg.uncaughtThrowable = error;
+                    }
+                });
+            t.start();
+            t.join();
+            if (tg.uncaughtThrowable != null) {
+                throw new RuntimeException(tg.uncaughtThrowable);
+            }
+        } else {
+            mainMethod.invoke(null, new Object[] { classArgs });
+        }
+    }
+
+    static class MainThreadGroup extends ThreadGroup {
+        MainThreadGroup() {
+            super("MainThreadGroup");
+        }
+
+        public void uncaughtException(Thread t, Throwable e) {
+            if (e instanceof ThreadDeath) {
+                return;
+            }
+            e.printStackTrace(System.err);
+            uncaughtThrowable = e;
+        }
+        Throwable uncaughtThrowable = null;
+    }
+
+    static Thread startVirtualThread(Runnable task) {
+        try {
+            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
+            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
+            Method start = clazz.getMethod("start", Runnable.class);
+            return (Thread) start.invoke(builder, task);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

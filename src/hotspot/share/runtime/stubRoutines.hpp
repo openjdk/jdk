@@ -153,7 +153,8 @@ class StubRoutines: AllStatic {
   static address _fence_entry;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
-  static BufferBlob* _code2;                               // code buffer for all other routines
+  static BufferBlob* _code2;
+  static BufferBlob* _code3;                               // code buffer for all other routines
 
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
@@ -250,6 +251,17 @@ class StubRoutines: AllStatic {
   static address _dlibm_tan_cot_huge;
   static address _dtan;
 
+  static RuntimeStub* _cont_doYield_stub;
+  static address _cont_doYield;
+  static address _cont_thaw;
+  static address _cont_returnBarrier;
+  static address _cont_returnBarrierExc;
+
+  JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
+  JFR_ONLY(static address _jfr_write_checkpoint;)
+  JFR_ONLY(static RuntimeStub* _jfr_get_event_writer_stub;)
+  JFR_ONLY(static address _jfr_get_event_writer;)
+
   // Safefetch stubs.
   static address _safefetch32_entry;
   static address _safefetch32_fault_pc;
@@ -266,6 +278,7 @@ class StubRoutines: AllStatic {
   // Initialization/Testing
   static void    initialize1();                            // must happen before universe::genesis
   static void    initialize2();                            // must happen after  universe::genesis
+  static void    initializeContinuationStubs();            // must happen after  universe::genesis
 
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
@@ -277,6 +290,7 @@ class StubRoutines: AllStatic {
 
   static RuntimeBlob* code1() { return _code1; }
   static RuntimeBlob* code2() { return _code2; }
+  static RuntimeBlob* code3() { return _code3; }
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }
@@ -425,6 +439,15 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+
+  static RuntimeStub* cont_doYield_stub() { return _cont_doYield_stub; }
+  static address cont_doYield()        { return _cont_doYield; }
+  static address cont_thaw()           { return _cont_thaw; }
+  static address cont_returnBarrier()  { return _cont_returnBarrier; }
+  static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
+
+  JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
+  JFR_ONLY(static address jfr_get_event_writer() { return _jfr_get_event_writer; })
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

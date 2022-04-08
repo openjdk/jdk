@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,8 @@ eventText(int i)
         CASE_RETURN_TEXT(EI_VM_INIT)
         CASE_RETURN_TEXT(EI_VM_DEATH)
         CASE_RETURN_TEXT(EI_GC_FINISH)
+        CASE_RETURN_TEXT(EI_VIRTUAL_THREAD_START)
+        CASE_RETURN_TEXT(EI_VIRTUAL_THREAD_END)
         default: return "EVENT_unknown";
     }
 }

@@ -433,6 +433,11 @@ void ZHeap::relocate() {
   ZStatHeap::set_at_relocate_end(_page_allocator.stats(), _object_allocator.relocated());
 }
 
+bool ZHeap::is_allocating(uintptr_t addr) const {
+  const ZPage* const page = _page_table.get(addr);
+  return page->is_allocating();
+}
+
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZHeapIterator iter(1 /* nworkers */, visit_weaks);

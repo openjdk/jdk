@@ -303,6 +303,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                        DebugInformationRecorder* debug_info,
                        Dependencies*             dependencies,
                        int                       compile_id,
+                       bool                      has_monitors,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vector,
                        JVMCIObject               compiled_code,

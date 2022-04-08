@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -36,13 +37,13 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
+import java.net.SocketTimeoutException;
 import java.net.StandardSocketOptions;
-import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
@@ -188,68 +189,57 @@ public class DatagramSocketAdaptor
 
     @Override
     public void send(DatagramPacket p) throws IOException {
-        ByteBuffer bb = null;
-        try {
-            InetSocketAddress target;
-            synchronized (p) {
-                // copy bytes to temporary direct buffer
-                int len = p.getLength();
-                bb = Util.getTemporaryDirectBuffer(len);
-                bb.put(p.getData(), p.getOffset(), len);
-                bb.flip();
+        byte[] ba; int off, len;
+        InetSocketAddress target;
 
-                // target address
-                if (p.getAddress() == null) {
-                    InetSocketAddress remote = dc.remoteAddress();
-                    if (remote == null) {
-                        // not specified by DatagramSocket
-                        throw new IllegalArgumentException("Address not set");
-                    }
-                    // set address/port to maintain compatibility with DatagramSocket
-                    p.setAddress(remote.getAddress());
-                    p.setPort(remote.getPort());
-                    target = remote;
-                } else {
-                    target = (InetSocketAddress) p.getSocketAddress();
+        synchronized (p) {
+            ba = p.getData();
+            off = p.getOffset();
+            len = p.getLength();
+
+            // target address
+            if (p.getAddress() == null) {
+                InetSocketAddress remote = dc.remoteAddress();
+                if (remote == null) {
+                    throw new IllegalArgumentException("Address not set");
                 }
+                // set address/port to maintain legacy compatibility
+                p.setAddress(remote.getAddress());
+                p.setPort(remote.getPort());
+                target = remote;
+            } else {
+                target = (InetSocketAddress) p.getSocketAddress();
             }
-            // send datagram
-            try {
-                dc.blockingSend(bb, target);
-            } catch (AlreadyConnectedException e) {
-                throw new IllegalArgumentException("Connected and packet address differ");
-            } catch (ClosedChannelException e) {
-                throw new SocketException("Socket closed", e);
-            }
-        } finally {
-            if (bb != null) {
-                Util.offerFirstTemporaryDirectBuffer(bb);
-            }
+        }
+
+        // send datagram
+        try {
+            dc.blockingSend(ba, off, len, target);
+        } catch (AlreadyConnectedException e) {
+            throw new IllegalArgumentException("Connected and packet address differ");
+        } catch (ClosedChannelException e) {
+            var exc = new SocketException("Socket closed");
+            exc.initCause(e);
+            throw exc;
         }
     }
 
     @Override
     public void receive(DatagramPacket p) throws IOException {
-        // get temporary direct buffer with a capacity of p.bufLength
-        int bufLength = DatagramPackets.getBufLength(p);
-        ByteBuffer bb = Util.getTemporaryDirectBuffer(bufLength);
+        long nanos = MILLISECONDS.toNanos(timeout);
         try {
-            long nanos = MILLISECONDS.toNanos(timeout);
-            SocketAddress sender = dc.blockingReceive(bb, nanos);
-            bb.flip();
-            synchronized (p) {
-                // copy bytes to the DatagramPacket and set length
-                int len = Math.min(bb.limit(), DatagramPackets.getBufLength(p));
-                bb.get(p.getData(), p.getOffset(), len);
-                DatagramPackets.setLength(p, len);
-
-                // sender address
-                p.setSocketAddress(sender);
+            dc.blockingReceive(p, nanos);
+        } catch (SocketTimeoutException e) {
+            throw e;
+        } catch (InterruptedIOException e) {
+            Thread thread = Thread.currentThread();
+            if (thread.isVirtual() && thread.isInterrupted()) {
+                close();
+                throw new SocketException("Closed by interrupt");
             }
+            throw e;
         } catch (ClosedChannelException e) {
             throw new SocketException("Socket closed", e);
-        } finally {
-            Util.offerFirstTemporaryDirectBuffer(bb);
         }
     }
 
@@ -690,46 +680,6 @@ public class DatagramSocketAdaptor
     }
 
     /**
-     * Defines static methods to get/set DatagramPacket fields and workaround
-     * DatagramPacket deficiencies.
-     */
-    private static class DatagramPackets {
-        private static final VarHandle LENGTH;
-        private static final VarHandle BUF_LENGTH;
-        static {
-            try {
-                PrivilegedExceptionAction<Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(DatagramPacket.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
-                LENGTH = l.findVarHandle(DatagramPacket.class, "length", int.class);
-                BUF_LENGTH = l.findVarHandle(DatagramPacket.class, "bufLength", int.class);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
-
-        /**
-         * Sets the DatagramPacket.length field. DatagramPacket.setLength cannot be
-         * used at this time because it sets both the length and bufLength fields.
-         */
-        static void setLength(DatagramPacket p, int value) {
-            synchronized (p) {
-                LENGTH.set(p, value);
-            }
-        }
-
-        /**
-         * Returns the value of the DatagramPacket.bufLength field.
-         */
-        static int getBufLength(DatagramPacket p) {
-            synchronized (p) {
-                return (int) BUF_LENGTH.get(p);
-            }
-        }
-    }
-
-    /**
      * Defines static methods to invoke non-public NetworkInterface methods.
      */
     private static class NetworkInterfaces {
@@ -774,20 +724,18 @@ public class DatagramSocketAdaptor
     }
 
     /**
-     * Provides access to the value of the private static DatagramSocket.NO_DELEGATE
+     * Provides access to non-public constants in DatagramSocket.
      */
     private static class DatagramSockets {
         private static final SocketAddress NO_DELEGATE;
-
         static {
             try {
                 PrivilegedExceptionAction<Lookup> pa = () ->
-                        MethodHandles.privateLookupIn(DatagramSocket.class, MethodHandles.lookup());
+                    MethodHandles.privateLookupIn(DatagramSocket.class, MethodHandles.lookup());
                 @SuppressWarnings("removal")
                 MethodHandles.Lookup l = AccessController.doPrivileged(pa);
-                NO_DELEGATE = (SocketAddress)
-                        l.findStaticVarHandle(DatagramSocket.class, "NO_DELEGATE",
-                                SocketAddress.class).get();
+                var handle = l.findStaticVarHandle(DatagramSocket.class, "NO_DELEGATE", SocketAddress.class);
+                NO_DELEGATE = (SocketAddress) handle.get();
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }

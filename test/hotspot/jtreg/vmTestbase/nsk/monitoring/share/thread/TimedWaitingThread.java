@@ -40,6 +40,7 @@ public class TimedWaitingThread extends RecursiveMonitoringThread {
         private volatile int n = 0;
         private static final String[] expectedMethods = {
                 "java.lang.Object.wait",
+                "java.lang.Object.wait0",
                 "nsk.monitoring.share.thread.TimedWaitingThread.runInside"
         };
 

@@ -52,6 +52,7 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual bool is_async()                          { return false; }
   virtual bool is_suspend()                        { return false; }
   virtual void do_thread(Thread* thread) = 0;
+  virtual bool can_be_processed_by(Thread* thread) { return true; }
 };
 
 class AsyncHandshakeClosure : public HandshakeClosure {
@@ -88,6 +89,7 @@ class HandshakeState {
   friend ThreadSelfSuspensionHandshake;
   friend SuspendThreadHandshake;
   friend JavaThread;
+
   // This a back reference to the JavaThread,
   // the target for all operation in the queue.
   JavaThread* _handshakee;
@@ -104,6 +106,7 @@ class HandshakeState {
   bool can_process_handshake();
 
   bool have_non_self_executable_operation();
+  static bool non_self_queue_filter(HandshakeOperation* op);
   HandshakeOperation* get_op_for_self(bool allow_suspend);
   HandshakeOperation* get_op();
   void remove_op(HandshakeOperation* op);
@@ -161,11 +164,12 @@ class HandshakeState {
 
   // Called from the suspend handshake.
   bool suspend_with_handshake();
+
   // Called from the async handshake (the trap)
   // to stop a thread from continuing execution when suspended.
   void do_self_suspend();
 
-  bool is_suspended()                       { return Atomic::load(&_suspended); }
+  bool is_suspended() const                 { return Atomic::load(&_suspended); }
   void set_suspended(bool to)               { return Atomic::store(&_suspended, to); }
   bool has_async_suspend_handshake()        { return _async_suspend_handshake; }
   void set_async_suspend_handshake(bool to) { _async_suspend_handshake = to; }

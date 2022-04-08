@@ -49,6 +49,10 @@
 // -DINCLUDE_<something>=0 | 1 can be specified on the command line to include
 // or exclude functionality.
 
+#ifndef FILE_AND_LINE
+#define FILE_AND_LINE __FILE__ ":" XSTR(__LINE__)
+#endif
+
 #ifndef INCLUDE_JVMTI
 #define INCLUDE_JVMTI 1
 #endif  // INCLUDE_JVMTI

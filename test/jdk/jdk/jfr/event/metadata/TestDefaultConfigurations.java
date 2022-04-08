@@ -177,6 +177,10 @@ public class TestDefaultConfigurations {
         insertSetting(doc, EventNames.X509Validation, "threshold", "0 ns");
         insertSetting(doc, EventNames.ProcessStart, "threshold", "0 ns");
         insertSetting(doc, EventNames.Deserialization, "threshold", "0 ns");
+        insertSetting(doc, EventNames.VirtualThreadStart, "threshold", "0 ns");
+        insertSetting(doc, EventNames.VirtualThreadEnd, "threshold", "0 ns");
+        insertSetting(doc, EventNames.VirtualThreadEnd, "stackTrace", "false");
+        insertSetting(doc, EventNames.VirtualThreadSubmitFailed, "threshold", "0 ns");
 
         return doc;
     }

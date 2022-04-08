@@ -43,6 +43,14 @@ inline Handle::Handle(Thread* thread, oop obj) {
   }
 }
 
+inline void Handle::replace(oop obj) {
+  // Unlike in OopHandle::replace, we shouldn't use a barrier here.
+  // OopHandle has its storage in OopStorage, which is walked concurrently and uses barriers.
+  // Handle is thread private, and iterated by Thread::oops_do, which is why it shouldn't have any barriers at all.
+  assert(_handle != NULL, "should not use replace");
+  *_handle = obj;
+}
+
 // Inline constructors for Specific Handles for different oop types
 #define DEF_HANDLE_CONSTR(type, is_a)                   \
 inline type##Handle::type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \

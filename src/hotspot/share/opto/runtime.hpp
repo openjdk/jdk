@@ -242,6 +242,11 @@ private:
   static const TypeFunc* modf_Type();
   static const TypeFunc* l2f_Type();
   static const TypeFunc* void_long_Type();
+  static const TypeFunc* void_void_Type();
+  static const TypeFunc* continuation_doYield_Type();
+  static const TypeFunc* continuation_jump_Type();
+
+  static const TypeFunc* jfr_write_checkpoint_Type();
 
   static const TypeFunc* flush_windows_Type();
 
@@ -288,7 +293,7 @@ private:
 
   static const TypeFunc* register_finalizer_Type();
 
-  JFR_ONLY(static const TypeFunc* get_class_id_intrinsic_Type();)
+  JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

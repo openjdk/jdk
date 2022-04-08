@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/bitMap.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -102,6 +103,8 @@ class OopIterateClosure : public OopClosure {
   virtual bool do_metadata() = 0;
   virtual void do_klass(Klass* k) = 0;
   virtual void do_cld(ClassLoaderData* cld) = 0;
+  virtual void do_method(Method* m) = 0;
+  virtual void do_nmethod(nmethod* nm) = 0;
 };
 
 // An OopIterateClosure that can be used when there's no need to visit the Metadata.
@@ -112,6 +115,15 @@ public:
   virtual bool do_metadata() { return false; }
   virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
   virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
+  virtual void do_method(Method* m) { ShouldNotReachHere(); }
+  virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
+};
+
+enum class derived_pointer : intptr_t;
+class DerivedOopClosure : public Closure {
+ public:
+  enum { SkipNull = true };
+  virtual void do_derived_oop(oop* base, derived_pointer* derived) = 0;
 };
 
 class KlassClosure : public Closure {
@@ -161,6 +173,8 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
   virtual bool do_metadata() { return true; }
   virtual void do_klass(Klass* k);
   virtual void do_cld(ClassLoaderData* cld);
+  virtual void do_method(Method* m);
+  virtual void do_nmethod(nmethod* nm);
 };
 
 // The base class for all concurrent marking closures,
@@ -234,9 +248,9 @@ class CodeBlobClosure : public Closure {
 // Applies an oop closure to all ref fields in code blobs
 // iterated over in an object iteration.
 class CodeBlobToOopClosure : public CodeBlobClosure {
+ protected:
   OopClosure* _cl;
   bool _fix_relocations;
- protected:
   void do_nmethod(nmethod* nm);
  public:
   // If fix_relocations(), then cl must copy objects to their new location immediately to avoid
@@ -249,10 +263,14 @@ class CodeBlobToOopClosure : public CodeBlobClosure {
 };
 
 class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
- public:
-  MarkingCodeBlobClosure(OopClosure* cl, bool fix_relocations) : CodeBlobToOopClosure(cl, fix_relocations) {}
-  // Called for each code blob, but at most once per unique blob.
+  bool _keepalive_nmethods;
 
+ public:
+  MarkingCodeBlobClosure(OopClosure* cl, bool fix_relocations, bool keepalive_nmethods) :
+      CodeBlobToOopClosure(cl, fix_relocations),
+      _keepalive_nmethods(keepalive_nmethods) {}
+
+  // Called for each code blob, but at most once per unique blob.
   virtual void do_code_blob(CodeBlob* cb);
 };
 
@@ -355,6 +373,8 @@ class Devirtualizer {
   template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
   template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
   template <typename OopClosureType>             static bool do_metadata(OopClosureType* closure);
+  template <typename DerivedOopClosureType>      static void do_derived_oop(DerivedOopClosureType* closure, oop* base, derived_pointer* derived);
+  template <typename BitMapClosureType>          static bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
 };
 
 class OopIteratorClosureDispatch {

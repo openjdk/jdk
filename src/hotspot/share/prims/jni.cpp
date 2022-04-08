@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2715,6 +2715,10 @@ JNI_ENTRY(jint, jni_MonitorEnter(JNIEnv *env, jobject jobj))
 
   Handle obj(thread, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_enter(obj, thread);
+  if (!Continuation::pin(thread)) {
+    ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
+    THROW_(vmSymbols::java_lang_VirtualMachineError(), JNI_ERR);
+  }
   ret = JNI_OK;
   return ret;
 JNI_END
@@ -2734,7 +2738,9 @@ JNI_ENTRY(jint, jni_MonitorExit(JNIEnv *env, jobject jobj))
 
   Handle obj(THREAD, JNIHandles::resolve_non_null(jobj));
   ObjectSynchronizer::jni_exit(obj(), CHECK_(JNI_ERR));
-
+  if (!Continuation::unpin(thread)) {
+    ShouldNotReachHere();
+  }
   ret = JNI_OK;
   return ret;
 JNI_END
@@ -3133,6 +3139,11 @@ JNI_ENTRY(jobject, jni_GetModule(JNIEnv* env, jclass clazz))
   return Modules::get_module(clazz, THREAD);
 JNI_END
 
+JNI_ENTRY(jboolean, jni_IsVirtualThread(JNIEnv* env, jobject obj))
+  oop thread_obj = JNIHandles::resolve_external_guard(obj);
+  return java_lang_VirtualThread::is_instance(thread_obj) ? JNI_TRUE : JNI_FALSE;
+JNI_END
+
 
 // Structure containing all jni functions
 struct JNINativeInterface_ jni_NativeInterface = {
@@ -3417,7 +3428,11 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Module features
 
-    jni_GetModule
+    jni_GetModule,
+
+    // Virtual threads
+
+    jni_IsVirtualThread
 };
 
 
@@ -3492,7 +3507,7 @@ static void post_thread_start_event(const JavaThread* jt) {
   assert(jt != NULL, "invariant");
   EventThreadStart event;
   if (event.should_commit()) {
-    event.set_thread(JFR_THREAD_ID(jt));
+    event.set_thread(JFR_JVM_THREAD_ID(jt));
     event.set_parentThread((traceid)0);
 #if INCLUDE_JFR
     if (EventThreadStart::is_stacktrace_enabled()) {

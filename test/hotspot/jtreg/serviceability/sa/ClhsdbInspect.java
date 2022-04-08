@@ -57,12 +57,15 @@ public class ClhsdbInspect {
 
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
 
+            // the key is a literal, searched in the jstack output; the value is a regex searched in the clhsdb output
             Map<String, String> tokensMap = new HashMap<>();
             tokensMap.put("(a java.lang.Class for LingeredAppWithLock)",
                           "instance of Oop for java/lang/Class");
             tokensMap.put("Method*=", "Type is Method");
-            tokensMap.put("(a java.lang.ref.ReferenceQueue$Lock)",
-                          "instance of Oop for java/lang/ref/ReferenceQueue\\$Lock");
+            tokensMap.put("(a java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject)",
+                          "instance of Oop for java/util/concurrent/locks/AbstractQueuedSynchronizer\\$ConditionObject");
+
+            // System.out.println("======>>>>>\n" + jstackOutput + "\n<<<<<========");
 
             String[] lines = jstackOutput.split("\\R");
 
@@ -89,6 +92,7 @@ public class ClhsdbInspect {
                       }
                   }
 
+                if (addressString == null) throw new NullPointerException("Token '" + key + "' not found in jstack output");
                 String cmd = "inspect " + addressString;
                 cmds.add(cmd);
                 expStrMap.put(cmd, List.of(tokensMap.get(key)));

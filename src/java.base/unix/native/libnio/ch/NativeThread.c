@@ -72,13 +72,13 @@ Java_sun_nio_ch_NativeThread_init(JNIEnv *env, jclass cl)
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_NativeThread_current(JNIEnv *env, jclass cl)
+Java_sun_nio_ch_NativeThread_current0(JNIEnv *env, jclass cl)
 {
     return (jlong)pthread_self();
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_NativeThread_signal(JNIEnv *env, jclass cl, jlong thread)
+Java_sun_nio_ch_NativeThread_signal0(JNIEnv *env, jclass cl, jlong thread)
 {
     int ret;
     ret = pthread_kill((pthread_t)thread, INTERRUPT_SIGNAL);

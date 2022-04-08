@@ -113,14 +113,15 @@ Java_nsk_jvmti_GetThreadGroupInfo_thrgrpinfo001_check(JNIEnv *env, jclass cls, j
         printf(" expected: %d\n", pri);
         result = STATUS_FAILED;
     }
-
+#if 0
+    // Check removed: the concept of daemon thread group no longer exists.
     if (daemon != inf.is_daemon) {
         printf("(%d) unexpected is_daemon: %s,", stage,
             (inf.is_daemon == JNI_TRUE) ? "true" : "false");
         printf(" expected: %s\n", (daemon == JNI_TRUE) ? "true" : "false");
         result = STATUS_FAILED;
     }
-
+#endif
     if (printdump == JNI_TRUE) {
         printf(">>> done ...\n");
     }

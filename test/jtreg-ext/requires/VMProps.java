@@ -242,6 +242,10 @@ public class VMProps implements Callable<Map<String, String>> {
         if (WB.getBooleanVMFlag("EnableJVMCI") == null) {
             return "false";
         }
+        
+        if (vmCompMode().equals("Xint")) {
+            return "false";
+        }
 
         // Not all GCs have full JVMCI support
         if (!WB.isJVMCISupportedByGC()) {

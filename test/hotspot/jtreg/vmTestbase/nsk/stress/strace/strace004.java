@@ -108,10 +108,18 @@ public class strace004 {
     static final String[] EXPECTED_METHODS = {
             "java.lang.System.arraycopy",
             "java.lang.Object.wait",
+            "java.lang.Object.wait0",
+            "java.lang.System$2.headStackableScope",
+            "java.lang.Thread.headStackableScopes",
             "java.lang.Thread.exit",
             "java.lang.Thread.yield",
-            "java.lang.ThreadGroup.remove",
-            "java.lang.ThreadGroup.threadTerminated",
+            "java.lang.Thread.yield0",
+            "java.lang.Thread.clearReferences",
+            "java.lang.Thread.currentCarrierThread",
+            "java.lang.Thread.currentThread",
+            "java.lang.Thread.threadContainer",
+            "jdk.internal.vm.StackableScope.head",
+            "jdk.internal.vm.StackableScope.popAll",
             "nsk.stress.strace.strace004Thread.run",
             "nsk.stress.strace.strace004Thread.recursiveMethod"
     };
@@ -260,7 +268,7 @@ public class strace004 {
     boolean checkElement(StackTraceElement element) {
         String name = element.getClassName() + "." + element.getMethodName();
         for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
+            if (name.startsWith(EXPECTED_METHODS[i]))
                 return true;
         }
         return false;

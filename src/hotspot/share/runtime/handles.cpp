@@ -31,11 +31,20 @@
 #include "runtime/thread.inline.hpp"
 
 #ifdef ASSERT
+#define assert_handle_mark_nesting()                                                     \
+  assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark"); \
+  assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");         \
+
+
 oop* HandleArea::allocate_handle(oop obj) {
-  assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
-  assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
+  assert_handle_mark_nesting();
   assert(oopDesc::is_oop(obj), "not an oop: " INTPTR_FORMAT, p2i(obj));
   return real_allocate_handle(obj);
+}
+
+oop* HandleArea::allocate_null_handle() {
+  assert_handle_mark_nesting();
+  return real_allocate_handle(NULL);
 }
 #endif
 

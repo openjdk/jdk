@@ -1151,7 +1151,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
                                        const void* user_data)
 {
   // EA based optimizations on tagged objects are already reverted.
-  EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
+  EscapeBarrier eb(false, JavaThread::current()); // disable due to virtual threads
   eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateThroughHeapObjectClosure blk(this,

@@ -457,8 +457,11 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend) {
   }
 }
 
-static bool non_self_queue_filter(HandshakeOperation* op) {
-  return !op->is_async();
+bool HandshakeState::non_self_queue_filter(HandshakeOperation* op) {
+  if (op->_handshake_cl->can_be_processed_by(Thread::current())) {
+    return !op->is_async();
+  }
+  return false;
 }
 
 bool HandshakeState::have_non_self_executable_operation() {
@@ -700,6 +703,7 @@ public:
 };
 
 bool HandshakeState::suspend() {
+  JVMTI_ONLY(assert(!_handshakee->is_in_VTMT(), "no suspend allowed in VTMT transition");)
   JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery

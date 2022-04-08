@@ -1754,11 +1754,13 @@ encode %{
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime, Java_To_Runtime_Leaf
     // This is the instruction starting address for relocation info.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
     emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                 runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
 
     if (UseSSE >= 2) {
       MacroAssembler _masm(&cbuf);
@@ -1810,6 +1812,7 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
 
@@ -1817,12 +1820,14 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_IMM32);
+      __ post_call_nop();
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
+      __ post_call_nop();
       // Emit stubs for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
@@ -1835,6 +1840,7 @@ encode %{
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
     MacroAssembler _masm(&cbuf);
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ post_call_nop();
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
@@ -1842,11 +1848,12 @@ encode %{
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
     // CALL *[EAX+in_bytes(Method::from_compiled_code_entry_point_offset())]
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
     emit_d8(cbuf, disp);             // Displacement
-
+    __ post_call_nop();
   %}
 
 //   Following encoding is no longer used, but may be restored if calling
@@ -2788,9 +2795,11 @@ encode %{
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -2807,9 +2816,11 @@ encode %{
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -2877,10 +2888,12 @@ encode %{
   %}
 
   enc_class enc_rethrow() %{
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE9);        // jmp    entry
     emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.insts_end())-4,
                    runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
   %}
 
 
@@ -2926,9 +2939,11 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Carry on here...
   %}
 
@@ -2968,9 +2983,11 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Carry on here...
   %}
 
@@ -10827,6 +10844,7 @@ instruct convD2I_reg_reg( eAXRegI dst, eDXRegI tmp, regD src, eFlagsReg cr ) %{
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10902,6 +10920,7 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10957,6 +10976,7 @@ instruct convF2I_reg(eAXRegI dst, eDXRegI tmp, regF src, eFlagsReg cr ) %{
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -11033,6 +11053,7 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );

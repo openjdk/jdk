@@ -41,6 +41,7 @@ public class RunParams {
         private boolean runForever = false;
         private long threadBlockSize = 64 * 1024 * 1024;
         private boolean interruptThreads = false;
+        private boolean useVirtualThreads = false;
 
         public RunParams() {
                 this(new StressOptions());
@@ -191,6 +192,10 @@ public class RunParams {
                 return stressOptions;
         }
 
+        public final boolean useVirtualThreads() {
+                return this.useVirtualThreads;
+        }
+
         public void parseCommandLine(String[] args) {
                 if (args == null)
                         return;
@@ -210,12 +215,18 @@ public class RunParams {
                                 runFinDiagThread = true;
                         else if (args[i].equals("-Df"))
                                 runFinDiagThread = true;
+                        else if (args[i].equals("-v"))
+                            useVirtualThreads = true;
                         else if (args[i].equals("-t"))
                                 numberOfThreads = Integer.parseInt(args[++i]);
                         else if (args[i].equals("-it"))
                                 interruptThreads = true;
                         else if (args[i].equals("-iterations"))
                                 iterations = Integer.parseInt(args[++i]);
+                }
+                // Allow to force using vthreads using wrapper property
+                if(System.getProperty("main.wrapper") != null && System.getProperty("main.wrapper").equals("Virtual")) {
+                        useVirtualThreads = true;
                 }
                 printConfig(System.out);
         }

@@ -58,6 +58,10 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   // Heal oops
   ZNMethod::nmethod_oops_barrier(nm);
 
+
+  // Class redefinition support
+  nm->mark_as_maybe_on_continuation();
+
   // Disarm
   disarm(nm);
 

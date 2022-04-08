@@ -28,8 +28,10 @@
 
 #include "runtime/thread.hpp"
 
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -122,6 +124,15 @@ inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
 
+#if INCLUDE_JVMTI
+inline void JavaThread::set_carrier_thread_suspended() {
+  _carrier_thread_suspended = true;
+}
+inline void JavaThread::clear_carrier_thread_suspended() {
+  _carrier_thread_suspended = false;
+}
+#endif
+
 inline bool JavaThread::clear_async_exception_condition() {
   bool ret = has_async_exception_condition();
   if (ret) {
@@ -186,6 +197,32 @@ void JavaThread::set_safepoint_state(ThreadSafepointState *state) {
 
 bool JavaThread::is_at_poll_safepoint() {
   return _safepoint_state->is_at_poll_safepoint();
+}
+
+bool JavaThread::is_vthread_mounted() const {
+  return vthread_continuation() != nullptr;
+}
+
+const ContinuationEntry* JavaThread::vthread_continuation() const {
+  for (ContinuationEntry* c = last_continuation(); c != nullptr; c = c->parent()) {
+    if (c->is_virtual_thread())
+      return c;
+  }
+  return nullptr;
+}
+
+JavaThread::CarrierOrVirtual JavaThread::which_stack(address adr) const {
+  address stack_end = _stack_base - _stack_size;
+  if (adr >= stack_end) {
+    const ContinuationEntry* entry = vthread_continuation();
+    if (entry != nullptr && (address)entry->entry_sp() > adr) {
+      return CarrierOrVirtual::VIRTUAL;
+    }
+    if (_stack_base > adr) {
+      return CarrierOrVirtual::CARRIER;
+    }
+  }
+  return CarrierOrVirtual::NONE;
 }
 
 void JavaThread::enter_critical() {

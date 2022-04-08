@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,9 +79,10 @@ public interface ThreadGroupReference extends ObjectReference {
 
     /**
      * Returns a List containing a {@link ThreadReference} for each live thread
-     * in this thread group. Only the live threads in this immediate thread group
-     * (and not its subgroups) are returned.  A thread is alive if it
-     * has been started and has not yet been stopped.
+     * in this thread group. Virtual threads are not considered live threads in
+     * a thread group and are not included. Only the live threads in this
+     * immediate thread group (and not its subgroups) are returned. A thread is
+     * alive if it has been started and has not yet been stopped.
      *
      * @return a List of {@link ThreadReference} objects mirroring the
      * live threads from this thread group in the target VM.
@@ -89,13 +90,12 @@ public interface ThreadGroupReference extends ObjectReference {
     List<ThreadReference> threads();
 
     /**
-     * Returns a List containing each active {@link ThreadGroupReference} in this
-     * thread group. Only the active thread groups in this immediate thread group
-     * (and not its subgroups) are returned.
-     * See {@link java.lang.ThreadGroup}
-     * for information about 'active' ThreadGroups.
+     * Returns a List containing a {@link ThreadGroupReference} for each
+     * subgroup. Only the thread groups in this immediate thread group (and
+     * not its subgroups) are returned.
+     *
      * @return a List of {@link ThreadGroupReference} objects mirroring the
-     * active thread groups from this thread group in the target VM.
+     * thread groups from this thread group in the target VM.
      */
     List<ThreadGroupReference> threadGroups();
 }

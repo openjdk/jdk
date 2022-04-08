@@ -60,7 +60,11 @@ public class TransformerAgent {
         public byte[] transform(ClassLoader loader, String name, Class<?> classBeingRedefined,
                                 ProtectionDomain pd, byte[] buffer) throws IllegalClassFormatException {
             try {
-                log("SimpleTransformer called for: " + name + "@" + incrCounter(name));
+                // Printing cause ClassCircularityError for java/util/concurrent/locks/AbstractQueuedSynchronizer$ExclusiveNode
+                // So don't try to print some system classes
+                if (!name.startsWith("java/")) {
+                    log("SimpleTransformer called for: " + name + "@" + incrCounter(name));
+                }
                 if (!shouldTransform(name))
                     return null;
 

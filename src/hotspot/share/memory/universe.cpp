@@ -57,6 +57,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -363,6 +364,8 @@ void Universe::genesis(TRAPS) {
     initialize_basic_type_klass(shortArrayKlassObj(), CHECK);
     initialize_basic_type_klass(intArrayKlassObj(), CHECK);
     initialize_basic_type_klass(longArrayKlassObj(), CHECK);
+
+    InstanceStackChunkKlass::init_offset_of_stack();
   } // end of core bootstrapping
 
   {

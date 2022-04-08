@@ -215,6 +215,13 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     fail_msg = "don't inline by annotation";
   }
 
+  // Don't inline a method that changes Thread.currentThread() except
+  // into another method that is annotated @ChangesCurrentThread.
+  if (callee_method->changes_current_thread()
+      && ! C->method()->changes_current_thread()) {
+    fail_msg = "method changes current thread";
+  }
+
   // one more inlining restriction
   if (fail_msg == NULL && callee_method->has_unloaded_classes_in_signature()) {
     fail_msg = "unloaded signature classes";

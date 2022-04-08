@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
  */
 
 package java.lang;
-import jdk.internal.misc.TerminatingThreadLocal;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import jdk.internal.misc.TerminatingThreadLocal;
 
 /**
  * This class provides thread-local variables.  These variables differ from
@@ -155,13 +155,28 @@ public class ThreadLocal<T> {
      * thread-local variable.  If the variable has no value for the
      * current thread, it is first initialized to the value returned
      * by an invocation of the {@link #initialValue} method.
+     * If the current thread does not support thread locals then
+     * this method returns its {@link #initialValue} (or {@code null}
+     * if the {@code initialValue} method is not overridden).
      *
      * @return the current thread's value of this thread-local
+     * @see Thread.Builder#allowSetThreadLocals(boolean)
      */
     public T get() {
-        Thread t = Thread.currentThread();
+        return get(Thread.currentThread());
+    }
+
+    /**
+     * Returns the value in the current carrier thread's copy of this
+     * thread-local variable.
+     */
+    T getCarrierThreadLocal() {
+        return get(Thread.currentCarrierThread());
+    }
+
+    private T get(Thread t) {
         ThreadLocalMap map = getMap(t);
-        if (map != null) {
+        if (map != null && map != ThreadLocalMap.NOT_SUPPORTED) {
             ThreadLocalMap.Entry e = map.getEntry(this);
             if (e != null) {
                 @SuppressWarnings("unchecked")
@@ -169,7 +184,7 @@ public class ThreadLocal<T> {
                 return result;
             }
         }
-        return setInitialValue();
+        return setInitialValue(t);
     }
 
     /**
@@ -182,7 +197,11 @@ public class ThreadLocal<T> {
     boolean isPresent() {
         Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
-        return map != null && map.getEntry(this) != null;
+        if (map != null && map != ThreadLocalMap.NOT_SUPPORTED) {
+            return map.getEntry(this) != null;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -191,10 +210,12 @@ public class ThreadLocal<T> {
      *
      * @return the initial value
      */
-    private T setInitialValue() {
+    private T setInitialValue(Thread t) {
         T value = initialValue();
-        Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
+        if (map == ThreadLocalMap.NOT_SUPPORTED) {
+            return value;
+        }
         if (map != null) {
             map.set(this, value);
         } else {
@@ -214,10 +235,25 @@ public class ThreadLocal<T> {
      *
      * @param value the value to be stored in the current thread's copy of
      *        this thread-local.
+     *
+     * @throws UnsupportedOperationException if the current thread is not
+     *         allowed to set its copy of thread-local variables
+     *
+     * @see Thread.Builder#allowSetThreadLocals(boolean)
      */
     public void set(T value) {
-        Thread t = Thread.currentThread();
+        set(Thread.currentThread(), value);
+    }
+
+    void setCarrierThreadLocal(T value) {
+        set(Thread.currentCarrierThread(), value);
+    }
+
+    private void set(Thread t, T value) {
         ThreadLocalMap map = getMap(t);
+        if (map == ThreadLocalMap.NOT_SUPPORTED) {
+            throw new UnsupportedOperationException();
+        }
         if (map != null) {
             map.set(this, value);
         } else {
@@ -238,7 +274,7 @@ public class ThreadLocal<T> {
      */
      public void remove() {
          ThreadLocalMap m = getMap(Thread.currentThread());
-         if (m != null) {
+         if (m != null && m != ThreadLocalMap.NOT_SUPPORTED) {
              m.remove(this);
          }
      }
@@ -336,6 +372,9 @@ public class ThreadLocal<T> {
             }
         }
 
+        // Placeholder when thread locals not supported
+        static final ThreadLocalMap NOT_SUPPORTED = new ThreadLocalMap();
+
         /**
          * The initial capacity -- MUST be a power of two.
          */
@@ -379,6 +418,12 @@ public class ThreadLocal<T> {
         }
 
         /**
+         * Construct a new map without a table.
+         */
+        ThreadLocalMap() {
+        }
+
+        /**
          * Construct a new map initially containing (firstKey, firstValue).
          * ThreadLocalMaps are constructed lazily, so we only create
          * one when we have at least one entry to put in it.
@@ -418,6 +463,13 @@ public class ThreadLocal<T> {
                     }
                 }
             }
+        }
+
+        /**
+         * Returns the number of elements in the map.
+         */
+        int size() {
+            return size;
         }
 
         /**

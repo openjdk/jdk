@@ -96,14 +96,49 @@ public class OwnedMonitorsDebugger extends TestDebuggerType2 {
         return result;
     }
 
+    int implStackDepth(ThreadReference threadReference, String className, String methodName) {
+        try {
+            int stackDepth = 0;
+            for (int i = 0; i < threadReference.frames().size(); i++) {
+                StackFrame sf = threadReference.frames().get(i);
+                if (!sf.location().declaringType().name().equals(className)) {
+                    return stackDepth;
+                }
+                if (sf.location().method().name().equals(methodName)) {
+                    stackDepth = i;
+                }
+            }
+        }  catch (IncompatibleThreadStateException e) {
+            log.complain("Unexpected exception", e);
+            return 0;
+        }
+        return 0;
+    }
+
     private boolean compare(MonitorInfo actual, DebugMonitorInfo expected) {
         boolean success = true;
 
-        if (actual.stackDepth() != expected.stackDepth) {
+        int depth = actual.stackDepth();
+        ThreadReference threadReference = actual.thread();
+        if (expected.stackDepth != - 1) {
+            // Exclude implementation of Thread.sleep()/Object.wait() from comparison
+            depth -= implStackDepth(threadReference, "java.lang.Thread", "sleep");
+            depth -= implStackDepth(threadReference, "java.lang.Object", "wait");
+        }
+
+        if (depth != expected.stackDepth) {
             setSuccess(false);
             success = false;
-            log.complain("Expected and actual monitor(" + actual.monitor() + ") stack depth differs, expected: " + expected.stackDepth + " actual: "
-                    + actual.stackDepth());
+            log.complain("Expected and actual monitor(" + actual.monitor() + ") stack depth differs, expected: "
+                    + expected.stackDepth + " actual (excluding wait/sleep impl): " + depth);
+            log.complain("The stack:");
+            try {
+                for (int idx = 0; idx < threadReference.frames().size(); idx++) {
+                    log.complain(idx + ": " + threadReference.frames().get(idx).toString());
+                }
+            } catch (IncompatibleThreadStateException e) {
+                e.printStackTrace();
+            }
         }
 
         if (!actual.thread().equals(expected.thread)) {

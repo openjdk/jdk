@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,9 @@ class JfrStackTrace : public JfrCHeapObj {
   void set_reached_root(bool reached_root) { _reached_root = reached_root; }
   void resolve_linenos() const;
 
-  bool record_thread(JavaThread& thread, frame& frame);
-  bool record_safe(JavaThread* thread, int skip);
+  bool record(JavaThread* current_thread, int skip);
+  bool record(JavaThread* current_thread, const frame& frame, int skip);
+  bool record_async(JavaThread* other_thread, const frame& frame);
 
   bool have_lineno() const { return _lineno; }
   bool full_stacktrace() const { return _reached_root; }

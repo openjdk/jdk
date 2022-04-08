@@ -75,6 +75,7 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -960,6 +961,9 @@ void PSParallelCompact::pre_compact()
   // Increment the invocation count
   heap->increment_total_collections(true);
 
+  Continuations::on_gc_marking_cycle_start();
+  Continuations::arm_all_nmethods();
+
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
 
@@ -989,6 +993,9 @@ void PSParallelCompact::post_compact()
 {
   GCTraceTime(Info, gc, phases) tm("Post Compact", &_gc_timer);
   ParCompactionManager::remove_all_shadow_regions();
+
+  Continuations::on_gc_marking_cycle_finish();
+  Continuations::arm_all_nmethods();
 
   for (unsigned int id = old_space_id; id < last_space_id; ++id) {
     // Clear the marking bitmap, summary data and split info.
@@ -1914,7 +1921,7 @@ public:
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
     PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
+    MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
     thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 

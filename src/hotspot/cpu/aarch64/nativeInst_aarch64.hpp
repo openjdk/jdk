@@ -71,7 +71,7 @@ public:
     return (encoding() & 0xff000000) == 0x10000000;
   }
 
-  inline bool is_nop();
+  inline bool is_nop() const;
   bool is_jump();
   bool is_general_jump();
   inline bool is_jump_or_nop();
@@ -543,7 +543,7 @@ class NativeTstRegMem: public NativeInstruction {
 public:
 };
 
-inline bool NativeInstruction::is_nop() {
+inline bool NativeInstruction::is_nop() const{
   uint32_t insn = *(uint32_t*)addr_at(0);
   return insn == 0xd503201f;
 }
@@ -665,5 +665,49 @@ inline NativeLdSt* NativeLdSt_at(address addr) {
   assert(nativeInstruction_at(addr)->is_Imm_LdSt(), "no immediate load/store found");
   return (NativeLdSt*)addr;
 }
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { return is_nop(); }
+  int displacement() const { return 0; }
+  void patch(jint diff);
+  void make_deopt();
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
+  return NULL;
+}
+
+inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  assert(nop->check(), "");
+  return nop;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+ public:
+  enum {
+    instruction_size            =    4,
+    instruction_offset          =    0,
+  };
+
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  void  verify();
+
+  static bool is_deopt_at(address instr) {
+    assert(instr != NULL, "");
+    uint32_t value = *(uint32_t *) instr;
+    return value == 0xd4ade001;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos);
+};
 
 #endif // CPU_AARCH64_NATIVEINST_AARCH64_HPP
