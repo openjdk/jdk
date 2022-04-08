@@ -108,13 +108,12 @@ public class PlatformSupportImpl extends PlatformSupport {
      *
      * 1. duplication of tmp directories
      *
-     * /proc/{hostpid}/root/tmp directories exist for many processes
-     * that are running on a Linux kernel that has cgroups enabled even
-     * if they are not running in a container.  To avoid this duplication,
-     * we compare the inode of the /proc tmp directories to /tmp and
-     * skip these duplicated directories.
-     * Host and container devices could have the same inode value,
-     * so we also need to check the device id.
+     * When cgroups is enabled, the directory /proc/{pid}/root/tmp may
+     * exist even if the given pid is not running inside a container. In
+     * this case, this directory is usually the same as /tmp and should
+     * be skipped, or else we would get duplicated hsperfdata files.
+     * This case can be detected if the inode and device id of
+     * /proc/{pid}/root/tmp are the same as /tmp.
      *
      * 2. Containerized processes without PID namespaces being enabled.
      *
