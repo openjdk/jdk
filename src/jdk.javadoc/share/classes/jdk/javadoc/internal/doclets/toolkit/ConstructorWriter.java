@@ -30,7 +30,6 @@ import javax.lang.model.element.ExecutableElement;
 /**
  * The interface for writing constructor output.
  */
-
 public interface ConstructorWriter extends MemberWriter {
 
     /**

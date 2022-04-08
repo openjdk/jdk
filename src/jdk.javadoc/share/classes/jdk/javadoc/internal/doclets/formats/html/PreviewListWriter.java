@@ -42,8 +42,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 /**
  * Generate File to list all the preview elements with the
  * appropriate links.
- *
- * @see java.util.List
  */
 public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> {
 

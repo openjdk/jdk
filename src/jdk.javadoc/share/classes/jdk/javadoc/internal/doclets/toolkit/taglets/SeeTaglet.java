@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A taglet that represents the @see tag.
+ * A taglet that represents the {@code @see} tag.
  */
 public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
