@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.List;
@@ -114,15 +115,15 @@ public class LocalVariableAnnotationNode extends TypeAnnotationNode {
             final LabelNode[] end,
             final int[] index,
             final String descriptor) {
-        this(/* latest api = */ Opcodes.ASM8, typeRef, typePath, start, end, index, descriptor);
+        this(/* latest api = */ Opcodes.ASM9, typeRef, typePath, start, end, index, descriptor);
     }
 
     /**
       * Constructs a new {@link LocalVariableAnnotationNode}.
       *
       * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link
+      *     Opcodes#ASM8} or {@link Opcodes#ASM9}.
       * @param typeRef a reference to the annotated type. See {@link jdk.internal.org.objectweb.asm.TypeReference}.
       * @param start the fist instructions corresponding to the continuous ranges that make the scope
       *     of this local variable (inclusive).
@@ -169,3 +170,4 @@ public class LocalVariableAnnotationNode extends TypeAnnotationNode {
                         typeRef, typePath, startLabels, endLabels, indices, desc, visible));
     }
 }
+

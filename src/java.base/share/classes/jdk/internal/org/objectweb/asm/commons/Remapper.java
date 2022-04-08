@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.ConstantDynamic;
@@ -267,6 +268,18 @@ public abstract class Remapper {
     }
 
     /**
+      * Maps an annotation attribute name. The default implementation of this method returns the given
+      * name, unchanged. Subclasses can override.
+      *
+      * @param descriptor the descriptor of the annotation class.
+      * @param name the name of the annotation attribute.
+      * @return the new name of the annotation attribute.
+      */
+    public String mapAnnotationAttributeName(final String descriptor, final String name) {
+        return name;
+    }
+
+    /**
       * Maps an inner class name to its new name. The default implementation of this method provides a
       * strategy that will work for inner classes produced by Java, but not necessarily other
       * languages. Subclasses can override.
@@ -376,3 +389,4 @@ public abstract class Remapper {
         return internalName;
     }
 }
+
