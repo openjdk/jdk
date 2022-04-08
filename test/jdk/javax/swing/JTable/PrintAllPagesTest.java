@@ -28,7 +28,6 @@
  */
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.Rectangle;
 import java.awt.print.PrinterException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -69,14 +68,11 @@ public class PrintAllPagesTest {
             });
 
             // wait for latch to complete
-            boolean ret = false;
-            ret = latch.await(5, TimeUnit.MINUTES);
-
-            if (!ret) {
+            if (!latch.await(5, TimeUnit.MINUTES)) {
                 throw new RuntimeException(" User has not executed the test");
             }
 
-            if (testResult == false) {
+            if (!testResult) {
                 throw new RuntimeException("Only 1st page is printed out of multiple pages");
             }
         } finally {
@@ -127,7 +123,7 @@ public class PrintAllPagesTest {
     private static void createUI() {
         String description
                 = " INSTRUCTIONS:\n"
-                + " A JTable will be shown.\n"
+                + " A JTable with 1000 rows and a print dialog will be shown.\n"
                 + " If only 1 page is printed,\n "
                 + " then press fail else press pass";
 
@@ -138,13 +134,11 @@ public class PrintAllPagesTest {
         final JButton passButton = new JButton("PASS");
         passButton.addActionListener((e) -> {
             testResult = true;
-            dispose();
             latch.countDown();
         });
         final JButton failButton = new JButton("FAIL");
         failButton.addActionListener((e) -> {
             testResult = false;
-            dispose();
             latch.countDown();
         });
         JPanel mainPanel = new JPanel(new BorderLayout());
