@@ -99,9 +99,7 @@ import java.util.function.BiFunction;
 
     @ForceInline
     boolean checkExactAccessMode(VarHandle.AccessDescriptor ad) {
-        if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
-            throwWrongMethodTypeException(ad);
-        }
+        super.checkExactAccessMode(ad);
         // return false to indicate this is an IndirectVarHandle
         return false;
     }
