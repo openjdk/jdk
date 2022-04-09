@@ -25,6 +25,7 @@
 /*
  * @test
  * @bug 7124282
+ * @key headful
  * @requires (os.family == "mac")
  * @summary Checks whether the JTable's focus ring color's RGB color
  * diff with selectionBackground is greater in comparison to original

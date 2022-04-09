@@ -890,7 +890,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
             "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(
-                    deriveLighterFocusRing(focusRingColor), 2),
+                    deriveProminentFocusRing(focusRingColor), 2),
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1137,7 +1137,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @param focusRingColor - the {@code Color} object
      * @return the {@code Color} object corresponding to new HSB values
      */
-    static Color deriveLighterFocusRing(Color focusRingColor) {
+    static Color deriveProminentFocusRing(Color focusRingColor) {
 
         // define constants
         float satLowerValue = 0.30f;
