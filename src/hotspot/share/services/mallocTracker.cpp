@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"

@@ -1,6 +1,6 @@
 /*
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,23 @@
  *
  */
 
-#ifndef CPU_ZERO_SAFEFETCH_ZERO_HPP
-#define CPU_ZERO_SAFEFETCH_ZERO_HPP
+#ifndef SHARE_RUNTIME_SAFEFETCH_HPP
+#define SHARE_RUNTIME_SAFEFETCH_HPP
 
-#include "utilities/globalDefinitions.hpp"
-
-// On Posix platforms that don't do anything better - or cannot, like Zero -
-// SafeFetch is implemented using setjmp/longjmp. That is reliable and portable,
-// but slower than other methods, and needs more thread stack (the sigjmp buffer
-// lives on the thread stack).
-
-int SafeFetch32(int* adr, int errValue);
-intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue);
-
-inline bool CanUseSafeFetch32() { return true; }
-inline bool CanUseSafeFetchN()  { return true; }
-
-// Handle safefetch, sigsetjmp style. Only call from signal handler.
-// If a safefetch jump had been established and the sig qualifies, we
-// jump back to the established jump point (and hence out of signal handling).
-void handle_safefetch(int sig);
-
+#ifdef _WIN32
+  // Windows uses Structured Exception Handling
+  #include "safefetch_windows.hpp"
+  #define SAFEFETCH_METHOD_SEH
+#elif defined(ZERO) || defined (_AIX)
+  // These platforms implement safefetch via Posix sigsetjmp/longjmp.
+  // This is slower than the other methods and uses more thread stack,
+  // but its safe and portable.
+  #include "safefetch_sigjmp.hpp"
+  #define SAFEFETCH_METHOD_SIGSETJMP
+#else
+  // All other platforms use static assembly
+  #include "safefetch_static.hpp"
+  #define SAFEFETCH_METHOD_STATIC_ASSEMBLY
 #endif
+
+#endif // SHARE_RUNTIME_SAFEFETCH_HPP

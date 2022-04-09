@@ -23,33 +23,25 @@
  *
  */
 
-    .globl SafeFetchN
-    .globl _SafeFetchN_fault
-    .globl _SafeFetchN_continuation
-    .globl SafeFetch32
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
+#ifndef CPU_POSIX_SAFEFETCH_SIGJMP_HPP
+#define CPU_POSIX_SAFEFETCH_SIGJMP_HPP
 
-    # Support for int SafeFetch32(int* address, int defaultval);
-    #
-    #  r3 : address
-    #  r4 : defaultval
-    #  r3 : retval
-SafeFetch32:
-_SafeFetch32_fault:
-    lwa      %r4, 0(%r3)
-_SafeFetch32_continuation:
-    mr       %r3, %r4
-    blr
+#include "utilities/globalDefinitions.hpp"
 
-    # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
-    #
-    #  r3 : address
-    #  r4 : defaultval
-    #  r3 : retval
-SafeFetchN:
-_SafeFetchN_fault:
-    ld     %r4, 0(%r3)
-_SafeFetchN_continuation:
-    mr     %r3, %r4
-    blr
+// On Posix platforms that don't do anything better - or cannot, like Zero -
+// SafeFetch is implemented using setjmp/longjmp. That is reliable and portable,
+// but slower than other methods, and needs more thread stack (the sigjmp buffer
+// lives on the thread stack).
+
+int SafeFetch32(int* adr, int errValue);
+intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue);
+
+inline bool CanUseSafeFetch32() { return true; }
+inline bool CanUseSafeFetchN()  { return true; }
+
+// Handle safefetch, sigsetjmp style. Only call from signal handler.
+// If a safefetch jump had been established and the sig qualifies, we
+// jump back to the established jump point (and hence out of signal handling).
+bool handle_safefetch(int sig, address pc, void* context);
+
+#endif // CPU_POSIX_SAFEFETCH_SIGJMP_HPP

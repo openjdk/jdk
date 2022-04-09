@@ -32,10 +32,10 @@
 #define ELF_TYPE(name, description) .type name,description
 #endif
 
-    .global SYMBOL(_SafeFetch64)
-    .global SYMBOL(_SafeFetch64_fault)
-    .global SYMBOL(_SafeFetch64_continuation)
-    .global SYMBOL(_SafeFetch32)
+    .global SYMBOL(SafeFetchN)
+    .global SYMBOL(_SafeFetchN_fault)
+    .global SYMBOL(_SafeFetchN_continuation)
+    .global SYMBOL(SafeFetch32)
     .global SYMBOL(_SafeFetch32_fault)
     .global SYMBOL(_SafeFetch32_continuation)
 
@@ -46,24 +46,24 @@
 
 	# needed to align function start to 4 byte
     .align  6
-    ELF_TYPE(_SafeFetch32,@function)
-SYMBOL(_SafeFetch32):
+    ELF_TYPE(SafeFetch32,@function)
+SYMBOL(SafeFetch32):
 SYMBOL(_SafeFetch32_fault):
     ldr      w1, [x0]
 SYMBOL(_SafeFetch32_continuation):
     mov      x0, x1
     ret
 
-    # Support for uint64_t SafeFetch64(uint64_t* address, uint64_t defaultval);
+    # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
     #
     #  x1 : address
     #  x0 : defaultval
 
     .align  6
-    ELF_TYPE(_SafeFetch64,@function)
-SYMBOL(_SafeFetch64):
-SYMBOL(_SafeFetch64_fault):
+    ELF_TYPE(SafeFetchN,@function)
+SYMBOL(SafeFetchN):
+SYMBOL(_SafeFetchN_fault):
     ldr      x1, [x0]
-SYMBOL(_SafeFetch64_continuation):
+SYMBOL(_SafeFetchN_continuation):
     mov      x0, x1
     ret

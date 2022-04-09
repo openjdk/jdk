@@ -21,12 +21,12 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-    .globl _SafeFetch32
-    .globl _SafeFetch64
+    .globl SafeFetch32
+    .globl SafeFetchN
     .globl _SafeFetch32_fault
-    .globl _SafeFetch64_fault
+    .globl _SafeFetchN_fault
     .globl _SafeFetch32_continuation
-    .globl _SafeFetch64_continuation
+    .globl _SafeFetchN_continuation
 
 	.text
 
@@ -35,8 +35,8 @@
     #
     #  %rdi : address
     #  %esi : defaultval
-	.type    _SafeFetch32,@function
-_SafeFetch32:
+	.type    SafeFetch32,@function
+SafeFetch32:
 _SafeFetch32_fault:
     movl (%rdi), %eax       # load target value, may fault
     ret
@@ -44,15 +44,15 @@ _SafeFetch32_continuation:
     movl %esi, %eax         # return default
     ret
 
-    # Support for uint64_t SafeFetch64(uint64_t* address, uint64_t defaultval);
+    # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
     #
     #  %rdi : address
     #  %rsi : defaultval
-	.type    _SafeFetch64,@function
-_SafeFetch64:
-_SafeFetch64_fault:
+	.type    SafeFetchN,@function
+SafeFetchN:
+_SafeFetchN_fault:
     movq (%rdi), %rax       # load target value, may fault
     ret
-_SafeFetch64_continuation:
+_SafeFetchN_continuation:
     movq %rsi, %rax         # return default
     ret

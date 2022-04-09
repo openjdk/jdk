@@ -24,15 +24,16 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/safefetch_method.hpp"
+
+#include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef SAFEFETCH_METHOD_SIGSETJMP
 
-// For SafeFetch we need POSIX tls and setjmp
-// (Note: for some reason __thread does not work; needs investigation. For now
-//  stick with Posix TLS)
+// For SafeFetch we need POSIX TLS and sigsetjmp/longjmp.
+// (Note: We would prefer compiler level TLS but for some reason __thread does not
+//  work here; this needs investigation. For we now stick with POSIX TLS)
 #include <setjmp.h>
 #include <pthread.h>
 static pthread_key_t g_jmpbuf_key;
@@ -40,58 +41,57 @@ static pthread_key_t g_jmpbuf_key;
 struct InitTLSKey { InitTLSKey() { pthread_key_create(&g_jmpbuf_key, NULL); } };
 static InitTLSKey g_init_tly_key;
 
-// return the currently active jump buffer for this thread
-//  - if there is any, NULL otherwise. Called from
-//    zero signal handlers.
-static sigjmp_buf* get_jmp_buf_for_continuation() {
-  return (sigjmp_buf*) pthread_getspecific(g_jmpbuf_key);
-}
-
-// Handle safefetch, sigsetjmp style. Only call from signal handler.
+// Handle safefetch, sigsetjmp style:
+//
 // If a safefetch jump had been established and the sig qualifies, we
 // jump back to the established jump point (and hence out of signal handling).
-void handle_safefetch(int sig) {
+//
+// Note that this function will never return for safefetch faults. We just
+// keep the prototype the same as other handle_safefetch() versions to keep
+// caller sites simple.
+bool handle_safefetch(int sig, address ignored1, void* ignored2) {
   if (sig == SIGSEGV || sig == SIGBUS) {
-    sigjmp_buf* const jb = get_jmp_buf_for_continuation();
+    // Retrieve jump buffer pointer from TLS. If not NULL, it means we set the
+    // jump buffer and this is indeed a SafeFetch fault.
+    sigjmp_buf* const jb = (sigjmp_buf*) pthread_getspecific(g_jmpbuf_key);
     if (jb) {
+      // Reset TLS slot and jump back
+      pthread_setspecific(g_jmpbuf_key, NULL);
       siglongjmp(*jb, 1);
     }
   }
+  return false;
 }
 
 template <class T>
 static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   T n = 0;
-  // set up a jump buffer; anchor the pointer to the jump buffer in tls; then
-  // do the pointer access. If pointer is invalid, we crash; in signal
-  // handler, we retrieve pointer to jmp buffer from tls, and jump back.
-  //
-  // Note: the jump buffer itself - which can get pretty large depending on
-  // the architecture - lives on the stack and that is fine, because we will
-  // not rewind the stack: either we crash, in which case signal handler
-  // frame is below us, or we don't crash, in which case it does not matter.
+
+  // Set up a jump buffer. Anchor its pointer in TLS. Then read from the unsafe address.
+  // If that address was invalid, we fault, and in the signal handler we will jump back
+  // to the jump point.
   sigjmp_buf jb;
-  if (sigsetjmp(jb, 1)) {
-
-    // we crashed. clean up tls and return default value.
-    pthread_setspecific(g_jmpbuf_key, NULL);
-
-  } else {
-    // save jump location
-    pthread_setspecific(g_jmpbuf_key, &jb);
-
-    // unsafe access
-    n = *adr;
-
-    // We are still here. All went well. Reset jump location
-    pthread_setspecific(g_jmpbuf_key, NULL);
-
-    *result = n;
-    return true;
+  if (sigsetjmp(jb, 1) != 0) {
+    // We faulted.
+    *result = 0;
+    return false;
   }
 
-  return false;
+  // Anchor jump buffer in TLS
+  pthread_setspecific(g_jmpbuf_key, &jb);
+
+  // unsafe access
+  n = *adr;
+
+  // Still here... All went well, adr was valid.
+  *result = n;
+
+  // Reset the TLS slot
+  pthread_setspecific(g_jmpbuf_key, NULL);
+
+  return true;
+
 }
 
 int SafeFetch32(int *adr, int errValue) {
@@ -105,4 +105,3 @@ intptr_t SafeFetchN(intptr_t *adr, intptr_t errValue) {
 }
 
 #endif // SAFEFETCH_METHOD_SIGSETJMP
-

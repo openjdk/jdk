@@ -23,33 +23,23 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SAFEFETCH_METHOD_HPP
-#define SHARE_RUNTIME_SAFEFETCH_METHOD_HPP
+#ifndef SHARE_RUNTIME_SAFEFETCH_STATIC_HPP
+#define SHARE_RUNTIME_SAFEFETCH_STATIC_HPP
 
-#include "utilities/macros.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#ifdef _WIN32
+extern "C" int SafeFetch32(int* adr, int errValue);
 
-// Windows uses Structured Exception Handling
-#include "safefetch_windows.hpp"
-#define SAFEFETCH_METHOD_SEH
-
-#elif defined(ZERO) || defined (_AIX)
-
-// These platforms use Posix sigsetjmp
-#include "safefetch_posix.hpp"
-#define SAFEFETCH_METHOD_SIGSETJMP
-
-#elif defined(LINUX) || defined(BSD)
-
-// These platforms use statically generated assembly
-#define SAFEFETCH_METHOD_STATIC_ASSEMBLY
-
+#ifdef _LP64
+extern "C" intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue);
 #else
+inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
+  return SafeFetch32(adr, errValue);
+}
+#endif // _LP64
 
-#error define safefetch method
+inline bool CanUseSafeFetch32() { return true; }
+inline bool CanUseSafeFetchN()  { return true; }
+bool handle_safefetch(int sig, address pc, void* context);
 
-#endif
-
-#endif // SHARE_RUNTIME_SAFEFETCH_METHOD_HPP
+#endif // SHARE_RUNTIME_SAFEFETCH_STATIC_HPP

@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "runtime/os.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -67,7 +67,6 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   PosixSignals::unblock_error_signals();
 
-  // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
   address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
@@ -76,16 +75,12 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
-  // Needed to make it possible to call SafeFetch.. APIs in error handling.
-#if defined(SAFEFETCH_METHOD_STUBROUTINES) || defined(SAFEFETCH_METHOD_STATIC_ASSEMBLY)
-  if (uc && pc && SafeFetchHelper::is_safefetch_fault(pc)) {
-    os::Posix::ucontext_set_pc(uc, SafeFetchHelper::continuation_for_safefetch_fault(pc));
+#if defined(SAFEFETCH_METHOD_STATIC_ASSEMBLY) || defined(SAFEFETCH_METHOD_SIGSETJMP)
+  // Handle safefetch here too, to be able to use SafeFetc() inside the error handler
+  if (handle_safefetch(sig, pc, uc)) {
     return;
   }
-#elif defined(SAFEFETCH_METHOD_SIGSETJMP)
-  handle_safefetch(sig); // does not return if handled. If it returns, it was no safefetch fault.
-#endif // SAFEFETCH_METHOD_SIGSETJMP
-
+#endif // SAFEFETCH_xxx handling
 
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT

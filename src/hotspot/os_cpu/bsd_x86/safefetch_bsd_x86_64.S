@@ -31,12 +31,12 @@
 #define ELF_TYPE(name, description) .type name,description
 #endif
 
-    .globl SYMBOL(_SafeFetch32)
-    .globl SYMBOL(_SafeFetch64)
+    .globl SYMBOL(SafeFetch32)
+    .globl SYMBOL(SafeFetchN)
     .globl SYMBOL(_SafeFetch32_fault)
-    .globl SYMBOL(_SafeFetch64_fault)
+    .globl SYMBOL(_SafeFetchN_fault)
     .globl SYMBOL(_SafeFetch32_continuation)
-    .globl SYMBOL(_SafeFetch64_continuation)
+    .globl SYMBOL(_SafeFetchN_continuation)
 
     .text
 
@@ -44,8 +44,8 @@
     #
     #  %rdi : address
     #  %esi : defaultval
-	ELF_TYPE(_SafeFetch32,@function)
-SYMBOL(_SafeFetch32:)
+	ELF_TYPE(SafeFetch32,@function)
+SYMBOL(SafeFetch32:)
 SYMBOL(_SafeFetch32_fault:)
     movl (%rdi), %eax
     ret
@@ -53,15 +53,15 @@ SYMBOL(_SafeFetch32_continuation:)
     movl %esi, %eax
     ret
 
-    # Support for uint64_t SafeFetch64(uint64_t* address, uint64_t defaultval);
+    # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
     #
     #  %rdi : address
     #  %rsi : defaultval
-    ELF_TYPE(_SafeFetch64,@function)
-SYMBOL(_SafeFetch64:)
-SYMBOL(_SafeFetch64_fault:)
+    ELF_TYPE(SafeFetchN,@function)
+SYMBOL(SafeFetchN:)
+SYMBOL(_SafeFetchN_fault:)
     movq (%rdi), %rax
     ret
-SYMBOL(_SafeFetch64_continuation:)
+SYMBOL(_SafeFetchN_continuation:)
     movq %rsi, %rax
     ret

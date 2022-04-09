@@ -23,10 +23,10 @@
  *
  */
 
-    .globl _SafeFetch64
-    .globl _SafeFetch64_fault
-    .globl _SafeFetch64_continuation
-    .globl _SafeFetch32
+    .globl SafeFetchN
+    .globl _SafeFetchN_fault
+    .globl _SafeFetchN_continuation
+    .globl SafeFetch32
     .globl _SafeFetch32_fault
     .globl _SafeFetch32_continuation
 
@@ -34,20 +34,20 @@
     #
     #  x0 : address
     #  x1 : defaultval
-_SafeFetch32:
+SafeFetch32:
 _SafeFetch32_fault:
     ldr      w1, [x0]
 _SafeFetch32_continuation:
     mov      x0, x1
     ret
 
-    # Support for uint64_t SafeFetch64(uint64_t* address, uint64_t defaultval);
+    # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
     #
     #  x1 : address
     #  x0 : defaultval
-_SafeFetch64:
-_SafeFetch64_fault:
+SafeFetchN:
+_SafeFetchN_fault:
     ldr      x1, [x0]
-_SafeFetch64_continuation:
+_SafeFetchN_continuation:
     mov      x0, x1
     ret
