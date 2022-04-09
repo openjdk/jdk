@@ -22,9 +22,10 @@
  *
  */
 
+#include "precompiled.hpp"
+
 #ifdef COMPILER2
 
-#include "precompiled.hpp"
 #include "opto/matcher.hpp"
 #include "opto/parse.hpp"
 #include "opto/node.hpp"
