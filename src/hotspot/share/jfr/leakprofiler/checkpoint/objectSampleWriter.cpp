@@ -164,6 +164,10 @@ class FieldTable : public ResourceObj {
 
  public:
   FieldTable() : _table(new FieldInfoTable(this)), _lookup(NULL) {}
+  ~FieldTable() {
+    assert(_table != NULL, "invariant");
+    delete _table;
+  }
 
   traceid store(const ObjectSampleFieldInfo* field_info) {
     assert(field_info != NULL, "invariant");
@@ -174,11 +178,6 @@ class FieldTable : public ResourceObj {
 
   size_t size() const {
     return _table->cardinality();
-  }
-
-  void clear() {
-    assert(_table != NULL, "invariant");
-    delete _table;
   }
 
   template <typename T>
@@ -613,6 +612,11 @@ ObjectSampleWriter::ObjectSampleWriter(JfrCheckpointWriter& writer, EdgeStore* s
   assert(store != NULL, "invariant");
   assert(!store->is_empty(), "invariant");
   register_serializers();
+  assert(field_infos == NULL, "Invariant");
+  assert(sample_infos == NULL, "Invariant");
+  assert(ref_infos == NULL, "Invariant");
+  assert(array_infos == NULL, "Invariant");
+  assert(root_infos == NULL, "Invariant");
 }
 
 ObjectSampleWriter::~ObjectSampleWriter() {
@@ -622,8 +626,9 @@ ObjectSampleWriter::~ObjectSampleWriter() {
   write_field_infos(_writer);
   write_root_descriptors(_writer);
 
+  // Followings are RA allocated, memory will be released automatically.
   if (field_infos != NULL) {
-    field_infos->clear();
+    field_infos->~FieldTable();
     field_infos = NULL;
   }
   sample_infos = NULL;
