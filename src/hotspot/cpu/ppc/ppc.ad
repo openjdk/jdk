@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2021 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -2098,6 +2098,10 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
     return 0; // TODO: PPC port ra_->C->frame_slots_sp_bias_in_bytes();
   }
   return 0;
+}
+
+bool Matcher::parse_one_bytecode(Parse& parser) {
+  return false;
 }
 
 const bool Matcher::match_rule_supported(int opcode) {

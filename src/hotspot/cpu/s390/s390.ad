@@ -1511,6 +1511,10 @@ static Register reg_to_register_object(int register_encoding) {
   return as_Register(register_encoding);
 }
 
+bool Matcher::parse_one_bytecode(Parse& parser) {
+  return false;
+}
+
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1818,6 +1818,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   return true; // Per default match rules are supported.
+}
+
+bool Matcher::parse_one_bytecode(Parse& parser) {
+  return false;
 }
 
 // Identify extra cases that we might want to provide match rules for vector nodes and

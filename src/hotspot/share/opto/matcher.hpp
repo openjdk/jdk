@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ class Node;
 class MachNode;
 class MachTypeNode;
 class MachOper;
+class Parse;
 
 //---------------------------Matcher-------------------------------------------
 class Matcher : public PhaseTransform {
@@ -199,6 +200,12 @@ public:
   void  set_visited( Node *n ) { _visited.set(n->_idx); }
   bool  is_dontcare( Node *n ) { return _dontcare.test(n->_idx) != 0; }
   void set_dontcare( Node *n ) {  _dontcare.set(n->_idx); }
+
+  // Parse a bytecode in a machine-dependent way, return false if it is
+  // not needed. Some machine instruction has a little different semantics
+  // from the corresponding VM instruction, transform during parsing
+  // help more efficient transformation in later phases
+  static bool parse_one_bytecode(Parse& parser);
 
   // Mode bit to tell DFA and expand rules whether we are running after
   // (or during) register selection.  Usually, the matcher runs before,

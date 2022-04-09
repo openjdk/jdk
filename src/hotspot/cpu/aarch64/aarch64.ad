@@ -2407,6 +2407,10 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
+bool Matcher::parse_one_bytecode(Parse& parser) {
+  return false;
+}
+
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
