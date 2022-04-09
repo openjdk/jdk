@@ -199,8 +199,8 @@ public class Krb5InitCredential
         EncryptionKey sessionKey = delegatedCred.getSessionKey();
 
         /*
-         * all the following data is optional in a KRB-CRED
-         * messages. This check for each field.
+         * All the following data is optional in a KRB-CRED
+         * message. This check for each field.
          */
 
         PrincipalName cPrinc = delegatedCred.getClient();

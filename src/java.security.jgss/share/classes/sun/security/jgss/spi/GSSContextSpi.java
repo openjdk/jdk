@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,9 +252,9 @@ public interface GSSContextSpi {
      * Provides per-message token encapsulation.
      *
      * @param is the user-provided message to be protected
-     * @param os the token to be sent to the peer. It includes
+     * @param is the token to be sent to the peer. It includes
      *    the message from <i>is</i> with the requested protection.
-     * @param msgProp on input, it contains the requested qop and
+     * @param msgProp on input, contains the requested qop and
      *    confidentiality state, on output, the applied values
      * @exception GSSException may be thrown
      * @see unwrap

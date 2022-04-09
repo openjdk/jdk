@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ abstract class MessageToken_v2 extends Krb5Token {
                                 : KG_USAGE_ACCEPTOR_SIGN);
             }
 
-            int minSize;    // minimal size for token data
+            int minSize = 0;    // minimal size for token data
             if (tokenId == Krb5Token.WRAP_ID_v2 && prop.getPrivacy()) {
                 minSize = CONFOUNDER_SIZE +
                         TOKEN_HEADER_SIZE + cipherHelper.getChecksumLength();

@@ -199,8 +199,8 @@ public class Krb5NameElement
             }
             hostName = hostName.toLowerCase(Locale.ENGLISH);
 
-        temp.append('/').append(hostName);
-        return temp.toString();
+            temp.append('/').append(hostName);
+            return temp.toString();
     }
 
     public final PrincipalName getKrb5PrincipalName() {

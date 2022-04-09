@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,28 +437,28 @@ class Krb5Context implements GSSContextSpi {
         credDelegState = state;
     }
 
-    final void setMutualAuthState() {
-        mutualAuthState = false;
+    final void setMutualAuthState(boolean state) {
+        mutualAuthState = state;
     }
 
-    final void setReplayDetState() {
-        replayDetState = false;
+    final void setReplayDetState(boolean state) {
+        replayDetState = state;
     }
 
-    final void setSequenceDetState() {
-        sequenceDetState = false;
+    final void setSequenceDetState(boolean state) {
+        sequenceDetState = state;
     }
 
-    final void setConfState() {
-        confState = false;
+    final void setConfState(boolean state) {
+        confState = state;
     }
 
-    final void setIntegState() {
-        integState = false;
+    final void setIntegState(boolean state) {
+        integState = state;
     }
 
-    final void setDelegPolicyState() {
-        delegPolicyState = false;
+    final void setDelegPolicyState(boolean state) {
+        delegPolicyState = state;
     }
 
     /**

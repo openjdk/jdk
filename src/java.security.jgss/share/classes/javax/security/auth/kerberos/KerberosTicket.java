@@ -689,7 +689,8 @@ public class KerberosTicket implements Destroyable, Refreshable,
         StringBuilder caddrString = new StringBuilder();
         if (clientAddresses != null) {
             for (int i = 0; i < clientAddresses.length; i++) {
-                caddrString.append("clientAddresses[").append(i).append("] = ").append(clientAddresses[i].toString());
+                caddrString.append("clientAddresses[" + i + "] = " +
+                        clientAddresses[i].toString());
             }
         }
         return ("Ticket (hex) = " + "\n" +

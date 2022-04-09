@@ -537,7 +537,9 @@ public class FileCredentialsCache extends CredentialsCache
                 // test if the directory exists
                 if (!(temp.isDirectory()))
                     fullname = null;
+                temp = null;
             }
+            fCheck = null;
 
         } catch (IOException e) {
             fullname = null; // invalid name

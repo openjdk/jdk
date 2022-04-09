@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,19 +88,19 @@ abstract class InitialToken extends Krb5Token {
 
             if (!tgt.isForwardable()) {
                 context.setCredDelegState(false);
-                context.setDelegPolicyState();
+                context.setDelegPolicyState(false);
             } else if (context.getCredDelegState()) {
                 if (context.getDelegPolicyState()) {
                     if (!serviceTicket.checkDelegate()) {
                         // delegation not permitted by server policy, mark it
-                        context.setDelegPolicyState();
+                        context.setDelegPolicyState(false);
                     }
                 }
             } else if (context.getDelegPolicyState()) {
                 if (serviceTicket.checkDelegate()) {
                     context.setCredDelegState(true);
                 } else {
-                    context.setDelegPolicyState();
+                    context.setDelegPolicyState(false);
                 }
             }
 
@@ -313,19 +313,19 @@ abstract class InitialToken extends Krb5Token {
                 context.setCredDelegState(true);
                 // default for the following are true
             if ((flags & CHECKSUM_MUTUAL_FLAG) == 0) {
-                context.setMutualAuthState();
+                context.setMutualAuthState(false);
             }
             if ((flags & CHECKSUM_REPLAY_FLAG) == 0) {
-                context.setReplayDetState();
+                context.setReplayDetState(false);
             }
             if ((flags & CHECKSUM_SEQUENCE_FLAG) == 0) {
-                context.setSequenceDetState();
+                context.setSequenceDetState(false);
             }
             if ((flags & CHECKSUM_CONF_FLAG) == 0) {
-                context.setConfState();
+                context.setConfState(false);
             }
             if ((flags & CHECKSUM_INTEG_FLAG) == 0) {
-                context.setIntegState();
+                context.setIntegState(false);
             }
         }
     }

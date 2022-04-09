@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import java.lang.reflect.Modifier;
  * from its peer in order to continue the context establishment phase. A
  * return code of COMPLETE signals that the local end of the context is
  * established. This may still require that a token be sent to the peer,
- * depending on if one is produced by GSS-API. The isEstablished method can
+ * depending if one is produced by GSS-API. The isEstablished method can
  * also be used to determine if the local end of the context has been
  * fully established. During the context establishment phase, the
  * isProtReady method may be called to determine if the context can be

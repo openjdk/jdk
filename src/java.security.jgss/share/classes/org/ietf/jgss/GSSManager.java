@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -482,7 +482,7 @@ public abstract class GSSManager {
      *    {@link GSSException#FAILURE GSSException.FAILURE}
      */
     public abstract GSSCredential createCredential(GSSName name,
-                                                   int lifetime, Oid[] mechs, int usage)
+                                      int lifetime, Oid[] mechs, int usage)
         throws GSSException;
 
     /**
