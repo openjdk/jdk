@@ -1557,6 +1557,17 @@ void Parse::do_one_block() {
     if (!Matcher::parse_one_bytecode(*this)) {
       do_one_bytecode();
     }
+#ifndef PRODUCT
+    if (C->should_print_igv(1)) {
+      IdealGraphPrinter* printer = C->igv_printer();
+      char buffer[256];
+      jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
+      bool old = printer->traverse_outs();
+      printer->set_traverse_outs(true);
+      printer->print_method(buffer, 4);
+      printer->set_traverse_outs(old);
+    }
+#endif
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
            "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);

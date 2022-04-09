@@ -62,7 +62,9 @@ bool Matcher::parse_one_bytecode(Parse& parser) {
       Node* iff_true = parser.IfTrue(iff);
       Node* iff_false = parser.IfFalse(iff);
       Node* res_fast = is_div
-                       ? gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt))
+                       ? ((in1 == in2)
+                          ? gvn.integercon(1, bt)
+                          : gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt)))
                        : gvn.zerocon(bt);
       Node* res_slow;
       if (is_div) {

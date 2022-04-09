@@ -8550,7 +8550,7 @@ instruct divI_rReg(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
 
   ins_cost(500);
   format %{ "cdql\n\t"
-            "idivl   $div\n" %}
+            "idivl   $div" %}
   ins_encode %{
     __ cdql();
     __ idivl($div$$Register);
@@ -8566,7 +8566,7 @@ instruct divL_rReg(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 
   ins_cost(500);
   format %{ "cdqq\n\t"
-            "idivq   $div\n" %}
+            "idivq   $div" %}
   ins_encode %{
     __ cdqq();
     __ idivq($div$$Register);
@@ -8583,7 +8583,7 @@ instruct divModI_rReg_divmod(rax_RegI rax, rdx_RegI rdx, no_rax_rdx_RegI div,
 
   ins_cost(500);
   format %{ "cdql\n\t"
-            "idivl   $div\n" %}
+            "idivl   $div" %}
   ins_encode %{
     __ cdql();
     __ idivl($div$$Register);
@@ -8600,7 +8600,7 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 
   ins_cost(500);
   format %{ "cdqq\n\t"
-            "idivq   $div\n" %}
+            "idivq   $div" %}
   ins_encode %{
     __ cdqq();
     __ idivq($div$$Register);
@@ -8616,7 +8616,7 @@ instruct modI_rReg(rdx_RegI rdx, rax_RegI rax, no_rax_rdx_RegI div,
 
   ins_cost(500);
   format %{ "cdql\n\t"
-            "idivl   $div\n" %}
+            "idivl   $div" %}
   ins_encode %{
     __ cdql();
     __ idivl($div$$Register);
@@ -8632,7 +8632,7 @@ instruct modL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div,
 
   ins_cost(500);
   format %{ "cdqq\n\t"
-            "idivq   $div\n" %}
+            "idivq   $div" %}
   ins_encode %{
     __ cdqq();
     __ idivq($div$$Register);
