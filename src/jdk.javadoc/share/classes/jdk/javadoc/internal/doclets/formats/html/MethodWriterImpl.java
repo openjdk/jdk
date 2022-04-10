@@ -47,11 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Writes method documentation in HTML format.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class MethodWriterImpl extends AbstractExecutableMemberWriter
         implements MethodWriter, MemberSummaryWriter {
@@ -200,7 +195,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .addTab(contents.getContent("doclet.Instance_Methods"), e -> !utils.isStatic(e))
                 .addTab(contents.getContent("doclet.Abstract_Methods"), utils::isAbstract)
                 .addTab(contents.getContent("doclet.Concrete_Methods"),
-                        e -> !utils.isAbstract(e) && !utils.isInterface(e.getEnclosingElement()))
+                        e -> !utils.isAbstract(e) && !utils.isPlainInterface(e.getEnclosingElement()))
                 .addTab(contents.getContent("doclet.Default_Methods"), utils::isDefault)
                 .addTab(contents.getContent("doclet.Deprecated_Methods"),
                         e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement));
