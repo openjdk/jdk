@@ -23,6 +23,8 @@
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import javax.swing.DefaultListModel;
 import javax.swing.ListModel;
 import javax.swing.JScrollPane;
@@ -47,6 +49,7 @@ public class TestMouseWheelScroll {
     static volatile int height;
     static volatile Point viewPosition;
     static volatile Point newPosition;
+    static volatile int direction;
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -81,6 +84,13 @@ public class TestMouseWheelScroll {
                     frame.setSize(200,200);
                     frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
+                    scrollPane.addMouseWheelListener(new MouseWheelListener() {
+                        @Override
+                        public void mouseWheelMoved(MouseWheelEvent event) {
+                            System.out.println(event.getWheelRotation());
+                            direction = event.getWheelRotation();
+                        }
+                    });
                 });
                 robot.waitForIdle();
                 robot.delay(1000);
@@ -97,12 +107,11 @@ public class TestMouseWheelScroll {
                     viewPosition = scrollPane.getViewport().getViewPosition();
                 });
                 robot.delay(1000);
-                if (!(System.getProperty("os.name").contains("OS X"))) {
-                    robot.mouseWheel(1);
-                } else {
+                robot.mouseWheel(1);
+                robot.delay(500);
+                if (direction == -1) {
                     robot.mouseWheel(-1);
                 }
-                robot.delay(500);
                 SwingUtilities.invokeAndWait(() -> {
                     newPosition = scrollPane.getViewport().getViewPosition();
                 });
