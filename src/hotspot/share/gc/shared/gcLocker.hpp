@@ -51,8 +51,8 @@ class GCLocker: public AllStatic {
   // critical sections are exited before a new one is started.
   static void verify_critical_count() NOT_DEBUG_RETURN;
 
-  static void jni_lock(JavaThread* thread);
-  static void jni_unlock(JavaThread* thread);
+  static void stall_until_no_needs_gc(JavaThread* thread);
+  static void ack_needs_gc_if_last_thread(JavaThread* thread);
 
   static bool is_active_internal() {
     verify_critical_count();
