@@ -45,6 +45,7 @@ bool Matcher::parse_one_bytecode(Parse& parser) {
     case Bytecodes::_irem: // fallthrough
     case Bytecodes::_lrem: {
       BasicType bt;
+      // Operands need to stay in the stack during zero check
       if (bc == Bytecodes::_idiv || bc == Bytecodes::_irem) {
         bt = T_INT;
         parser.zero_check_int(parser.peek(0));
@@ -56,15 +57,27 @@ bool Matcher::parse_one_bytecode(Parse& parser) {
 
       Node* in2 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
       Node* in1 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
+
+      if (in1 == in2) {
+        Node* res = gvn.integercon(is_div ? 1 : 0, bt);
+        if (bt == T_INT) {
+          parser.push(res);
+        } else {
+          parser.push_pair(res);
+        }
+        return true;
+      }
+
+      // the generated graph is equivalent to (in2 == -1) ? -in1 : (in1 / in2)
+      // we need to have a separate branch for in2 == -1 due to overflow error
+      // with (min_jint / -1) on x86, fast path comes as a nice bonus
       Node* cmp = gvn.transform(CmpNode::make(in2, gvn.integercon(-1, bt), bt));
       Node* bol = parser.Bool(cmp, BoolTest::eq);
       IfNode* iff = parser.create_and_map_if(parser.control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
       Node* iff_true = parser.IfTrue(iff);
       Node* iff_false = parser.IfFalse(iff);
       Node* res_fast = is_div
-                       ? ((in1 == in2)
-                          ? gvn.integercon(1, bt)
-                          : gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt)))
+                       ? gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt))
                        : gvn.zerocon(bt);
       Node* res_slow;
       if (is_div) {

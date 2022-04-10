@@ -1360,10 +1360,12 @@ private:
   void hlt();
 
   void idivl(Register src);
+  void idivl(Address src);
   void divl(Register src); // Unsigned division
 
 #ifdef _LP64
   void idivq(Register src);
+  void idivq(Address src);
 #endif
 
   void imull(Register src);

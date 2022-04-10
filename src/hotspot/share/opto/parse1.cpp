@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jvm_io.h"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/resourceArea.hpp"
