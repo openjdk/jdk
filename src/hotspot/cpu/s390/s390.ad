@@ -697,27 +697,18 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
 }
 
 static inline void z_emit16(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 16), "instruction too large");
-  *((unsigned short*)(cbuf.insts_end())) = (unsigned short)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned short));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 2);
 }
 
 static inline void z_emit32(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value < (1L << 32), "instruction too large");
-  *((unsigned int*)(cbuf.insts_end())) = (unsigned int)value;
-  cbuf.set_insts_end(cbuf.insts_end() + sizeof(unsigned int));
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 4);
 }
 
 static inline void z_emit48(CodeBuffer &cbuf, long value) {
-  // 32bit instructions may become sign extended.
-  assert(value >= 0, "unintended sign extension (int->long)");
-  assert(value < (1L << 48), "instruction too large");
-  value = value<<16;
-  memcpy(cbuf.insts_end(), (unsigned char*)&value, 6);
-  cbuf.set_insts_end(cbuf.insts_end() + 6);
+  C2_MacroAssembler _masm(&cbuf);
+  __ emit_instruction((unsigned long)value, 6);
 }
 
 static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
@@ -726,19 +717,9 @@ static inline unsigned int z_emit_inst(CodeBuffer &cbuf, long value) {
     value = (long)((unsigned long)((unsigned int)value));
   }
 
-  if (value < (1L << 16)) { // 2-byte instruction
-    z_emit16(cbuf, value);
-    return 2;
-  }
-
-  if (value < (1L << 32)) { // 4-byte instruction, might be unaligned store
-    z_emit32(cbuf, value);
-    return 4;
-  }
-
-  // 6-byte instruction, probably unaligned store.
-  z_emit48(cbuf, value);
-  return 6;
+  C2_MacroAssembler _masm(&cbuf);
+  int len = __ emit_instruction((unsigned long)value, 0);
+  return len;
 }
 
 // Check effective address (at runtime) for required alignment.

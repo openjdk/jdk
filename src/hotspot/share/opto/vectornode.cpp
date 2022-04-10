@@ -157,6 +157,10 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return (bt == T_FLOAT ? Op_SqrtVF : 0);
   case Op_SqrtD:
     return (bt == T_DOUBLE ? Op_SqrtVD : 0);
+  case Op_RoundF:
+    return (bt == T_INT ? Op_RoundVF : 0);
+  case Op_RoundD:
+    return (bt == T_LONG ? Op_RoundVD : 0);
   case Op_PopCountI:
     // Unimplemented for subword types since bit count changes
     // depending on size of lane (and sign bit).
@@ -584,6 +588,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
 
   case Op_SqrtVF: return new SqrtVFNode(n1, vt);
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
+
+  case Op_RoundVF: return new RoundVFNode(n1, vt);
+  case Op_RoundVD: return new RoundVDNode(n1, vt);
 
   case Op_PopCountVI: return new PopCountVINode(n1, vt);
   case Op_PopCountVL: return new PopCountVLNode(n1, vt);

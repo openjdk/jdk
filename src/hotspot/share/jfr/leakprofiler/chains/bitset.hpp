@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ class BitSet : public CHeapObj<mtTracing> {
 
   public:
     BitMapFragmentTable(int table_size) : BasicHashtable<mtTracing>(table_size, sizeof(Entry)) {}
+    ~BitMapFragmentTable();
     void add(uintptr_t key, CHeapBitMap* value);
     CHeapBitMap** lookup(uintptr_t key);
   };
