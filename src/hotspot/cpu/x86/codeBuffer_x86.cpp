@@ -23,28 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/codeBuffer.hpp"
+#include "asm/codeBuffer.inline.hpp"
 #include "asm/macroAssembler.hpp"
-#include "ci/ciEnv.hpp"
-#include "code/compiledIC.hpp"
 
-bool CodeBuffer::emit_shared_stubs_to_interp() {
-  MacroAssembler masm(this);
-  LinkedListIterator<SharedStubToInterpRequest> it(_shared_stub_to_interp_requests.head());
-  SharedStubToInterpRequest* request = it.next();
-  while (request != NULL) {
-    address stub = masm.start_a_stub(CompiledStaticCall::to_interp_stub_size());
-    if (stub == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return false;
-    }
-    Method* method = request->shared_method();
-    do {
-      masm.relocate(static_stub_Relocation::spec(request->caller_pc()), Assembler::imm_operand);
-      request = it.next();
-    } while (request != NULL && request->shared_method() == method);
-    masm.emit_static_call_stub();
-    masm.end_a_stub();
-  }
-  return true;
+bool CodeBuffer::pd_finalize_stubs() {
+  return emit_shared_stubs_to_interp<MacroAssembler, Assembler::imm_operand>(this, _shared_stub_to_interp_requests);
 }
