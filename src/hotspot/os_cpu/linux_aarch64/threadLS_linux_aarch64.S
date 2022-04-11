@@ -20,7 +20,7 @@
 // questions.
 
         // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-        // in NativeCompilation.gmk, this ensure reproducible .debuginfo
+        // in NativeCompilation.gmk, this ensures reproducible .debuginfo
         .file ASSEMBLY_SRC_FILE
 
         // JavaThread::aarch64_get_thread_helper()

@@ -22,7 +22,7 @@
  *
  */
         // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-        // in NativeCompilation.gmk, this ensure reproducible .debuginfo
+        // in NativeCompilation.gmk, this ensures reproducible .debuginfo
         .file ASSEMBLY_SRC_FILE
 
         .global _Copy_conjoint_words
