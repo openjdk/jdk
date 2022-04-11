@@ -35,9 +35,9 @@ public class TestFillerObjectInstantiation {
     private static void testInstantiationFails(String classname) throws Exception {
         System.out.println("trying to instantiate " + classname);
         try {
-            o = System.getSystemClassLoader().loadClass(classname).newInstance();
+            Object o = ClassLoader.getSystemClassLoader().loadClass(classname).newInstance();
             throw new Error("Have been able to instantiate " + classname);
-        } catch (ClassNotFoundException e) {
+        } catch (IllegalAccessException | ClassNotFoundException e) {
             System.out.println("Could not instantiate " + classname + " as expected");
             System.out.println("Message: " + e.toString());
         }
