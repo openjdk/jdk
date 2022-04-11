@@ -2063,7 +2063,7 @@ public abstract sealed class VarHandle implements Constable
     }
 
     @ForceInline
-    boolean checkExactAccessMode(VarHandle.AccessDescriptor ad) {
+    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
         if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
             throwWrongMethodTypeException(ad);
         }
@@ -2072,7 +2072,7 @@ public abstract sealed class VarHandle implements Constable
     }
 
     @DontInline
-    final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
+    private final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
         throw new WrongMethodTypeException("expected " + accessModeType(ad.type) + " but found "
                 + ad.symbolicMethodTypeExact);
     }

@@ -98,8 +98,8 @@ import java.util.function.BiFunction;
     }
 
     @ForceInline
-    boolean checkExactAccessMode(VarHandle.AccessDescriptor ad) {
-        super.checkExactAccessMode(ad);
+    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
+        super.checkAccessModeThenIsDirect(ad);
         // return false to indicate this is an IndirectVarHandle
         return false;
     }
