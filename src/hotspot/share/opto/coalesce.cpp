@@ -513,6 +513,7 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
     lrgs(lr1)._maxfreq = lrgs(lr2)._maxfreq;
 
   lrgs(lr1)._region = MAX2(lrgs(lr1)._region, lrgs(lr2)._region);
+  lrgs(lr1)._region2 = MIN2(lrgs(lr1)._region2, lrgs(lr2)._region2);
 
   // Copy original value instead.  Intermediate copies go dead, and
   // the dst_copy becomes useless.
@@ -650,6 +651,10 @@ static void record_bias( const PhaseIFG *ifg, int lr1, int lr2 ) {
     ifg->lrgs(lr2)._copy_bias = lr1;
 }
 
+void roland_debug(PhaseChaitin* pc, uint lr) {
+  pc->lrgs(lr).dump();
+}
+
 // See if I can coalesce a series of multiple copies together.  I need the
 // final dest copy and the original src copy.  They can be the same Node.
 // Compute the compatible register masks.
@@ -665,9 +670,16 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   uint lr1 = _phc._lrg_map.find(dst_copy);
   uint lr2 = _phc._lrg_map.find(src_def);
 
-  if (lrgs(lr1)._region2 < _region || lrgs(lr2)._region2 < _region) {
-    return false;
-  }
+//  if (lrgs(lr1)._region2 < _region || lrgs(lr2)._region2 < _region) {
+//    return false;
+//  }
+//
+//  if (lrgs(lr1)._region > _region || lrgs(lr2)._region > _region) {
+//    return false;
+//  }
+//  if (lrgs(lr1)._region != _region || lrgs(lr2)._region != _region) {
+//    return false;
+//  }
 
   // Same live ranges already?
   if (lr1 == lr2) {
@@ -757,6 +769,9 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
     }
   } // End of if dst_copy & src_copy are different
 
+  if (lrgs(lr1)._region != _region || lrgs(lr2)._region != _region) {
+    return false;
+  }
 
   // ---- THE COMBINED LRG IS COLORABLE ----
 

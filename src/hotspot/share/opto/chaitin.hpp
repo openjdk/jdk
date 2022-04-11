@@ -67,7 +67,7 @@ public:
 
   uint _next;                   // Index of next LRG in linked list
   uint _prev;                   // Index of prev LRG in linked list
-private:
+public:
   uint _reg;                    // Chosen register; undefined if mask is plural
   uint _prev_reg;
 public:
@@ -216,7 +216,8 @@ public:
          _msize_valid:1,        // _mask_size cache valid
          _degree_valid:1,       // _degree cache valid
          _has_copy:1,           // Adjacent to some copy instruction
-         _at_risk:1;            // Simplify says this guy is at risk to spill
+         _at_risk:1,            // Simplify says this guy is at risk to spill
+         _was_up_in_prev_region;
 
   uint _region;
   uint _region2;

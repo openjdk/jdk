@@ -729,6 +729,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         }  // end if found correct phi
       }  // end for all phi's
 
+      if (b->_region > region) {
+        needs_phi = false;
+      }
+
       // If a phi is needed or exist, check for it
       if( needs_phi || has_phi ) {
         // add new phinode if one not already found
@@ -758,10 +762,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         // PhiNodes should either force the LRG UP or DOWN depending
         // on its inputs and the register pressure in the Phi's block.
         UPblock[slidx] = true;  // Assume new DEF is UP
+//        if (b->_region > region && !_was_up_in_prev_region.test(phi->_idx)) {
+//          UPblock[slidx] = false;
+//        }
         // If entering a high-pressure area with no immediate use,
         // assume Phi is DOWN
-        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) && b->_region <= region)
-          UPblock[slidx] = false;
+        if( is_high_pressure( b, &lrgs(lidx), b->end_idx()) && !prompt_use(b,lidx) && b->_region <= region){
+          UPblock[slidx] = false;}
         // If we are not split up/down and all inputs are down, then we
         // are down
         if( !needs_split && !u3 )
