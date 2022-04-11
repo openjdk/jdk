@@ -36,78 +36,85 @@
 #include "opto/phase.hpp"
 #include "interpreter/bytecodes.hpp"
 
+static void parse_div_mod(Parse& parser);
+
 bool Matcher::parse_one_bytecode(Parse& parser) {
-  Bytecodes::Code bc = parser.bc();
-  PhaseGVN& gvn = parser.gvn();
-  switch (bc) {
+  switch (parser.bc()) {
     case Bytecodes::_idiv: // fallthrough
     case Bytecodes::_ldiv: // fallthrough
     case Bytecodes::_irem: // fallthrough
-    case Bytecodes::_lrem: {
-      BasicType bt;
-      // Operands need to stay in the stack during zero check
-      if (bc == Bytecodes::_idiv || bc == Bytecodes::_irem) {
-        bt = T_INT;
-        parser.zero_check_int(parser.peek(0));
-      } else {
-        bt = T_LONG;
-        parser.zero_check_long(parser.peek(1));
-      }
-      bool is_div = bc == Bytecodes::_idiv || bc == Bytecodes::_ldiv;
-
-      Node* in2 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
-      Node* in1 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
-
-      if (in1 == in2) {
-        Node* res = gvn.integercon(is_div ? 1 : 0, bt);
-        if (bt == T_INT) {
-          parser.push(res);
-        } else {
-          parser.push_pair(res);
-        }
-        return true;
-      }
-
-      // the generated graph is equivalent to (in2 == -1) ? -in1 : (in1 / in2)
-      // we need to have a separate branch for in2 == -1 due to overflow error
-      // with (min_jint / -1) on x86, fast path comes as a nice bonus
-      Node* cmp = gvn.transform(CmpNode::make(in2, gvn.integercon(-1, bt), bt));
-      Node* bol = parser.Bool(cmp, BoolTest::eq);
-      IfNode* iff = parser.create_and_map_if(parser.control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
-      Node* iff_true = parser.IfTrue(iff);
-      Node* iff_false = parser.IfFalse(iff);
-      Node* res_fast = is_div
-                       ? gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt))
-                       : gvn.zerocon(bt);
-      Node* res_slow;
-      if (is_div) {
-        res_slow = (bt == T_INT)
-                   ? gvn.transform(new DivINode(iff_false, in1, in2))
-                   : gvn.transform(new DivLNode(iff_false, in1, in2));
-      } else {
-        res_slow = (bt == T_INT)
-                   ? gvn.transform(new ModINode(iff_false, in1, in2))
-                   : gvn.transform(new ModLNode(iff_false, in1, in2));
-      }
-      Node* merge = new RegionNode(3);
-      merge->init_req(1, iff_true);
-      merge->init_req(2, iff_false);
-      parser.record_for_igvn(merge);
-      parser.set_control(gvn.transform(merge));
-      Node* res = new PhiNode(merge, Type::get_const_basic_type(bt));
-      res->init_req(1, res_fast);
-      res->init_req(2, res_slow);
-      res = gvn.transform(res);
-
-      if (bt == T_INT) {
-        parser.push(res);
-      } else {
-        parser.push_pair(res);
-      }
+    case Bytecodes::_lrem:
+      parse_div_mod(parser);
       return true;
-    }
     default:
       return false;
+  }
+}
+
+static void parse_div_mod(Parse& parser) {
+  Bytecodes::Code bc = parser.bc();
+  PhaseGVN& gvn = parser.gvn();
+  BasicType bt = (bc == Bytecodes::_idiv || bc == Bytecodes::_irem) ? T_INT : T_LONG;
+  bool is_div = (bc == Bytecodes::_idiv || bc == Bytecodes::_ldiv);
+  // Operands need to stay in the stack during zero check
+  if (bt == T_INT) {
+    parser.zero_check_int(parser.peek(0));
+  } else {
+    parser.zero_check_long(parser.peek(1));
+  }
+  // Compile time detect of arithmetic exception
+  if (parser.stopped()) {
+    return;
+  }
+
+  Node* in2 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
+  Node* in1 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
+
+  if (in1 == in2) {
+    Node* res = gvn.integercon(is_div ? 1 : 0, bt);
+    if (bt == T_INT) {
+      parser.push(res);
+    } else {
+      parser.push_pair(res);
+    }
+    return;
+  }
+
+  // the generated graph is equivalent to (in2 == -1) ? -in1 : (in1 / in2)
+  // we need to have a separate branch for in2 == -1 due to overflow error
+  // with (min_jint / -1) on x86, fast path comes as a nice bonus
+  Node* cmp = gvn.transform(CmpNode::make(in2, gvn.integercon(-1, bt), bt));
+  Node* bol = parser.Bool(cmp, BoolTest::eq);
+  IfNode* iff = parser.create_and_map_if(parser.control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
+  Node* iff_true = parser.IfTrue(iff);
+  Node* iff_false = parser.IfFalse(iff);
+  Node* res_fast = is_div
+                   ? gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt))
+                   : gvn.zerocon(bt);
+  Node* res_slow;
+  if (is_div) {
+    res_slow = (bt == T_INT)
+               ? gvn.transform(new DivINode(iff_false, in1, in2))
+               : gvn.transform(new DivLNode(iff_false, in1, in2));
+  } else {
+    res_slow = (bt == T_INT)
+               ? gvn.transform(new ModINode(iff_false, in1, in2))
+               : gvn.transform(new ModLNode(iff_false, in1, in2));
+  }
+  Node* merge = new RegionNode(3);
+  merge->init_req(1, iff_true);
+  merge->init_req(2, iff_false);
+  parser.record_for_igvn(merge);
+  parser.set_control(gvn.transform(merge));
+  Node* res = new PhiNode(merge, Type::get_const_basic_type(bt));
+  res->init_req(1, res_fast);
+  res->init_req(2, res_slow);
+  res = gvn.transform(res);
+
+  if (bt == T_INT) {
+    parser.push(res);
+  } else {
+    parser.push_pair(res);
   }
 }
 
