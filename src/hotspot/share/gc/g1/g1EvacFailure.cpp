@@ -215,7 +215,7 @@ class RemoveSelfForwardPtrHRChunkClosure : public G1HeapRegionChunkClosure {
     }
 
     G1GCPhaseTimes* p = _g1h->phase_times();
-    p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, rspc.marked_words(), G1GCPhaseTimes::RemoveSelfForwardObjectsBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, rspc.marked_words() << LogHeapWordSize, G1GCPhaseTimes::RemoveSelfForwardObjectsBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RemoveSelfForwardsInChunks, _worker_id, rspc.marked_objects(), G1GCPhaseTimes::RemoveSelfForwardObjectsNum);
   }
 
@@ -235,7 +235,6 @@ public:
 };
 
 G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
-  WorkerTask("G1 Remove Self-forwarding Pointers"),
   _g1h(G1CollectedHeap::heap()),
   _evac_failure_regions(evac_failure_regions) { }
 
@@ -246,8 +245,4 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   _evac_failure_regions->par_iterate_chunks_in_regions(&chunk_closure, worker_id);
 
   chunk_closure.sync_last_region_data();
-}
-
-uint G1ParRemoveSelfForwardPtrsTask::num_failed_regions() const {
-  return _evac_failure_regions->num_regions_failed_evacuation();
 }

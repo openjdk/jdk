@@ -100,18 +100,16 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask1::RemoveSelfForwardPtrsTask : public G1AbstractSubTask {
   G1ParRemoveSelfForwardPtrsTask _task;
   G1EvacFailureRegions* _evac_failure_regions;
-  const char* _task_name;
 
 public:
-  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions, const char* task_name) :
+  RemoveSelfForwardPtrsTask(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::RestoreRetainedRegions),
     _task(evac_failure_regions),
-    _evac_failure_regions(evac_failure_regions),
-    _task_name(task_name) { }
+    _evac_failure_regions(evac_failure_regions) { }
 
   double worker_cost() const override {
     assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
-    return _evac_failure_regions->num_regions_failed_evacuation() * G1RemoveSelfForwardPtrsWorkerCost;
+    return _evac_failure_regions->num_regions_failed_evacuation() * G1PerRetainedRegionThreads;
   }
 
   void do_work(uint worker_id) override {
@@ -123,11 +121,9 @@ public:
   }
 };
 
-const char* G1PostEvacuateCollectionSetCleanupTask1::_name = "Post Evacuate Cleanup 1";
-
 G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedTask(_name, G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evacuation_failed = evac_failure_regions->evacuation_failed();
 
@@ -140,7 +136,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   if (evacuation_failed) {
     add_parallel_task(evac_failure_regions->create_prepare_regions_task());
 
-    RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions, _name);
+    RemoveSelfForwardPtrsTask* remove_self_forward_task = new RemoveSelfForwardPtrsTask(evac_failure_regions);
     add_parallel_task(remove_self_forward_task);
 
     uint num_workers = clamp(num_workers_estimate(), 1u, G1CollectedHeap::heap()->workers()->active_workers());

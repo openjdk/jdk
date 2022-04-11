@@ -47,7 +47,6 @@ class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class SampleCollectionSetCandidatesTask;
   class RemoveSelfForwardPtrsTask;
 
-  static const char* _name;
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
                                           G1EvacFailureRegions* evac_failure_regions);
