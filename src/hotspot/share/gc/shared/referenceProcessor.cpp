@@ -860,8 +860,8 @@ inline bool ReferenceProcessor::set_discovered_link(HeapWord* discovered_addr, o
 inline void ReferenceProcessor::add_to_discovered_list(DiscoveredList& refs_list,
                                                        oop obj,
                                                        HeapWord* discovered_addr) {
-  ResourceMark rm; // needed by obj->klass()
-  
+  ResourceMark rm;
+
   oop current_head = refs_list.head();
   // Prepare value to put into the discovered field. The last ref must have its
   // discovered field pointing to itself.
@@ -999,8 +999,11 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
   assert(oopDesc::is_oop_or_null(discovered), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   if (discovered != NULL) {
-    // `G1CMTask::make_reference_grey` can push the same oop twice onto the
-    // mark stack, causing the "rediscovery" of a non-strong ref.
+    // A non-strong ref is "rediscovered". This is possible only for G1 in the
+    // following two cases:
+    //  1. `G1CMTask::make_reference_grey` can push the same oop twice onto the
+    //     mark stack.
+    //  2. CM restarts after mark-stack overflow.
     assert(UseG1GC, "inv");
     return true;
   }
