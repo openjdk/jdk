@@ -1957,7 +1957,7 @@ public final class Long extends Number
      * long compressLeft(long i, long mask) {
      *     // This implementation follows the description in Hacker's Delight which
      *     // is informative. A more optimal implementation is:
-     *     //   Long.compress(i, mask) << -Long.bitCount(m)
+     *     //   Long.compress(i, mask) << -Long.bitCount(mask)
      *     return Long.reverse(
      *         Long.compress(Long.reverse(i), Long.reverse(mask)));
      * }

@@ -1818,7 +1818,7 @@ public final class Integer extends Number
      * int compressLeft(int i, int mask) {
      *     // This implementation follows the description in Hacker's Delight which
      *     // is informative. A more optimal implementation is:
-     *     //   Integer.compress(i, mask) << -Integer.bitCount(m)
+     *     //   Integer.compress(i, mask) << -Integer.bitCount(mask)
      *     return Integer.reverse(
      *         Integer.compress(Integer.reverse(i), Integer.reverse(mask)));
      * }
