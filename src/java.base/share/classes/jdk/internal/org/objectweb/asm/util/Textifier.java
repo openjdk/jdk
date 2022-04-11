@@ -153,9 +153,8 @@ public class Textifier extends Printer {
     /**
       * Constructs a new {@link Textifier}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link
-      *     Opcodes#ASM8} or {@link Opcodes#ASM9}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected Textifier(final int api) {
         super(api);
@@ -920,9 +919,9 @@ public class Textifier extends Printer {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
         stringBuilder.setLength(0);
-        stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ').append(var).append('\n');
+        stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ').append(varIndex).append('\n');
         text.add(stringBuilder.toString());
     }
 
@@ -1045,12 +1044,12 @@ public class Textifier extends Printer {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
+    public void visitIincInsn(final int varIndex, final int increment) {
         stringBuilder.setLength(0);
         stringBuilder
                 .append(tab2)
                 .append("IINC ")
-                .append(var)
+                .append(varIndex)
                 .append(' ')
                 .append(increment)
                 .append('\n');

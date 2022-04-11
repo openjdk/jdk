@@ -34,7 +34,6 @@ import com.sun.tools.javac.util.Context;
 /**
  * Provides external entry points (tool and programmatic) for the javadoc program.
  */
-
 public class Main {
 
     /**

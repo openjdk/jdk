@@ -47,7 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * do is implement the ConstantsSummaryWriter interface and pass it to the
  * builder using a WriterFactory.
  */
-
 public abstract class AbstractBuilder {
     public static class Context {
         /**
