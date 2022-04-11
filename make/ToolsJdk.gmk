@@ -44,9 +44,6 @@ TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_cla
     --add-exports java.desktop/sun.awt=ALL-UNNAMED \
     build.tools.compilefontconfig.CompileFontConfig
 
-TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.compileproperties.CompileProperties
-
 TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.GenerateCharacter
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,17 @@
 BitSet::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
     _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, mtTracing, true /* clear */),
     _next(next) {
+}
+
+BitSet::BitMapFragmentTable::~BitMapFragmentTable() {
+  for (int index = 0; index < table_size(); index ++) {
+    Entry* e = bucket(index);
+    while (e != nullptr) {
+      Entry* tmp = e;
+      e = e->next();
+      free_entry(tmp);
+    }
+  }
 }
 
 BitSet::BitSet() :
