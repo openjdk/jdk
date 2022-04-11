@@ -523,6 +523,7 @@ typedef FcFontSet* (*FcFontSortFuncType)(FcConfig *config,
                                          FcResult *result);
 typedef FcCharSet* (*FcCharSetUnionFuncType)(const FcCharSet *a,
                                              const FcCharSet *b);
+typedef FcCharSet* (*FcCharSetDestroyFuncType)(FcCharSet *fcs);
 typedef FcChar32 (*FcCharSetSubtractCountFuncType)(const FcCharSet *a,
                                                    const FcCharSet *b);
 
@@ -808,6 +809,7 @@ Java_sun_font_FontConfigManager_getFontConfig
     FcFontSortFuncType FcFontSort;
     FcFontSetDestroyFuncType FcFontSetDestroy;
     FcCharSetUnionFuncType FcCharSetUnion;
+    FcCharSetDestroyFuncType FcCharSetDestroy;
     FcCharSetSubtractCountFuncType FcCharSetSubtractCount;
     FcGetVersionFuncType FcGetVersion;
     FcConfigGetCacheDirsFuncType FcConfigGetCacheDirs;
@@ -887,6 +889,8 @@ Java_sun_font_FontConfigManager_getFontConfig
         (FcFontSetDestroyFuncType)dlsym(libfontconfig, "FcFontSetDestroy");
     FcCharSetUnion =
         (FcCharSetUnionFuncType)dlsym(libfontconfig, "FcCharSetUnion");
+    FcCharSetDestroy =
+        (FcCharSetDestroyFuncType)dlsym(libfontconfig, "FcCharSetDestroy");
     FcCharSetSubtractCount =
         (FcCharSetSubtractCountFuncType)dlsym(libfontconfig,
                                               "FcCharSetSubtractCount");
@@ -902,6 +906,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         FcPatternGetCharSet  == NULL ||
         FcFontSetDestroy     == NULL ||
         FcCharSetUnion       == NULL ||
+        FcCharSetDestroy     == NULL ||
         FcGetVersion         == NULL ||
         FcCharSetSubtractCount == NULL) {/* problem with the library: return.*/
         closeFontConfig(libfontconfig, JNI_FALSE);
@@ -1100,7 +1105,11 @@ Java_sun_font_FontConfigManager_getFontConfig
             } else {
                 if ((*FcCharSetSubtractCount)(charset, unionCharset)
                     > minGlyphs) {
-                    unionCharset = (* FcCharSetUnion)(unionCharset, charset);
+                    FcCharSet *currentUnionSet = unionCharset;
+                    unionCharset = (* FcCharSetUnion)(currentUnionSet, charset);
+                    if (currentUnionSet != charset) {
+                        (*FcCharSetDestroy)(currentUnionSet);
+                    }
                 } else {
                     continue;
                 }
