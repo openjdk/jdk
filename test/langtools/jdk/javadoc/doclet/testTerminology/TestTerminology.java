@@ -143,11 +143,11 @@ public class TestTerminology extends JavadocTester {
 
         checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) < 0,
                 """
-                        var catTypes = "Types";""" //
+                        types: "Types","""
         );
         checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) >= 0,
                 """
-                        var catTypes = "Classes and Interfaces";"""
+                        types: "Classes and Interfaces","""
         );
     }
 
