@@ -21,6 +21,7 @@
 # questions.
 #
 
+        .file ASSEMBLY_SRC_FILE
 
         # NOTE WELL!  The _Copy functions are called directly
 	# from server-compiler-generated code via CallLeafNoFP,

@@ -356,7 +356,14 @@ define SetupCompileNativeFileBody
       $1_COMPILER := $$($$($1_BASE)_CC)
     else ifneq ($$(filter %.S, $$($1_FILENAME)), )
       # Compile as preprocessed assembler file
-      $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS)
+      # If no absolute paths allowed, work out relative source file path
+      # for assembly .file substitution, otherwise use full file path
+      ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), false)
+        $1_REL_ASM_SRC := $$(call RelativePath, $$($1_FILE), $(WORKSPACE_ROOT))
+      else
+        $1_REL_ASM_SRC := $$($1_FILE)
+      endif
+      $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS) -DASSEMBLY_SRC_FILE='"$$($1_REL_ASM_SRC)"'
       $1_COMPILER := $(AS)
     else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
       # Compile as a C++ or Objective-C++ file
@@ -1143,19 +1150,6 @@ define SetupNativeCompilationBody
         # There is no strlen function in make, but checking path depth is a
         # reasonable approximation.
         ifneq ($$(word 10, $$(subst /, ,$$(OUTPUTDIR))), )
-          $1_LINK_OBJS_RELATIVE := true
-          $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
-        endif
-      endif
-    endif
-
-    # Debuginfo of ASM objects always embeds the absolute object path,
-    # as ASM debuginfo paths do not get prefix mapped.
-    # So for reproducible builds use relative paths to ensure a reproducible
-    # debuginfo and libs, when creating debug symbols.
-    ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
-      ifeq ($(call isTargetOs, linux), true)
-        ifeq ($$($1_COMPILE_WITH_DEBUG_SYMBOLS), true)
           $1_LINK_OBJS_RELATIVE := true
           $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
         endif

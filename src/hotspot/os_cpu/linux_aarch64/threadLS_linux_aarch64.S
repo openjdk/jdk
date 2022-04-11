@@ -19,6 +19,8 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
+        .file ASSEMBLY_SRC_FILE
+
         // JavaThread::aarch64_get_thread_helper()
         //
         // Return the current thread pointer in x0.
