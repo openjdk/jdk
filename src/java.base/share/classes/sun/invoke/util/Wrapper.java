@@ -274,18 +274,14 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for unexpected types
      */
     public static Wrapper forPrimitiveType(char basicTypeChar) {
-        return switch (basicTypeChar) {
-            case 'I' -> INT;
-            case 'J' -> LONG;
-            case 'S' -> SHORT;
-            case 'B' -> BYTE;
-            case 'C' -> CHAR;
-            case 'F' -> FLOAT;
-            case 'D' -> DOUBLE;
-            case 'Z' -> BOOLEAN;
-            case 'V' -> VOID;
-            default -> throw newIllegalArgumentException("not primitive: " + basicTypeChar);
-        };
+        Wrapper w = FROM_CHAR[(basicTypeChar + (basicTypeChar >> 1)) % 16];
+        if (w == null || w.basicTypeChar != basicTypeChar) {
+            handleBasicTypeError(basicTypeChar);
+        }
+        if (w == OBJECT) {
+            throw newIllegalArgumentException("not primitive: " + basicTypeChar);
+        }
+        return w;
     }
 
     /** Return the wrapper that wraps values into the given wrapper type.
@@ -296,11 +292,10 @@ public enum Wrapper {
      */
     public static Wrapper forWrapperType(Class<?> type) {
         Wrapper w = findWrapperType(type);
-        if (w != null)  return w;
-        for (Wrapper x : values())
-            if (x.wrapperType == type)
-                throw new InternalError(); // missing wrapper type
-        throw newIllegalArgumentException("not wrapper: "+type);
+        if (w != null) {
+            return w;
+        }
+        throw wrapperTypeError(type);
     }
 
     static Wrapper findWrapperType(Class<?> type) {
@@ -317,24 +312,34 @@ public enum Wrapper {
         return null;
     }
 
+    @jdk.internal.vm.annotation.DontInline
+    private static RuntimeException wrapperTypeError(Class<?> type) {
+        for (Wrapper x : values())
+            if (x.wrapperType == type)
+                throw new InternalError(); // missing wrapper type
+        return newIllegalArgumentException("not wrapper: " + type);
+    }
+
     /** Return the wrapper that corresponds to the given bytecode
      *  signature character.  Return {@code OBJECT} for the character 'L'.
      *  @throws IllegalArgumentException for any non-signature character or {@code '['}.
      */
     public static Wrapper forBasicType(char type) {
-        return switch (type) {
-            case 'I' -> INT;
-            case 'J' -> LONG;
-            case 'S' -> SHORT;
-            case 'B' -> BYTE;
-            case 'C' -> CHAR;
-            case 'F' -> FLOAT;
-            case 'D' -> DOUBLE;
-            case 'Z' -> BOOLEAN;
-            case 'V' -> VOID;
-            case 'L' -> OBJECT;
-            default -> throw newIllegalArgumentException("not basic type: " + type);
-        };
+        Wrapper w = FROM_CHAR[(type + (type >> 1)) % 16];
+        if (w != null && w.basicTypeChar == type) {
+            return w;
+        }
+        throw basicTypeError(type);
+    }
+
+    @jdk.internal.vm.annotation.DontInline
+    private static RuntimeException basicTypeError(char type) {
+        for (Wrapper x : values()) {
+            if (x.basicTypeChar == type) {
+                throw new InternalError(); // redo hash function
+            }
+        }
+        return newIllegalArgumentException("not basic type char: " + type);
     }
 
     /** Return the wrapper for the given type, if it is
@@ -344,13 +349,25 @@ public enum Wrapper {
         if (type == int.class)      return INT;
         if (type == long.class)     return LONG;
         if (type == boolean.class)  return BOOLEAN;
-        if (type == short.class)    return SHORT;
+        if (type == void.class)     return VOID;
         if (type == byte.class)     return BYTE;
         if (type == char.class)     return CHAR;
         if (type == float.class)    return FLOAT;
         if (type == double.class)   return DOUBLE;
-        if (type == void.class)     return VOID;
+        if (type == short.class)    return SHORT;
         return OBJECT;  // any reference, including wrappers or arrays
+    }
+
+    // Note on perfect hashes:
+    //   for signature chars c, do (c + (c >> 1)) % 16
+    private static final Wrapper[] FROM_CHAR = new Wrapper[16];
+
+    static {
+        for (Wrapper w : values()) {
+            int ci = (w.basicTypeChar + (w.basicTypeChar >> 1)) % 16;
+            assert(FROM_CHAR[ci] == null);
+            FROM_CHAR[ci] = w;
+        }
     }
 
     /** What is the primitive type wrapped by this wrapper? */

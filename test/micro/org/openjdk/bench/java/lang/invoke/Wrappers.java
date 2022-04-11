@@ -81,6 +81,16 @@ public class Wrappers {
         'Z',
         'V',
         'L' };
+    public static char[] PRIM_TYPES = {
+        'I',
+        'J',
+        'S',
+        'B',
+        'C',
+        'F',
+        'D',
+        'Z',
+        'V' };
 
     @Benchmark
     public void forPrimitive(Blackhole bh) throws Throwable {
@@ -100,6 +110,13 @@ public class Wrappers {
     public void forBasicType(Blackhole bh) throws Throwable {
         for (char c : BASIC_TYPES) {
             bh.consume(Wrapper.forBasicType(c));
+        }
+    }
+
+    @Benchmark
+    public void forPrimitiveType(Blackhole bh) throws Throwable {
+        for (char c : PRIM_TYPES) {
+            bh.consume(Wrapper.forPrimitiveType(c));
         }
     }
 }
