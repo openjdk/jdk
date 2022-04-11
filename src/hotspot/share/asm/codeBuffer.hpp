@@ -29,7 +29,7 @@
 #include "code/relocInfo.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/linkedlist.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -353,17 +353,13 @@ class SharedStubToInterpRequest {
   address _caller_pc;
 
  public:
-  SharedStubToInterpRequest(Method* method, address caller_pc = NULL) : _shared_method(method),
+  SharedStubToInterpRequest(Method* method = NULL, address caller_pc = NULL) : _shared_method(method),
       _caller_pc(caller_pc) {}
 
-  bool equals(const SharedStubToInterpRequest& request) const {
-    return _shared_method == request._shared_method;
-  }
-
-  Method* shared_method() { return _shared_method; }
-  address caller_pc() { return _caller_pc; }
+  Method* shared_method() const { return _shared_method; }
+  address caller_pc() const { return _caller_pc; }
 };
-typedef LinkedListImpl<SharedStubToInterpRequest> SharedStubToInterpRequests;
+typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
 
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
