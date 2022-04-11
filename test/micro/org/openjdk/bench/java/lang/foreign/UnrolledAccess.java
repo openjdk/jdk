@@ -102,10 +102,10 @@ public class UnrolledAccess {
         final MemorySegment os = state.outputSegment;
 
         for(int i = 0; i < SIZE; i+=4) {
-            os.setAtIndex(JAVA_LONG, i, is.getAtIndex(JAVA_LONG, i) + os.get(JAVA_LONG, i));
-            os.setAtIndex(JAVA_LONG, i+1, is.getAtIndex(JAVA_LONG, i+1) + os.get(JAVA_LONG, i+1));
-            os.setAtIndex(JAVA_LONG, i+2, is.getAtIndex(JAVA_LONG, i+2) + os.get(JAVA_LONG, i+2));
-            os.setAtIndex(JAVA_LONG, i+3, is.getAtIndex(JAVA_LONG, i+3) + os.get(JAVA_LONG, i+3));
+            os.setAtIndex(JAVA_LONG, i, is.getAtIndex(JAVA_LONG, i) + os.getAtIndex(JAVA_LONG, i));
+            os.setAtIndex(JAVA_LONG, i+1, is.getAtIndex(JAVA_LONG, i+1) + os.getAtIndex(JAVA_LONG, i+1));
+            os.setAtIndex(JAVA_LONG, i+2, is.getAtIndex(JAVA_LONG, i+2) + os.getAtIndex(JAVA_LONG, i+2));
+            os.setAtIndex(JAVA_LONG, i+3, is.getAtIndex(JAVA_LONG, i+3) + os.getAtIndex(JAVA_LONG, i+3));
         }
     }
 }
