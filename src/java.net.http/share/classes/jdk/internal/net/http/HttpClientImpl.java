@@ -282,7 +282,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         assert builder.localAddr instanceof InetSocketAddress isa && isa.getPort() == 0;
         @SuppressWarnings("removal")
         var sm = System.getSecurityManager();
-        if (sm != null) {
+        if (sm != null && builder.localAddr != null) {
             sm.checkListen(((InetSocketAddress) (builder.localAddr)).getPort());
         }
         localAddr = builder.localAddr;
