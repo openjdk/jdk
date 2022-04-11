@@ -88,7 +88,7 @@ public class ColorConvertOpTests extends ColorConversionTests {
         static ImageType BYTE_4BYTE_ABGR_PRE = new ImageType(BufferedImage.TYPE_4BYTE_ABGR_PRE, "4BYTE_ABGR_PRE", "TYPE_4BYTE_ABGR_PRE");
         static ImageType BYTE_GRAY = new ImageType(BufferedImage.TYPE_BYTE_GRAY, "BYTE_GRAY", "TYPE_BYTE_GRAY");
         static ImageType BYTE_BINARY = new ImageType(BufferedImage.TYPE_BYTE_BINARY, "BYTE_BINARY", "TYPE_BYTE_BINARY");
-        static ImageType BYTE_INDEXED = new ImageType(BufferedImage.TYPE_BYTE_INDEXED, "BYTE_INDEXED", "BYTE_INDEXED");
+        static ImageType BYTE_INDEXED = new ImageType(BufferedImage.TYPE_BYTE_INDEXED, "BYTE_INDEXED", "TYPE_BYTE_INDEXED");
         static ImageType USHORT_565_RGB = new ImageType(BufferedImage.TYPE_USHORT_565_RGB, "USHORT_565_RGB", "TYPE_USHORT_565_RGB");
         static ImageType USHORT_555_RGB = new ImageType(BufferedImage.TYPE_USHORT_555_RGB, "USHORT_555_RGB", "TYPE_USHORT_555_RGB");
         static ImageType USHORT_GRAY = new ImageType(BufferedImage.TYPE_USHORT_GRAY, "USHORT_GRAY", "TYPE_USHORT_GRAY");
