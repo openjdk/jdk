@@ -129,7 +129,7 @@ public class InflaterInputStream extends FilterInputStream {
      * no bytes are read and {@code 0} is returned.
      * <p>
      * If <i>n</i> denotes the returned number of inflated bytes then {@code b[off]}
-     * trough {@code b[off+}<i>n</i>{@code -1]} will contain the uncompressed data. The
+     * through {@code b[off+}<i>n</i>{@code -1]} will contain the uncompressed data. The
      * elements {@code b[off+}<i>n</i>{@code ]} through {@code b[off+}<i>len</i>{@code -1]}
      * are undefined and an implementation is free to change them during the inflate
      * operation. If the return value is -1 or an exception is thrown the whole

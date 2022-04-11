@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,12 +170,12 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * blocks until some input is available; otherwise, no
      * bytes are read and {@code 0} is returned.
      * <p>
-     * If <i>n</i> denotes the returned number of inflated bytes then {@code b[off]}
-     * trough {@code b[off+}<i>n</i>{@code -1]} will contain the uncompressed data. The
-     * elements {@code b[off+}<i>n</i>{@code ]} through {@code b[off+}<i>len</i>{@code -1]}
-     * are undefined and an implementation is free to change them during the inflate
-     * operation. If the return value is -1 or an exception is thrown the whole
-     * content of {@code b} is undefined.
+     * If the current entry is compressed and <i>n</i> denotes the returned number of
+     * inflated bytes then {@code b[off]} trough {@code b[off+}<i>n</i>{@code -1]} will
+     * contain the uncompressed data. The elements {@code b[off+}<i>n</i>{@code ]} through
+     * {@code b[off+}<i>len</i>{@code -1]} are undefined and an implementation is free to
+     * change them during the inflate operation. If the return value is -1 or an exception
+     * is thrown the whole content of {@code b} is undefined.
      *
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
