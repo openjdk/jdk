@@ -26,8 +26,11 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -36,7 +39,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -81,11 +83,10 @@ public class InheritDocTaglet extends BaseTaglet {
         Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
         CommentHelper ch = utils.getCommentHelper(e);
-        Taglet inheritableTaglet = holderTag == null
+        Taglet taglet = holderTag == null
                 ? null
                 : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
-        if (inheritableTaglet != null &&
-                !(inheritableTaglet instanceof InheritableTaglet)) {
+        if (taglet != null && !(taglet instanceof InheritableTaglet)) {
             String message = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
                             ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
@@ -95,9 +96,8 @@ public class InheritDocTaglet extends BaseTaglet {
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag", message);
             return replacement;
         }
-        Input input = new DocFinder.Input(utils, e,
-                (InheritableTaglet) inheritableTaglet, new DocFinder.DocTreeInfo(holderTag, e),
-                isFirstSentence, true);
+        var input = new DocFinder.Input(utils, e, (InheritableTaglet) taglet,
+                new DocFinder.DocTreeInfo(holderTag, e), isFirstSentence, true);
         DocFinder.Output inheritedDoc = DocFinder.search(configuration, input);
         if (inheritedDoc.isValidInheritDocTag) {
             if (!inheritedDoc.inlineTags.isEmpty()) {
@@ -105,6 +105,14 @@ public class InheritDocTaglet extends BaseTaglet {
                         inheritedDoc.inlineTags, isFirstSentence);
             }
         } else {
+            // This is to assert that we don't reach here for a class declaration.
+            // Indeed, every class except for java.lang.Object has a superclass.
+            // If we ever reach here, we would need a different warning; because
+            // the below warning is about method declarations, not class declarations.
+            // Unless @inheritDoc is used inside java.lang.Object itself,
+            // which would clearly be an error, we shouldn't reach here.
+            assert !(e instanceof TypeElement typeElement)
+                    || typeElement.getSuperclass().getKind() == TypeKind.NONE;
             String message = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
                             ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
