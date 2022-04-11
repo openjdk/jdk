@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class AbsPathsInImage {
                 String fileName = file.toString();
                 if (Files.isSymbolicLink(file)) {
                     return super.visitFile(file, attrs);
-                } else if (fileName.endsWith(".debuginfo") || fileName.endsWith(".pdb")) {
+                } else if (fileName.endsWith(".pdb")) {
                     // Do nothing
                 } else if (fileName.endsWith(".zip")) {
                     scanZipFile(file, searchPatterns);
