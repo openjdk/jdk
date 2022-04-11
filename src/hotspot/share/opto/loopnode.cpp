@@ -843,7 +843,8 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     }
   }
 
-  // May not have gone thru igvn yet so don't use _igvn.type(phi) (PhaseIdealLoop::is_counted_loop() sets the iv phi's type)
+  // Take what we know about the number of iterations of the long counted loop into account when computing the limit of
+  // the inner loop.
   const Node* init = head->init_trip();
   const TypeInteger* lo = _igvn.type(init)->is_integer(bt);
   const TypeInteger* hi = _igvn.type(limit)->is_integer(bt);
