@@ -49,6 +49,7 @@ public class Guards {
         runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchStatement);
         runIfTrue(this::typeGuardAfterParenthesizedTrueSwitchExpression);
         runIfTrue(this::typeGuardAfterParenthesizedTrueIfStatement);
+        testGuardNPE();
     }
 
     void run(Function<Object, String> convert) {
@@ -156,6 +157,26 @@ public class Guards {
             return s;
         }
         return null;
+    }
+
+    void testGuardNPE() {
+        assertEquals("empty", guardNPE(""));
+        assertEquals("A", guardNPE("A"));
+        assertEquals("other", guardNPE(1));
+        try {
+            guardNPE(null);
+            throw new AssertionError("Expected exception missing.");
+        } catch (NullPointerException ex) {
+            //expected
+        }
+    }
+
+    String guardNPE(Object o) {
+        return switch (o) {
+            case null, String s when s.isEmpty() -> "empty";
+            case String s -> s;
+            case Object x -> "other";
+        };
     }
 
     void assertEquals(String expected, String actual) {
