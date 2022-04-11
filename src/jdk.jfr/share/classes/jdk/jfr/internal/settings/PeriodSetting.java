@@ -115,7 +115,7 @@ public final class PeriodSetting extends JDKSettingControl {
         default:
             long nanos = Utils.parseTimespanWithInfinity(value);
             if (nanos != Long.MAX_VALUE) {
-                eventType.setPeriod(nanos / 1_000_000, false, false);
+                eventType.setPeriod(Math.max(1, Math.round(nanos / 1_000_000f)), false, false);
             } else {
                 eventType.setPeriod(Long.MAX_VALUE, false, false);
             }

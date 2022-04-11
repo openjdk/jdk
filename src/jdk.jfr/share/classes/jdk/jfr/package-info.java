@@ -160,6 +160,8 @@
  * <li>{@code "h"} (hours)
  * <li>{@code "d"} (days)
  * </ul>
+ * The values are rounded to the next full millisecond,
+ * values lower than <code>1ms</code> are considered to be <code>1ms</code>.
  * </td>
  * <td>{@code "20 ms"}<br>
  * {@code "1 s"}<br>
