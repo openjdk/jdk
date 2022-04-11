@@ -448,7 +448,7 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
 }
 
 static bool can_use_shared_stub_for(LIR_OpJavaCall* op) {
-  return CodeBuffer::supports_shared_stubs() &&
+  return UseSharedStubs &&
          op->method()->is_loaded() &&
          (op->code() == lir_static_call || op->method()->is_final_method());
 }
