@@ -52,7 +52,6 @@ public class PrintLatinCJKTest implements Printable {
             the test pass. If there is a printer, press Print, send
             the output to the printer, and examine it. It should have
             text looking like this : \u4e00\u4e01\u4e02\u4e03\u4e04English
-            
             To test 8022536, if a remote printer is the system default,
             it should show in the dialog as the selected printer.
             """;
