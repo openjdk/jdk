@@ -588,7 +588,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   int load_alias_idx = C->get_alias_index(load->adr_type());
 #ifdef ASSERT
   assert(Compile::AliasIdxTop <= load_alias_idx && load_alias_idx < C->num_alias_types(), "Invalid alias index");
-  if (load_alias_idx == Compile::AliasIdxBot && C->AliasLevel() > 0 &&
+  if (load_alias_idx == Compile::AliasIdxBot && C->do_aliasing() &&
       (PrintOpto || VerifyAliases ||
        (PrintMiscellaneous && (WizardMode || Verbose)))) {
     // Load nodes should not consume all of memory.
