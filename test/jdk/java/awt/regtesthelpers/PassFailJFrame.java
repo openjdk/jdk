@@ -48,14 +48,14 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
 public class PassFailJFrame {
 
     private final static CountDownLatch latch = new CountDownLatch(1);
-    private static volatile boolean failed = false;
-    private static volatile boolean timeout = false;
+    private static volatile boolean failed;
+    private static volatile boolean timeout;
     private static volatile String testFailedReason;
     private static JFrame frame;
     private static final List<Frame> frameList = new ArrayList<>();
     private static final Timer timer = new Timer(0, null);
 
-    public enum POSITION {HORIZONTAL, VERTICAL}
+    public enum Position {HORIZONTAL, VERTICAL}
 
     /**
      * Constructs a JFrame with a given title & serves as test instructional
@@ -99,18 +99,18 @@ public class PassFailJFrame {
         instructionsText.setEditable(false);
         instructionsText.setLineWrap(true);
 
-        int testTimeout = (int) TimeUnit.MINUTES.toMillis(timeoutInMinutes);
+        long testTimeout = TimeUnit.MINUTES.toMillis(timeoutInMinutes);
 
         final JLabel testTimeoutLabel = new JLabel(String.format("Test " +
                 "timeout: %s", convertMillisToTimeStr(testTimeout)), JLabel.CENTER);
         final long startTime = System.currentTimeMillis();
         timer.setDelay(1000);
         timer.addActionListener((e) -> {
-            int leftTime = testTimeout - (int) (System.currentTimeMillis() - startTime);
+            long leftTime = testTimeout - (System.currentTimeMillis() - startTime);
             if ((leftTime < 0) || failed) {
                 timer.stop();
-                testFailedReason = "Failure Reason:\n Timeout " +
-                        "User did not perform testing.";
+                testFailedReason = "Failure Reason:\n"
+                        + "Timeout User did not perform testing.";
                 timeout = true;
                 latch.countDown();
             }
@@ -140,8 +140,8 @@ public class PassFailJFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 super.windowClosing(e);
-                testFailedReason = "Failure Reason:\n User closed the " +
-                        "instruction Frame";
+                testFailedReason = "Failure Reason:\n"
+                        + "User closed the instruction Frame";
                 failed = true;
                 latch.countDown();
             }
@@ -159,9 +159,9 @@ public class PassFailJFrame {
         if (millis < 0) {
             return "00:00:00";
         }
-        long hours = millis / 3600000;
-        long minutes = (millis - hours * 3600000) / 60000;
-        long seconds = (millis - hours * 3600000 - minutes * 60000) / 1000;
+        long hours = millis / 3_600_000;
+        long minutes = (millis - hours * 3_600_000) / 60_000;
+        long seconds = (millis - hours * 3_600_000 - minutes * 60_000) / 1_000;
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
@@ -171,14 +171,15 @@ public class PassFailJFrame {
      * the specified timeoutMinutes period and the test gets timeout.
      * Note: This method should be called from main() thread
      *
-     * @throws InterruptedException      exception thrown for invokeAndWait
+     * @throws InterruptedException      if the thread is interrupted
      * @throws InvocationTargetException exception thrown for invokeAndWait
      */
     public void awaitAndCheck() throws InterruptedException, InvocationTargetException {
-        latch.await();
         if (isEventDispatchThread()) {
-            disposeFrames();
-        } else invokeAndWait(PassFailJFrame::disposeFrames);
+            throw new IllegalStateException("awaitAndCheck() should not be called on EDT");
+        }
+        latch.await();
+        invokeAndWait(PassFailJFrame::disposeFrames);
 
         if (timeout) {
             throw new RuntimeException(testFailedReason);
@@ -195,7 +196,7 @@ public class PassFailJFrame {
      * Dispose all the frame(s) i,e both the test instruction frame as
      * well as the frame that is added via addTestFrame(Frame frame)
      */
-    private static void disposeFrames() {
+    private static synchronized void disposeFrames() {
         for (Frame f : frameList) {
             f.dispose();
         }
@@ -205,7 +206,7 @@ public class PassFailJFrame {
      * Read the test failure reason and add the reason to the test result
      * example in the jtreg .jtr file.
      */
-    public static void getFailureReason() {
+    private static void getFailureReason() {
         final JDialog dialog = new JDialog(frame, "Test Failure ", true);
         dialog.setTitle("Failure reason");
         JPanel jPanel = new JPanel(new BorderLayout());
@@ -224,15 +225,6 @@ public class PassFailJFrame {
 
         jPanel.add(okayBtnPanel, BorderLayout.SOUTH);
         dialog.add(jPanel);
-        dialog.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                super.windowClosing(e);
-                testFailedReason = "User closed the " +
-                        "dialog";
-            }
-        });
-
         dialog.setLocationRelativeTo(frame);
         dialog.pack();
         dialog.setVisible(true);
@@ -254,14 +246,14 @@ public class PassFailJFrame {
      *                  side or VERTICAL ( both test instruction frame and
      *                  test frame as arranged up and down)
      */
-    public static void positionTestFrame(Frame testFrame, POSITION position) {
+    public static void positionTestFrame(Frame testFrame, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        if (position.equals(POSITION.HORIZONTAL)) {
+        if (position.equals(Position.HORIZONTAL)) {
             int newX = ((screenSize.width / 2) - frame.getWidth());
             frame.setLocation(newX, frame.getY());
 
             testFrame.setLocation((frame.getLocation().x + frame.getWidth() + 5), frame.getY());
-        } else if (position.equals(POSITION.VERTICAL)) {
+        } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
             frame.setLocation(frame.getX(), newY);
 
@@ -277,7 +269,7 @@ public class PassFailJFrame {
      *
      * @param testFrame testFrame that needs to be disposed
      */
-    public synchronized static void addTestFrame(Frame testFrame) {
+    public static synchronized void addTestFrame(Frame testFrame) {
         frameList.add(testFrame);
     }
 }

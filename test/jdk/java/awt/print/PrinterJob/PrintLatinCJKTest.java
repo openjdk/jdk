@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8022536
+ * @bug 8008535 8022536
  * @library ../../regtesthelpers
  * @build PassFailJFrame
  * @summary JDK7 Printing: CJK and Latin Text in string overlap
@@ -48,12 +48,13 @@ public class PrintLatinCJKTest implements Printable {
     private static PrintLatinCJKTest testInstance = new PrintLatinCJKTest();
     private static JFrame frame;
     private static String info = """
-            To test 8022536, if a remote printer is the system default,
-            it should show in the dialog as the selected printer.
             You need a printer for this test. If you have none, let
             the test pass. If there is a printer, press Print, send
             the output to the printer, and examine it. It should have
             text looking like this : \u4e00\u4e01\u4e02\u4e03\u4e04English
+            
+            To test 8022536, if a remote printer is the system default,
+            it should show in the dialog as the selected printer.
             """;
 
     public static void showFrame() throws InterruptedException, InvocationTargetException {
@@ -80,7 +81,8 @@ public class PrintLatinCJKTest implements Printable {
             PassFailJFrame.addTestFrame(frame);
 
             // Arrange the test instruction frame and test frame side by side
-            PassFailJFrame.positionTestFrame(frame, PassFailJFrame.POSITION.HORIZONTAL);
+            PassFailJFrame.positionTestFrame(frame,
+                    PassFailJFrame.Position.HORIZONTAL);
         });
     }
 
