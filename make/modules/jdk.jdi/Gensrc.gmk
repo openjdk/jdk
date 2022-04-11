@@ -23,7 +23,7 @@
 # questions.
 #
 
-include GensrcCommonJdk.gmk
+include GensrcCommon.gmk
 
 ################################################################################
 # Translate the Java debugger wire protocol (jdwp.spec) file into a front-end

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@ package com.sun.hotspot.igv.view.widgets;
 
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
 import com.sun.hotspot.igv.graph.OutputSlot;
+import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
@@ -138,8 +138,10 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             public void select(Widget arg0, Point arg1, boolean arg2) {
                 Set<Figure> set = new HashSet<>();
                 for (Connection c : LineWidget.this.connections) {
-                    set.add(c.getInputSlot().getFigure());
-                    set.add(c.getOutputSlot().getFigure());
+                    if (c.hasSlots()) {
+                        set.add(scene.getWidget(c.getTo()));
+                        set.add(scene.getWidget(c.getFrom()));
+                    }
                 }
                 LineWidget.this.scene.setSelectedObjects(set);
             }
@@ -242,10 +244,12 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
         Set<Object> highlightedObjectsChange = new HashSet<>();
         for (Connection c : connections) {
-            highlightedObjectsChange.add(c.getInputSlot().getFigure());
-            highlightedObjectsChange.add(c.getInputSlot());
-            highlightedObjectsChange.add(c.getOutputSlot().getFigure());
-            highlightedObjectsChange.add(c.getOutputSlot());
+            if (c.hasSlots()) {
+                highlightedObjectsChange.add(c.getTo());
+                highlightedObjectsChange.add(c.getTo().getVertex());
+                highlightedObjectsChange.add(c.getFrom());
+                highlightedObjectsChange.add(c.getFrom().getVertex());
+            }
         }
         if(b) {
             highlightedObjects.addAll(highlightedObjectsChange);
@@ -312,14 +316,19 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     @Override
     public JPopupMenu getPopupMenu(Widget widget, Point localLocation) {
         JPopupMenu menu = new JPopupMenu();
-        menu.add(scene.createGotoAction(outputSlot.getFigure()));
-        menu.addSeparator();
-
-        for (Connection c : connections) {
-            InputSlot s = c.getInputSlot();
-            menu.add(scene.createGotoAction(s.getFigure()));
+        if (outputSlot == null) { // One-to-one block line.
+            assert (connections.size() == 1);
+            Connection c = connections.get(0);
+            menu.add(scene.createGotoAction((Block)c.getFromCluster()));
+            menu.addSeparator();
+            menu.add(scene.createGotoAction((Block)c.getToCluster()));
+        } else { // One-to-many figure line.
+            menu.add(scene.createGotoAction(outputSlot.getFigure()));
+            menu.addSeparator();
+            for (Connection c : connections) {
+                menu.add(scene.createGotoAction((Figure)c.getTo().getVertex()));
+            }
         }
-
         final LineWidget w = this;
         menu.addPopupMenuListener(new PopupMenuListener() {
 

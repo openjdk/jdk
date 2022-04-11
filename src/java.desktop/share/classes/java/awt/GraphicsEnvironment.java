@@ -357,9 +357,9 @@ public abstract class GraphicsEnvironment {
     }
 
     /**
-     * Indicates a preference for proportional over non-proportional (e.g.
-     * dual-spaced CJK fonts) fonts in the mapping of logical fonts to
-     * physical fonts. If the default mapping contains fonts for which
+     * Indicates a preference for proportional over non-proportional (for
+     * example dual-spaced CJK fonts) fonts in the mapping of logical fonts
+     * to physical fonts. If the default mapping contains fonts for which
      * proportional and non-proportional variants exist, then calling
      * this method indicates the mapping should use a proportional variant.
      * <p>

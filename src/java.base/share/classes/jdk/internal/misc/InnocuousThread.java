@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,15 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
-            return createThread(name, target, ClassLoader.getSystemClassLoader(), priority);
+            return createThread(name, target, 0L,
+                    ClassLoader.getSystemClassLoader(), priority);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return createThread(name, target, ClassLoader.getSystemClassLoader(), priority);
+                        return createThread(name, target, 0L,
+                                ClassLoader.getSystemClassLoader(), priority);
                     }
                 });
     }
@@ -104,28 +106,50 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newSystemThread(String name, Runnable target, int priority) {
         if (System.getSecurityManager() == null) {
-            return createThread(name, target, null, priority);
+            return createThread(name, target, 0L, null, priority);
         }
         return AccessController.doPrivileged(
                 new PrivilegedAction<Thread>() {
                     @Override
                     public Thread run() {
-                        return createThread(name, target, null, priority);
+                        return createThread(name, target, 0L,
+                                null, priority);
                     }
                 });
     }
 
-    private static Thread createThread(String name, Runnable target, ClassLoader loader, int priority) {
+    /**
+     * Returns a new InnocuousThread with null context class loader.
+     * Thread priority is set to the given priority.
+     */
+    public static Thread newSystemThread(String name, Runnable target,
+                                         long stackSize, int priority) {
+        if (System.getSecurityManager() == null) {
+            return createThread(name, target, stackSize, null, priority);
+        }
+        return AccessController.doPrivileged(
+                new PrivilegedAction<Thread>() {
+                    @Override
+                    public Thread run() {
+                        return createThread(name, target, 0L,
+                                null, priority);
+                    }
+                });
+    }
+
+    private static Thread createThread(String name, Runnable target, long stackSize,
+                                       ClassLoader loader, int priority) {
         Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
-                target, name, loader);
+                target, name, stackSize, loader);
         if (priority >= 0) {
             t.setPriority(priority);
         }
         return t;
     }
 
-    private InnocuousThread(ThreadGroup group, Runnable target, String name, ClassLoader tccl) {
-        super(group, target, name, 0L, false);
+    private InnocuousThread(ThreadGroup group, Runnable target, String name,
+                            long stackSize, ClassLoader tccl) {
+        super(group, target, name, stackSize, false);
         UNSAFE.putReferenceRelease(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
         UNSAFE.putReferenceRelease(this, CONTEXTCLASSLOADER, tccl);
     }
