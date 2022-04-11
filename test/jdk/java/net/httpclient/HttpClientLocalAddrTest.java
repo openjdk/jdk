@@ -72,7 +72,7 @@ import java.util.function.Predicate;
  *      HttpClientLocalAddrTest
  *
  */
-public class HttpClientLocalAddrTest {
+public class HttpClientLocalAddrTest implements HttpServerAdapters {
 
     private static SSLContext sslContext;
     private static HttpServerAdapters.HttpTestServer http1_1_Server;
