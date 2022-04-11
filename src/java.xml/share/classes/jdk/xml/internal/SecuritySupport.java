@@ -117,9 +117,9 @@ public class SecuritySupport {
         if (value == null) {
             value = defValue;
         }
-        if (Integer.class.isAssignableFrom(type)) {
+        if (Integer.class == type) {
             return type.cast(Integer.parseInt(value));
-        } else if (Boolean.class.isAssignableFrom(type)) {
+        } else if (Boolean.class == type) {
             return type.cast(Boolean.parseBoolean(value));
         }
         return type.cast(value);
