@@ -470,8 +470,8 @@ class PhaseChaitin : public PhaseRegAlloc {
     return found_projs;
   }
 
-  Node *split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits,
-                            int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);
+  Node* split_Rematerialize(Node* def, Block* b, uint insidx, uint &maxlrg, GrowableArray<uint> splits, int slidx,
+                            uint* lrg2reach, Node** Reachblock, bool walkThru, uint region);
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
   Node *get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx );

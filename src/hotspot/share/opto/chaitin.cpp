@@ -434,7 +434,7 @@ void PhaseChaitin::Register_Allocate() {
   }
 
   GrowableArray<Block_List> regions;
-  if (C->method() != NULL && !C->is_osr_compilation() && UseNewCode) {
+  if (C->method() != NULL && !C->is_osr_compilation() && !C->has_irreducible_loop() && UseNewCode) {
 //    ResourceMark rm;
     stringStream ss;
     C->method()->print_short_name(&ss);
