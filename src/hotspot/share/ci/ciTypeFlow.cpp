@@ -2491,7 +2491,7 @@ int ciTypeFlow::Loop::profiled_count() {
     return 0;
   }
   ciTypeFlow::Block* tail = this->tail();
-  if (tail->control() == -1) {
+  if (tail->control() == -1 || tail->has_trap()) {
     _profiled_count = 0;
     return 0;
   }

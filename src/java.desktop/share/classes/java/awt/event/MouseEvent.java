@@ -189,7 +189,7 @@ import sun.awt.SunToolkit;
  *
  * @since 1.1
  */
-public class MouseEvent extends InputEvent {
+public non-sealed class MouseEvent extends InputEvent {
 
     /**
      * The first number in the range of ids used for mouse events.
