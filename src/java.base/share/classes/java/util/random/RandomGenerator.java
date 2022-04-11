@@ -546,8 +546,8 @@ public interface RandomGenerator {
      *
      * @implSpec The default implementation verifies that the {@code origin}
      *           and {@code bound} are valid then invokes {@code nextFloat()}
-     *           scaling and translating the result to fit {@code origin} and
-     *           {@code bound} (exclusive).
+     *           scaling and translating the result to fit between {@code origin}
+     *           and {@code bound} (exclusive).
      */
     default float nextFloat(float origin, float bound) {
         RandomSupport.checkRange(origin, bound);
@@ -612,8 +612,8 @@ public interface RandomGenerator {
      *
      * @implSpec The default implementation verifies that the {@code origin}
      *           and {@code bound} are valid, then invokes {@code nextDouble()}
-     *           scaling and translating the result to fit {@code origin} and
-     *           {@code bound}( exclusive).
+     *           scaling and translating the result to fit between {@code origin}
+     *           and {@code bound}( exclusive).
      */
     default double nextDouble(double origin, double bound) {
         RandomSupport.checkRange(origin, bound);
