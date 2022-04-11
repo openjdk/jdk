@@ -989,10 +989,7 @@ void CodeBuffer::finalize_stubs() {
 
 void CodeBuffer::shared_stub_to_interp_for(Method* method, address caller_pc) {
   SharedStubToInterpRequest request(method, caller_pc);
-  auto node = _shared_stub_to_interp_requests.find_node(request);
-  auto new_node = (node == NULL) ? _shared_stub_to_interp_requests.add(request)
-                                 : _shared_stub_to_interp_requests.insert_after(request, node);
-  assert(new_node != NULL, "sanity");
+  _shared_stub_to_interp_requests.push(request);
   _finalize_stubs = true;
 }
 

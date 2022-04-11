@@ -27,5 +27,5 @@
 #include "asm/macroAssembler.hpp"
 
 bool CodeBuffer::pd_finalize_stubs() {
-  return emit_shared_stubs_to_interp<MacroAssembler, Assembler::imm_operand>(this, _shared_stub_to_interp_requests);
+  return emit_shared_stubs_to_interp<MacroAssembler, Assembler::imm_operand>(this, &_shared_stub_to_interp_requests);
 }
