@@ -87,13 +87,9 @@ public class InheritDocTaglet extends BaseTaglet {
                 ? null
                 : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
         if (taglet != null && !(taglet instanceof InheritableTaglet)) {
-            String message = utils.getSimpleName(e) +
-                    ((utils.isExecutableElement(e))
-                            ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
-                            : "");
             //This tag does not support inheritance.
             var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(holderTag);
-            messages.warning(path, "doclet.inheritDocWithinInappropriateTag", message);
+            messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
         }
         var input = new DocFinder.Input(utils, e, (InheritableTaglet) taglet,
