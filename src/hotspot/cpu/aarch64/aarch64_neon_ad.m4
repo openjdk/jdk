@@ -178,16 +178,23 @@ VECTOR_CAST_I2I_L(4, I, B, D, X, xtn,  4S, 4H, 8H, 8B)
 VECTOR_CAST_I2I_L(4, B, I, X, D, sxtl, 8B, 8H, 4H, 4S)
 dnl
 
-instruct vcvt2Lto2F(vecD dst, vecX src)
+instruct vcvt2Lto2F(vecD dst, vecX src, vRegF tmp)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
   match(Set dst (VectorCastL2X src));
-  format %{ "scvtfv  T2D, $dst, $src\n\t"
-            "fcvtn   $dst, T2S, $dst, T2D\t# convert 2L to 2F vector"
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "umov   rscratch1, $src, D, 0\n\t"
+            "scvtfs $dst, rscratch1\n\t"
+            "umov   rscratch1, $src, D, 1\n\t"
+            "scvtfs $tmp, rscratch1\n\t"
+            "ins    $dst, S, $tmp, 1, 0\t# convert 2L to 2F vector"
   %}
   ins_encode %{
-    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
-    __ fcvtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($dst$$reg), __ T2D);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 0);
+    __ scvtfs(as_FloatRegister($dst$$reg), rscratch1);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 1);
+    __ scvtfs(as_FloatRegister($tmp$$reg), rscratch1);
+    __ ins(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($tmp$$reg), 1, 0);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1923,20 +1930,39 @@ VSQRT(fsqrt, 4,  F, X, S)
 VSQRT(fsqrt, 2,  D, X, D)
 
 // --------------------------------- NEG --------------------------------------
+define(`VNEGI', `
+instruct vnegI$1(vec$1 dst, vec$1 src)
+%{
+  predicate(n->as_Vector()->length_in_bytes() ifelse($1, D, <, ==) 16);
+  match(Set dst (NegVI src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst, $src\t# vector ($2)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), ifelse($1, D, false, true));
+    __ negr(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp`'ifelse($1, D, 64, 128));
+%}')dnl
+dnl  $1  $2
+VNEGI(D, 8B/4H/2S)
+VNEGI(X, 16B/8H/4S)
+dnl
 define(`VNEG', `
 instruct vneg$2$3`'(vec$4 dst, vec$4 src)
 %{
   predicate(n->as_Vector()->length() == $2);
   match(Set dst (NegV$3 src));
-  ins_cost(INSN_COST * 3);
+  ins_cost(INSN_COST`'ifelse($3, L, `',` * 3'));
   format %{ "$1  $dst,$src\t# vector ($2$5)" %}
   ins_encode %{
-    __ $1(as_FloatRegister($dst$$reg), __ T$2`'ifelse($5, L, D, $5),
+    __ $1(as_FloatRegister($dst$$reg), __ T$2$5,
             as_FloatRegister($src$$reg));
   %}
   ins_pipe(vunop_fp`'ifelse($4, D, 64, 128));
 %}')dnl
 dnl  $1    $2  $3 $4 $5
+VNEG(negr, 2,  L, X, D)
 VNEG(fneg, 2,  F, D, S)
 VNEG(fneg, 4,  F, X, S)
 VNEG(fneg, 2,  D, X, D)

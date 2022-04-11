@@ -151,7 +151,7 @@ import sun.awt.AWTAccessor;
  *
  * @since 1.1
  */
-public class KeyEvent extends InputEvent {
+public non-sealed class KeyEvent extends InputEvent {
 
     /**
      * Stores the state of native event dispatching system

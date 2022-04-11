@@ -45,7 +45,7 @@ import java.util.Locale;
 
 public class TestDayPeriodWithSDF {
 
-    private static final Locale BURMESE = new Locale("my");
+    private static final Locale BURMESE = Locale.of("my");
     private static final DateFormat FORMAT_SHORT_BURMESE = DateFormat.getTimeInstance(DateFormat.SHORT, BURMESE);
     private static final DateFormat FORMAT_MEDIUM_BURMESE = DateFormat.getTimeInstance(DateFormat.MEDIUM, BURMESE);
 
