@@ -201,16 +201,19 @@ class MethodType
 
     /** Return number of extra slots (count of long/double args). */
     private static int checkPtypes(Class<?>[] ptypes) {
-        int slots = 0;
+        int slots = ptypes.length;
         for (Class<?> ptype : ptypes) {
-            Objects.requireNonNull(ptype);
+            if (ptype == null)
+                throw new NullPointerException();
             if (ptype == void.class)
                 throw newIllegalArgumentException("parameter type cannot be void");
             if (ptype == double.class || ptype == long.class) {
                 slots++;
             }
         }
-        checkSlotCount(ptypes.length + slots);
+        if ((slots & MAX_JVM_ARITY) != slots) {
+            throw newIllegalArgumentException("bad slot count " + slots);
+        }
         return slots;
     }
 

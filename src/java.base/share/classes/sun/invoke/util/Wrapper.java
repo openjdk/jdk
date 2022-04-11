@@ -229,28 +229,17 @@ public enum Wrapper {
      *  instead of no value at all.)
      */
     public Object zero() {
-        switch (this) {
-            case BOOLEAN:
-                return Boolean.FALSE;
-            case INT:
-                return (Integer)0;
-            case BYTE:
-                return (Byte)(byte)0;
-            case CHAR:
-                return (Character)(char)0;
-            case SHORT:
-                return (Short)(short)0;
-            case LONG:
-                return (Long)(long)0;
-            case FLOAT:
-                return FLOAT_ZERO;
-            case DOUBLE:
-                return DOUBLE_ZERO;
-            case VOID:
-            case OBJECT:
-            default:
-                return null;
-        }
+        return switch (this) {
+            case BOOLEAN -> Boolean.FALSE;
+            case INT -> (Integer)0;
+            case BYTE -> (Byte)(byte)0;
+            case CHAR -> (Character)(char)0;
+            case SHORT -> (Short)(short)0;
+            case LONG -> (Long)(long)0;
+            case FLOAT -> FLOAT_ZERO;
+            case DOUBLE -> DOUBLE_ZERO;
+            default -> null;
+        };
     }
 
     private static final Object DOUBLE_ZERO = (Double)(double)0;
@@ -268,11 +257,16 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for unexpected types
      */
     public static Wrapper forPrimitiveType(Class<?> type) {
-        Wrapper w = findPrimitiveType(type);
-        if (w != null)  return w;
-        if (type.isPrimitive())
-            throw new InternalError(); // redo hash function
-        throw newIllegalArgumentException("not primitive: "+type);
+        if (type == int.class)     return INT;
+        if (type == long.class)    return LONG;
+        if (type == boolean.class) return BOOLEAN;
+        if (type == short.class)   return SHORT;
+        if (type == byte.class)    return BYTE;
+        if (type == char.class)    return CHAR;
+        if (type == float.class)   return FLOAT;
+        if (type == double.class)  return DOUBLE;
+        if (type == void.class)    return VOID;
+        throw newIllegalArgumentException("not primitive: " + type);
     }
 
     /** Return the wrapper that corresponds to the provided basic type char.
@@ -280,26 +274,18 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for unexpected types
      */
     public static Wrapper forPrimitiveType(char basicTypeChar) {
-        switch (basicTypeChar) {
-            case 'I': return INT;
-            case 'J': return LONG;
-            case 'S': return SHORT;
-            case 'B': return BYTE;
-            case 'C': return CHAR;
-            case 'F': return FLOAT;
-            case 'D': return DOUBLE;
-            case 'Z': return BOOLEAN;
-            case 'V': return VOID;
-            default: throw newIllegalArgumentException("not primitive: " + basicTypeChar);
-        }
-    }
-
-    static Wrapper findPrimitiveType(Class<?> type) {
-        Wrapper w = FROM_PRIM[hashPrim(type)];
-        if (w != null && w.primitiveType == type) {
-            return w;
-        }
-        return null;
+        return switch (basicTypeChar) {
+            case 'I' -> INT;
+            case 'J' -> LONG;
+            case 'S' -> SHORT;
+            case 'B' -> BYTE;
+            case 'C' -> CHAR;
+            case 'F' -> FLOAT;
+            case 'D' -> DOUBLE;
+            case 'Z' -> BOOLEAN;
+            case 'V' -> VOID;
+            default -> throw newIllegalArgumentException("not primitive: " + basicTypeChar);
+        };
     }
 
     /** Return the wrapper that wraps values into the given wrapper type.
@@ -313,15 +299,21 @@ public enum Wrapper {
         if (w != null)  return w;
         for (Wrapper x : values())
             if (x.wrapperType == type)
-                throw new InternalError(); // redo hash function
+                throw new InternalError(); // missing wrapper type
         throw newIllegalArgumentException("not wrapper: "+type);
     }
 
     static Wrapper findWrapperType(Class<?> type) {
-        Wrapper w = FROM_WRAP[hashWrap(type)];
-        if (w != null && w.wrapperType == type) {
-            return w;
-        }
+        if (type == Object.class)    return OBJECT;
+        if (type == Integer.class)   return INT;
+        if (type == Long.class)      return LONG;
+        if (type == Boolean.class)   return BOOLEAN;
+        if (type == Short.class)     return SHORT;
+        if (type == Byte.class)      return BYTE;
+        if (type == Character.class) return CHAR;
+        if (type == Float.class)     return FLOAT;
+        if (type == Double.class)    return DOUBLE;
+        if (type == Void.class)      return VOID;
         return null;
     }
 
@@ -330,61 +322,35 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for any non-signature character or {@code '['}.
      */
     public static Wrapper forBasicType(char type) {
-        Wrapper w = FROM_CHAR[hashChar(type)];
-        if (w != null && w.basicTypeChar == type) {
-            return w;
-        }
-        for (Wrapper x : values())
-            if (w.basicTypeChar == type)
-                throw new InternalError(); // redo hash function
-        throw newIllegalArgumentException("not basic type char: "+type);
+        return switch (type) {
+            case 'I' -> INT;
+            case 'J' -> LONG;
+            case 'S' -> SHORT;
+            case 'B' -> BYTE;
+            case 'C' -> CHAR;
+            case 'F' -> FLOAT;
+            case 'D' -> DOUBLE;
+            case 'Z' -> BOOLEAN;
+            case 'V' -> VOID;
+            case 'L' -> OBJECT;
+            default -> throw newIllegalArgumentException("not basic type: " + type);
+        };
     }
 
     /** Return the wrapper for the given type, if it is
      *  a primitive type, else return {@code OBJECT}.
      */
     public static Wrapper forBasicType(Class<?> type) {
-        if (type.isPrimitive())
-            return forPrimitiveType(type);
+        if (type == int.class)      return INT;
+        if (type == long.class)     return LONG;
+        if (type == boolean.class)  return BOOLEAN;
+        if (type == short.class)    return SHORT;
+        if (type == byte.class)     return BYTE;
+        if (type == char.class)     return CHAR;
+        if (type == float.class)    return FLOAT;
+        if (type == double.class)   return DOUBLE;
+        if (type == void.class)     return VOID;
         return OBJECT;  // any reference, including wrappers or arrays
-    }
-
-    // Note on perfect hashes:
-    //   for signature chars c, do (c + (c >> 1)) % 16
-    //   for primitive type names n, do (n[0] + n[2]) % 16
-    // The type name hash works for both primitive and wrapper names.
-    // You can add "java/lang/Object" to the primitive names.
-    // But you add the wrapper name Object, use (n[2] + (3*n[1])) % 16.
-    private static final Wrapper[] FROM_PRIM = new Wrapper[16];
-    private static final Wrapper[] FROM_WRAP = new Wrapper[16];
-    private static final Wrapper[] FROM_CHAR = new Wrapper[16];
-    private static int hashPrim(Class<?> x) {
-        String xn = x.getName();
-        if (xn.length() < 3)  return 0;
-        return (xn.charAt(0) + xn.charAt(2)) % 16;
-    }
-    private static int hashWrap(Class<?> x) {
-        String xn = x.getName();
-        final int offset = 10; assert(offset == "java.lang.".length());
-        if (xn.length() < offset+3)  return 0;
-        return (3*xn.charAt(offset+1) + xn.charAt(offset+2)) % 16;
-    }
-    private static int hashChar(char x) {
-        return (x + (x >> 1)) % 16;
-    }
-    static {
-        for (Wrapper w : values()) {
-            int pi = hashPrim(w.primitiveType);
-            int wi = hashWrap(w.wrapperType);
-            int ci = hashChar(w.basicTypeChar);
-            assert(FROM_PRIM[pi] == null);
-            assert(FROM_WRAP[wi] == null);
-            assert(FROM_CHAR[ci] == null);
-            FROM_PRIM[pi] = w;
-            FROM_WRAP[wi] = w;
-            FROM_CHAR[ci] = w;
-        }
-        //assert(jdk.sun.invoke.util.WrapperTest.test(false));
     }
 
     /** What is the primitive type wrapped by this wrapper? */
