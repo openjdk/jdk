@@ -57,7 +57,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 public class JComboBoxPopupMenuEventTest {
 
     private static final String[] compStrs =
-            {"apple", "citibank", "cisco", "cienna", "Oracle", "IBM"};
+            {"Apple", "Citibank", "Cisco", "Cienna", "Oracle", "IBM"};
     private static Robot robot;
     private static JComboBox comboBox;
     private static JTextField searchTextField;
@@ -106,8 +106,8 @@ public class JComboBoxPopupMenuEventTest {
                 // PopupMenuListener gets called when popup menu disappears.
                 if (!popupMenuInvisibleLatch.await(3, TimeUnit.SECONDS)) {
                     throw new RuntimeException(
-                            "Waited too long, but popupMenuWillBecomeInvisible" +
-                                               "not yet got called for " + laf);
+                            "Waited too long, but popupMenuWillBecomeInvisible " +
+                            "not yet got called for " + laf);
                 }
 
                 System.out.println("Test passed for " + laf);
@@ -128,10 +128,9 @@ public class JComboBoxPopupMenuEventTest {
     private static Point getLocationOnScreen(JComponent jComponent)
             throws Exception {
         final AtomicReference<Point> loc = new AtomicReference<>();
-        SwingUtilities
-                .invokeAndWait(() -> loc.set(jComponent.getLocationOnScreen()));
-        final Point location = loc.get();
-        return location;
+        SwingUtilities.invokeAndWait(
+                () -> loc.set(jComponent.getLocationOnScreen()));
+        return loc.get();
     }
 
     private static void hitKeys(int... keys) {
@@ -157,13 +156,9 @@ public class JComboBoxPopupMenuEventTest {
                 popupMenuVisibleLatch.countDown();
                 comboBox.removeAllItems();
                 String text = searchTextField.getText().trim();
-                List<String> comps = Arrays.stream(compStrs)
-                                           .filter(compStr -> compStr
-                                                   .startsWith(text))
-                                           .collect(Collectors.toList());
-                for (String comp : comps) {
-                    comboBox.addItem(comp);
-                }
+                Arrays.stream(compStrs)
+                      .filter(str -> str.toLowerCase().startsWith(text))
+                      .forEach(str -> comboBox.addItem(str));
             }
 
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
