@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 # Versions and download locations for dependencies used by pre-submit testing.
 
-BOOT_JDK_VERSION=16
+BOOT_JDK_VERSION=17
 JTREG_VERSION=6
 JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=1c0a73cbb863aad579b967316bf17673b8f98a9bb938602a140ba2e5c38f880a
+LINUX_X64_BOOT_JDK_FILENAME=openjdk-17.0.2_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_linux_hotspot_17.0.2_8.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=288f34e3ba8a4838605636485d0365ce23e57d5f2f68997ac4c2e4c01967cd48
 
-WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_SHA256=329900a6673b237b502bdcf77bc334da34bc91355c5fd2d457fc00f53fd71ef1
+WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-17.0.2_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_windows_hotspot_17.0.2_8.zip
+WINDOWS_X64_BOOT_JDK_SHA256=d083479ca927dce2f586f779373d895e8bf668c632505740279390384edf03fa
 
-MACOS_X64_BOOT_JDK_FILENAME=openjdk-17.0.1_macos-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk17.0.1/2a2082e5a09d4267845be086888add4f/12/GPL/openjdk-17.0.1_macos-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=6ccb35800e723cabe15af60e67099d1a07c111d2d3208aa75523614dde68bee1
+MACOS_X64_BOOT_JDK_FILENAME=openjdk-17.0.2_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.2%2B8/OpenJDK17U-jdk_x64_mac_hotspot_17.0.2_8.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=3630e21a571b7180876bf08f85d0aac0bdbb3267b2ae9bd242f4933b21f9be32
