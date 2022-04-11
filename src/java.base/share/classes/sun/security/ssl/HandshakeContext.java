@@ -164,7 +164,7 @@ abstract class HandshakeContext implements ConnectionContext {
         this.conContext = conContext;
         this.sslConfig = (SSLConfiguration)conContext.sslConfig.clone();
 
-        this.algorithmConstraints = new SSLAlgorithmConstraints(
+        this.algorithmConstraints = SSLAlgorithmConstraints.wrap(
                 sslConfig.userSpecifiedAlgorithmConstraints);
         this.activeProtocols = getActiveProtocols(sslConfig.enabledProtocols,
                 sslConfig.enabledCipherSuites, algorithmConstraints);

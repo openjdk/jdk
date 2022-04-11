@@ -69,6 +69,13 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         this.enabledX509DisabledAlgConstraints = true;
     }
 
+    static AlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
+        if (userSpecifiedConstraints == DEFAULT) {
+            return DEFAULT;
+        }
+        return new SSLAlgorithmConstraints(userSpecifiedConstraints);
+    }
+
     SSLAlgorithmConstraints(SSLSocket socket,
             boolean withDefaultCertPathConstraints) {
         this.userSpecifiedConstraints = getUserSpecifiedConstraints(socket);
