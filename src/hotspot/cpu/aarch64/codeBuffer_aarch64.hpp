@@ -32,6 +32,5 @@ private:
 
 public:
   void flush_bundle(bool start_new_bundle) {}
-  static bool supports_shared_stubs() { return true; }
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP
