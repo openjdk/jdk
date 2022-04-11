@@ -201,7 +201,10 @@ void Universe::basic_type_classes_do(KlassClosure *closure) {
   for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
     closure->do_klass(_typeArrayKlassObjs[i]);
   }
-  // Hide _fillerArrayKlassObj from JVMTI
+  // We don't do the following because it will confuse JVMTI.
+  // _fillerArrayKlassObj is used only by GC, which doesn't need to see
+  // this klass from basic_type_classes_do().
+  //
   // closure->do_klass(_fillerArrayKlassObj);
 }
 
