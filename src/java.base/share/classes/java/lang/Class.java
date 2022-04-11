@@ -3003,7 +3003,7 @@ public final class Class<T> implements java.io.Serializable,
             String pn = Resources.toPackageName(name);
             if (thisModule.getDescriptor().packages().contains(pn)) {
                 if (callerModule == null) {
-                    // no caller
+                    // no caller, return true if the package is open to all modules
                     return thisModule.isOpen(pn);
                 }
                 if (!thisModule.isOpen(pn, callerModule)) {

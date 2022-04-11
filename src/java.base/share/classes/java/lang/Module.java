@@ -1655,7 +1655,7 @@ public final class Module implements AnnotatedElement {
                 String pn = Resources.toPackageName(name);
                 if (getPackages().contains(pn)) {
                     if (caller == null) {
-                        if (! isOpen(pn)) {
+                        if (!isOpen(pn)) {
                             return null;
                         }
                     } else if (!isOpen(pn, caller)) {
