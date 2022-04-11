@@ -65,8 +65,10 @@ public class SharedStubToInterpTest {
         command.add("-XX:CompileCommand=compileonly," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=print," + testClassName + "::" + "test");
-        command.add("-XX:CompileCommand=exclude," + testClassName + "::" + "log");
-        command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log");
+        command.add("-XX:CompileCommand=exclude," + testClassName + "::" + "log01");
+        command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log01");
+        command.add("-XX:CompileCommand=exclude," + testClassName + "::" + "log02");
+        command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "log02");
         command.add(testClassName);
         command.add("a");
         command.add("b");
@@ -104,11 +106,17 @@ public class SharedStubToInterpTest {
             throw new RuntimeException("Missing compiler output for the method 'test'");
         }
 
-        // Shared static stubs are put after Deopt Handler Code.
-        match = skipTo(iter, "{runtime_call DeoptimizationBlob}");
-        if (match == null) {
-            throw new RuntimeException("The start of Deopt Handler Code not found");
+        while (iter.hasNext()) {
+            String nextLine = iter.next();
+            if (nextLine.contains("{static_stub}")) {
+                // Static stubs must be created at the end of the Stub section.
+                throw new RuntimeException("Found {static_stub} before Deopt Handler Code");
+            } else if (nextLine.contains("{runtime_call DeoptimizationBlob}")) {
+                // Shared static stubs are put after Deopt Handler Code.
+                break;
+            }
         }
+
         int foundStaticStubs = 0;
         while (iter.hasNext()) {
             if (iter.next().contains("{static_stub}")) {
@@ -116,21 +124,25 @@ public class SharedStubToInterpTest {
             }
         }
 
-        final int expectedStaticStubs = 1;
+        final int expectedStaticStubs = 2;
         if (foundStaticStubs != expectedStaticStubs) {
             throw new RuntimeException("Found static stubs: " + foundStaticStubs + "; Expected static stubs: " + expectedStaticStubs);
         }
     }
 
     public static class StaticMethodTest {
-        static void log(int i) {
+        static void log01(int i) {
+        }
+        static void log02(int i) {
         }
 
         static void test(int i, String[] args) {
             if (i % args.length == 0) {
-                log(i);
+                log01(i);
+                log02(i);
             } else {
-                log(i);
+                log01(i);
+                log02(i);
             }
         }
 
@@ -142,14 +154,18 @@ public class SharedStubToInterpTest {
     }
 
     public static final class FinalClassTest {
-        void log(int i) {
+        void log01(int i) {
+        }
+        void log02(int i) {
         }
 
         void test(int i, String[] args) {
             if (i % args.length == 0) {
-                log(i);
+                log01(i);
+                log02(i);
             } else {
-                log(i);
+                log01(i);
+                log02(i);
             }
         }
 
@@ -162,14 +178,18 @@ public class SharedStubToInterpTest {
     }
 
     public static class FinalMethodTest {
-        final void log(int i) {
+        final void log01(int i) {
+        }
+        final void log02(int i) {
         }
 
         void test(int i, String[] args) {
             if (i % args.length == 0) {
-                log(i);
+                log01(i);
+                log02(i);
             } else {
-                log(i);
+                log01(i);
+                log02(i);
             }
         }
 
