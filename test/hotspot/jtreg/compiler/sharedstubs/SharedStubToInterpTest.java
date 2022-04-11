@@ -61,7 +61,7 @@ public class SharedStubToInterpTest {
             throw new RuntimeException("Unknown compiler: " + compiler);
         }
         command.add("-Xbatch");
-        command.add("-XX:+UseSharedStubs");
+        //command.add("-XX:+UseSharedStubs");
         command.add("-XX:CompileCommand=compileonly," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=dontinline," + testClassName + "::" + "test");
         command.add("-XX:CompileCommand=print," + testClassName + "::" + "test");

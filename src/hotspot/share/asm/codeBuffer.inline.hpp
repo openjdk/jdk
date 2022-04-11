@@ -31,7 +31,7 @@
 
 template <typename MacroAssembler, int relocate_format = 0>
 bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* shared_stub_to_interp_requests) {
-  if (shared_stub_to_interp_requests->is_empty()) {
+  if (shared_stub_to_interp_requests == NULL) {
     return true;
   }
   auto by_shared_method = [](SharedStubToInterpRequest* r1, SharedStubToInterpRequest* r2) {

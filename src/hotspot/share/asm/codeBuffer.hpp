@@ -433,7 +433,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
-  SharedStubToInterpRequests _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
 
 #ifndef PRODUCT
@@ -454,6 +454,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _overflow_arena  = NULL;
     _last_insn       = NULL;
     _finalize_stubs  = false;
+    _shared_stub_to_interp_requests = NULL;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;

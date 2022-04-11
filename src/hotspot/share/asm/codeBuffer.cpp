@@ -988,8 +988,11 @@ void CodeBuffer::finalize_stubs() {
 }
 
 void CodeBuffer::shared_stub_to_interp_for(Method* method, address caller_pc) {
+  if (_shared_stub_to_interp_requests == NULL) {
+    _shared_stub_to_interp_requests = new SharedStubToInterpRequests();
+  }
   SharedStubToInterpRequest request(method, caller_pc);
-  _shared_stub_to_interp_requests.push(request);
+  _shared_stub_to_interp_requests->push(request);
   _finalize_stubs = true;
 }
 
