@@ -1002,20 +1002,10 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // The reference has already been discovered...
     log_develop_trace(gc, ref)("Already discovered reference (" INTPTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
-    if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-      // assumes that an object is not processed twice;
-      // if it's been already discovered it must be on another
-      // generation's discovered list; so we won't discover it.
-      return false;
-    } else {
-      assert(RefDiscoveryPolicy == ReferenceBasedDiscovery,
-             "Unrecognized policy");
-      // Check assumption that an object is not potentially
-      // discovered twice except by concurrent collectors that potentially
-      // trace the same Reference object twice.
-      assert(UseG1GC, "Only possible with a concurrent marking collector");
-      return true;
-    }
+    // `G1CMTask::make_reference_grey` can push the same oop twice onto the
+    // mark stack, causing the "rediscovery" of a non-strong ref.
+    assert(UseG1GC, "inv");
+    return true;
   }
 
   if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
