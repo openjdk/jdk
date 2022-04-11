@@ -274,7 +274,7 @@ JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
     if (family == AF_INET) {
         rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
     } else {
-        rv = setsockopt(fd, IPPROTO_IPV6, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &optsetting, sizeof (optsetting));
     }
     handleError(env, rv, "set option IP_DONTFRAGMENT failed");
 }
@@ -286,9 +286,22 @@ JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_getIpDontFragment0
 (JNIEnv *env, jobject unused, jint fd) {
-    jint optval, rv;
+    jint optlevel, optname, optval, rv;
+    jint family = socketFamily(fd);
+    if (family == -1) {
+        handleError(env, family, "get socket family failed");
+        return JNI_FALSE;
+    }
+
+    if (family == AF_INET) {
+        optlevel = IPPROTO_IP;
+        optname = IP_MTU_DISCOVER;
+    } else {
+        optlevel = IPPROTO_IPV6;
+        optname = IPV6_MTU_DISCOVER;
+    }
     socklen_t sz = sizeof(optval);
-    rv = getsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optval, &sz);
+    rv = getsockopt(fd, optlevel, optname, &optval, &sz);
     handleError(env, rv, "get option IP_DONTFRAGMENT failed");
     return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
 }

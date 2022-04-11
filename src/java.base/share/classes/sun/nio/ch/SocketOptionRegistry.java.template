@@ -122,6 +122,7 @@ class SocketOptionRegistry {
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_TTL));
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_MULTICAST_LOOP,
                 StandardProtocolFamily.INET), new OptionKey(0, IP_MULTICAST_LOOP));
+
 #ifdef AF_INET6
             // IPPROTO_IPV6 is 41
             map.put(new RegistryKey(StandardSocketOptions.PREFIX_IP_TOS,
