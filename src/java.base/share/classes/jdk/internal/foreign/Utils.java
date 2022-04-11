@@ -158,7 +158,7 @@ public final class Utils {
 
     @ForceInline
     public static void checkElementAlignment(MemoryLayout layout, String msg) {
-        if (layout.byteAlignment() > layout.byteSize()) {
+        if (layout.bitAlignment() > layout.bitSize()) {
             throw new IllegalArgumentException(msg);
         }
     }
