@@ -23,7 +23,7 @@
 # questions.
 #
 
-include GensrcCommonJdk.gmk
+include GensrcCommon.gmk
 
 include gensrc/GensrcLocaleData.gmk
 include gensrc/GensrcCharacterData.gmk
