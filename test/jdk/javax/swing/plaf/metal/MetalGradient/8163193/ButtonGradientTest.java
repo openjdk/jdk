@@ -159,6 +159,6 @@ public class ButtonGradientTest {
     }
 
     private static boolean similar(int i1, int i2) {
-        return Math.abs(i2 - i1) < 6;
+        return Math.abs(i2 - i1) < 7;
     }
 }
