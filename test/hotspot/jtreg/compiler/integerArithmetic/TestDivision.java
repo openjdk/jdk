@@ -27,7 +27,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test TestDivision
- * @bug 8043284 8042786
+ * @bug 8284742
  * @summary Tests compiled code correctly handles integral divisions.
  * @library /test/lib
  *
