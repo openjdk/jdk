@@ -44,7 +44,7 @@
     #  x0 : address
     #  w1 : defaultval
 
-	# needed to align function start to 4 byte
+    # needed to align function start to 4 byte
     .align  6
     ELF_TYPE(SafeFetch32,@function)
 SYMBOL(SafeFetch32):

@@ -35,7 +35,7 @@
     #
     #  %rdi : address
     #  %esi : defaultval
-	.type    SafeFetch32,@function
+    .type    SafeFetch32,@function
 SafeFetch32:
 _SafeFetch32_fault:
     movl (%rdi), %eax       # load target value, may fault
@@ -48,7 +48,7 @@ _SafeFetch32_continuation:
     #
     #  %rdi : address
     #  %rsi : defaultval
-	.type    SafeFetchN,@function
+    .type    SafeFetchN,@function
 SafeFetchN:
 _SafeFetchN_fault:
     movq (%rdi), %rax       # load target value, may fault

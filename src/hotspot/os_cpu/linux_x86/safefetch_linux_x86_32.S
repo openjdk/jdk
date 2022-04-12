@@ -31,7 +31,7 @@
     #
     #  8(%esp) : default value
     #  4(%esp) : crash address
-	#  0(%esp) : return pc
+    #  0(%esp) : return pc
     .type _SafeFetch32,@function
 SafeFetch32:
     movl 4(%esp),%ecx         # load address from stack
