@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8279508
+ * @bug 8282541
  * @summary Auto-vectorize Math.round API
  * @requires vm.compiler2.enabled
  * @requires os.simpleArch == "aarch64"
