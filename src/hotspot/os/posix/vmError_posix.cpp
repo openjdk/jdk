@@ -76,7 +76,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   }
 
 #if defined(SAFEFETCH_METHOD_STATIC_ASSEMBLY) || defined(SAFEFETCH_METHOD_SIGSETJMP)
-  // Handle safefetch here too, to be able to use SafeFetc() inside the error handler
+  // Handle safefetch here too, to be able to use SafeFetch() inside the error handler
   if (handle_safefetch(sig, pc, uc)) {
     return;
   }

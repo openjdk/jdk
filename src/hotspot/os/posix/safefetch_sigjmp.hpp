@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef CPU_POSIX_SAFEFETCH_SIGJMP_HPP
-#define CPU_POSIX_SAFEFETCH_SIGJMP_HPP
+#ifndef OS_POSIX_SAFEFETCH_SIGJMP_HPP
+#define OS_POSIX_SAFEFETCH_SIGJMP_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -44,4 +44,4 @@ inline bool CanUseSafeFetchN()  { return true; }
 // jump back to the established jump point (and hence out of signal handling).
 bool handle_safefetch(int sig, address pc, void* context);
 
-#endif // CPU_POSIX_SAFEFETCH_SIGJMP_HPP
+#endif // OS_POSIX_SAFEFETCH_SIGJMP_HPP

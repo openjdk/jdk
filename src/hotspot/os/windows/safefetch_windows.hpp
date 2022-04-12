@@ -42,8 +42,13 @@ inline T SafeFetchXX(const T* adr, T errValue) {
   return v;
 }
 
-inline int SafeFetch32(const int* adr, int errValue)                { return SafeFetchXX<int>(adr, errValue); }
-inline intptr_t SafeFetchN(const intptr_t* adr, intptr_t errValue)  { return SafeFetchXX<intptr_t>(adr, errValue); }
+inline int SafeFetch32(const int* adr, int errValue) {
+  return SafeFetchXX<int>(adr, errValue);
+}
+
+inline intptr_t SafeFetchN(const intptr_t* adr, intptr_t errValue) {
+  return SafeFetchXX<intptr_t>(adr, errValue);
+}
 
 inline bool CanUseSafeFetch32() { return true; }
 inline bool CanUseSafeFetchN()  { return true; }
