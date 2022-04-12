@@ -60,6 +60,8 @@ static void test_safefetch32_positive() {
 static void test_safefetchN_negative() {
   intptr_t a = SafeFetchN(bad_addressN, 0);
   ASSERT_EQ(0, a);
+  a = SafeFetchN(bad_addressN, -1);
+  ASSERT_EQ(-1, a);
   a = SafeFetchN(bad_addressN, ~patternN);
   ASSERT_EQ(~patternN, a);
   // Also test NULL, but not on AIX, where NULL is readable
@@ -74,6 +76,8 @@ static void test_safefetchN_negative() {
 static void test_safefetch32_negative() {
   int a = SafeFetch32(bad_address32, 0);
   ASSERT_EQ(0, a);
+  a = SafeFetch32(bad_address32, -1);
+  ASSERT_EQ(-1, a);
   a = SafeFetch32(bad_address32, ~pattern32);
   ASSERT_EQ(~pattern32, a);
   // Also test NULL, but not on AIX, where NULL is readable
