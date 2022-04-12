@@ -241,7 +241,8 @@ public class DocFinder {
         Input inheritedSearchInput = input.copy(configuration.utils);
         inheritedSearchInput.isInheritDocTag = false;
         if (utils.isMethod(input.element)) {
-            ExecutableElement overriddenMethod = utils.overriddenMethod((ExecutableElement) input.element);
+            ExecutableElement m = (ExecutableElement) input.element;
+            ExecutableElement overriddenMethod = utils.overriddenMethod(m);
             if (overriddenMethod != null) {
                 inheritedSearchInput.element = overriddenMethod;
                 output = search(configuration, inheritedSearchInput);
@@ -252,8 +253,7 @@ public class DocFinder {
             }
             TypeElement encl = utils.getEnclosingTypeElement(input.element);
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(encl);
-            List<ExecutableElement> implementedMethods =
-                    vmt.getImplementedMethods((ExecutableElement) input.element);
+            List<ExecutableElement> implementedMethods = vmt.getImplementedMethods(m);
             for (ExecutableElement implementedMethod : implementedMethods) {
                 inheritedSearchInput.element = implementedMethod;
                 output = search(configuration, inheritedSearchInput);
