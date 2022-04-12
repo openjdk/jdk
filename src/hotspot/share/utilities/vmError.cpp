@@ -547,17 +547,24 @@ void VMError::report(outputStream* st, bool _verbose) {
   // test secondary error handling. Test it twice, to test that resetting
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == 14) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == 14) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP("test missing ResourceMark does not crash")
+    if (_verbose && TestCrashInErrorHandler == 2) {
+      stringStream message;
+      message.print("This is a message with no ResourceMark");
+      tty->print_cr("%s", message.as_string());
     }
 
   // TestUnresponsiveErrorHandler: We want to test both step timeouts and global timeout.
