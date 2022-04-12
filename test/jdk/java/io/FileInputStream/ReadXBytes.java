@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,23 @@
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main ReadXBytes
- * @bug 8264777
- * @summary Test read{All,N}Bytes overrides (use -Dseed=X to set PRNG seed)
+ * @bug 6478546 8264777
+ * @summary Test read(byte[],int,int) and read{All,N}Bytes overrides (use -Dseed=X to set PRNG seed)
  * @key randomness
  */
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.Random;
 import jdk.test.lib.RandomFactory;
 
 public class ReadXBytes {
     private static final int ITERATIONS = 10;
-    private static final int MAX_FILE_SIZE = 1_000_000;
+    private static final int MAX_EXTRA_FILE_SIZE = 1_000_000;
+    private static final int MIN_LARGE_FILE_SIZE = 2_500_000;
     private static final Random RND = RandomFactory.getRandom();
 
     public static void main(String args[]) throws IOException {
@@ -73,12 +74,30 @@ public class ReadXBytes {
             File file = File.createTempFile("foo", "bar", dir);
             file.deleteOnExit();
 
-            int size = 1 + RND.nextInt(MAX_FILE_SIZE);
+            int baseSize = i % 2 == 0 ? 1 : MIN_LARGE_FILE_SIZE;
+            int size = baseSize + RND.nextInt(MAX_EXTRA_FILE_SIZE);
             System.out.printf("size %d%n", size);
-            byte[] bytes = new byte[size];
+            int offset = RND.nextInt(size/4);
+            byte[] bytes = new byte[offset + size];
             RND.nextBytes(bytes);
-            try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
-                raf.write(bytes);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(bytes, offset, size);
+            }
+
+            try (FileInputStream fis = new FileInputStream(file)) {
+                int pos = RND.nextInt(size);
+                int len = RND.nextInt(size - pos);
+                fis.getChannel().position(pos);
+                byte[] nbytes = new byte[size];
+                int n = fis.read(nbytes, 0, 0);
+                if (n != 0)
+                    throw new RuntimeException("read() zero length");
+                n = fis.read(nbytes, pos, len);
+                if (n != len)
+                    throw new RuntimeException("read() length");
+                if (!Arrays.equals(nbytes, pos, pos + len,
+                                   bytes, offset + pos, offset + pos + len))
+                    throw new RuntimeException("read() content");
             }
 
             try (FileInputStream fis = new FileInputStream(file)) {
@@ -91,7 +110,8 @@ public class ReadXBytes {
                 nbytes = fis.readNBytes(len);
                 if (nbytes.length != len)
                     throw new RuntimeException("readNBytes() length");
-                if (!Arrays.equals(nbytes, 0, len, bytes, pos, pos + len))
+                if (!Arrays.equals(nbytes, 0, len,
+                                   bytes, pos + offset, offset + pos + len))
                     throw new RuntimeException("readNBytes() content");
             }
 
@@ -102,7 +122,7 @@ public class ReadXBytes {
                 if (allbytes.length != size - pos)
                     throw new RuntimeException("readAllBytes() length");
                 if (!Arrays.equals(allbytes, 0, allbytes.length,
-                                   bytes, pos, pos + allbytes.length))
+                                   bytes, offset + pos, offset + pos + allbytes.length))
                     throw new RuntimeException("readAllBytes() content");
             }
 
