@@ -32,8 +32,6 @@
 #ifdef SAFEFETCH_METHOD_SIGSETJMP
 
 // For SafeFetch we need POSIX TLS and sigsetjmp/longjmp.
-// (Note: We would prefer compiler level TLS but for some reason __thread does not
-//  work here; this needs investigation. For we now stick with POSIX TLS)
 #include <setjmp.h>
 #include <pthread.h>
 static pthread_key_t g_jmpbuf_key;
@@ -53,6 +51,9 @@ bool handle_safefetch(int sig, address ignored1, void* ignored2) {
   if (sig == SIGSEGV || sig == SIGBUS) {
     // Retrieve jump buffer pointer from TLS. If not NULL, it means we set the
     // jump buffer and this is indeed a SafeFetch fault.
+    // Note signal safety: pthread_getspecific is not safe for signal handler
+    // usage, but in practice it works and we have done this in the JVM for many
+    // years (via Thread::current_or_null_safe()).
     sigjmp_buf* const jb = (sigjmp_buf*) pthread_getspecific(g_jmpbuf_key);
     if (jb) {
       siglongjmp(*jb, 1);
