@@ -847,12 +847,15 @@ abstract class ChaCha20Cipher extends CipherSpi {
     }
 
     @ForceInline
-    private static int chaCha20Block(int[] initState, long counter, byte[] result) {
+    private static int chaCha20Block(int[] initState, long counter,
+            byte[] result) {
         if (initState.length != KS_SIZE_INTS || result.length != KS_MAX_LEN) {
-            throw new IllegalArgumentException("Illegal state or keystream buffer length");
+            throw new IllegalArgumentException(
+                    "Illegal state or keystream buffer length");
         }
 
-        // Set the counter value before sending into the underlying private block method
+        // Set the counter value before sending into the underlying
+        // private block method
         initState[12] = (int)counter;
         return _chaCha20Block(initState, result);
     }
