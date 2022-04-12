@@ -746,12 +746,13 @@ void PhaseChaitin::Register_Allocate() {
     }
     if (regions.length() > 1) {
       _was_up_in_prev_region.clear();
-      if (UseNewCode3) {
+      bool dump = UseNewCode3;
+      if (dump) {
         tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _reg), sizeof(LRG));
       }
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
-        if (UseNewCode3) {
+        if (dump) {
           block->dump_head(NULL);
         }
         for (uint i = 0; i < block->number_of_nodes(); i++) {
@@ -761,7 +762,7 @@ void PhaseChaitin::Register_Allocate() {
             if (lrg.mask().is_UP()) {
               _was_up_in_prev_region.set(n->_idx);
             }
-            if (UseNewCode3) {
+            if (dump) {
               tty->print(" - %d - ", _lrg_map.live_range_id(n));
               OptoReg::Name reg = lrg.reg();
               if ((int) reg < 0) {
@@ -774,11 +775,11 @@ void PhaseChaitin::Register_Allocate() {
               }
             }
           }
-          if (UseNewCode3)
+          if (dump)
             n->dump();
         }
       }
-      if (UseNewCode3) {
+      if (dump) {
         tty->print("\n");
       }
     }

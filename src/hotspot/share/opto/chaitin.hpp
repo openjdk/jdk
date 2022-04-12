@@ -820,6 +820,8 @@ private:
   friend class PhaseConservativeCoalesce;
 
   void record_regs();
+
+  bool is_compatible_with_region(uint region, const Block* b, uint lidx) const;
 };
 
 #endif // SHARE_OPTO_CHAITIN_HPP

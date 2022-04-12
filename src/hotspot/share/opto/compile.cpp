@@ -1237,8 +1237,8 @@ void Compile::grow_node_notes(GrowableArray<Node_Notes*>* arr, int grow_by) {
 bool Compile::copy_node_notes_to(Node* dest, Node* source) {
   if (source == NULL || dest == NULL)  return false;
 
-  if (dest->is_Con())
-    return false;               // Do not push debug info onto constants.
+//  if (dest->is_Con())
+//    return false;               // Do not push debug info onto constants.
 
 #ifdef ASSERT
   // Leave a bread crumb trail pointing to the original node:

@@ -633,9 +633,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       // with long live ranges.
       if( lrgs(lidx).is_singledef() &&
           lrgs(lidx)._def->rematerialize() &&
-          (lrgs(lidx)._region <= region ||
-           (_cfg.get_block_for_node(lrgs(lidx)._def)->_region >= b->_region &&
-                   (b->num_preds() > 2 || _cfg.get_block_for_node(lrgs(lidx)._def)->_region >= _cfg.get_block_for_node(b->pred(1))->_region)))) {
+          is_compatible_with_region(region, b, lidx)) {
         // reset the Reaches & UP entries
         Reachblock[slidx] = lrgs(lidx)._def;
         UPblock[slidx] = true;
@@ -1524,14 +1522,14 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
               assert(b->_num_succs == 1, "");
               assert(lrgs(defidx)._region2 <= region,  "");
 
-              if (def->rematerialize() && 0) {
+              if (def->rematerialize()) {
 //                assert(_was_up_in_prev_region.test(def->_idx), "");
                 Node* spill = split_Rematerialize(def, b, b->end_idx(), maxlrg, splits, slidx, lrg2reach, Reachblock,
                                                   true, region);
                 if( !spill ) return -1; // Bail out
-                Reachblock[slidx] = spill;
-                UPblock[slidx] = _was_up_in_prev_region.test(def->_idx);
-              } else {
+                def = spill;
+              }
+              {
                 Node* spill = get_spillcopy_wide(MachSpillCopyNode::RegionEntry, def, NULL, 0);
                 if (!spill) return -1;        // Bailed out
                 insert_proj(b, b->end_idx(), spill, maxlrg);
@@ -1706,4 +1704,31 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 #endif
   // Return updated count of live ranges
   return maxlrg;
+}
+
+bool PhaseChaitin::is_compatible_with_region(uint region, const Block* b, uint lidx) const {
+  if (lrgs(lidx)._region <= region) {
+    return true;
+  }
+  Node* def = lrgs(lidx)._def;
+  if (_cfg.get_block_for_node(def)->_region >= b->_region) {
+    for (uint i = 1; i < def->req(); i++) {
+      Node* in = def->in(i);
+      if (in->ideal_reg() == Op_RegFlags) {
+        continue;
+      }
+      uint in_lidx = _lrg_map.live_range_id(in);
+      if (in_lidx < _lrg_map.max_lrg_id() && lrgs(in_lidx).is_singledef()) {
+        continue;
+      }
+      return false;
+    }
+    if (b->num_preds() > 2) {
+      return true;
+    }
+    if (_cfg.get_block_for_node(def)->_region >= _cfg.get_block_for_node(b->pred(1))->_region) {
+      return true;
+    }
+  }
+  return false;
 }
