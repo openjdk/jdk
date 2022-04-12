@@ -70,19 +70,44 @@ static void parse_div_mod(Parse& parser) {
   Node* in2 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
   Node* in1 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
 
-  if (in1 == in2) {
-    Node* res = gvn.integercon(is_div ? 1 : 0, bt);
+  auto generate_division = [](PhaseGVN& gvn, Node* control, Node* in1, Node* in2,
+                              BasicType bt, bool is_div) {
+    if (is_div) {
+      return (bt == T_INT)
+             ? gvn.transform(new DivINode(control, in1, in2))
+             : gvn.transform(new DivLNode(control, in1, in2));
+    } else {
+      return (bt == T_INT)
+             ? gvn.transform(new ModINode(control, in1, in2))
+             : gvn.transform(new ModLNode(control, in1, in2));
+    }
+  };
+
+  auto push_result = [](Parse& parser, Node* res, BasicType bt) {
     if (bt == T_INT) {
       parser.push(res);
     } else {
       parser.push_pair(res);
     }
+  };
+
+  if (in1 == in2) {
+    Node* res = gvn.integercon(is_div ? 1 : 0, bt);
+    push_result(parser, res, bt);
+    return;
+  }
+
+  // if in1 > min_value then there is no overflow risk
+  if ((bt == T_INT  &&  !TypeInt::MIN->higher_equal(gvn.type(in1))) ||
+      (bt == T_LONG && !TypeLong::MIN->higher_equal(gvn.type(in1)))) {
+    Node* res = generate_division(gvn, parser.control(), in1, in2, bt, is_div);
+    push_result(parser, res, bt);
     return;
   }
 
   // the generated graph is equivalent to (in2 == -1) ? -in1 : (in1 / in2)
   // we need to have a separate branch for in2 == -1 due to overflow error
-  // with (min_jint / -1) on x86, fast path comes as a nice bonus
+  // with (min_jint / -1) on x86
   Node* cmp = gvn.transform(CmpNode::make(in2, gvn.integercon(-1, bt), bt));
   Node* bol = parser.Bool(cmp, BoolTest::eq);
   IfNode* iff = parser.create_and_map_if(parser.control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
@@ -91,16 +116,7 @@ static void parse_div_mod(Parse& parser) {
   Node* res_fast = is_div
                    ? gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt))
                    : gvn.zerocon(bt);
-  Node* res_slow;
-  if (is_div) {
-    res_slow = (bt == T_INT)
-               ? gvn.transform(new DivINode(iff_false, in1, in2))
-               : gvn.transform(new DivLNode(iff_false, in1, in2));
-  } else {
-    res_slow = (bt == T_INT)
-               ? gvn.transform(new ModINode(iff_false, in1, in2))
-               : gvn.transform(new ModLNode(iff_false, in1, in2));
-  }
+  Node* res_slow = generate_division(gvn, iff_false, in1, in2, bt, is_div);
   Node* merge = new RegionNode(3);
   merge->init_req(1, iff_true);
   merge->init_req(2, iff_false);
@@ -110,12 +126,7 @@ static void parse_div_mod(Parse& parser) {
   res->init_req(1, res_fast);
   res->init_req(2, res_slow);
   res = gvn.transform(res);
-
-  if (bt == T_INT) {
-    parser.push(res);
-  } else {
-    parser.push_pair(res);
-  }
+  push_result(parser, res, bt);
 }
 
 #endif // COMPILER2
