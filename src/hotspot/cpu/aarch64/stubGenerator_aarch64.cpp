@@ -3985,6 +3985,189 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // ChaCha20 block function
+  //
+  // state (int[16]) = c_rarg0
+  // keystream (byte[256]) = c_rarg1
+  // return - number of bytes of keystream (always 64)
+  address generate_chacha20Block() {
+    __ align(CodeEntryAlignment);
+     StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+    __ enter();
+
+    Label L_twoRounds;
+    const Register state = c_rarg0;
+    const Register keystream = c_rarg1;
+    const Register loopCtr = r10;
+    const Register tmp1 = r11;
+    const Register tmp2 = r12;
+
+    const FloatRegister aState = v0;
+    const FloatRegister bState = v1;
+    const FloatRegister cState = v2;
+    const FloatRegister dState = v3;
+    const FloatRegister aVec = v4;
+    const FloatRegister bVec = v5;
+    const FloatRegister cVec = v6;
+    const FloatRegister dVec = v7;
+    const FloatRegister scratch = v20;
+
+    // Load the initial state in the first 4 quadword registers,
+    // then copy the initial state into the next 4 quadword registers
+    // that will be used for the working state.
+    __ ldrq(aState, Address(state, 0));
+    __ ldrq(bState, Address(state, 16));
+    __ ldrq(cState, Address(state, 32));
+    __ ldrq(dState, Address(state, 48));
+    __ mov(aVec, __ T16B, aState);
+    __ mov(bVec, __ T16B, bState);
+    __ mov(cVec, __ T16B, cState);
+    __ mov(dVec, __ T16B, dState);
+
+    // Set up the 10 iteration loop
+    __ mov(loopCtr, 10);
+    __ BIND(L_twoRounds);
+
+    // The first set of operations on the vectors covers the first 4 quarter
+    // round operations:
+    //  Qround(state, 0, 4, 8,12)
+    //  Qround(state, 1, 5, 9,13)
+    //  Qround(state, 2, 6,10,14)
+    //  Qround(state, 3, 7,11,15)
+
+    // a += b, d ^= a, d <<<= 16
+    __ addv(aVec, __ T4S, aVec, bVec);
+    __ eor(dVec, __ T16B, dVec, aVec);
+    __ ushr(scratch, __ T4S, dVec, 16);     // scratch >> 16
+    __ shl(dVec, __ T4S, dVec, 16);         // d << 16
+    __ orr(dVec, __ T16B, dVec, scratch);   // d |= scratch
+
+    // c += d, b ^= c, b <<<= 12 (b << 12 | scr >> 20)
+    __ addv(cVec, __ T4S, cVec, dVec);
+    __ eor(bVec, __ T16B, bVec, cVec);
+    __ ushr(scratch, __ T4S, bVec, 20);     // scratch >> 20
+    __ shl(bVec, __ T4S, bVec, 12);         // b << 12
+    __ orr(bVec, __ T16B, bVec, scratch);   // b |= scratch
+
+    // a += b, d ^= a, d <<<= 8 (d << 8 | scr >> 24)
+    __ addv(aVec, __ T4S, aVec, bVec);
+    __ eor(dVec, __ T16B, dVec, aVec);
+    __ ushr(scratch, __ T4S, dVec, 24);     // scratch >> 24
+    __ shl(dVec, __ T4S, dVec, 8);          // d << 8
+    __ orr(dVec, __ T16B, dVec, scratch);   // d |= scratch
+
+    // c += d, b ^= c, b <<<= 7 (b << 7 | scr >> 25)
+    __ addv(cVec, __ T4S, cVec, dVec);
+    __ eor(bVec, __ T16B, bVec, cVec);
+    __ ushr(scratch, __ T4S, bVec, 25);     // scratch >> 25
+    __ shl(bVec, __ T4S, bVec, 7);          // b << 7
+    __ orr(bVec, __ T16B, bVec, scratch);   // b |= scratch
+
+    // Shuffle the bVec/cVec/dVec to reorganize the state vectors to
+    // diagonals. The aVec does not need to change orientation.
+    // 1-lane left rotation on bVec
+    __ umov(tmp1, bVec, __ S, 0);
+    __ umov(tmp2, bVec, __ S, 2);
+    __ rev64(bVec, __ T4S, bVec);
+    __ mov(bVec, __ S, 3, tmp1);
+    __ mov(bVec, __ S, 1, tmp2);
+
+    // 2-lane rotation on cVec
+    __ umov(tmp1, cVec, __ D, 0);
+    __ ins(cVec, __ D, cVec, 0, 1);
+    __ mov(cVec, __ D, 1, tmp1);
+
+    // 3-lane left rotation on dVec
+    __ umov(tmp1, dVec, __ S, 1);
+    __ umov(tmp2, dVec, __ S, 3);
+    __ rev64(dVec, __ T4S, dVec);
+    __ mov(dVec, __ S, 2, tmp1);
+    __ mov(dVec, __ S, 0, tmp2);
+
+    // The second set of operations on the vectors covers the second 4 quarter
+    // round operations, now acting on the diagonals:
+    //  Qround(state, 0, 5,10,15)
+    //  Qround(state, 1, 6,11,12)
+    //  Qround(state, 2, 7, 8,13)
+    //  Qround(state, 3, 4, 9,14)
+
+    // a += b, d ^= a, d <<<= 16
+    __ addv(aVec, __ T4S, aVec, bVec);
+    __ eor(dVec, __ T16B, dVec, aVec);
+    __ ushr(scratch, __ T4S, dVec, 16);     // scratch >> 16
+    __ shl(dVec, __ T4S, dVec, 16);         // d << 16
+    __ orr(dVec, __ T16B, dVec, scratch);   // d |= scratch
+
+    // c += d, b ^= c, b <<<= 12 (b << 12 | scr >> 20)
+    __ addv(cVec, __ T4S, cVec, dVec);
+    __ eor(bVec, __ T16B, bVec, cVec);
+    __ ushr(scratch, __ T4S, bVec, 20);     // scratch >> 20
+    __ shl(bVec, __ T4S, bVec, 12);         // b << 12
+    __ orr(bVec, __ T16B, bVec, scratch);   // b |= scratch
+
+    // a += b, d ^= a, d <<<= 8 (d << 8 | scr >> 24)
+    __ addv(aVec, __ T4S, aVec, bVec);
+    __ eor(dVec, __ T16B, dVec, aVec);
+    __ ushr(scratch, __ T4S, dVec, 24);     // scratch >> 24
+    __ shl(dVec, __ T4S, dVec, 8);          // d << 8
+    __ orr(dVec, __ T16B, dVec, scratch);   // d |= scratch
+
+    // c += d, b ^= c, b <<<= 7 (b << 7 | scr >> 25)
+    __ addv(cVec, __ T4S, cVec, dVec);
+    __ eor(bVec, __ T16B, bVec, cVec);
+    __ ushr(scratch, __ T4S, bVec, 25);     // scratch >> 25
+    __ shl(bVec, __ T4S, bVec, 7);          // b << 7
+    __ orr(bVec, __ T16B, bVec, scratch);   // b |= scratch
+
+    // Before we start the next iteration, we need to perform shuffles
+    // on the b/c/d vectors to move them back to columnar organizations
+    // from their current diagonal orientation.
+    // 3-lane rotation on bVec
+    __ umov(tmp1, bVec, __ S, 1);
+    __ umov(tmp2, bVec, __ S, 3);
+    __ rev64(bVec, __ T4S, bVec);
+    __ mov(bVec, __ S, 2, tmp1);
+    __ mov(bVec, __ S, 0, tmp2);
+
+    // 2-lane rotation on cVec
+    __ umov(tmp1, cVec, __ D, 0);
+    __ ins(cVec, __ D, cVec, 0, 1);
+    __ mov(cVec, __ D, 1, tmp1);
+
+    // 3-lane left rotation on dVec
+    __ umov(tmp1, dVec, __ S, 0);
+    __ umov(tmp2, dVec, __ S, 2);
+    __ rev64(dVec, __ T4S, dVec);
+    __ mov(dVec, __ S, 3, tmp1);
+    __ mov(dVec, __ S, 1, tmp2);
+
+    // Decrement and iterate
+    __ subs(loopCtr, loopCtr, 1);
+    __ cmp(loopCtr, (u1)0);
+    __ br(Assembler::NE, L_twoRounds);
+
+    // Once the counter reaches zero, we fall out of the loop
+    // and need to add the initial state back into the working state
+    // represented by the a/b/c/dVec registers.
+    __ addv(aVec, __ T4S, aVec, aState);
+    __ addv(bVec, __ T4S, bVec, bState);
+    __ addv(cVec, __ T4S, cVec, cState);
+    __ addv(dVec, __ T4S, dVec, dState);
+
+    // Now write the final state back to the result buffer
+    __ strq(aVec, Address(keystream, 0));
+    __ strq(bVec, Address(keystream, 16));
+    __ strq(cVec, Address(keystream, 32));
+    __ strq(dVec, Address(keystream, 48));
+
+    __ mov(r0, 64);             // Return length of output keystream
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
                           address* fault_pc, address* continuation_pc) {
@@ -7566,6 +7749,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
 #endif // COMPILER2
+
+    if (UseChaCha20Intrinsics) {
+        StubRoutines::_chacha20Block = generate_chacha20Block();
+    }
 
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
