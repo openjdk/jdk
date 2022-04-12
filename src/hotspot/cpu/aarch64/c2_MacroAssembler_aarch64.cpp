@@ -1268,6 +1268,8 @@ void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, i
   }
 }
 
+// java.lang.Math::round intrinsics
+
 void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
                                        FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
   assert_different_registers(tmp1, tmp2, tmp3, src, dst);
@@ -1275,11 +1277,11 @@ void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, 
     case T2S:
     case T4S:
       fmovs(tmp1, T, 0.5f);
-      mov_immediate64(rscratch1, jint_cast(0x1.0p23f), /*isFloat*/true);
+      mov(rscratch1, jint_cast(0x1.0p23f));
       break;
     case T2D:
       fmovd(tmp1, T, 0.5);
-      mov_immediate64(rscratch1, julong_cast(0x1.0p52), /*isFloat*/true);
+      mov(rscratch1, julong_cast(0x1.0p52));
       break;
     default:
       assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
@@ -1296,14 +1298,6 @@ void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, 
   cmhs(tmp3, T, tmp3, tmp2);
   // tmp3 is now a set of flags
 
-  // Why we don't we use MOVI to load the constant 0x1.0p23f into
-  // tmp2, instead of moving it first into rscratch1 then using DUP to
-  // copy it into all the vector lanes. The answer is that it's
-  // slower, at least on Apple M1.
-  //
-  // movi(tmp2, T16B, jint_cast(0x1.0p23f) >> 24);
-  // shl(tmp2, T4S, tmp2, 24);
-
   bif(dst, T16B, tmp1, tmp3);
   // result in dst
 }
@@ -1317,10 +1311,10 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
 
   switch (T) {
     case S:
-      mov_immediate32(rscratch1, jint_cast(0x1.0p23f), /*isFloat*/true); // (I)   (ASIMD: I)
+      mov(rscratch1, jint_cast(0x1.0p23f));
       break;
     case D:
-      mov_immediate64(rscratch1, julong_cast(0x1.0p52), /*isFloat*/true);
+      mov(rscratch1, julong_cast(0x1.0p52));
       break;
     default:
       assert(T == S | T == D, "invalid arrangement");
@@ -1343,7 +1337,7 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   }
   bind(none);
 
-  sve_fcvtzs(dst, T, ptrue, dst, T);          // (V0)   (ASIMD: -)
+  sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
 

@@ -447,8 +447,8 @@ class MacroAssembler: public Assembler {
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
-  void mov_immediate64(Register dst, uint64_t imm64, bool isFloat = false);
-  void mov_immediate32(Register dst, uint32_t imm32, bool isFloat = false);
+  void mov_immediate64(Register dst, uint64_t imm64);
+  void mov_immediate32(Register dst, uint32_t imm32);
 
   int push(unsigned int bitset, Register stack);
   int pop(unsigned int bitset, Register stack);
