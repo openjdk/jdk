@@ -169,7 +169,7 @@ public class DocFinder {
         public DocTree holderTag;
 
         /**
-         * The Doc object that holds the documentation.
+         * The element that holds the documentation.
          */
         public Element holder;
 
@@ -184,12 +184,11 @@ public class DocFinder {
         public boolean isValidInheritDocTag = true;
 
         /**
-         * When automatically inheriting throws tags, you sometime must inherit
-         * more than one tag.  For example if the element declares that it throws
-         * IOException and the overridden element has throws tags for IOException and
+         * When automatically inheriting throws tags, you sometimes must inherit
+         * more than one tag.  For example, if a method declares that it throws
+         * IOException and the overridden method has {@code @throws} tags for IOException and
          * ZipException, both tags would be inherited because ZipException is a
-         * subclass of IOException.  This subclass of DocFinder.Output allows
-         * multiple tag inheritance.
+         * subclass of IOException.  This allows multiple tag inheritance.
          */
         public final List<DocTree> tagList = new ArrayList<>();
 
