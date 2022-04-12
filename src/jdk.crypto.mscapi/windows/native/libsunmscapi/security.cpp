@@ -386,10 +386,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    loadKeysOrCertificateChains
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateChains
-  (JNIEnv *env, jobject obj, jstring jCertStoreName)
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jstring jCertStoreLocation)
 {
     /**
      * Certificate in cert store has enhanced key usage extension
@@ -402,6 +402,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
      */
 
     const char* pszCertStoreName = NULL;
+    const char* pszCertStoreLocation = NULL;
     HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
     char* pszNameString = NULL; // certificate's friendly name
@@ -415,8 +416,22 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             == NULL) {
             __leave;
         }
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName))
+        if ((pszCertStoreLocation = env->GetStringUTFChars(jCertStoreLocation, NULL))
             == NULL) {
+            __leave;
+        }
+
+        if (strcmp(pszCertStoreLocation, "LOCALMACHINE") == 0)
+        {
+            hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+        }
+        else
+        {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+
+        if (hCertStore == NULL) {
 
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
@@ -469,7 +484,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             PP("--------------------------");
             // Check if private key available - client authentication certificate
             // must have private key available.
-            HCRYPTPROV hCryptProv = NULL;
+            HCRYPTPROV_OR_NCRYPT_KEY_HANDLE hCryptProv = NULL;
             DWORD dwKeySpec = 0;
             HCRYPTKEY hUserKey = NULL;
             BOOL bCallerFreeProv = FALSE;

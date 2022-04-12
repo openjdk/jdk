@@ -56,13 +56,25 @@ abstract class CKeyStore extends KeyStoreSpi {
 
     public static final class MY extends CKeyStore {
         public MY() {
-            super("MY");
+            super("MY", "CURRENTUSER");
         }
     }
 
     public static final class ROOT extends CKeyStore {
         public ROOT() {
-            super("ROOT");
+            super("ROOT", "CURRENTUSER");
+        }
+    }
+
+    public static final class MYLocalMachine extends CKeyStore {
+        public MYLocalMachine() {
+            super("MY", "LOCALMACHINE");
+        }
+    }
+
+    public static final class ROOTLocalMachine extends CKeyStore {
+        public ROOTLocalMachine() {
+            super("ROOT", "LOCALMACHINE");
         }
     }
 
@@ -220,7 +232,13 @@ abstract class CKeyStore extends KeyStoreSpi {
      */
     private final String storeName;
 
-    CKeyStore(String storeName) {
+    /*
+     * The keystore location.
+     * Case is not significant.
+     */
+    private final String storeLocation;
+
+    CKeyStore(String storeName, String storeLocation) {
         // Get the compatibility mode
         @SuppressWarnings("removal")
         String prop = AccessController.doPrivileged(
@@ -233,6 +251,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         }
 
         this.storeName = storeName;
+        this.storeLocation = storeLocation;
     }
 
     /**
@@ -705,7 +724,7 @@ abstract class CKeyStore extends KeyStoreSpi {
         try {
 
             // Load keys and/or certificate chains
-            loadKeysOrCertificateChains(getName());
+            loadKeysOrCertificateChains(getName(), getLocation());
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
@@ -829,12 +848,20 @@ abstract class CKeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Returns the location of the keystore.
+     */
+    private String getLocation() {
+        return storeLocation;
+    }
+
+    /**
      * Load keys and/or certificates from keystore into Collection.
      *
      * @param name Name of keystore.
+     * @param location Location of keystore.
      */
-    private native void loadKeysOrCertificateChains(String name)
-            throws KeyStoreException;
+    private native void loadKeysOrCertificateChains(String name,
+        String location) throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store
