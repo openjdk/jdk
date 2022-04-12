@@ -164,7 +164,7 @@ public class CommentHelper {
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
-        // Workaround JDK-8284193
+        // Workaround for JDK-8284193
         // DocTrees.getElement(DocTreePath) returns javac-internal Symbols
         var e = doctrees.getElement(docTreePath);
         return e == null || e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED ? null : e;

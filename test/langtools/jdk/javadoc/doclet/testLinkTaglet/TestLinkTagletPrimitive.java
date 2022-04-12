@@ -67,6 +67,10 @@ public class TestLinkTagletPrimitive extends JavadocTester {
                 src.resolve("C.java").toString());
         checkExit(Exit.OK);
 
+        checkOutput(Output.OUT, true,
+                "C.java:3: warning: Tag @link: reference not found: byte",
+                "C.java:4: warning: Tag @link: reference not found: void");
+
         checkOutput("C.html", true,
                 """
                     <div class="block">Comment.
@@ -103,6 +107,9 @@ public class TestLinkTagletPrimitive extends JavadocTester {
                 "-sourcepath", src.toString(),
                 src.resolve("C.java").toString());
         checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, true,
+                "C.java:3: warning: Tag @link: reference not found: byte[]");
 
         checkOutput("C.html", true,
                 """
