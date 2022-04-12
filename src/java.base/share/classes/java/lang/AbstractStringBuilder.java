@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,8 @@ import static java.lang.String.checkOffset;
  * @author      Ulf Zibis
  * @since       1.5
  */
-abstract class AbstractStringBuilder implements Appendable, CharSequence {
+abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
+    permits StringBuilder, StringBuffer {
     /**
      * The value is used for character storage.
      */
@@ -66,6 +67,14 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * The id of the encoding used to encode the bytes in {@code value}.
      */
     byte coder;
+
+    /**
+     *  The attribute indicates {@code value} might be compressible to LATIN1 if it is UTF16-encoded.
+     *  An inflated byte array becomes compressible only when those non-latin1 chars are deleted.
+     *  We simply set this attribute in all methods which may delete chars. Therefore, there are
+     *  false positives. Subclasses and String need to handle it properly.
+     */
+    boolean maybeLatin1;
 
     /**
      * The count is the number of characters used.
@@ -131,10 +140,11 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
 
         final byte initCoder;
         if (COMPACT_STRINGS) {
-            if (seq instanceof AbstractStringBuilder) {
-                initCoder = ((AbstractStringBuilder)seq).getCoder();
-            } else if (seq instanceof String) {
-                initCoder = ((String)seq).coder();
+            if (seq instanceof AbstractStringBuilder asb) {
+                initCoder = asb.getCoder();
+                maybeLatin1 |= asb.maybeLatin1;
+            } else if (seq instanceof String s) {
+                initCoder = s.coder();
             } else {
                 initCoder = LATIN1;
             }
@@ -232,20 +242,12 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * The maximum size of array to allocate (unless necessary).
-     * Some VMs reserve some header words in an array.
-     * Attempts to allocate larger arrays may result in
-     * OutOfMemoryError: Requested array size exceeds VM limit
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    /**
      * Returns a capacity at least as large as the given minimum capacity.
      * Returns the current capacity increased by the current length + 2 if
      * that suffices.
      * Will not return a capacity greater than
-     * {@code (MAX_ARRAY_SIZE >> coder)} unless the given minimum capacity
-     * is greater than that.
+     * {@code (SOFT_MAX_ARRAY_LENGTH >> coder)}
+     * unless the given minimum capacity is greater than that.
      *
      * @param  minCapacity the desired minimum capacity
      * @throws OutOfMemoryError if minCapacity is less than zero or
@@ -326,6 +328,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             } else {
                 StringUTF16.fillNull(value, count, newLength);
             }
+        } else if (count > newLength) {
+            maybeLatin1 = true;
         }
         count = newLength;
     }
@@ -438,9 +442,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * {@code beginIndex} is larger than {@code endIndex}.
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        if (beginIndex < 0 || endIndex > count || beginIndex > endIndex) {
-            throw new IndexOutOfBoundsException();
-        }
+        Preconditions.checkFromToIndex(beginIndex, endIndex, length(), null);
         if (isLatin1()) {
             return endIndex - beginIndex;
         }
@@ -458,7 +460,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param codePointOffset the offset in code points
      * @return the index within this sequence
      * @throws    IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of this sequence,
+     *   is negative or larger than the length of this sequence,
      *   or if {@code codePointOffset} is positive and the subsequence
      *   starting with {@code index} has fewer than
      *   {@code codePointOffset} code points,
@@ -537,6 +539,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 inflate();
             }
             StringUTF16.putCharSB(value, index, ch);
+            maybeLatin1 = true;
         }
     }
 
@@ -606,6 +609,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         inflateIfNeededFor(asb);
         asb.getBytes(value, count, coder);
         count += len;
+        maybeLatin1 |= asb.maybeLatin1;
         return this;
     }
 
@@ -916,6 +920,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (len > 0) {
             shift(end, -len);
             this.count = count - len;
+            maybeLatin1 = true;
         }
         return this;
     }
@@ -967,6 +972,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         checkIndex(index, count);
         shift(index + 1, -1);
         count--;
+        maybeLatin1 = true;
         return this;
     }
 
@@ -1001,6 +1007,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         shift(end, newCount - count);
         this.count = newCount;
         putStringAt(start, str);
+        maybeLatin1 = true;
         return this;
     }
 

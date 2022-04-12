@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/cdsProtectionDomain.hpp"
-#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
 #include "classfile/classFileStream.hpp"
@@ -187,6 +187,11 @@ void SystemDictionaryShared::start_dumping() {
   _dump_in_progress = true;
 }
 
+void SystemDictionaryShared::stop_dumping() {
+  assert_lock_strong(DumpTimeTable_lock);
+  _dump_in_progress = false;
+}
+
 DumpTimeClassInfo* SystemDictionaryShared::find_or_allocate_info_for(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   return find_or_allocate_info_for_locked(k);
@@ -243,6 +248,14 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
 bool SystemDictionaryShared::is_registered_lambda_proxy_class(InstanceKlass* ik) {
   DumpTimeClassInfo* info = _dumptime_table->get(ik);
   return (info != NULL) ? info->_is_archived_lambda_proxy : false;
+}
+
+void SystemDictionaryShared::reset_registered_lambda_proxy_class(InstanceKlass* ik) {
+  DumpTimeClassInfo* info = _dumptime_table->get(ik);
+  if (info != NULL) {
+    info->_is_archived_lambda_proxy = false;
+    info->set_excluded();
+  }
 }
 
 bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
@@ -325,6 +338,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
     if (check_for_exclusion(intf, NULL)) {
+      ResourceMark rm;
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
       return true;
     }
@@ -430,6 +444,7 @@ class UnregisteredClassesTable : public ResourceHashtable<
 
 static UnregisteredClassesTable* _unregistered_classes_table = NULL;
 
+// true == class was successfully added; false == a duplicated class (with the same name) already exists.
 bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKlass* klass) {
   // We don't allow duplicated unregistered classes with the same name.
   // We only archive the first class with that name that succeeds putting
@@ -446,18 +461,6 @@ bool SystemDictionaryShared::add_unregistered_class(Thread* current, InstanceKla
     name->increment_refcount();
   }
   return (klass == *v);
-}
-
-// true == class was successfully added; false == a duplicated class (with the same name) already exists.
-bool SystemDictionaryShared::add_unregistered_class_for_static_archive(Thread* current, InstanceKlass* k) {
-  assert(DumpSharedSpaces, "only when dumping");
-  if (add_unregistered_class(current, k)) {
-    MutexLocker mu_r(current, Compile_lock); // add_to_hierarchy asserts this.
-    SystemDictionary::add_to_hierarchy(k);
-    return true;
-  } else {
-    return false;
-  }
 }
 
 // This function is called to lookup the super/interfaces of shared classes for
@@ -674,6 +677,8 @@ void SystemDictionaryShared::check_excluded_classes() {
   ExcludeDumpTimeSharedClasses excl;
   _dumptime_table->iterate(&excl);
   _dumptime_table->update_counts();
+
+  cleanup_lambda_proxy_class_dictionary();
 }
 
 bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
@@ -786,6 +791,13 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
       return true;
     }
   }
+}
+
+void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int root_index) {
+  assert(DumpSharedSpaces, "static dump only");
+  DumpTimeClassInfo* info = SystemDictionaryShared::find_or_allocate_info_for_locked(ik);
+  assert(info != NULL, "must be");
+  info->add_enum_klass_static_field(root_index);
 }
 
 void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
@@ -1035,14 +1047,7 @@ void SystemDictionaryShared::record_linking_constraint(Symbol* name, InstanceKla
     return;
   }
 
-  if (DumpSharedSpaces && !is_builtin(klass)) {
-    // During static dump, unregistered classes (those intended for
-    // custom loaders) are loaded by the boot loader. Need to
-    // exclude these for the same reason as above.
-    // This should be fixed by JDK-8261941.
-    return;
-  }
-
+  assert(is_builtin(klass), "must be");
   assert(klass_loader != NULL, "should not be called for boot loader");
   assert(loader1 != loader2, "must be");
 
@@ -1169,7 +1174,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
-      size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
+      size_t byte_size = info.runtime_info_bytesize();
       _shared_class_info_size += align_up(byte_size, SharedSpaceObjectAlignment);
     }
     return true; // keep on iterating
@@ -1278,7 +1283,7 @@ public:
 
   bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded() && info.is_builtin() == _is_builtin) {
-      size_t byte_size = RunTimeClassInfo::byte_size(info._klass, info.num_verifier_constraints(), info.num_loader_constraints());
+      size_t byte_size = info.runtime_info_bytesize();
       RunTimeClassInfo* record;
       record = (RunTimeClassInfo*)ArchiveBuilder::ro_region_alloc(byte_size);
       record->init(info);
@@ -1410,6 +1415,11 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
+    // We did not save the classfile data of the regenerated LambdaForm invoker classes,
+    // so we cannot support CLFH for such classes.
+    if (record->_klass->is_regenerated() && JvmtiExport::should_post_class_file_load_hook()) {
+       return NULL;
+    }
     return record->_klass;
   } else {
     return NULL;
@@ -1528,6 +1538,7 @@ void SystemDictionaryShared::print_table_statistics(outputStream* st) {
 }
 
 bool SystemDictionaryShared::is_dumptime_table_empty() {
+  assert_lock_strong(DumpTimeTable_lock);
   if (_dumptime_table == NULL) {
     return true;
   }
@@ -1607,6 +1618,38 @@ void SystemDictionaryShared::restore_dumptime_tables() {
   delete _dumptime_lambda_proxy_class_dictionary;
   _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
   _cloned_dumptime_lambda_proxy_class_dictionary = NULL;
+}
+
+class CleanupDumpTimeLambdaProxyClassTable: StackObj {
+ public:
+  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    assert_lock_strong(DumpTimeTable_lock);
+    InstanceKlass* caller_ik = key.caller_ik();
+    if (SystemDictionaryShared::check_for_exclusion(caller_ik, NULL)) {
+      // If the caller class is excluded, unregister all the associated lambda proxy classes
+      // so that they will not be included in the CDS archive.
+      for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
+        SystemDictionaryShared::reset_registered_lambda_proxy_class(info._proxy_klasses->at(i));
+        info._proxy_klasses->remove_at(i);
+      }
+    }
+    for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
+      InstanceKlass* ik = info._proxy_klasses->at(i);
+      if (SystemDictionaryShared::check_for_exclusion(ik, NULL)) {
+        SystemDictionaryShared::reset_registered_lambda_proxy_class(ik);
+        info._proxy_klasses->remove_at(i);
+      }
+    }
+    return info._proxy_klasses->length() == 0 ? true /* delete the node*/ : false;
+  }
+};
+
+void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
+  assert_lock_strong(DumpTimeTable_lock);
+  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
+    CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
+    _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
+  }
 }
 
 #if INCLUDE_CDS_JAVA_HEAP

@@ -35,7 +35,6 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CRLReason;
 import java.security.cert.Extension;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Date;
@@ -46,7 +45,6 @@ import sun.security.action.GetIntegerAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
 import sun.security.util.IOUtils;
-import sun.security.validator.Validator;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.GeneralName;
@@ -166,22 +164,26 @@ public final class OCSP {
             List<Extension> extensions) throws IOException {
         OCSPRequest request = new OCSPRequest(certIds, extensions);
         byte[] bytes = request.encodeBytes();
+        String responder = responderURI.toString();
 
         if (debug != null) {
-            debug.println("connecting to OCSP service at: " + responderURI);
+            debug.println("connecting to OCSP service at: " + responder);
         }
         Event.report(Event.ReporterCategory.CRLCHECK, "event.ocsp.check",
-                responderURI.toString());
+                responder);
 
         URL url;
         HttpURLConnection con = null;
         try {
-            String encodedGetReq = responderURI.toString() + "/" +
-                    URLEncoder.encode(Base64.getEncoder().encodeToString(bytes),
-                                      UTF_8);
+            StringBuilder encodedGetReq = new StringBuilder(responder);
+            if (!responder.endsWith("/")) {
+                encodedGetReq.append("/");
+            }
+            encodedGetReq.append(URLEncoder.encode(
+                    Base64.getEncoder().encodeToString(bytes), UTF_8));
 
             if (encodedGetReq.length() <= 255) {
-                url = new URL(encodedGetReq);
+                url = new URL(encodedGetReq.toString());
                 con = (HttpURLConnection)url.openConnection();
                 con.setDoOutput(true);
                 con.setDoInput(true);

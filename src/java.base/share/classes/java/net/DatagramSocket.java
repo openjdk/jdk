@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1353,9 +1353,7 @@ public class DatagramSocket implements java.io.Closeable {
         Throwable cause = e.getCause();
         if (cause instanceof SocketException)
             return (SocketException) cause;
-        SocketException se = new SocketException(e.getMessage());
-        se.initCause(e);
-        return se;
+        return new SocketException(e.getMessage(), e);
     }
 
     /**
@@ -1376,7 +1374,7 @@ public class DatagramSocket implements java.io.Closeable {
      *                 {@code java.net.MulticastSocket}.
      * @return {@code null} if {@code bindaddr == NO_DELEGATE}, otherwise returns a
      * delegate for the requested {@code type}.
-     * @throws SocketException if an exception occurs while creating or binding the
+     * @throws SocketException if an exception occurs while creating or binding
      *                         the delegate.
      */
     static <T extends DatagramSocket> T createDelegate(SocketAddress bindaddr, Class<T> type)

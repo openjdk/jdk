@@ -85,7 +85,7 @@ jint ParallelScavengeHeap::initialize() {
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
-  // Set up WorkGang
+  // Set up WorkerThreads
   _workers.initialize_workers();
 
   // Create and initialize the generations.
@@ -600,7 +600,7 @@ void ParallelScavengeHeap::object_iterate_parallel(ObjectClosure* cl,
   }
 }
 
-class PSScavengeParallelObjectIterator : public ParallelObjectIterator {
+class PSScavengeParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   ParallelScavengeHeap*  _heap;
   HeapBlockClaimer      _claimer;
@@ -615,7 +615,7 @@ public:
   }
 };
 
-ParallelObjectIterator* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
+ParallelObjectIteratorImpl* ParallelScavengeHeap::parallel_object_iterator(uint thread_num) {
   return new PSScavengeParallelObjectIterator();
 }
 
@@ -645,8 +645,10 @@ void ParallelScavengeHeap::prepare_for_verify() {
 PSHeapSummary ParallelScavengeHeap::create_ps_heap_summary() {
   PSOldGen* old = old_gen();
   HeapWord* old_committed_end = (HeapWord*)old->virtual_space()->committed_high_addr();
-  VirtualSpaceSummary old_summary(old->reserved().start(), old_committed_end, old->reserved().end());
-  SpaceSummary old_space(old->reserved().start(), old_committed_end, old->used_in_bytes());
+  HeapWord* old_reserved_start = old->reserved().start();
+  HeapWord* old_reserved_end = old->reserved().end();
+  VirtualSpaceSummary old_summary(old_reserved_start, old_committed_end, old_reserved_end);
+  SpaceSummary old_space(old_reserved_start, old_committed_end, old->used_in_bytes());
 
   PSYoungGen* young = young_gen();
   VirtualSpaceSummary young_summary(young->reserved().start(),
@@ -794,6 +796,16 @@ void ParallelScavengeHeap::resize_young_gen(size_t eden_size,
 void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
   // Delegate the resize to the generation.
   _old_gen->resize(desired_free_space);
+}
+
+HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
+  return _old_gen->allocate(size);
+}
+
+void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  assert(_old_gen->object_space()->used_region().contains(archive_space),
+         "Archive space not contained in old gen");
+  _old_gen->complete_loaded_archive_space(archive_space);
 }
 
 #ifndef PRODUCT

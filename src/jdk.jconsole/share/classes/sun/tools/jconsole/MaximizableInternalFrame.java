@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ public class MaximizableInternalFrame extends JInternalFrame {
     }
 
 
-    private class FixedMenuBarLayout extends BoxLayout {
+    private static class FixedMenuBarLayout extends BoxLayout {
         public FixedMenuBarLayout(Container target, int axis) {
             super(target, axis);
         }
@@ -239,15 +239,7 @@ public class MaximizableInternalFrame extends JInternalFrame {
                     UIManager.put(key,
                                   new MDIButtonIcon(UIManager.getIcon(key)));
                 }
-            } catch (ClassNotFoundException ex) {
-                if (JConsole.debug) {
-                    ex.printStackTrace();
-                }
-            } catch (NoSuchFieldException ex) {
-                if (JConsole.debug) {
-                    ex.printStackTrace();
-                }
-            } catch (IllegalAccessException ex) {
+            } catch (ClassNotFoundException | IllegalAccessException | NoSuchFieldException ex) {
                 if (JConsole.debug) {
                     ex.printStackTrace();
                 }

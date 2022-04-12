@@ -243,7 +243,7 @@ LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_o
 
 
 LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
-  LIR_Opr r = NULL;
+  LIR_Opr r;
   if (type == T_LONG) {
     r = LIR_OprFact::longConst(x);
   } else if (type == T_INT) {
@@ -722,7 +722,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
     }
-    case vmIntrinsics::_dsqrt: {
+    case vmIntrinsics::_dsqrt:
+    case vmIntrinsics::_dsqrt_strict: {
       if (VM_Version::has_fsqrt()) {
         assert(x->number_of_arguments() == 1, "wrong type");
         LIRItem value(x->argument_at(0), this);
@@ -743,6 +744,7 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       address runtime_entry = NULL;
       switch (x->id()) {
         case vmIntrinsics::_dsqrt:
+        case vmIntrinsics::_dsqrt_strict:
           runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
           break;
         case vmIntrinsics::_dsin:

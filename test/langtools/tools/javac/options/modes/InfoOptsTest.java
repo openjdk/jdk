@@ -49,7 +49,7 @@ public class InfoOptsTest extends OptionModesTester {
 
         String specVersion = System.getProperty("java.specification.version");
         testInfoOpt("-version", "javac", specVersion);
-        testInfoOpt("-fullversion", "javac", specVersion, "+");
+        testInfoOpt("-fullversion", "javac", specVersion);
     }
 
     void testInfoOpt(String opt, String... expect) {
@@ -69,19 +69,23 @@ public class InfoOptsTest extends OptionModesTester {
 
     @Test
     void testUniqueInfoOpts() throws IOException {
-        testUniqueInfoOpt(new String[] {"--help", "--help"}, "possible options");
-        testUniqueInfoOpt(new String[] {"-X", "-X"}, "extra options");
-        testUniqueInfoOpt(new String[] {"--help-lint", "--help-lint"}, "supported keys");
+        testUniqueInfoOpt(new String[] {"--help"},       new String[] {"--help", "--help"});
+        testUniqueInfoOpt(new String[] {"-X"},           new String[] {"-X", "-X"});
+        testUniqueInfoOpt(new String[] {"--help-lint"},  new String[] {"--help-lint", "--help-lint"});
 
-        String specVersion = System.getProperty("java.specification.version");
-        testUniqueInfoOpt(new String[] {"-version", "-version"}, "javac", specVersion);
-        testUniqueInfoOpt(new String[] {"-fullversion", "-fullversion"}, "javac", specVersion);
+        testUniqueInfoOpt(new String[] {"-version"},     new String[] {"-version", "-version"});
+        testUniqueInfoOpt(new String[] {"-fullversion"}, new String[] {"-fullversion", "-fullversion"});
     }
 
-    void testUniqueInfoOpt(String[] opts, String... expect) {
+    void testUniqueInfoOpt(String[] baseOpts, String[] testOpts) {
         String[] files = { };
-        runMain(opts, files)
-                .checkOK()
-                .checkUniqueLog(expect);
+
+        TestResult base = runMain(baseOpts, files)
+                                 .checkOK();
+
+        TestResult test = runMain(testOpts, files)
+                                 .checkOK();
+
+        base.checkSameLog(test);
     }
 }

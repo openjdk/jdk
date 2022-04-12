@@ -565,13 +565,9 @@ public final class Long extends Number
         }
 
         // We know there are at most two digits left at this point.
-        q2 = i2 / 10;
-        r  = (q2 * 10) - i2;
-        buf[--charPos] = (byte)('0' + r);
-
-        // Whatever left is the remaining digit.
-        if (q2 < 0) {
-            buf[--charPos] = (byte)('0' - q2);
+        buf[--charPos] = Integer.DigitOnes[-i2];
+        if (i2 < -9) {
+            buf[--charPos] = Integer.DigitTens[-i2];
         }
 
         if (negative) {
@@ -1667,6 +1663,7 @@ public final class Long extends Number
      * @see #remainderUnsigned
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long divideUnsigned(long dividend, long divisor) {
         /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {
@@ -1689,6 +1686,7 @@ public final class Long extends Number
      * @see #divideUnsigned
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static long remainderUnsigned(long dividend, long divisor) {
         /* See Hacker's Delight (2nd ed), section 9.3 */
         if (divisor >= 0) {

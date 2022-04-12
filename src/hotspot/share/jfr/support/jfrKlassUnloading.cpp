@@ -23,11 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/utilities/jfrPredicate.hpp"
 #include "jfr/utilities/jfrRelation.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/macros.hpp"
 
 static const int initial_array_size = 64;
 
@@ -107,9 +110,22 @@ static bool add_to_unloaded_klass_set(traceid klass_id, bool current_epoch) {
   return true;
 }
 
+#if INCLUDE_MANAGEMENT
+static void send_finalizer_event(const Klass* k) {
+  if (!k->is_instance_klass()) {
+    return;
+  }
+  const InstanceKlass* const ik = InstanceKlass::cast(k);
+  if (ik->has_finalizer()) {
+    JfrFinalizerStatisticsEvent::send_unload_event(ik);
+  }
+}
+#endif
+
 bool JfrKlassUnloading::on_unload(const Klass* k) {
   assert(k != NULL, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  MANAGEMENT_ONLY(send_finalizer_event(k);)
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,14 +131,27 @@ public final class Math {
      * The {@code double} value that is closer than any other to
      * <i>e</i>, the base of the natural logarithms.
      */
-    public static final double E = 2.7182818284590452354;
+    public static final double E = 2.718281828459045;
 
     /**
      * The {@code double} value that is closer than any other to
-     * <i>pi</i>, the ratio of the circumference of a circle to its
-     * diameter.
+     * <i>pi</i> (&pi;), the ratio of the circumference of a circle to
+     * its diameter.
      */
-    public static final double PI = 3.14159265358979323846;
+    public static final double PI = 3.141592653589793;
+
+    /**
+     * The {@code double} value that is closer than any other to
+     * <i>tau</i> (&tau;), the ratio of the circumference of a circle
+     * to its radius.
+     *
+     * @apiNote
+     * The value of <i>pi</i> is one half that of <i>tau</i>; in other
+     * words, <i>tau</i> is double <i>pi</i> .
+     *
+     * @since 19
+     */
+    public static final double TAU = 2.0 * PI;
 
     /**
      * Constant by which to multiply an angular value in degrees to obtain an
@@ -740,6 +753,7 @@ public final class Math {
      * @see     java.lang.Integer#MAX_VALUE
      * @see     java.lang.Integer#MIN_VALUE
      */
+    @IntrinsicCandidate
     public static int round(float a) {
         int intBits = Float.floatToRawIntBits(a);
         int biasedExp = (intBits & FloatConsts.EXP_BIT_MASK)
@@ -789,6 +803,7 @@ public final class Math {
      * @see     java.lang.Long#MAX_VALUE
      * @see     java.lang.Long#MIN_VALUE
      */
+    @IntrinsicCandidate
     public static long round(double a) {
         long longBits = Double.doubleToRawLongBits(a);
         long biasedExp = (longBits & DoubleConsts.EXP_BIT_MASK)
@@ -1088,13 +1103,13 @@ public final class Math {
      * @since 18
      */
     public static int floorDivExact(int x, int y) {
-        int r = x / y;
-        if ((x & y & r) >= 0) {
+        final int q = x / y;
+        if ((x & y & q) >= 0) {
             // if the signs are different and modulo not zero, round down
-            if ((x ^ y) < 0 && (r * y != x)) {
-                r--;
+            if ((x ^ y) < 0 && (q * y != x)) {
+                return q - 1;
             }
-            return r;
+            return q;
         }
         throw new ArithmeticException("integer overflow");
     }
@@ -1125,13 +1140,87 @@ public final class Math {
      * @since 18
      */
     public static long floorDivExact(long x, long y) {
-        long r = x / y;
-        if ((x & y & r) >= 0) {
+        final long q = x / y;
+        if ((x & y & q) >= 0) {
             // if the signs are different and modulo not zero, round down
-            if ((x ^ y) < 0 && (r * y != x)) {
-                r--;
+            if ((x ^ y) < 0 && (q * y != x)) {
+                return q - 1;
             }
-            return r;
+            return q;
+        }
+        throw new ArithmeticException("long overflow");
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * This method is identical to {@link #ceilDiv(int,int)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Integer.MIN_VALUE}.
+     * <p>
+     * The ceil modulus method {@link #ceilMod(int,int)} is a suitable
+     * counterpart both for this method and for the {@link #ceilDiv(int,int)}
+     * method.
+     * <p>
+     * For examples, see {@link #ceilDiv(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Integer.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see #ceilDiv(int, int)
+     * @since 18
+     */
+    public static int ceilDivExact(int x, int y) {
+        final int q = x / y;
+        if ((x & y & q) >= 0) {
+            // if the signs are the same and modulo not zero, round up
+            if ((x ^ y) >= 0 && (q * y != x)) {
+                return q + 1;
+            }
+            return q;
+        }
+        throw new ArithmeticException("integer overflow");
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * This method is identical to {@link #ceilDiv(long,long)} except that it
+     * throws an {@code ArithmeticException} when the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is
+     * {@code -1} instead of ignoring the integer overflow and returning
+     * {@code Long.MIN_VALUE}.
+     * <p>
+     * The ceil modulus method {@link #ceilMod(long,long)} is a suitable
+     * counterpart both for this method and for the {@link #ceilDiv(long,long)}
+     * method.
+     * <p>
+     * For examples, see {@link #ceilDiv(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero, or the
+     * dividend {@code x} is {@code Long.MIN_VALUE} and the divisor {@code y}
+     * is {@code -1}.
+     * @see #ceilDiv(long,long)
+     * @since 18
+     */
+    public static long ceilDivExact(long x, long y) {
+        final long q = x / y;
+        if ((x & y & q) >= 0) {
+            // if the signs are the same and modulo not zero, round up
+            if ((x ^ y) >= 0 && (q * y != x)) {
+                return q + 1;
+            }
+            return q;
         }
         throw new ArithmeticException("long overflow");
     }
@@ -1316,6 +1405,7 @@ public final class Math {
      * @see #multiplyHigh
      * @since 18
      */
+    @IntrinsicCandidate
     public static long unsignedMultiplyHigh(long x, long y) {
         // Compute via multiplyHigh() to leverage the intrinsic
         long result = Math.multiplyHigh(x, y);
@@ -1361,12 +1451,12 @@ public final class Math {
      * @since 1.8
      */
     public static int floorDiv(int x, int y) {
-        int r = x / y;
+        final int q = x / y;
         // if the signs are different and modulo not zero, round down
-        if ((x ^ y) < 0 && (r * y != x)) {
-            r--;
+        if ((x ^ y) < 0 && (q * y != x)) {
+            return q - 1;
         }
-        return r;
+        return q;
     }
 
     /**
@@ -1424,12 +1514,12 @@ public final class Math {
      * @since 1.8
      */
     public static long floorDiv(long x, long y) {
-        long r = x / y;
+        final long q = x / y;
         // if the signs are different and modulo not zero, round down
-        if ((x ^ y) < 0 && (r * y != x)) {
-            r--;
+        if ((x ^ y) < 0 && (q * y != x)) {
+            return q - 1;
         }
-        return r;
+        return q;
     }
 
     /**
@@ -1453,8 +1543,8 @@ public final class Math {
      * <ul>
      *   <li>Regardless of the signs of the arguments, {@code floorMod}(x, y)
      *       is zero exactly when {@code x % y} is zero as well.</li>
-     *   <li>If neither of {@code floorMod}(x, y) or {@code x % y} is zero,
-     *       their results differ exactly when the signs of the arguments differ.<br>
+     *   <li>If neither {@code floorMod}(x, y) nor {@code x % y} is zero,
+     *       they differ exactly when the signs of the arguments differ.<br>
      *       <ul>
      *       <li>{@code floorMod(+4, +3) == +1}; &nbsp; and {@code (+4 % +3) == +1}</li>
      *       <li>{@code floorMod(-4, -3) == -1}; &nbsp; and {@code (-4 % -3) == -1}</li>
@@ -1472,12 +1562,12 @@ public final class Math {
      * @since 1.8
      */
     public static int floorMod(int x, int y) {
-        int mod = x % y;
+        final int r = x % y;
         // if the signs are different and modulo not zero, adjust result
-        if ((x ^ y) < 0 && mod != 0) {
-            mod += y;
+        if ((x ^ y) < 0 && r != 0) {
+            return r + y;
         }
-        return mod;
+        return r;
     }
 
     /**
@@ -1530,12 +1620,226 @@ public final class Math {
      * @since 1.8
      */
     public static long floorMod(long x, long y) {
-        long mod = x % y;
+        final long r = x % y;
         // if the signs are different and modulo not zero, adjust result
-        if ((x ^ y) < 0 && mod != 0) {
-            mod += y;
+        if ((x ^ y) < 0 && r != 0) {
+            return r + y;
         }
-        return mod;
+        return r;
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Integer.MIN_VALUE}.
+     * <p>
+     * Normal integer division operates under the round to zero rounding mode
+     * (truncation).  This operation instead acts under the round toward
+     * positive infinity (ceiling) rounding mode.
+     * The ceiling rounding mode gives different results from truncation
+     * when the exact quotient is not an integer and is positive.
+     * <ul>
+     *   <li>If the signs of the arguments are different, the results of
+     *       {@code ceilDiv} and the {@code /} operator are the same.  <br>
+     *       For example, {@code ceilDiv(-4, 3) == -1} and {@code (-4 / 3) == -1}.</li>
+     *   <li>If the signs of the arguments are the same, {@code ceilDiv}
+     *       returns the smallest integer greater than or equal to the quotient
+     *       while the {@code /} operator returns the largest integer less
+     *       than or equal to the quotient.
+     *       They differ if and only if the quotient is not an integer.<br>
+     *       For example, {@code ceilDiv(4, 3) == 2},
+     *       whereas {@code (4 / 3) == 1}.
+     *   </li>
+     * </ul>
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code int} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #ceilMod(int, int)
+     * @see #ceil(double)
+     * @since 18
+     */
+    public static int ceilDiv(int x, int y) {
+        final int q = x / y;
+        // if the signs are the same and modulo not zero, round up
+        if ((x ^ y) >= 0 && (q * y != x)) {
+            return q + 1;
+        }
+        return q;
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * Normal integer division operates under the round to zero rounding mode
+     * (truncation).  This operation instead acts under the round toward
+     * positive infinity (ceiling) rounding mode.
+     * The ceiling rounding mode gives different results from truncation
+     * when the exact result is not an integer and is positive.
+     * <p>
+     * For examples, see {@link #ceilDiv(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #ceilMod(int, int)
+     * @see #ceil(double)
+     * @since 18
+     */
+    public static long ceilDiv(long x, int y) {
+        return ceilDiv(x, (long)y);
+    }
+
+    /**
+     * Returns the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * There is one special case: if the dividend is
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * Normal integer division operates under the round to zero rounding mode
+     * (truncation).  This operation instead acts under the round toward
+     * positive infinity (ceiling) rounding mode.
+     * The ceiling rounding mode gives different results from truncation
+     * when the exact result is not an integer and is positive.
+     * <p>
+     * For examples, see {@link #ceilDiv(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the smallest (closest to negative infinity)
+     * {@code long} value that is greater than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #ceilMod(int, int)
+     * @see #ceil(double)
+     * @since 18
+     */
+    public static long ceilDiv(long x, long y) {
+        final long q = x / y;
+        // if the signs are the same and modulo not zero, round up
+        if ((x ^ y) >= 0 && (q * y != x)) {
+            return q + 1;
+        }
+        return q;
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code int} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * The difference in values between {@code ceilMod} and the {@code %} operator
+     * is due to the difference between {@code ceilDiv} and the {@code /}
+     * operator, as detailed in {@linkplain #ceilDiv(int, int)}.
+     * <p>
+     * Examples:
+     * <ul>
+     *   <li>Regardless of the signs of the arguments, {@code ceilMod}(x, y)
+     *       is zero exactly when {@code x % y} is zero as well.</li>
+     *   <li>If neither {@code ceilMod}(x, y) nor {@code x % y} is zero,
+     *       they differ exactly when the signs of the arguments are the same.<br>
+     *       <ul>
+     *       <li>{@code ceilMod(+4, +3) == -2}; &nbsp; and {@code (+4 % +3) == +1}</li>
+     *       <li>{@code ceilMod(-4, -3) == +2}; &nbsp; and {@code (-4 % -3) == -1}</li>
+     *       <li>{@code ceilMod(+4, -3) == +1}; &nbsp; and {@code (+4 % -3) == +1}</li>
+     *       <li>{@code ceilMod(-4, +3) == -1}; &nbsp; and {@code (-4 % +3) == -1}</li>
+     *       </ul>
+     *   </li>
+     * </ul>
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #ceilDiv(int, int)
+     * @since 18
+     */
+    public static int ceilMod(int x, int y) {
+        final int r = x % y;
+        // if the signs are the same and modulo not zero, adjust result
+        if ((x ^ y) >= 0 && r != 0) {
+            return r - y;
+        }
+        return r;
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code long} and {@code int} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * For examples, see {@link #ceilMod(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #ceilDiv(long, int)
+     * @since 18
+     */
+    public static int ceilMod(long x, int y) {
+        // Result cannot overflow the range of int.
+        return (int)ceilMod(x, (long)y);
+    }
+
+    /**
+     * Returns the ceiling modulus of the {@code long} arguments.
+     * <p>
+     * The ceiling modulus is {@code r = x - (ceilDiv(x, y) * y)},
+     * has the opposite sign as the divisor {@code y} or is zero, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code ceilDiv} and {@code ceilMod} is such that:
+     * <ul>
+     *   <li>{@code ceilDiv(x, y) * y + ceilMod(x, y) == x}</li>
+     * </ul>
+     * <p>
+     * For examples, see {@link #ceilMod(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the ceiling modulus {@code x - (ceilDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #ceilDiv(long, long)
+     * @since 18
+     */
+    public static long ceilMod(long x, long y) {
+        final long r = x % y;
+        // if the signs are the same and modulo not zero, adjust result
+        if ((x ^ y) >= 0 && r != 0) {
+            return r - y;
+        }
+        return r;
     }
 
     /**

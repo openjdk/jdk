@@ -118,7 +118,7 @@ public class ByteCodeRewriter
        }
     }
 
-    static private void writeShort(byte[] buf, int index, short value) {
+    private static void writeShort(byte[] buf, int index, short value) {
         buf[index] = (byte) ((value >> 8) & 0x00FF);
         buf[index + 1] = (byte) (value & 0x00FF);
     }

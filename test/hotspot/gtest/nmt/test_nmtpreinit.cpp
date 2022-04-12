@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 SAP SE. All rights reserved.
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@
 // - for the post-init phase, we just start it inside a TEST_VM scope, which needs to create the VM for
 //   us. So inside that scope VM initialization ran and with it the NMT initialization.
 // To be sure, we assert those assumptions.
-
-#if INCLUDE_NMT
 
 // Some shorts to save writing out the flags every time
 static void* os_malloc(size_t s)              { return os::malloc(s, mtTest); }
@@ -127,5 +125,3 @@ TEST_VM(NMTPreInit, pre_to_post_allocs) {
   g_test_allocations.test_post();
   g_test_allocations.free_all();
 }
-
-#endif // INCLUDE_NMT

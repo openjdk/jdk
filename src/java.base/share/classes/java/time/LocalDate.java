@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,13 +363,16 @@ public final class LocalDate
 
         // convert march-based values back to january-based
         int marchMonth0 = (marchDoy0 * 5 + 2) / 153;
-        int month = (marchMonth0 + 2) % 12 + 1;
+        int month = marchMonth0 + 3;
+        if (month > 12) {
+            month -= 12;
+        }
         int dom = marchDoy0 - (marchMonth0 * 306 + 5) / 10 + 1;
-        yearEst += marchMonth0 / 10;
+        if (marchDoy0 >= 306) {
+            yearEst++;
+        }
 
-        // check year now we are certain it is correct
-        int year = YEAR.checkValidIntValue(yearEst);
-        return new LocalDate(year, month, dom);
+        return new LocalDate((int)yearEst, month, dom);
     }
 
     //-----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
  * which should not be exposed in untrusted environments.  See the
  * <a href="{@docRoot}/../specs/serialization/security.html">
  * Security Appendix</a>
- * of the Serialization Specification for more information.
+ * of the <cite>Java Object Serialization Specification</cite> for more information.
  *
  * @see Key
  * @see KeyFactory

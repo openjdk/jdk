@@ -37,7 +37,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.security.Provider;
 import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.Key;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -46,7 +45,6 @@ import javax.security.auth.kerberos.ServicePermission;
 import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
-import sun.security.krb5.internal.Ticket;
 import sun.security.krb5.internal.AuthorizationData;
 
 /**
@@ -121,9 +119,12 @@ class Krb5Context implements GSSContextSpi {
     // XXX See if the required info from these can be extracted and
     // stored elsewhere
     private Credentials tgt;
+
+    // On the Initiator side, contains the final TGS to a service on both
+    // delegation and no-delegation scenarios.
+    // On the Acceptor side, contains a user TGS usable for delegation.
     private Credentials serviceCreds;
     private KrbApReq apReq;
-    Ticket serviceTicket;
     private final GSSCaller caller;
     private static final boolean DEBUG = Krb5Util.DEBUG;
 
@@ -549,7 +550,7 @@ class Krb5Context implements GSSContextSpi {
                     delegatedCred = new Krb5ProxyCredential(
                         Krb5InitCredential.getInstance(
                             GSSCaller.CALLER_ACCEPT, myName, lifetime),
-                        peerName, serviceTicket);
+                        peerName, serviceCreds);
                 } catch (GSSException gsse) {
                     // OK, delegatedCred is null then
                 }
@@ -624,13 +625,13 @@ class Krb5Context implements GSSContextSpi {
                                            "No TGT available");
                     }
                     myName = (Krb5NameElement) myCred.getName();
-                    final Krb5ProxyCredential second;
+                    final Krb5ProxyCredential proxyCreds;
                     if (myCred instanceof Krb5InitCredential) {
-                        second = null;
+                        proxyCreds = null;
                         tgt = ((Krb5InitCredential) myCred).getKrb5Credentials();
                     } else {
-                        second = (Krb5ProxyCredential) myCred;
-                        tgt = second.self.getKrb5Credentials();
+                        proxyCreds = (Krb5ProxyCredential) myCred;
+                        tgt = proxyCreds.self.getKrb5Credentials();
                     }
 
                     checkPermission(peerName.getKrb5PrincipalName().getName(),
@@ -641,16 +642,12 @@ class Krb5Context implements GSSContextSpi {
                      * for this service in the Subject and reuse it
                      */
 
-                    @SuppressWarnings("removal")
-                    final AccessControlContext acc =
-                        AccessController.getContext();
-
                     if (GSSUtil.useSubjectCredsOnly(caller)) {
                         KerberosTicket kerbTicket = null;
                         try {
                            // get service ticket from caller's subject
                            @SuppressWarnings("removal")
-                           var tmp = AccessController.doPrivileged(
+                           var tmp = AccessController.doPrivilegedWithCombiner(
                                 new PrivilegedExceptionAction<KerberosTicket>() {
                                 public KerberosTicket run() throws Exception {
                                     // XXX to be cleaned
@@ -662,11 +659,10 @@ class Krb5Context implements GSSContextSpi {
                                         GSSCaller.CALLER_UNKNOWN,
                                         // since it's useSubjectCredsOnly here,
                                         // don't worry about the null
-                                        second == null ?
+                                        proxyCreds == null ?
                                             myName.getKrb5PrincipalName().getName():
-                                            second.getName().getKrb5PrincipalName().getName(),
-                                        peerName.getKrb5PrincipalName().getName(),
-                                        acc);
+                                            proxyCreds.getName().getKrb5PrincipalName().getName(),
+                                        peerName.getKrb5PrincipalName().getName());
                                 }});
                             kerbTicket = tmp;
                         } catch (PrivilegedActionException e) {
@@ -696,24 +692,24 @@ class Krb5Context implements GSSContextSpi {
                                                "the subject");
                         }
                         // Get Service ticket using the Kerberos protocols
-                        if (second == null) {
+                        if (proxyCreds == null) {
                             serviceCreds = Credentials.acquireServiceCreds(
                                      peerName.getKrb5PrincipalName().getName(),
                                      tgt);
                         } else {
                             serviceCreds = Credentials.acquireS4U2proxyCreds(
                                     peerName.getKrb5PrincipalName().getName(),
-                                    second.tkt,
-                                    second.getName().getKrb5PrincipalName(),
+                                    proxyCreds.userCreds,
+                                    proxyCreds.getName().getKrb5PrincipalName(),
                                     tgt);
                         }
                         if (GSSUtil.useSubjectCredsOnly(caller)) {
                             @SuppressWarnings("removal")
                             final Subject subject =
-                                AccessController.doPrivileged(
+                                AccessController.doPrivilegedWithCombiner(
                                 new java.security.PrivilegedAction<Subject>() {
                                     public Subject run() {
-                                        return (Subject.getSubject(acc));
+                                        return (Subject.current());
                                     }
                                 });
                             if (subject != null &&
@@ -850,7 +846,7 @@ class Krb5Context implements GSSContextSpi {
                         retVal = new AcceptSecContextToken(this,
                                           token.getKrbApReq()).encode();
                 }
-                serviceTicket = token.getKrbApReq().getCreds().getTicket();
+                serviceCreds = token.getKrbApReq().getCreds();
                 myCred = null;
                 state = STATE_DONE;
             } else  {

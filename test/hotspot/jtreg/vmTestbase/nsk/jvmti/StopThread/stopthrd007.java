@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,8 +170,8 @@ class stopthrd007ThreadRunning extends Thread {
     }
 
     public void run() {
-        stopthrd007.startingBarrier.unlock();
         try {
+            stopthrd007.startingBarrier.unlock();
             int i = 0;
             int n = 1000;
             while (flag) {
@@ -216,8 +216,8 @@ class stopthrd007ThreadWaiting extends Thread {
     }
 
     public synchronized void run() {
-        stopthrd007.startingBarrier.unlock();
         try {
+            stopthrd007.startingBarrier.unlock();
             wait(timeout);
             status = 1;
         } catch (ThreadDeath t) {
@@ -249,8 +249,8 @@ class stopthrd007ThreadSleeping extends Thread {
     }
 
     public void run() {
-        stopthrd007.startingBarrier.unlock();
         try {
+            stopthrd007.startingBarrier.unlock();
             sleep(timeout);
             status = 1;
         } catch (ThreadDeath t) {

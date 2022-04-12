@@ -71,6 +71,7 @@ public class UnicastRef implements RemoteRef {
                        Boolean.getBoolean("sun.rmi.client.logCalls")));
     private static final long serialVersionUID = 8258372400816541186L;
 
+    @SuppressWarnings("serial") // Type of field is not Serializable
     protected LiveRef ref;
 
     /**

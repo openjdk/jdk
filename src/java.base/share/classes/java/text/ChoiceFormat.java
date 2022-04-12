@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,9 +178,9 @@ public class ChoiceFormat extends NumberFormat {
      *            is {@code null}
      */
     public void applyPattern(String newPattern) {
-        StringBuffer[] segments = new StringBuffer[2];
+        StringBuilder[] segments = new StringBuilder[2];
         for (int i = 0; i < segments.length; ++i) {
-            segments[i] = new StringBuffer();
+            segments[i] = new StringBuilder();
         }
         double[] newChoiceLimits = new double[30];
         String[] newChoiceFormats = new String[30];

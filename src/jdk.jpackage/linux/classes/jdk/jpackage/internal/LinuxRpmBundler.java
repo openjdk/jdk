@@ -177,6 +177,7 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
             appDirectory = appDirectory.resolve(PACKAGE_NAME.fetchFrom(params));
         }
 
+        data.put("APPLICATION_RELEASE", RELEASE.fetchFrom(params));
         data.put("APPLICATION_PREFIX", prefix.toString());
         data.put("APPLICATION_DIRECTORY", appDirectory.toString());
         data.put("APPLICATION_SUMMARY", APP_NAME.fetchFrom(params));

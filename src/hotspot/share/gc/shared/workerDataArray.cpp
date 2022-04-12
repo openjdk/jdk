@@ -37,16 +37,6 @@ double WorkerDataArray<double>::uninitialized() {
 }
 
 template <>
-void WorkerDataArray<double>::WDAPrinter::summary(outputStream* out, double time) {
-  out->print_cr(" %.1lfms", time * MILLIUNITS);
-}
-
-template <>
-void WorkerDataArray<size_t>::WDAPrinter::summary(outputStream* out, size_t value) {
-  out->print_cr(" " SIZE_FORMAT, value);
-}
-
-template <>
 void WorkerDataArray<double>::WDAPrinter::summary(outputStream* out, double min, double avg, double max, double diff, double sum, bool print_sum) {
   out->print(" Min: %4.1lf, Avg: %4.1lf, Max: %4.1lf, Diff: %4.1lf", min * MILLIUNITS, avg * MILLIUNITS, max * MILLIUNITS, diff* MILLIUNITS);
   if (print_sum) {

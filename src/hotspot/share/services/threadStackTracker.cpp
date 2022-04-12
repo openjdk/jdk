@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,19 +38,6 @@ bool ThreadStackTracker::initialize(NMT_TrackingLevel level) {
     _simple_thread_stacks = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
       SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>();
     return (_simple_thread_stacks != NULL);
-  }
-  return true;
-}
-
-bool ThreadStackTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel to) {
-  assert (from != NMT_minimal, "cannot convert from the lowest tracking level to anything");
-  if (to == NMT_minimal) {
-    assert(from == NMT_summary || from == NMT_detail, "Just check");
-    ThreadCritical tc;
-    if (_simple_thread_stacks != NULL) {
-      delete _simple_thread_stacks;
-      _simple_thread_stacks = NULL;
-    }
   }
   return true;
 }

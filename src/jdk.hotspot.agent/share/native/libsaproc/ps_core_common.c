@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       jvm_name = lib->name;
       useSharedSpacesAddr = lookup_symbol(ph, jvm_name, USE_SHARED_SPACES_SYM);
       if (useSharedSpacesAddr == 0) {
-        print_debug("can't lookup 'UseSharedSpaces' flag\n");
+        print_debug("can't lookup 'UseSharedSpaces' symbol\n");
         return false;
       }
 
@@ -308,7 +308,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       // using equivalent type jboolean to read the value of
       // UseSharedSpaces which is same as hotspot type "bool".
       if (read_jboolean(ph, useSharedSpacesAddr, &useSharedSpaces) != true) {
-        print_debug("can't read the value of 'UseSharedSpaces' flag\n");
+        print_debug("can't read the value of 'UseSharedSpaces' symbol\n");
         return false;
       }
 
@@ -356,26 +356,27 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       }
 
       // read CDSFileMapHeaderBase from the file
-      memset(&header, 0, sizeof(CDSFileMapHeaderBase));
-      if ((n = read(fd, &header, sizeof(CDSFileMapHeaderBase)))
-           != sizeof(CDSFileMapHeaderBase)) {
+      size_t header_size = sizeof(CDSFileMapHeaderBase);
+      memset(&header, 0, header_size);
+      if ((n = read(fd, &header, header_size))
+           != header_size) {
         print_debug("can't read shared archive file map header from %s\n", classes_jsa);
         close(fd);
         return false;
       }
 
       // check file magic
-      if (header._magic != CDS_ARCHIVE_MAGIC) {
+      if (header._generic_header._magic != CDS_ARCHIVE_MAGIC) {
         print_debug("%s has bad shared archive file magic number 0x%x, expecting 0x%x\n",
-                    classes_jsa, header._magic, CDS_ARCHIVE_MAGIC);
+                    classes_jsa, header._generic_header._magic, CDS_ARCHIVE_MAGIC);
         close(fd);
         return false;
       }
 
       // check version
-      if (header._version != CURRENT_CDS_ARCHIVE_VERSION) {
+      if (header._generic_header._version != CURRENT_CDS_ARCHIVE_VERSION) {
         print_debug("%s has wrong shared archive file version %d, expecting %d\n",
-                     classes_jsa, header._version, CURRENT_CDS_ARCHIVE_VERSION);
+                     classes_jsa, header._generic_header._version, CURRENT_CDS_ARCHIVE_VERSION);
         close(fd);
         return false;
       }

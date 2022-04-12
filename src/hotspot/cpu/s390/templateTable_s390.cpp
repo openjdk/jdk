@@ -43,6 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef PRODUCT
@@ -3822,7 +3823,7 @@ void TemplateTable::_new() {
       SkipIfEqual skip(_masm, &DTraceAllocProbes, false, Z_ARG5 /*scratch*/);
       // Trigger dtrace event for fastpath.
       __ push(atos); // Save the return value.
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc), RallocatedObject);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), RallocatedObject);
       __ pop(atos); // Restore the return value.
     }
     __ z_bru(done);

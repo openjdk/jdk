@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,21 +40,22 @@ extern Mutex*   Module_lock;                     // a lock on module and package
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
-extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* EscapeBarrier_lock;              // a lock to sync reallocating and relocking objects because of JVMTI access
 extern Monitor* Heap_lock;                       // a lock on the heap
-extern Mutex*   ExpandHeap_lock;                 // a lock on expanding the heap
+#ifdef INCLUDE_PARALLELGC
+extern Mutex*   PSOldGenExpand_lock;         // a lock on expanding the heap
+#endif
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
 extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
 extern Monitor* StringDedup_lock;                // a lock on the string deduplication facility
 extern Mutex*   StringDedupIntern_lock;          // a lock on StringTable notification of StringDedup
-extern Monitor* CodeCache_lock;                  // a lock on the CodeCache, rank is special
+extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Monitor* CodeSweeper_lock;                // a lock used by the sweeper only for wait notify
 extern Mutex*   MethodData_lock;                 // a lock on installation of method data
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
@@ -86,7 +87,6 @@ extern Monitor* Terminator_lock;                 // a lock used to guard termina
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
-extern Mutex*   ProfilePrint_lock;               // a lock used to serialize the printing of profiles
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
 extern Mutex*   NMethodSweeperStats_lock;        // a lock used to serialize access to sweeper statistics
 
@@ -116,9 +116,7 @@ extern Monitor* ThreadsSMRDelete_lock;           // Used by ThreadsSMRSupport to
 extern Mutex*   ThreadIdTableCreate_lock;        // Used by ThreadIdTable to lazily create the thread id table
 extern Mutex*   SharedDecoder_lock;              // serializes access to the decoder during normal (not error reporting) use
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
-#if INCLUDE_NMT
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
-#endif
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
@@ -141,7 +139,8 @@ extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR t
 extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updates to jlongs on platforms that don't support cx8
 #endif
 
-extern Mutex*   Metaspace_lock;            // protects Metaspace virtualspace and chunk expansions
+extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions
+extern Monitor* MetaspaceCritical_lock;          // synchronizes failed metaspace allocations that risk throwing metaspace OOM
 extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed for concurrent unloading
 
 
@@ -197,8 +196,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -211,8 +208,6 @@ class MutexLocker: public StackObj {
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != NULL) {
-      assert(_mutex->rank() > Mutex::special || no_safepoint_check,
-             "Mutexes with rank special or lower should not do safepoint checks");
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {
@@ -255,12 +250,8 @@ class MonitorLocker: public MutexLocker {
   }
 
   bool wait(int64_t timeout = 0) {
-    if (_flag == Mutex::_safepoint_check_flag) {
-      return as_monitor()->wait(timeout);
-    } else {
-      return as_monitor()->wait_without_safepoint_check(timeout);
-    }
-    return false;
+    return _flag == Mutex::_safepoint_check_flag ?
+      as_monitor()->wait(timeout) : as_monitor()->wait_without_safepoint_check(timeout);
   }
 
   void notify_all() {

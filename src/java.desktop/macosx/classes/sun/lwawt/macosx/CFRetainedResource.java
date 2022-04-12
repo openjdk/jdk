@@ -163,7 +163,7 @@ public class CFRetainedResource {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected final void finalize() throws Throwable {
         dispose();
     }

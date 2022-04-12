@@ -206,9 +206,7 @@ JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
 }
 
 JvmtiBreakpoint::~JvmtiBreakpoint() {
-  if (_class_holder.peek() != NULL) {
-    _class_holder.release(JvmtiExport::jvmti_oop_storage());
-  }
+  _class_holder.release(JvmtiExport::jvmti_oop_storage());
 }
 
 void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {

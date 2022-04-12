@@ -46,7 +46,7 @@ public class ZForwarding extends VMObject {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         type = db.lookupType("ZForwarding");
 
         virtualFieldOffset = type.getField("_virtual").getOffset();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,12 +266,8 @@ class GraphKit : public Phase {
   JVMState* transfer_exceptions_into_jvms();
 
   // Helper to throw a built-in exception.
-  // Range checks take the offending index.
-  // Cast and array store checks take the offending class.
-  // Others do not take the optional argument.
-  // The JVMS must allow the bytecode to be re-executed
-  // via an uncommon trap.
-  void builtin_throw(Deoptimization::DeoptReason reason, Node* arg = NULL);
+  // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
+  void builtin_throw(Deoptimization::DeoptReason reason);
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -660,7 +656,7 @@ class GraphKit : public Phase {
                               Node* ctrl = NULL);
 
   // Return a load of array element at idx.
-  Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
+  Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);
@@ -789,9 +785,6 @@ class GraphKit : public Phase {
 
   // rounding for strict double precision conformance
   Node* dprecision_rounding(Node* n);
-
-  // rounding for non-strict double stores
-  Node* dstore_rounding(Node* n);
 
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);

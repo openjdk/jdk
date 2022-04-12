@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.Iterator;
 import java.security.Permission;
 import java.util.Properties;
 import sun.net.NetworkClient;
@@ -250,9 +249,8 @@ public class FtpURLConnection extends URLConnection {
                 } catch (IllegalArgumentException iae) {
                     throw new IOException("Failed to select a proxy", iae);
                 }
-                final Iterator<Proxy> it = proxies.iterator();
-                while (it.hasNext()) {
-                    p = it.next();
+                for (Proxy proxy : proxies) {
+                    p = proxy;
                     if (p == null || p == Proxy.NO_PROXY ||
                         p.type() == Proxy.Type.SOCKS) {
                         break;
@@ -512,17 +510,7 @@ public class FtpURLConnection extends URLConnection {
                 is = new FtpInputStream(ftp, ftp.list(null));
                 msgh.add("content-type", "text/plain");
                 msgh.add("access-type", "directory");
-            } catch (IOException ex) {
-                FileNotFoundException fnfe = new FileNotFoundException(fullpath);
-                if (ftp != null) {
-                    try {
-                        ftp.close();
-                    } catch (IOException ioe) {
-                        fnfe.addSuppressed(ioe);
-                    }
-                }
-                throw fnfe;
-            } catch (FtpProtocolException ex2) {
+            } catch (IOException | FtpProtocolException ex) {
                 FileNotFoundException fnfe = new FileNotFoundException(fullpath);
                 if (ftp != null) {
                     try {

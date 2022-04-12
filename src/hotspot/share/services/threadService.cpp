@@ -618,18 +618,14 @@ void StackFrameInfo::print_on(outputStream* st) const {
 class InflatedMonitorsClosure: public MonitorClosure {
 private:
   ThreadStackTrace* _stack_trace;
-  Thread* _thread;
 public:
-  InflatedMonitorsClosure(Thread* t, ThreadStackTrace* st) {
-    _thread = t;
+  InflatedMonitorsClosure(ThreadStackTrace* st) {
     _stack_trace = st;
   }
   void do_monitor(ObjectMonitor* mid) {
-    if (mid->owner() == _thread) {
-      oop object = mid->object();
-      if (!_stack_trace->is_owned_monitor_on_stack(object)) {
-        _stack_trace->add_jni_locked_monitor(object);
-      }
+    oop object = mid->object();
+    if (!_stack_trace->is_owned_monitor_on_stack(object)) {
+      _stack_trace->add_jni_locked_monitor(object);
     }
   }
 };
@@ -663,7 +659,7 @@ ThreadStackTrace::~ThreadStackTrace() {
   }
 }
 
-void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth) {
+void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHashtable* table) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
   if (_thread->has_last_Java_frame()) {
@@ -687,9 +683,19 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth) {
 
   if (_with_locked_monitors) {
     // Iterate inflated monitors and find monitors locked by this thread
-    // not found in the stack
-    InflatedMonitorsClosure imc(_thread, this);
-    ObjectSynchronizer::monitors_iterate(&imc);
+    // that are not found in the stack, e.g. JNI locked monitors:
+    InflatedMonitorsClosure imc(this);
+    if (table != nullptr) {
+      // Get the ObjectMonitors locked by the target thread, if any,
+      // and does not include any where owner is set to a stack lock
+      // address in the target thread:
+      ObjectMonitorsHashtable::PtrList* list = table->get_entry(_thread);
+      if (list != nullptr) {
+        ObjectSynchronizer::monitors_iterate(&imc, list, _thread);
+      }
+    } else {
+      ObjectSynchronizer::monitors_iterate(&imc, _thread);
+    }
   }
 }
 
@@ -940,9 +946,10 @@ ThreadSnapshot::~ThreadSnapshot() {
   delete _concurrent_locks;
 }
 
-void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_monitors) {
+void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
+                                             ObjectMonitorsHashtable* table) {
   _stack_trace = new ThreadStackTrace(_thread, with_locked_monitors);
-  _stack_trace->dump_stack_at_safepoint(max_depth);
+  _stack_trace->dump_stack_at_safepoint(max_depth, table);
 }
 
 

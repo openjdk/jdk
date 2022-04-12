@@ -29,7 +29,9 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.SyntaxTreeNode;
  */
 public class TypeCheckError extends Exception {
     static final long serialVersionUID = 3246224233917854640L;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     ErrorMsg _error = null;
+    @SuppressWarnings("serial") // Type of field is not Serializable
     SyntaxTreeNode _node = null;
 
     public TypeCheckError(SyntaxTreeNode node) {

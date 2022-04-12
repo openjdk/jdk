@@ -32,10 +32,7 @@ import java.util.Random;
 import java.util.function.BiConsumer;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
-
-import static org.testng.Assert.assertTrue;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -68,34 +65,36 @@ public class CompensatedSums {
             // Older less accurate implementations included here as the baseline.
 
             // squared error of naive sum by reduction - should be large
-            naive += Math.pow(DoubleStream.of(rand).reduce((x, y) -> x+y).getAsDouble() - sum[0], 2);
+            naive += square(DoubleStream.of(rand).reduce((x, y) -> x+y).getAsDouble() - sum[0]);
 
             // squared error of sequential sum - should be 0
-            jdkSequentialStreamError += Math.pow(DoubleStream.of(rand).sum() - sum[0], 2);
+            jdkSequentialStreamError += square(DoubleStream.of(rand).sum() - sum[0]);
 
-            goodSequentialStreamError += Math.pow(computeFinalSum(DoubleStream.of(rand).collect(doubleSupplier,objDoubleConsumer,goodCollectorConsumer)) - sum[0], 2);
+            goodSequentialStreamError += square(computeFinalSum(DoubleStream.of(rand).collect(doubleSupplier,objDoubleConsumer,goodCollectorConsumer)) - sum[0]);
 
             // squared error of parallel sum from the JDK
-            jdkParallelStreamError += Math.pow(DoubleStream.of(rand).parallel().sum() - sum[0], 2);
+            jdkParallelStreamError += square(DoubleStream.of(rand).parallel().sum() - sum[0]);
 
             // squared error of parallel sum
-            goodParallelStreamError += Math.pow(computeFinalSum(DoubleStream.of(rand).parallel().collect(doubleSupplier,objDoubleConsumer,goodCollectorConsumer)) - sum[0], 2);
+            goodParallelStreamError += square(computeFinalSum(DoubleStream.of(rand).parallel().collect(doubleSupplier,objDoubleConsumer,goodCollectorConsumer)) - sum[0]);
 
             // the bad parallel stream
-            badParallelStreamError += Math.pow(computeFinalSum(DoubleStream.of(rand).parallel().collect(doubleSupplier,objDoubleConsumer,badCollectorConsumer)) - sum[0], 2);
+            badParallelStreamError += square(computeFinalSum(DoubleStream.of(rand).parallel().collect(doubleSupplier,objDoubleConsumer,badCollectorConsumer)) - sum[0]);
 
 
         }
 
-        Assert.assertEquals(goodSequentialStreamError, 0.0);
-        Assert.assertEquals(goodSequentialStreamError, jdkSequentialStreamError);
-
         Assert.assertTrue(jdkParallelStreamError <= goodParallelStreamError);
-        Assert.assertTrue(badParallelStreamError > goodParallelStreamError);
+        Assert.assertTrue(badParallelStreamError > jdkParallelStreamError);
 
+        Assert.assertTrue(goodSequentialStreamError >= jdkSequentialStreamError);
         Assert.assertTrue(naive > jdkSequentialStreamError);
         Assert.assertTrue(naive > jdkParallelStreamError);
 
+    }
+
+    private static double square(double arg) {
+        return arg * arg;
     }
 
     // from OpenJDK8 Collectors, unmodified

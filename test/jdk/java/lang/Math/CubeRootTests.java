@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @run main CubeRootTests
  * @bug 4347132 4939441 8078672
  * @summary Tests for {Math, StrictMath}.cbrt (use -Dseed=X to set PRNG seed)
- * @author Joseph D. Darcy
  * @key randomness
  */
 
@@ -46,17 +45,10 @@ public class CubeRootTests {
     static int testCubeRootCase(double input, double expected) {
         int failures=0;
 
-        double minus_input = -input;
-        double minus_expected = -expected;
-
-        failures+=Tests.test("Math.cbrt(double)", input,
-                             Math.cbrt(input), expected);
-        failures+=Tests.test("Math.cbrt(double)", minus_input,
-                             Math.cbrt(minus_input), minus_expected);
-        failures+=Tests.test("StrictMath.cbrt(double)", input,
-                             StrictMath.cbrt(input), expected);
-        failures+=Tests.test("StrictMath.cbrt(double)", minus_input,
-                             StrictMath.cbrt(minus_input), minus_expected);
+        failures+=Tests.test("Math.cbrt",        input, Math::cbrt,        expected);
+        failures+=Tests.test("Math.cbrt",       -input, Math::cbrt,       -expected);
+        failures+=Tests.test("StrictMath.cbrt",  input, StrictMath::cbrt,  expected);
+        failures+=Tests.test("StrictMath.cbrt", -input, StrictMath::cbrt, -expected);
 
         return failures;
     }
@@ -324,7 +316,7 @@ public class CubeRootTests {
         return failures;
     }
 
-    public static void main(String argv[]) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testCubeRoot();

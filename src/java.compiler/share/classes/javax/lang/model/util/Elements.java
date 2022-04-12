@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,6 @@ import javax.lang.model.element.*;
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see javax.annotation.processing.ProcessingEnvironment#getElementUtils
  * @since 1.6
  */
@@ -68,8 +65,8 @@ public interface Elements {
      *     </li>
      * </ul>
      *
-     * If this process leads to a list with a single element,
-     * the single element is returned, otherwise null is returned.
+     * If this process leads to a list with a single element, the
+     * single element is returned, otherwise {@code null} is returned.
      *
      * @param name fully qualified package name,
      *             or an empty string for an unnamed package
@@ -155,8 +152,8 @@ public interface Elements {
      *     </li>
      * </ul>
      *
-     * If this process leads to a list with a single element,
-     * the single element is returned, otherwise null is returned.
+     * If this process leads to a list with a single element, the
+     * single element is returned, otherwise {@code null} is returned.
      *
      * @param name the canonical name
      * @return the named type element,
@@ -427,6 +424,7 @@ public interface Elements {
          *
          * @jls 8.8.9 Default Constructor
          * @jls 8.9.3 Enum Members
+         * @jls 8.10.3 Record Members
          * @jls 9.6.3 Repeatable Annotation Types
          * @jls 9.7.5 Multiple Annotations of the Same Interface
          */
@@ -543,7 +541,7 @@ public interface Elements {
      * element and therefore {@code null} is returned for those kinds
      * of elements.
      *
-     * A {@link NestingKind#TOP_LEVEL top-level} class or
+     * A {@linkplain NestingKind#TOP_LEVEL top-level} class or
      * interface is its own outermost type element.
      *
      * @implSpec
@@ -734,8 +732,9 @@ public interface Elements {
     }
 
     /**
-     * Returns the record component for the given accessor. Returns null if the
-     * given method is not a record component accessor.
+     * Returns the record component for the given accessor. Returns
+     * {@code null} if the given method is not a record component
+     * accessor.
      *
      * @implSpec The default implementation of this method checks if the element
      * enclosing the accessor has kind {@link ElementKind#RECORD RECORD} if that is
@@ -746,8 +745,8 @@ public interface Elements {
      * record component is returned, in any other case {@code null} is returned.
      *
      * @param accessor the method for which the record component should be found.
-     * @return the record component, or null if the given method is not an record
-     * component accessor
+     * @return the record component, or {@code null} if the given
+     * method is not a record component accessor
      * @since 16
      */
     default RecordComponentElement recordComponentFor(ExecutableElement accessor) {
@@ -759,5 +758,101 @@ public interface Elements {
             }
         }
         return null;
+    }
+
+    /**
+     * {@return the file object for this element or {@code null} if
+     * there is no such file object}
+     *
+     * <p>The returned file object is for the <a
+     * href="../element/package-summary.html#accurate_model">reference
+     * representation</a> of the information used to construct the
+     * element. For example, if during compilation or annotation
+     * processing, a source file for class {@code Foo} is compiled
+     * into a class file, the file object returned for the element
+     * representing {@code Foo} would be for the source file and
+     * <em>not</em> for the class file.
+     *
+     * <p>An implementation may choose to not support the
+     * functionality of this method, in which case {@link
+     * UnsupportedOperationException} is thrown.
+     *
+     * <p>In the context of annotation processing, a non-{@code null}
+     * value is returned if the element was included as part of the
+     * initial inputs or the containing file was created during the
+     * run of the annotation processing tool. Otherwise, a {@code
+     * null} may be returned. In annotation processing, if a
+     * {@linkplain javax.annotation.processing.Filer#createClassFile
+     * class file is created}, that class file can serve as the
+     * reference representation for elements.
+     *
+     * <p>If it has a file object, the file object for a package will
+     * be a {@code package-info} file. A package may exist and not
+     * have any {@code package-info} file even if the package is
+     * (implicitly) created during an annotation processing run from
+     * the creation of source or class files in that package.  An
+     * {@linkplain PackageElement#isUnnamed unnamed package} will have
+     * a {@code null} file since it cannot be declared in a
+     * compilation unit.
+     *
+     * <p>If it has a file object, the file object for a module will
+     * be a {@code module-info} file.  An {@linkplain
+     * ModuleElement#isUnnamed unnamed module} will have a {@code
+     * null} file since it cannot be declared in a compilation unit.
+     * An {@linkplain #isAutomaticModule automatic module} will have a
+     * {@code null} file since it is implicitly declared.
+     *
+     * <p>If it has a file object, the file object for a top-level
+     * {@code public} class or interface will be a source or class
+     * file corresponding to that class or interface. In this case,
+     * typically the leading portion of the name of the file will
+     * match the name of the class or interface. A single compilation
+     * unit can define multiple top-level classes and interfaces, such
+     * as a primary {@code public} class or interfaces whose name
+     * corresponds to the file name and one or more <em>auxiliary</em>
+     * classes or interfaces whose names do not correspond to the file
+     * name. If a source file is providing the reference
+     * representation of an auxiliary class or interface, the file for
+     * the primary class is returned. (An auxiliary class or interface
+     * can also be defined in a {@code package-info} source file, in
+     * which case the file for the {@code package-info} file is
+     * returned.)  If a class file is providing the reference
+     * representation of an auxiliary class or interface, the separate
+     * class file for the auxiliary class is returned.
+     *
+     * <p>For a nested class or interface, if it has a file object:
+     *
+     * <ul>
+     *
+     * <li>if a source file is providing the reference representation,
+     * the file object will be that of the {@linkplain
+     * #getOutermostTypeElement(Element) outermost enclosing} class or
+     * interface
+     *
+     * <li>if a class file is providing the reference representation,
+     * the file object will be that of the nested class or interface
+     * itself
+     *
+     * </ul>
+     *
+     * <p>For other lexically enclosed elements, such as {@linkplain
+     * VariableElement#getEnclosingElement() variables}, {@linkplain
+     * ExecutableElement#getEnclosingElement() methods, and
+     * constructors}, if they have a file object, the file object will
+     * be the object associated with the {@linkplain
+     * Element#getEnclosingElement() enclosing element} of the
+     * lexically enclosed element.
+     *
+     * @implSpec The default implementation unconditionally throws
+     * {@link UnsupportedOperationException}.
+     *
+     * @throws UnsupportedOperationException if this functionality is
+     * not supported
+     *
+     * @param e the element to find a file object for
+     * @since 18
+     */
+    default javax.tools.JavaFileObject getFileObjectOf(Element e) {
+        throw new UnsupportedOperationException();
     }
 }

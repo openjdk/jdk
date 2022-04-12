@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,6 +509,16 @@ const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
 //----------------------------------------------------------------------------------------------------
+// old CDS options
+extern bool DumpSharedSpaces;
+extern bool DynamicDumpSharedSpaces;
+extern bool RequireSharedSpaces;
+extern "C" {
+// Make sure UseSharedSpaces is accessible to the serviceability agent.
+extern JNIEXPORT jboolean UseSharedSpaces;
+}
+
+//----------------------------------------------------------------------------------------------------
 // Object alignment, in units of HeapWords.
 //
 // Minimum is max(BytesPerLong, BytesPerDouble, BytesPerOop) / HeapWordSize, so jlong, jdouble and
@@ -803,6 +813,9 @@ extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
 inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
 #endif
 
+inline bool same_type_or_subword_size(BasicType t1, BasicType t2) {
+  return (t1 == t2) || (is_subword_type(t1) && type2aelembytes(t1) == type2aelembytes(t2));
+}
 
 // JavaValue serves as a container for arbitrary Java values.
 
@@ -1209,5 +1222,9 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
   return k0 == k1;
 }
 
+//----------------------------------------------------------------------------------------------------
+
+// Allow use of C++ thread_local when approved - see JDK-8282469.
+#define APPROVED_CPP_THREAD_LOCAL thread_local
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

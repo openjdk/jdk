@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,8 +297,8 @@ public class HashSet<E>
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
-        // Read in any hidden serialization magic
-        s.defaultReadObject();
+        // Consume and ignore stream fields (currently zero).
+        s.readFields();
 
         // Read capacity and verify non-negative.
         int capacity = s.readInt();
@@ -313,12 +313,13 @@ public class HashSet<E>
             throw new InvalidObjectException("Illegal load factor: " +
                                              loadFactor);
         }
+        // Clamp load factor to range of 0.25...4.0.
+        loadFactor = Math.min(Math.max(0.25f, loadFactor), 4.0f);
 
         // Read size and verify non-negative.
         int size = s.readInt();
         if (size < 0) {
-            throw new InvalidObjectException("Illegal size: " +
-                                             size);
+            throw new InvalidObjectException("Illegal size: " + size);
         }
 
         // Set the capacity according to the size and load factor ensuring that
@@ -334,7 +335,7 @@ public class HashSet<E>
                      .checkArray(s, Map.Entry[].class, HashMap.tableSizeFor(capacity));
 
         // Create backing HashMap
-        map = (((HashSet<?>)this) instanceof LinkedHashSet ?
+        map = (this instanceof LinkedHashSet ?
                new LinkedHashMap<>(capacity, loadFactor) :
                new HashMap<>(capacity, loadFactor));
 

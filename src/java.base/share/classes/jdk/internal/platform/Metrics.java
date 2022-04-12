@@ -365,6 +365,14 @@ public interface Metrics {
      */
     public long getPidsMax();
 
+    /**
+     * Returns the current number of tasks in the Isolation Group.
+     *
+     * @return The current number of tasks or -2 if not supported
+     *
+     */
+    public long getPidsCurrent();
+
     /*****************************************************************
      * BlKIO Subsystem
      ****************************************************************/

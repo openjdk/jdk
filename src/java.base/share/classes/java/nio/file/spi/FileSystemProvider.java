@@ -1129,7 +1129,7 @@ public abstract class FileSystemProvider {
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method denies read access to the file. If this method is invoked
      *          to read security sensitive attributes then the security manager
-     *          may be invoke to check for additional permissions.
+     *          may be invoked to check for additional permissions.
      */
     public abstract Map<String,Object> readAttributes(Path path, String attributes,
                                                       LinkOption... options)

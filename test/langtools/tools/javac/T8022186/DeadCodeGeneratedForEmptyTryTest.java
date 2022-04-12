@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8022186
+ * @bug 8022186 8271254
  * @summary javac generates dead code if a try with an empty body has a finalizer
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.util
@@ -53,8 +53,10 @@ public class DeadCodeGeneratedForEmptyTryTest {
     }
 
     void run() throws Exception {
-        checkClassFile(Paths.get(System.getProperty("test.classes"),
-                this.getClass().getName() + "$Test.class"));
+        for (int i = 1; i <= 8; i++) {
+            checkClassFile(Paths.get(System.getProperty("test.classes"),
+                    this.getClass().getName() + "$Test" + i + ".class"));
+        }
     }
 
     int utf8Index;
@@ -62,6 +64,7 @@ public class DeadCodeGeneratedForEmptyTryTest {
     ConstantPool constantPool;
 
     void checkClassFile(final Path path) throws Exception {
+        numberOfRefToStr = 0;
         ClassFile classFile = ClassFile.read(
                 new BufferedInputStream(Files.newInputStream(path)));
         constantPool = classFile.constant_pool;
@@ -155,9 +158,92 @@ public class DeadCodeGeneratedForEmptyTryTest {
 
     }
 
-    public class Test {
+    public class Test1 {
         void methodToLookFor() {
             try {
+                // empty intentionally
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test2 {
+        void methodToLookFor() {
+            try {
+                // empty intentionally
+            } catch (Exception e) {
+                System.out.println("EXCEPTION");
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test3 {
+        void methodToLookFor() {
+            try {
+                ;  // skip statement intentionally
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test4 {
+        void methodToLookFor() {
+            try {
+                ;  // skip statement intentionally
+            } catch (Exception e) {
+                System.out.println("EXCEPTION");
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test5 {
+        void methodToLookFor() {
+            try {
+                // empty try statement
+                try { } finally { }
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test6 {
+        void methodToLookFor() {
+            try {
+                // empty try statement
+                try { } catch (Exception e) { } finally { }
+            } catch (Exception e) {
+                System.out.println("EXCEPTION");
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test7 {
+        void methodToLookFor() {
+            try {
+                // empty try statement with skip statement
+                try { ; } finally { }
+            } finally {
+                System.out.println("STR_TO_LOOK_FOR");
+            }
+        }
+    }
+
+    public class Test8 {
+        void methodToLookFor() {
+            try {
+                // empty try statement with skip statement
+                try { ; } catch (Exception e) { } finally { }
+            } catch (Exception e) {
+                System.out.println("EXCEPTION");
             } finally {
                 System.out.println("STR_TO_LOOK_FOR");
             }

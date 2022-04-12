@@ -43,6 +43,7 @@ import sun.hotspot.WhiteBox;
 
 public class OldWhiteBox {
     public static void main(String[] args) {
+        @SuppressWarnings("deprecation")
         WhiteBox wb = WhiteBox.getWhiteBox();
         if (wb.getHeapOopSize() < 0) {
             throw new Error("wb.getHeapOopSize() < 0");

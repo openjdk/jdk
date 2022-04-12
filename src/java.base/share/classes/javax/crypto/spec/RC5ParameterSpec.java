@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the parameters used with the
- * <a href="http://tools.ietf.org/html/rfc2040"><i>RC5</i></a>
+ * <a href="https://tools.ietf.org/html/rfc2040"><i>RC5</i></a>
  * algorithm.
  *
  * <p> The parameters consist of a version number, a rounds count, a word
@@ -114,7 +114,12 @@ public class RC5ParameterSpec implements AlgorithmParameterSpec {
         this.version = version;
         this.rounds = rounds;
         this.wordSize = wordSize;
-        if (iv == null) throw new IllegalArgumentException("IV missing");
+        if (iv == null) {
+            throw new IllegalArgumentException("IV missing");
+        }
+        if (offset < 0) {
+            throw new ArrayIndexOutOfBoundsException("offset is negative");
+        }
         int blockSize = (wordSize / 8) * 2;
         if (iv.length - offset < blockSize) {
             throw new IllegalArgumentException("IV too short");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "classfile/classFileStream.hpp"
-#include "classfile/classLoader.hpp"
+#include "classfile/classLoader.inline.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -103,6 +103,9 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
+#endif
+#if INCLUDE_MANAGEMENT
+#include "services/finalizerService.hpp"
 #endif
 
 #include <errno.h>
@@ -423,8 +426,8 @@ extern volatile jint vm_created;
 JVM_ENTRY_NO_ENV(void, JVM_BeforeHalt())
 #if INCLUDE_CDS
   // Link all classes for dynamic CDS dumping before vm exit.
-  if (DynamicDumpSharedSpaces) {
-    DynamicArchive::prepare_for_dynamic_dumping();
+  if (DynamicArchive::should_dump_at_vm_exit()) {
+    DynamicArchive::prepare_for_dump_at_exit();
   }
 #endif
   EventShutdown event;
@@ -484,7 +487,7 @@ JVM_ENTRY_NO_ENV(jint, JVM_ActiveProcessorCount(void))
   return os::active_processor_count();
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, JVM_IsUseContainerSupport(void))
+JVM_LEAF(jboolean, JVM_IsUseContainerSupport(void))
 #ifdef LINUX
   if (UseContainerSupport) {
     return JNI_TRUE;
@@ -657,7 +660,7 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   }
 
   // Make shallow object copy
-  const int size = obj->size();
+  const size_t size = obj->size();
   oop new_obj_oop = NULL;
   if (obj->is_array()) {
     const int length = ((arrayOop)obj())->length();
@@ -679,6 +682,16 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   }
 
   return JNIHandles::make_local(THREAD, new_obj());
+JVM_END
+
+// java.lang.ref.Finalizer ////////////////////////////////////////////////////
+
+JVM_ENTRY(void, JVM_ReportFinalizationComplete(JNIEnv * env, jobject finalizee))
+  MANAGEMENT_ONLY(FinalizerService::on_complete(JNIHandles::resolve_non_null(finalizee), THREAD);)
+JVM_END
+
+JVM_LEAF(jboolean, JVM_IsFinalizationEnabled(JNIEnv * env))
+  return InstanceKlass::is_finalization_enabled();
 JVM_END
 
 // java.io.File ///////////////////////////////////////////////////////////////
@@ -2823,7 +2836,7 @@ void jio_print(const char* s, size_t len) {
     jio_fprintf(defaultStream::output_stream(), "%.*s", (int)len, s);
   } else {
     // Make an unused local variable to avoid warning from gcc compiler.
-    size_t count = ::write(defaultStream::output_fd(), s, (int)len);
+    ssize_t count = os::write(defaultStream::output_fd(), s, (int)len);
   }
 }
 
@@ -2852,6 +2865,26 @@ static void thread_entry(JavaThread* thread, TRAPS) {
 
 
 JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    // During java -Xshare:dump, if we allow multiple Java threads to
+    // execute in parallel, symbols and classes may be loaded in
+    // random orders which will make the resulting CDS archive
+    // non-deterministic.
+    //
+    // Lucikly, during java -Xshare:dump, it's important to run only
+    // the code in the main Java thread (which is NOT started here) that
+    // creates the module graph, etc. It's safe to not start the other
+    // threads which are launched by class static initializers
+    // (ReferenceHandler, FinalizerThread and CleanerImpl).
+    if (log_is_enabled(Info, cds)) {
+      ResourceMark rm;
+      oop t = JNIHandles::resolve_non_null(jthread);
+      log_info(cds)("JVM_StartThread() ignored: %s", t->klass()->external_name());
+    }
+    return;
+  }
+#endif
   JavaThread *native_thread = NULL;
 
   // We cannot hold the Threads_lock when we throw an exception,
@@ -2961,7 +2994,7 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
       THROW_OOP(java_throwable);
     } else {
       // Use a VM_Operation to throw the exception.
-      JavaThread::send_async_exception(java_thread, java_throwable);
+      JavaThread::send_async_exception(receiver, java_throwable);
     }
   } else {
     // Either:
@@ -3022,7 +3055,7 @@ JVM_ENTRY(void, JVM_SetThreadPriority(JNIEnv* env, jobject jthread, jint prio))
 JVM_END
 
 
-JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
+JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   if (os::dont_yield()) return;
   HOTSPOT_THREAD_YIELD();
   os::naked_yield();
@@ -3360,7 +3393,12 @@ JVM_END
 
 // Library support ///////////////////////////////////////////////////////////////////////////
 
-JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
+JVM_LEAF(void*, JVM_LoadZipLibrary())
+  ClassLoader::load_zip_library_if_needed();
+  return ClassLoader::zip_library_handle();
+JVM_END
+
+JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwException))
   //%note jvm_ct
   char ebuf[1024];
   void *load_result;
@@ -3369,18 +3407,23 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
     load_result = os::dll_load(name, ebuf, sizeof ebuf);
   }
   if (load_result == NULL) {
-    char msg[1024];
-    jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
-    // Since 'ebuf' may contain a string encoded using
-    // platform encoding scheme, we need to pass
-    // Exceptions::unsafe_to_utf8 to the new_exception method
-    // as the last argument. See bug 6367357.
-    Handle h_exception =
-      Exceptions::new_exception(thread,
-                                vmSymbols::java_lang_UnsatisfiedLinkError(),
-                                msg, Exceptions::unsafe_to_utf8);
+    if (throwException) {
+      char msg[1024];
+      jio_snprintf(msg, sizeof msg, "%s: %s", name, ebuf);
+      // Since 'ebuf' may contain a string encoded using
+      // platform encoding scheme, we need to pass
+      // Exceptions::unsafe_to_utf8 to the new_exception method
+      // as the last argument. See bug 6367357.
+      Handle h_exception =
+        Exceptions::new_exception(thread,
+                                  vmSymbols::java_lang_UnsatisfiedLinkError(),
+                                  msg, Exceptions::unsafe_to_utf8);
 
-    THROW_HANDLE_0(h_exception);
+      THROW_HANDLE_0(h_exception);
+    } else {
+      log_info(library)("Failed to load library %s", name);
+      return load_result;
+    }
   }
   log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, name, p2i(load_result));
   return load_result;
@@ -3620,26 +3663,26 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
+JVM_LEAF(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
   return Arguments::is_dumping_archive();
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
+JVM_LEAF(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
   return UseSharedSpaces;
 JVM_END
 
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   if (DumpSharedSpaces) {
-    const char* release = Abstract_VM_Version::vm_release();
-    const char* dbg_level = Abstract_VM_Version::jdk_debug_level();
+    const char* release = VM_Version::vm_release();
+    const char* dbg_level = VM_Version::jdk_debug_level();
     const char* version = VM_Version::internal_vm_info_string();
     jlong seed = (jlong)(java_lang_String::hash_code((const jbyte*)release, (int)strlen(release)) ^
                          java_lang_String::hash_code((const jbyte*)dbg_level, (int)strlen(dbg_level)) ^
                          java_lang_String::hash_code((const jbyte*)version, (int)strlen(version)));
-    seed += (jlong)Abstract_VM_Version::vm_major_version();
-    seed += (jlong)Abstract_VM_Version::vm_minor_version();
-    seed += (jlong)Abstract_VM_Version::vm_security_version();
-    seed += (jlong)Abstract_VM_Version::vm_patch_version();
+    seed += (jlong)VM_Version::vm_major_version();
+    seed += (jlong)VM_Version::vm_minor_version();
+    seed += (jlong)VM_Version::vm_security_version();
+    seed += (jlong)VM_Version::vm_patch_version();
     if (seed == 0) { // don't let this ever be zero.
       seed = 0x87654321;
     }
@@ -3650,7 +3693,7 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   }
 JVM_END
 
-JVM_ENTRY(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
+JVM_LEAF(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
 #if INCLUDE_CDS
   return ClassListWriter::is_enabled() || DynamicDumpSharedSpaces;
 #else
@@ -3666,9 +3709,9 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));
     char* c_line = java_lang_String::as_utf8_string(h_line());
     if (DynamicDumpSharedSpaces) {
-      // Note: LambdaFormInvokers::append_filtered and LambdaFormInvokers::append take same format which is not
+      // Note: LambdaFormInvokers::append take same format which is not
       // same as below the print format. The line does not include LAMBDA_FORM_TAG.
-      LambdaFormInvokers::append_filtered(os::strdup((const char*)c_line, mtInternal));
+      LambdaFormInvokers::append(os::strdup((const char*)c_line, mtInternal));
     }
     if (ClassListWriter::is_enabled()) {
       ClassListWriter w;
@@ -3692,7 +3735,7 @@ JVM_ENTRY(void, JVM_DumpDynamicArchive(JNIEnv *env, jstring archiveName))
   ResourceMark rm(THREAD);
   Handle file_handle(THREAD, JNIHandles::resolve_non_null(archiveName));
   char* archive_name  = java_lang_String::as_utf8_string(file_handle());
-  DynamicArchive::dump(archive_name, CHECK);
+  DynamicArchive::dump_for_jcmd(archive_name, CHECK);
 #endif // INCLUDE_CDS
 JVM_END
 
@@ -3759,7 +3802,7 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
 JVM_END
 
 // JVM monitoring and management support
-JVM_ENTRY_NO_ENV(void*, JVM_GetManagement(jint version))
+JVM_LEAF(void*, JVM_GetManagement(jint version))
   return Management::get_jmm_interface(version);
 JVM_END
 
@@ -3848,6 +3891,7 @@ JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
   return (jobjectArray) JNIHandles::make_local(THREAD, result_h());
 JVM_END
 
-JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
+JVM_LEAF(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
+

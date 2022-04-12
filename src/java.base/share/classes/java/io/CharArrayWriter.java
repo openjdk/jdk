@@ -28,7 +28,7 @@ package java.io;
 import java.util.Arrays;
 
 /**
- * This class implements a character buffer that can be used as an Writer.
+ * This class implements a character buffer that can be used as a Writer.
  * The buffer automatically grows when data is written to the stream.  The data
  * can be retrieved using toCharArray() and toString().
  * <P>

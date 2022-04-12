@@ -1834,7 +1834,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
     return;
   }
 
-  if (MemTracker::tracking_level() > NMT_minimal) {
+  if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
     Tracker tkr(Tracker::release);
     remove_file_mapping(addr);

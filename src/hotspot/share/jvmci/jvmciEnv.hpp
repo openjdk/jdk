@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,11 +171,15 @@ class JVMCIEnv : public ResourceObj {
   const char*            _file;  // The file and ...
   int                    _line;  // ... line where this JNIEnv was created
 
-  // Translates an exception on the HotSpot heap to an exception on
-  // the shared library heap. The translation includes the stack and
-  // causes of `throwable`. The translated exception is pending in the
-  // shared library thread upon returning.
-  void translate_hotspot_exception_to_jni_exception(JavaThread* THREAD, const Handle& throwable);
+  // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
+  // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
+  // The translated exception is pending in jni_env upon returning.
+  static void translate_to_jni_exception(JavaThread* THREAD, const Handle& throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
+
+  // Translates an exception on the shared library heap (i.e., jni_env) to an exception on
+  // the HotSpot heap (i.e., hotspot_env). The translation includes the stack and cause(s) of `throwable`.
+  // The translated exception is pending in hotspot_env upon returning.
+  static void translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
 public:
   // Opens a JVMCIEnv scope for a Java to VM call (e.g., via CompilerToVM).
@@ -225,6 +229,11 @@ public:
   jboolean has_pending_exception();
   void clear_pending_exception();
 
+  // If this env has a pending exception, it is translated to be a pending
+  // exception in `peer_env` and is cleared from this env. Returns true
+  // if a pending exception was transferred, false otherwise.
+  jboolean transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env);
+
   // Prints an exception and stack trace of a pending exception.
   void describe_pending_exception(bool clear);
 
@@ -242,7 +251,7 @@ public:
   jint get_int_at(JVMCIPrimitiveArray array, int index);
   void put_int_at(JVMCIPrimitiveArray array, int index, jint value);
 
-  long get_long_at(JVMCIPrimitiveArray array, int index);
+  jlong get_long_at(JVMCIPrimitiveArray array, int index);
   void put_long_at(JVMCIPrimitiveArray array, int index, jlong value);
 
   void copy_bytes_to(JVMCIPrimitiveArray src, jbyte* dest, int offset, jsize length);
@@ -310,6 +319,8 @@ public:
   JVMCIObject call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS);
 
   jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
+
+  void call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCI_TRAPS);
 
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 

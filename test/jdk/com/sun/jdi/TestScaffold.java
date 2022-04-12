@@ -535,16 +535,15 @@ abstract public class TestScaffold extends TargetAdapter {
                         Location loc = ((Locatable)event).location();
                         ReferenceType rt = loc.declaringType();
                         String name = rt.name();
-                        if (name.startsWith("java.") &&
-                                       !name.startsWith("sun.") &&
-                                       !name.startsWith("com.")) {
+                        if (name.startsWith("java.")
+                            || name.startsWith("sun.")
+                            || name.startsWith("com.")
+                            || name.startsWith("jdk.")) {
                             if (mainStartClass != null) {
                                 redefine(mainStartClass);
                             }
                         } else {
-                            if (!name.startsWith("jdk.")) {
-                                redefine(rt);
-                            }
+                            redefine(rt);
                         }
                     }
                 }

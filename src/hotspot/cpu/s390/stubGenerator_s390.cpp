@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Declaration and definition of StubGenerator (no .hpp file).
@@ -2404,9 +2405,6 @@ class StubGenerator: public StubCodeGenerator {
 
  public:
   StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    // Replace the standard masm with a special one:
-    _masm = new MacroAssembler(code);
-
     _stub_count = !all ? 0x100 : 0x200;
     if (all) {
       generate_all();
@@ -2422,9 +2420,9 @@ class StubGenerator: public StubCodeGenerator {
     // Put extra information in the stub code, to make it more readable.
     // Write the high part of the address.
     // [RGV] Check if there is a dependency on the size of this prolog.
-    __ emit_32((intptr_t)cdesc >> 32);
-    __ emit_32((intptr_t)cdesc);
-    __ emit_32(++_stub_count);
+    __ emit_data((intptr_t)cdesc >> 32);
+    __ emit_data((intptr_t)cdesc);
+    __ emit_data(++_stub_count);
 #endif
     align(true);
   }
@@ -2438,7 +2436,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (at_header) {
       while ((intptr_t)(__ pc()) % icache_line_size != 0) {
-        __ emit_16(0);
+        __ z_illtrap();
       }
     } else {
       while ((intptr_t)(__ pc()) % icache_half_line_size != 0) {

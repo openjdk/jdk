@@ -246,7 +246,7 @@ public abstract class DataTransferer {
             nativeEOLNs.put(format, eoln);
         }
         if (terminators != null && terminators.length() != 0) {
-            Integer iTerminators = Integer.valueOf(terminators);
+            int iTerminators = Integer.parseInt(terminators);
             if (iTerminators > 0) {
                 nativeTerminators.put(format, iTerminators);
             }
@@ -945,10 +945,9 @@ search:
                 }
 
                 if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
-                    byte[] bytes = bos.toByteArray();
                     String sourceEncoding = DataFlavorUtil.getTextCharset(flavor);
                     return translateTransferableString(
-                               new String(bytes, sourceEncoding),
+                               bos.toString(sourceEncoding),
                                format);
                 }
                 theByteArray = bos.toByteArray();
@@ -1958,8 +1957,8 @@ search:
         Set<Long> keySet = map.keySet();
         long[] retval = new long[keySet.size()];
         int i = 0;
-        for (Iterator<Long> iter = keySet.iterator(); iter.hasNext(); i++) {
-            retval[i] = iter.next();
+        for (long key : keySet) {
+            retval[i++] = key;
         }
         return retval;
     }

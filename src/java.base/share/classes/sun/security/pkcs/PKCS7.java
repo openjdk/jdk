@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ import sun.security.x509.*;
  * @author Benjamin Renaud
  */
 public class PKCS7 {
-
-    private ObjectIdentifier contentType;
 
     // the ASN.1 members for a signedData (and other) contentTypes
     private BigInteger version = null;
@@ -167,7 +165,7 @@ public class PKCS7 {
         throws IOException
     {
         ContentInfo block = new ContentInfo(derin, oldStyle);
-        contentType = block.contentType;
+        ObjectIdentifier contentType = block.contentType;
         DerValue content = block.getContent();
 
         if (contentType.equals(ContentInfo.SIGNED_DATA_OID)) {
@@ -240,13 +238,9 @@ public class PKCS7 {
                     bais.close();
                     bais = null;
                 }
-            } catch (CertificateException ce) {
+            } catch (CertificateException | IOException ce) {
                 ParsingException pe = new ParsingException(ce.getMessage());
                 pe.initCause(ce);
-                throw pe;
-            } catch (IOException ioe) {
-                ParsingException pe = new ParsingException(ioe.getMessage());
-                pe.initCause(ioe);
                 throw pe;
             } finally {
                 if (bais != null)
@@ -255,6 +249,16 @@ public class PKCS7 {
         }
     }
 
+    //    SignedData ::= SEQUENCE {
+    //     version Version,
+    //     digestAlgorithms DigestAlgorithmIdentifiers,
+    //     contentInfo ContentInfo,
+    //     certificates
+    //        [0] IMPLICIT ExtendedCertificatesAndCertificates
+    //          OPTIONAL,
+    //     crls
+    //       [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+    //     signerInfos SignerInfos }
     private void parseSignedData(DerValue val)
         throws ParsingException, IOException {
 
@@ -294,9 +298,9 @@ public class PKCS7 {
          * check if certificates (implicit tag) are provided
          * (certificates are OPTIONAL)
          */
-        if ((byte)(dis.peekByte()) == (byte)0xA0) {
-            DerValue[] certVals = dis.getSet(2, true);
-
+        var certDer = dis.getOptionalImplicitContextSpecific(0, DerValue.tag_SetOf);
+        if (certDer.isPresent()) {
+            DerValue[] certVals = certDer.get().subs(DerValue.tag_SetOf, 2);
             len = certVals.length;
             certificates = new X509Certificate[len];
             int count = 0;
@@ -320,13 +324,9 @@ public class PKCS7 {
                         }
                         count++;
                     }
-                } catch (CertificateException ce) {
+                } catch (CertificateException | IOException ce) {
                     ParsingException pe = new ParsingException(ce.getMessage());
                     pe.initCause(ce);
-                    throw pe;
-                } catch (IOException ioe) {
-                    ParsingException pe = new ParsingException(ioe.getMessage());
-                    pe.initCause(ioe);
                     throw pe;
                 } finally {
                     if (bais != null)
@@ -339,9 +339,9 @@ public class PKCS7 {
         }
 
         // check if crls (implicit tag) are provided (crls are OPTIONAL)
-        if ((byte)(dis.peekByte()) == (byte)0xA1) {
-            DerValue[] crlVals = dis.getSet(1, true);
-
+        var crlsDer = dis.getOptionalImplicitContextSpecific(1, DerValue.tag_SetOf);
+        if (crlsDer.isPresent()) {
+            DerValue[] crlVals = crlsDer.get().subs(DerValue.tag_SetOf, 1);
             len = crlVals.length;
             crls = new X509CRL[len];
 
@@ -434,13 +434,9 @@ public class PKCS7 {
                     bais.close();
                     bais = null;
                 }
-            } catch (CertificateException ce) {
+            } catch (CertificateException | IOException ce) {
                 ParsingException pe = new ParsingException(ce.getMessage());
                 pe.initCause(ce);
-                throw pe;
-            } catch (IOException ioe) {
-                ParsingException pe = new ParsingException(ioe.getMessage());
-                pe.initCause(ioe);
                 throw pe;
             } finally {
                 if (bais != null)
@@ -944,7 +940,7 @@ public class PKCS7 {
 
     /**
      * Examine the certificate for a Subject Information Access extension
-     * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
+     * (<a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>).
      * The extension's {@code accessMethod} field should contain the object
      * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
      * {@code accessLocation} field should contain an HTTP or HTTPS URL.

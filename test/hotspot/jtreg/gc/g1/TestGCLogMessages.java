@@ -90,6 +90,17 @@ public class TestGCLogMessages {
         }
     }
 
+    private class LogMessageWithJFROnly extends LogMessageWithLevel {
+        public LogMessageWithJFROnly(String message, Level level) {
+            super(message, level);
+        }
+
+        public boolean isAvailable() {
+            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            return WB.isJFRIncluded();
+        }
+    }
+
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Pre Evacuate Collection Set", Level.INFO),
         new LogMessageWithLevel("Evacuate Collection Set", Level.INFO),
@@ -131,6 +142,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Scanned Cards", Level.DEBUG),
         new LogMessageWithLevel("Scanned Blocks", Level.DEBUG),
         new LogMessageWithLevel("Claimed Chunks", Level.DEBUG),
+        new LogMessageWithLevel("Found Roots", Level.DEBUG),
         // Code Roots Scan
         new LogMessageWithLevel("Code Root Scan", Level.DEBUG),
         // Object Copy
@@ -153,7 +165,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("JVMTI Tag Weak OopStorage", Level.DEBUG),
         new LogMessageWithLevel("StringTable Weak", Level.DEBUG),
         new LogMessageWithLevel("ResolvedMethodTable Weak", Level.DEBUG),
-        new LogMessageWithLevel("Weak JFR Old Object Samples", Level.DEBUG),
+        new LogMessageWithJFROnly("Weak JFR Old Object Samples", Level.DEBUG),
         new LogMessageWithLevel("JNI Weak", Level.DEBUG),
 
         // Post Evacuate Cleanup 1
@@ -253,7 +265,8 @@ public class TestGCLogMessages {
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
-        new LogMessageWithLevel("Remove Self Forwards", Level.DEBUG),
+        new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Evacuation Failure Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {

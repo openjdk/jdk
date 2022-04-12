@@ -100,7 +100,7 @@ template <class T> class EventLogBase : public EventLog {
 
  public:
   EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
-    _mutex(Mutex::event, name, Mutex::_safepoint_check_never),
+    _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),
     _length(length),
@@ -235,6 +235,9 @@ class Events : AllStatic {
 
   // Class unloading events
   static UnloadingEventLog* _class_unloading;
+
+  // Class loading events
+  static StringEventLog* _class_loading;
  public:
 
   // Print all event logs; limit number of events per event log to be printed with max
@@ -259,6 +262,8 @@ class Events : AllStatic {
   static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_class_unloading(Thread* thread, InstanceKlass* ik);
+
+  static void log_class_loading(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -311,6 +316,15 @@ inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
 inline void Events::log_class_unloading(Thread* thread, InstanceKlass* ik) {
   if (LogEvents && _class_unloading != NULL) {
     _class_unloading->log(thread, ik);
+  }
+}
+
+inline void Events::log_class_loading(Thread* thread, const char* format, ...) {
+  if (LogEvents && _class_loading != NULL) {
+    va_list ap;
+    va_start(ap, format);
+    _class_loading->logv(thread, format, ap);
+    va_end(ap);
   }
 }
 
@@ -472,5 +486,8 @@ typedef EventMarkWithLogFunction<Events::log> EventMark;
 
 // These end up in the vm_operation log.
 typedef EventMarkWithLogFunction<Events::log_vm_operation> EventMarkVMOperation;
+
+// These end up in the class loading log.
+typedef EventMarkWithLogFunction<Events::log_class_loading> EventMarkClassLoading;
 
 #endif // SHARE_UTILITIES_EVENTS_HPP

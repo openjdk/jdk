@@ -22,10 +22,10 @@
  *
  */
 
-import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemorySegment;
 
 import jdk.incubator.foreign.ResourceScope;
+import jdk.incubator.foreign.SegmentAllocator;
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
 
@@ -40,11 +40,12 @@ public class TestStringEncoding {
     @Test(dataProvider = "strings")
     public void testStrings(String testString, int expectedByteLength) {
         try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment text = CLinker.toCString(testString, scope);
+            SegmentAllocator allocator = SegmentAllocator.newNativeArena(expectedByteLength, scope);
+            MemorySegment text = allocator.allocateUtf8String(testString);
 
             assertEquals(text.byteSize(), expectedByteLength);
 
-            String roundTrip = CLinker.toJavaString(text);
+            String roundTrip = text.getUtf8String(0);
             assertEquals(roundTrip, testString);
         }
     }

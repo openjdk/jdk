@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,6 +50,7 @@ import jdk.test.lib.Platform;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
+@SuppressWarnings("removal")
 public class GetXSpace {
 
     private static SecurityManager [] sma = { null, new Allow(), new DenyFSA(),
@@ -107,8 +107,8 @@ public class GetXSpace {
 
         Space(String total, String free, String name) {
             try {
-                this.total = Long.valueOf(total) * KSIZE;
-                this.free = Long.valueOf(free) * KSIZE;
+                this.total = Long.parseLong(total) * KSIZE;
+                this.free = Long.parseLong(free) * KSIZE;
             } catch (NumberFormatException x) {
                 throw new RuntimeException("the regex should have caught this", x);
             }
@@ -154,9 +154,9 @@ public class GetXSpace {
                         // cygwin's df lists windows path as FileSystem (1st group)
                         name = Platform.isWindows() ? m.group(1) : m.group(4);
                     }
-                    al.add(new Space(m.group(2), m.group(3), name));;
+                    al.add(new Space(m.group(2), m.group(3), name));
                 }
-                j = m.end() + 1;
+                j = m.end();
             } else {
                 throw new RuntimeException("unrecognized df output format: "
                                            + "charAt(" + j + ") = '"
@@ -213,8 +213,9 @@ public class GetXSpace {
         out.format(fmt, "df", s.total(), 0, s.free());
         out.format(fmt, "getX", ts, fs, us);
 
-        // if the file system can dynamically change size, this check will fail
-        if (ts != s.total()) {
+        // If the file system can dynamically change size, this check will fail.
+        // This can happen on macOS for the /dev files system.
+        if (ts != s.total() && (!Platform.isOSX() || !s.name().equals("/dev"))) {
             long blockSize = 1;
             long numBlocks = 0;
             try {
@@ -225,12 +226,11 @@ public class GetXSpace {
                 // On Linux, ignore the NSFE if the path is one of the
                 // /run/user/$UID mounts created by pam_systemd(8) as it
                 // might be deleted during the test
-                if (!Platform.isLinux() || s.name().indexOf("/run/user") == -1)
+                if (!Platform.isLinux() || !s.name().contains("/run/user"))
                     throw new RuntimeException(nsfe);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
 
             // On macOS, the number of 1024 byte blocks might be incorrectly
             // calculated by 'df' using integer division by 2 of the number of

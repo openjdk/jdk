@@ -29,16 +29,27 @@
 
 
 #include "jni.h" /* JNIEXPORT */
+#ifdef _WIN32
+#include <windows.h>
+#include <tchar.h>
+#endif
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef _WIN32
+typedef char TCHAR;
+#endif
+
 typedef struct {
     const char* jliLibPath;
     int jliLaunchArgc;
+    int envVarCount;
     char** jliLaunchArgv;
+    TCHAR** envVarNames;
+    TCHAR** envVarValues;
 } JvmlLauncherData;
 
 typedef void* JvmlLauncherHandle;
@@ -71,7 +82,8 @@ static inline JvmlLauncherData* jvmLauncherInitJvmlLauncherData(JvmlLauncherAPI*
     return (*api->initJvmlLauncherData)(h, ptr, bufferSize);
 }
 
-JvmlLauncherData* jvmLauncherCreateJvmlLauncherData(JvmlLauncherAPI* api, JvmlLauncherHandle h);
+JvmlLauncherData* jvmLauncherCreateJvmlLauncherData(JvmlLauncherAPI* api,
+                                            JvmlLauncherHandle h, int* size);
 int jvmLauncherStartJvm(JvmlLauncherData* jvmArgs, void* JLI_Launch);
 
 void jvmLauncherLog(const char* format, ...);
@@ -105,6 +117,12 @@ public:
         return *this;
     }
 
+    Jvm& addEnvVariable(const tstring& name, const tstring& value) {
+        envVarNames.push_back(name);
+        envVarValues.push_back(value);
+        return *this;
+    }
+
     Jvm& setPath(const tstring& v) {
         jvmPath = v;
         return *this;
@@ -118,11 +136,15 @@ public:
 
     void launch();
 
+    void setEnvVariables();
+
     JvmlLauncherHandle exportLauncher() const;
 
 private:
     tstring jvmPath;
     tstring_array args;
+    tstring_array envVarNames;
+    tstring_array envVarValues;
 };
 
 #endif // #ifdef __cplusplus

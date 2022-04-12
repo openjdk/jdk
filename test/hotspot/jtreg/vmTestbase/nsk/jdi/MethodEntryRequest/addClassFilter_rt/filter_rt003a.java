@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.MethodEntryRequest.addClassFilter_rt;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,8 +53,8 @@ public class filter_rt003a {
 
     //====================================================== test program
 
-    static filter_rt003aThread1 thread1 = null;
-    static filter_rt003aThread2 thread2 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
 
     //------------------------------------------------------ common section
 
@@ -84,8 +83,8 @@ public class filter_rt003a {
         filter_rt003aTestClass11 obj1 = new filter_rt003aTestClass11();
         filter_rt003aTestClass21 obj2 = new filter_rt003aTestClass21();
 
-        thread1 = new filter_rt003aThread1("thread1");
-        thread2 = new filter_rt003aThread2("thread2");
+        thread1 = JDIThreadFactory.newThread(new filter_rt003aThread1("thread1"));
+        thread2 = JDIThreadFactory.newThread(new filter_rt003aThread2("thread2"));
 
         log1("debuggee started!");
 
@@ -163,20 +162,17 @@ class filter_rt003aTestClass11 extends filter_rt003aTestClass10{
     }
 }
 
-class filter_rt003aThread1 extends Thread {
-
-    String tName = null;
+class filter_rt003aThread1 extends NamedTask {
 
     public filter_rt003aThread1(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_rt003a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt003a.log1("  'run': enter  :: threadName == " + getName());
         filter_rt003aTestClass11.m11();
         filter_rt003aTestClass21.m21();
-        filter_rt003a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt003a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }
@@ -193,19 +189,16 @@ class filter_rt003aTestClass21 extends filter_rt003aTestClass20{
     }
 }
 
-class filter_rt003aThread2 extends Thread {
-
-    String tName = null;
+class filter_rt003aThread2 extends NamedTask {
 
     public filter_rt003aThread2(String threadName) {
         super(threadName);
-        tName = threadName;
     }
 
     public void run() {
-        filter_rt003a.log1("  'run': enter  :: threadName == " + tName);
+        filter_rt003a.log1("  'run': enter  :: threadName == " + getName());
         filter_rt003aTestClass21.m21();
-        filter_rt003a.log1("  'run': exit   :: threadName == " + tName);
+        filter_rt003a.log1("  'run': exit   :: threadName == " + getName());
         return;
     }
 }

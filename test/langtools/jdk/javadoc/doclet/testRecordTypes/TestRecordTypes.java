@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8225055 8239804 8246774 8258338 8261976
+ * @bug      8225055 8239804 8246774 8258338 8261976 8275199
  * @summary  Record types
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -51,13 +51,11 @@ public class TestRecordTypes extends JavadocTester {
 
     private final ToolBox tb = new ToolBox();
 
-    // The following constants are set up for use with -linkoffline
-    // (but note: JDK 11 does not include java.lang.Record, so expect
-    // some 404 broken links until we can update this to a stable version.)
+    // The following constants are set up for use with -linkoffline.
     private static final String externalDocs =
-        "https://docs.oracle.com/en/java/javase/11/docs/api";
+        "https://docs.oracle.com/en/java/javase/17/docs/api";
     private static final String localDocs =
-        Path.of(testSrc).resolve("jdk11").toUri().toString();
+        Path.of(testSrc).resolve("jdk17").toUri().toString();
 
     @Test
     public void testRecordKeywordUnnamedPackage(Path base) throws IOException {
@@ -391,17 +389,17 @@ public class TestRecordTypes extends JavadocTester {
     }
 
     @Test
-    public void testExamples(Path base) throws IOException {
+    public void testExamples(Path base) {
         javadoc("-d", base.resolve("out-no-link").toString(),
                 "-quiet", "-noindex",
-                "-sourcepath", testSrc.toString(),
+                "-sourcepath", testSrc,
                 "-linksource",
                 "examples");
 
         checkExit(Exit.OK);
         javadoc("-d", base.resolve("out-with-link").toString(),
                 "-quiet", "-noindex",
-                "-sourcepath", testSrc.toString(),
+                "-sourcepath", testSrc,
                 "-linksource",
                 "-linkoffline", externalDocs, localDocs,
                 "examples");
@@ -559,5 +557,52 @@ public class TestRecordTypes extends JavadocTester {
                     <div class="col-summary-item-name even-row-color"><a href="p/R.html#r1()">p.R.r1()</a></div>
                     <div class="col-last even-row-color"></div>
                     </div>""");
+    }
+
+    @Test
+    public void testSerializableType(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    /**
+                     * A point,
+                     * @param x the x coord
+                     * @param y the y coord
+                     */
+                    public record Point(int x, int y) implements java.io.Serializable { }""");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-quiet", "-noindex", "--no-platform-links",
+                src.resolve("Point.java").toString());
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false,
+                "warning: no comment");
+
+        checkOutput("serialized-form.html", true,
+                """
+                    <section class="serialized-class-details" id="Point">
+                    <h3>Record Class&nbsp;<a href="Point.html" title="class in Unnamed Package">Point</a></h3>
+                    <div class="type-signature">class Point extends java.lang.Record implements java.io.Serializable</div>
+                    <ul class="block-list">
+                    <li>
+                    <section class="detail">
+                    <h4>Serialized Fields</h4>
+                    <ul class="block-list">
+                    <li class="block-list">
+                    <h5>x</h5>
+                    <pre>int x</pre>
+                    <div class="block">The field for the <a href="./Point.html#param-x"><code>x</code></a> record component.</div>
+                    </li>
+                    <li class="block-list">
+                    <h5>y</h5>
+                    <pre>int y</pre>
+                    <div class="block">The field for the <a href="./Point.html#param-y"><code>y</code></a> record component.</div>
+                    </li>
+                    </ul>
+                    </section>
+                    </li>
+                    </ul>
+                    </section>""");
     }
 }

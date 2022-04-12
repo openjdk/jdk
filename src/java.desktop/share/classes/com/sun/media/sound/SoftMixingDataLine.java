@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,8 +102,7 @@ public abstract class SoftMixingDataLine implements DataLine {
                     format.getSampleRate(), sourceFormat.isBigEndian());
             nrofchannels = targetFormat.getChannels();
             Object interpolation = format.getProperty("interpolation");
-            if (interpolation != null && (interpolation instanceof String)) {
-                String resamplerType = (String) interpolation;
+            if (interpolation instanceof String resamplerType) {
                 if (resamplerType.equalsIgnoreCase("point"))
                     this.resampler = new SoftPointResampler();
                 if (resamplerType.equalsIgnoreCase("linear"))

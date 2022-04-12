@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,41 +34,41 @@ typedef VMRegImpl* VMReg;
 
 // Use Register as shortcut
 class RegisterImpl;
-typedef RegisterImpl* Register;
+typedef const RegisterImpl* Register;
 
-inline const Register as_Register(int encoding) {
-  return (Register)(intptr_t) encoding;
-}
+inline constexpr Register as_Register(int encoding);
 
 class RegisterImpl: public AbstractRegisterImpl {
- public:
+  static constexpr Register first();
+
+public:
   enum {
     number_of_registers         =   32,
-    number_of_byte_registers      = 32,
-    number_of_registers_for_jvmci = 34,  // Including SP and ZR.
+    number_of_declared_registers  = 34,  // Including SP and ZR.
     max_slots_per_register = 2
   };
 
   // derived registers, offsets, and addresses
-  Register successor() const                          { return as_Register(encoding() + 1); }
+  const Register successor() const { return this + 1; }
 
   // construction
-  inline friend const Register as_Register(int encoding);
+  inline friend constexpr Register as_Register(int encoding);
 
-  VMReg as_VMReg();
+  VMReg as_VMReg() const;
 
   // accessors
-  int   encoding() const                         { assert(is_valid(), "invalid register"); return (intptr_t)this; }
-  bool  is_valid() const                         { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
-  bool  has_byte_register() const                { return 0 <= (intptr_t)this && (intptr_t)this < number_of_byte_registers; }
+  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  bool is_valid() const            { return (unsigned)encoding_nocheck() < number_of_registers; }
   const char* name() const;
-  int   encoding_nocheck() const                 { return (intptr_t)this; }
+  int encoding_nocheck() const     { return this - first(); }
 };
+
+
+REGISTER_IMPL_DECLARATION(Register, RegisterImpl, RegisterImpl::number_of_declared_registers);
 
 // The integer registers of the aarch64 architecture
 
 CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
-
 
 CONSTANT_REGISTER_DECLARATION(Register, r0,    (0));
 CONSTANT_REGISTER_DECLARATION(Register, r1,    (1));
@@ -126,15 +126,15 @@ const Register dummy_reg = r31_sp;
 
 // Use FloatRegister as shortcut
 class FloatRegisterImpl;
-typedef FloatRegisterImpl* FloatRegister;
+typedef const FloatRegisterImpl* FloatRegister;
 
-inline FloatRegister as_FloatRegister(int encoding) {
-  return (FloatRegister)(intptr_t) encoding;
-}
+inline constexpr FloatRegister as_FloatRegister(int encoding);
 
 // The implementation of floating point registers for the architecture
 class FloatRegisterImpl: public AbstractRegisterImpl {
- public:
+  static constexpr FloatRegister first();
+
+public:
   enum {
     number_of_registers = 32,
     max_slots_per_register = 8,
@@ -144,20 +144,24 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
   };
 
   // construction
-  inline friend FloatRegister as_FloatRegister(int encoding);
+  inline friend constexpr FloatRegister as_FloatRegister(int encoding);
 
-  VMReg as_VMReg();
+  VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
-  FloatRegister successor() const                          { return as_FloatRegister((encoding() + 1) % 32); }
+  FloatRegister successor() const {
+    return as_FloatRegister((encoding() + 1) % (unsigned)number_of_registers);
+  }
 
   // accessors
-  int   encoding() const                          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
-  int   encoding_nocheck() const                         { return (intptr_t)this; }
-  bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
+  int encoding() const             { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  bool is_valid() const            { return (unsigned)encoding_nocheck() < number_of_registers; }
   const char* name() const;
-
+  int encoding_nocheck() const     { return this - first(); }
 };
+
+REGISTER_IMPL_DECLARATION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::number_of_registers);
+
 
 // The float registers of the AARCH64 architecture
 
@@ -232,35 +236,43 @@ CONSTANT_REGISTER_DECLARATION(FloatRegister, z31    , (31));
 
 
 class PRegisterImpl;
-typedef PRegisterImpl* PRegister;
-inline PRegister as_PRegister(int encoding) {
-  return (PRegister)(intptr_t)encoding;
-}
+typedef const PRegisterImpl* PRegister;
+inline constexpr PRegister as_PRegister(int encoding);
 
 // The implementation of predicate registers for the architecture
 class PRegisterImpl: public AbstractRegisterImpl {
+  static constexpr PRegister first();
+
  public:
   enum {
     number_of_registers = 16,
     number_of_governing_registers = 8,
+    // p0-p7 are governing predicates for load/store and arithmetic, but p7 is
+    // preserved as an all-true predicate in OpenJDK. And since we don't support
+    // non-governing predicate registers allocation for non-temp register, the
+    // predicate registers to be saved are p0-p6.
+    number_of_saved_registers = number_of_governing_registers - 1,
     max_slots_per_register = 1
   };
 
   // construction
-  inline friend PRegister as_PRegister(int encoding);
+  inline friend constexpr PRegister as_PRegister(int encoding);
 
-  VMReg as_VMReg();
+  VMReg as_VMReg() const;
 
   // derived registers, offsets, and addresses
-  PRegister successor() const     { return as_PRegister(encoding() + 1); }
+  PRegister successor() const     { return this + 1; }
 
   // accessors
-  int   encoding() const          { assert(is_valid(), "invalid register"); return (intptr_t)this; }
-  int   encoding_nocheck() const  { return (intptr_t)this; }
-  bool  is_valid() const          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
-  bool  is_governing() const      { return 0 <= (intptr_t)this && (intptr_t)this < number_of_governing_registers; }
+  int encoding() const            { assert(is_valid(), "invalid register"); return encoding_nocheck(); }
+  int encoding_nocheck() const    { return this - first(); }
+  bool is_valid() const           { return (unsigned)encoding_nocheck() < number_of_registers; }
+  bool is_governing() const       { return first() <= this && this - first() < number_of_governing_registers; }
   const char* name() const;
 };
+
+
+REGISTER_IMPL_DECLARATION(PRegister, PRegisterImpl, PRegisterImpl::number_of_registers);
 
 // The predicate registers of SVE.
 CONSTANT_REGISTER_DECLARATION(PRegister, p0,  ( 0));
@@ -302,113 +314,9 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_pr;
 };
 
-template <class RegImpl = Register> class RegSetIterator;
-
-// A set of registers
-template <class RegImpl>
-class AbstractRegSet {
-  uint32_t _bitset;
-
-  AbstractRegSet(uint32_t bitset) : _bitset(bitset) { }
-
-public:
-
-  AbstractRegSet() : _bitset(0) { }
-
-  AbstractRegSet(RegImpl r1) : _bitset(1 << r1->encoding()) { }
-
-  AbstractRegSet operator+(const AbstractRegSet aSet) const {
-    AbstractRegSet result(_bitset | aSet._bitset);
-    return result;
-  }
-
-  AbstractRegSet operator-(const AbstractRegSet aSet) const {
-    AbstractRegSet result(_bitset & ~aSet._bitset);
-    return result;
-  }
-
-  AbstractRegSet &operator+=(const AbstractRegSet aSet) {
-    *this = *this + aSet;
-    return *this;
-  }
-
-  AbstractRegSet &operator-=(const AbstractRegSet aSet) {
-    *this = *this - aSet;
-    return *this;
-  }
-
-  static AbstractRegSet of(RegImpl r1) {
-    return AbstractRegSet(r1);
-  }
-
-  static AbstractRegSet of(RegImpl r1, RegImpl r2) {
-    return of(r1) + r2;
-  }
-
-  static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3) {
-    return of(r1, r2) + r3;
-  }
-
-  static AbstractRegSet of(RegImpl r1, RegImpl r2, RegImpl r3, RegImpl r4) {
-    return of(r1, r2, r3) + r4;
-  }
-
-  static AbstractRegSet range(RegImpl start, RegImpl end) {
-    uint32_t bits = ~0;
-    bits <<= start->encoding();
-    bits <<= 31 - end->encoding();
-    bits >>= 31 - end->encoding();
-
-    return AbstractRegSet(bits);
-  }
-
-  uint32_t bits() const { return _bitset; }
-
-private:
-
-  RegImpl first();
-
-public:
-
-  friend class RegSetIterator<RegImpl>;
-
-  RegSetIterator<RegImpl> begin();
-};
-
 typedef AbstractRegSet<Register> RegSet;
 typedef AbstractRegSet<FloatRegister> FloatRegSet;
-
-template <class RegImpl>
-class RegSetIterator {
-  AbstractRegSet<RegImpl> _regs;
-
-public:
-  RegSetIterator(AbstractRegSet<RegImpl> x): _regs(x) {}
-  RegSetIterator(const RegSetIterator& mit) : _regs(mit._regs) {}
-
-  RegSetIterator& operator++() {
-    RegImpl r = _regs.first();
-    if (r->is_valid())
-      _regs -= r;
-    return *this;
-  }
-
-  bool operator==(const RegSetIterator& rhs) const {
-    return _regs.bits() == rhs._regs.bits();
-  }
-  bool operator!=(const RegSetIterator& rhs) const {
-    return ! (rhs == *this);
-  }
-
-  RegImpl operator*() {
-    return _regs.first();
-  }
-};
-
-template <class RegImpl>
-inline RegSetIterator<RegImpl> AbstractRegSet<RegImpl>::begin() {
-  return RegSetIterator<RegImpl>(*this);
-}
+typedef AbstractRegSet<PRegister> PRegSet;
 
 template <>
 inline Register AbstractRegSet<Register>::first() {

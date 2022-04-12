@@ -395,16 +395,10 @@ private:
   intx _arg_stack;    // bit set of stack-allocatable arguments
   intx _arg_returned; // bit set of returned arguments
 
-  int _creation_mileage; // method mileage at MDO creation
-
-  // Maturity of the oop when the snapshot is taken.
-  int _current_mileage;
-
   // These counters hold the age of MDO in tiered. In tiered we can have the same method
   // running at different compilation levels concurrently. So, in order to precisely measure
   // its maturity we need separate counters.
   int _invocation_counter;
-  int _backedge_counter;
 
   // Coherent snapshot of original header.
   MethodData::CompilerCounters _orig;
@@ -477,11 +471,7 @@ public:
   bool is_empty()  { return _state == empty_state; }
   bool is_mature() { return _state == mature_state; }
 
-  int creation_mileage() { return _creation_mileage; }
-  int current_mileage()  { return _current_mileage; }
-
   int invocation_count() { return _invocation_counter; }
-  int backedge_count()   { return _backedge_counter;   }
 
 #if INCLUDE_RTM_OPT
   // return cached value

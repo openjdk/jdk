@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,6 +416,13 @@ class LateInlineMHCallGenerator : public LateInlineCallGenerator {
 };
 
 bool LateInlineMHCallGenerator::do_late_inline_check(Compile* C, JVMState* jvms) {
+  // When inlining a virtual call, the null check at the call and the call itself can throw. These 2 paths have different
+  // expression stacks which causes late inlining to break. The MH invoker is not expected to be called from a method wih
+  // exception handlers. When there is no exception handler, GraphKit::builtin_throw() pops the stack which solves the issue
+  // of late inlining with exceptions.
+  assert(!jvms->method()->has_exception_handlers() ||
+         (method()->intrinsic_id() != vmIntrinsics::_linkToVirtual &&
+          method()->intrinsic_id() != vmIntrinsics::_linkToInterface), "no exception handler expected");
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   bool input_not_const = true;
@@ -519,12 +526,20 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   Node* receiver = jvms->map()->argument(jvms, 0);
   const Type* recv_type = C->initial_gvn()->type(receiver);
   if (recv_type->maybe_null()) {
+    if (C->print_inlining() || C->print_intrinsics()) {
+      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(),
+                        "late call devirtualization failed (receiver may be null)");
+    }
     return false;
   }
   // Even if inlining is not allowed, a virtual call can be strength-reduced to a direct call.
   bool allow_inline = C->inlining_incrementally();
   if (!allow_inline && _callee->holder()->is_interface()) {
     // Don't convert the interface call to a direct call guarded by an interface subtype check.
+    if (C->print_inlining() || C->print_intrinsics()) {
+      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(),
+                        "late call devirtualization failed (interface call)");
+    }
     return false;
   }
   CallGenerator* cg = C->call_generator(_callee,
@@ -565,62 +580,6 @@ void LateInlineMHCallGenerator::do_late_inline() {
 void LateInlineVirtualCallGenerator::do_late_inline() {
   assert(_callee != NULL, "required"); // set up in CallDynamicJavaNode::Ideal
   CallGenerator::do_late_inline_helper();
-}
-
-static bool has_non_debug_usages(Node* n) {
-  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    Node* m = n->fast_out(i);
-    if (!m->is_SafePoint()
-        || (m->is_Call() && m->as_Call()->has_non_debug_use(n))) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static bool is_box_cache_valid(CallNode* call) {
-  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
-  return klass->is_box_cache_valid();
-}
-
-// delay box in runtime, treat box as a scalarized object
-static void scalarize_debug_usages(CallNode* call, Node* resproj) {
-  GraphKit kit(call->jvms());
-  PhaseGVN& gvn = kit.gvn();
-
-  ProjNode* res = resproj->as_Proj();
-  ciInstanceKlass* klass = call->as_CallStaticJava()->method()->holder();
-  int n_fields = klass->nof_nonstatic_fields();
-  assert(n_fields == 1, "the klass must be an auto-boxing klass");
-
-  for (DUIterator_Last imin, i = res->last_outs(imin); i >= imin;) {
-    SafePointNode* sfpt = res->last_out(i)->as_SafePoint();
-    uint first_ind = sfpt->req() - sfpt->jvms()->scloff();
-    Node* sobj = new SafePointScalarObjectNode(gvn.type(res)->isa_oopptr(),
-#ifdef ASSERT
-                                                call,
-#endif // ASSERT
-                                                first_ind, n_fields, true);
-    sobj->init_req(0, kit.root());
-    sfpt->add_req(call->in(TypeFunc::Parms));
-    sobj = gvn.transform(sobj);
-    JVMState* jvms = sfpt->jvms();
-    jvms->set_endoff(sfpt->req());
-    int start = jvms->debug_start();
-    int end   = jvms->debug_end();
-    int num_edges = sfpt->replace_edges_in_range(res, sobj, start, end, &gvn);
-    i -= num_edges;
-  }
-
-  assert(res->outcnt() == 0, "the box must have no use after replace");
-
-#ifndef PRODUCT
-  if (PrintEliminateAllocations) {
-    tty->print("++++ Eliminated: %d ", call->_idx);
-    call->as_CallStaticJava()->method()->print_short_name(tty);
-    tty->cr();
-  }
-#endif
 }
 
 void CallGenerator::do_late_inline_helper() {
@@ -672,23 +631,11 @@ void CallGenerator::do_late_inline_helper() {
     C->remove_macro_node(call);
   }
 
-  bool result_not_used = false;
+  // The call is marked as pure (no important side effects), but result isn't used.
+  // It's safe to remove the call.
+  bool result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
 
-  if (is_pure_call()) {
-    if (is_boxing_late_inline() && callprojs.resproj != nullptr) {
-        // replace box node to scalar node only in case it is directly referenced by debug info
-        assert(call->as_CallStaticJava()->is_boxing_method(), "sanity");
-        if (!has_non_debug_usages(callprojs.resproj) && is_box_cache_valid(call)) {
-          scalarize_debug_usages(call, callprojs.resproj);
-        }
-    }
-
-    // The call is marked as pure (no important side effects), but result isn't used.
-    // It's safe to remove the call.
-    result_not_used = (callprojs.resproj == NULL || callprojs.resproj->outcnt() == 0);
-  }
-
-  if (result_not_used) {
+  if (is_pure_call() && result_not_used) {
     GraphKit kit(call->jvms());
     kit.replace_call(call, C->top(), true);
   } else {
@@ -815,8 +762,6 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
     JVMState* new_jvms = DirectCallGenerator::generate(jvms);
     return new_jvms;
   }
-
-  virtual bool is_boxing_late_inline() const { return true; }
 
   virtual CallGenerator* with_call_node(CallNode* call) {
     LateInlineBoxingCallGenerator* cg = new LateInlineBoxingCallGenerator(method(), _inline_cg);

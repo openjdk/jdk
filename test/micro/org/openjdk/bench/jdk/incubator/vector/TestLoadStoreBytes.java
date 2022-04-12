@@ -26,8 +26,6 @@ package org.openjdk.bench.jdk.incubator.vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -45,6 +43,8 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+
+import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -116,8 +116,8 @@ public class TestLoadStoreBytes {
     dstBufferSegmentImplicit = dstSegmentImplicit.asByteBuffer();
 
 
-    srcAddress = CLinker.allocateMemory(size);
-    dstAddress = CLinker.allocateMemory(size);
+    srcAddress = MemorySegment.allocateNative(size, implicitScope).address();
+    dstAddress = MemorySegment.allocateNative(size, implicitScope).address();
 
     a = new byte[size];
     b = new byte[size];
@@ -232,16 +232,16 @@ public class TestLoadStoreBytes {
   @CompilerControl(CompilerControl.Mode.PRINT)
   public void segmentImplicitScalar() {
     for (int i = 0; i < SPECIES.loopBound(srcArray.length); i++) {
-      var v = MemoryAccess.getByteAtOffset(srcSegmentImplicit, i);
-      MemoryAccess.setByteAtOffset(dstSegmentImplicit, i, v);
+      var v = srcSegmentImplicit.get(JAVA_BYTE, i);
+      dstSegmentImplicit.set(JAVA_BYTE, i, v);
     }
   }
 
   @Benchmark
   public void bufferSegmentConfined() {
     try (final var scope = ResourceScope.newConfinedScope()) {
-      final var srcBufferSegmentConfined = srcAddress.asSegment(size, scope).asByteBuffer();
-      final var dstBufferSegmentConfined = dstAddress.asSegment(size, scope).asByteBuffer();
+      final var srcBufferSegmentConfined = MemorySegment.ofAddress(srcAddress, size, scope).asByteBuffer();
+      final var dstBufferSegmentConfined = MemorySegment.ofAddress(dstAddress, size, scope).asByteBuffer();
 
       for (int i = 0; i < SPECIES.loopBound(srcArray.length); i += SPECIES.length()) {
         var v = ByteVector.fromByteBuffer(SPECIES, srcBufferSegmentConfined, i, ByteOrder.nativeOrder());

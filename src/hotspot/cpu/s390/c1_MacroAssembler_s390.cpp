@@ -36,6 +36,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/macros.hpp"
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label ic_miss, ic_hit;
@@ -73,8 +74,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   push_frame(frame_size_in_bytes);
 }
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) z_illtrap(0xC1);
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry) z_illtrap(0xC1);
 }
 
 void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {

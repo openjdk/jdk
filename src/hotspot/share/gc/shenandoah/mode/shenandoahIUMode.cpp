@@ -65,19 +65,18 @@ void ShenandoahIUMode::initialize_flags() const {
 }
 
 ShenandoahHeuristics* ShenandoahIUMode::initialize_heuristics() const {
-  if (ShenandoahGCHeuristics != NULL) {
-    if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-      return new ShenandoahAggressiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-      return new ShenandoahStaticHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-      return new ShenandoahAdaptiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-      return new ShenandoahCompactHeuristics();
-    } else {
-      vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-    }
+  if (ShenandoahGCHeuristics == NULL) {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   }
-  ShouldNotReachHere();
+  if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+    return new ShenandoahAggressiveHeuristics();
+  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
+    return new ShenandoahStaticHeuristics();
+  } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
+    return new ShenandoahAdaptiveHeuristics();
+  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
+    return new ShenandoahCompactHeuristics();
+  }
+  vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
   return NULL;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
     // The main intention is to keep enough free space for C2 compiled code
     // to achieve peak performance if the code cache is under stress.
     if (CompilerConfig::is_tiered() && !CompilationModeFlag::disable_intermediate() && is_c1_compile(level))  {
-      double current_reverse_free_ratio = CodeCache::reverse_free_ratio(CodeCache::get_code_blob_type(level));
+      double current_reverse_free_ratio = CodeCache::reverse_free_ratio();
       if (current_reverse_free_ratio > _increase_threshold_at_ratio) {
         k *= exp(current_reverse_free_ratio - _increase_threshold_at_ratio);
       }
@@ -887,6 +887,10 @@ bool CompilationPolicy::is_method_profiled(const methodHandle& method) {
 
 // Determine is a method is mature.
 bool CompilationPolicy::is_mature(Method* method) {
+  if (Arguments::is_compiler_only()) {
+    // Always report profiles as immature with -Xcomp
+    return false;
+  }
   methodHandle mh(Thread::current(), method);
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {

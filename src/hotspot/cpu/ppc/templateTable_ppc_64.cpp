@@ -3803,7 +3803,7 @@ void TemplateTable::_new() {
     // Check and trigger dtrace event.
     SkipIfEqualZero::skip_to_label_if_equal_zero(_masm, Rscratch, &DTraceAllocProbes, Ldone);
     __ push(atos);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_object_alloc));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
     __ pop(atos);
 
     __ b(Ldone);

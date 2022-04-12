@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,7 @@ class AllocatedObj {
   f(mtServiceability, "Serviceability")                                              \
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
+  f(mtObjectMonitor,  "Object Monitors")                                             \
   f(mtNone,           "Unknown")                                                     \
   //end
 
@@ -170,15 +171,7 @@ MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
 // Make an int version of the sentinel end value.
 constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
 
-#if INCLUDE_NMT
-
 extern bool NMT_track_callsite;
-
-#else
-
-const bool NMT_track_callsite = false;
-
-#endif // INCLUDE_NMT
 
 class NativeCallStack;
 
@@ -456,6 +449,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   bool allocated_on_res_area()          const { return get_allocation_type() == RESOURCE_AREA; }
   bool allocated_on_C_heap()            const { return get_allocation_type() == C_HEAP; }
   bool allocated_on_arena()             const { return get_allocation_type() == ARENA; }
+
 protected:
   ResourceObj();
   ResourceObj(const ResourceObj&);

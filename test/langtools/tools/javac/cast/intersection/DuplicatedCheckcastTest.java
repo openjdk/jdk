@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 8263642
+ * @bug 8263642 8268885
  * @summary javac should not emit duplicate checkcast for first bound of intersection type in cast
+ *          duplicate checkcast when destination type is not first type of intersection type
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -61,19 +62,39 @@ public class DuplicatedCheckcastTest extends TestRunner {
         t.runTests();
     }
 
+    static final String Code1 =
+            """
+            class IntersectionTypeTest {
+                interface I1 { }
+                static class C1 { }
+                static Object test(Object o) {
+                    return (C1 & I1) o;
+                }
+            }
+            """;
+
+    static final String Code2 =
+            """
+            class IntersectionTypeTest {
+                interface I1 {}
+                interface I2 {}
+                static class C {}
+                void test() {
+                    I2 i = (I1 & I2) new C();
+                }
+            }
+            """;
+
     @Test
     public void testDuplicatedCheckcast() throws Exception {
-        String code = """
-                class IntersectionTypeTest {
-                    interface I1 { }
-                    static class C1 { }
-                    static Object test(Object o) {
-                        return (C1 & I1) o;
-                    }
-                }""";
+        duplicateCheckCastHelper(Code1, "IntersectionTypeTest$I1", "IntersectionTypeTest$C1");
+        duplicateCheckCastHelper(Code2, "IntersectionTypeTest$I1", "IntersectionTypeTest$I2");
+    }
+
+    private void duplicateCheckCastHelper(String source, String expected1, String expected2) throws Exception {
         Path curPath = Path.of(".");
         new JavacTask(tb)
-                .sources(code)
+                .sources(source)
                 .outdir(curPath)
                 .run();
         cf = ClassFile.read(curPath.resolve("IntersectionTypeTest.class"));
@@ -92,8 +113,8 @@ public class DuplicatedCheckcastTest extends TestRunner {
             throw new AssertionError("The number of the instruction 'checkcast' is not right. " +
                     "Expected number: 2, actual number: " + checkCastList.size());
         }
-        checkClassName(checkCastList.get(0), "IntersectionTypeTest$I1");
-        checkClassName(checkCastList.get(1), "IntersectionTypeTest$C1");
+        checkClassName(checkCastList.get(0), expected1);
+        checkClassName(checkCastList.get(1), expected2);
     }
 
     public void checkClassName(Instruction ins, String expected) throws Exception {

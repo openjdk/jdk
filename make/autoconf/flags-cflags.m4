@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,24 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   # info flags for toolchains unless we know they work.
   # See JDK-8207057.
   ASFLAGS_DEBUG_SYMBOLS=""
+
+  # Debug prefix mapping if supported by compiler
+  DEBUG_PREFIX_CFLAGS=
+
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
+      # Check if compiler supports -fdebug-prefix-map. If so, use that to make
+      # the debug symbol paths resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      DEBUG_PREFIX_CFLAGS="-fdebug-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_PREFIX_CFLAGS}],
+        IF_FALSE: [
+            DEBUG_PREFIX_CFLAGS=
+        ]
+      )
+    fi
+
     CFLAGS_DEBUG_SYMBOLS="-g"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
@@ -106,6 +122,11 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     CFLAGS_DEBUG_SYMBOLS="-g1"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
+  fi
+
+  if test "x$DEBUG_PREFIX_CFLAGS" != x; then
+    CFLAGS_DEBUG_SYMBOLS="$CFLAGS_DEBUG_SYMBOLS $DEBUG_PREFIX_CFLAGS"
+    ASFLAGS_DEBUG_SYMBOLS="$ASFLAGS_DEBUG_SYMBOLS $DEBUG_PREFIX_CFLAGS"
   fi
 
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
@@ -496,8 +517,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:strictStrings -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:strictStrings -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
@@ -782,10 +803,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
       # There is a known issue with the pathmap if the mapping is made to the
       # empty string. Add a minimal string "s" as prefix to work around this.
-      workspace_root_win=`$FIXPATH_BASE print "${WORKSPACE_ROOT%/}"`
       # PATHMAP_FLAGS is also added to LDFLAGS in flags-ldflags.m4.
-      PATHMAP_FLAGS="-pathmap:${workspace_root_win//\//\\\\}=s \
-          -pathmap:${workspace_root_win}=s"
+      PATHMAP_FLAGS="-pathmap:${WORKSPACE_ROOT}=s"
       FILE_MACRO_CFLAGS="$PATHMAP_FLAGS"
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${FILE_MACRO_CFLAGS}],
           PREFIX: $3,
@@ -805,17 +824,19 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
   AC_SUBST(FILE_MACRO_CFLAGS)
 
+  FLAGS_SETUP_BRANCH_PROTECTION
+
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
       $WARNING_CFLAGS $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
-      $REPRODUCIBLE_CFLAGS"
+      $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
   CFLAGS_JDK_COMMON="$ALWAYS_CFLAGS_JDK $ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \
       $WARNING_CFLAGS $WARNING_CFLAGS_JDK $DEBUG_SYMBOLS_CFLAGS_JDK \
-      $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS"
+      $FILE_MACRO_CFLAGS $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
 
   # Use ${$2EXTRA_CFLAGS} to block EXTRA_CFLAGS to be added to build flags.
   # (Currently we don't have any OPENJDK_BUILD_EXTRA_CFLAGS, but that might
@@ -880,4 +901,25 @@ AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
   FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG],
       PREFIX: $2, IF_FALSE: [NO_LIFETIME_DSE_CFLAG=""])
   $1_GCC6_CFLAGS="${NO_DELETE_NULL_POINTER_CHECKS_CFLAG} ${NO_LIFETIME_DSE_CFLAG}"
+])
+
+AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
+[
+  # Is branch protection available?
+  BRANCH_PROTECTION_AVAILABLE=false
+  BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
+
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${BRANCH_PROTECTION_FLAG}],
+          IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
+    fi
+  fi
+
+  BRANCH_PROTECTION_CFLAGS=""
+  UTIL_ARG_ENABLE(NAME: branch-protection, DEFAULT: false,
+      RESULT: USE_BRANCH_PROTECTION, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
+      DESC: [enable branch protection when compiling C/C++],
+      IF_ENABLED: [ BRANCH_PROTECTION_CFLAGS=${BRANCH_PROTECTION_FLAG}])
+  AC_SUBST(BRANCH_PROTECTION_CFLAGS)
 ])

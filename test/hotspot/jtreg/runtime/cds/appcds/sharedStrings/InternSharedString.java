@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test shared strings together with string intern operation
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.gc == null
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @compile InternStringTest.java

@@ -161,7 +161,7 @@ public final class AppContext {
        contained in another AppContext. It is implicitly created for
        standalone apps only (i.e. not applets)
      */
-    private static volatile AppContext mainAppContext = null;
+    private static volatile AppContext mainAppContext;
 
     private static class GetAppContextLock {};
     private static final Object getAppContextLock = new GetAppContextLock();
@@ -391,7 +391,7 @@ public final class AppContext {
      * This method must be called from a Thread which is not contained
      * within this AppContext.
      *
-     * @exception  IllegalThreadStateException  if the current thread is
+     * @throws  IllegalThreadStateException  if the current thread is
      *                                    contained within this AppContext
      * @since      1.2
      */
@@ -660,7 +660,7 @@ public final class AppContext {
      * @param      value   the value.
      * @return     the previous value of the specified key in this
      *             AppContext, or {@code null} if it did not have one.
-     * @exception  NullPointerException  if the key or value is
+     * @throws  NullPointerException  if the key or value is
      *               {@code null}.
      * @see     #get(Object)
      * @since   1.2

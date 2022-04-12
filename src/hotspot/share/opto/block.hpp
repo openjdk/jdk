@@ -797,8 +797,6 @@ class Trace : public ResourceObj {
   Block * _first;       // First block in the trace
   Block * _last;        // Last block in the trace
 
-  // Return the block that follows "b" in the trace.
-  Block * next(Block *b) const { return _next_list[b->_pre_order]; }
   void set_next(Block *b, Block *n) const { _next_list[b->_pre_order] = n; }
 
   // Return the block that precedes "b" in the trace.
@@ -836,6 +834,9 @@ class Trace : public ResourceObj {
   // Return the last block in the trace
   Block * last_block() const { return _last; }
 
+  // Return the block that follows "b" in the trace.
+  Block * next(Block *b) const { return _next_list[b->_pre_order]; }
+
   // Insert a trace in the middle of this one after b
   void insert_after(Block *b, Trace *tr) {
     set_next(tr->last_block(), next(b));
@@ -869,8 +870,6 @@ class Trace : public ResourceObj {
     _last = b;
   }
 
-  // Adjust the the blocks in this trace
-  void fixup_blocks(PhaseCFG &cfg);
   bool backedge(CFGEdge *e);
 
 #ifndef PRODUCT
