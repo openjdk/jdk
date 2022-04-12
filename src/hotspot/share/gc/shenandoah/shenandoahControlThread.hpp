@@ -59,10 +59,11 @@ class ShenandoahControlThread: public ConcurrentGCThread {
 private:
   // While we could have a single lock for these, it may risk unblocking
   // GC waiters when alloc failure GC cycle finishes. We want instead
-  // to make complete explicit cycle for for demanding customers.
+  // to make complete explicit cycle for demanding customers.
   Monitor _alloc_failure_waiters_lock;
   Monitor _gc_waiters_lock;
   Monitor _control_lock;
+  Monitor _regulator_lock;
   ShenandoahPeriodicTask _periodic_task;
   ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
 

@@ -54,6 +54,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   _alloc_failure_waiters_lock(Mutex::safepoint - 1, "ShenandoahAllocFailureGC_lock", true),
   _gc_waiters_lock(Mutex::safepoint - 1, "ShenandoahRequestedGC_lock", true),
   _control_lock(Mutex::nosafepoint - 1, "ShenandoahControlGC_lock", true),
+  _regulator_lock(Mutex::nosafepoint - 1, "ShenandoahRegulatorGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _requested_generation(GenerationMode::GLOBAL),
@@ -741,6 +742,8 @@ bool ShenandoahControlThread::request_concurrent_gc(GenerationMode generation) {
     _requested_gc_cause = GCCause::_shenandoah_concurrent_gc;
     _requested_generation = generation;
     notify_control_thread();
+    MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
+    ml.wait();
     return true;
   }
 
@@ -751,6 +754,8 @@ bool ShenandoahControlThread::request_concurrent_gc(GenerationMode generation) {
     _preemption_requested.set();
     ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
     notify_control_thread();
+    MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
+    ml.wait();
     return true;
   }
 
@@ -929,5 +934,7 @@ void ShenandoahControlThread::set_gc_mode(ShenandoahControlThread::GCMode new_mo
   if (_mode != new_mode) {
     log_info(gc)("Transition from: %s to: %s", gc_mode_name(_mode), gc_mode_name(new_mode));
     _mode = new_mode;
+    MonitorLocker ml(&_regulator_lock, Mutex::_no_safepoint_check_flag);
+    ml.notify_all();
   }
 }
