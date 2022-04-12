@@ -1267,3 +1267,83 @@ void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, i
       ShouldNotReachHere();
   }
 }
+
+void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                       FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
+  assert_different_registers(tmp1, tmp2, tmp3, src, dst);
+  switch (T) {
+    case T2S:
+    case T4S:
+      fmovs(tmp1, T, 0.5f);
+      mov_immediate64(rscratch1, jint_cast(0x1.0p23f), /*isFloat*/true);
+      break;
+    case T2D:
+      fmovd(tmp1, T, 0.5);
+      mov_immediate64(rscratch1, julong_cast(0x1.0p52), /*isFloat*/true);
+      break;
+    default:
+      assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  }
+  fadd(tmp1, T, tmp1, src);
+  fcvtms(tmp1, T, tmp1);
+  // tmp1 = floor(src + 0.5, ties to even)
+
+  fcvtas(dst, T, src);
+  // dst = round(src), ties to away
+
+  fneg(tmp3, T, src);
+  dup(tmp2, T, rscratch1);
+  cmhs(tmp3, T, tmp3, tmp2);
+  // tmp3 is now a set of flags
+
+  // Why we don't we use MOVI to load the constant 0x1.0p23f into
+  // tmp2, instead of moving it first into rscratch1 then using DUP to
+  // copy it into all the vector lanes. The answer is that it's
+  // slower, at least on Apple M1.
+  //
+  // movi(tmp2, T16B, jint_cast(0x1.0p23f) >> 24);
+  // shl(tmp2, T4S, tmp2, 24);
+
+  bif(dst, T16B, tmp1, tmp3);
+  // result in dst
+}
+
+void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                      FloatRegister tmp2, PRegister ptmp, SIMD_RegVariant T) {
+  assert_different_registers(tmp1, tmp2, src, dst);
+
+  // mov(lr, (uint64_t)xxx);
+  // blr(lr);
+
+  switch (T) {
+    case S:
+      mov_immediate32(rscratch1, jint_cast(0x1.0p23f), /*isFloat*/true); // (I)   (ASIMD: I)
+      break;
+    case D:
+      mov_immediate64(rscratch1, julong_cast(0x1.0p52), /*isFloat*/true);
+      break;
+    default:
+      assert(T == S | T == D, "invalid arrangement");
+  }
+
+  sve_frinta(dst, T, ptrue, src);
+  // dst = round(src), ties to away
+
+  Label none;
+
+  sve_fneg(tmp1, T, ptrue, src);
+  sve_dup(tmp2, T, rscratch1);
+  sve_cmp(HS, ptmp, T, ptrue, tmp2, tmp1);
+  br(EQ, none);
+  {
+    sve_cpy(tmp1, T, ptmp, 0.5);
+    sve_fadd(tmp1, T, ptmp, src);
+    sve_frintm(dst, T, ptmp, tmp1);
+    // dst = floor(src + 0.5, ties to even)
+  }
+  bind(none);
+
+  sve_fcvtzs(dst, T, ptrue, dst, T);          // (V0)   (ASIMD: -)
+  // result in dst
+}
+
