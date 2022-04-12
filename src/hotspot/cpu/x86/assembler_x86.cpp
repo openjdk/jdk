@@ -12366,6 +12366,11 @@ void Assembler::idivq(Register src) {
   emit_int16((unsigned char)0xF7, (0xF8 | encode));
 }
 
+void Assembler::divq(Register src) {
+  int encode = prefixq_and_encode(src->encoding());
+  emit_int16((unsigned char)0xF7, (0xF0 | encode));
+}
+
 void Assembler::imulq(Register dst, Register src) {
   int encode = prefixq_and_encode(dst->encoding(), src->encoding());
   emit_int24(0x0F, (unsigned char)0xAF, (0xC0 | encode));

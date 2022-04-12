@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class Bug4175998Test extends IntlTest {
         boolean bad = false;
         for (int i = 0; i < CODES.length; i++) {
             final String[] localeCodes = CODES[i];
-            final Locale l = new Locale(localeCodes[0], "");
+            final Locale l = Locale.of(localeCodes[0]);
             final String iso3 = l.getISO3Language();
             if (!iso3.equals(localeCodes[1]) /*&& !iso3.equals(localeCodes[2])*/) {
                 logln("Locale("+l+") returned bad ISO3 language code."
