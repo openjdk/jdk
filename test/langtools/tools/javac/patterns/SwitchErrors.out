@@ -9,7 +9,7 @@ SwitchErrors.java:36:13: compiler.err.total.pattern.and.default
 SwitchErrors.java:42:18: compiler.err.pattern.dominated
 SwitchErrors.java:42:24: compiler.err.total.pattern.and.default
 SwitchErrors.java:48:18: compiler.err.total.pattern.and.default
-SwitchErrors.java:54:18: compiler.err.pattern.dominated
+SwitchErrors.java:54:18: compiler.err.duplicate.total.pattern
 SwitchErrors.java:60:13: compiler.err.duplicate.default.label
 SwitchErrors.java:66:13: compiler.err.duplicate.default.label
 SwitchErrors.java:71:27: compiler.err.duplicate.default.label

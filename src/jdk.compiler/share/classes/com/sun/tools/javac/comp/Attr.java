@@ -1783,7 +1783,6 @@ public class Attr extends JCTree.Visitor {
                         }
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
-                        checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
                         JCExpression guard = ((JCPattern) pat).guard;
                         if (guard != null) {
                             MatchBindings afterPattern = matchBindings;
@@ -1807,6 +1806,7 @@ public class Attr extends JCTree.Visitor {
                             }
                             hasTotalPattern = true;
                         }
+                        checkCaseLabelDominated(pat.pos(), coveredTypesForPatterns, patternType);
                         if (!patternType.isErroneous()) {
                             coveredTypesForConstants = coveredTypesForConstants.prepend(patternType);
                             if (unconditional) {
