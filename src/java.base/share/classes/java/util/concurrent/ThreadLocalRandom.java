@@ -93,7 +93,7 @@ import jdk.internal.misc.VM;
         i = 64, j = 0, k = 0,
         equidistribution = 1
 )
-public class ThreadLocalRandom extends Random {
+public final class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
      * Random) using a single static instance that accesses 64 bits of

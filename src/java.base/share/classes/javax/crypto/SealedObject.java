@@ -259,8 +259,8 @@ public class SealedObject implements Serializable {
             // them into NoSuchAlgorithmException's with details about
             // the failing algorithm
             throw new NoSuchAlgorithmException("algorithm not found");
-        } catch (IllegalBlockSizeException | BadPaddingException ibse) {
-            throw new InvalidKeyException(ibse.getMessage());
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            throw new InvalidKeyException(e.getMessage());
         }
     }
 

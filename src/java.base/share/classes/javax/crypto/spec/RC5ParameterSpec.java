@@ -29,7 +29,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the parameters used with the
- * <a href="http://tools.ietf.org/html/rfc2040"><i>RC5</i></a>
+ * <a href="https://tools.ietf.org/html/rfc2040"><i>RC5</i></a>
  * algorithm.
  *
  * <p> The parameters consist of a version number, a rounds count, a word
