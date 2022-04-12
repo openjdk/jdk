@@ -46,15 +46,11 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestUseCompressedOopsFlagsWithUlimit {
 
-  private static void checkFlag(long maxram, int maxrampercent, boolean forcecoop, boolean expectcoop) throws Exception {
+  private static void checkFlag(long maxram, int maxrampercent, boolean expectcoop) throws Exception {
 
     ArrayList<String> args = new ArrayList<String>();
     args.add("-XX:MaxRAM=" + maxram);
     args.add("-XX:MaxRAMPercentage=" + maxrampercent);
-    if (forcecoop) {
-      args.add("-XX:+UseCompressedOops");
-    }
-
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
@@ -81,15 +77,13 @@ public class TestUseCompressedOopsFlagsWithUlimit {
 
   public static void main(String args[]) throws Exception {
     // Tests
-    // 1. Verify that UseCompressedOops Ergo follows ulimit -v setting.
-    // 2. Verify that UseCompressedOops forces compressed oops limit even
-    //    when ulimit -v are specified.
+    // Verify that UseCompressedOops Ergo follows ulimit -v setting.
 
     long oneG = 1L * 1024L * 1024L * 1024L;
 
-    // Args: MaxRAM , MaxRAMPercentage, forcecoop, expect coop
-    checkFlag(32 * oneG, 100, false, true);
-    checkFlag(128 * oneG, 100, false, true);
-    checkFlag(128 * oneG, 100, true, true);
+    // Args: MaxRAM , MaxRAMPercentage, expect coop
+    // Having MaxRAMPercentage set explicitly instead of relying on its default value indeed makes the test more resilient.
+    checkFlag(32 * oneG, 100, true);
+    checkFlag(128 * oneG, 100, true);
   }
 }
