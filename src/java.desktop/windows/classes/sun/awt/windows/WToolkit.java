@@ -211,7 +211,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
      * will lead to undefined behavior.
      *
      * embeddedInit must be called before the WToolkit() constructor.
-     * embeddedDispose should be called before the applicaton terminates the
+     * embeddedDispose should be called before the application terminates the
      * Java VM. It is currently unsafe to reinitialize the toolkit again
      * after it has been disposed. Instead, awt.dll must be reloaded and the
      * class loader which loaded WToolkit must be finalized before it is

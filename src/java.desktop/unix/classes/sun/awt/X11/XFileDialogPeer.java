@@ -202,7 +202,7 @@ class XFileDialogPeer extends XDialogPeer
 
         // Fixed 6260650: FileDialog.getDirectory() does not return null when file dialog is cancelled
         // After showing we should display 'user.dir' as current directory
-        // if user didn't set directory programatically
+        // if user didn't set directory programmatically
         pathField = new TextField(savedDir != null ? savedDir : userDir);
         @SuppressWarnings("serial") // Anonymous class
         Choice tmp = new Choice() {

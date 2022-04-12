@@ -249,7 +249,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
             /* In an ideal situation, the following check would not be necessary
              * and we would replace the color any time the previous color was a
-             * UIResouce. However, it turns out that there is existing code that
+             * UIResource. However, it turns out that there is existing code that
              * uses the following inadvisable pattern to turn a text area into
              * what appears to be a multi-line label:
              *
