@@ -2070,7 +2070,7 @@ public abstract sealed class VarHandle implements Constable
      *
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.
-     * @throws WrongMethodTypeException if there's a access type mismatch
+     * @throws WrongMethodTypeException if there's an access type mismatch
      */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
