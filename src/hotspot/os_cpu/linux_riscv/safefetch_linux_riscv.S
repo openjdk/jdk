@@ -32,24 +32,24 @@
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
-    #  x10 : address
-    #  x11 : defaultval
-    #  x10 : retval
+    #  x10 (a0) : address
+    #  x11 (a1) : defaultval
+    #  x10 (a0) : retval
 SafeFetch32:
 _SafeFetch32_fault:
-    lw       x11, 0(x10)
+    lw       a1, 0(a0)
 _SafeFetch32_continuation:
-    mv       x10, x11
+    mv       a0, a1
     ret
 
     # Support for intptr_t SafeFetchN(intptr_t* address, intptr_t defaultval);
     #
-    #  x10 : address
-    #  x11 : defaultval
-    #  x10 : retval
+    #  x10 (a0) : address
+    #  x11 (a1) : defaultval
+    #  x10 (a0) : retval
 SafeFetchN:
 _SafeFetchN_fault:
-    ld       x11, 0(x10)
+    ld       a1, 0(a0)
 _SafeFetchN_continuation:
-    mv       x10, x11
+    mv       a0, a1
     ret
