@@ -119,7 +119,7 @@ import sun.util.calendar.LocalGregorianCalendar;
  *
  * @since 1.8
  */
-public final class JapaneseChronology extends AbstractChronology implements Serializable, IsoChronology.IsoBasedChronology {
+public final class JapaneseChronology extends IsoBasedChronology implements Serializable {
 
     static final LocalGregorianCalendar JCAL =
         (LocalGregorianCalendar) CalendarSystem.forName("japanese");

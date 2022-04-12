@@ -104,7 +104,7 @@ import java.util.Map;
  *
  * @since 1.8
  */
-public final class ThaiBuddhistChronology extends AbstractChronology implements Serializable, IsoChronology.IsoBasedChronology {
+public final class ThaiBuddhistChronology extends IsoBasedChronology implements Serializable {
 
     /**
      * Singleton instance of the Buddhist chronology.

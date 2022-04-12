@@ -63,7 +63,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 import java.time.chrono.Chronology;
-import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoBasedChronology;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -86,7 +86,7 @@ public class TestServiceLoader {
         }
         var coptic = chronos.get("Coptic");
         assertNotNull(coptic, "CopticChronology not found");
-        assertEquals(coptic instanceof IsoChronology.IsoBasedChronology, false);
+        assertEquals(coptic instanceof IsoBasedChronology, false);
     }
 
 }

@@ -104,7 +104,7 @@ import java.util.Map;
  *
  * @since 1.8
  */
-public final class MinguoChronology extends AbstractChronology implements Serializable, IsoChronology.IsoBasedChronology {
+public final class MinguoChronology extends IsoBasedChronology implements Serializable {
 
     /**
      * Singleton instance for the Minguo chronology.
