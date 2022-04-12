@@ -46,8 +46,13 @@ public class UnrolledAccess {
     static final Unsafe U = Utils.unsafe;
 
     final static int SIZE = 1024;
+    
+    static final ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
 
     static final VarHandle LONG_HANDLE = MemoryLayout.sequenceLayout(SIZE, JAVA_LONG)
+            .varHandle(MemoryLayout.PathElement.sequenceElement());
+
+    static final VarHandle LONG_HANDLE_UNALIGNED = MemoryLayout.sequenceLayout(SIZE, JAVA_LONG_UNALIGNED)
             .varHandle(MemoryLayout.PathElement.sequenceElement());
 
     @State(Scope.Benchmark)
@@ -106,6 +111,32 @@ public class UnrolledAccess {
             os.setAtIndex(JAVA_LONG, i+1, is.getAtIndex(JAVA_LONG, i+1) + os.getAtIndex(JAVA_LONG, i+1));
             os.setAtIndex(JAVA_LONG, i+2, is.getAtIndex(JAVA_LONG, i+2) + os.getAtIndex(JAVA_LONG, i+2));
             os.setAtIndex(JAVA_LONG, i+3, is.getAtIndex(JAVA_LONG, i+3) + os.getAtIndex(JAVA_LONG, i+3));
+        }
+    }
+
+    @Benchmark
+    public void handle_loop_unaligned(Data state) {
+        final MemorySegment is = state.inputSegment;
+        final MemorySegment os = state.outputSegment;
+
+        for(int i = 0; i < SIZE; i+=4) {
+            LONG_HANDLE_UNALIGNED.set(os, (long) (i),   (long) LONG_HANDLE_UNALIGNED.get(is, (long) (i))   + (long) LONG_HANDLE_UNALIGNED.get(os, (long) (i)));
+            LONG_HANDLE_UNALIGNED.set(os, (long) (i+1), (long) LONG_HANDLE_UNALIGNED.get(is, (long) (i+1)) + (long) LONG_HANDLE_UNALIGNED.get(os, (long) (i+1)));
+            LONG_HANDLE_UNALIGNED.set(os, (long) (i+2), (long) LONG_HANDLE_UNALIGNED.get(is, (long) (i+2)) + (long) LONG_HANDLE_UNALIGNED.get(os, (long) (i+2)));
+            LONG_HANDLE_UNALIGNED.set(os, (long) (i+3), (long) LONG_HANDLE_UNALIGNED.get(is, (long) (i+3)) + (long) LONG_HANDLE_UNALIGNED.get(os, (long) (i+3)));
+        }
+    }
+
+    @Benchmark
+    public void handle_loop_instance_unaligned(Data state) {
+        final MemorySegment is = state.inputSegment;
+        final MemorySegment os = state.outputSegment;
+
+        for(int i = 0; i < SIZE; i+=4) {
+            os.setAtIndex(JAVA_LONG_UNALIGNED, i, is.getAtIndex(JAVA_LONG_UNALIGNED, i) + os.getAtIndex(JAVA_LONG_UNALIGNED, i));
+            os.setAtIndex(JAVA_LONG_UNALIGNED, i+1, is.getAtIndex(JAVA_LONG_UNALIGNED, i+1) + os.getAtIndex(JAVA_LONG_UNALIGNED, i+1));
+            os.setAtIndex(JAVA_LONG_UNALIGNED, i+2, is.getAtIndex(JAVA_LONG_UNALIGNED, i+2) + os.getAtIndex(JAVA_LONG_UNALIGNED, i+2));
+            os.setAtIndex(JAVA_LONG_UNALIGNED, i+3, is.getAtIndex(JAVA_LONG_UNALIGNED, i+3) + os.getAtIndex(JAVA_LONG_UNALIGNED, i+3));
         }
     }
 }

@@ -395,6 +395,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @Override
+    @ForceInline
     public MemorySessionImpl sessionImpl() {
         return MemorySessionImpl.toSessionImpl(session);
     }
