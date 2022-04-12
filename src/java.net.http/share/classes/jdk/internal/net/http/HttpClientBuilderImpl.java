@@ -27,9 +27,8 @@ package jdk.internal.net.http;
 
 import java.net.Authenticator;
 import java.net.CookieHandler;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.ProxySelector;
-import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
@@ -51,7 +50,7 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     SSLContext sslContext;
     SSLParameters sslParams;
     int priority = -1;
-    SocketAddress localAddr;
+    InetAddress localAddr;
 
     @Override
     public HttpClientBuilderImpl cookieHandler(CookieHandler cookieHandler) {
@@ -134,11 +133,7 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
     }
 
     @Override
-    public HttpClient.Builder localAddress(final SocketAddress localAddr) {
-        // we only support InetSocketAddress type and that too with port 0
-        if (localAddr != null && (!(localAddr instanceof InetSocketAddress isa) || isa.getPort() != 0)) {
-            throw new UnsupportedOperationException("Only InetSocketAddress with port 0 is allowed");
-        }
+    public HttpClient.Builder localAddress(final InetAddress localAddr) {
         this.localAddr = localAddr;
         return this;
     }

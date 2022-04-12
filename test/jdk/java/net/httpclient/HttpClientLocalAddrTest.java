@@ -200,7 +200,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
             final var loopbackAddr = InetAddress.getLoopbackAddress();
             testMethodParams.add(new Object[]{
                     newBuilder(configureClientSSL)
-                            .localAddress(new InetSocketAddress(loopbackAddr, 0))
+                            .localAddress(loopbackAddr)
                             .build(),
                     requestURI,
                     loopbackAddr
@@ -211,7 +211,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
                 final var localAddr = InetAddress.getByName("::");
                 testMethodParams.add(new Object[]{
                         newBuilder(configureClientSSL)
-                                .localAddress(new InetSocketAddress(localAddr, 0))
+                                .localAddress(localAddr)
                                 .build(),
                         requestURI,
                         localAddr
@@ -222,7 +222,7 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
                 final var localAddr = InetAddress.getByName("0.0.0.0");
                 testMethodParams.add(new Object[]{
                         newBuilder(configureClientSSL)
-                                .localAddress(new InetSocketAddress(localAddr, 0))
+                                .localAddress(localAddr)
                                 .build(),
                         requestURI,
                         localAddr

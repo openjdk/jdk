@@ -27,7 +27,7 @@ package java.net.http;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.SocketAddress;
+import java.net.InetAddress;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -379,20 +379,14 @@ public abstract class HttpClient {
          * through {@link HttpClient#newBuilder()} provide an implementation
          * of this method that allows setting the local address.
          *
-         * @implNote {@code Builder}s obtained through {@link HttpClient#newBuilder()}
-         * provide an implementation of this method that only supports
-         * a {@code localAddr} of type {@link InetSocketAddress} and
-         * the {@link InetSocketAddress#getPort() port} of such an address is
-         * expected to be {@code 0}.
-         *
-         * @param localAddr The local socket address. Can be null.
+         * @param localAddr The local address of the socket. Can be null.
          * @return this builder
          * @throws UnsupportedOperationException if this builder doesn't support
          *         configuring a local address or if the passed {@code localAddr}
          *         is not supported by this {@code HttpClient} implementation.
          * @since 19
          */
-        default Builder localAddress(SocketAddress localAddr) {
+        default Builder localAddress(InetAddress localAddr) {
             throw new UnsupportedOperationException();
         }
 
@@ -400,8 +394,8 @@ public abstract class HttpClient {
          * Returns a new {@link HttpClient} built from the current state of this
          * builder.
          *
-         * @implSpec If the {@link #localAddress(SocketAddress) local address} is a non-null
-         * <i>Internet Protocol</i> socket address and a security manager is installed, then
+         * @implSpec If the {@link #localAddress(InetAddress) local address} is a non-null
+         * <i>Internet Protocol</i> address and a security manager is installed, then
          * this method calls {@link SecurityManager#checkListen checkListen} to check that
          * the caller has necessary permission to bind to that local address.
          *
@@ -412,10 +406,10 @@ public abstract class HttpClient {
          * if the implementation requires a {@link Selector}, and opening
          * one fails due to {@linkplain Selector#open() lack of necessary resources}.
          * @throws SecurityException If a security manager has been installed and
-         *         the {@link #localAddress(SocketAddress) local address} is an
-         *         <i>Internet Protocol</i> socket address
-         *         and the security manager's {@link SecurityManager#checkListen checkListen}
-         *         method disallows binding to the given socket address.
+         *         the {@link #localAddress(InetAddress) local address} is an
+         *         <i>Internet Protocol</i> address and the
+         *         security manager's {@link SecurityManager#checkListen checkListen}
+         *         method disallows binding to the given address.
          */
         public HttpClient build();
     }

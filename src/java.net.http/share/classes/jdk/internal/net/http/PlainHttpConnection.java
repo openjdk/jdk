@@ -184,7 +184,8 @@ class PlainHttpConnection extends HttpConnection {
                 if (debug.on()) {
                     debug.log("binding to configured local address " + localAddr);
                 }
-                PrivilegedExceptionAction<SocketChannel> pa = () -> chan.bind(localAddr);
+                var sockAddr = new InetSocketAddress(localAddr, 0);
+                PrivilegedExceptionAction<SocketChannel> pa = () -> chan.bind(sockAddr);
                 try {
                     AccessController.doPrivileged(pa);
                     if (debug.on()) {

@@ -29,11 +29,9 @@ import java.net.CookieManager;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -42,7 +40,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
@@ -267,24 +264,16 @@ public class HttpClientBuilderTest {
     }
 
     /**
-     * Tests the {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(SocketAddress)} method
+     * Tests the {@link HttpClient,java.net.http.HttpClient.Builder#localAddress(InetAddress)} method
      */
     @Test
     public void testLocalAddress() throws Exception {
         HttpClient.Builder builder = HttpClient.newBuilder();
         // setting null should work fine
         builder.localAddress(null);
-        // setting to InetSocketAddress with port 0 should work fine
-        builder.localAddress(new InetSocketAddress(0));
-        builder.localAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-        builder.localAddress(new JustAnotherInetSocketAddress(0));
+        builder.localAddress(InetAddress.getLoopbackAddress());
         // resetting back to null should work fine
         builder.localAddress(null);
-        // using a InetSocketAddress with non-zero port should throw UnsupportedOperationException
-        assertThrows(UOE, () -> builder.localAddress(new InetSocketAddress(12345)));
-        assertThrows(UOE, () -> builder.localAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 12345)));
-        // using a SocketAddress which isn't of type InetSocketAddress should throw UnsupportedOperationException
-        assertThrows(UOE, () -> builder.localAddress(new SocketAddress() {}));
     }
 
     // ---
@@ -358,14 +347,6 @@ public class HttpClientBuilderTest {
         public <T> CompletableFuture<HttpResponse<T>>
         sendAsync(HttpRequest x, BodyHandler<T> y, PushPromiseHandler<T> z) {
             return null;
-        }
-    }
-
-    // used in HttpClient.Builder.localAddr(...) testing
-    private static final class JustAnotherInetSocketAddress extends InetSocketAddress {
-
-        public JustAnotherInetSocketAddress(int port) {
-            super(port);
         }
     }
 
