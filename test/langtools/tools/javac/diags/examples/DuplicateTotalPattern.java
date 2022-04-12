@@ -21,10 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @compile --enable-preview -source 19 DuplicateTotalPattern.java
- */
 // key: compiler.err.duplicate.total.pattern
 // key: compiler.misc.feature.pattern.switch
 // key: compiler.warn.preview.feature.use.plural
