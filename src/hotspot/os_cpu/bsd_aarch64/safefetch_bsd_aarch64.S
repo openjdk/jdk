@@ -49,7 +49,8 @@
     ELF_TYPE(SafeFetch32,@function)
 SYMBOL(SafeFetch32):
 SYMBOL(_SafeFetch32_fault):
-    ldr      w1, [x0]
+    ldr      w0, [x0]
+    ret
 SYMBOL(_SafeFetch32_continuation):
     mov      x0, x1
     ret
@@ -63,7 +64,8 @@ SYMBOL(_SafeFetch32_continuation):
     ELF_TYPE(SafeFetchN,@function)
 SYMBOL(SafeFetchN):
 SYMBOL(_SafeFetchN_fault):
-    ldr      x1, [x0]
+    ldr      x0, [x0]
+    ret
 SYMBOL(_SafeFetchN_continuation):
     mov      x0, x1
     ret

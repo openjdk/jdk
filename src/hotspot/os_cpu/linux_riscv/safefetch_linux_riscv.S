@@ -37,7 +37,8 @@
     #  x10 (a0) : retval
 SafeFetch32:
 _SafeFetch32_fault:
-    lw       a1, 0(a0)
+    lw       a0, 0(a0)
+    ret
 _SafeFetch32_continuation:
     mv       a0, a1
     ret
@@ -49,7 +50,8 @@ _SafeFetch32_continuation:
     #  x10 (a0) : retval
 SafeFetchN:
 _SafeFetchN_fault:
-    ld       a1, 0(a0)
+    ld       a0, 0(a0)
+    ret
 _SafeFetchN_continuation:
     mv       a0, a1
     ret

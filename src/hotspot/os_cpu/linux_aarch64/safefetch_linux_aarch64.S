@@ -36,7 +36,8 @@
     #  x1 : defaultval
 SafeFetch32:
 _SafeFetch32_fault:
-    ldr      w1, [x0]
+    ldr      w0, [x0]
+    ret
 _SafeFetch32_continuation:
     mov      x0, x1
     ret
@@ -47,7 +48,8 @@ _SafeFetch32_continuation:
     #  x0 : defaultval
 SafeFetchN:
 _SafeFetchN_fault:
-    ldr      x1, [x0]
+    ldr      x0, [x0]
+    ret
 _SafeFetchN_continuation:
     mov      x0, x1
     ret

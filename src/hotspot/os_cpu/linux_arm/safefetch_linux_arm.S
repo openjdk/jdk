@@ -33,7 +33,8 @@
     #  r1 : defaultval
 SafeFetch32:
 _SafeFetch32_fault:
-    ldr      r1, [r0]
+    ldr      r0, [r0]
+    bx       lr
 _SafeFetch32_continuation:
     mov      r0, r1
     bx       lr

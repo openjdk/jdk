@@ -37,7 +37,8 @@
     #  r3 : retval
 SafeFetch32:
 _SafeFetch32_fault:
-    lwa      %r4, 0(%r3)
+    lwa      %r3, 0(%r3)
+    blr
 _SafeFetch32_continuation:
     mr       %r3, %r4
     blr
@@ -49,7 +50,8 @@ _SafeFetch32_continuation:
     #  r3 : retval
 SafeFetchN:
 _SafeFetchN_fault:
-    ld     %r4, 0(%r3)
+    ld     %r3, 0(%r3)
+    blr
 _SafeFetchN_continuation:
     mr     %r3, %r4
     blr
