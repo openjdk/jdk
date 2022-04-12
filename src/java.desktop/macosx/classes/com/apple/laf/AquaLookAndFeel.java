@@ -388,6 +388,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         final Color focusRingColor = AquaImageFactory.getFocusRingColorUIResource();
         final Border focusCellHighlightBorder = new BorderUIResource.LineBorderUIResource(focusRingColor);
 
+        // for table cell highlighter
+        final Color cellFocusRing = AquaImageFactory.getCellHighlightColorUIResource();
+
         final Color windowBackgroundColor = AquaImageFactory.getWindowBackgroundColorUIResource();
         final Color panelBackgroundColor = windowBackgroundColor;
         final Color tabBackgroundColor = windowBackgroundColor;
@@ -889,8 +892,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
             "Table.gridColor", white, // grid line color
             "Table.focusCellBackground", textHighlightText,
             "Table.focusCellForeground", textHighlight,
+            "Table.cellFocusRing", cellFocusRing,
             "Table.focusCellHighlightBorder", new BorderUIResource.LineBorderUIResource(
-                    deriveProminentFocusRing(focusRingColor), 2),
+                    deriveProminentFocusRing(cellFocusRing), 2),
             "Table.scrollPaneBorder", scollListBorder,
 
             "Table.ancestorInputMap", aquaKeyBindings.getTableInputMap(),
@@ -1125,19 +1129,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns a new Focus Ring color by changing saturation
-     * and setting the brightness to 100% for incoming focusRingColor.
+     * Returns a new cell focus ring color by changing saturation
+     * and setting the brightness to 100% for incoming cellFocusRing.
      *
-     * If the incoming focusRingColor is equal to white/black/grayish,
-     * the returned focusRingColor is Light Gray. For all other colors,
-     * new focusRingColor (in the latter case), is obtained by adjusting
+     * If the incoming cellFocusRing is equal to white/black/grayish,
+     * the returned cellFocusRing is Light Gray. For all other colors,
+     * new cellFocusRing (in the latter case), is obtained by adjusting
      * the saturation levels and setting the brightness to 100% of the
-     * incoming focusRingColor.
+     * incoming cellFocusRing.
      *
-     * @param focusRingColor - the {@code Color} object
+     * @param cellFocusRing - the {@code Color} object
      * @return the {@code Color} object corresponding to new HSB values
      */
-    static Color deriveProminentFocusRing(Color focusRingColor) {
+    static Color deriveProminentFocusRing(Color cellFocusRing) {
 
         // define constants
         float satLowerValue = 0.30f;
@@ -1155,19 +1159,19 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
 
         float[] hsbValues = new float[3];
 
-        int redValue = focusRingColor.getRed();
-        int greenValue = focusRingColor.getGreen();
-        int blueValue = focusRingColor.getBlue();
+        int redValue = cellFocusRing.getRed();
+        int greenValue = cellFocusRing.getGreen();
+        int blueValue = cellFocusRing.getBlue();
 
         Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
 
-        // if focusRingColor is White/Black/Grayish
+        // if cellFocusRing is White/Black/Grayish
         if ((hsbValues[0] == 0 && hsbValues[1] == 0)
                 || hsbValues[1] <= satGrayScale) {
             return Color.LIGHT_GRAY;
         }
 
-        // if focusRingColor color NOT White/Black/Grayish
+        // if cellFocusRing color NOT White/Black/Grayish
         // saturation adjustment - saturation set to either lower or
         // upper saturation value based on current saturation level
         hsbValues[1] = hsbValues[1] >= saturationThreshold ?

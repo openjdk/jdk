@@ -120,11 +120,13 @@ JNI_COCOA_EXIT(env);
         }
     }
 
+    // added for JTable Focus Ring
     if (@available(macOS 10.14, *)) {
-        appleColors[sun_lwawt_macosx_LWCToolkit_KEYBOARD_FOCUS_COLOR] =               [NSColor controlAccentColor];
+        appleColors[sun_lwawt_macosx_LWCToolkit_CELL_HIGHLIGHT_COLOR] =               [NSColor controlAccentColor];
     } else {
-        appleColors[sun_lwawt_macosx_LWCToolkit_KEYBOARD_FOCUS_COLOR] =               [NSColor keyboardFocusIndicatorColor];
+        appleColors[sun_lwawt_macosx_LWCToolkit_CELL_HIGHLIGHT_COLOR] =               [NSColor keyboardFocusIndicatorColor];
     }
+    appleColors[sun_lwawt_macosx_LWCToolkit_KEYBOARD_FOCUS_COLOR] =                    [NSColor keyboardFocusIndicatorColor];
     appleColors[sun_lwawt_macosx_LWCToolkit_INACTIVE_SELECTION_BACKGROUND_COLOR] =    [NSColor secondarySelectedControlColor];
     appleColors[sun_lwawt_macosx_LWCToolkit_INACTIVE_SELECTION_FOREGROUND_COLOR] =    [NSColor controlDarkShadowColor];
     appleColors[sun_lwawt_macosx_LWCToolkit_SELECTED_CONTROL_TEXT_COLOR] =            [NSColor controlTextColor];

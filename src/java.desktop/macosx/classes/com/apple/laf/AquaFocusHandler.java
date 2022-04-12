@@ -145,10 +145,10 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         c.setSelectionBackground(UIManager.getColor(bgName));
 
         // focus ring changes for on-the-fly accent color changes
-        Color lighterFocusRing = AquaLookAndFeel.deriveProminentFocusRing(
-                UIManager.getColor("Focus.color"));
+        Color prominentFocusRing = AquaLookAndFeel.deriveProminentFocusRing(
+                UIManager.getColor("Table.cellFocusRing"));
         BorderUIResource.LineBorderUIResource focusCellHighlightBorder =
-                new BorderUIResource.LineBorderUIResource(lighterFocusRing, 2);
+                new BorderUIResource.LineBorderUIResource(prominentFocusRing, 2);
         UIManager.getDefaults().put("Table.focusCellHighlightBorder",
                 focusCellHighlightBorder);
 

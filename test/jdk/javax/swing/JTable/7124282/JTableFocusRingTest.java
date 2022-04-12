@@ -29,8 +29,8 @@
  * @requires (os.family == "mac")
  * @summary Checks whether the JTable's focus ring color's RGB color
  * diff with selectionBackground is greater in comparison to original
- * focus ring (represented by 'Focus.color' property in Aqua LAF
- * UIDefaults)
+ * focus ring (represented by 'Table.cellFocusRing' property in Aqua LAF
+ * UIDefaults).
  * @run main JTableFocusRingTest
  */
 
@@ -58,7 +58,7 @@ public class JTableFocusRingTest {
             float[] newCellRingRGB = new float[3];
 
             Color selectionBck = null;
-            Color oldRingColor = null;
+            Color originalRingColor = null;
             Color newRingColor = null;
 
             // saturation threshold for grayish colors
@@ -70,10 +70,10 @@ public class JTableFocusRingTest {
                 selectionBck = (Color) UIManager.getDefaults()
                         .get("Table.selectionBackground");
             }
-            if (UIManager.getDefaults().get("Focus.color") != null
-                    && UIManager.getDefaults().get("Focus.color")
+            if (UIManager.getDefaults().get("Table.cellFocusRing") != null
+                    && UIManager.getDefaults().get("Table.cellFocusRing")
                     instanceof Color) {
-               oldRingColor = (Color) UIManager.getDefaults().get("Focus.color");
+               originalRingColor = (Color) UIManager.getDefaults().get("Table.cellFocusRing");
             }
 
             if (UIManager.getDefaults()
@@ -85,7 +85,7 @@ public class JTableFocusRingTest {
                 newRingColor = cellFocusBorderObj.getLineColor();
             }
 
-            if (selectionBck == null || oldRingColor == null ||
+            if (selectionBck == null || originalRingColor == null ||
                     newRingColor == null) {
                 throw new RuntimeException("One or more color values are null");
             }
@@ -94,14 +94,14 @@ public class JTableFocusRingTest {
                     + selectionBck.toString());
 
             System.out.println("Original FocusRing Color: "
-                    + oldRingColor.toString());
+                    + originalRingColor.toString());
 
             System.out.println("Brighter FocusRing Color: "
                     + newRingColor.toString());
 
-            int redValue = oldRingColor.getRed();
-            int greenValue = oldRingColor.getGreen();
-            int blueValue = oldRingColor.getBlue();
+            int redValue = originalRingColor.getRed();
+            int greenValue = originalRingColor.getGreen();
+            int blueValue = originalRingColor.getBlue();
 
             float[] hsbValues = new float[3];
             Color.RGBtoHSB(redValue, greenValue, blueValue, hsbValues);
@@ -114,12 +114,12 @@ public class JTableFocusRingTest {
                     || hsbValues[1] <= satGrayScale) &&
                     newRingColor.equals(Color.LIGHT_GRAY)) {
                 System.out.println("Original Focus ring color:" +
-                        "WHITE/BLACK/GRAYISH, Focus Ring Color: LIGHT GRAY");
+                        "WHITE/BLACK/GRAYISH, Cell Focus Ring Color: LIGHT GRAY");
                 System.out.println("Test case passed");
                 return;
             }
             selectionBck.getRGBColorComponents(bckRGB);
-            oldRingColor.getRGBColorComponents(oldCellRingRGB);
+            originalRingColor.getRGBColorComponents(oldCellRingRGB);
             newRingColor.getRGBColorComponents(newCellRingRGB);
 
             float originalRGBDiff = calculateRGBDiff(oldCellRingRGB, bckRGB);
@@ -134,8 +134,10 @@ public class JTableFocusRingTest {
         });
     }
 
-    /* calculates the difference between individual RGB components of 2 colors and
-       returns the total difference */
+    /* calculates the difference between individual RGB components of 2 colors
+       and returns the total difference. A higher RGB difference is preferred
+       for a prominent cell highlighter */
+
     private static float calculateRGBDiff(float[] focusRingRGB, float[] bckRGB) {
 
         float totalRGBDiff = 0;
