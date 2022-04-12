@@ -1917,9 +1917,9 @@ public class RelationService extends NotificationBroadcasterSupport
                                           signature));
             } catch (InstanceNotFoundException | ReflectionException exc1) {
                 throw new RuntimeException(exc1.getMessage());
-            } catch (MBeanException exc3) {
+            } catch (MBeanException exc2) {
                 throw new
-                    RuntimeException((exc3.getTargetException()).getMessage());
+                    RuntimeException((exc2.getTargetException()).getMessage());
             }
         }
 
