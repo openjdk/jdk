@@ -75,12 +75,10 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
-#if defined(SAFEFETCH_METHOD_STATIC_ASSEMBLY) || defined(SAFEFETCH_METHOD_SIGSETJMP)
   // Handle safefetch here too, to be able to use SafeFetch() inside the error handler
   if (handle_safefetch(sig, pc, uc)) {
     return;
   }
-#endif // SAFEFETCH_xxx handling
 
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT

@@ -611,11 +611,9 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     }
   }
 
-#if defined(SAFEFETCH_METHOD_STATIC_ASSEMBLY) || defined(SAFEFETCH_METHOD_SIGSETJMP)
   if (!signal_was_handled) {
     signal_was_handled = handle_safefetch(sig, pc, uc);
   }
-#endif // SAFEFETCH_xxx handling
 
   // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
   if (!signal_was_handled &&
