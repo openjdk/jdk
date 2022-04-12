@@ -104,6 +104,8 @@ public:
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,
                                     address* stub);
+
+  static void print_active_locale(outputStream* st);
 };
 
 /*
