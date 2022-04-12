@@ -853,6 +853,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   if (bt == T_INT && head->as_CountedLoop()->is_strip_mined()) {
     // Loop is strip mined: use the safepoint of the outer strip mined loop
     OuterStripMinedLoopNode* outer_loop = head->as_CountedLoop()->outer_loop();
+    assert(outer_loop != NULL, "no outer loop");
     safepoint = outer_loop->outer_safepoint();
     outer_loop->transform_to_counted_loop(&_igvn, this);
     exit_test = head->loopexit();
@@ -4546,7 +4547,8 @@ void PhaseIdealLoop::build_and_optimize() {
       if (lpt->is_counted()) {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
 
-        if (PostLoopMultiversioning && cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
+        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
+          assert(PostLoopMultiversioning, "multiversioning must be enabled");
           // Check that the rce'd post loop is encountered first, multiversion after all
           // major main loop optimization are concluded
           if (!C->major_progress()) {

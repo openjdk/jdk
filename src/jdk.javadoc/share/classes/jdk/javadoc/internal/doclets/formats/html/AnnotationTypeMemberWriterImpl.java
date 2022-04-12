@@ -44,11 +44,6 @@ import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 
 /**
  * Writes annotation interface member documentation in HTML format.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     implements AnnotationTypeMemberWriter, MemberSummaryWriter {
@@ -269,7 +264,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     public void addDefaultValueInfo(Element member, Content annotationContent) {
-        if (utils.isAnnotationType(member)) {
+        if (utils.isAnnotationInterface(member.getEnclosingElement())) {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();
             if (value != null) {

@@ -403,6 +403,7 @@
   template(deadChild_name,                            "deadChild")                                \
   template(getFromClass_name,                         "getFromClass")                             \
   template(dispatch_name,                             "dispatch")                                 \
+  template(bootLoader_name,                           "bootLoader")                               \
   template(getPlatformClassLoader_name,               "getPlatformClassLoader")                   \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \
   template(fillInStackTrace_name,                     "fillInStackTrace")                         \
@@ -561,6 +562,7 @@
   template(long_long_void_signature,                  "(JJ)V")                                                    \
   template(void_byte_array_signature,                 "()[B")                                                    \
   template(void_classloader_signature,                "()Ljava/lang/ClassLoader;")                                \
+  template(void_BuiltinClassLoader_signature,         "()Ljdk/internal/loader/BuiltinClassLoader;")               \
   template(void_object_signature,                     "()Ljava/lang/Object;")                                     \
   template(void_class_signature,                      "()Ljava/lang/Class;")                                      \
   template(void_class_array_signature,                "()[Ljava/lang/Class;")                                     \

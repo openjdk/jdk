@@ -145,10 +145,10 @@ public class Signatures {
             if (utils.isRecord(typeElement)) {
                 content.add(getRecordComponents());
             }
-            if (!utils.isAnnotationType(typeElement)) {
+            if (!utils.isAnnotationInterface(typeElement)) {
                 var extendsImplements = new HtmlTree(TagName.SPAN)
                         .setStyle(HtmlStyle.extendsImplements);
-                if (!utils.isInterface(typeElement)) {
+                if (!utils.isPlainInterface(typeElement)) {
                     TypeMirror superclass = utils.getFirstVisibleSuperClass(typeElement);
                     if (superclass != null) {
                         content.add(DocletConstants.NL);
@@ -169,7 +169,7 @@ public class Signatures {
                         }
                         if (isFirst) {
                             extendsImplements.add(DocletConstants.NL);
-                            extendsImplements.add(utils.isInterface(typeElement) ? "extends " : "implements ");
+                            extendsImplements.add(utils.isPlainInterface(typeElement) ? "extends " : "implements ");
                             isFirst = false;
                         } else {
                             extendsImplements.add(", ");
@@ -507,7 +507,7 @@ public class Signatures {
             // interface methods and fields.
             if ((utils.isField(element) || utils.isMethod(element))) {
                 Element te = element.getEnclosingElement();
-                if (utils.isInterface(te) || utils.isAnnotationType(te)) {
+                if (utils.isInterface(te)) {
                     // Remove the implicit abstract and public modifiers
                     if (utils.isMethod(element)) {
                         set.remove(ABSTRACT);

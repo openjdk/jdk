@@ -59,11 +59,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
  * documented elements, terms defined in some documentation comments,
  * and summary pages.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @see IndexBuilder
  */
 public class IndexWriter extends HtmlDocletWriter {
@@ -330,7 +325,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case CONSTRUCTOR ->
                     "doclet.Constructor_for";
             case METHOD ->
-                    utils.isAnnotationType(enclosing) ? "doclet.Element_in"
+                    utils.isAnnotationInterface(enclosing) ? "doclet.Element_in"
                             : utils.isStatic(member) ? "doclet.Static_method_in" : "doclet.Method_in";
             case RECORD_COMPONENT ->
                     "doclet.Record_component_in";

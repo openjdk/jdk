@@ -209,7 +209,7 @@ public class XPathImpl extends XPathImplUtil implements javax.xml.xpath.XPath {
         isSupportedClassType(type);
         try {
             XObject resultObject = eval(expression, item);
-            if (type.isAssignableFrom(XPathEvaluationResult.class)) {
+            if (type == XPathEvaluationResult.class) {
                 return getXPathResult(resultObject, type);
             } else {
                 return XPathResultImpl.getValue(resultObject, type);

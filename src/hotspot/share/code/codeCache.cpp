@@ -311,19 +311,20 @@ void CodeCache::initialize_heaps() {
   const size_t alignment = MAX2(page_size(false, 8), (size_t) os::vm_allocation_granularity());
   non_nmethod_size = align_up(non_nmethod_size, alignment);
   profiled_size    = align_down(profiled_size, alignment);
+  non_profiled_size = align_down(non_profiled_size, alignment);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
   // ---------- high -----------
   //    Non-profiled nmethods
-  //      Profiled nmethods
   //         Non-nmethods
+  //      Profiled nmethods
   // ---------- low ------------
   ReservedCodeSpace rs = reserve_heap_memory(cache_size);
-  ReservedSpace non_method_space    = rs.first_part(non_nmethod_size);
-  ReservedSpace rest                = rs.last_part(non_nmethod_size);
-  ReservedSpace profiled_space      = rest.first_part(profiled_size);
-  ReservedSpace non_profiled_space  = rest.last_part(profiled_size);
+  ReservedSpace profiled_space      = rs.first_part(profiled_size);
+  ReservedSpace rest                = rs.last_part(profiled_size);
+  ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
+  ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
 
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
@@ -904,6 +905,23 @@ size_t CodeCache::max_capacity() {
   return max_cap;
 }
 
+bool CodeCache::is_non_nmethod(address addr) {
+  CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
+  return blob->contains(addr);
+}
+
+size_t CodeCache::max_distance_to_non_nmethod() {
+  if (!SegmentedCodeCache) {
+    return ReservedCodeCacheSize;
+  } else {
+    CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
+    // the max distance is minimized by placing the NonNMethod segment
+    // in between MethodProfiled and MethodNonProfiled segments
+    size_t dist1 = (size_t)blob->high() - (size_t)_low_bound;
+    size_t dist2 = (size_t)_high_bound - (size_t)blob->low();
+    return dist1 > dist2 ? dist1 : dist2;
+  }
+}
 
 // Returns the reverse free ratio. E.g., if 25% (1/4) of the code cache
 // is free, reverse_free_ratio() returns 4.
