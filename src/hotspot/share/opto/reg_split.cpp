@@ -633,7 +633,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
       // with long live ranges.
       if( lrgs(lidx).is_singledef() &&
           lrgs(lidx)._def->rematerialize() &&
-          is_compatible_with_region(region, b, lidx)) {
+          is_compatible_with_region(region, b, lidx, Reaches, slidx)) {
         // reset the Reaches & UP entries
         Reachblock[slidx] = lrgs(lidx)._def;
         UPblock[slidx] = true;
@@ -1524,9 +1524,19 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
               if (def->rematerialize()) {
 //                assert(_was_up_in_prev_region.test(def->_idx), "");
-                Node* spill = split_Rematerialize(def, b, b->end_idx(), maxlrg, splits, slidx, lrg2reach, Reachblock,
+                uint pos = b->end_idx();
+                while (b->get_node(pos - 1)->is_SpillCopy() &&
+                       b->get_node(pos - 1)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+                  pos--;
+                }
+                Node* spill = split_Rematerialize(def, b, pos, maxlrg, splits, slidx, lrg2reach, Reachblock,
                                                   true, region);
                 if( !spill ) return -1; // Bail out
+
+                spill = get_spillcopy_wide(MachSpillCopyNode::RegToMem, spill, NULL, 0);
+                if (!spill) return -1;        // Bailed out
+                insert_proj(b, pos+1, spill, maxlrg);
+                maxlrg++;
                 def = spill;
               }
               {
@@ -1706,12 +1716,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
   return maxlrg;
 }
 
-bool PhaseChaitin::is_compatible_with_region(uint region, const Block* b, uint lidx) const {
-  if (lrgs(lidx)._region <= region) {
-    return true;
-  }
+bool PhaseChaitin::is_compatible_with_region(uint region, const Block* b, uint lidx, Node*** Reaches, uint slidx) const {
   Node* def = lrgs(lidx)._def;
-  if (_cfg.get_block_for_node(def)->_region >= b->_region) {
+  if (_cfg.get_block_for_node(def)->_region > b->_region) {
     for (uint i = 1; i < def->req(); i++) {
       Node* in = def->in(i);
       if (in->ideal_reg() == Op_RegFlags) {
@@ -1723,12 +1730,43 @@ bool PhaseChaitin::is_compatible_with_region(uint region, const Block* b, uint l
       }
       return false;
     }
-    if (b->num_preds() > 2) {
-      return true;
+  }
+
+  for (uint i = 1; i < def->req(); i++) {
+    Node* in = def->in(i);
+    if (in->ideal_reg() == Op_RegFlags) {
+      continue;
     }
-    if (_cfg.get_block_for_node(def)->_region >= _cfg.get_block_for_node(b->pred(1))->_region) {
-      return true;
+    uint in_lidx = _lrg_map.live_range_id(in);
+    if (in_lidx < _lrg_map.max_lrg_id() && lrgs(in_lidx).is_singledef() && lrgs(in_lidx)._region > region) {
+      uint j;
+      for (j = 1; j < b->num_preds(); j++) {
+        Block* pred = _cfg.get_block_for_node(b->pred(j));
+        if (_live->live(pred)->member(in_lidx)) {
+          break;
+        }
+      }
+      if (j == b->num_preds()) {
+        return false;
+      }
     }
   }
-  return false;
+
+  if (b->_region > region || (b->num_preds() == 2 && _cfg.get_block_for_node(b->pred(1))->_region > region)) {
+    return false;
+  }
+
+  return true;
+
+//  if (lrgs(lidx)._region <= region) {
+//    return true;
+//  }
+//
+//  if (b->num_preds() > 2) {
+//    return true;
+//  }
+//  if (_cfg.get_block_for_node(def)->_region >= _cfg.get_block_for_node(b->pred(1))->_region) {
+//    return true;
+//  }
+//  return false;
 }

@@ -821,7 +821,7 @@ private:
 
   void record_regs();
 
-  bool is_compatible_with_region(uint region, const Block* b, uint lidx) const;
+  bool is_compatible_with_region(uint region, const Block* b, uint lidx, Node*** Reaches, uint slidx) const;
 };
 
 #endif // SHARE_OPTO_CHAITIN_HPP
