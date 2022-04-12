@@ -201,10 +201,10 @@ public:
   bool  is_dontcare( Node *n ) { return _dontcare.test(n->_idx) != 0; }
   void set_dontcare( Node *n ) {  _dontcare.set(n->_idx); }
 
-  // Parse a bytecode in a machine-dependent way, return false if it is
-  // not needed. Some machine instruction has a little different semantics
-  // from the corresponding VM instruction, transform during parsing
-  // help more efficient transformation in later phases
+  // Parse a bytecode in a machine-dependent manner, return false if it is
+  // not needed. Some machine instructions have a little different semantics
+  // from the corresponding VM instructions, transforming during parsing
+  // may result in more efficient transformations in later phases
   static bool parse_one_bytecode(Parse& parser);
 
   // Mode bit to tell DFA and expand rules whether we are running after

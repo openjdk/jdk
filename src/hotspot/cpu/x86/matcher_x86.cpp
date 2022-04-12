@@ -61,7 +61,7 @@ static void parse_div_mod(Parse& parser) {
   } else {
     parser.zero_check_long(parser.peek(1));
   }
-  // Compile time detect of arithmetic exception
+  // Compile-time detection of arithmetic exception
   if (parser.stopped()) {
     return;
   }
@@ -90,7 +90,7 @@ static void parse_div_mod(Parse& parser) {
     }
   };
 
-  // if in1 > min_value or in1 == in2 then there is no overflow risk
+  // No overflow possibility here
   if ((in1 == in2) ||
       (bt == T_INT  &&  !TypeInt::MIN->higher_equal(gvn.type(in1))) ||
       (bt == T_LONG && !TypeLong::MIN->higher_equal(gvn.type(in1)))) {
@@ -99,7 +99,7 @@ static void parse_div_mod(Parse& parser) {
     return;
   }
 
-  // the generated graph is equivalent to (in2 == -1) ? -in1 : (in1 / in2)
+  // The generated graph is equivalent to (in2 == -1) ? -in1 : (in1 / in2)
   // we need to have a separate branch for in2 == -1 due to overflow error
   // with (min_jint / -1) on x86
   Node* cmp = gvn.transform(CmpNode::make(in2, gvn.integercon(-1, bt), bt));
