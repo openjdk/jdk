@@ -2062,6 +2062,15 @@ public abstract sealed class VarHandle implements Constable
         return accessModeType(accessMode.at.ordinal());
     }
 
+    /**
+     * Validates that the given access descriptors method type matches up with
+     * the access mode of this VarHandle. This checking and accessor was merged
+     * to slightly improve efficiency during warmup.
+     *
+     * @return true if this is a direct VarHandle, false if it's an indirect
+     *         VarHandle.
+     * @throws WrongMethodTypeException if there's a access type mismatch
+     */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
         if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
