@@ -447,8 +447,8 @@ class MacroAssembler: public Assembler {
   // first two private routines for loading 32 bit or 64 bit constants
 private:
 
-  void mov_immediate64(Register dst, uint64_t imm64);
-  void mov_immediate32(Register dst, uint32_t imm32);
+  void mov_immediate64(Register dst, uint64_t imm64, bool isFloat = false);
+  void mov_immediate32(Register dst, uint32_t imm32, bool isFloat = false);
 
   int push(unsigned int bitset, Register stack);
   int pop(unsigned int bitset, Register stack);
@@ -876,6 +876,16 @@ public:
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
+
+  // java.lang.Math::round intrinsics
+  void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
+  void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
+  void vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                         FloatRegister tmp2, FloatRegister tmp3,
+                         SIMD_Arrangement T);
+  void vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                        FloatRegister tmp2, PRegister ptmp,
+                        SIMD_RegVariant T);
 
   // allocation
   void eden_allocate(

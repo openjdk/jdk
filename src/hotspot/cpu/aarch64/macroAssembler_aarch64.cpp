@@ -1392,12 +1392,16 @@ void MacroAssembler::mov(FloatRegister Vd, SIMD_Arrangement T, uint32_t imm32) {
   }
 }
 
-void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
+void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64, bool isFloat)
 {
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
+    if (isFloat) {
+      snprintf(buffer, sizeof(buffer), "%a", jdouble_cast((jlong)imm64));
+    } else {
+      snprintf(buffer, sizeof(buffer), "0x%" PRIX64, imm64);
+    }
     block_comment(buffer);
   }
 #endif
@@ -1505,14 +1509,18 @@ void MacroAssembler::mov_immediate64(Register dst, uint64_t imm64)
   }
 }
 
-void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32)
+void MacroAssembler::mov_immediate32(Register dst, uint32_t imm32, bool isFloat)
 {
 #ifndef PRODUCT
-    {
-      char buffer[64];
+  {
+    char buffer[64];
+    if (isFloat) {
+      snprintf(buffer, sizeof(buffer), "%a", jfloat_cast((jint)imm32));
+    } else {
       snprintf(buffer, sizeof(buffer), "0x%" PRIX32, imm32);
-      block_comment(buffer);
     }
+    block_comment(buffer);
+  }
 #endif
   if (operand_valid_for_logical_immediate(true, imm32)) {
     orrw(dst, zr, imm32);
@@ -5181,6 +5189,150 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   // Adjust result: res == len ? len : 0
   cmp(len, res);
   csel(res, res, zr, EQ);
+}
+
+// java.math.round(double a)
+// Returns the closest long to the argument, with ties rounding to
+// positive infinity.  This requires some fiddling for corner
+// cases. We take care to avoid double rounding in e.g. (jlong)(a + 0.5).
+void MacroAssembler::java_round_double(Register dst, FloatRegister src,
+                                       FloatRegister ftmp) {
+  Label DONE;
+  BLOCK_COMMENT("java_round_float: { ");
+  fmovd(rscratch1, src);
+  // Use RoundToNearestTiesAway unless src small and -ve.
+  fcvtasd(dst, src);
+  // Test if src >= 0 || abs(src) >= 0x1.0p52
+  eor(rscratch1, rscratch1, 1ul << 63); // flip sign bit
+  mov(rscratch2, julong_cast(0x1.0p52));
+  cmp(rscratch1, rscratch2);
+  br(HS, DONE); {
+    // src < 0 && abs(src) < 0x1.0p52
+    // src may have a fractional part, so add 0.5
+    fmovd(ftmp, 0.5);
+    faddd(ftmp, src, ftmp);
+    // Convert double to jlong, use RoundTowardsNegative
+    fcvtmsd(dst, ftmp);
+  }
+  bind(DONE);
+  BLOCK_COMMENT("} java_round_double");
+}
+
+void MacroAssembler::java_round_float(Register dst, FloatRegister src,
+                                      FloatRegister ftmp) {
+  Label DONE;
+  BLOCK_COMMENT("java_round_float: { ");
+  fmovs(rscratch1, src);
+  // Use RoundToNearestTiesAway unless src small and -ve.
+  fcvtassw(dst, src);
+  // Test if src >= 0 || abs(src) >= 0x1.0p23
+  eor(rscratch1, rscratch1, 0x80000000); // flip sign bit
+  mov(rscratch2, jint_cast(0x1.0p23f));
+  cmp(rscratch1, rscratch2);
+  br(HS, DONE); {
+    // src < 0 && |src| < 0x1.0p23
+    // src may have a fractional part, so add 0.5
+    fmovs(ftmp, 0.5f);
+    fadds(ftmp, src, ftmp);
+    // Convert float to jint, use RoundTowardsNegative
+    fcvtmssw(dst, ftmp);
+  }
+  bind(DONE);
+  BLOCK_COMMENT("} java_round_float");
+}
+
+void MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                       FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
+  assert_different_registers(tmp1, tmp2, tmp3, src, dst);
+  switch (T) {
+    case T2S:
+    case T4S:
+      fmovs(tmp1, T, 0.5f);
+      mov_immediate64(rscratch1, jint_cast(0x1.0p23f), /*isFloat*/true);
+      break;
+    case T2D:
+      fmovd(tmp1, T, 0.5);
+      mov_immediate64(rscratch1, julong_cast(0x1.0p52), /*isFloat*/true);
+      break;
+    default:
+      assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+  }
+  fadd(tmp1, T, tmp1, src);
+  fcvtms(tmp1, T, tmp1);
+  // tmp1 = floor(src + 0.5, ties to even)
+
+  fcvtas(dst, T, src);
+  // dst = round(src), ties to away
+
+  fneg(tmp3, T, src);
+  dup(tmp2, T, rscratch1);
+  cmhs(tmp3, T, tmp3, tmp2);
+  // tmp3 is now a set of flags
+
+  // Why we don't we use MOVI to load the constant 0x1.0p23f into
+  // tmp2, instead of moving it first into rscratch1 then using DUP to
+  // copy it into all the vector lanes. The answer is that it's
+  // slower, at least on Apple M1.
+  //
+  // movi(tmp2, T16B, jint_cast(0x1.0p23f) >> 24);
+  // shl(tmp2, T4S, tmp2, 24);
+
+  bif(dst, T16B, tmp1, tmp3);
+  // result in dst
+}
+
+void xxx() {
+  asm("nop");
+}
+
+void MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                                      FloatRegister tmp2, PRegister ptmp, SIMD_RegVariant T) {
+  assert_different_registers(tmp1, tmp2, src, dst);
+
+  // mov(lr, (uint64_t)xxx);
+  // blr(lr);
+
+  switch (T) {
+    case S:
+      mov_immediate32(rscratch1, jint_cast(0x1.0p23f), /*isFloat*/true); // (I)   (ASIMD: I)
+      break;
+    case D:
+      mov_immediate64(rscratch1, julong_cast(0x1.0p52), /*isFloat*/true);
+      break;
+    default:
+      assert(T == S | T == D, "invalid arrangement");
+  }
+
+  sve_frinta(dst, T, ptrue, src);          // (V0)   (ASIMD: V02)
+  // dst = round(src), ties to away
+
+  Label none;
+
+  sve_fneg(tmp1, T, ptrue, src);           // (V01)   (ASIMD: V)
+  sve_dup(tmp2, T, rscratch1);             // (M0)    (ASIMD: M0)
+  sve_cmp(HS, ptmp, T, ptrue, tmp2, tmp1); // (V0,M0) (ASIMD: V)
+  br(EQ, none);
+  {
+    sve_cpy(tmp1, T, ptmp, 0.5);           // (V01)   (ASIMD: V)
+    sve_fadd(tmp1, T, ptmp, src);          // (V01)   (ASIMD: V)
+    sve_frintm(dst, T, ptmp, tmp1);        // (V0)    (ASIMD: V02)
+    // dst = floor(src + 0.5, ties to even)
+  }
+  bind(none);
+
+  // Alternative, using only FP operations, slightly slower:
+  // sve_fcm(LT, ptmp, T, ptrue, src, 0.0);
+  // sve_dup(tmp2, T, rscratch1);             // (M0)    (ASIMD: M0)
+  // sve_fcm(GT, ptmp, T, ptmp, src, tmp2);   // (V0)    (ASIMD: V)
+  // {
+  //   sve_cpy(tmp1, T, ptmp, 0.5);           // (V01)   (ASIMD: V)
+  //   sve_fadd(tmp1, T, ptmp, src);          // (V01)   (ASIMD: V)
+  //   sve_frintm(dst, T, ptmp, tmp1);        // (V0)    (ASIMD: V02)
+  //   // dst = floor(src + 0.5, ties to even)
+  // }
+
+  sve_fcvtzs(dst, T, ptrue, dst, T);          // (V0)   (ASIMD: -)
+  // result in dst
 }
 
 // get_thread() can be called anywhere inside generated code so we
