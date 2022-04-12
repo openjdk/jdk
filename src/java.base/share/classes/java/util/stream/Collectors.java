@@ -194,11 +194,11 @@ public final class Collectors {
      * @param <T> the type of elements to be collected
      * @param <R> the type of the result
      */
-    static record CollectorImpl<T, A, R>(Supplier<A> supplier,
-                                         BiConsumer<A, T> accumulator,
-                                         BinaryOperator<A> combiner,
-                                         Function<A, R> finisher,
-                                         Set<Characteristics> characteristics
+    record CollectorImpl<T, A, R>(Supplier<A> supplier,
+                                  BiConsumer<A, T> accumulator,
+                                  BinaryOperator<A> combiner,
+                                  Function<A, R> finisher,
+                                  Set<Characteristics> characteristics
             ) implements Collector<T, A, R> {
 
         CollectorImpl(Supplier<A> supplier,
