@@ -173,14 +173,14 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * If the current entry is compressed and <i>n</i> denotes the returned number of
      * inflated bytes then {@code b[off]} trough {@code b[off+}<i>n</i>{@code -1]} will
      * contain the uncompressed data. The elements {@code b[off+}<i>n</i>{@code ]} through
-     * {@code b[off+}<i>len</i>{@code -1]} are undefined and an implementation is free to
-     * change them during the inflate operation. If the return value is -1 or an exception
-     * is thrown the whole content of {@code b} is undefined.
+     * {@code b[off+}<i>len</i>{@code -1]} are undefined (an implementation is free to
+     * change them during the inflate operation). If the return value is -1 or an exception
+     * is thrown then {@code b[off]} to {@code b[off+}<i>len</i>{@code -1]} is undefined.
      *
      * @param b the buffer into which the data is read
      * @param off the start offset in the destination array {@code b}
      * @param len the maximum number of bytes read
-     * @return the actual number of bytes read, or -1 if the end of the
+     * @return the actual number of inflated bytes, or -1 if the end of the
      *         entry is reached
      * @throws     NullPointerException if {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException if {@code off} is negative,

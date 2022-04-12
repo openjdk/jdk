@@ -343,9 +343,6 @@ public class ZipFile implements ZipConstants, Closeable {
      * Closing this ZIP file will, in turn, close all input streams that
      * have been returned by invocations of this method.
      *
-     * @implNote This implementation returns an instance of
-     * {@link java.util.zip.InflaterInputStream}.
-     *
      * @param entry the zip file entry
      * @return the input stream for reading the contents of the specified
      * zip file entry or null if the zip file entry does not exist
