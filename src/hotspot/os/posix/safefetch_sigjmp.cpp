@@ -55,8 +55,6 @@ bool handle_safefetch(int sig, address ignored1, void* ignored2) {
     // jump buffer and this is indeed a SafeFetch fault.
     sigjmp_buf* const jb = (sigjmp_buf*) pthread_getspecific(g_jmpbuf_key);
     if (jb) {
-      // Reset TLS slot and jump back
-      pthread_setspecific(g_jmpbuf_key, NULL);
       siglongjmp(*jb, 1);
     }
   }
@@ -73,7 +71,8 @@ static bool _SafeFetchXX_internal(const T *adr, T* result) {
   // to the jump point.
   sigjmp_buf jb;
   if (sigsetjmp(jb, 1) != 0) {
-    // We faulted.
+    // We faulted. Reset TLS slot, then return.
+    pthread_setspecific(g_jmpbuf_key, NULL);
     *result = 0;
     return false;
   }
@@ -85,10 +84,9 @@ static bool _SafeFetchXX_internal(const T *adr, T* result) {
   n = *adr;
 
   // Still here... All went well, adr was valid.
-  *result = n;
-
-  // Reset the TLS slot
+  // Reset TLS slot, then return result.
   pthread_setspecific(g_jmpbuf_key, NULL);
+  *result = n;
 
   return true;
 

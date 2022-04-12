@@ -26,11 +26,13 @@
 #ifndef SHARE_RUNTIME_SAFEFETCH_HPP
 #define SHARE_RUNTIME_SAFEFETCH_HPP
 
+#include "utilities/macros.hpp"
+
 #ifdef _WIN32
   // Windows uses Structured Exception Handling
   #include "safefetch_windows.hpp"
   #define SAFEFETCH_METHOD_SEH
-#elif defined(ZERO) || defined (_AIX)
+#elif defined(ZERO) || defined (_AIX) || defined(X86)
   // These platforms implement safefetch via Posix sigsetjmp/longjmp.
   // This is slower than the other methods and uses more thread stack,
   // but its safe and portable.
