@@ -209,9 +209,7 @@ public class DocFinder {
 
     /**
      * Search for the requested comments in the given element.  If it does not
-     * have comments, return documentation from the overridden element if possible.
-     * If the overridden element does not exist or does not have documentation to
-     * inherit, search for documentation to inherit from implemented methods.
+     * have comments, return the inherited comments if possible.
      *
      * @param input the input object used to perform the search.
      *
