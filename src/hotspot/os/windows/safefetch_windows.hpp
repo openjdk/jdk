@@ -50,7 +50,4 @@ inline intptr_t SafeFetchN(const intptr_t* adr, intptr_t errValue) {
   return SafeFetchXX<intptr_t>(adr, errValue);
 }
 
-inline bool CanUseSafeFetch32() { return true; }
-inline bool CanUseSafeFetchN()  { return true; }
-
 #endif

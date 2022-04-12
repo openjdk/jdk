@@ -36,9 +36,6 @@
 int SafeFetch32(int* adr, int errValue);
 intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue);
 
-inline bool CanUseSafeFetch32() { return true; }
-inline bool CanUseSafeFetchN()  { return true; }
-
 // Handle safefetch, sigsetjmp style. Only call from signal handler.
 // If a safefetch jump had been established and the sig qualifies, we
 // jump back to the established jump point (and hence out of signal handling).

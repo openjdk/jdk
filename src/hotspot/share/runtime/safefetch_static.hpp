@@ -38,8 +38,6 @@ inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
 }
 #endif // _LP64
 
-inline bool CanUseSafeFetch32() { return true; }
-inline bool CanUseSafeFetchN()  { return true; }
 bool handle_safefetch(int sig, address pc, void* context);
 
 #endif // SHARE_RUNTIME_SAFEFETCH_STATIC_HPP
