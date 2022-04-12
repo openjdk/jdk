@@ -35,12 +35,10 @@ import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
 
 public class JRootPaneAccessiblAtTest extends JFrame {
-    JRootPane rootPane;
-    AccessibleComponent accessibleComponent;
 
     public JRootPaneAccessiblAtTest() {
-        rootPane = getRootPane();
-        accessibleComponent =
+        JRootPane rootPane = getRootPane();
+        AccessibleComponent accessibleComponent =
             rootPane.getAccessibleContext().getAccessibleComponent();
         Accessible accessible = accessibleComponent
             .getAccessibleAt(accessibleComponent.getLocation());
