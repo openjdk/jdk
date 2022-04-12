@@ -364,7 +364,12 @@ public class SealedObject implements Serializable {
                     params = AlgorithmParameters.getInstance(this.paramsAlg);
 
             } catch (NoSuchProviderException nspe) {
-                throw new NoSuchProviderException(nspe.getMessage());
+                if (provider == null) {
+                    throw new NoSuchAlgorithmException(this.paramsAlg
+                                                       + " not found");
+                } else {
+                    throw new NoSuchProviderException(nspe.getMessage());
+                }
             }
             params.init(this.encodedParams);
         }
@@ -384,7 +389,7 @@ public class SealedObject implements Serializable {
                                                + "available");
         } catch (NoSuchProviderException nspe) {
             if (provider == null) {
-                throw new NoSuchAlgorithmException(null +" not found");
+                throw new NoSuchAlgorithmException(this.sealAlg+" not found");
             } else {
                 throw new NoSuchProviderException(nspe.getMessage());
             }

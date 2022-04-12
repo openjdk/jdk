@@ -274,7 +274,7 @@ public class KeyAgreement {
      * @see java.security.Provider
      */
     public static KeyAgreement getInstance(String algorithm,
-        Provider provider) throws NoSuchAlgorithmException {
+            Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance
                 ("KeyAgreement", KeyAgreementSpi.class, algorithm, provider);
