@@ -250,9 +250,6 @@ public class DocFinder {
                     return output;
                 }
             }
-            //NOTE:  When we fix the bug where ClassDoc.interfaceTypes() does
-            //       not pass all implemented interfaces, we will use the
-            //       appropriate element here.
             TypeElement encl = utils.getEnclosingTypeElement(input.element);
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(encl);
             List<ExecutableElement> implementedMethods =
