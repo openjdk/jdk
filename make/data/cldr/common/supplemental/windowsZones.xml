@@ -407,7 +407,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="South Africa Standard Time" territory="MW" type="Africa/Blantyre"/>
 			<mapZone other="South Africa Standard Time" territory="MZ" type="Africa/Maputo"/>
 			<mapZone other="South Africa Standard Time" territory="RW" type="Africa/Kigali"/>
-			<mapZone other="South Africa Standard Time" territory="SS" type="Africa/Juba"/>
 			<mapZone other="South Africa Standard Time" territory="SZ" type="Africa/Mbabane"/>
 			<mapZone other="South Africa Standard Time" territory="ZA" type="Africa/Johannesburg"/>
 			<mapZone other="South Africa Standard Time" territory="ZM" type="Africa/Lusaka"/>
@@ -427,6 +426,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- (UTC+02:00) Jerusalem -->
 			<mapZone other="Israel Standard Time" territory="001" type="Asia/Jerusalem"/>
 			<mapZone other="Israel Standard Time" territory="IL" type="Asia/Jerusalem"/>
+
+			<!-- (UTC+02:00) Juba -->
+			<mapZone other="South Sudan Standard Time" territory="001" type="Africa/Juba"/>
+			<mapZone other="South Sudan Standard Time" territory="SS" type="Africa/Juba"/>
 
 			<!-- (UTC+02:00) Kaliningrad -->
 			<mapZone other="Kaliningrad Standard Time" territory="001" type="Europe/Kaliningrad"/>
