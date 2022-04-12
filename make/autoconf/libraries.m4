@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,12 @@ m4_include([lib-alsa.m4])
 m4_include([lib-bundled.m4])
 m4_include([lib-cups.m4])
 m4_include([lib-ffi.m4])
+m4_include([lib-fontconfig.m4])
 m4_include([lib-freetype.m4])
+m4_include([lib-hsdis.m4])
 m4_include([lib-std.m4])
 m4_include([lib-x11.m4])
-m4_include([lib-fontconfig.m4])
+
 m4_include([lib-tests.m4])
 
 ################################################################################
@@ -93,14 +95,17 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
 AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 [
   LIB_SETUP_STD_LIBS
-  LIB_SETUP_X11
+
+  LIB_SETUP_ALSA
+  LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_CUPS
   LIB_SETUP_FONTCONFIG
   LIB_SETUP_FREETYPE
-  LIB_SETUP_ALSA
+  LIB_SETUP_HSDIS
   LIB_SETUP_LIBFFI
-  LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
+  LIB_SETUP_X11
+
   LIB_TESTS_SETUP_GTEST
 
   BASIC_JDKLIB_LIBS=""
@@ -142,6 +147,12 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
          test "x$OPENJDK_TARGET_CPU" = xsh); then
       BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
     fi
+  fi
+
+  # Because RISC-V only has word-sized atomics, it requries libatomic where
+  # other common architectures do not.  So link libatomic by default.
+  if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$OPENJDK_TARGET_CPU" = xriscv64; then
+    BASIC_JVM_LIBS="$BASIC_JVM_LIBS -latomic"
   fi
 
   # perfstat lib

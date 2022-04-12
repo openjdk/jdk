@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,13 +497,13 @@ public class EncryptionKey
     }
 
     public String toString() {
-        return new String("EncryptionKey: keyType=" + keyType
-                          + " kvno=" + kvno
-                          + " keyValue (hex dump)="
-                          + (keyValue == null || keyValue.length == 0 ?
-                        " Empty Key" : '\n'
-                        + Krb5.hexDumper.encodeBuffer(keyValue)
-                        + '\n'));
+        return "EncryptionKey: keyType=" + keyType
+                + " kvno=" + kvno
+                + " keyValue (hex dump)="
+                + (keyValue == null || keyValue.length == 0 ?
+                " Empty Key" : '\n'
+                + Krb5.hexDumper.encodeBuffer(keyValue)
+                + '\n');
     }
 
     /**

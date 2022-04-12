@@ -27,9 +27,11 @@
 
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinYield.hpp"
 
-inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_value, uint card_in_region, uint idx, uint bits_per_card) {
+inline G1CardSetInlinePtr::ContainerPtr G1CardSetInlinePtr::merge(ContainerPtr orig_value, uint card_in_region, uint idx, uint bits_per_card) {
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);
   assert(card_in_region < ((uint)1 << bits_per_card), "Card %u too large to fit into card value field", card_in_region);
 
@@ -42,7 +44,7 @@ inline G1CardSetInlinePtr::CardSetPtr G1CardSetInlinePtr::merge(CardSetPtr orig_
 
   uintptr_t value = ((uintptr_t)(idx + 1) << SizeFieldPos) | ((uintptr_t)card_in_region << card_pos);
   uintptr_t res = (((uintptr_t)orig_value & ~SizeFieldMask) | value);
-  return (CardSetPtr)res;
+  return (ContainerPtr)res;
 }
 
 inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card, uint max_cards_in_inline_ptr) {
@@ -62,8 +64,8 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
     if (num_cards >= max_cards_in_inline_ptr) {
       return Overflow;
     }
-    CardSetPtr new_value = merge(_value, card_idx, num_cards, bits_per_card);
-    CardSetPtr old_value = Atomic::cmpxchg(_value_addr, _value, new_value, memory_order_relaxed);
+    ContainerPtr new_value = merge(_value, card_idx, num_cards, bits_per_card);
+    ContainerPtr old_value = Atomic::cmpxchg(_value_addr, _value, new_value, memory_order_relaxed);
     if (_value == old_value) {
       return Added;
     }
@@ -71,7 +73,7 @@ inline G1AddCardResult G1CardSetInlinePtr::add(uint card_idx, uint bits_per_card
     _value = old_value;
     // The value of the pointer may have changed to something different than
     // an inline card set. Exit then instead of overwriting.
-    if (G1CardSet::card_set_type(_value) != G1CardSet::CardSetInlinePtr) {
+    if (G1CardSet::container_type(_value) != G1CardSet::ContainerInlinePtr) {
       return Overflow;
     }
   }
@@ -266,23 +268,23 @@ inline G1CardSetHowl::G1CardSetHowl(EntryCountType card_in_region, G1CardSetConf
 
 inline bool G1CardSetHowl::contains(uint card_idx, G1CardSetConfiguration* config) {
   EntryCountType bucket = config->howl_bucket_index(card_idx);
-  CardSetPtr* array_entry = get_card_set_addr(bucket);
-  CardSetPtr card_set = Atomic::load_acquire(array_entry);
+  ContainerPtr* array_entry = get_container_addr(bucket);
+  ContainerPtr container = Atomic::load_acquire(array_entry);
 
-  switch (G1CardSet::card_set_type(card_set)) {
-    case G1CardSet::CardSetArrayOfCards : {
-      return G1CardSet::card_set_ptr<G1CardSetArray>(card_set)->contains(card_idx);
+  switch (G1CardSet::container_type(container)) {
+    case G1CardSet::ContainerArrayOfCards: {
+      return G1CardSet::container_ptr<G1CardSetArray>(container)->contains(card_idx);
     }
-    case G1CardSet::CardSetBitMap: {
+    case G1CardSet::ContainerBitMap: {
       uint card_offset = config->howl_bitmap_offset(card_idx);
-      return G1CardSet::card_set_ptr<G1CardSetBitMap>(card_set)->contains(card_offset, config->max_cards_in_howl_bitmap());
+      return G1CardSet::container_ptr<G1CardSetBitMap>(container)->contains(card_offset, config->max_cards_in_howl_bitmap());
     }
-    case G1CardSet::CardSetInlinePtr: {
-      G1CardSetInlinePtr ptr(card_set);
+    case G1CardSet::ContainerInlinePtr: {
+      G1CardSetInlinePtr ptr(container);
       return ptr.contains(card_idx, config->inline_ptr_bits_per_card());
     }
-    case G1CardSet::CardSetHowl: {// Fullcard set entry
-      assert(card_set == G1CardSet::FullCardSet, "Must be");
+    case G1CardSet::ContainerHowl: {// Fullcard set entry
+      assert(container == G1CardSet::FullCardSet, "Must be");
       return true;
     }
   }
@@ -296,38 +298,38 @@ inline void G1CardSetHowl::iterate(CardOrRangeVisitor& found, G1CardSetConfigura
   }
 }
 
-template <class CardSetPtrVisitor>
-inline void G1CardSetHowl::iterate(CardSetPtrVisitor& found, uint num_card_sets) {
+template <class ContainerPtrVisitor>
+inline void G1CardSetHowl::iterate(ContainerPtrVisitor& found, uint num_card_sets) {
   for (uint i = 0; i < num_card_sets; ++i) {
     found(&_buckets[i]);
   }
 }
 
 template <class CardOrRangeVisitor>
-inline void G1CardSetHowl::iterate_cardset(CardSetPtr const card_set, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
-  switch (G1CardSet::card_set_type(card_set)) {
-    case G1CardSet::CardSetInlinePtr: {
+inline void G1CardSetHowl::iterate_cardset(ContainerPtr const container, uint index, CardOrRangeVisitor& found, G1CardSetConfiguration* config) {
+  switch (G1CardSet::container_type(container)) {
+    case G1CardSet::ContainerInlinePtr: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlInline)) {
-        G1CardSetInlinePtr ptr(card_set);
+        G1CardSetInlinePtr ptr(container);
         ptr.iterate(found, config->inline_ptr_bits_per_card());
       }
       return;
     }
-    case G1CardSet::CardSetArrayOfCards : {
+    case G1CardSet::ContainerArrayOfCards: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlArrayOfCards)) {
-        G1CardSet::card_set_ptr<G1CardSetArray>(card_set)->iterate(found);
+        G1CardSet::container_ptr<G1CardSetArray>(container)->iterate(found);
       }
       return;
     }
-    case G1CardSet::CardSetBitMap: {
+    case G1CardSet::ContainerBitMap: {
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlBitmap)) {
         uint offset = index << config->log2_max_cards_in_howl_bitmap();
-        G1CardSet::card_set_ptr<G1CardSetBitMap>(card_set)->iterate(found, config->max_cards_in_howl_bitmap(), offset);
+        G1CardSet::container_ptr<G1CardSetBitMap>(container)->iterate(found, config->max_cards_in_howl_bitmap(), offset);
       }
       return;
     }
-    case G1CardSet::CardSetHowl: { // actually FullCardSet
-      assert(card_set == G1CardSet::FullCardSet, "Must be");
+    case G1CardSet::ContainerHowl: { // actually FullCardSet
+      assert(container == G1CardSet::FullCardSet, "Must be");
       if (found.start_iterate(G1GCPhaseTimes::MergeRSHowlFull)) {
         uint offset = index << config->log2_max_cards_in_howl_bitmap();
         found(offset, config->max_cards_in_howl_bitmap());

@@ -12,6 +12,10 @@ on:
         required: true
         default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prerequisites:
     name: Prerequisites
@@ -19,6 +23,7 @@ jobs:
     outputs:
       should_run: ${{ steps.check_submit.outputs.should_run }}
       bundle_id: ${{ steps.check_bundle_id.outputs.bundle_id }}
+      jdk_version: ${{ steps.check_jdk_versions.outputs.jdk_version }}
       platform_linux_additional: ${{ steps.check_platforms.outputs.platform_linux_additional }}
       platform_linux_x64: ${{ steps.check_platforms.outputs.platform_linux_x64 }}
       platform_linux_x86: ${{ steps.check_platforms.outputs.platform_linux_x86 }}
@@ -64,6 +69,23 @@ jobs:
 
       - name: Print extracted dependencies to the log
         run: "echo '${{ steps.check_deps.outputs.dependencies }}'"
+        if: steps.check_submit.outputs.should_run != 'false'
+
+      - name: Determine full JDK versions
+        id: check_jdk_versions
+        shell: bash
+        run: |
+          FEATURE=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_FEATURE }}
+          INTERIM=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_INTERIM }}
+          UPDATE=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_UPDATE }}
+          if [ "x${UPDATE}" != "x0" ]; then
+             V=${FEATURE}.${INTERIM}.${UPDATE}
+          elif [ "x${INTERIM}" != "x0" ]; then
+             V={FEATURE}.${INTERIM}
+          else
+             V=${FEATURE}
+          fi
+          echo "::set-output name=jdk_version::${V}"
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Determine the jtreg ref to checkout
@@ -121,7 +143,7 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
@@ -249,7 +271,7 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
@@ -321,6 +343,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin-tests${{ matrix.artifact }}
@@ -336,7 +359,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -431,7 +454,7 @@ jobs:
             gnu-arch: powerpc64le
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
@@ -578,7 +601,7 @@ jobs:
 
     # Reduced 32-bit build uses the same boot JDK as 64-bit build
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
@@ -714,7 +737,7 @@ jobs:
 
     # Reduced 32-bit build uses the same boot JDK as 64-bit build
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).LINUX_X64_BOOT_JDK_URL }}"
@@ -786,6 +809,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_linux-x86_bin-tests${{ matrix.artifact }}
@@ -801,7 +825,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
@@ -865,13 +889,26 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_URL }}"
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v2
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -881,8 +918,6 @@ jobs:
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
@@ -953,13 +988,26 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_URL }}"
       BOOT_JDK_SHA256: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_SHA256 }}"
 
     steps:
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v2
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -969,8 +1017,6 @@ jobs:
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
@@ -1104,7 +1150,7 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).WINDOWS_X64_BOOT_JDK_URL }}"
@@ -1131,6 +1177,19 @@ jobs:
           Get-ChildItem "$HOME\bootjdk\$env:BOOT_JDK_VERSION\*\*" | Move-Item -Destination "$HOME\bootjdk\$env:BOOT_JDK_VERSION"
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
+      - name: Restore cygwin installer from cache
+        id: cygwin-installer
+        uses: actions/cache@v2
+        with:
+          path: ~/cygwin/setup-x86_64.exe
+          key: cygwin-installer
+
+      - name: Download cygwin installer
+        run: |
+          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
+          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
+        if: steps.cygwin-installer.outputs.cache-hit != 'true'
+
       - name: Restore cygwin packages from cache
         id: cygwin
         uses: actions/cache@v2
@@ -1140,8 +1199,6 @@ jobs:
 
       - name: Install cygwin
         run: |
-          New-Item -Force -ItemType directory -Path "$HOME\cygwin"
-          & curl -L "https://www.cygwin.com/setup-x86_64.exe" -o "$HOME/cygwin/setup-x86_64.exe"
           Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
@@ -1193,6 +1250,7 @@ jobs:
         run: echo ("imageroot=" + (Get-ChildItem -Path $HOME/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_windows-x64_bin${{ matrix.artifact }} -Filter release -Recurse -ErrorAction SilentlyContinue -Force).DirectoryName) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Run tests
+        id: run_tests
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
@@ -1211,7 +1269,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
             Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
@@ -1279,7 +1337,7 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_URL }}"
@@ -1380,7 +1438,7 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_URL }}"
@@ -1510,7 +1568,7 @@ jobs:
             artifact: -debug
 
     env:
-      JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).DEFAULT_VERSION_FEATURE }}"
+      JDK_VERSION: "${{ needs.prerequisites.outputs.jdk_version }}"
       BOOT_JDK_VERSION: "${{ fromJson(needs.prerequisites.outputs.dependencies).BOOT_JDK_VERSION }}"
       BOOT_JDK_FILENAME: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_FILENAME }}"
       BOOT_JDK_URL: "${{ fromJson(needs.prerequisites.outputs.dependencies).MACOS_X64_BOOT_JDK_URL }}"
@@ -1588,6 +1646,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_macos-x64_bin-tests${{ matrix.artifact }}
@@ -1603,7 +1662,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
             cat build/*/test-results/*/text/newfailures.txt ;
