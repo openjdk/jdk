@@ -53,6 +53,8 @@ public abstract class InputStream implements Closeable {
     // use when skipping.
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
+    private static final int MIN_SKIP_BUFFER_SIZE = 128;
+
     private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /** Skip buffer, null until allocated */
@@ -548,7 +550,7 @@ public abstract class InputStream implements Closeable {
 
         byte[] skipBuffer = this.skipBuffer;
         if ((skipBuffer == null) || (skipBuffer.length < size)) {
-            this.skipBuffer = skipBuffer = new byte[size];
+            this.skipBuffer = skipBuffer = new byte[size < MIN_SKIP_BUFFER_SIZE ? MIN_SKIP_BUFFER_SIZE : MAX_SKIP_BUFFER_SIZE];
         }
 
         while (remaining > 0) {
