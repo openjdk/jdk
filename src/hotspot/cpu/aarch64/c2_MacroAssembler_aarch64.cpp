@@ -1317,7 +1317,7 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
       mov(rscratch1, julong_cast(0x1.0p52));
       break;
     default:
-      assert(T == S | T == D, "invalid arrangement");
+      assert(T == S || T == D, "invalid arrangement");
   }
 
   sve_frinta(dst, T, ptrue, src);
