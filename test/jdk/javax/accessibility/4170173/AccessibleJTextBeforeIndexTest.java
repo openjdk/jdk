@@ -34,92 +34,94 @@ import javax.swing.JEditorPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.text.JTextComponent;
 
 public class AccessibleJTextBeforeIndexTest {
-    private static volatile JTextField jTextField;
-    private static volatile JTextArea jTextArea;
-    private static volatile JEditorPane jEditorPane;
-    private static volatile String actualAccessibleText;
 
-    public static void doTest() throws Exception {
-        SwingUtilities.invokeAndWait(() -> createGUI());
+    public static void doTest() {
+        JTextField jTextField =
+            new JTextField("Test1 Test2 Test3. Test4 Test5. Test6");
+        JTextArea jTextArea = new JTextArea("Test1 Test2 Test3.\nTest4 Test5");
+        JEditorPane jEditorPane =
+            new JEditorPane("text/plain", "Test1 Test2 Test3.\nTest4 Test5");
 
-        if (!checkAccessibleText(jTextField, AccessibleText.CHARACTER, 5,
-            "1")) {
+        String actualAccessibleText = jTextField.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.CHARACTER, 5);
+        if (!(actualAccessibleText.equals("1"))) {
             throw new RuntimeException(
                 "JTextField -" + "getBeforeIndex() CHARACTER parameter"
-                    + "expected: 1, actual: " + actualAccessibleText);
+                    + " expected:--1--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jTextField, AccessibleText.WORD, 5, "Test1")) {
-            throw new RuntimeException(
-                "JTextField - " + "getBeforeIndex() WORD parameter"
-                    + "expected: Test1, actual: " + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jTextField, AccessibleText.SENTENCE, 20,
-            "Test1 Test2 Test3. ")) {
-            throw new RuntimeException(
-                "JTextField - " + "getBeforeIndex() SENTENCE parameter"
-                    + "expected: Test1 Test2 Test3. , " + "actual: "
-                    + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jTextArea, AccessibleText.CHARACTER, 5, "1")) {
-            throw new RuntimeException(
-                "JTextArea - " + "getBeforeIndex() CHARACTER parameter"
-                    + "expected: 1 , actual: " + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jTextArea, AccessibleText.WORD, 5, "Test1")) {
-            throw new RuntimeException(
-                "JTextArea - " + "getBeforeIndex() WORD parameter"
-                    + "expected: Test1 , actual: " + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jTextArea, AccessibleText.SENTENCE, 20,
-            "Test1 Test2 Test3.\n")) {
-            throw new RuntimeException(
-                "JTextArea - " + "getBeforeIndex() SENTENCE parameter"
-                    + "expected: Test1 Test2 Test3.\n, actual: "
-                    + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jEditorPane, AccessibleText.CHARACTER, 5,
-            "1")) {
-            throw new RuntimeException(
-                "JTextArea - " + "getBeforeIndex() CHARACTER parameter"
-                    + "expected: 1, actual: " + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jEditorPane, AccessibleText.WORD, 5,
-            "Test1")) {
-            throw new RuntimeException(
-                "JEditorPane - " + "getBeforeIndex() WORD parameter"
-                    + "expected: Test1, actual: " + actualAccessibleText);
-        }
-        if (!checkAccessibleText(jEditorPane, AccessibleText.SENTENCE, 20,
-            "Test1 Test2 Test3.\n")) {
-            throw new RuntimeException(
-                "JEditorPane - " + "getBeforeIndex() Sentence parameter"
-                    + "expected: Test1 Test2 Test3.\n, actual: "
-                    + actualAccessibleText);
-        }
-    }
 
-    private static void createGUI() {
-        jTextField = new JTextField("Test1 Test2 Test3. Test4 Test5. Test6");
-        jTextArea = new JTextArea("Test1 Test2 Test3.\nTest4 Test5");
-        jEditorPane =
-            new JEditorPane("text/plain", "Test1 Test2 Test3.\nTest4 Test5");
-    }
+        actualAccessibleText = jTextField.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.WORD, 5);
+        if (!(actualAccessibleText.equals("Test1"))) {
+            throw new RuntimeException(
+                "JTextField -" + "getBeforeIndex() WORD parameter"
+                    + " expected:--Test1--, actual:--" + actualAccessibleText + "--");
+        }
 
-    private static boolean checkAccessibleText(JTextComponent jTextComponent,
-        int character, int characterPosition, String expectedString)
-            throws Exception {
-        SwingUtilities.invokeAndWait(() -> actualAccessibleText =
-            jTextComponent.getAccessibleContext().getAccessibleText()
-            .getBeforeIndex(character, characterPosition));
+        actualAccessibleText = jTextField.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.SENTENCE, 20);
+        if (!(actualAccessibleText.equals("Test1 Test2 Test3. "))) {
+            throw new RuntimeException(
+                "JTextField -" + "getBeforeIndex() SENTENCE parameter"
+                    + " expected:--Test1 Test2 Test3. --, actual:--"
+                    + actualAccessibleText + "--");
+        }
 
-        return actualAccessibleText.equals(expectedString);
+        actualAccessibleText = jTextArea.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.CHARACTER, 5);
+        if (!(actualAccessibleText.equals("1"))) {
+            throw new RuntimeException(
+                "JTextArea -" + "getBeforeIndex() CHARACTER parameter"
+                    + " expected:--1--, actual:--" + actualAccessibleText + "--");
+        }
+
+        actualAccessibleText = jTextArea.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.WORD, 5);
+        if (!(actualAccessibleText.equals("Test1"))) {
+            throw new RuntimeException("JTextArea -"
+                + "getBeforeIndex() WORD parameter"
+                + " expected:--Test1--, actual:--" + actualAccessibleText + "--");
+        }
+
+        actualAccessibleText = jTextArea.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.SENTENCE, 20);
+        if (!(actualAccessibleText.equals("Test1 Test2 Test3.\n"))) {
+            throw new RuntimeException(
+                "JTextArea -" + "getBeforeIndex() SENTENCE parameter"
+                    + " expected: Test1 Test2 Test3.\n--, actual:--"
+                    + actualAccessibleText + "--");
+        }
+
+        actualAccessibleText = jEditorPane.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.CHARACTER, 5);
+        if (!(actualAccessibleText.equals("1"))) {
+            throw new RuntimeException(
+                "JEditorPane -" + "getBeforeIndex() CHARACTER parameter"
+                    + " expected:--1--, actual:--" + actualAccessibleText + "--");
+        }
+
+        actualAccessibleText = jEditorPane.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.WORD, 5);
+        if (!(actualAccessibleText.equals("Test1"))) {
+            throw new RuntimeException(
+                "JEditorPane -" + "getBeforeIndex() WORD parameter"
+                    + " expected:--Test1--, actual:--" + actualAccessibleText + "--");
+        }
+
+        actualAccessibleText = jEditorPane.getAccessibleContext()
+            .getAccessibleText().getBeforeIndex(AccessibleText.SENTENCE, 20);
+        if (!(actualAccessibleText.equals("Test1 Test2 Test3.\n"))) {
+            throw new RuntimeException(
+                "JEditorPane -" + "getBeforeIndex() SENTENCE parameter"
+                    + " expected:--Test1 Test2 Test3.\n--, actual:--"
+                    + actualAccessibleText + "--");
+        }
     }
 
     public static void main(String[] args) throws Exception {
-        doTest();
+        SwingUtilities.invokeAndWait(() -> doTest());
         System.out.println("Test Passed");
     }
 }

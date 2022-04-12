@@ -34,89 +34,91 @@ import javax.swing.JEditorPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.text.JTextComponent;
 
 public class AccessibleJTextAfterIndexTest {
-    private static volatile JTextField jTextField;
-    private static volatile JTextArea jTextArea;
-    private static volatile JEditorPane jEditorPane;
-    private static volatile String actualAccessibleText;
 
-    public static void doTest() throws Exception {
-        SwingUtilities.invokeAndWait(() -> createGUI());
+    public static void doTest() {
+        JTextField jTextField =
+            new JTextField("Test1 Test2 Test3. Test4 Test5. Test6");
+        JTextArea jTextArea = new JTextArea("Test1 Test2 Test3.\nTest4 Test5");
+        JEditorPane jEditorPane =
+            new JEditorPane("text/plain", "Test1 Test2 Test3.\nTest4 Test5");
 
-        if (!checkAccessibleText(jTextField, AccessibleText.CHARACTER, 5,
-            "T")) {
+        String actualAccessibleText = jTextField.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.CHARACTER, 5);
+        if (!(actualAccessibleText.equals("T"))) {
             throw new RuntimeException(
                 "JTextField -" + "getAfterIndex() CHARACTER parameter"
-                    + "expected: t, actual: " + actualAccessibleText);
+                    + " expected:--T--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jTextField, AccessibleText.WORD, 5, "Test2")) {
+
+        actualAccessibleText = jTextField.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.WORD, 5);
+        if (!(actualAccessibleText.equals("Test2"))) {
             throw new RuntimeException(
                 "JTextField - " + "getAfterIndex() WORD parameter"
-                    + "expected: Test2, actual: " + actualAccessibleText);
+                    + " expected:--Test2--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jTextField, AccessibleText.SENTENCE, 5,
-            "Test4 Test5. ")) {
+
+        actualAccessibleText = jTextField.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.SENTENCE, 5);
+        if (!(actualAccessibleText.equals("Test4 Test5. "))) {
             throw new RuntimeException("JTextField - "
                 + "getAfterIndex() SENTENCE parameter"
-                + "expected: Test4 Test5. , actual: " + actualAccessibleText);
+                + " expected:--Test4 Test5. --, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jTextArea, AccessibleText.CHARACTER, 5, "T")) {
+
+        actualAccessibleText = jTextArea.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.CHARACTER, 5);
+        if (!(actualAccessibleText.equals("T"))) {
             throw new RuntimeException(
                 "JTextArea - " + "getAfterIndex() CHARACTER parameter"
-                    + "expected: T , actual: " + actualAccessibleText);
+                    + " expected:--T--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jTextArea, AccessibleText.WORD, 5, "Test2")) {
+
+        actualAccessibleText = jTextArea.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.WORD, 5);
+        if (!(actualAccessibleText.equals("Test2"))) {
             throw new RuntimeException(
                 "JTextArea - " + "getAfterIndex() WORD parameter"
-                    + "expected: Test2 , actual: " + actualAccessibleText);
+                    + " expected:--Test2--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jTextArea, AccessibleText.SENTENCE, 5,
-            "Test4 Test5\n")) {
+
+        actualAccessibleText = jTextArea.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.SENTENCE, 5);
+        if (!(actualAccessibleText.equals("Test4 Test5\n"))) {
             throw new RuntimeException("JTextArea - "
                 + "getAfterIndex() SENTENCE parameter"
-                + "expected: Test4 Test5\n, actual: " + actualAccessibleText);
+                + " expected:--Test4 Test5\n--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jEditorPane, AccessibleText.CHARACTER, 5,
-            "T")) {
+
+        actualAccessibleText = jEditorPane.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.CHARACTER, 5);
+        if (!(actualAccessibleText.equals("T"))) {
             throw new RuntimeException(
-                "JTextArea - " + "getAfterIndex() CHARACTER parameter"
-                    + "expected: T, actual: " + actualAccessibleText);
+                "JEditorPane - " + "getAfterIndex() CHARACTER parameter"
+                    + " expected:--T--, actual:--" + actualAccessibleText +"--");
         }
-        if (!checkAccessibleText(jEditorPane, AccessibleText.WORD, 5,
-            "Test2")) {
+
+        actualAccessibleText = jEditorPane.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.WORD, 5);
+        if (!(actualAccessibleText.equals("Test2"))) {
             throw new RuntimeException(
                 "JEditorPane - " + "getAfterIndex() WORD parameter"
-                    + "expected: Test2, actual: " + actualAccessibleText);
+                    + " expected:--Test2--, actual:--" + actualAccessibleText + "--");
         }
-        if (!checkAccessibleText(jEditorPane, AccessibleText.SENTENCE, 5,
-            "Test4 Test5\n")) {
+
+        actualAccessibleText = jEditorPane.getAccessibleContext()
+            .getAccessibleText().getAfterIndex(AccessibleText.SENTENCE, 5);
+        if (!(actualAccessibleText.equals("Test4 Test5\n"))) {
             throw new RuntimeException("JEditorPane - "
                 + "getAfterIndex() Sentence parameter"
-                + "expected: Test4 Test5\n, actual: " + actualAccessibleText);
+                + " expected:--Test4 Test5\n--, actual:--" + actualAccessibleText +"--");
         }
-    }
-
-    private static void createGUI() {
-        jTextField = new JTextField("Test1 Test2 Test3. Test4 Test5. Test6");
-        jTextArea = new JTextArea("Test1 Test2 Test3.\nTest4 Test5");
-        jEditorPane =
-            new JEditorPane("text/plain", "Test1 Test2 Test3.\nTest4 Test5");
-    }
-
-    private static boolean checkAccessibleText(JTextComponent jTextComponent,
-        int character, int characterPosition, String expectedString)
-            throws Exception {
-        SwingUtilities.invokeAndWait(() -> actualAccessibleText =
-            jTextComponent.getAccessibleContext().getAccessibleText()
-            .getAfterIndex(character, characterPosition));
-
-        return actualAccessibleText.equals(expectedString);
     }
 
     public static void main(String[] args) throws Exception {
-        doTest();
+        SwingUtilities.invokeAndWait(() -> doTest());
         System.out.println("Test Passed");
     }
 }
