@@ -1861,12 +1861,12 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   // Dump the assembly code, including basic-block numbers
   if (C->print_assembly()) {
 
-    //ttyLocker ttyl;  // keep the following output all in one block
+    ttyLocker ttyl;  // keep the following output all in one block
     if (!VMThread::should_terminate()) {  // test this under the tty lock
       // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
-      // We called them first and write to a stringStream.
+      // We call them first and write to a stringStream.
       // Then we retake the lock to make sure the end tag is coherent,
-      // and that xmlStream->pop_tag is done thread safe
+      // and that xmlStream->pop_tag is done thread safe.
       ResourceMark rm;
       stringStream method_metadata_str;
       if (C->method() != NULL) {
