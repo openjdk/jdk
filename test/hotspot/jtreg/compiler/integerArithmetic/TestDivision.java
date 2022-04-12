@@ -28,20 +28,57 @@ import jdk.test.lib.Asserts;
 /*
  * @test TestDivision
  * @bug 8043284 8042786
- * @summary Tests compiled code correctly handles corner cases.
+ * @summary Tests compiled code correctly handles integral divisions.
  * @library /test/lib
  *
- * @run main/othervm -Xcomp
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
  *      -XX:CompileCommand=compileonly,*.TestDivision::divide
  *      -XX:CompileCommand=compileonly,*.TestDivision::remainder
  *      compiler.integerArithmetic.TestDivision
  */
 public class TestDivision {
     public static void main(String[] args) {
+        Asserts.assertEquals(divide(19, 7), 19 / 7);
+        Asserts.assertEquals(remainder(19, 7), 19 % 7);
+        Asserts.assertEquals(divide(19L, 7L), 19L / 7L);
+        Asserts.assertEquals(remainder(19L, 7L), 19L % 7L);
+
+        Asserts.assertEquals(divide(19, -7), 19 / -7);
+        Asserts.assertEquals(remainder(19, -7), 19 % -7);
+        Asserts.assertEquals(divide(19L, -7L), 19L / -7L);
+        Asserts.assertEquals(remainder(19L, -7L), 19L % -7L);
+
+        Asserts.assertEquals(divide(-19, 7), -19 / 7);
+        Asserts.assertEquals(remainder(-19, 7), -19 % 7);
+        Asserts.assertEquals(divide(-19L, 7L), -19L / 7L);
+        Asserts.assertEquals(remainder(-19L, 7L), -19L % 7L);
+
+        Asserts.assertEquals(divide(-19, -7), -19 / -7);
+        Asserts.assertEquals(remainder(-19, -7), -19 % -7);
+        Asserts.assertEquals(divide(-19L, -7L), -19L / -7L);
+        Asserts.assertEquals(remainder(-19L, -7L), -19L % -7L);
+
         Asserts.assertEquals(divide(Integer.MIN_VALUE, -1), Integer.MIN_VALUE / -1);
         Asserts.assertEquals(remainder(Integer.MIN_VALUE, -1), Integer.MIN_VALUE % -1);
         Asserts.assertEquals(divide(Long.MIN_VALUE, -1), Long.MIN_VALUE / -1L);
         Asserts.assertEquals(remainder(Long.MIN_VALUE, -1), Long.MIN_VALUE % -1L);
+
+        try {
+            divide(19, 0);
+            Asserts.fail();
+        } catch (ArithmeticException e) {}
+        try {
+            remainder(19, 0);
+            Asserts.fail();
+        } catch (ArithmeticException e) {}
+        try {
+            divide(19L, 0L);
+            Asserts.fail();
+        } catch (ArithmeticException e) {}
+        try {
+            remainder(19L, 0L);
+            Asserts.fail();
+        } catch (ArithmeticException e) {}
     }
 
     static int divide(int x, int y) {

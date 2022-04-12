@@ -55,7 +55,6 @@ static void parse_div_mod(Parse& parser) {
   Bytecodes::Code bc = parser.bc();
   PhaseGVN& gvn = parser.gvn();
   BasicType bt = (bc == Bytecodes::_idiv || bc == Bytecodes::_irem) ? T_INT : T_LONG;
-  bool is_div = (bc == Bytecodes::_idiv || bc == Bytecodes::_ldiv);
   // Operands need to stay in the stack during zero check
   if (bt == T_INT) {
     parser.zero_check_int(parser.peek(0));
@@ -71,15 +70,15 @@ static void parse_div_mod(Parse& parser) {
   Node* in1 = (bt == T_INT) ? parser.pop() : parser.pop_pair();
 
   auto generate_division = [](PhaseGVN& gvn, Node* control, Node* in1, Node* in2,
-                              BasicType bt, bool is_div) {
-    if (is_div) {
-      return (bt == T_INT)
-             ? gvn.transform(new DivINode(control, in1, in2))
-             : gvn.transform(new DivLNode(control, in1, in2));
-    } else {
-      return (bt == T_INT)
-             ? gvn.transform(new ModINode(control, in1, in2))
-             : gvn.transform(new ModLNode(control, in1, in2));
+                              Bytecodes::Code bc) {
+    switch (bc) {
+      case Bytecodes::_idiv: return gvn.transform(new DivINode(control, in1, in2));
+      case Bytecodes::_ldiv: return gvn.transform(new DivLNode(control, in1, in2));
+      case Bytecodes::_irem: return gvn.transform(new ModINode(control, in1, in2));
+      case Bytecodes::_lrem: return gvn.transform(new ModLNode(control, in1, in2));
+      default:
+        ShouldNotReachHere();
+        return static_cast<Node*>(nullptr);
     }
   };
 
@@ -91,16 +90,11 @@ static void parse_div_mod(Parse& parser) {
     }
   };
 
-  if (in1 == in2) {
-    Node* res = gvn.integercon(is_div ? 1 : 0, bt);
-    push_result(parser, res, bt);
-    return;
-  }
-
-  // if in1 > min_value then there is no overflow risk
-  if ((bt == T_INT  &&  !TypeInt::MIN->higher_equal(gvn.type(in1))) ||
+  // if in1 > min_value or in1 == in2 then there is no overflow risk
+  if ((in1 == in2) ||
+      (bt == T_INT  &&  !TypeInt::MIN->higher_equal(gvn.type(in1))) ||
       (bt == T_LONG && !TypeLong::MIN->higher_equal(gvn.type(in1)))) {
-    Node* res = generate_division(gvn, parser.control(), in1, in2, bt, is_div);
+    Node* res = generate_division(gvn, parser.control(), in1, in2, bc);
     push_result(parser, res, bt);
     return;
   }
@@ -113,10 +107,10 @@ static void parse_div_mod(Parse& parser) {
   IfNode* iff = parser.create_and_map_if(parser.control(), bol, PROB_UNLIKELY_MAG(3), COUNT_UNKNOWN);
   Node* iff_true = parser.IfTrue(iff);
   Node* iff_false = parser.IfFalse(iff);
-  Node* res_fast = is_div
+  Node* res_fast = (bc == Bytecodes::_idiv || bc == Bytecodes::_ldiv)
                    ? gvn.transform(SubNode::make(gvn.zerocon(bt), in1, bt))
                    : gvn.zerocon(bt);
-  Node* res_slow = generate_division(gvn, iff_false, in1, in2, bt, is_div);
+  Node* res_slow = generate_division(gvn, iff_false, in1, in2, bc);
   Node* merge = new RegionNode(3);
   merge->init_req(1, iff_true);
   merge->init_req(2, iff_false);
