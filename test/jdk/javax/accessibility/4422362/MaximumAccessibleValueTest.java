@@ -28,7 +28,6 @@
  * @summary Wrong Max Accessible Value with BoundedRangeModel components
  * @run main MaximumAccessibleValueTest
  */
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JProgressBar;
 import javax.swing.JScrollBar;
@@ -36,51 +35,37 @@ import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 
 public class MaximumAccessibleValueTest {
-    private static JScrollBar jScrollBar;
-    private static JProgressBar jProgressBar;
-    private static JSlider jSlider;
 
-    public static void createGUI() {
-        jScrollBar = new JScrollBar();
-        jProgressBar = new JProgressBar();
-        jSlider = new JSlider();
-    }
+    public static void doTest() {
 
-    public static void doTest() throws Exception {
-        SwingUtilities.invokeAndWait(() -> createGUI());
-        AtomicBoolean checkMaxValue = new AtomicBoolean();
+        JScrollBar jScrollBar = new JScrollBar();
+        JProgressBar jProgressBar = new JProgressBar();
+        JSlider jSlider = new JSlider();
 
-        SwingUtilities.invokeAndWait(
-            () -> checkMaxValue.set(((Integer) jScrollBar.getAccessibleContext()
-                .getAccessibleValue().getMaximumAccessibleValue())
-                .intValue() != jScrollBar.getMaximum()
-                - jScrollBar.getVisibleAmount()));
-        if (checkMaxValue.get()) {
+        if (((Integer) jScrollBar.getAccessibleContext().getAccessibleValue()
+            .getMaximumAccessibleValue()).intValue() != jScrollBar.getMaximum()
+            - jScrollBar.getVisibleAmount()) {
             throw new RuntimeException(
                 "Wrong MaximumAccessibleValue returned by JScrollBar");
         }
 
-        SwingUtilities.invokeAndWait(() -> checkMaxValue.set(
-            ((Integer) jProgressBar.getAccessibleContext().getAccessibleValue()
-                .getMaximumAccessibleValue().intValue()) != (jProgressBar
-                    .getMaximum() - jProgressBar.getModel().getExtent())));
-        if (checkMaxValue.get()) {
+        if (((Integer) jProgressBar.getAccessibleContext().getAccessibleValue()
+            .getMaximumAccessibleValue().intValue()) != (jProgressBar
+                .getMaximum() - jProgressBar.getModel().getExtent())) {
             throw new RuntimeException(
                 "Wrong MaximumAccessibleValue returned by JProgressBar");
         }
 
-        SwingUtilities.invokeAndWait(() -> checkMaxValue
-            .set(((Integer) jSlider.getAccessibleContext().getAccessibleValue()
-                .getMaximumAccessibleValue()).intValue() != jSlider.getMaximum()
-                - jSlider.getModel().getExtent()));
-        if (checkMaxValue.get()) {
+        if (((Integer) jSlider.getAccessibleContext().getAccessibleValue()
+            .getMaximumAccessibleValue()).intValue() != jSlider.getMaximum()
+            - jSlider.getModel().getExtent()) {
             throw new RuntimeException(
                 "Wrong MaximumAccessibleValue returned by JSlider");
         }
     }
 
     public static void main(String[] args) throws Exception {
-        doTest();
+        SwingUtilities.invokeAndWait(() -> doTest());
         System.out.println("Test Passed");
     }
 }
