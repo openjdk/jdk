@@ -25,7 +25,7 @@
 package java.time.chrono;
 
 /**
- * An abstract class that confirms chronologies implementing this class
+ * An interface that confirms chronologies implementing this interface
  * are ISO based.
  * <p>
  * An ISO based chronology has the same basic structure of days and
@@ -41,10 +41,5 @@ package java.time.chrono;
  * @see java.time.temporal.IsoFields
  * @since 19
  */
-public abstract class IsoBasedChronology extends AbstractChronology {
-    //-----------------------------------------------------------------------
-    /**
-     * Creates an instance.
-     */
-    protected IsoBasedChronology() { }
+public interface IsoBasedChronology {
 }
