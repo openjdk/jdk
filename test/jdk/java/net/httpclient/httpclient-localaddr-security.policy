@@ -21,10 +21,13 @@
 // questions.
 //
 
-// for JTwork/classes/0/test/lib/jdk/test/lib/net/SimpleSSLContext.class
+// for JTwork/classes/0/test/lib/jdk/test/lib/net/SimpleSSLContext.class and
+// JTwork/classes/0/test/lib/jdk/test/lib/net/IPSupport.class
 grant codeBase "file:${test.classes}/../../../../test/lib/-" {
     permission java.util.PropertyPermission "test.src.path", "read";
     permission java.io.FilePermission "${test.src}/../../../../lib/jdk/test/lib/net/testkeys", "read";
+    permission java.util.PropertyPermission "java.net.preferIPv4Stack", "read";
+    permission java.util.PropertyPermission "java.net.preferIPv6Addresses", "read";
 };
 
 // for JTwork//classes/0/java/net/httpclient/http2/server/*

@@ -61,6 +61,8 @@ import java.util.function.Predicate;
  *
  * @library /test/lib http2/server
  *
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport HttpServerAdapters
+ *
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
