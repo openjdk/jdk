@@ -653,7 +653,7 @@ static final class java_awt_Font_PersistenceDelegate extends PersistenceDelegate
         int size = 12;
 
         Map<TextAttribute, ?> basic = font.getAttributes();
-        Map<TextAttribute, Object> clone = HashMap.newHashMap(basic.size());
+        Map<TextAttribute, Object> clone = new HashMap<>(basic.size());
         for (TextAttribute key : basic.keySet()) {
             Object value = basic.get(key);
             if (value != null) {

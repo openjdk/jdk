@@ -272,7 +272,7 @@ public final class MetadataLoader {
     }
 
     private Map<String, Type> buildTypeMap() {
-        Map<String, Type> typeMap = HashMap.newHashMap(2 * types.size());
+        Map<String, Type> typeMap = new HashMap<>(2 * types.size());
         Map<String, Type> knownTypeMap = new HashMap<>(20);
         for (Type kt : Type.getKnownTypes()) {
             typeMap.put(kt.getName(), kt);

@@ -113,7 +113,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
                 if (list.isEmpty()) {
                     map = Collections.emptyMap();
                 } else {
-                    map = HashMap.newHashMap(list.size());
+                    map = new HashMap<>(list.size());
                     for (MemoryManagerMXBean gcm : list) {
                         map.put(gcm.getObjectName().getCanonicalName(),
                                 gcm);

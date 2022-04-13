@@ -85,7 +85,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
-        Map<InputNode, List<InputEdge>> result = HashMap.newHashMap(getNodes().size());
+        Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
         for(InputNode n : this.getNodes()) {
             result.put(n, new ArrayList<InputEdge>());
         }
@@ -107,7 +107,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public Map<InputNode, List<InputEdge>> findAllIngoingEdges() {
-        Map<InputNode, List<InputEdge>> result = HashMap.newHashMap(getNodes().size());
+        Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
         for(InputNode n : this.getNodes()) {
             result.put(n, new ArrayList<InputEdge>());
         }

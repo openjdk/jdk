@@ -252,7 +252,7 @@ public class ServerCompilerScheduler implements Scheduler {
             return graph.getBlocks();
         } else {
             nodes = new ArrayList<>();
-            inputNodeToNode = HashMap.newHashMap(graph.getNodes().size());
+            inputNodeToNode = new HashMap<>(graph.getNodes().size());
 
             this.graph = graph;
             if (!hasCategoryInformation()) {
@@ -516,7 +516,7 @@ public class ServerCompilerScheduler implements Scheduler {
     }
 
     public void buildDominators() {
-        dominatorMap = HashMap.newHashMap(graph.getBlocks().size());
+        dominatorMap = new HashMap<>(graph.getBlocks().size());
         if (blocks.size() == 0) {
             return;
         }
@@ -614,7 +614,7 @@ public class ServerCompilerScheduler implements Scheduler {
             inputNodeToNode.put(n, node);
         }
 
-        Map<Integer, List<InputEdge>> edgeMap = HashMap.newHashMap(graph.getEdges().size());
+        Map<Integer, List<InputEdge>> edgeMap = new HashMap<>(graph.getEdges().size());
         for (InputEdge e : graph.getEdges()) {
 
             int to = e.getTo();

@@ -102,7 +102,7 @@ public final class MetadataEvent {
 
     private void calculateDelta() {
         List<EventType> added = new ArrayList<>();
-        Map<Long, EventType> previousSet = HashMap.newHashMap(previous.size());
+        Map<Long, EventType> previousSet = new HashMap<>(previous.size());
         for (EventType eventType : previous) {
             previousSet.put(eventType.getId(), eventType);
         }
