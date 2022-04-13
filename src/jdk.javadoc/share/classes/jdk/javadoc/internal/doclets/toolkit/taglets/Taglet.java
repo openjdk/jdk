@@ -33,7 +33,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * This is the Taglet interface used internally within the doclet.
+ * This is the taglet interface used internally within the doclet.
  */
 public interface Taglet {
     /**

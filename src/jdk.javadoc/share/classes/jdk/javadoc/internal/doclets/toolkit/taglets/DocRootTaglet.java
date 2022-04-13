@@ -33,7 +33,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An inline Taglet representing {&#064;docRoot}.  This taglet is
+ * An inline taglet representing {@code {@docRoot}}.  This taglet is
  * used to get the relative path to the document's root output
  * directory.
  */

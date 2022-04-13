@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -234,9 +234,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BZ">Belis</territory>
 			<territory type="CA">Kanadaa</territory>
 			<territory type="CC">Duni Koko (Kilin)</territory>
-			<territory type="CD" alt="variant">Kongo (R K D)</territory>
+			<territory type="CD">Kongo (R K D)</territory>
 			<territory type="CF">Repiblik Sàntar Afrik</territory>
-			<territory type="CG" alt="variant">Réewum Kongo</territory>
+			<territory type="CG">Réewum Kongo</territory>
 			<territory type="CH">Siwis</territory>
 			<territory type="CI">Kodiwaar</territory>
 			<territory type="CK">Duni Kuuk</territory>
@@ -288,7 +288,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GU">Guwam</territory>
 			<territory type="GW">Gine-Bisaawóo</territory>
 			<territory type="GY">Giyaan</territory>
-			<territory type="HK" alt="short">Ooŋ Koŋ</territory>
+			<territory type="HK">Ooŋ Koŋ</territory>
 			<territory type="HM">Duni Hërd ak Duni MakDonald</territory>
 			<territory type="HN">Onduraas</territory>
 			<territory type="HR">Korowasi</territory>
@@ -340,7 +340,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Miyanmaar</territory>
 			<territory type="MN">Mongoli</territory>
-			<territory type="MO" alt="short">Makaawo</territory>
+			<territory type="MO">Makaawo</territory>
 			<territory type="MP">Duni Mariyaan Noor</territory>
 			<territory type="MQ">Martinik</territory>
 			<territory type="MR">Mooritani</territory>
@@ -480,21 +480,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMM, y G</pattern>
+							<datetimeSkeleton>GyMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd-MM-y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -808,21 +812,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMM, y</pattern>
+							<datetimeSkeleton>yMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd-MM-y</pattern>
+							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -830,21 +838,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -878,6 +890,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">dd-MM-y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>

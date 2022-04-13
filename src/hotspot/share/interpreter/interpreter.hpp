@@ -46,11 +46,11 @@ class InterpreterCodelet: public Stub {
   friend class VMStructs;
   friend class CodeCacheDumper; // possible extension [do not remove]
  private:
-  int         _size;                      // the size in bytes
-  const char* _description;               // a description of the codelet, for debugging & printing
-  Bytecodes::Code _bytecode;              // associated bytecode if any
   NOT_PRODUCT(AsmRemarks _asm_remarks;)   // Comments for annotating assembler output.
   NOT_PRODUCT(DbgStrings _dbg_strings;)   // Debug strings used in generated code.
+  const char*     _description;           // A description of the codelet, for debugging & printing
+  int             _size;                  // The codelet size in bytes
+  Bytecodes::Code _bytecode;              // Associated bytecode, if any
 
  public:
   // Initialization/finalization

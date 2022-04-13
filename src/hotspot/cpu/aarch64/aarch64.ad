@@ -11598,6 +11598,108 @@ instruct regI_not_reg(iRegINoSp dst,
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_URShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (URShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, LSR $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSR, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_RShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (RShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, ASR $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::ASR, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_LShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (LShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, LSL $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSL, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_URShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (URShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, LSR $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSR, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_RShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (RShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, ASR $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::ASR, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_LShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (LShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, LSL $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSL, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct AndI_reg_not_reg(iRegINoSp dst,
                          iRegIorL2I src1, iRegIorL2I src2, immI_M1 m1) %{
   match(Set dst (AndI src1 (XorI src2 m1)));
