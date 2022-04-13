@@ -45,7 +45,7 @@ inline frame::frame() {
 
 static int spin;
 
-inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool checkEntrant) {
+inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool allowUnsafe) {
   intptr_t a = intptr_t(ptr_sp);
   intptr_t b = intptr_t(ptr_fp);
   _sp = ptr_sp;
@@ -53,7 +53,7 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool che
   _fp = ptr_fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-  if (checkEntrant) {
+  if (!allowUnsafe) {
     _cb = CodeCache::find_blob(pc);
   } else {
     _cb = CodeCache::find_blob_unsafe(pc);
@@ -73,8 +73,8 @@ inline void frame::init(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool che
   }
 }
 
-inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool checkEntrant) {
-  init(ptr_sp, ptr_fp, pc, checkEntrant);
+inline frame::frame(intptr_t* ptr_sp, intptr_t* ptr_fp, address pc, bool allowUnsafe) {
+  init(ptr_sp, ptr_fp, pc, allowUnsafe);
 }
 
 inline frame::frame(intptr_t* ptr_sp, intptr_t* unextended_sp, intptr_t* ptr_fp, address pc) {

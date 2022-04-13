@@ -33,10 +33,10 @@
 // Inline functions for ppc64 frames:
 
 // Find codeblob and set deopt_state.
-inline void frame::find_codeblob_and_set_pc_and_deopt_state(address pc, bool checkEntrant) {
+inline void frame::find_codeblob_and_set_pc_and_deopt_state(address pc, bool allowUnsafe) {
   assert(pc != NULL, "precondition: must have PC");
 
-  if (checkEntrant) {
+  if (!allowUnsafe) {
     _cb = CodeCache::find_blob(pc);
   } else {
     _cb = CodeCache::find_blob_unsafe(pc);
@@ -69,8 +69,8 @@ inline frame::frame(intptr_t* sp) : _sp(sp), _unextended_sp(sp) {
   find_codeblob_and_set_pc_and_deopt_state((address)own_abi()->lr); // also sets _fp and adjusts _unextended_sp
 }
 
-inline frame::frame(intptr_t* sp, address pc, bool checkEntrant) : _sp(sp), _unextended_sp(sp) {
-  find_codeblob_and_set_pc_and_deopt_state(pc, checkEntrant); // also sets _fp and adjusts _unextended_sp
+inline frame::frame(intptr_t* sp, address pc, bool allowUnsafe) : _sp(sp), _unextended_sp(sp) {
+  find_codeblob_and_set_pc_and_deopt_state(pc, allowUnsafe); // also sets _fp and adjusts _unextended_sp
 }
 
 inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp) : _sp(sp), _unextended_sp(unextended_sp) {
