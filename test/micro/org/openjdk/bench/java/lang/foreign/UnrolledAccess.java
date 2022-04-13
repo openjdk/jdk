@@ -46,7 +46,7 @@ public class UnrolledAccess {
     static final Unsafe U = Utils.unsafe;
 
     final static int SIZE = 1024;
-    
+
     static final ValueLayout.OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
 
     static final VarHandle LONG_HANDLE = MemoryLayout.sequenceLayout(SIZE, JAVA_LONG)
