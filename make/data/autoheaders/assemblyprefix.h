@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -21,7 +21,7 @@
 # questions.
 #
 
-        // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-        // in NativeCompilation.gmk, this ensures reproducible .debuginfo
-        .file ASSEMBLY_SRC_FILE
+// ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
+// in NativeCompilation.gmk, this ensures reproducible .debuginfo
+.file ASSEMBLY_SRC_FILE
 
