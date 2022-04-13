@@ -2185,8 +2185,8 @@ void os::Linux::print_uptime_info(outputStream* st) {
   }
 }
 
-static void print_container_helper(outputStream* st, jlong j, const char* header) {
-  st->print("%s", header);
+static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
+  st->print("%s: ", metrics);
   if (j > 0) {
     st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
   } else {
@@ -2249,11 +2249,11 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes: ");
-  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes: ");
-  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes: ");
-  print_container_helper(st, OSContainer::OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes: ");
-  print_container_helper(st, OSContainer::OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes: ");
+  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  print_container_helper(st, OSContainer::OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  print_container_helper(st, OSContainer::OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
 
   jlong j = OSContainer::OSContainer::pids_max();
   st->print("maximum number of tasks: ");
