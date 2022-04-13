@@ -92,7 +92,7 @@ import sun.util.locale.provider.LocaleResources;
  * <p>
  * This class defines fields and units that are specific to the ISO calendar system.
  * Other non-ISO calendar systems may provide these fields by implementing
- * {@link java.time.chrono.IsoBasedChronology} interface.
+ * {@link IsoBasedChronology} interface.
  *
  * <h2>Quarter of year</h2>
  * The ISO-8601 standard is based on the standard civic 12 month year.
@@ -159,7 +159,7 @@ import sun.util.locale.provider.LocaleResources;
  * <p>
  * This class is immutable and thread-safe.
  *
- * @see java.time.chrono.IsoBasedChronology
+ * @see IsoBasedChronology
  * @since 1.8
  */
 public final class IsoFields {
