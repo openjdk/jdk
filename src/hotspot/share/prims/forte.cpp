@@ -505,7 +505,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 }
 
 
-void asyncGetCallTraceImpl(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+static void asyncGetCallTraceImpl(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
   JavaThread* thread;
 
@@ -667,11 +667,16 @@ extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 #ifndef ASSERT
+  if (Thread::current_or_null_safe() == NULL) {
+    // we need the current Thread object for crash protection
+    trace->num_frames = ticks_thread_exit;
+    return;
+  }
   trace->num_frames = ticks_unknown_state;
   AsyncGetCallTraceCallBack cb(trace, depth, ucontext);
   os::ThreadCrashProtection crash_protection;
   if (!crash_protection.call(cb)) {
-    if (trace->num_frames < -10 || trace->num_frames >= 0) {
+    if (trace->num_frames >= 0) {
       trace->num_frames = ticks_unknown_state;
     }
   }
