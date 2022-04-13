@@ -716,7 +716,6 @@
   nonstatic_field(JavaThread,                  _current_pending_monitor_is_from_java,         bool)                                  \
   volatile_nonstatic_field(JavaThread,         _current_waiting_monitor,                      ObjectMonitor*)                        \
   volatile_nonstatic_field(JavaThread,         _suspend_flags,                                uint32_t)                              \
-  nonstatic_field(JavaThread,                  _pending_async_exception,                      oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
   volatile_nonstatic_field(JavaThread,         _exception_pc,                                 address)                               \
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
@@ -1558,7 +1557,6 @@
   declare_c2_type(ConvL2INode, Node)                                      \
   declare_c2_type(CastX2PNode, Node)                                      \
   declare_c2_type(CastP2XNode, Node)                                      \
-  declare_c2_type(SetVectMaskINode, Node)                                 \
   declare_c2_type(MemBarNode, MultiNode)                                  \
   declare_c2_type(MemBarAcquireNode, MemBarNode)                          \
   declare_c2_type(MemBarReleaseNode, MemBarNode)                          \
@@ -1581,13 +1579,19 @@
   declare_c2_type(DivLNode, Node)                                         \
   declare_c2_type(DivFNode, Node)                                         \
   declare_c2_type(DivDNode, Node)                                         \
+  declare_c2_type(UDivINode, Node)                                        \
+  declare_c2_type(UDivLNode, Node)                                        \
   declare_c2_type(ModINode, Node)                                         \
   declare_c2_type(ModLNode, Node)                                         \
   declare_c2_type(ModFNode, Node)                                         \
   declare_c2_type(ModDNode, Node)                                         \
+  declare_c2_type(UModINode, Node)                                        \
+  declare_c2_type(UModLNode, Node)                                        \
   declare_c2_type(DivModNode, MultiNode)                                  \
   declare_c2_type(DivModINode, DivModNode)                                \
   declare_c2_type(DivModLNode, DivModNode)                                \
+  declare_c2_type(UDivModINode, DivModNode)                               \
+  declare_c2_type(UDivModLNode, DivModNode)                               \
   declare_c2_type(BoxLockNode, Node)                                      \
   declare_c2_type(LoopNode, RegionNode)                                   \
   declare_c2_type(CountedLoopNode, LoopNode)                              \
@@ -1757,9 +1761,11 @@
   declare_c2_type(MulVFNode, VectorNode)                                  \
   declare_c2_type(MulReductionVFNode, ReductionNode)                      \
   declare_c2_type(MulVDNode, VectorNode)                                  \
-  declare_c2_type(NegVINode, VectorNode)                                  \
-  declare_c2_type(NegVFNode, VectorNode)                                  \
-  declare_c2_type(NegVDNode, VectorNode)                                  \
+  declare_c2_type(NegVNode, VectorNode)                                   \
+  declare_c2_type(NegVINode, NegVNode)                                    \
+  declare_c2_type(NegVLNode, NegVNode)                                    \
+  declare_c2_type(NegVFNode, NegVNode)                                    \
+  declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
   declare_c2_type(CMoveVFNode, VectorNode)                                \
@@ -2118,12 +2124,6 @@
   declare_constant(JVM_CONSTANT_MethodTypeInError)                        \
   declare_constant(JVM_CONSTANT_DynamicInError)                           \
   declare_constant(JVM_CONSTANT_InternalMax)                              \
-                                                                          \
-  /*****************************/                                         \
-  /* Thread::SuspendFlags enum */                                         \
-  /*****************************/                                         \
-                                                                          \
-  declare_constant(JavaThread::_has_async_exception)                      \
                                                                           \
   /*******************/                                                   \
   /* JavaThreadState */                                                   \

@@ -782,11 +782,10 @@ public:
     Flag_has_call                    = 1 << 10,
     Flag_is_reduction                = 1 << 11,
     Flag_is_scheduled                = 1 << 12,
-    Flag_has_vector_mask_set         = 1 << 13,
-    Flag_is_expensive                = 1 << 14,
-    Flag_is_predicated_vector        = 1 << 15,
-    Flag_for_post_loop_opts_igvn     = 1 << 16,
-    Flag_is_removed_by_peephole      = 1 << 17,
+    Flag_is_expensive                = 1 << 13,
+    Flag_is_predicated_vector        = 1 << 14,
+    Flag_for_post_loop_opts_igvn     = 1 << 15,
+    Flag_is_removed_by_peephole      = 1 << 16,
     _last_flag                       = Flag_is_removed_by_peephole
   };
 
@@ -1000,9 +999,6 @@ public:
   bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
-
-  // The node is a CountedLoopEnd with a mask annotation so as to emit a restore context
-  bool has_vector_mask_set() const { return (_flags & Flag_has_vector_mask_set) != 0; }
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }

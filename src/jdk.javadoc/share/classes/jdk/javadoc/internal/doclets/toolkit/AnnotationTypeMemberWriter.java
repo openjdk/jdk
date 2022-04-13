@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,58 +29,51 @@ import javax.lang.model.element.Element;
 
 /**
  * The interface for writing annotation type required member output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface AnnotationTypeMemberWriter extends MemberWriter {
 
     /**
-     * Adds the annotation type member tree header.
+     * Adds the annotation type member header.
      *
-     * @return content tree for the member tree header
+     * @return the content for the member header
      */
-    Content getMemberTreeHeader();
+    Content getMemberHeader();
 
     /**
      * Adds the annotation type details marker.
      *
-     * @param memberDetails the content tree representing details marker
+     * @param memberDetails the content representing details marker
      */
     void addAnnotationDetailsMarker(Content memberDetails);
 
     /**
-     * Adds the annotation type details tree header.
+     * Adds the annotation type details header.
      *
-     * @return content tree for the annotation details header
+     * @return the content for the annotation details header
      */
-    Content getAnnotationDetailsTreeHeader();
+    Content getAnnotationDetailsHeader();
 
     /**
-     * Gets the annotation type documentation tree header.
+     * Gets the annotation type documentation header.
      *
      * @param member the annotation type being documented
-     * @return content tree for the annotation type documentation header
+     * @return the content for the annotation type documentation header
      */
-    Content getAnnotationDocTreeHeader(Element member);
+    Content getAnnotationHeaderContent(Element member);
 
     /**
-     * Gets the annotation type details tree.
+     * Gets the annotation type details.
      *
-     * @param annotationDetailsTreeHeader the content tree representing annotation type details header
-     * @param annotationDetailsTree the content tree representing annotation type details
-     * @return content tree for the annotation type details
+     * @param annotationDetailsHeader the content representing annotation type details header
+     * @param annotationDetails the content representing annotation type details
+     * @return the annotation type details
      */
-    Content getAnnotationDetails(Content annotationDetailsTreeHeader, Content annotationDetailsTree);
+    Content getAnnotationDetails(Content annotationDetailsHeader, Content annotationDetails);
 
     /**
-     * Gets the signature for the given member.
+     * {@return the signature for the specified member}
      *
      * @param member the member being documented
-     * @return content tree for the annotation type signature
      */
     Content getSignature(Element member);
 
@@ -88,39 +81,39 @@ public interface AnnotationTypeMemberWriter extends MemberWriter {
      * Adds the deprecated output for the given member.
      *
      * @param member the member being documented
-     * @param annotationDocTree content tree to which the deprecated information will be added
+     * @param target the content to which the deprecated information will be added
      */
-    void addDeprecated(Element member, Content annotationDocTree);
+    void addDeprecated(Element member, Content target);
 
     /**
      * Adds the preview output for the given member.
      *
      * @param member the member being documented
-     * @param contentTree content tree to which the preview information will be added
+     * @param content the content to which the preview information will be added
      */
-    void addPreview(Element member, Content contentTree);
+    void addPreview(Element member, Content content);
 
     /**
      * Adds the comments for the given member.
      *
      * @param member the member being documented
-     * @param annotationDocTree the content tree to which the comments will be added
+     * @param annotationContent the content to which the comments will be added
      */
-    void addComments(Element member, Content annotationDocTree);
+    void addComments(Element member, Content annotationContent);
 
     /**
      * Adds the tags for the given member.
      *
      * @param member the member being documented
-     * @param annotationDocTree the content tree to which the tags will be added
+     * @param annotationContent the content to which the tags will be added
      */
-    void addTags(Element member, Content annotationDocTree);
+    void addTags(Element member, Content annotationContent);
 
     /**
      * Adds the default value documentation if the member has one.
      *
      * @param member the member being documented
-     * @param annotationDocTree content tree to which the default value will be added
+     * @param annotationContent the content to which the default value will be added
      */
-    void addDefaultValueInfo(Element member, Content annotationDocTree);
+    void addDefaultValueInfo(Element member, Content annotationContent);
 }
