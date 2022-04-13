@@ -193,8 +193,7 @@ public class DocFinder {
         public final List<DocTree> tagList = new ArrayList<>();
 
         /**
-         * Returns a string representation for debugging purposes
-         * @return string
+         * For debugging purposes.
          */
         @Override
         public String toString() {
