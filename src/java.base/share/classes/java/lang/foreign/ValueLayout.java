@@ -25,11 +25,16 @@
  */
 package java.lang.foreign;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
+import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
@@ -114,6 +119,61 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
             order.equals(v.order) &&
             bitSize() == v.bitSize() &&
             alignment == v.alignment;
+    }
+
+    /**
+     * Creates a <em>strided</em> access var handle that can be used to dereference a multi-dimensional array. The
+     * layout of this array is a sequence layout with {@code shape.length} nested sequence layouts. The element
+     * layout of the sequence layout at depth {@code shape.length} is this value layout.
+     * As a result, if {@code shape.length == 0}, the array layout will feature only one dimension.
+     * <p>
+     * The resulting var handle will feature {@code sizes.length + 1} coordinates of type {@code long}, which are
+     * used as indices into a multi-dimensional array.
+     * <p>
+     * For instance, the following method call:
+     *
+     * {@snippet lang=java :
+     * VarHandle arrayHandle = ValueLayout.JAVA_INT.arrayElementVarHandle(10, 20);
+     * }
+     *
+     * Can be used to access a multi-dimensional array whose layout is as follows:
+     *
+     * {@snippet lang=java :
+     * MemoryLayout arrayLayout = MemoryLayout.sequenceLayout(-1,
+     *                                      MemoryLayout.sequenceLayout(10,
+     *                                                  MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
+     * }
+     *
+     * The resulting var handle {@code arrayHandle} will feature 3 coordinates of type {@code long}; each coordinate
+     * is interpreted as an index into the corresponding sequence layout. If we refer to the var handle coordinates, from left
+     * to right, as {@code x}, {@code y} and {@code z} respectively, the final offset dereferenced by the var handle can be
+     * computed with the following formula:
+     *
+     * <blockquote><pre>{@code
+     * offset = (10 * 20 * 4 * x) + (20 * 4 * y) + (4 * z)
+     * }</pre></blockquote>
+     *
+     * @param shape the size of each nested array dimension.
+     * @return a var handle which can be used to dereference a multi-dimensional array, featuring {@code shape.length + 1}
+     * {@code long} coordinates.
+     * @throws IllegalArgumentException if {@code shape[i] < 0}, for at least one index {@code i}.
+     * @throws UnsupportedOperationException if the layout path has one or more elements with incompatible alignment constraints.
+     * @see MethodHandles#memorySegmentViewVarHandle
+     * @see MemoryLayout#varHandle(PathElement...)
+     */
+    public VarHandle arrayElementVarHandle(int... shape) {
+        Objects.requireNonNull(shape);
+        MemoryLayout layout = this;
+        List<PathElement> path = new ArrayList<>();
+        for (int i = shape.length ; i > 0 ; i--) {
+            int size = shape[i - 1];
+            if (size < 0) throw new IllegalArgumentException("Invalid shape size: " + size);
+            layout = MemoryLayout.sequenceLayout(size, layout);
+            path.add(PathElement.sequenceElement());
+        }
+        layout = MemoryLayout.sequenceLayout(-1, layout);
+        path.add(PathElement.sequenceElement());
+        return layout.varHandle(path.toArray(new PathElement[0]));
     }
 
     /**

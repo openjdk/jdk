@@ -131,6 +131,18 @@ public class TestLayouts {
     }
 
     @Test
+    public void testSequenceBadCount() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.sequenceLayout(-2, JAVA_SHORT));
+    }
+
+    @Test(dataProvider = "basicLayouts")
+    public void testSequenceInferredCount(MemoryLayout layout) {
+        assertEquals(MemoryLayout.sequenceLayout(-1, layout),
+                     MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.bitSize(), layout));
+    }
+
+    @Test
     public void testSequenceOverflow() {
         assertThrows(IllegalArgumentException.class, // negative
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
