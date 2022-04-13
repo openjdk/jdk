@@ -46,7 +46,7 @@ public class DESKeySpec implements java.security.spec.KeySpec {
     /*
      * Weak/semi-weak keys copied from FIPS 74.
      *
-     * "...The first 6 keys have duals different from themselves, hence
+     * "...The first 6 keys have duals different than themselves, hence
      * each is both a key and a dual giving 12 keys with duals. The last
      * four keys equal their duals, and are called self-dual keys..."
      *

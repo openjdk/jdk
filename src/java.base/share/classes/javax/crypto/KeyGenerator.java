@@ -237,7 +237,7 @@ public class KeyGenerator {
      *
      * @see java.security.Provider
      */
-    public static KeyGenerator getInstance(String algorithm)
+    public static final KeyGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         return new KeyGenerator(algorithm);
@@ -279,7 +279,7 @@ public class KeyGenerator {
      *
      * @see java.security.Provider
      */
-    public static KeyGenerator getInstance(String algorithm,
+    public static final KeyGenerator getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -319,7 +319,7 @@ public class KeyGenerator {
      *
      * @see java.security.Provider
      */
-    public static KeyGenerator getInstance(String algorithm,
+    public static final KeyGenerator getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("KeyGenerator",

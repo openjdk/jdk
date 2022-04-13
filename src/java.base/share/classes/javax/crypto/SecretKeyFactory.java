@@ -158,8 +158,7 @@ public class SecretKeyFactory {
      *
      * @see java.security.Provider
      */
-    public static SecretKeyFactory getInstance(String algorithm)
-            throws NoSuchAlgorithmException {
+    public static final SecretKeyFactory getInstance(String algorithm) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         return new SecretKeyFactory(algorithm);
     }
@@ -201,7 +200,7 @@ public class SecretKeyFactory {
      *
      * @see java.security.Provider
      */
-    public static SecretKeyFactory getInstance(String algorithm,
+    public static final SecretKeyFactory getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -242,7 +241,7 @@ public class SecretKeyFactory {
      *
      * @see java.security.Provider
      */
-    public static SecretKeyFactory getInstance(String algorithm,
+    public static final SecretKeyFactory getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("SecretKeyFactory",

@@ -139,7 +139,7 @@ public class ExemptionMechanism {
      *
      * @see java.security.Provider
      */
-    public static ExemptionMechanism getInstance(String algorithm)
+    public static final ExemptionMechanism getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("ExemptionMechanism",
@@ -186,7 +186,7 @@ public class ExemptionMechanism {
      *
      * @see java.security.Provider
      */
-    public static ExemptionMechanism getInstance(String algorithm,
+    public static final ExemptionMechanism getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -227,7 +227,7 @@ public class ExemptionMechanism {
      *
      * @see java.security.Provider
      */
-    public static ExemptionMechanism getInstance(String algorithm,
+    public static final ExemptionMechanism getInstance(String algorithm,
         Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("ExemptionMechanism",

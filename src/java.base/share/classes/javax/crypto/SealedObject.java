@@ -446,7 +446,7 @@ public class SealedObject implements Serializable {
 
 final class extObjectInputStream extends ObjectInputStream {
     extObjectInputStream(InputStream in)
-        throws IOException {
+        throws IOException, StreamCorruptedException {
         super(in);
     }
 

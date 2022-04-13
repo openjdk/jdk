@@ -174,7 +174,7 @@ public class Mac implements Cloneable {
      *
      * @see java.security.Provider
      */
-    public static Mac getInstance(String algorithm)
+    public static final Mac getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         List<Service> services = GetInstance.getServices("Mac", algorithm);
@@ -227,7 +227,7 @@ public class Mac implements Cloneable {
      *
      * @see java.security.Provider
      */
-    public static Mac getInstance(String algorithm, String provider)
+    public static final Mac getInstance(String algorithm, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance
@@ -265,7 +265,7 @@ public class Mac implements Cloneable {
      *
      * @see java.security.Provider
      */
-    public static Mac getInstance(String algorithm, Provider provider)
+    public static final Mac getInstance(String algorithm, Provider provider)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance

@@ -434,7 +434,9 @@ class CryptoPermission extends java.security.Permission {
             // For classes we don't know, the following
             // may be the best try.
             return this.algParamSpec.equals(algParamSpec);
-        } else return !this.checkParam;
+        } else {
+            return !this.checkParam;
+        }
     }
 
     private boolean equalObjects(Object obj1, Object obj2) {

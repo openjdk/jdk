@@ -177,7 +177,7 @@ public class KeyAgreement {
      *
      * @see java.security.Provider
      */
-    public static KeyAgreement getInstance(String algorithm)
+    public static final KeyAgreement getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         List<Service> services =
@@ -232,7 +232,7 @@ public class KeyAgreement {
      *
      * @see java.security.Provider
      */
-    public static KeyAgreement getInstance(String algorithm,
+    public static final KeyAgreement getInstance(String algorithm,
             String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -273,7 +273,7 @@ public class KeyAgreement {
      *
      * @see java.security.Provider
      */
-    public static KeyAgreement getInstance(String algorithm,
+    public static final KeyAgreement getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance

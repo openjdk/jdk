@@ -154,6 +154,8 @@ public class CipherInputStream extends FilterInputStream {
         ensureCapacity(readin);
         try {
             ofinish = cipher.update(ibuffer, 0, readin, obuffer, ostart);
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (ShortBufferException e) {
             throw new IOException(e);
         }
