@@ -339,6 +339,10 @@ public class LinkedHashMap<K,V>
      * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and load factor.
      *
+     * @apiNote
+     * To create a {@code LinkedHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newLinkedHashMap(int) newLinkedHashMap}.
+     *
      * @param  initialCapacity the initial capacity
      * @param  loadFactor      the load factor
      * @throws IllegalArgumentException if the initial capacity is negative
@@ -352,6 +356,10 @@ public class LinkedHashMap<K,V>
     /**
      * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and a default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code LinkedHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newLinkedHashMap(int) newLinkedHashMap}.
      *
      * @param  initialCapacity the initial capacity
      * @throws IllegalArgumentException if the initial capacity is negative

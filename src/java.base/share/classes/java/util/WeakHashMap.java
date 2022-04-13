@@ -198,6 +198,10 @@ public class WeakHashMap<K,V>
      * Constructs a new, empty {@code WeakHashMap} with the given initial
      * capacity and the given load factor.
      *
+     * @apiNote
+     * To create a {@code WeakHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newWeakHashMap(int) newWeakHashMap}.
+     *
      * @param  initialCapacity The initial capacity of the {@code WeakHashMap}
      * @param  loadFactor      The load factor of the {@code WeakHashMap}
      * @throws IllegalArgumentException if the initial capacity is negative,
@@ -222,6 +226,10 @@ public class WeakHashMap<K,V>
     /**
      * Constructs a new, empty {@code WeakHashMap} with the given initial
      * capacity and the default load factor (0.75).
+     *
+     * @apiNote
+     * To create a {@code WeakHashMap} with an initial capacity that accommodates
+     * an expected number of mappings, use {@link #newWeakHashMap(int) newWeakHashMap}.
      *
      * @param  initialCapacity The initial capacity of the {@code WeakHashMap}
      * @throws IllegalArgumentException if the initial capacity is negative
