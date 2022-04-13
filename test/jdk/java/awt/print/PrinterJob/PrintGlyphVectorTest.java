@@ -34,11 +34,13 @@ import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Label;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.Point2D;
@@ -52,6 +54,9 @@ public class PrintGlyphVectorTest extends Component implements Printable {
 
     private static final String INSTRUCTIONS = """
             Note: You must have a printer installed for this test.
+            If printer is not available, then 'PRINT' button will
+            be in disabled state then press 'Pass' button.
+
             Press the PRINT button on the 'Test PrintGlyphVector' frame
             and press OK/print button on the print dialog.
 
@@ -69,7 +74,8 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         FontRenderContext frc = g2d.getFontRenderContext();
         GlyphVector v = font.createGlyphVector(frc, testString);
 
-        float x = 50f, y = 50f;
+        float x = 50f;
+        float y = 50f;
 
         g2d.drawGlyphVector(v, x, y);
         Rectangle2D r = v.getVisualBounds();
@@ -94,7 +100,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
 
     public void paint(Graphics g) {
         g.setColor(Color.white);
-        g.fillRect(0,0,getSize().width, getSize().height);
+        g.fillRect(0, 0, getSize().width, getSize().height);
         drawGVs(g);
     }
 
@@ -121,17 +127,22 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         f.add(pvt, BorderLayout.CENTER);
 
         Button printButton = new Button("PRINT");
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        if (pj == null || pj.getPrintService() == null) {
+            printButton.setEnabled(false);
+        }
+
         printButton.addActionListener((e) -> {
-            PrinterJob pj = PrinterJob.getPrinterJob();
-            if (pj == null || pj.getPrintService() == null ||
-                    !pj.printDialog()) {
-                return;
-            }
             pj.setPrintable(new PrintGlyphVectorTest());
-            try {
-                pj.print();
-            } catch (PrinterException ex) {
-                System.err.println(ex);
+            if (pj.printDialog()) {
+                try {
+                    pj.print();
+                } catch (PrinterException ex) {
+                    throw new RuntimeException(ex.getMessage());
+                }
+            } else {
+                throw new RuntimeException("Test failed : "
+                        + "User selected 'Cancel' button on the print dialog");
             }
         });
 
@@ -146,7 +157,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         PassFailJFrame.positionTestFrame(f, PassFailJFrame.Position.HORIZONTAL);
     }
 
-    public static void main(String arg[]) throws Exception {
+    public static void main(String[] arg) throws Exception {
         PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
                 "Frame", INSTRUCTIONS, 10, 40, 5);
         createTestUI();
