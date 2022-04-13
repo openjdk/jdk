@@ -356,7 +356,7 @@ define SetupCompileNativeFileBody
       $1_COMPILER := $$($$($1_BASE)_CC)
     else ifneq ($$(filter %.S, $$($1_FILENAME)), )
       # Compile as preprocessed assembler file
-      $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS) -DASSEMBLY_SRC_FILE='"$$($1_REL_ASM_SRC)"'
+      $1_FLAGS := $(BASIC_ASFLAGS) $$($1_BASE_ASFLAGS)
       $1_COMPILER := $(AS)
 
       # gcc assembly files must contain an appropriate relative .file
