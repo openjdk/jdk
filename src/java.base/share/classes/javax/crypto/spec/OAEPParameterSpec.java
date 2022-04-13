@@ -88,12 +88,17 @@ public class OAEPParameterSpec implements AlgorithmParameterSpec {
     private final PSource pSrc;
 
     /**
-     * The OAEP parameter set with all default values.
+     * The OAEP parameter set with all default values, i.e. "SHA-1" as message
+     * digest algorithm, "MGF1" as mask generation function (mgf) algorithm,
+     * {@code MGF1ParameterSpec.SHA1} as parameters for the mask generation
+     * function, and {@code PSource.PSpecified.DEFAULT} as the source of the
+     * encoding input.
+     *
      * @deprecated This field uses the default values defined in the PKCS #1
      *         standard. Some of these defaults are no longer recommended due
      *         to advances in cryptanalysis -- see the
-     *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
-     *         standard for more details. Thus, it is recommended to create
+     *         <a href="https://www.rfc-editor.org/rfc/rfc8017#appendix-B.1">Appendix B.1</a>
+     *         for more details. Thus, it is recommended to create
      *         a new {@code OAEPParameterSpec} with the desired parameter values
      *         using the
      *         {@link #OAEPParameterSpec(String, String, AlgorithmParameterSpec, PSource)} constructor.
