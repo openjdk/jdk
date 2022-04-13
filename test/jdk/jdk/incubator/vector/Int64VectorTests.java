@@ -2565,7 +2565,7 @@ public class Int64VectorTests extends AbstractVectorTest {
 
 
     static int ROR_unary(int a, int b) {
-        return (int)(ROR_scalar(a,b));
+        return (int)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -2607,7 +2607,7 @@ public class Int64VectorTests extends AbstractVectorTest {
 
 
     static int ROL_unary(int a, int b) {
-        return (int)(ROL_scalar(a,b));
+        return (int)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -2776,7 +2776,7 @@ public class Int64VectorTests extends AbstractVectorTest {
 
 
     static int ROR_binary_const(int a) {
-        return (int)(ROR_scalar(a,CONST_SHIFT));
+        return (int)(ROR_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "intUnaryOpProvider")
@@ -2817,7 +2817,7 @@ public class Int64VectorTests extends AbstractVectorTest {
 
 
     static int ROL_binary_const(int a) {
-        return (int)(ROL_scalar(a,CONST_SHIFT));
+        return (int)(ROL_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "intUnaryOpProvider")

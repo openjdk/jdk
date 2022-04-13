@@ -2600,7 +2600,7 @@ public class Byte512VectorTests extends AbstractVectorTest {
 
 
     static byte ROR_unary(byte a, byte b) {
-        return (byte)(ROR_scalar(a,b));
+        return (byte)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -2642,7 +2642,7 @@ public class Byte512VectorTests extends AbstractVectorTest {
 
 
     static byte ROL_unary(byte a, byte b) {
-        return (byte)(ROL_scalar(a,b));
+        return (byte)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -2811,7 +2811,7 @@ public class Byte512VectorTests extends AbstractVectorTest {
 
 
     static byte ROR_binary_const(byte a) {
-        return (byte)(ROR_scalar(a,CONST_SHIFT));
+        return (byte)(ROR_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "byteUnaryOpProvider")
@@ -2852,7 +2852,7 @@ public class Byte512VectorTests extends AbstractVectorTest {
 
 
     static byte ROL_binary_const(byte a) {
-        return (byte)(ROL_scalar(a,CONST_SHIFT));
+        return (byte)(ROL_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "byteUnaryOpProvider")

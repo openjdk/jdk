@@ -2590,7 +2590,7 @@ public class Short256VectorTests extends AbstractVectorTest {
 
 
     static short ROR_unary(short a, short b) {
-        return (short)(ROR_scalar(a,b));
+        return (short)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2632,7 +2632,7 @@ public class Short256VectorTests extends AbstractVectorTest {
 
 
     static short ROL_unary(short a, short b) {
-        return (short)(ROL_scalar(a,b));
+        return (short)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -2801,7 +2801,7 @@ public class Short256VectorTests extends AbstractVectorTest {
 
 
     static short ROR_binary_const(short a) {
-        return (short)(ROR_scalar(a,CONST_SHIFT));
+        return (short)(ROR_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "shortUnaryOpProvider")
@@ -2842,7 +2842,7 @@ public class Short256VectorTests extends AbstractVectorTest {
 
 
     static short ROL_binary_const(short a) {
-        return (short)(ROL_scalar(a,CONST_SHIFT));
+        return (short)(ROL_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "shortUnaryOpProvider")

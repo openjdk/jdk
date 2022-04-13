@@ -2587,7 +2587,7 @@ public class Long256VectorTests extends AbstractVectorTest {
 
 
     static long ROR_unary(long a, long b) {
-        return (long)(ROR_scalar(a,b));
+        return (long)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2629,7 +2629,7 @@ public class Long256VectorTests extends AbstractVectorTest {
 
 
     static long ROL_unary(long a, long b) {
-        return (long)(ROL_scalar(a,b));
+        return (long)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2798,7 +2798,7 @@ public class Long256VectorTests extends AbstractVectorTest {
 
 
     static long ROR_binary_const(long a) {
-        return (long)(ROR_scalar(a,CONST_SHIFT));
+        return (long)(ROR_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "longUnaryOpProvider")
@@ -2839,7 +2839,7 @@ public class Long256VectorTests extends AbstractVectorTest {
 
 
     static long ROL_binary_const(long a) {
-        return (long)(ROL_scalar(a,CONST_SHIFT));
+        return (long)(ROL_scalar(a, CONST_SHIFT));
     }
 
     @Test(dataProvider = "longUnaryOpProvider")

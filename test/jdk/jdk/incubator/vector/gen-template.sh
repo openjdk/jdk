@@ -443,8 +443,8 @@ gen_shift_op  "ASHR" "(a >> (b \& 7))" "byte"
 gen_shift_op  "ASHR" "(a >> (b \& 15))" "short"
 gen_binary_alu_op "ROR" "ROR_scalar(a,b)" "BITWISE"
 gen_binary_alu_op "ROL" "ROL_scalar(a,b)" "BITWISE"
-gen_shift_op  "ROR" "ROR_scalar(a,b)" "BITWISE"
-gen_shift_op  "ROL" "ROL_scalar(a,b)" "BITWISE"
+gen_shift_op  "ROR" "ROR_scalar(a, b)" "BITWISE"
+gen_shift_op  "ROL" "ROL_scalar(a, b)" "BITWISE"
 
 # Constant Shifts
 gen_shift_cst_op  "LSHR" "(a >>> CONST_SHIFT)" "intOrLong"
@@ -452,8 +452,8 @@ gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> CONST_SHIFT)" "byte"
 gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> CONST_SHIFT)" "short"
 gen_shift_cst_op  "LSHL" "(a << CONST_SHIFT)" "BITWISE"
 gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
-gen_shift_cst_op  "ROR" "ROR_scalar(a,CONST_SHIFT)" "BITWISE"
-gen_shift_cst_op  "ROL" "ROL_scalar(a,CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
