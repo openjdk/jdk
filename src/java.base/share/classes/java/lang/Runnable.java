@@ -28,7 +28,7 @@ package java.lang;
 /**
  * Represents an operation that does not return a result.
  *
- * <p> This is a <a href="package-summary.html">functional interface</a>
+ * <p> This is a {@linkplain java.util.function functional interface}
  * whose functional method is {@link #run()}.
  *
  * @author  Arthur van Hoff

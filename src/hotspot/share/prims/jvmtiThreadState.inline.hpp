@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,23 +80,23 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
 
   NoSafepointVerifier nsv;  // oop is safe to use.
 
-  if (thread_oop == NULL) { // then thread should not be NULL (see assert above)
+  if (thread_oop == NULL) {  // Then thread should not be NULL (see assert above).
     thread_oop = thread->jvmti_vthread() != NULL ? thread->jvmti_vthread() : thread->threadObj();
   }
 
-  // in a case of unmounted virtual thread the thread can be NULL
+  // In a case of unmounted virtual thread the thread can be NULL.
   JvmtiThreadState *state = thread == NULL ? NULL : thread->jvmti_thread_state();
 
   if (state == NULL && thread != NULL && thread->is_exiting()) {
-    // don't add a JvmtiThreadState to a thread that is exiting
+    // Don't add a JvmtiThreadState to a thread that is exiting.
     return NULL;
   }
   if (state == NULL || state->get_thread_oop() != thread_oop) {
-    // check if java_lang_Thread already has a link to the JvmtiThreadState
-    if (thread_oop != NULL) { // thread_oop can be NULL at early VMStart
+    // Check if java_lang_Thread already has a link to the JvmtiThreadState.
+    if (thread_oop != NULL) {  // thread_oop can be NULL during early VMStart.
       state = java_lang_Thread::jvmti_thread_state(thread_oop);
     }
-    if (state == NULL) { // need to create state
+    if (state == NULL) {  // Need to create state.
       state = new JvmtiThreadState(thread, thread_oop);
     }
   }
@@ -105,7 +105,7 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
 PRAGMA_DIAG_POP
 
 inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread, Handle thread_handle) {
-  // in a case of unmounted virtual thread the thread can be NULL
+  // In a case of unmounted virtual thread the thread can be NULL.
   JvmtiThreadState* state = thread_handle == NULL ? thread->jvmti_thread_state() :
                                                 java_lang_Thread::jvmti_thread_state(thread_handle());
   if (state == NULL) {
@@ -133,23 +133,23 @@ inline void JvmtiThreadState::unbind_from(JvmtiThreadState* state, JavaThread* t
   if (state == NULL) {
     return;
   }
-  // save interp_only_mode
+  // Save thread's interp_only_mode.
   state->_saved_interp_only_mode = thread->get_interp_only_mode();
-  state->set_thread(NULL); // it is to make sure stale _thread value is never used
+  state->set_thread(NULL);  // Make sure stale _thread value is never used.
 }
 
 inline void JvmtiThreadState::bind_to(JvmtiThreadState* state, JavaThread* thread) {
-  // restore thread interp_only_mode
+  // Restore thread's interp_only_mode.
   thread->set_interp_only_mode(state == NULL ? 0 : state->_saved_interp_only_mode);
 
-  // make continuation to notice the interp_only_mode change
+  // Make continuation notice the interp_only_mode change.
   Continuation::set_cont_fastpath_thread_state(thread);
 
-  // bind JavaThread to JvmtiThreadState
+  // Bind JavaThread to JvmtiThreadState.
   thread->set_jvmti_thread_state(state);
 
   if (state != NULL) {
-    // bind to JavaThread
+    // Bind to JavaThread.
     state->set_thread(thread);
   }
 }

@@ -35,10 +35,9 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  *
  * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
+ * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PreserveFramePointer Fuzz
  *
  */
-
-// * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
 
 // * @run main/othervm/timeout=3000 -XX:StartFlightRecording=filename=test.jfr,settings=profile -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
 
@@ -436,6 +435,10 @@ public class Fuzz implements Runnable {
             .collect(Collectors.toList()).toArray(Op[]::new);
 
         Fuzz f0 = new Fuzz(trace0);
+        // if (VERBOSE) {
+        //     System.out.println(">>>> RESULT");
+        //     f0.verbose = true;
+        // }
         f0.run();
         return f0.result;
     }

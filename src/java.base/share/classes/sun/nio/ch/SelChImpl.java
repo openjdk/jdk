@@ -86,7 +86,7 @@ public interface SelChImpl extends Channel {
             Poller.poll(getFDVal(), event, nanos, this::isOpen);
         } else {
             long millis;
-            if (nanos == 0) {
+            if (nanos <= 0) {
                 millis = -1;
             } else {
                 millis = NANOSECONDS.toMillis(nanos);

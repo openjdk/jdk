@@ -1995,10 +1995,17 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
 }
 
 void nmethod::follow_nmethod(OopIterateClosure* cl) {
+  // Process oops in the nmethod
   oops_do(cl);
+
+  // CodeCache sweeper support
   mark_as_maybe_on_continuation();
+
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   bs_nm->disarm(this);
+
+  // There's an assumption made that this function is not used by GCs that
+  // relocate objects, and therefore we don't call fix_oop_relocations.
 }
 
 nmethod* volatile nmethod::_oops_do_mark_nmethods;

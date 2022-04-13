@@ -1588,26 +1588,26 @@ threadControl_suspendCount(jthread thread, jint *count)
     if (node != NULL) {
         *count = node->suspendCount;
     } else {
-      /*
-       * If the node is in neither list, the debugger never suspended
-       * this thread, so the suspend count is 0, unless it is a vthread.
-       */
-      if (isVThread(thread)) {
-          jint vthread_state = 0;
-          jvmtiError error = threadState(thread, &vthread_state);
-          if (error != JVMTI_ERROR_NONE) {
-              EXIT_ERROR(error, "getting thread state");
-          }
-          if (vthread_state == 0) {
-              // If state == 0, then this is a new vthread that has not been started yet.
-              *count = 0;
-          } else {
-              // This is a started vthread that we are not tracking. Use suspendAllCount.
-              *count = suspendAllCount;
-          }
-      } else {
-        *count = 0;
-      }
+        /*
+         * If the node is in neither list, the debugger never suspended
+         * this thread, so the suspend count is 0, unless it is a vthread.
+         */
+        if (isVThread(thread)) {
+            jint vthread_state = 0;
+            jvmtiError error = threadState(thread, &vthread_state);
+            if (error != JVMTI_ERROR_NONE) {
+                EXIT_ERROR(error, "getting thread state");
+            }
+            if (vthread_state == 0) {
+                // If state == 0, then this is a new vthread that has not been started yet.
+                *count = 0;
+            } else {
+                // This is a started vthread that we are not tracking. Use suspendAllCount.
+                *count = suspendAllCount;
+            }
+        } else {
+            *count = 0;
+        }
     }
 
     debugMonitorExit(threadLock);
@@ -1801,7 +1801,7 @@ threadControl_resumeAll(void)
              * Tell JVMTI to resume all virtual threads except for those we
              * are tracking separately. The commonResumeList() call below will
              * resume any vthread with a suspendCount == 1, and we want to ignore
-             * vthreads with a suspendCount > 0. Therefor we don't want
+             * vthreads with a suspendCount > 0. Therefore we don't want
              * ResumeAllVirtualThreads resuming these vthreads. We must first
              * build a list of them to pass to as the exclude list.
              */

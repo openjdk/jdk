@@ -65,8 +65,6 @@ public class ClhsdbInspect {
             tokensMap.put("(a java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject)",
                           "instance of Oop for java/util/concurrent/locks/AbstractQueuedSynchronizer\\$ConditionObject");
 
-            // System.out.println("======>>>>>\n" + jstackOutput + "\n<<<<<========");
-
             String[] lines = jstackOutput.split("\\R");
 
             for (String key: tokensMap.keySet()) {

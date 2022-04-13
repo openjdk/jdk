@@ -125,6 +125,7 @@ public class strace003 {
             "java.lang.Thread.currentCarrierThread",
             "java.lang.Thread.currentThread",
             "java.lang.Thread.threadContainer",
+            "jdk.internal.misc.Blocker.end",
             "jdk.internal.vm.StackableScope.head",
             "jdk.internal.vm.StackableScope.popAll",
             "nsk.stress.strace.strace003Thread.run",

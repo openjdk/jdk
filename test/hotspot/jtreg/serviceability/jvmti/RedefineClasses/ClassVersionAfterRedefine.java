@@ -28,7 +28,6 @@
  * @summary Class redefinition with a different class file version
  * @library /test/lib
  * @compile TestClassOld.jasm TestClassNew.jasm
- * @build jdk.test.lib.helpers.ClassFileInstaller jdk.test.lib.compiler.InMemoryJavaCompiler
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar ClassVersionAfterRedefine
  */

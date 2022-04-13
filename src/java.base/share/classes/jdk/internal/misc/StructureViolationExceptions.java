@@ -27,7 +27,7 @@ package jdk.internal.misc;
 import java.lang.reflect.Constructor;
 
 /**
- * Defines static methods to allow code in java.base to cretae or throw
+ * Defines static methods to allow code in java.base to create or throw
  * StructureViolationException. This class will go away when the exception
  * moves to java.base.
  */

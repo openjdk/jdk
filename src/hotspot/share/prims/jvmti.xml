@@ -1733,11 +1733,11 @@ jvmtiEnv *jvmti;
         permanent features of the Java platform.</i>
         <p/>
         Suspend all virtual threads except those already suspended.
+        Virtual threads that are currently suspended do not change state.
         Virtual threads may be resumed with
         <functionlink id="ResumeAllVirtualThreads"></functionlink> or
         <functionlink id="ResumeThreadList"></functionlink> or
         <functionlink id="ResumeThread"></functionlink>.
-        Virtual threads that are currently suspended do not change state.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -1861,11 +1861,11 @@ jvmtiEnv *jvmti;
         permanent features of the Java platform.</i>
         <p/>
         Resume all virtual threads except those already resumed.
+        Virtual threads that are currently resumed do not change state.
         Virtual threads may be suspended with
         <functionlink id="SuspendAllVirtualThreads"></functionlink> or
         <functionlink id="SuspendThreadList"></functionlink> or
         <functionlink id="SuspendThread"></functionlink>.
-        Virtual threads that are currently resumed do not change state.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -5822,7 +5822,7 @@ class C2 extends C1 implements I2 {
       slot numbers can be obtained with the function
       <functionlink id="GetLocalVariableTable"></functionlink>.
       <p/>
-      The <code>GetLocalXXX</code> functions may be to used retrieve the value of
+      The <code>GetLocalXXX</code> functions may be used to retrieve the value of
       a local variable contained in the frame of a virtual thread.
       The <code>SetLocalXXX</code> functions may be used to set the value of a
       local variable in the topmost frame of a virtual thread suspended at a
@@ -12975,7 +12975,7 @@ myInit() {
       <i>Preview features may be removed in a future release, or upgraded to
       permanent features of the Java platform.</i>
       <p/>
-      Virtual thread start events are generated before its initial method executes.
+      A virtual thread start event is generated before its initial method executes.
       <p/>
       The event is sent on the <paramlink id="virtual_thread"></paramlink>.
     </description>
@@ -13008,7 +13008,7 @@ myInit() {
       <i>Preview features may be removed in a future release, or upgraded to
       permanent features of the Java platform.</i>
       <p/>
-      Virtual thread end events are generated after its initial method has finished execution.
+      A virtual thread end event is generated after its initial method has finished execution.
       <p/>
       The event is sent on the <paramlink id="virtual_thread"></paramlink>.
     </description>
@@ -13038,7 +13038,7 @@ myInit() {
   <event label="Virtual Thread Mount"
          id="VirtualThreadMount" const="JVMTI_EVENT_VIRTUAL_THREAD_MOUNT" filtered="thread" num="89" phase="start" since="99">
     <description>
-      Virtual thread mount events are generated before its method continue to execute on the mounted thread.
+      A virtual thread mount event is generated before its method continue to execute on the mounted thread.
       <p/>
       The event is sent on the <paramlink id="thread"></paramlink> the virtual thread is mounted to.
     </description>
@@ -13069,7 +13069,7 @@ myInit() {
   <event label="Virtual Thread Unmount"
          id="VirtualThreadUnmount" const="JVMTI_EVENT_VIRTUAL_THREAD_UNMOUNT" filtered="thread" num="90" phase="start" since="99">
     <description>
-      Virtual thread unmount events are generated when the virtual thread is about to be unmounted from the carrier thread.
+      A virtual thread unmount event is generated when the virtual thread is about to be unmounted from the carrier thread.
       <p/>
       The event is sent on the <paramlink id="thread"></paramlink> the virtual thread is unmounted from.
     </description>

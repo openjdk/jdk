@@ -34,7 +34,7 @@
 
 // Fast path
 
-inline void FreezeBase::patch_chunk_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
+inline void FreezeBase::patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
   // copy the spilled fp from the heap to the stack
   *(frame_sp - frame::sender_sp_offset) = *(heap_sp - frame::sender_sp_offset);
 }
@@ -190,6 +190,7 @@ inline frame ThawBase::new_entry_frame() {
 
 template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom) {
   assert(FKind::is_instance(hf), "");
+  // The values in the returned frame object will be written into the callee's stack in patch.
 
   if (FKind::interpreted) {
     intptr_t* heap_sp = hf.unextended_sp();
@@ -200,6 +201,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     if ((intptr_t)fp % frame::frame_alignment != 0) {
       fp--;
       frame_sp--;
+      log_develop_trace(continuations)("Adding internal interpreted frame alignment");
     }
     DEBUG_ONLY(intptr_t* unextended_sp = fp + *hf.addr_at(frame::interpreter_frame_last_sp_offset);)
     assert(frame_sp == unextended_sp, "");

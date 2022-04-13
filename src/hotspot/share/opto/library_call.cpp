@@ -2953,6 +2953,42 @@ bool LibraryCallKit::inline_native_classID() {
   return true;
 }
 
+/*
+ * The intrinsic is a model of this pseudo-code:
+ *
+ * JfrThreadLocal* const tl = Thread::jfr_thread_local()
+ * jobject h_event_writer = tl->java_event_writer();
+ * if (h_event_writer == NULL) {
+ *   return NULL;
+ * }
+ * oop threadObj = Thread::threadObj();
+ * oop vthread = java_lang_Thread::vthread(threadObj);
+ * traceid tid;
+ * bool excluded;
+ * if (vthread != threadObj) {  // i.e. current thread is virtual
+ *   tid = java_lang_Thread::tid(vthread);
+ *   u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(vthread);
+ *   excluded = vthread_epoch_raw & excluded_mask;
+ *   if (!excluded) {
+ *     traceid current_epoch = JfrTraceIdEpoch::current_generation();
+ *     u2 vthread_epoch = vthread_epoch_raw & epoch_mask;
+ *     if (vthread_epoch != current_epoch) {
+ *       write_checkpoint();
+ *     }
+ *   }
+ * } else {
+ *   tid = java_lang_Thread::tid(threadObj);
+ *   u2 thread_epoch_raw = java_lang_Thread::jfr_epoch(threadObj);
+ *   excluded = thread_epoch_raw & excluded_mask;
+ * }
+ * oop event_writer = JNIHandles::resolve_non_null(h_event_writer);
+ * traceid tid_in_event_writer = getField(event_writer, "threadID");
+ * if (tid_in_event_writer != tid) {
+ *   setField(event_writer, "threadID", tid);
+ *   setField(event_writer, "excluded", excluded);
+ * }
+ * return event_writer
+ */
 bool LibraryCallKit::inline_native_getEventWriter() {
   enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
 
@@ -3208,6 +3244,24 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   return true;
 }
 
+/*
+ * The intrinsic is a model of this pseudo-code:
+ *
+ * JfrThreadLocal* const tl = thread->jfr_thread_local();
+ * if (carrierThread != thread) { // is virtual thread
+ *   const u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(thread);
+ *   bool excluded = vthread_epoch_raw & excluded_mask;
+ *   Atomic::store(&tl->_contextual_tid, java_lang_Thread::tid(thread));
+ *   Atomic::store(&tl->_contextual_thread_excluded, is_excluded);
+ *   if (!excluded) {
+ *     const u2 vthread_epoch = vthread_epoch_raw & epoch_mask;
+ *     Atomic::store(&tl->_vthread_epoch, vthread_epoch);
+ *   }
+ *   Atomic::release_store(&tl->_vthread, true);
+ *   return;
+ * }
+ * Atomic::release_store(&tl->_vthread, false);
+ */
 void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
 

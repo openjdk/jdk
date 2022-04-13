@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,13 +282,13 @@ class VM_VirtualThreadGetCurrentLocation : public VM_Operation {
   VMOp_Type type() const { return VMOp_VirtualThreadGetCurrentLocation; }
   void doit() {
     if (!JvmtiEnvBase::is_vthread_alive(_vthread_h())) {
-      return; // _completed remains false
+      return; // _completed remains false.
     }
     ResourceMark rm;
     javaVFrame* jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
     if (jvf != NULL) {
-      // jvf can be NULL, when the native enterSpecial frame is on the top
+      // jvf can be NULL, when the native enterSpecial frame is on the top.
       Method* method = jvf->method();
       _method_id = method->jmethod_id();
       _bci = jvf->bci();
@@ -375,16 +375,16 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
     oop thread_oop = jvmti_thread_state()->get_thread_oop();
     assert(!jvmti_thread_state()->is_in_VTMT(), "sanity check");
 
-    // Check for an unmounted virual thread case.
     if (thread == NULL && event_type == JVMTI_EVENT_SINGLE_STEP && is_virtual()) {
+      // Handle the unmounted virtual thread case.
       jmethodID method_id;
       int bci;
       JavaThread* cur_thread = JavaThread::current();
       HandleMark hm(cur_thread);
       VM_VirtualThreadGetCurrentLocation op(Handle(cur_thread, thread_oop));
       VMThread::execute(&op);
-      // do nothing if virtual thread has been already terminated
       if (op.completed()) {
+        // Do nothing if virtual thread has been already terminated.
         op.get_current_location(&method_id, &bci);
         set_current_location(method_id, bci);
       }

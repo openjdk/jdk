@@ -59,7 +59,7 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_nmethod(nmethod* nm) {
 }
 
 inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
-  // Mark interpreted frames for marking_cycle
+  // Mark interpreted frames for class redefinition
   m->record_gc_epoch();
 }
 

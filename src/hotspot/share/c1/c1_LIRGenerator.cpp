@@ -1314,17 +1314,6 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   __ branch_destination(L_done->label());
 }
 
-// Example: Thread.currentCarrierThread()
-void LIRGenerator::do_currentCarrierThread(Intrinsic* x) {
-  assert(x->number_of_arguments() == 0, "wrong type");
-  LIR_Opr temp = new_register(T_ADDRESS);
-  LIR_Opr reg = rlock_result(x);
-  __ move(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_ADDRESS), temp);
-  // threadObj = ((OopHandle)_threadObj)->resolve();
-  access_load(IN_NATIVE, T_OBJECT,
-              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
-}
-
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   assert(x->number_of_arguments() == 3, "wrong type");
   LIR_Opr result_reg = rlock_result(x);
@@ -1429,19 +1418,23 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 }
 
 void LIRGenerator::do_scopeLocalCache(Intrinsic* x) {
-  assert(x->number_of_arguments() == 0, "wrong type");
-  LIR_Opr temp = new_register(T_ADDRESS);
-  LIR_Opr reg = rlock_result(x);
-  __ move(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::scopeLocalCache_offset()), T_ADDRESS), temp);
-  access_load(IN_NATIVE, T_OBJECT,
-              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
+  do_JavaThreadField(x, JavaThread::scopeLocalCache_offset());
+}
+
+// Example: Thread.currentCarrierThread()
+void LIRGenerator::do_currentCarrierThread(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::threadObj_offset());
 }
 
 void LIRGenerator::do_vthread(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::vthread_offset());
+}
+
+void LIRGenerator::do_JavaThreadField(Intrinsic* x, ByteSize offset) {
   assert(x->number_of_arguments() == 0, "wrong type");
   LIR_Opr temp = new_register(T_ADDRESS);
   LIR_Opr reg = rlock_result(x);
-  __ move(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::vthread_offset()), T_ADDRESS), temp);
+  __ move(new LIR_Address(getThreadPointer(), in_bytes(offset), T_ADDRESS), temp);
   access_load(IN_NATIVE, T_OBJECT,
               LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
 }
@@ -2905,7 +2898,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
 #ifdef JFR_HAVE_INTRINSICS
 
 void LIRGenerator::do_getEventWriter(Intrinsic* x) {
-  LabelObj* L_NULL = new LabelObj();
   BasicTypeList signature(0);
   CallingConvention* cc = frame_map()->c_calling_convention(&signature);
   LIR_Opr reg = result_register_for(x->type());

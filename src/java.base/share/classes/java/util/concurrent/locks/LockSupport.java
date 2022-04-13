@@ -176,7 +176,7 @@ public class LockSupport {
     public static void unpark(Thread thread) {
         if (thread != null) {
             if (thread.isVirtual()) {
-                VirtualThreads.unpark(thread); // can throw RejectedExecutionException
+                VirtualThreads.unpark(thread);
             } else {
                 U.unpark(thread);
             }

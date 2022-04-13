@@ -206,7 +206,11 @@ public:
     _st->print_cr("-- frame sp: " INTPTR_FORMAT " interpreted: %d size: %d argsize: %d",
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
                   fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
+  #ifdef ASSERT
+    f.print_value_on(_st, nullptr);
+  #else
     f.print_on(_st);
+  #endif
     const ImmutableOopMap* oopmap = fs.oopmap();
     if (oopmap != nullptr) {
       oopmap->print_on(_st);

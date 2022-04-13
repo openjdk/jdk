@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package java.io;
 
-
-import jdk.internal.misc.InternalLock;
-
 import java.util.Objects;
+import jdk.internal.misc.InternalLock;
 
 /**
  * Abstract class for writing to character streams.  The only methods that a
@@ -151,17 +149,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * synchronize on the writer itself.
      */
     protected Writer() {
-        // use InternalLock for trusted classes
-        Class<?> clazz = getClass();
-        if (clazz == OutputStreamWriter.class
-                || clazz == BufferedWriter.class
-                || clazz == FileWriter.class
-                || clazz == PrintWriter.class
-                || clazz == sun.nio.cs.StreamEncoder.class) {
-            this.lock = InternalLock.newLockOr(this);
-        } else {
-            this.lock = this;
-        }
+        this.lock = this;
     }
 
     /**
@@ -172,7 +160,25 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *         Object to synchronize on
      */
     protected Writer(Object lock) {
-        this.lock = Objects.requireNonNull(lock);
+        if (lock == null) {
+            throw new NullPointerException();
+        }
+        this.lock = lock;
+    }
+
+    /**
+     * For use by BufferedWriter to create a character-stream writer that uses an
+     * internal lock when BufferedWriter is not extended and the given writer is
+     * trusted, otherwise critical sections will synchronize on the given writer.
+     */
+    Writer(Writer writer) {
+        Class<?> clazz = writer.getClass();
+        if (getClass() == BufferedWriter.class &&
+                (clazz == OutputStreamWriter.class || clazz == FileWriter.class)) {
+            this.lock = InternalLock.newLockOr(writer);
+        } else {
+            this.lock = writer;
+        }
     }
 
     /**

@@ -129,9 +129,6 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
       if (found) {
         LOG(" >>> found: %s\n", name);
       }
-      //== name &&
-        //  (idx == POINT_AGENT_THREAD || strlen(name) ==
-          //    strlen(expected_thread_info[idx].thr_names[i]));
     }
 
     if (!found) {

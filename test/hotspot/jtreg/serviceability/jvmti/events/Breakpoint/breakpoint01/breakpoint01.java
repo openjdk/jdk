@@ -70,7 +70,7 @@ public class breakpoint01 {
 
     public static void main(String[] argv) {
         int result = new breakpoint01().runThis();
-        if (result !=0 ) {
+        if (result != 0 ) {
             throw new RuntimeException("Check returned " + result);
         }
     }

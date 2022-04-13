@@ -110,6 +110,11 @@ int stackChunkOopDesc::num_java_frames() const {
   return n;
 }
 
+// The high-order bit tagging has only been verified to work on these platforms.
+#if (defined(X86) && defined(_LP64)) || defined(AARCH64)
+#define HIGH_ORDER_BIT_TAGGING_SUPPORTED
+#endif
+
 // We use the high-order (sign) bit to tag derived oop offsets.
 // However, we cannot rely on simple nagation, as offsets could hypothetically be zero or even negative
 
@@ -117,13 +122,13 @@ static inline bool is_derived_oop_offset(intptr_t value) {
   return value < 0;
 }
 
-#if defined(X86) || defined(AARCH64)
+#ifdef HIGH_ORDER_BIT_TAGGING_SUPPORTED
 static const intptr_t OFFSET_MAX = (intptr_t)((uintptr_t)1 << 35); // 32 bit offset + 3 for jlong (offset in bytes)
 static const intptr_t OFFSET_MIN = -OFFSET_MAX - 1;
 #endif
 
 static inline intptr_t tag_derived_oop_offset(intptr_t untagged) {
-#if defined(X86) || defined(AARCH64)
+#ifdef HIGH_ORDER_BIT_TAGGING_SUPPORTED
   assert(untagged <= OFFSET_MAX, "");
   assert(untagged >= OFFSET_MIN, "");
   intptr_t tagged = (intptr_t)((uintptr_t)untagged | ((uintptr_t)1 << (BitsPerWord-1)));
@@ -135,7 +140,7 @@ static inline intptr_t tag_derived_oop_offset(intptr_t untagged) {
 }
 
 static inline intptr_t untag_derived_oop_offset(intptr_t tagged) {
-#if defined(X86) || defined(AARCH64)
+#ifdef HIGH_ORDER_BIT_TAGGING_SUPPORTED
   assert(is_derived_oop_offset(tagged), "");
   intptr_t untagged = (intptr_t)((uintptr_t)tagged << 1) >> 1;  // unsigned left shift; signed right shift
   assert(untagged <= OFFSET_MAX, "");
@@ -263,6 +268,24 @@ void stackChunkOopDesc::relativize_derived_oops() {
   OrderAccess::storestore();
 }
 
+#ifdef ASSERT
+template <ChunkFrames frame_kind, typename RegisterMapT>
+static void assert_relativized_derived_oops_in_frame(const StackChunkFrameStream<frame_kind>& f,
+                                                     const RegisterMapT* map) {
+  class AssertRelativeDerivedOopClosure : public DerivedOopClosure {
+  public:
+    virtual void do_derived_oop(oop* base_loc, derived_pointer* derived_loc) override {
+      assert(*base_loc == nullptr || is_derived_oop_offset(*(intptr_t*)derived_loc), "");
+    }
+  };
+  assert(!f.is_compiled() || f.oopmap()->has_derived_oops() == f.oopmap()->has_any(OopMapValue::derived_oop_value), "");
+  if (f.is_compiled() && f.oopmap()->has_derived_oops()) {
+    AssertRelativeDerivedOopClosure derived_closure;
+    f.iterate_derived_pointers(&derived_closure, map);
+  }
+}
+#endif
+
 enum class OopKind { Narrow, Wide };
 
 template <OopKind kind>
@@ -369,6 +392,7 @@ void stackChunkOopDesc::do_barriers0(const StackChunkFrameStream<frame_kind>& f,
 
   if (f.is_interpreted()) {
     Method* m = f.to_frame().interpreter_frame_method();
+    // Class redefinition support
     m->record_gc_epoch();
   } else if (f.is_compiled()) {
     nmethod* nm = f.cb()->as_nmethod();
@@ -379,7 +403,11 @@ void stackChunkOopDesc::do_barriers0(const StackChunkFrameStream<frame_kind>& f,
     // CodeCache, noting their Methods
   }
 
-  relativize_derived_oops_in_frame(f, map);
+  if (UseZGC) {
+    relativize_derived_oops_in_frame(f, map);
+  } else {
+    DEBUG_ONLY(assert_relativized_derived_oops_in_frame(f, map));
+  }
 
   // The store of the derived oops must be ordered with the store of the base.
   // RelativizeDerivedOopsStackChunkFrameClosure stored the derived oops,
@@ -536,6 +564,15 @@ public:
       // become stable(requires_barriers()), the earlier is_good check should
       // guarantee that all derived oops have been converted too offsets.
       assert(is_derived_oop_offset(value), "Unexpected non-offset value: " PTR_FORMAT, value);
+    } else {
+      if (is_derived_oop_offset(value)) {
+        intptr_t offset = untag_derived_oop_offset(value); // for assertions
+      } else {
+        // The offset was a non-offset derived pointer that
+        // had not been converted to an offset yet.
+        intptr_t offset = value - cast_from_oop<intptr_t>(base);
+        tag_derived_oop_offset(offset); // for assertions
+      }
     }
 
     // There's not much else we can assert about derived pointers. Their offsets are allowed to
@@ -581,7 +618,7 @@ public:
     LogTarget(Trace, continuations) lt;
     if (lt.develop_is_enabled()) {
       LogStream ls(lt);
-      f.print_on(&ls);
+      f.print_value_on(&ls);
     }
     assert(f.pc() != nullptr,
            "young: %d num_frames: %d sp: " INTPTR_FORMAT " start: " INTPTR_FORMAT " end: " INTPTR_FORMAT,
@@ -681,7 +718,9 @@ bool stackChunkOopDesc::verify(size_t* out_size, int* out_oops, int* out_frames,
            "argsize(): %d closure.argsize: %d closure.callee_interpreted: %d",
            argsize(), closure._argsize, closure._callee_interpreted);
 
-    int calculated_max_size = closure._size + closure._num_i2c * frame::align_wiggle;
+    int calculated_max_size = closure._size
+                              + closure._num_i2c * frame::align_wiggle
+                              + closure._num_interpreted_frames * frame::align_wiggle;
     assert(max_size() == calculated_max_size,
            "max_size(): %d calculated_max_size: %d argsize: %d num_i2c: %d",
            max_size(), calculated_max_size, closure._argsize, closure._num_i2c);

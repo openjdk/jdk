@@ -92,7 +92,7 @@ public class BufferedWriter extends Writer {
      * Creates a buffered character-output stream.
      */
     private BufferedWriter(Writer out, int initialSize, int maxSize) {
-        Objects.requireNonNull(out);
+        super(out);
         if (initialSize <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
         }

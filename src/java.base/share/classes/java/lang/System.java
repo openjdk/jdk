@@ -2166,12 +2166,7 @@ public final class System {
         // classes are used.
         VM.initializeOSEnvironment();
 
-        // Subsystems that are invoked during initialization can invoke
-        // VM.isBooted() in order to avoid doing things that should
-        // wait until the VM is fully initialized. The initialization level
-        // is incremented from 0 to 1 here to indicate the first phase of
-        // initialization has completed.
-        // IMPORTANT: Ensure that this remains the last initialization action!
+        // system properties, java.lang and other core classes are now initialized
         VM.initLevel(1);
 
         // start Finalizer and Reference Handler threads
@@ -2183,7 +2178,6 @@ public final class System {
 
     /*
      * Invoked by VM.  Phase 2 module system initialization.
-     *
      * Only classes in java.base can be loaded in this phase.
      *
      * @param printToStderr print exceptions to stderr rather than stdout

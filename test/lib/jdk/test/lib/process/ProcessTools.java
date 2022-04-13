@@ -314,6 +314,8 @@ public final class ProcessTools {
         String[] doubleWordArgs = {"-cp", "-classpath", "--add-opens", "--class-path", "--upgrade-module-path",
                                    "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path"};
 
+        // When test is executed with process wrapper the line is changed to
+        // java <jvm-args> jdk.test.lib.process.ProcessTools <test-class>
         String mainWrapper = System.getProperty("main.wrapper");
         if (noModule && mainWrapper != null) {
             if (mainWrapper.equalsIgnoreCase("virtual")) {
@@ -364,8 +366,6 @@ public final class ProcessTools {
                 args.add("jdk.test.lib.process.ProcessTools");
                 args.add(mainWrapper);
                 added = true;
-                // Should be main
-                // System.out.println("Wrapped TOFIND: " + cmd);
                 args.add(cmd);
             }
         } else {
@@ -764,6 +764,7 @@ public final class ProcessTools {
     }
 
     // ProcessTools as a wrapper
+    // It executes method main in a separate virtual or platform thread
     public static void main(String[] args) throws Throwable {
         String wrapper = args[0];
         String className = args[1];
@@ -774,8 +775,9 @@ public final class ProcessTools {
         mainMethod.setAccessible(true);
 
         if (wrapper.equals("Virtual")) {
+            // MainThreadGroup used just as a container for exceptions
+            // when main is executed in virtual thread
             MainThreadGroup tg = new MainThreadGroup();
-            // TODO fix to set virtual scheduler group when become available
             Thread vthread = startVirtualThread(() -> {
                     try {
                         mainMethod.invoke(null, new Object[] { classArgs });
@@ -785,6 +787,9 @@ public final class ProcessTools {
                         tg.uncaughtThrowable = error;
                     }
                 });
+            if (tg.uncaughtThrowable != null) {
+                throw new RuntimeException(tg.uncaughtThrowable);
+            }
             vthread.join();
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();

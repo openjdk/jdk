@@ -98,7 +98,7 @@ public class BufferedReader extends Reader {
      * @throws IllegalArgumentException  If {@code sz <= 0}
      */
     public BufferedReader(Reader in, int sz) {
-        Objects.requireNonNull(in);
+        super(in);
         if (sz <= 0)
             throw new IllegalArgumentException("Buffer size <= 0");
         this.in = in;

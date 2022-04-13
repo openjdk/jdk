@@ -59,7 +59,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZNMethod::nmethod_oops_barrier(nm);
 
 
-  // Class redefinition support
+  // CodeCache sweeper support
   nm->mark_as_maybe_on_continuation();
 
   // Disarm

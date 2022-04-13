@@ -24,6 +24,7 @@
  */
 package jdk.internal.vm;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -47,28 +48,62 @@ import java.util.List;
 public class ThreadDumper {
     private ThreadDumper() { }
 
+    // the maximum byte array to return when generating the thread dump to a byte array
+    private static final int MAX_BYTE_ARRAY_SIZE = 16_000;
+
     /**
-     * Generate a thread dump in plain text format to the given file, UTF-8 encoded.
+     * Generate a thread dump in plain text format to a byte array or file, UTF-8 encoded.
      *
      * This method is invoked by the VM for the Thread.dump_to_file diagnostic command.
+     *
+     * @param file the file path to the file, null or "-" to return a byte array
+     * @param okayToOverwrite true to overwrite an existing file
+     * @return the UTF-8 encoded thread dump or message to return to the user
      */
     public static byte[] dumpThreads(String file, boolean okayToOverwrite) {
-        return dumpThreads(file, okayToOverwrite, false);
+        if (file == null || file.equals("-")) {
+            return dumpThreadsToByteArray(false, MAX_BYTE_ARRAY_SIZE);
+        } else {
+            return dumpThreadsToFile(file, okayToOverwrite, false);
+        }
     }
 
     /**
-     * Generate a thread dump in JSON format to the given file, UTF-8 encoded.
+     * Generate a thread dump in JSON format to a byte array or file, UTF-8 encoded.
      *
      * This method is invoked by the VM for the Thread.dump_to_file diagnostic command.
+     *
+     * @param file the file path to the file, null or "-" to return a byte array
+     * @param okayToOverwrite true to overwrite an existing file
+     * @return the UTF-8 encoded thread dump or message to return to the user
      */
     public static byte[] dumpThreadsToJson(String file, boolean okayToOverwrite) {
-        return dumpThreads(file, okayToOverwrite, true);
+        if (file == null || file.equals("-")) {
+            return dumpThreadsToByteArray(true, MAX_BYTE_ARRAY_SIZE);
+        } else {
+            return dumpThreadsToFile(file, okayToOverwrite, true);
+        }
+    }
+
+    /**
+     * Generate a thread dump in plain text or JSON format to a byte array, UTF-8 encoded.
+     */
+    private static byte[] dumpThreadsToByteArray(boolean json, int maxSize) {
+        try (var out = new BoundedByteArrayOutputStream(maxSize);
+             PrintStream ps = new PrintStream(out, true, StandardCharsets.UTF_8)) {
+            if (json) {
+                dumpThreadsToJson(ps);
+            } else {
+                dumpThreads(ps);
+            }
+            return out.toByteArray();
+        }
     }
 
     /**
      * Generate a thread dump in plain text or JSON format to the given file, UTF-8 encoded.
      */
-    private static byte[] dumpThreads(String file, boolean okayToOverwrite, boolean json) {
+    private static byte[] dumpThreadsToFile(String file, boolean okayToOverwrite, boolean json) {
         Path path = Path.of(file).toAbsolutePath();
         OpenOption[] options = (okayToOverwrite)
                 ? new OpenOption[0]
@@ -283,6 +318,33 @@ public class ThreadDumper {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * A ByteArrayOutputStream of bounded size. Once the maximum number of bytes is
+     * written the subsequent bytes are discarded.
+     */
+    private static class BoundedByteArrayOutputStream extends ByteArrayOutputStream {
+        final int max;
+        BoundedByteArrayOutputStream(int max) {
+            this.max = max;
+        }
+        @Override
+        public void write(int b) {
+            if (max < count) {
+                super.write(b);
+            }
+        }
+        @Override
+        public void write(byte[] b, int off, int len) {
+            int remaining = max - count;
+            if (remaining > 0) {
+                super.write(b, off, Integer.min(len, remaining));
+            }
+        }
+        @Override
+        public void close() {
+        }
     }
 
     /**

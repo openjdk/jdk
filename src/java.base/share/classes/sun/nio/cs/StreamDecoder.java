@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,7 @@ public class StreamDecoder extends Reader {
     }
 
     private int read0() throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
@@ -165,6 +166,7 @@ public class StreamDecoder extends Reader {
     }
 
     public int read(char[] cbuf, int offset, int length) throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
@@ -217,6 +219,7 @@ public class StreamDecoder extends Reader {
     }
 
     public boolean ready() throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
@@ -237,6 +240,7 @@ public class StreamDecoder extends Reader {
     }
 
     public void close() throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {

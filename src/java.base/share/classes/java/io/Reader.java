@@ -154,16 +154,7 @@ public abstract class Reader implements Readable, Closeable {
      * synchronize on the reader itself.
      */
     protected Reader() {
-        // use InternalLock for trusted classes
-        Class<?> clazz = getClass();
-        if (clazz == InputStreamReader.class
-            || clazz == BufferedReader.class
-            || clazz == FileReader.class
-            || clazz == sun.nio.cs.StreamDecoder.class) {
-            this.lock = InternalLock.newLockOr(this);
-        } else {
-            this.lock = this;
-        }
+        this.lock = this;
     }
 
     /**
@@ -173,7 +164,25 @@ public abstract class Reader implements Readable, Closeable {
      * @param lock  The Object to synchronize on.
      */
     protected Reader(Object lock) {
-        this.lock = Objects.requireNonNull(lock);
+        if (lock == null) {
+            throw new NullPointerException();
+        }
+        this.lock = lock;
+    }
+
+    /**
+     * For use by BufferedReader to create a character-stream reader that uses an
+     * internal lock when BufferedReader is not extended and the given reader is
+     * trusted, otherwise critical sections will synchronize on the given reader.
+     */
+    Reader(Reader in) {
+        Class<?> clazz = in.getClass();
+        if (getClass() == BufferedReader.class &&
+                (clazz == InputStreamReader.class || clazz == FileReader.class)) {
+            this.lock = InternalLock.newLockOr(in);
+        } else {
+            this.lock = in;
+        }
     }
 
     /**

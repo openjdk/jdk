@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,40 +38,6 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class ThreadDumpToFileTest {
-
-    private Path genThreadDumpPath(String suffix) throws IOException {
-        Path dir = Path.of(".").toAbsolutePath();
-        Path file = Files.createTempFile(dir, "threads-", suffix);
-        Files.delete(file);
-        return file;
-    }
-
-    private OutputAnalyzer threadDump(Path file, String... options) {
-        String cmd = "Thread.dump_to_file";
-        for (String option : options) {
-            cmd += " " + option;
-        }
-        return new PidJcmdExecutor().execute(cmd + " " + file);
-    }
-
-    private boolean find(Path file, String text) throws IOException {
-        try (Stream<String> stream = Files.lines(file)) {
-            return  stream.anyMatch(line -> line.indexOf(text) >= 0);
-        }
-    }
-
-    /**
-     * Test thread dump in plain text format.
-     */
-    private void testPlainThreadDump(Path file, String... options) throws IOException {
-        threadDump(file, options).shouldMatch("Created");
-
-        // test that thread dump contains the name and id of the current thread
-        String name = Thread.currentThread().getName();
-        long tid = Thread.currentThread().getId();
-        String expected = "#" + tid + " \"" + name + "\"";
-        assertTrue(find(file, expected), expected + " not found in " + file);
-    }
 
     /**
      * Test thread dump, should be in plain text format.
@@ -130,5 +96,39 @@ public class ThreadDumpToFileTest {
         Path file = genThreadDumpPath(".txt");
         Files.writeString(file, "xxx");
         testPlainThreadDump(file, "-overwrite");
+    }
+
+    /**
+     * Test thread dump in plain text format.
+     */
+    private void testPlainThreadDump(Path file, String... options) throws IOException {
+        threadDump(file, options).shouldMatch("Created");
+
+        // test that thread dump contains the name and id of the current thread
+        String name = Thread.currentThread().getName();
+        long tid = Thread.currentThread().getId();
+        String expected = "#" + tid + " \"" + name + "\"";
+        assertTrue(find(file, expected), expected + " not found in " + file);
+    }
+
+    private Path genThreadDumpPath(String suffix) throws IOException {
+        Path dir = Path.of(".").toAbsolutePath();
+        Path file = Files.createTempFile(dir, "threads-", suffix);
+        Files.delete(file);
+        return file;
+    }
+
+    private OutputAnalyzer threadDump(Path file, String... options) {
+        String cmd = "Thread.dump_to_file";
+        for (String option : options) {
+            cmd += " " + option;
+        }
+        return new PidJcmdExecutor().execute(cmd + " " + file);
+    }
+
+    private boolean find(Path file, String text) throws IOException {
+        try (Stream<String> stream = Files.lines(file)) {
+            return  stream.anyMatch(line -> line.indexOf(text) >= 0);
+        }
     }
 }

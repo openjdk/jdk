@@ -66,9 +66,15 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
 }
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
-  nm->mark_as_maybe_on_continuation();
+  // If the nmethod is the only thing pointing to the oops, and we are using a
+  // SATB GC, then it is important that this code marks them live. This is done
+  // by the phantom load.
   LoadPhantomOopClosure cl;
   nm->oops_do(&cl);
+
+  // CodeCache sweeper support
+  nm->mark_as_maybe_on_continuation();
+
   disarm(nm);
 
   return true;

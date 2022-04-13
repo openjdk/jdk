@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -490,7 +490,7 @@ bool VM_BaseGetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thre
 bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   Method* method = jvf->method();
   if (!method->has_localvariable_table()) {
-    // Just to check index boundaries
+    // Just to check index boundaries.
     jint extra_slot = (_type == T_LONG || _type == T_DOUBLE) ? 1 : 0;
     if (_index < 0 || _index + extra_slot >= method->max_locals()) {
       _result = JVMTI_ERROR_INVALID_SLOT;
@@ -648,7 +648,7 @@ void VM_BaseGetOrSetLocal::doit() {
     // possible the compiler emitted some locals as constant values,
     // meaning they are not mutable.
     if (can_be_deoptimized(_jvf)) {
-      // continuation can't be unmounted at this point (it was checked/reported in get_java_vframe)
+      // Continuation can't be unmounted at this point (it was checked/reported in get_java_vframe).
       if (Continuation::is_frame_in_continuation(_jvf->thread(), fr)) {
         _result = JVMTI_ERROR_OPAQUE_FRAME; // can't deoptimize for top continuation frame
         return;

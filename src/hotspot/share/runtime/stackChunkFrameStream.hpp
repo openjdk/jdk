@@ -87,7 +87,7 @@ public:
   inline int num_oops() const;
 
   inline void initialize_register_map(RegisterMap* map);
-  template <typename RegisterMapT> inline void next(RegisterMapT* map);
+  template <typename RegisterMapT> inline void next(RegisterMapT* map, bool stop = false);
 
   template <typename RegisterMapT> inline void update_reg_map(RegisterMapT* map);
 

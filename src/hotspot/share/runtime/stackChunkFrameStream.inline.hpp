@@ -153,7 +153,7 @@ inline void StackChunkFrameStream<frame_kind>::initialize_register_map(RegisterM
 
 template <ChunkFrames frame_kind>
 template <typename RegisterMapT>
-inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map) {
+inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop) {
   update_reg_map(map);
   bool safepoint = is_stub();
   if (frame_kind == ChunkFrames::Mixed) {
@@ -172,13 +172,16 @@ inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map) {
   }
   assert(!is_interpreted() || _unextended_sp == unextended_sp_for_interpreter_frame(), "");
 
+  DEBUG_ONLY(_index++;)
+  if (stop) {
+    return;
+  }
+
   get_cb();
   update_reg_map_pd(map);
-  if (safepoint && cb() != nullptr) {
-    // there's no post-call nop and no fast oopmap lookup
+  if (safepoint && cb() != nullptr) { // there's no post-call nop and no fast oopmap lookup
     _oopmap = cb()->oop_map_for_return_address(pc());
   }
-  DEBUG_ONLY(_index++;)
 }
 
 template <ChunkFrames frame_kind>

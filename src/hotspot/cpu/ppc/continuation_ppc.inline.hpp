@@ -57,7 +57,7 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
   Unimplemented();
 }
 
-inline void FreezeBase::patch_chunk_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
+inline void FreezeBase::patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
   Unimplemented();
 }
 

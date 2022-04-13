@@ -600,12 +600,12 @@ JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, 
 JVM_END
 
 JVM_ENTRY(void, JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, jobjectArray frames, jobject cont))
-    objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
-    objArrayHandle frames_array_h(THREAD, fa);
-    Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
-    Handle cont_h(THREAD, JNIHandles::resolve_non_null(cont));
+  objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
+  objArrayHandle frames_array_h(THREAD, fa);
+  Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
+  Handle cont_h(THREAD, JNIHandles::resolve_non_null(cont));
 
-    StackWalk::setContinuation(stackStream_h, anchor, frames_array_h, cont_h, THREAD);
+  StackWalk::setContinuation(stackStream_h, anchor, frames_array_h, cont_h, THREAD);
 JVM_END
 
 // java.lang.Object ///////////////////////////////////////////////
@@ -3110,7 +3110,7 @@ JVM_END
 
 JVM_ENTRY(jobject, JVM_CurrentCarrierThread(JNIEnv* env, jclass threadClass))
   oop jthread = thread->threadObj();
-  assert(jthread != NULL, "no current thread!");
+  assert(jthread != NULL, "no current carrier thread!");
   return JNIHandles::make_local(THREAD, jthread);
 JVM_END
 
@@ -3189,7 +3189,7 @@ JVM_ENTRY(jobject, JVM_ScopeLocalCache(JNIEnv* env, jclass threadClass))
 JVM_END
 
 JVM_ENTRY(void, JVM_SetScopeLocalCache(JNIEnv* env, jclass threadClass,
-                                   jobject theCache))
+                                       jobject theCache))
   arrayOop objs = arrayOop(JNIHandles::resolve(theCache));
   if (objs != NULL) {
     assert(objs->length() == ScopeLocalCacheSize * 2, "wrong length");
@@ -3941,7 +3941,7 @@ JVM_ENTRY(void, JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboole
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  JvmtiVTMTDisabler::start_VTMT(vthread, true);
+  JvmtiVTMTDisabler::start_VTMT(vthread, /* is_mount */ true);
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif
@@ -3965,7 +3965,7 @@ JVM_ENTRY(void, JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean
     }
   }
   assert(thread->is_in_VTMT(), "VTMT sanity check");
-  JvmtiVTMTDisabler::finish_VTMT(vthread, true);
+  JvmtiVTMTDisabler::finish_VTMT(vthread, /* is_mount */ true);
   if (first_mount) {
     // thread start
     if (JvmtiExport::can_support_virtual_threads()) {
@@ -4015,7 +4015,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboo
   }
 
   assert(!thread->is_in_VTMT(), "VTMT sanity check");
-  JvmtiVTMTDisabler::start_VTMT(vthread, false);
+  JvmtiVTMTDisabler::start_VTMT(vthread, /* is_mount */ false);
 
   if (last_unmount && thread->jvmti_thread_state() != NULL) {
     JvmtiExport::cleanup_thread(thread);
@@ -4036,7 +4036,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
     return;
   }
   assert(thread->is_in_VTMT(), "VTMT sanity check");
-  JvmtiVTMTDisabler::finish_VTMT(vthread, false);
+  JvmtiVTMTDisabler::finish_VTMT(vthread, /* is_mount */ false);
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif

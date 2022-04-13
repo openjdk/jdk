@@ -217,8 +217,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-
-  // TODO set somehow configure
   threads_count = 10;
 
   if (init_agent_data(jvmti, &agent_data) != JVMTI_ERROR_NONE) {

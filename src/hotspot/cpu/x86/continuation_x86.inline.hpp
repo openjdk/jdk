@@ -49,7 +49,7 @@ frame ContinuationEntry::to_frame() const {
 
 // Fast path
 
-inline void FreezeBase::patch_chunk_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
+inline void FreezeBase::patch_stack_pd(intptr_t* frame_sp, intptr_t* heap_sp) {
   // copy the spilled rbp from the heap to the stack
   *(frame_sp - frame::sender_sp_offset) = *(heap_sp - frame::sender_sp_offset);
 }
@@ -205,6 +205,7 @@ inline frame ThawBase::new_entry_frame() {
 
 template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom) {
   assert(FKind::is_instance(hf), "");
+  // The values in the returned frame object will be written into the callee's stack in patch.
 
   if (FKind::interpreted) {
     intptr_t* heap_sp = hf.unextended_sp();

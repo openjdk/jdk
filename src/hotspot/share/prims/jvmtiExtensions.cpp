@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ GrowableArray<jvmtiExtensionFunctionInfo*>* JvmtiExtensions::_ext_functions;
 GrowableArray<jvmtiExtensionEventInfo*>* JvmtiExtensions::_ext_events;
 
 
-/*
- * Extension Functions
- */
+//
+// Extension Functions
+//
 static jvmtiError JNICALL IsClassUnloadingEnabled(const jvmtiEnv* env, ...) {
   jboolean* enabled = NULL;
   va_list ap;
@@ -169,7 +169,7 @@ void JvmtiExtensions::register_extensions() {
   _ext_functions = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiExtensionFunctionInfo*>(1, mtServiceability);
   _ext_events = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiExtensionEventInfo*>(1, mtServiceability);
 
-  // register our extension functions
+  // Register our extension functions.
   static jvmtiParamInfo func_params0[] = {
     { (char*)"IsClassUnloadingEnabled", JVMTI_KIND_OUT, JVMTI_TYPE_JBOOLEAN, JNI_FALSE }
   };

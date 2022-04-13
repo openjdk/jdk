@@ -76,24 +76,36 @@ void G1CodeBlobClosure::MarkingOopClosure::do_oop(narrowOop* o) {
 
 void G1CodeBlobClosure::do_evacuation_and_fixup(nmethod* nm) {
   _oc.set_nm(nm);
+
+  // Evacuate objects pointed to by the nmethod
+  nm->oops_do(&_oc);
+
   if (_strong) {
+    // CodeCache sweeper support
     nm->mark_as_maybe_on_continuation();
+
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != NULL) {
       bs_nm->disarm(nm);
     }
   }
-  nm->oops_do(&_oc);
+
   nm->fix_oop_relocations();
 }
 
 void G1CodeBlobClosure::do_marking(nmethod* nm) {
+  // Mark through oops in the nmethod
   nm->oops_do(&_marking_oc);
+
+  // CodeCache sweeper support
   nm->mark_as_maybe_on_continuation();
+
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != NULL) {
     bs_nm->disarm(nm);
   }
+
+  // The oops were only marked, no need to update oop relocations.
 }
 
 class G1NmethodProcessor : public nmethod::OopsDoProcessor {

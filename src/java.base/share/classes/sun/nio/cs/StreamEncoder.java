@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public final class StreamEncoder extends Writer {
     }
 
     public void flushBuffer() throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
@@ -115,7 +116,7 @@ public final class StreamEncoder extends Writer {
                 locker.unlock();
             }
         } else {
-            synchronized (super.lock) {
+            synchronized (lock) {
                 lockedFlushBuffer();
             }
         }
@@ -135,6 +136,7 @@ public final class StreamEncoder extends Writer {
     }
 
     public void write(char[] cbuf, int off, int len) throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
@@ -143,7 +145,7 @@ public final class StreamEncoder extends Writer {
                 locker.unlock();
             }
         } else {
-            synchronized (super.lock) {
+            synchronized (lock) {
                 lockedWrite(cbuf, off, len);
             }
         }
@@ -172,6 +174,7 @@ public final class StreamEncoder extends Writer {
     public void write(CharBuffer cb) throws IOException {
         int position = cb.position();
         try {
+            Object lock = this.lock;
             if (lock instanceof InternalLock locker) {
                 locker.lock();
                 try {
@@ -180,7 +183,7 @@ public final class StreamEncoder extends Writer {
                     locker.unlock();
                 }
             } else {
-                synchronized (super.lock) {
+                synchronized (lock) {
                     lockedWrite(cb);
                 }
             }
@@ -195,6 +198,7 @@ public final class StreamEncoder extends Writer {
     }
 
     public void flush() throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {
@@ -215,6 +219,7 @@ public final class StreamEncoder extends Writer {
     }
 
     public void close() throws IOException {
+        Object lock = this.lock;
         if (lock instanceof InternalLock locker) {
             locker.lock();
             try {

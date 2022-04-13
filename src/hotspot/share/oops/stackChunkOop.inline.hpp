@@ -67,7 +67,10 @@ inline uint8_t stackChunkOopDesc::flags() const         { return jdk_internal_vm
 inline void stackChunkOopDesc::set_flags(uint8_t value) { jdk_internal_vm_StackChunk::set_flags(this, value); }
 
 inline int stackChunkOopDesc::max_size() const          { return jdk_internal_vm_StackChunk::maxSize(as_oop()); }
-inline void stackChunkOopDesc::set_max_size(int value)  { jdk_internal_vm_StackChunk::set_maxSize(this, (jint)value); }
+inline void stackChunkOopDesc::set_max_size(int value)  {
+  assert(value >= 0, "size must be >= 0");
+  jdk_internal_vm_StackChunk::set_maxSize(this, (jint)value);
+}
 
 inline oop stackChunkOopDesc::cont() const              { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
 template<typename P>

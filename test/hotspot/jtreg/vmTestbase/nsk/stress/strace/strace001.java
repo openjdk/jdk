@@ -73,8 +73,11 @@ public class strace001 {
             "java.lang.Thread.exit",
             "java.lang.Thread.yield",
             "java.lang.Thread.yield0",
+            "java.lang.Thread.clearReferences",
             "java.lang.Thread.currentCarrierThread",
             "java.lang.Thread.currentThread",
+            "java.lang.Thread.threadContainer",
+            "jdk.internal.misc.Blocker.end",
             "nsk.stress.strace.strace001Thread.run",
             "nsk.stress.strace.strace001Thread.recursiveMethod"
     };

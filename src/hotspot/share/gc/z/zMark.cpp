@@ -700,7 +700,10 @@ public:
 
     if (ZNMethod::is_armed(nm)) {
       ZNMethod::nmethod_oops_do_inner(nm, _cl);
+
+      // CodeCache sweeper support
       nm->mark_as_maybe_on_continuation();
+
       ZNMethod::disarm(nm);
     }
   }

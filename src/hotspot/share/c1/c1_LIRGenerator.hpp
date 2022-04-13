@@ -259,6 +259,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_currentCarrierThread(Intrinsic* x);
   void do_scopeLocalCache(Intrinsic* x);
   void do_vthread(Intrinsic* x);
+  void do_JavaThreadField(Intrinsic* x, ByteSize offset);
   void do_FmaIntrinsic(Intrinsic* x);
   void do_MathIntrinsic(Intrinsic* x);
   void do_LibmIntrinsic(Intrinsic* x);

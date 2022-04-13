@@ -151,7 +151,8 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
       }
 #endif
       val = read_oop_local(&val);
-      assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT, p2i(value_addr));
+      assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
+        p2i(value_addr), reg_map->in_cont(), reg_map->in_cont() && reg_map->stack_chunk()->has_bitmap() && UseCompressedOops);
       Handle h(Thread::current(), val); // Wrap a handle around the oop
       return new StackValue(h);
     }

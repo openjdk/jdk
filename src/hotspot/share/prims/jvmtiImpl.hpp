@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,7 +383,7 @@ class VM_GetReceiver : public VM_GetOrSetLocal {
   const char* name() const                       { return "get receiver"; }
 };
 
-// VM operation to get or set virtual thread local
+// VM operation to get or set virtual thread local.
 class VM_VirtualThreadGetOrSetLocal : public VM_BaseGetOrSetLocal {
  protected:
   JvmtiEnv *_env;
@@ -392,14 +392,14 @@ class VM_VirtualThreadGetOrSetLocal : public VM_BaseGetOrSetLocal {
   javaVFrame* get_java_vframe();
 
 public:
-  // Constructor for non-object getter
+  // Constructor for non-object getter.
   VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth, jint index, BasicType type);
 
-  // Constructor for object or non-object setter
+  // Constructor for object or non-object setter.
   VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
                                 jint index, BasicType type, jvalue value);
 
-  // Constructor for object getter
+  // Constructor for object getter.
   VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
                                 jint depth, int index);
 

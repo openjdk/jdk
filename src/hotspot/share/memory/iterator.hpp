@@ -99,11 +99,16 @@ class OopIterateClosure : public OopClosure {
   // 1) do_klass on the header klass pointer.
   // 2) do_klass on the klass pointer in the mirrors.
   // 3) do_cld   on the class loader data in class loaders.
+  //
+  // Used to determine metadata liveness for class unloading GCs.
 
   virtual bool do_metadata() = 0;
   virtual void do_klass(Klass* k) = 0;
   virtual void do_cld(ClassLoaderData* cld) = 0;
+
+  // Class redefinition needs to get notified about methods from stackChunkOops
   virtual void do_method(Method* m) = 0;
+  // The code cache sweeper needs to get notified about methods from stackChunkOops
   virtual void do_nmethod(nmethod* nm) = 0;
 };
 

@@ -84,7 +84,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
                                    int* need_safepoint_p);
-  static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend);
+  static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
   static jvmtiError check_thread_list(jint count, const jthread* list);
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
 
@@ -176,7 +176,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     return err;
   }
 
-  // If there is a virtual thread mounted to the JavaThread* then
+  // If there is a virtual thread mounted on the JavaThread* then
   // return virtual thread oop. Otherwise, return thread oop.
   static oop get_vthread_or_thread_oop(JavaThread* jt) {
     oop result = jt->threadObj();
@@ -369,6 +369,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                 jmethodID* method_ptr, jlocation* location_ptr);
   jvmtiError get_frame_location(oop vthread_oop, jint depth,
                                 jmethodID* method_ptr, jlocation* location_ptr);
+  jvmtiError set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth);
   jvmtiError get_object_monitor_usage(JavaThread *calling_thread,
                                                     jobject object, jvmtiMonitorUsage* info_ptr);
   jvmtiError get_stack_trace(javaVFrame *jvf,
@@ -382,7 +383,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
   jvmtiError get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                          GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);
@@ -464,7 +465,7 @@ private:
 
 public:
   SetFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, jint depth)
-    : JvmtiHandshakeClosure("SetFramePop"),
+    : JvmtiHandshakeClosure("SetFramePopClosure"),
       _env(env),
       _state(state),
       _depth(depth) {}
@@ -871,6 +872,29 @@ public:
   void do_thread(Thread *target);
   jvmtiError result() { return _result; }
 };
+
+// HandshakeClosure to set frame pop for a virtual thread..
+class VirtualThreadSetFramePopClosure : public JvmtiHandshakeClosure {
+private:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+  JvmtiThreadState* _state;
+  jint _depth;
+
+public:
+  VirtualThreadSetFramePopClosure(JvmtiEnv *env, Handle vthread_h, JvmtiThreadState* state, jint depth)
+    : JvmtiHandshakeClosure("VirtualThreadSetFramePopClosure"),
+      _env(env),
+      _vthread_h(vthread_h),
+      _state(state),
+      _depth(depth) {}
+
+  void do_thread(Thread *target) {
+    doit(target, false /* self */);
+  }
+  void doit(Thread *target, bool self);
+};
+
 
 // ResourceTracker
 //

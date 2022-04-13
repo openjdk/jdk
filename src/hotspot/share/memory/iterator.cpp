@@ -58,16 +58,21 @@ void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {
 void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
   if (nm != NULL && nm->oops_do_try_claim()) {
+    // Process the oops in the nmethod
     nm->oops_do(_cl);
-    if (_fix_relocations) {
-      nm->fix_oop_relocations();
-    }
+
     if (_keepalive_nmethods) {
+      // CodeCache sweeper support
       nm->mark_as_maybe_on_continuation();
+
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       if (bs_nm != NULL) {
         bs_nm->disarm(nm);
       }
+    }
+
+    if (_fix_relocations) {
+      nm->fix_oop_relocations();
     }
   }
 }

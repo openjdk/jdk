@@ -65,7 +65,8 @@ public interface ThreadFactory {
      * @return constructed thread, or {@code null} if the request to
      *         create a thread is rejected
      *
-     * @see <a href="../../lang/Thread.html#inheritance">Inheritance</a>
+     * @see <a href="../../lang/Thread.html#inheritance">Inheritance when
+     * creating threads</a>
      */
     Thread newThread(Runnable r);
 }

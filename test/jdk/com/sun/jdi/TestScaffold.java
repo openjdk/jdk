@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,8 +457,10 @@ abstract public class TestScaffold extends TargetAdapter {
 
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
-        if (System.getProperty("main.wrapper") != null) {
-            argInfo.targetAppCommandLine  = TestScaffold.class.getName() + " " + System.getProperty("main.wrapper") + " ";
+        String mainWrapper = System.getProperty("main.wrapper");
+        if ("Virtual".equals(mainWrapper)) {
+            argInfo.targetAppCommandLine = TestScaffold.class.getName() + " " + mainWrapper + " ";
+            argInfo.targetVMArgs += "--enable-preview ";
         }
 
         for (int i = 0; i < args.length; i++) {

@@ -31,8 +31,8 @@
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
- * @compile --enable-preview -source ${jdk.version} RedefineRunningMethods.java
  * @run main RedefineClassHelper
+ * @compile --enable-preview -source ${jdk.version} RedefineRunningMethods.java
  * @run main/othervm/timeout=180
  *         --enable-preview
  *         -javaagent:redefineagent.jar

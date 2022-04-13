@@ -111,7 +111,8 @@ public class PrintWriter extends Writer {
      *                    flush the output buffer
      */
     public PrintWriter(Writer out, boolean autoFlush) {
-        this.out = Objects.requireNonNull(out);
+        super(out);
+        this.out = out;
         this.autoFlush = autoFlush;
     }
 

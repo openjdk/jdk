@@ -87,7 +87,7 @@ class frame {
   // We use different assertions to allow for intermediate states (e.g. during thawing or relativizing the frame)
   void assert_on_heap() const  { assert(is_heap_frame(), "Using offset with a non-chunk frame"); }
   void assert_offset() const   { assert(_frame_index >= 0,  "Using offset with a non-chunk frame"); assert_on_heap(); }
-  void assert_absolute() const { assert(_frame_index == -1, "Using absolute addresses with a chunk frame i: %d h: %d", _frame_index, _on_heap); }
+  void assert_absolute() const { assert(_frame_index == -1, "Using absolute addresses with a chunk frame"); }
 
  public:
   // Constructors

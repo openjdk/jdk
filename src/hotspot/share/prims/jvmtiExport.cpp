@@ -888,6 +888,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _cached_class_file_ptr = cache_ptr;
     _has_been_modified = false;
 
+    assert(!_thread->is_in_VTMT(), "CFLH events are not allowed in VTMT");
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {
       _class_being_redefined = _state->get_class_being_redefined();
@@ -1334,9 +1335,8 @@ void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
   if (state == NULL) {
     return;
   }
-  if (thread->is_in_VTMT()) {
-    return; // no events should be posted if thread is in a VTMT transition
-  }
+  assert(!thread->is_in_VTMT(), "class load events are not allowed in VTMT");
+
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_LOAD, ("[%s] Trg Class Load triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvThreadStateIterator it(state);
@@ -1370,9 +1370,8 @@ void JvmtiExport::post_class_prepare(JavaThread *thread, Klass* klass) {
   if (state == NULL) {
     return;
   }
-  if (thread->is_in_VTMT()) {
-    return; // no events should be posted if thread is in a VTMT transition
-  }
+  assert(!thread->is_in_VTMT(), "class prepare events are not allowed in VTMT");
+
   EVT_TRIG_TRACE(JVMTI_EVENT_CLASS_PREPARE, ("[%s] Trg Class Prepare triggered",
                       JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvThreadStateIterator it(state);
@@ -1687,6 +1686,11 @@ void JvmtiExport::continuation_yield_cleanup(JavaThread* thread, jint continuati
 }
 
 void JvmtiExport::post_object_free(JvmtiEnv* env, jlong tag) {
+  Thread *thread = Thread::current();
+
+  if (thread->is_Java_thread() && JavaThread::cast(thread)->is_in_VTMT()) {
+    return; // no events should be posted if thread is in a VTMT transition
+  }
   assert(env->is_enabled(JVMTI_EVENT_OBJECT_FREE), "checking");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Trg Object Free triggered" ));
@@ -1701,6 +1705,10 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, jlong tag) {
 void JvmtiExport::post_resource_exhausted(jint resource_exhausted_flags, const char* description) {
 
   JavaThread *thread  = JavaThread::current();
+
+  if (thread->is_in_VTMT()) {
+    return; // no events should be posted if thread is in a VTMT transition
+  }
 
   log_error(jvmti)("Posting Resource Exhausted event: %s",
                    description != nullptr ? description : "unknown");
@@ -1782,9 +1790,6 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     // for any thread that actually wants method exit, interp_only_mode is set
     return;
   }
-  if (mh->jvmti_mount_transition() || thread->is_in_VTMT()) {
-    return; // no events should be posted if thread is in a VTMT transition
-  }
 
   // return a flag when a method terminates by throwing an exception
   // i.e. if an exception is thrown and it's not caught by the current method
@@ -1828,6 +1833,10 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                          bool exception_exit,
                                          frame current_frame,
                                          jvalue& value) {
+  if (mh->jvmti_mount_transition() || thread->is_in_VTMT()) {
+    return; // no events should be posted if thread is in a VTMT transition
+  }
+
   EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_EXIT, ("[%s] Trg Method Exit triggered %s.%s",
                                            JvmtiTrace::safe_get_thread_name(thread),
                                            (mh() == NULL) ? "NULL" : mh()->klass_name()->as_C_string(),
@@ -1888,7 +1897,6 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
   }
 
   state->decr_cur_stack_depth();
-
 }
 
 
@@ -2060,6 +2068,9 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
       assert(!state->is_exception_caught(), "exception must not be caught yet.");
       state->set_exception_caught();
 
+      if (mh->jvmti_mount_transition() || thread->is_in_VTMT()) {
+        return; // no events should be posted if thread is in a VTMT transition
+      }
       JvmtiEnvThreadStateIterator it(state);
       for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
         if (ets->is_enabled(JVMTI_EVENT_EXCEPTION_CATCH) && (exception_handle() != NULL)) {
@@ -2408,6 +2419,8 @@ void JvmtiExport::post_compiled_method_load(nmethod *nm) {
   }
   JavaThread* thread = JavaThread::current();
 
+  assert(!thread->is_in_VTMT(), "compiled method load events are not allowed in VTMT");
+
   EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
                  ("[%s] method compile load event triggered",
                  JvmtiTrace::safe_get_thread_name(thread)));
@@ -2428,6 +2441,8 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
     return;
   }
   JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMT(), "compiled method load events are not allowed in VTMT");
 
   EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
            ("[%s] method compile load event sent %s.%s  ",
@@ -2452,6 +2467,9 @@ void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const v
   assert(name != NULL && name[0] != '\0', "sanity check");
 
   JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMT(), "dynamic code generated events are not allowed in VTMT");
+
   // In theory everyone coming thru here is in_vm but we need to be certain
   // because a callee will do a vm->native transition
   ThreadInVMfromUnknown __tiv;
@@ -2497,6 +2515,9 @@ void JvmtiExport::post_dynamic_code_generated(JvmtiEnv* env, const char *name,
                                               const void *code_begin, const void *code_end)
 {
   JavaThread* thread = JavaThread::current();
+
+  assert(!thread->is_in_VTMT(), "dynamic code generated events are not allowed in VTMT");
+
   EVT_TRIG_TRACE(JVMTI_EVENT_DYNAMIC_CODE_GENERATED,
                  ("[%s] dynamic code generated event triggered (by GenerateEvents)",
                   JvmtiTrace::safe_get_thread_name(thread)));
@@ -2518,12 +2539,15 @@ void JvmtiExport::post_dynamic_code_generated(JvmtiEnv* env, const char *name,
 void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* name,
                                                                   address code_begin, address code_end)
 {
+  JavaThread* thread = JavaThread::current();
+  assert(!thread->is_in_VTMT(), "dynamic code generated events are not allowed in VTMT");
+
   // register the stub with the current dynamic code event collector
   // Cannot take safepoint here so do not use state_for to get
   // jvmti thread state.
   // The collector and/or state might be NULL if JvmtiDynamicCodeEventCollector
   // has been initialized while JVMTI_EVENT_DYNAMIC_CODE_GENERATED was disabled.
-  JvmtiThreadState* state = JavaThread::current()->jvmti_thread_state();
+  JvmtiThreadState* state = thread->jvmti_thread_state();
   if (state != NULL) {
     JvmtiDynamicCodeEventCollector *collector = state->get_dynamic_code_event_collector();
     if (collector != NULL) {
@@ -2943,6 +2967,11 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
         JvmtiJavaThreadEventTransition jet(THREAD);
 
         result = (*on_attach_entry)(&main_vm, (char*)options, NULL);
+
+        // Agent_OnAttach may have used JNI
+        if (THREAD->is_pending_jni_exception_check()) {
+          THREAD->clear_pending_jni_exception_check();
+        }
       }
 
       // Agent_OnAttach may have used JNI

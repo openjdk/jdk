@@ -184,25 +184,6 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
     check_reset_tls(jvmti, jni, thread, "ThreadEnd");
   }
 }
-/*
-void JNICALL
-MethodEntry(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method) {
-
-  int p = ((long) method / 128 % 100);
-  if (p < 1) {
-    RawMonitorLocker rml(jvmti, jni, monitor);
-    if (is_vm_running) {
-      jvmtiThreadInfo thread_info;
-      check_jvmti_status(jni, jvmti->GetThreadInfo(thread, &thread_info), "Error in GetThreadInfo11");
-      if (strcmp("main", thread_info.name) == 0) {
-        // Skip main() method entries
-        return;
-      }
-      check_reset_tls(jvmti, jni, thread, "MethodEntry");
-    }
-  }
-}
-*/
 
 static void JNICALL
 VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
@@ -264,7 +245,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   callbacks.VMDeath = &VMDeath;
   callbacks.ThreadStart = &ThreadStart;
   callbacks.ThreadEnd = &ThreadEnd;
-  // callbacks.MethodEntry = &MethodEntry;
   callbacks.VirtualThreadStart = &VirtualThreadStart;
   callbacks.VirtualThreadEnd = &VirtualThreadEnd;
 
@@ -278,8 +258,6 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
   jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
   jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, NULL);
-
-  //jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL);
 
   err = init_agent_data(jvmti, &agent_data);
   if (err != JVMTI_ERROR_NONE) {

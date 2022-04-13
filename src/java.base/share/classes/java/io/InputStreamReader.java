@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.io;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.util.Objects;
+import jdk.internal.misc.InternalLock;
 import sun.nio.cs.StreamDecoder;
 
 /**
@@ -64,6 +64,20 @@ public class InputStreamReader extends Reader {
     private final StreamDecoder sd;
 
     /**
+     * Return the lock object for the given reader's stream decoder.
+     * If the reader type is trusted then an internal lock can be used. If the
+     * reader type is not trusted then the reader object is the lock.
+     */
+    private static Object lockFor(InputStreamReader reader) {
+        Class<?> clazz = reader.getClass();
+        if (clazz == InputStreamReader.class || clazz == FileReader.class) {
+            return InternalLock.newLockOr(reader);
+        } else {
+            return reader;
+        }
+    }
+
+    /**
      * Creates an InputStreamReader that uses the
      * {@link Charset#defaultCharset() default charset}.
      *
@@ -72,8 +86,9 @@ public class InputStreamReader extends Reader {
      * @see Charset#defaultCharset()
      */
     public InputStreamReader(InputStream in) {
-        Objects.requireNonNull(in);
-        sd = StreamDecoder.forInputStreamReader(in, lock, Charset.defaultCharset());
+        super(in);
+        Charset cs = Charset.defaultCharset();
+        sd = StreamDecoder.forInputStreamReader(in, lockFor(this), cs);
     }
 
     /**
@@ -91,9 +106,10 @@ public class InputStreamReader extends Reader {
     public InputStreamReader(InputStream in, String charsetName)
         throws UnsupportedEncodingException
     {
-        Objects.requireNonNull(in);
-        Objects.requireNonNull(charsetName, "charsetName");
-        sd = StreamDecoder.forInputStreamReader(in, lock, charsetName);
+        super(in);
+        if (charsetName == null)
+            throw new NullPointerException("charsetName");
+        sd = StreamDecoder.forInputStreamReader(in, lockFor(this), charsetName);
     }
 
     /**
@@ -105,9 +121,10 @@ public class InputStreamReader extends Reader {
      * @since 1.4
      */
     public InputStreamReader(InputStream in, Charset cs) {
-        Objects.requireNonNull(in);
-        Objects.requireNonNull(cs, "charset");
-        sd = StreamDecoder.forInputStreamReader(in, lock, cs);
+        super(in);
+        if (cs == null)
+            throw new NullPointerException("charset");
+        sd = StreamDecoder.forInputStreamReader(in, lockFor(this), cs);
     }
 
     /**
@@ -119,8 +136,10 @@ public class InputStreamReader extends Reader {
      * @since 1.4
      */
     public InputStreamReader(InputStream in, CharsetDecoder dec) {
-        Objects.requireNonNull(dec, "charset decoder");
-        sd = StreamDecoder.forInputStreamReader(in, lock, dec);
+        super(in);
+        if (dec == null)
+            throw new NullPointerException("charset decoder");
+        sd = StreamDecoder.forInputStreamReader(in, lockFor(this), dec);
     }
 
     /**

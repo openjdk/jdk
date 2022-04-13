@@ -1111,17 +1111,17 @@ class jdk_internal_vm_Continuation: AllStatic {
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
   // Accessors
-  static inline oop scope(oop ref);
-  static inline oop target(oop ref);
-  static inline oop parent(oop ref);
-  static inline oop yieldInfo(oop ref);
-  static inline void set_yieldInfo(oop ref, oop value);
-  static inline stackChunkOop tail(oop ref);
-  static inline void set_tail(oop ref, stackChunkOop value);
-  static inline bool on_local_stack(oop ref, address adr);
-  static inline bool done(oop ref);
-  static inline bool is_preempted(oop ref);
-  static inline void set_preempted(oop ref, bool value);
+  static inline oop scope(oop continuation);
+  static inline oop target(oop continuation);
+  static inline oop parent(oop continuation);
+  static inline oop yieldInfo(oop continuation);
+  static inline void set_yieldInfo(oop continuation, oop value);
+  static inline stackChunkOop tail(oop continuation);
+  static inline void set_tail(oop continuation, stackChunkOop value);
+  static inline bool on_local_stack(oop continuation, address adr);
+  static inline bool done(oop continuation);
+  static inline bool is_preempted(oop continuation);
+  static inline void set_preempted(oop continuation, bool value);
 };
 
 // Interface to jdk.internal.vm.StackChunk objects
@@ -1152,36 +1152,36 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline int cont_offset()   { return _cont_offset; }
 
   // Accessors
-  static inline oop parent(oop ref);
-  static inline void set_parent(oop ref, oop value);
+  static inline oop parent(oop chunk);
+  static inline void set_parent(oop chunk, oop value);
   template<typename P>
-  static inline bool is_parent_null(oop ref); // bypasses barriers for a faster test
+  static inline bool is_parent_null(oop chunk); // bypasses barriers for a faster test
   template<typename P>
-  static inline void set_parent_raw(oop ref, oop value);
+  static inline void set_parent_raw(oop chunk, oop value);
 
-  static inline int size(oop ref);
-  static inline void set_size(HeapWord* ref, int value);
+  static inline int size(oop chunk);
+  static inline void set_size(HeapWord* chunk, int value);
 
-  static inline int sp(oop ref);
-  static inline void set_sp(oop ref, int value);
-  static inline void set_sp(HeapWord* ref, int value); // used while allocating
-  static inline intptr_t pc(oop ref);
-  static inline void set_pc(oop ref, intptr_t value);
-  static inline int argsize(oop ref);
-  static inline void set_argsize(oop ref, int value);
-  static inline uint8_t flags(oop ref);
-  static inline void set_flags(oop ref, uint8_t value);
+  static inline int sp(oop chunk);
+  static inline void set_sp(oop chunk, int value);
+  static inline void set_sp(HeapWord* chunk, int value); // used while allocating
+  static inline intptr_t pc(oop chunk);
+  static inline void set_pc(oop chunk, intptr_t value);
+  static inline int argsize(oop chunk);
+  static inline void set_argsize(oop chunk, int value);
+  static inline uint8_t flags(oop chunk);
+  static inline void set_flags(oop chunk, uint8_t value);
 
-  static inline int maxSize(oop ref);
-  static inline void set_maxSize(oop ref, int value);
+  static inline int maxSize(oop chunk);
+  static inline void set_maxSize(oop chunk, int value);
 
  // cont oop's processing is essential for the chunk's GC protocol
-  static inline oop cont(oop ref);
-  static inline void set_cont(oop ref, oop value);
+  static inline oop cont(oop chunk);
+  static inline void set_cont(oop chunk, oop value);
   template<typename P>
-  static inline oop cont_raw(oop ref);
+  static inline oop cont_raw(oop chunk);
   template<typename P>
-  static inline void set_cont_raw(oop ref, oop value);
+  static inline void set_cont_raw(oop chunk, oop value);
 };
 
 // Interface to java.lang.invoke.MethodHandle objects

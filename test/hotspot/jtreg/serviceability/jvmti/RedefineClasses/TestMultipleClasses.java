@@ -31,7 +31,6 @@
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
- * @build jdk.test.lib.helpers.ClassFileInstaller jdk.test.lib.compiler.InMemoryJavaCompiler
  * @run main RedefineClassHelper
  * @run main/othervm/timeout=180 -javaagent:redefineagent.jar -XX:CompileThreshold=100 -Xlog:redefine+class+nmethod=debug TestMultipleClasses
  */

@@ -60,8 +60,6 @@ public class frameloc02 {
     native static int check(Thread thr);
 
     public static void main(String args[]) {
-
-
         // produce JCK-like exit status.
         System.exit(run(args, System.out) + JCK_STATUS_BASE);
     }
