@@ -21,9 +21,6 @@
 # questions.
 #
 
-        // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-        // in NativeCompilation.gmk, this ensures reproducible .debuginfo
-        .file ASSEMBLY_SRC_FILE
 
         # NOTE WELL!  The _Copy functions are called directly
 	# from server-compiler-generated code via CallLeafNoFP,

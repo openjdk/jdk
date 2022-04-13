@@ -19,10 +19,6 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
-        // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-        // in NativeCompilation.gmk, this ensures reproducible .debuginfo
-        .file ASSEMBLY_SRC_FILE
-
         // JavaThread::aarch64_get_thread_helper()
         //
         // Return the current thread pointer in x0.

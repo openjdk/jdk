@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Linaro Ltd. All rights reserved.
+ * Copyright (c) 2016, Linaro Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,6 @@
  * questions.
  *
  */
-        // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-        // in NativeCompilation.gmk, this ensures reproducible .debuginfo
-        .file ASSEMBLY_SRC_FILE
-
         .global _Copy_conjoint_words
         .global _Copy_disjoint_words
 
