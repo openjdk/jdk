@@ -298,11 +298,11 @@ public abstract class CipherSpi {
     /**
      * Returns the parameters used with this cipher.
      *
-     * <p>If this cipher has been previously initialized with parameters,
-     * this method returns the same parameters. Otherwise, this method may
-     * return a combination of user-supplied, default and randomly generated
-     * parameter values if the underlying cipher implementation supports it
-     * and can successfully generate them. Otherwise, {@code null} is returned.
+     * <p>The returned parameters may be the same that were used to initialize
+     * this cipher, or may contain additional default or random parameter
+     * values used by the underlying cipher implementation if this cipher can
+     * successfully generate the required parameter values when not supplied.
+     * Otherwise, {@code null} is returned.
      *
      * @return the parameters used with this cipher, or {@code null}
      */

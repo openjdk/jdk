@@ -481,11 +481,11 @@ public class Cipher {
      * Returns a {@code Cipher} object that implements the specified
      * transformation.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code Cipher} object encapsulating the
      * {@code CipherSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -518,7 +518,7 @@ public class Cipher {
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
-     *         or if no {@code Provider} supports a {@code CipherSpi}
+     *         or if no provider supports a {@code CipherSpi}
      *         implementation for the specified algorithm
      *
      * @throws NoSuchPaddingException if {@code transformation}
@@ -652,8 +652,8 @@ public class Cipher {
      * transformation.
      *
      * <p> A new {@code Cipher} object encapsulating the
-     * {@code CipherSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * {@code CipherSpi} implementation from the specified {@code provider}
+     * object is returned.  Note that the specified {@code provider} object
      * does not have to be registered in the provider list.
      *
      * @apiNote
@@ -685,7 +685,7 @@ public class Cipher {
      *         is {@code null}, empty, in an invalid format,
      *         or if a {@code CipherSpi} implementation for the
      *         specified algorithm is not available from the specified
-     *         {@code Provider} object
+     *         {@code provider} object
      *
      * @throws NoSuchPaddingException if {@code transformation}
      *         contains a padding scheme that is not available
@@ -1048,11 +1048,11 @@ public class Cipher {
     /**
      * Returns the parameters used with this cipher.
      *
-     * <p>If this cipher has been previously initialized with parameters,
-     * this method returns the same parameters. Otherwise, this method may
-     * return a combination of user-supplied, default and randomly generated
-     * parameter values if the underlying cipher implementation supports it
-     * and can successfully generate them. Otherwise, {@code null} is returned.
+     * <p>The returned parameters may be the same that were used to initialize
+     * this cipher, or may contain additional default or random parameter
+     * values used by the underlying cipher implementation if this cipher can
+     * successfully generate the required parameter values when not supplied.
+     * Otherwise, {@code null} is returned.
      *
      * @return the parameters used with this cipher, or {@code null}
      */
@@ -2632,13 +2632,13 @@ public class Cipher {
      * Returns the maximum key length for the specified transformation
      * according to the installed JCE jurisdiction policy files. If
      * JCE unlimited strength jurisdiction policy files are installed,
-     * Integer.MAX_VALUE will be returned.
+     * {@code Integer.MAX_VALUE} will be returned.
      * For more information on the default key sizes and the JCE jurisdiction
      * policy files, please see the Cryptographic defaults and limitations in
      * the {@extLink security_guide_jdk_providers JDK Providers Documentation}.
      *
      * @param transformation the cipher transformation
-     * @return the maximum key length in bits or Integer.MAX_VALUE
+     * @return the maximum key length in bits or {@code Integer.MAX_VALUE}
      * @exception NullPointerException if {@code transformation} is {@code null}
      * @exception NoSuchAlgorithmException if {@code transformation}
      * is not a valid transformation, i.e. in the form of "algorithm" or
