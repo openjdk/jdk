@@ -1675,7 +1675,13 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   return result;
 }
 
+static void assert_nonempty_range(const char* addr, size_t bytes) {
+  assert(addr != nullptr && bytes > 0, "invalid range [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(addr), p2i(addr) + bytes);
+}
+
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
@@ -1685,6 +1691,7 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable) {
+  assert_nonempty_range(addr, size);
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
@@ -1694,17 +1701,20 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 
 void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
                                const char* mesg) {
+  assert_nonempty_range(addr, bytes);
   pd_commit_memory_or_exit(addr, bytes, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
 }
 
 void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
                                bool executable, const char* mesg) {
+  assert_nonempty_range(addr, size);
   os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
+  assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     Tracker tkr(Tracker::uncommit);
@@ -1719,6 +1729,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
 }
 
 bool os::release_memory(char* addr, size_t bytes) {
+  assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
     // Note: Tracker contains a ThreadCritical.

@@ -28,6 +28,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include <errno.h>
 
 class ArgumentsTest : public ::testing::Test {
 public:
@@ -261,16 +262,12 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
   }
 
   {
-    // Invalid strings for *any* type of integer VM arguments
+    // Invalid strings for *any* numeric type of VM arguments
     const char* invalid_strings[] = {
       "", " 1", "2 ", "3 2",
       "0x", "0x0x1" "e"
       "K", "M", "G", "1MB", "1KM", "AA", "0B",
       "18446744073709551615K", "17179869184G",
-      "999999999999999999999999999999",
-      "0x10000000000000000", "18446744073709551616",
-      "-0x10000000000000000", "-18446744073709551616",
-      "-0x8000000000000001", "-9223372036854775809",
       "0x8000000t", "0x800000000g",
       "0x800000000000m", "0x800000000000000k",
       "-0x8000000t", "-0x800000000g",
@@ -280,9 +277,21 @@ void check_numeric_flag(JVMFlag* flag, T getvalue(JVMFlag* flag),
     check_invalid_numeric_string(flag, invalid_strings);
   }
 
-  if (!is_double) {
+  if (is_double) {
+    const char* invalid_strings_for_double[] = {
+      "INF", "Inf", "Infinity", "INFINITY",
+      "-INF", "-Inf", "-Infinity", "-INFINITY",
+      "nan", "NAN", "NaN",
+      NULL,
+    };
+    check_invalid_numeric_string(flag, invalid_strings_for_double);
+  } else {
     const char* invalid_strings_for_integers[] = {
       "1.0", "0x4.5", "0.001", "4e10",
+      "999999999999999999999999999999",
+      "0x10000000000000000", "18446744073709551616",
+      "-0x10000000000000000", "-18446744073709551616",
+      "-0x8000000000000001", "-9223372036854775809",
       NULL,
     };
     check_invalid_numeric_string(flag, invalid_strings_for_integers);
@@ -549,8 +558,6 @@ TEST_VM_F(ArgumentsTest, set_numeric_flag_double) {
     return;
   }
 
-  // TODO -- JDK-8282774
-  // Need to add more test input that have a fractional part like "4.2".
   NumericArgument<double> valid_strings[] = {
     NumericArgument<double>("0",   0.0),
     NumericArgument<double>("1",   1.0),
@@ -564,4 +571,44 @@ TEST_VM_F(ArgumentsTest, set_numeric_flag_double) {
 
   check_numeric_flag<double>(flag, getvalue, valid_strings,
                              ARRAY_SIZE(valid_strings), /*is_double=*/true);
+
+  const char* more_test_strings[] = {
+    // These examples are from https://en.cppreference.com/w/cpp/language/floating_literal
+    // (but with the L and F suffix removed).
+    "1e10", "1e-5",
+    "1.e-2", "3.14",
+    ".1", "0.1e-1",
+    "0x1ffp10", "0X0p-1",
+    "0x1.p0", "0xf.p-1",
+    "0x0.123p-1", "0xa.bp10",
+    "0x1.4p3",
+
+    // More test cases
+    "1.5", "6.02e23", "-6.02e+23",
+    "1.7976931348623157E+308", // max double
+    "-0", "0",
+    "0x1.91eb85p+1",
+    "999999999999999999999999999999",
+  };
+  for (uint i = 0; i < ARRAY_SIZE(more_test_strings); i++) {
+    const char* str = more_test_strings[i];
+
+    char* dummy;
+    errno = 0;
+    double expected = strtod(str, &dummy);
+    if (errno == 0) {
+      ASSERT_TRUE(ArgumentsTest::parse_argument(flag->name(), str))
+        << "Test string '" <<
+        str << "' did not parse for type " << flag->type_string() << ".";
+      double d = flag->get_double();
+      ASSERT_TRUE(d == expected)
+        << "Parsed number " << d << " is not the same as expected " << expected;
+    } else {
+      // Some of the strings like "1.e-2" are not valid in certain locales.
+      // The decimal-point character is also locale dependent.
+      ASSERT_FALSE(ArgumentsTest::parse_argument(flag->name(), str))
+        << "Invalid string '" << str << "' parsed without error.";
+
+    }
+  }
 }

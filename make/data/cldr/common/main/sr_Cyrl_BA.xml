@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -20,6 +20,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bm" draft="contributed">бамананкан</language>
 			<language type="bn" draft="contributed">бангла</language>
 			<language type="de" draft="contributed">њемачки</language>
+			<language type="de_CH">швајцарски високи њемачки</language>
 			<language type="en_GB">енглески (Велика Британија)</language>
 			<language type="es_ES">шпански (Европа)</language>
 			<language type="fa_AF" draft="contributed">дари</language>
@@ -300,8 +301,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<relative type="-1" draft="contributed">прошлог м.</relative>
-				<relative type="0" draft="contributed">овог м.</relative>
+				<relative type="-1" draft="contributed">прошлог мјес.</relative>
+				<relative type="0" draft="contributed">овог мјес.</relative>
 				<relative type="1" draft="contributed">сљедећег м.</relative>
 				<relativeTime type="past">
 					<relativeTimePattern count="one" draft="contributed">прије {0} м.</relativeTimePattern>
@@ -1700,6 +1701,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="few" draft="contributed">сјевернокорејска вона</displayName>
 				<displayName count="other" draft="contributed">сјевернокорејских вона</displayName>
 			</currency>
+			<currency type="NIO">
+				<displayName>Никарагванска златна кордоба</displayName>
+				<displayName count="one">никарагванска златна кордоба</displayName>
+				<displayName count="few">никарагванске златне кордобе</displayName>
+				<displayName count="other">никарагванских златних кордоба</displayName>
+			</currency>
 		</currencies>
 	</numbers>
 	<units>
@@ -1785,21 +1792,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 	</units>
 	<characterLabels>
-		<characterLabel type="body" draft="contributed">тијело</characterLabel>
-		<characterLabel type="bullets_stars" draft="contributed">Знакови за набрајање/звјездице</characterLabel>
-		<characterLabel type="downwards_arrows" draft="contributed">Стрелице надоље</characterLabel>
-		<characterLabel type="downwards_upwards_arrows" draft="contributed">Стрелице надоље и нагоре</characterLabel>
-		<characterLabel type="leftwards_arrows" draft="contributed">Стрелице налијево</characterLabel>
-		<characterLabel type="leftwards_rightwards_arrows" draft="contributed">Стрелице налијево и надесно</characterLabel>
-		<characterLabel type="place" draft="contributed">мјесто</characterLabel>
-		<characterLabel type="travel_places" draft="contributed">Путовања и мјеста</characterLabel>
-		<characterLabel type="weather" draft="contributed">вријеме</characterLabel>
+		<characterLabel type="body">тијело</characterLabel>
+		<characterLabel type="bullets_stars">Знакови за набрајање/звјездице</characterLabel>
+		<characterLabel type="downwards_arrows">Стрелице надоље</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Стрелице надоље и нагоре</characterLabel>
+		<characterLabel type="leftwards_arrows">Стрелице налијево</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Стрелице налијево и надесно</characterLabel>
+		<characterLabel type="place">мјесто</characterLabel>
+		<characterLabel type="travel_places">Путовања и мјеста</characterLabel>
+		<characterLabel type="weather">вријеме</characterLabel>
 	</characterLabels>
 	<typographicNames>
-		<styleName type="slnt" subtype="-12" draft="contributed">нагнут улијево</styleName>
-		<styleName type="wght" subtype="200" draft="contributed">екстрасвијетао</styleName>
-		<styleName type="wght" subtype="200" alt="ultra" draft="contributed">ултрасвијетао</styleName>
-		<styleName type="wght" subtype="300" draft="contributed">свијетао</styleName>
-		<styleName type="wght" subtype="350" draft="contributed">полусвијетао</styleName>
+		<styleName type="slnt" subtype="-12">нагнут улијево</styleName>
+		<styleName type="wght" subtype="200">екстрасвијетао</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ултрасвијетао</styleName>
+		<styleName type="wght" subtype="300">свијетао</styleName>
+		<styleName type="wght" subtype="350">полусвијетао</styleName>
 	</typographicNames>
 </ldml>

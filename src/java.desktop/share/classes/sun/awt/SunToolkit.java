@@ -1181,7 +1181,7 @@ public abstract class SunToolkit extends Toolkit
                 variant = AccessController.doPrivileged(
                                 new GetPropertyAction("user.variant", ""));
             }
-            startupLocale = new Locale(language, country, variant);
+            startupLocale = Locale.of(language, country, variant);
         }
         return startupLocale;
     }
