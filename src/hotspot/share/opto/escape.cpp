@@ -651,6 +651,13 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       add_java_object(n, PointsToNode::ArgEscape);
       break;
     }
+    case Op_Blackhole: {
+      add_local_var(n, PointsToNode::GlobalEscape);
+      // Do not add edges during first iteration because some could be
+      // not defined yet.
+      delayed_worklist->push(n);
+      break;
+    }
     default:
       ; // Do nothing for nodes not related to EA.
   }
@@ -797,6 +804,25 @@ void ConnectionGraph::add_final_edges(Node *n) {
           assert(ptn != NULL, "node should be registered");
           add_edge(n_ptn, ptn);
         }
+      }
+      break;
+    }
+    case Op_Blackhole: {
+      // All blackhole arguments are globally escaping.
+      for (uint i = 0; i < n->req(); i++) {
+        Node *in = n->in(i);
+        if (in == nullptr) continue;
+
+        PointsToNode* ptn = ptnode_adr(in->_idx);
+        if (ptn == nullptr) {
+          // Not registered yet
+          add_local_var(in, PointsToNode::GlobalEscape);
+          ptn = ptnode_adr(in->_idx);
+        } else {
+          // Registered already, force the escape state
+          set_escape_state(ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA "blackhole"));
+        }
+        add_edge(n_ptn, ptn);
       }
       break;
     }
