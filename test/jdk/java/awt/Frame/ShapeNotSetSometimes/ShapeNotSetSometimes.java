@@ -50,6 +50,7 @@ public class ShapeNotSetSometimes {
     private static final Color BACKGROUND_COLOR = Color.GREEN;
     private static final Color SHAPE_COLOR = Color.WHITE;
     private Point[] pointsOutsideToCheck;
+    private Point[] shadedPointsToCheck;
     private Point innerPoint;
 
     private final Rectangle bounds = new Rectangle(220, 400, 300, 300);
@@ -81,7 +82,12 @@ public class ShapeNotSetSometimes {
                 new Point(150, 20),
                 new Point(280, 120),
                 new Point(150, 250),
-                new Point(20, 120),
+                new Point(20, 120)
+        };
+
+        shadedPointsToCheck = new Point[] {
+                new Point(62, 62),
+                new Point(240, 185)
         };
 
         window = new TestFrame();
@@ -134,14 +140,14 @@ public class ShapeNotSetSometimes {
         robot.delay(500);
 
         try {
-            colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR);
+            colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR, true);
 
             for (Point point : pointsOutsideToCheck) {
-                colorCheck(
-                        point.x,
-                        point.y,
-                        BACKGROUND_COLOR
-                );
+                colorCheck(point.x, point.y, BACKGROUND_COLOR, true);
+            }
+
+            for (Point point : shadedPointsToCheck) {
+                colorCheck(point.x, point.y, SHAPE_COLOR, false);
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -151,22 +157,31 @@ public class ShapeNotSetSometimes {
         }
     }
 
-    private void colorCheck(int x, int y, Color expectedColor) {
+    private void colorCheck(int x, int y, Color expectedColor, boolean mustBeExpectedColor) {
 
         int screenX = window.getX() + x;
         int screenY = window.getY() + y;
 
         Color actualColor = robot.getPixelColor(screenX, screenY);
 
-        System.out.printf("Checking %3d, %3d, %35s %35s\n", x, y, actualColor, expectedColor);
-        if (!expectedColor.equals(actualColor)) {
+        System.out.printf(
+                "Checking %3d, %3d, %35s should %sbe %35s\n",
+                x, y,
+                actualColor,
+                (mustBeExpectedColor) ? "" : "not ",
+                expectedColor
+        );
+
+        if (mustBeExpectedColor != expectedColor.equals(actualColor)) {
             System.out.printf("window.getX() = %3d, window.getY() = %3d\n", window.getX(), window.getY());
 
             System.err.printf(
-                    "Checking for transparency failed: point: %3d, %3d\n\tactual   = %s\n\texpected = %s\n",
+                    "Checking for transparency failed: point: %3d, %3d\n\tactual    %s\n\texpected %s%s\n",
                     screenX,
                     screenY,
-                    actualColor, expectedColor);
+                    actualColor,
+                    mustBeExpectedColor ? "" : "not ",
+                    expectedColor);
             throw new RuntimeException("Test failed. The shape has not been applied.");
         }
     }
