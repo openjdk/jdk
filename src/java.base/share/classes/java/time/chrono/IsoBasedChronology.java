@@ -24,6 +24,8 @@
  */
 package java.time.chrono;
 
+import java.time.temporal.IsoFields;
+
 /**
  * An interface that confirms chronologies implementing this interface
  * are ISO based.
@@ -38,7 +40,7 @@ package java.time.chrono;
  * @see JapaneseChronology
  * @see MinguoChronology
  * @see ThaiBuddhistChronology
- * @see java.time.temporal.IsoFields
+ * @see IsoFields
  * @since 19
  */
 public interface IsoBasedChronology {
