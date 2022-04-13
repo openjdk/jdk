@@ -5195,7 +5195,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src,
   // Use RoundToNearestTiesAway unless src small and -ve.
   fcvtasd(dst, src);
   // Test if src >= 0 || abs(src) >= 0x1.0p52
-  eor(rscratch1, rscratch1, 1ul << 63); // flip sign bit
+  eor(rscratch1, rscratch1, UCONST64(1) << 63); // flip sign bit
   mov(rscratch2, julong_cast(0x1.0p52));
   cmp(rscratch1, rscratch2);
   br(HS, DONE); {
