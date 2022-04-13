@@ -266,6 +266,7 @@ public class HtmlDoclet extends AbstractDoclet {
             }
             configuration.mainIndex.createSearchIndexFiles();
             IndexWriter.generate(configuration);
+            SearchWriter.generate(configuration);
         }
 
         if (options.createOverview()) {
@@ -292,6 +293,9 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
 
+            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_PAGE_JS);
+            f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_PAGE_JS), configuration.docResources);
+
             f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.GLASS_IMG), true, false);
 
@@ -308,9 +312,9 @@ public class HtmlDoclet extends AbstractDoclet {
 
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
-                "jquery-3.6.0.min.js",
-                "jquery-ui.min.js",
-                "jquery-ui.min.css",
+                DocPaths.JQUERY_JS.getPath(),
+                DocPaths.JQUERY_UI_JS.getPath(),
+                DocPaths.JQUERY_UI_CSS.getPath(),
                 "jquery-ui.structure.min.css",
                 "images/ui-bg_glass_65_dadada_1x400.png",
                 "images/ui-icons_454545_256x240.png",

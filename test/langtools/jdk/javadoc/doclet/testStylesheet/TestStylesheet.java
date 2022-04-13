@@ -105,18 +105,15 @@ public class TestStylesheet extends JavadocTester {
                         white-space:pre;
                     }""",
                 """
-                    .caption span {
-                        white-space:nowrap;
-                        padding-top:5px;
-                        padding-left:12px;
-                        padding-right:12px;
-                        padding-bottom:7px;
-                        display:inline-block;
-                        float:left;
-                        background-color:#F8981D;
-                        border: none;
-                        height:16px;
-                    }""",
+                .caption span {
+                    white-space:nowrap;
+                    padding:5px 12px 7px 12px;
+                    display:inline-block;
+                    float:left;
+                    background-color:#F8981D;
+                    border: none;
+                    height:16px;
+                }""",
                 """
                     div.table-tabs > button {
                        border: none;
