@@ -544,21 +544,31 @@ void VMError::report(outputStream* st, bool _verbose) {
 
 #ifdef ASSERT
   // Error handler self tests
+  // Meaning of codes passed through in the tests.
+#define TEST_SECONDARY_CRASH 14
+#define TEST_RESOURCE_MARK_CRASH 2
 
   // test secondary error handling. Test it twice, to test that resetting
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
-    if (_verbose && TestCrashInErrorHandler != 0) {
+    if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
       st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
+    }
+
+  STEP("test missing ResourceMark does not crash")
+    if (_verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH) {
+      stringStream message;
+      message.print("This is a message with no ResourceMark");
+      tty->print_cr("%s", message.as_string());
     }
 
   // TestUnresponsiveErrorHandler: We want to test both step timeouts and global timeout.
