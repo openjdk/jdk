@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4627316 6743526
+ * @bug 4627316 6743526 8284642
  * @summary Test option to limit direct memory allocation
  * @requires (os.arch == "x86_64") | (os.arch == "amd64")
  * @library /test/lib
@@ -41,8 +41,8 @@
  * @run main/othervm -Xmx64m LimitDirectMemory false 0 DEFAULT
  * @run main/othervm -Xmx64m LimitDirectMemory true 0 DEFAULT+1
  *
- * @summary Test: We should be able to eliminate direct memory allocation entirely
- * @run main/othervm -XX:MaxDirectMemorySize=0 LimitDirectMemory true 0 1
+ * @summary Test: A value of 0 means the JVM picks the size for NIO direct-buffer allocations
+ * @run main/othervm -XX:MaxDirectMemorySize=0 LimitDirectMemory false 10 1
  *
  * @summary Test: Setting the system property should not work so we should be able
  *                to allocate the default amount
