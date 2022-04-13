@@ -540,7 +540,6 @@ public abstract class InputStream implements Closeable {
      */
     public long skip(long n) throws IOException {
         long remaining = n;
-        int nr;
 
         if (n <= 0) {
             return 0;
@@ -554,7 +553,7 @@ public abstract class InputStream implements Closeable {
         }
 
         while (remaining > 0) {
-            nr = read(skipBuffer, 0, (int)Math.min(size, remaining));
+            int nr = read(skipBuffer, 0, (int)Math.min(size, remaining));
             if (nr < 0) {
                 break;
             }
