@@ -140,9 +140,8 @@ public class FieldNode extends FieldVisitor {
     /**
       * Constructs a new {@link FieldNode}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link
-      *     Opcodes#ASM8} or {@link Opcodes#ASM9}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param access the field's access flags (see {@link jdk.internal.org.objectweb.asm.Opcodes}). This parameter
       *     also indicates if the field is synthetic and/or deprecated.
       * @param name the field's name.
@@ -213,8 +212,8 @@ public class FieldNode extends FieldVisitor {
       * that this node, and all its children recursively, do not contain elements that were introduced
       * in more recent versions of the ASM API than the given version.
       *
-      * @param api an ASM API version. Must be one of {@link Opcodes#ASM4}, {@link Opcodes#ASM5},
-      *     {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param api an ASM API version. Must be one of the {@code ASM}<i>x</i> values in {@link
+      *     Opcodes}.
       */
     public void check(final int api) {
         if (api == Opcodes.ASM4) {

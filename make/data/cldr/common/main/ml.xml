@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -14,7 +14,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</identity>
 	<localeDisplayNames>
 		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
 			<localeSeparator>{0}, {1}</localeSeparator>
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
@@ -72,7 +71,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bkm">കോം</language>
 			<language type="bla">സിക്സിക</language>
 			<language type="bm">ബംബാറ</language>
-			<language type="bn">ബംഗാളി</language>
+			<language type="bn">ബംഗ്ലാ</language>
 			<language type="bo">ടിബറ്റൻ</language>
 			<language type="br">ബ്രെട്ടൺ</language>
 			<language type="bra">ബ്രജ്</language>
@@ -414,6 +413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="raj">രാജസ്ഥാനി</language>
 			<language type="rap">രാപനൂയി</language>
 			<language type="rar">രാരോടോങ്കൻ</language>
+			<language type="rhg">റോഹിംഗാ</language>
 			<language type="rm">റൊമാഞ്ച്</language>
 			<language type="rn">റുണ്ടി</language>
 			<language type="ro">റൊമാനിയൻ</language>
@@ -556,6 +556,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zh_Hans">ലളിതമാക്കിയ ചൈനീസ്</language>
 			<language type="zh_Hans" alt="long">ലളിതവൽകൃത മാൻഡറിൻ ചൈനീസ്</language>
 			<language type="zh_Hant">പരമ്പരാഗത ചൈനീസ്</language>
+			<language type="zh_Hant" alt="long">പരമ്പരാഗത മാൻഡറിൻ ചൈനീസ്</language>
 			<language type="zu">സുലു</language>
 			<language type="zun">സുനി</language>
 			<language type="zxx">ഭാഷാപരമായ ഉള്ളടക്കമൊന്നുമില്ല</language>
@@ -819,6 +820,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="FR">ഫ്രാൻസ്</territory>
 			<territory type="GA">ഗാബൺ</territory>
 			<territory type="GB">യുണൈറ്റഡ് കിംഗ്ഡം</territory>
+			<territory type="GB" alt="short">യുകെ</territory>
 			<territory type="GD">ഗ്രനേഡ</territory>
 			<territory type="GE">ജോർജ്ജിയ</territory>
 			<territory type="GF">ഫ്രഞ്ച് ഗയാന</territory>
@@ -960,7 +962,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="SX">സിന്റ് മാർട്ടെൻ</territory>
 			<territory type="SY">സിറിയ</territory>
 			<territory type="SZ">സ്വാസിലൻഡ്</territory>
-			<territory type="SZ" alt="variant">സ്വിറ്റ്സർലൻഡ്</territory>
+			<territory type="SZ" alt="variant">സ്വാസിലാൻഡ്</territory>
 			<territory type="TA">ട്രിസ്റ്റൻ ഡ കൂന</territory>
 			<territory type="TC">ടർക്ക്‌സും കെയ്‌ക്കോ ദ്വീപുകളും</territory>
 			<territory type="TD">ഛാഡ്</territory>
@@ -1119,7 +1121,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">അർമേനിയൻ സംഖ്യകൾ</type>
 			<type key="numbers" type="armnlow">അർമേനിയൻ ചെറിയ സംഖ്യകൾ</type>
 			<type key="numbers" type="bali" draft="contributed">ബെലിനീസ് അക്കങ്ങൾ</type>
-			<type key="numbers" type="beng">ബംഗാളി അക്കങ്ങൾ</type>
+			<type key="numbers" type="beng">ബംഗ്ലാ അക്കങ്ങൾ</type>
 			<type key="numbers" type="brah" draft="contributed">ബ്രാഹ്‌മി അക്കങ്ങൾ</type>
 			<type key="numbers" type="cakm" draft="contributed">ചക്മ അക്കങ്ങൾ</type>
 			<type key="numbers" type="cham" draft="contributed">ചാം അക്കങ്ങൾ</type>
@@ -1205,7 +1207,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[\u200C\u200D ഃ അ ആ ഇ ഈ ഉ ഊ ഋ ൠ ഌ ൡ എ ഏ ഐ ഒ ഓ ഔ ക ൿ ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ൺ ത ഥ ദ ധ ന ൻ പ ഫ ബ ഭ മ ം യ ര ർ ല ൽ വ ശ ഷ സ ഹ ള ൾ ഴ റ ാ ി ീ \u0D41 \u0D42 \u0D43 െ േ ൈ ൊ ോ ൌ ൗ \u0D4D]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[അ ആ ഇ ഈ ഉ ഊ ഋ എ ഏ ഐ ഒ ഓ ഔ ക ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ത ഥ ദ ധ ന പ ഫ ബ ഭ മ യ ര ല വ ശ ഷ സ ഹ ള ഴ റ]</exemplarCharacters>
+		<exemplarCharacters type="index">[അ ആ ഇ ഈ ഉ ഊ ഋ എ ഏ ഐ ഒ ഓ ഔ ക ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ത ഥ ദ ധ ന പ ഫ ബ ഭ മ യ ര ല വ ശ ഷ സ ഹ ള ഴ റ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0൦ 1൧ 2൨ 3൩ 4൪ 5൫ 6൬ 7൭ 8൮ 9൯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
@@ -1216,23 +1218,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\--/]</parseLenient>
+			<parseLenient sample=":">[\:∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -1485,21 +1487,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y, MMMM d, EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y, MMMM d</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y, MMM d</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG y-MM-dd</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1989,21 +1995,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y, MMMM d, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y, MMMM d</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y, MMM d</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -2011,21 +2021,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -2064,6 +2078,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
@@ -2655,7 +2670,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>കാലഘട്ടം</displayName>
 			</field>
 			<field type="era-narrow">
-				<displayName>കാലഘട്ടം</displayName>
+				<displayName>കാല.</displayName>
 			</field>
 			<field type="year">
 				<displayName>വർഷം</displayName>
@@ -3951,6 +3966,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>എൻഡബറി</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="contributed">കാൻട്ടൻ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>കിരിറ്റിമാറ്റി</exemplarCity>
@@ -5571,35 +5589,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>യെക്കാറ്റരിൻബർഗ് ഗ്രീഷ്‌മകാല സമയം</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>യൂക്കോൺ സമയം</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>mlym</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
-			<decimal draft="contributed">.</decimal>
-			<group draft="contributed">,</group>
+			<decimal>.</decimal>
+			<group>,</group>
 			<list draft="contributed">;</list>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="mlym">
-			<decimal draft="contributed">.</decimal>
-			<group draft="contributed">,</group>
+			<decimal>.</decimal>
+			<group>,</group>
 			<list>;</list>
 			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -5762,7 +5785,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>യുണൈറ്റഡ് അറബ് എമിറേറ്റ്സ് ദിർഹം</displayName>
 				<displayName count="one">യു.എ.ഇ. ദിർഹം</displayName>
 				<displayName count="other">യു.എ.ഇ. ദിർഹം</displayName>
-				<symbol draft="contributed">AED</symbol>
+				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>അഫ്ഘാനി (1927–2002)</displayName>
@@ -5773,33 +5796,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>അഫ്‌ഗാൻ അഫ്‌‌ഗാനി</displayName>
 				<displayName count="one">അഫ്‌ഗാൻ അഫ്‌‌ഗാനി</displayName>
 				<displayName count="other">അഫ്‌ഗാൻ അഫ്‌‌ഗാനി</displayName>
-				<symbol draft="contributed">AFN</symbol>
+				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>അൽബേനിയൻ ലെക്</displayName>
 				<displayName count="one">അൽബേനിയൻ ലെക്</displayName>
 				<displayName count="other">അൽബേനിയൻ ലെക്</displayName>
-				<symbol draft="contributed">ALL</symbol>
+				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>അർമേനിയൻ ഡ്രാം</displayName>
 				<displayName count="one">അർമേനിയൻ ഡ്രാം</displayName>
 				<displayName count="other">അർമേനിയൻ ഡ്രാം</displayName>
-				<symbol draft="contributed">AMD</symbol>
+				<symbol>AMD</symbol>
 				<symbol alt="narrow" draft="contributed">֏</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>നെതർലാൻഡ്‌സ് ആന്റിലൻ ഗിൽഡർ</displayName>
 				<displayName count="one">നെതർലാൻഡ്‌സ് ആന്റിലൻ ഗിൽഡർ</displayName>
 				<displayName count="other">നെതർലാൻഡ്‌സ് ആന്റിലൻ ഗിൽഡർ</displayName>
-				<symbol draft="contributed">ANG</symbol>
+				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>അംഗോളൻ ‍ക്വാൻസ</displayName>
 				<displayName count="one">അംഗോളൻ ക്വാൻസ</displayName>
 				<displayName count="other">അംഗോളൻ ക്വാൻസ</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol>AOA</symbol>
+				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>അംഗോളൻ ‍ക്വാൻസ (1977–1990)</displayName>
@@ -5830,8 +5853,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>അർജൻറീൻ പെസോ</displayName>
 				<displayName count="one">അർജൻറീൻ പെസോ</displayName>
 				<displayName count="other">അർജൻറീൻ പെസോ</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>ARS</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>ഓസ്ട്രേലിയൻ ഷില്ലിംഗ്</displayName>
@@ -5842,14 +5865,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഓസ്ട്രേലിയൻ ഡോളർ</displayName>
 				<displayName count="one">ഓസ്ട്രേലിയൻ ഡോളർ</displayName>
 				<displayName count="other">ഓസ്ട്രേലിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">A$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>A$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>അറൂബൻ ഫ്ലോറിൻ</displayName>
 				<displayName count="one">അറൂബൻ ഫ്ലോറിൻ</displayName>
 				<displayName count="other">അറൂബൻ ഫ്ലോറിൻ</displayName>
-				<symbol draft="contributed">AWG</symbol>
+				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>അസർബയ്ജാനിയൻ മനത് (1993–2006)</displayName>
@@ -5860,7 +5883,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>അസർബൈജാനി മനത്</displayName>
 				<displayName count="one">അസർബൈജാനി മനത്</displayName>
 				<displayName count="other">അസർബൈജാനി മനത്</displayName>
-				<symbol draft="contributed">AZN</symbol>
+				<symbol>AZN</symbol>
 				<symbol alt="narrow" draft="contributed">₼</symbol>
 			</currency>
 			<currency type="BAD">
@@ -5872,22 +5895,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബോസ്‌നിയ-ഹെർസഗോവിന കൺവേർട്ടബിൾ മാർക്ക്</displayName>
 				<displayName count="one">ബോസ്‌നിയ-ഹെർസഗോവിന കൺവേർട്ടബിൾ മാർക്ക്</displayName>
 				<displayName count="other">ബോസ്‌നിയ-ഹെർസഗോവിന കൺവേർട്ടബിൾ മാർക്ക്</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol>BAM</symbol>
+				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>ബാർബേഡിയൻ ഡോളർ</displayName>
 				<displayName count="one">ബാർബേഡിയൻ ഡോളർ</displayName>
 				<displayName count="other">ബാർബേഡിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>ബംഗ്ലാദേശി ടാക്ക</displayName>
 				<displayName count="one">ബംഗ്ലാദേശി ടാക്ക</displayName>
 				<displayName count="other">ബംഗ്ലാദേശി ടാക്ക</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol>BDT</symbol>
+				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>ബെൽജിയൻ ഫ്രാങ്ക് (കൈമാറ്റം ചെയ്യാവുന്നത്)</displayName>
@@ -5913,40 +5936,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബൾഗേറിയൻ ലെവ്</displayName>
 				<displayName count="one">ബൾഗേറിയൻ ലെവ്</displayName>
 				<displayName count="other">ബൾഗേറിയൻ ലെവ്</displayName>
-				<symbol draft="contributed">BGN</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>ബഹ്റൈനി ദിനാർ</displayName>
 				<displayName count="one">ബഹ്റൈനി ദിനാർ</displayName>
 				<displayName count="other">ബഹ്റൈനി ദിനാർ</displayName>
-				<symbol draft="contributed">BHD</symbol>
+				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>ബറുണ്ടിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="one">ബുറുണ്ടിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="other">ബറുണ്ടിയൻ ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">BIF</symbol>
+				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>ബെർമുഡൻ ഡോളർ</displayName>
 				<displayName count="one">ബെർമുഡൻ ഡോളർ</displayName>
 				<displayName count="other">ബെർമുഡൻ ഡോളർ</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>ബ്രൂണൈ ഡോളർ</displayName>
 				<displayName count="one">ബ്രൂണൈ ഡോളർ</displayName>
 				<displayName count="other">ബ്രൂണൈ ഡോളർ</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BND</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>ബൊളീവിയൻ ബൊളിവിയാനോ</displayName>
 				<displayName count="one">ബൊളീവിയൻ ബൊളിവിയാനോ</displayName>
 				<displayName count="other">ബൊളീവിയൻ ബൊളിവിയാനോ</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol>BOB</symbol>
+				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>ബൊളീവിയൻ പെയ്സോ</displayName>
@@ -5977,8 +6000,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബ്രസീലിയൻ റിയാൽ</displayName>
 				<displayName count="one">ബ്രസീലിയൻ റിയാൽ</displayName>
 				<displayName count="other">ബ്രസീലിയൻ റിയാൽ</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol>R$</symbol>
+				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>ബ്രസീലിയൻ ക്രുസാഡോ നോവോ</displayName>
@@ -5994,14 +6017,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബഹാമിയൻ ഡോളർ</displayName>
 				<displayName count="one">ബഹാമിയൻ ഡോളർ</displayName>
 				<displayName count="other">ബഹാമിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BSD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>ഭൂട്ടാനീസ് ഗൾട്രം</displayName>
 				<displayName count="one">ഭൂട്ടാനീസ് ഗൾട്രം</displayName>
 				<displayName count="other">ഭൂട്ടാനീസ് ഗൾട്രം</displayName>
-				<symbol draft="contributed">BTN</symbol>
+				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>ബർമീസ് ചാറ്റ്</displayName>
@@ -6012,8 +6035,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബോട്‌സ്വാനൻ പ്യുല</displayName>
 				<displayName count="one">ബോട്‌സ്വാനൻ പ്യുല</displayName>
 				<displayName count="other">ബോട്‌സ്വാനൻ പ്യുല</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol>BWP</symbol>
+				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>ബെലാറഷ്യൻ ന്യൂ റൂബിൾ (1994–1999)</displayName>
@@ -6024,8 +6047,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബെലാറുഷ്യൻ റൂബിൾ</displayName>
 				<displayName count="one">ബെലാറുഷ്യൻ റൂബിൾ</displayName>
 				<displayName count="other">ബെലാറുഷ്യൻ റൂബിൾ</displayName>
-				<symbol draft="contributed">BYN</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>ബെലാറുഷ്യൻ റൂബിൾ (2000–2016)</displayName>
@@ -6037,21 +6060,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബെലീസ് ഡോളർ</displayName>
 				<displayName count="one">ബെലീസ് ഡോളർ</displayName>
 				<displayName count="other">ബെലീസ് ഡോളർ</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>BZD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>കനേഡിയൻ ഡോളർ</displayName>
 				<displayName count="one">കനേഡിയൻ ഡോളർ</displayName>
 				<displayName count="other">കനേഡിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CA$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>കോങ്കളീസ് ഫ്രാങ്ക്</displayName>
 				<displayName count="one">കോങ്കളീസ് ഫ്രാങ്ക്</displayName>
 				<displayName count="other">കോങ്കളീസ് ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">CDF</symbol>
+				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>WIR യൂറോ</displayName>
@@ -6062,7 +6085,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സ്വിസ് ഫ്രാങ്ക്</displayName>
 				<displayName count="one">സ്വിസ് ഫ്രാങ്ക്</displayName>
 				<displayName count="other">സ്വിസ് ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">CHF</symbol>
+				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>WIR ഫ്രാങ്ക്</displayName>
@@ -6078,28 +6101,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ചിലിയൻ പെസോ</displayName>
 				<displayName count="one">ചിലിയൻ പെസോ</displayName>
 				<displayName count="other">ചിലിയൻ പെസോ</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CLP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>ചൈനീസ് യുവാൻ (ഓഫ്‌ഷോർ)</displayName>
 				<displayName count="one">ചൈനീസ് യുവാൻ (ഓഫ്‌ഷോർ)</displayName>
 				<displayName count="other">ചൈനീസ് യുവാൻ (ഓഫ്‌ഷോർ)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>ചൈനീസ് യുവാൻ</displayName>
 				<displayName count="one">ചൈനീസ് യുവാൻ</displayName>
 				<displayName count="other">ചൈനീസ് യുവാൻ</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol>CN¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>കൊളംബിയൻ പെസോ</displayName>
 				<displayName count="one">കൊളംബിയൻ പെസോ</displayName>
 				<displayName count="other">കൊളംബിയൻ പെസോ</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>COP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>യൂണിഡാഡ് ഡി വാലർ റിയൽ</displayName>
@@ -6110,8 +6133,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>കോസ്റ്റാ റിക്കൻ കോളൻ</displayName>
 				<displayName count="one">കോസ്റ്റാ റിക്കൻ കോളൻ</displayName>
 				<displayName count="other">കോസ്റ്റാ റിക്കൻ കോളൻ</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol>CRC</symbol>
+				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>പ്രാചീന സെർബിയൻ ദിനാർ</displayName>
@@ -6127,21 +6150,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ക്യൂബൻ കൺവേർട്ടബിൾ പെസോ</displayName>
 				<displayName count="one">ക്യൂബൻ കൺവേർട്ടബിൾ പെസോ</displayName>
 				<displayName count="other">ക്യൂബൻ കൺവേർട്ടബിൾ പെസോ</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUC</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>ക്യൂബൻ പെസോ</displayName>
 				<displayName count="one">ക്യൂബൻ പെസോ</displayName>
 				<displayName count="other">ക്യൂബൻ പെസോ</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>CUP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>കേപ് വെർദിയൻ എസ്‌ക്യുഡോ</displayName>
 				<displayName count="one">കേപ് വെർദിയൻ എസ്‌ക്യുഡോ</displayName>
 				<displayName count="other">കേപ് വെർദിയൻ എസ്‌ക്യുഡോസ്</displayName>
-				<symbol draft="contributed">CVE</symbol>
+				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>സൈപ്രസ് പൌണ്ട്</displayName>
@@ -6152,8 +6175,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ചെക്ക് റിപ്പബ്ലിക് കൊരുണ</displayName>
 				<displayName count="one">ചെക്ക് റിപ്പബ്ലിക് കൊരുണ</displayName>
 				<displayName count="other">ചെക്ക് റിപ്പബ്ലിക് കൊരുണ</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol>CZK</symbol>
+				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>കിഴക്കൻ ജർമൻ ഓസ്റ്റ്മാർക്ക്</displayName>
@@ -6169,27 +6192,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ദിജിബൗട്ടിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="one">ദിജിബൗട്ടിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="other">ദിജിബൗട്ടിയൻ ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">DJF</symbol>
+				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>ഡാനിഷ് ക്രോണെ</displayName>
 				<displayName count="one">ഡാനിഷ് ക്രോണെ</displayName>
 				<displayName count="other">ഡാനിഷ് ക്രോണെ</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>DKK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>ഡൊമിനിക്കൻ പെസോ</displayName>
 				<displayName count="one">ഡൊമിനിക്കൻ പെസോ</displayName>
 				<displayName count="other">ഡൊമിനിക്കൻ പെസോ</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>DOP</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>അൾജീരിയൻ ദിനാർ</displayName>
 				<displayName count="one">അൾജീരിയൻ ദിനാർ</displayName>
 				<displayName count="other">അൾജീരിയൻ ദിനാർ</displayName>
-				<symbol draft="contributed">DZD</symbol>
+				<symbol>DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>ഇക്വഡോർ സൂക്രേ</displayName>
@@ -6210,14 +6233,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഈജിപ്‌ഷ്യൻ പൗണ്ട്</displayName>
 				<displayName count="one">ഈജിപ്‌ഷ്യൻ പൗണ്ട്</displayName>
 				<displayName count="other">ഈജിപ്‌ഷ്യൻ പൗണ്ട്</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol>EGP</symbol>
+				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>എറിത്രിയൻ നക്ഫ</displayName>
 				<displayName count="one">എറിത്രിയൻ നക്ഫ</displayName>
 				<displayName count="other">എറിത്രിയൻ നക്‌ഫ</displayName>
-				<symbol draft="contributed">ERN</symbol>
+				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>സ്പാനിഷ് പസെയ്റ്റ (A അക്കൌണ്ട്)</displayName>
@@ -6238,14 +6261,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>എത്യോപ്യൻ ബിർ</displayName>
 				<displayName count="one">എത്യോപ്യൻ ബിർ</displayName>
 				<displayName count="other">എത്യോപ്യൻ ബിർ</displayName>
-				<symbol draft="contributed">ETB</symbol>
+				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>യൂറോ</displayName>
 				<displayName count="one">യൂറോ</displayName>
 				<displayName count="other">യൂറോ</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
+				<symbol>€</symbol>
+				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>ഫിന്നിഷ് മാർക്ക</displayName>
@@ -6256,15 +6279,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഫിജിയൻ ഡോളർ</displayName>
 				<displayName count="one">ഫിജിയൻ ഡോളർ</displayName>
 				<displayName count="other">ഫിജിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>FJD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ഫാക്ക്‌ലാന്റ് ദ്വീപുകളുടെ പൗണ്ട്</displayName>
 				<displayName count="one">ഫാക്ക്‌ലാന്റ് ദ്വീപുകളുടെ പൗണ്ട്</displayName>
 				<displayName count="other">ഫാക്ക്‌ലാന്റ് ദ്വീപുകളുടെ പൗണ്ട്</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>FKP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>ഫ്രാങ്ക്</displayName>
@@ -6275,8 +6298,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ബ്രിട്ടീഷ് പൗണ്ട്</displayName>
 				<displayName count="one">ബ്രിട്ടീഷ് പൗണ്ട്</displayName>
 				<displayName count="other">ബ്രിട്ടീഷ് പൗണ്ട്</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>ജോർ‍ജ്ജിയൻ ക്യൂപോൺ ലാരിറ്റ്</displayName>
@@ -6287,9 +6310,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ജോർജ്ജിയൻ ലാറി</displayName>
 				<displayName count="one">ജോർജ്ജിയൻ ലാറി</displayName>
 				<displayName count="other">ജോർജ്ജിയൻ ലാറിസ്</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol>GEL</symbol>
+				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>ഘാന കെഡി (1979–2007)</displayName>
@@ -6300,28 +6322,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഘാനയൻ കെഡി</displayName>
 				<displayName count="one">ഘാനയൻ കെഡി</displayName>
 				<displayName count="other">ഘാനയൻ കെഡി</displayName>
-				<symbol draft="contributed">GHS</symbol>
+				<symbol>GHS</symbol>
 				<symbol alt="narrow" draft="contributed">GH₵</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ജിബ്രാൾട്ടർ പൗണ്ട്</displayName>
 				<displayName count="one">ജിബ്രാൾട്ടർ പൗണ്ട്</displayName>
 				<displayName count="other">ജിബ്രാൾട്ടർ പൗണ്ട്</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>GIP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>ഗാംബിയൻ ദലാസി</displayName>
 				<displayName count="one">ഗാംബിയൻ ദലാസി</displayName>
 				<displayName count="other">ഗാംബിയൻ ദലാസിസ്</displayName>
-				<symbol draft="contributed">GMD</symbol>
+				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>ഗിനിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="one">ഗിനിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="other">ഗിനിയൻ ഫ്രാങ്ക്സ്</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol>GNF</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>ഗിനിയ സൈലി</displayName>
@@ -6342,8 +6364,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഗ്വാട്ടിമാലൻ ക്വെറ്റ്‌സൽ</displayName>
 				<displayName count="one">ഗ്വാട്ടിമാലൻ ക്വെറ്റ്‌സൽ</displayName>
 				<displayName count="other">ഗ്വാട്ടിമാലൻ ക്വെറ്റ്‌സൽ</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol>GTQ</symbol>
+				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>പോർച്ചുഗീസ് ഗിനി എസ്ക്യൂഡോ</displayName>
@@ -6359,22 +6381,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഗയാനീസ് ഡോളർ</displayName>
 				<displayName count="one">ഗയാനീസ് ഡോളർ</displayName>
 				<displayName count="other">ഗയാനീസ് ഡോളർ</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>GYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>ഹോങ്കോങ്ങ് ഡോളർ</displayName>
 				<displayName count="one">ഹോങ്കോങ്ങ് ഡോളർ</displayName>
 				<displayName count="other">ഹോങ്കോങ്ങ് ഡോളർ</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>HK$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>ഹോണ്ടുറൻ ലെംപിറ</displayName>
 				<displayName count="one">ഹോണ്ടുറൻ ലെംപിറ</displayName>
 				<displayName count="other">ഹോണ്ടുറൻ ലെംപിറ</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol>HNL</symbol>
+				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>ക്രൊയേഷ്യൻ ദിനാർ</displayName>
@@ -6385,28 +6407,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ക്രൊയേഷൻ ക്യുന</displayName>
 				<displayName count="one">ക്രൊയേഷൻ ക്യുന</displayName>
 				<displayName count="other">ക്രൊയേഷൻ ക്യുന</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol>HRK</symbol>
+				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>ഹെയ്‌തിയൻ ഗൂർഡ്</displayName>
 				<displayName count="one">ഹെയ്‌തിയൻ ഗൂർഡ്</displayName>
 				<displayName count="other">ഹെയ്‌തിയൻ ഗൂർഡ്</displayName>
-				<symbol draft="contributed">HTG</symbol>
+				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>ഹംഗേറിയൻ ഫോറിന്റ്</displayName>
 				<displayName count="one">ഹംഗേറിയൻ ഫോറിന്റ്</displayName>
 				<displayName count="other">ഹംഗേറിയൻ ഫോറിന്റ്</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol>HUF</symbol>
+				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>ഇന്തോനേഷ്യൻ റുപിയ</displayName>
 				<displayName count="one">ഇന്തോനേഷ്യൻ റുപിയ</displayName>
 				<displayName count="other">ഇന്തോനേഷ്യൻ റുപിയ</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol>IDR</symbol>
+				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>ഐറിഷ് പൌണ്ട്</displayName>
@@ -6422,34 +6444,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഇസ്രായേലി ന്യൂ ഷെക്കെൽ</displayName>
 				<displayName count="one">ഇസ്രായേലി ന്യൂ ഷെക്കെൽ</displayName>
 				<displayName count="other">ഇസ്രായേലി ന്യൂ ഷെക്കെൽ</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol>₪</symbol>
+				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>ഇന്ത്യൻ രൂപ</displayName>
 				<displayName count="one">ഇന്ത്യൻ രൂപ</displayName>
 				<displayName count="other">ഇന്ത്യൻ രൂപ</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol>₹</symbol>
+				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>ഇറാഖി ദിനാർ</displayName>
 				<displayName count="one">ഇറാഖി ദിനാർ</displayName>
 				<displayName count="other">ഇറാഖി ദിനാർ</displayName>
-				<symbol draft="contributed">IQD</symbol>
+				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ഇറാനിയൻ റിയാൽ</displayName>
 				<displayName count="one">ഇറാനിയൻ റിയാൽ</displayName>
 				<displayName count="other">ഇറാനിയൻ റിയാൽ</displayName>
-				<symbol draft="contributed">IRR</symbol>
+				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>ഐസ്‌ലാൻഡിക് ക്രോണ</displayName>
 				<displayName count="one">ഐസ്‌ലാൻഡിക് ക്രോണ</displayName>
 				<displayName count="other">ഐസ്‌ലാൻഡിക് ക്രോണ</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>ISK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>ഇറ്റാലിയൻ ലിറ</displayName>
@@ -6460,109 +6482,109 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ജമൈക്കൻ ഡോളർ</displayName>
 				<displayName count="one">ജമൈക്കൻ ഡോളർ</displayName>
 				<displayName count="other">ജമൈക്കൻ ഡോളർ</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>JMD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>ജോർദ്ദാനിയൻ ദിനാർ</displayName>
 				<displayName count="one">ജോർദ്ദാനിയൻ ദിനാർ</displayName>
 				<displayName count="other">ജോർദ്ദാനിയൻ ദിനാർ</displayName>
-				<symbol draft="contributed">JOD</symbol>
+				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>ജാപ്പനീസ് യെൻ</displayName>
 				<displayName count="one">ജാപ്പനീസ് യെൻ</displayName>
 				<displayName count="other">ജാപ്പനീസ് യെൻ</displayName>
 				<symbol>¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>കെനിയൻ ഷില്ലിംഗ്</displayName>
 				<displayName count="one">കെനിയൻ ഷില്ലിംഗ്</displayName>
 				<displayName count="other">കെനിയൻ ഷില്ലിംഗ്</displayName>
-				<symbol draft="contributed">KES</symbol>
+				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>കിർഗിസ്ഥാനി സോം</displayName>
 				<displayName count="one">കിർഗിസ്ഥാനി സോം</displayName>
 				<displayName count="other">കിർഗിസ്ഥാനി സോം</displayName>
-				<symbol draft="contributed">KGS</symbol>
+				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>കംബോഡിയൻ റീൽ</displayName>
 				<displayName count="one">കംബോഡിയൻ റീൽ</displayName>
 				<displayName count="other">കംബോഡിയൻ റീൽ</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol>KHR</symbol>
+				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>കൊമോറിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="one">കൊമോറിയൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="other">കൊമോറിയൻ ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol>KMF</symbol>
+				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>ഉത്തര കൊറിയൻ വോൺ</displayName>
 				<displayName count="one">ഉത്തര കൊറിയൻ വോൺ</displayName>
 				<displayName count="other">ഉത്തര കൊറിയൻ വോൺ</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>KPW</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>ദക്ഷിണ കൊറിയൻ വോൺ</displayName>
 				<displayName count="one">ദക്ഷിണ കൊറിയൻ വോൺ</displayName>
 				<displayName count="other">ദക്ഷിണ കൊറിയൻ വോൺ</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol>₩</symbol>
+				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>കുവൈറ്റി ദിനാർ</displayName>
 				<displayName count="one">കുവൈറ്റി ദിനാർ</displayName>
 				<displayName count="other">കുവൈറ്റി ദിനാർ</displayName>
-				<symbol draft="contributed">KWD</symbol>
+				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>കേമാൻ ഐലൻഡ്‌സ് ഡോളർ</displayName>
 				<displayName count="one">കേമാൻ ഐലൻഡ്‌സ് ഡോളർ</displayName>
 				<displayName count="other">കേമാൻ ഐലൻഡ്‌സ് ഡോളർ</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>KYD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>കസാക്കിസ്ഥാനി ടെംഗെ</displayName>
 				<displayName count="one">കസാക്കിസ്ഥാനി ടെംഗെ</displayName>
 				<displayName count="other">കസാക്കിസ്ഥാനി ടെംഗെ</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol>KZT</symbol>
+				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>ലാവോഷിയൻ കിപ്</displayName>
 				<displayName count="one">ലാവോഷ്യൻ കിപ്‌</displayName>
 				<displayName count="other">ലാവോഷിയൻ കിപ്</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol>LAK</symbol>
+				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>ലെബനീസ് പൗണ്ട്</displayName>
 				<displayName count="one">ലെബനീസ് പൗണ്ട്</displayName>
 				<displayName count="other">ലെബനീസ് പൗണ്ട്</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol>LBP</symbol>
+				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>ശ്രീലങ്കൻ റുപ്പീ</displayName>
 				<displayName count="one">ശ്രീലങ്കൻ റുപ്പീ</displayName>
 				<displayName count="other">ശ്രീലങ്കൻ റുപ്പീ</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>LKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ലൈബീരിയൻ ഡോളർ</displayName>
 				<displayName count="one">ലൈബീരിയൻ ഡോളർ</displayName>
 				<displayName count="other">ലൈബീരിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>LRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>ലെസോതോ ലോത്തി</displayName>
@@ -6610,13 +6632,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ലിബിയൻ ദിനാർ</displayName>
 				<displayName count="one">ലിബിയൻ ദിനാർ</displayName>
 				<displayName count="other">ലിബിയൻ ദിനാർ</displayName>
-				<symbol draft="contributed">LYD</symbol>
+				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>മൊറോക്കൻ ദിർഹം</displayName>
 				<displayName count="one">മൊറോക്കൻ ദിർഹം</displayName>
 				<displayName count="other">മൊറോക്കൻ ദിർഹം</displayName>
-				<symbol draft="contributed">MAD</symbol>
+				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>മൊറോക്കൻ ഫ്രാങ്ക്</displayName>
@@ -6625,14 +6647,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മൊൾഡോവൻ ലിയു</displayName>
 				<displayName count="one">മൊൾഡോവൻ ലിയു</displayName>
 				<displayName count="other">മൊൾഡോവൻ ലിയു</displayName>
-				<symbol draft="contributed">MDL</symbol>
+				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>മഡഗാസി ഏരിയറി</displayName>
 				<displayName count="one">മഡഗാസി ഏരിയറി</displayName>
 				<displayName count="other">മഡഗാസി ഏരിയറി</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol>MGA</symbol>
+				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>മഡഗാസ്കർ ഫ്രാങ്ക്</displayName>
@@ -6641,7 +6663,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മാസിഡോണിയൻ ദിനാർ</displayName>
 				<displayName count="one">മാസിഡോണിയൻ ദിനാർ</displayName>
 				<displayName count="other">മാസിഡോണിയൻ ദിനാർ</displayName>
-				<symbol draft="contributed">MKD</symbol>
+				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>മാലി ഫ്രാങ്ക്</displayName>
@@ -6650,21 +6672,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മ്യാൻമാർ ക്യാട്</displayName>
 				<displayName count="one">മ്യാൻമാർ ക്യാട്</displayName>
 				<displayName count="other">മ്യാൻമാർ ക്യാട്</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol>MMK</symbol>
+				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>മംഗോളിയൻ തുഗ്രിക്</displayName>
 				<displayName count="one">മംഗോളിയൻ തുഗ്രിക്</displayName>
 				<displayName count="other">മംഗോളിയൻ തുഗ്രിക്</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol>MNT</symbol>
+				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>മകാനീസ് പതാക്ക</displayName>
 				<displayName count="one">മകാനീസ് പതാക്ക</displayName>
 				<displayName count="other">മകാനീസ് പതാക്ക</displayName>
-				<symbol draft="contributed">MOP</symbol>
+				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>മൗറിറ്റേനിയൻ ഔഗിയ (1973–2017)</displayName>
@@ -6676,7 +6698,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മൗറിറ്റേനിയൻ ഔഗിയ</displayName>
 				<displayName count="one">മൗറിറ്റേനിയൻ ഔഗിയ</displayName>
 				<displayName count="other">മൗറിറ്റേനിയൻ ഔഗിയസ്</displayName>
-				<symbol draft="contributed">MRU</symbol>
+				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>മൽത്തീസ് ലിറ</displayName>
@@ -6688,27 +6710,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മൗറീഷ്യൻ റുപ്പീ</displayName>
 				<displayName count="one">മൗറീഷ്യൻ റുപ്പീ</displayName>
 				<displayName count="other">മൗറീഷ്യൻ റുപ്പീ</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>MUR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>മാൽദീവിയൻ റുഫിയ</displayName>
 				<displayName count="one">മാൽദീവിയൻ റുഫിയ</displayName>
 				<displayName count="other">മാൽദീവിയൻ റുഫിയ</displayName>
-				<symbol draft="contributed">MVR</symbol>
+				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>മലാവിയൻ ക്വച്ചാ</displayName>
 				<displayName count="one">മലാവിയൻ ക്വച്ചാ</displayName>
 				<displayName count="other">മലാവിയൻ ക്വച്ചാ</displayName>
-				<symbol draft="contributed">MWK</symbol>
+				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>മെക്സിക്കൻ പെസോ</displayName>
 				<displayName count="one">മെക്സിക്കൻ പെസോ</displayName>
 				<displayName count="other">മെക്സിക്കൻ പെസോ</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>MX$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>മെക്സിക്കൻ സിൽവർ പെയ്സോ (1861–1992)</displayName>
@@ -6724,8 +6746,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മലേഷ്യൻ റിംഗിറ്റ്</displayName>
 				<displayName count="one">മലേഷ്യൻ റിംഗിറ്റ്</displayName>
 				<displayName count="other">മലേഷ്യൻ റിംഗിറ്റ്</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol>MYR</symbol>
+				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>മൊസാന്പിക്ക് എസ്ക്യുഡോ</displayName>
@@ -6737,21 +6759,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മൊസാംബിക്കൻ മെറ്റിക്കൽ</displayName>
 				<displayName count="one">മൊസാംബിക്കൻ മെറ്റിക്കൽ</displayName>
 				<displayName count="other">മൊസാംബിക്കൻ മെറ്റിക്കൽ</displayName>
-				<symbol draft="contributed">MZN</symbol>
+				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>നമീബിയൻ ഡോളർ</displayName>
 				<displayName count="one">നമീബിയൻ ഡോളർ</displayName>
 				<displayName count="other">നമീബിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NAD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>നൈജീരിയൻ നൈറ</displayName>
 				<displayName count="one">നൈജീരിയൻ നൈറ</displayName>
 				<displayName count="other">നൈജീരിയൻ നൈറ</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol>NGN</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>നികരാഗ്വൻ കൊർഡോബ</displayName>
@@ -6760,8 +6782,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>നിക്കരാഗ്വൻ കോർഡോബ</displayName>
 				<displayName count="one">നിക്കരാഗ്വൻ കോർഡോബ</displayName>
 				<displayName count="other">നിക്കരാഗ്വൻ കോർഡോബ</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol>NIO</symbol>
+				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>നെതർലൻഡ്സ് ഗിൽഡർ</displayName>
@@ -6772,34 +6794,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>നോർവീജിയൻ ക്രോണെ</displayName>
 				<displayName count="one">നോർവീജിയൻ ക്രോണെ</displayName>
 				<displayName count="other">നോർവീജിയൻ ക്രോണെ</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>NOK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>നേപ്പാളീസ് റുപ്പീ</displayName>
 				<displayName count="one">നേപ്പാളീസ് റുപ്പീ</displayName>
 				<displayName count="other">നേപ്പാളീസ് റുപ്പീ</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>NPR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>ന്യൂസിലാന്റ് ഡോളർ</displayName>
 				<displayName count="one">ന്യൂസിലാന്റ് ഡോളർ</displayName>
 				<displayName count="other">ന്യൂസിലാന്റ് ഡോളർ</displayName>
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>NZ$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ഒമാനി റിയാൽ</displayName>
 				<displayName count="one">ഒമാനി റിയാൽ</displayName>
 				<displayName count="other">ഒമാനി റിയാൽ</displayName>
-				<symbol draft="contributed">OMR</symbol>
+				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>പനാമനിയൻ ബാൽബോവ</displayName>
 				<displayName count="one">പനാമനിയൻ ബാൽബോവ</displayName>
 				<displayName count="other">പനാമനിയൻ ബാൽബോവ</displayName>
-				<symbol draft="contributed">PAB</symbol>
+				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>പെറൂവിയൻ ഇൻറി</displayName>
@@ -6810,7 +6832,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>പെറുവിയൻ സോൾ</displayName>
 				<displayName count="one">പെറുവിയൻ സോൾ</displayName>
 				<displayName count="other">പെറുവിയൻ സോൾ</displayName>
-				<symbol draft="contributed">PEN</symbol>
+				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>പെറൂവിയൻ സോൾ (1863–1965)</displayName>
@@ -6821,28 +6843,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>പാപ്പുവ ന്യൂ ഗിനിയൻ കിന</displayName>
 				<displayName count="one">പാപ്പുവ ന്യൂ ഗിനിയൻ കിന</displayName>
 				<displayName count="other">പാപ്പുവ ന്യൂ ഗിനിയൻ കിന</displayName>
-				<symbol draft="contributed">PGK</symbol>
+				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>ഫിലിപ്പീനി പെസോ</displayName>
 				<displayName count="one">ഫിലിപ്പീനി പെസോ</displayName>
 				<displayName count="other">ഫിലിപ്പീനി പെസോ</displayName>
-				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol>PHP</symbol>
+				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>പാക്കിസ്ഥാനി റുപ്പീ</displayName>
 				<displayName count="one">പാക്കിസ്ഥാനി റുപ്പീ</displayName>
 				<displayName count="other">പാക്കിസ്ഥാനി റുപ്പീ</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol>PKR</symbol>
+				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>പോളിഷ് സ്ലോട്ടി</displayName>
 				<displayName count="one">പോളിഷ് സ്ലോട്ടി</displayName>
 				<displayName count="other">പോളിഷ് സ്ലോട്ടി</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol>PLN</symbol>
+				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>പോളിഷ് സ്ലോട്ടി (1950–1995)</displayName>
@@ -6854,14 +6876,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>പരാഗ്വേയൻ ഗ്വരനീ</displayName>
 				<displayName count="one">പരാഗ്വേയൻ ഗ്വരനീ</displayName>
 				<displayName count="other">പരാഗ്വേയൻ ഗ്വരനീ</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol>PYG</symbol>
+				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>ഖത്തർ റിയാൽ</displayName>
 				<displayName count="one">ഖത്തർ റിയാൽ</displayName>
 				<displayName count="other">ഖത്തർ റിയാൽ</displayName>
-				<symbol draft="contributed">QAR</symbol>
+				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>റൊഡേഷ്യൻ ഡോളർ</displayName>
@@ -6873,21 +6895,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>റൊമാനിയൻ ലെയു</displayName>
 				<displayName count="one">റൊമാനിയൻ ലെയു</displayName>
 				<displayName count="other">റൊമാനിയൻ ലെയു</displayName>
-				<symbol draft="contributed">RON</symbol>
-				<symbol alt="narrow" draft="contributed">lei</symbol>
+				<symbol>RON</symbol>
+				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>സെർബിയൻ ദിനാർ</displayName>
 				<displayName count="one">സെർബിയൻ ദിനാർ</displayName>
 				<displayName count="other">സെർബിയൻ ദിനാർ</displayName>
-				<symbol draft="contributed">RSD</symbol>
+				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>റഷ്യൻ റൂബിൾ</displayName>
 				<displayName count="one">റഷ്യൻ റൂബിൾ</displayName>
 				<displayName count="other">റഷ്യൻ റൂബിൾ</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol>RUB</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>റഷ്യൻ റൂബിൾ (1991–1998)</displayName>
@@ -6896,27 +6918,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>റുവാണ്ടൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="one">റുവാണ്ടൻ ഫ്രാങ്ക്</displayName>
 				<displayName count="other">റുവാണ്ടൻ ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol>RWF</symbol>
+				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>സൗദി റിയാൽ</displayName>
 				<displayName count="one">സൗദി റിയാൽ</displayName>
 				<displayName count="other">സൗദി റിയാൽ</displayName>
-				<symbol draft="contributed">SAR</symbol>
+				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>സോളമൻ ദ്വീപുകളുടെ ഡോളർ</displayName>
 				<displayName count="one">സോളമൻ ദ്വീപുകളുടെ ഡോളർ</displayName>
 				<displayName count="other">സോളമൻ ദ്വീപുകളുടെ ഡോളർ</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SBD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>സീഷെലോയിസ് റുപ്പീ</displayName>
 				<displayName count="one">സീഷെലോയിസ് റുപ്പീ</displayName>
 				<displayName count="other">സീഷെലോയിസ് റുപ്പീ</displayName>
-				<symbol draft="contributed">SCR</symbol>
+				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>പ്രാചീന സുഡാനീസ് ദിനാർ</displayName>
@@ -6925,7 +6947,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സുഡാനീസ് പൗണ്ട്</displayName>
 				<displayName count="one">സുഡാനീസ് പൗണ്ട്</displayName>
 				<displayName count="other">സുഡാനീസ് പൗണ്ട്</displayName>
-				<symbol draft="contributed">SDG</symbol>
+				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>പ്രാചീന സുഡാനീസ് പൌണ്ട്</displayName>
@@ -6934,22 +6956,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സ്വീഡിഷ് ക്രോണ</displayName>
 				<displayName count="one">സ്വീഡിഷ് ക്രോണ</displayName>
 				<displayName count="other">സ്വീഡിഷ് ക്രോണ</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol>SEK</symbol>
+				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>സിംഗപ്പൂർ ഡോളർ</displayName>
 				<displayName count="one">സിംഗപ്പൂർ ഡോളർ</displayName>
 				<displayName count="other">സിംഗപ്പൂർ ഡോളർ</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SGD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>സെന്റ് ഹെലീന പൗണ്ട്</displayName>
 				<displayName count="one">സെന്റ് ഹെലീന പൗണ്ട്</displayName>
 				<displayName count="other">സെന്റ് ഹെലീന പൗണ്ട്</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SHP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>സ്ലൊവേനിയ റ്റോളർ</displayName>
@@ -6961,20 +6983,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സിയെറ ലിയോണിയൻ ലിയോൺ</displayName>
 				<displayName count="one">സിയെറ ലിയോണിയൻ ലിയോൺ</displayName>
 				<displayName count="other">സിയെറ ലിയോണിയൻ ലിയോണസ്</displayName>
-				<symbol draft="contributed">SLL</symbol>
+				<symbol>SLL</symbol>
 			</currency>
 			<currency type="SOS">
 				<displayName>സോമാലി ഷില്ലിംഗ്</displayName>
 				<displayName count="one">സോമാലി ഷില്ലിംഗ്</displayName>
 				<displayName count="other">സോമാലി ഷില്ലിംഗ്</displayName>
-				<symbol draft="contributed">SOS</symbol>
+				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>സുരിനെയിമിസ് ഡോളർ</displayName>
 				<displayName count="one">സുരിനെയിമിസ് ഡോളർ</displayName>
 				<displayName count="other">സുരിനെയിമിസ് ഡോളർ</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>SRD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>സൂരിനാം ഗിൽഡർ</displayName>
@@ -6983,8 +7005,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ദക്ഷിണ സുഡാനീസ് പൗണ്ട്</displayName>
 				<displayName count="one">ദക്ഷിണ സുഡാനീസ് പൗണ്ട്</displayName>
 				<displayName count="other">ദക്ഷിണ സുഡാനീസ് പൗണ്ട്</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SSP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര (1977–2017)</displayName>
@@ -6996,8 +7018,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര</displayName>
 				<displayName count="one">സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര</displayName>
 				<displayName count="other">സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol>STN</symbol>
+				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>സോവിയറ്റ് റൂബിൾ</displayName>
@@ -7009,21 +7031,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സിറിയൻ പൗണ്ട്</displayName>
 				<displayName count="one">സിറിയൻ പൗണ്ട്</displayName>
 				<displayName count="other">സിറിയൻ പൗണ്ട്</displayName>
-				<symbol draft="contributed">SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol>SYP</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>സ്വാസി ലിലാംഗനി</displayName>
 				<displayName count="one">സ്വാസി ലിലാംഗനി</displayName>
 				<displayName count="other">സ്വാസി ലിലാംഗനി</displayName>
-				<symbol draft="contributed">SZL</symbol>
+				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>തായ് ബട്ട്</displayName>
 				<displayName count="one">തായ് ബട്ട്</displayName>
 				<displayName count="other">തായ് ബട്ട്</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>താജിക്കിസ്ഥാൻ റൂബിൾ</displayName>
@@ -7034,7 +7056,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>താജിക്കിസ്ഥാനി സോംനി</displayName>
 				<displayName count="one">താജിക്കിസ്ഥാനി സോംനി</displayName>
 				<displayName count="other">താജിക്കിസ്ഥാനി സൊമോനി</displayName>
-				<symbol draft="contributed">TJS</symbol>
+				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>തുർക്മെനിസ്ഥാൻ മനത്</displayName>
@@ -7045,20 +7067,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>തുർക്ക്‌മെനിസ്ഥാനി മനത്</displayName>
 				<displayName count="one">തുർക്ക്‌മെനിസ്ഥാനി മനത്</displayName>
 				<displayName count="other">തുർക്ക്‌മെനിസ്ഥാനി മനത്</displayName>
-				<symbol draft="contributed">TMT</symbol>
+				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ടുണീഷ്യൻ ദിനാർ</displayName>
 				<displayName count="one">ടുണീഷ്യൻ ദിനാർ</displayName>
 				<displayName count="other">ടുണീഷ്യൻ ദിനാർ</displayName>
-				<symbol draft="contributed">TND</symbol>
+				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>ടോംഗൻ പാംഗ</displayName>
 				<displayName count="one">ടോംഗൻ പാംഗ</displayName>
 				<displayName count="other">ടോംഗൻ പാംഗ</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol>TOP</symbol>
+				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>തിമോർ എസ്ക്യൂഡോ</displayName>
@@ -7074,36 +7096,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ടർക്കിഷ് ലിറ</displayName>
 				<displayName count="one">ടർക്കിഷ് ലിറ</displayName>
 				<displayName count="other">ടർക്കിഷ് ലിറ</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
+				<symbol>TRY</symbol>
+				<symbol alt="narrow">₺</symbol>
+				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>ട്രിനിഡാഡ് അന്റ് ടുബാഗോ ഡോളർ</displayName>
 				<displayName count="one">ട്രിനിഡാഡ് അന്റ് ടുബാഗോ ഡോളർ</displayName>
 				<displayName count="other">ട്രിനിഡാഡ് അന്റ് ടുബാഗോ ഡോളർ</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>TTD</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>ന്യൂ തായ്‌വാൻ ഡോളർ</displayName>
 				<displayName count="one">ന്യൂ തായ്‌വാൻ ഡോളർ</displayName>
 				<displayName count="other">ന്യൂ തായ്‌വാൻ ഡോളർ</displayName>
-				<symbol draft="contributed">NT$</symbol>
+				<symbol>NT$</symbol>
 				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>ടാൻസാനിയൻ ഷില്ലിംഗ്</displayName>
 				<displayName count="one">ടാൻസാനിയൻ ഷില്ലിംഗ്</displayName>
 				<displayName count="other">ടാൻസാനിയൻ ഷില്ലിംഗ്</displayName>
-				<symbol draft="contributed">TZS</symbol>
+				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>ഉക്രേനിയൻ ഹ്രിവ്‌നിയ</displayName>
 				<displayName count="one">ഉക്രേനിയൻ ഹ്രിവ്നിയ</displayName>
 				<displayName count="other">ഉക്രേനിയൻ ഹ്രിവ്‌നിയ</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol>UAH</symbol>
+				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>യുക്രേനിയൻ കാർബോവാനെസ്</displayName>
@@ -7117,14 +7139,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഉഗാണ്ടൻ ഷില്ലിംഗ്</displayName>
 				<displayName count="one">ഉഗാണ്ടൻ ഷില്ലിംഗ്</displayName>
 				<displayName count="other">ഉഗാണ്ടൻ ഷില്ലിംഗ്</displayName>
-				<symbol draft="contributed">UGX</symbol>
+				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>യു.എസ്. ഡോളർ</displayName>
 				<displayName count="one">യു.എസ്. ഡോളർ</displayName>
 				<displayName count="other">യു.എസ്. ഡോളർ</displayName>
 				<symbol>$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>യുഎസ് ഡോളർ (അടുത്ത ദിവസം)</displayName>
@@ -7148,14 +7170,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ഉറുഗ്വേയൻ പെസോ</displayName>
 				<displayName count="one">ഉറുഗ്വേയൻ പെസോ</displayName>
 				<displayName count="other">ഉറുഗ്വേയൻ പെസോ</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>UYU</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>ഉസ്‌ബെക്കിസ്ഥാനി സോം</displayName>
 				<displayName count="one">ഉസ്‌ബെക്കിസ്ഥാനി സോം</displayName>
 				<displayName count="other">ഉസ്‌ബെക്കിസ്ഥാനി സോം</displayName>
-				<symbol draft="contributed">UZS</symbol>
+				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>വെനസ്വേലൻ ബോലിവർ (1871–2008)</displayName>
@@ -7173,32 +7195,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>വെനിസ്വേലൻ ബൊളീവർ</displayName>
 				<displayName count="one">വെനിസ്വേലൻ ബൊളീവർ</displayName>
 				<displayName count="other">വെനിസ്വേലൻ ബൊളീവർ</displayName>
-				<symbol draft="contributed">VES</symbol>
+				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>വിയറ്റ്നാമീസ് ഡോങ്</displayName>
 				<displayName count="one">വിയറ്റ്നാമീസ് ഡോങ്</displayName>
 				<displayName count="other">വിയറ്റ്നാമീസ് ഡോങ്</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol>₫</symbol>
+				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>വന്വാതു വാതു</displayName>
 				<displayName count="one">വന്വാതു വാതു</displayName>
 				<displayName count="other">വന്വാതു വാതു</displayName>
-				<symbol draft="contributed">VUV</symbol>
+				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>സമോവൻ താല</displayName>
 				<displayName count="one">സമോവൻ താല</displayName>
 				<displayName count="other">സമോവൻ താല</displayName>
-				<symbol draft="contributed">WST</symbol>
+				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>മദ്ധ്യ ആഫ്രിക്കൻ [CFA] ഫ്രാങ്ക്</displayName>
 				<displayName count="one">മദ്ധ്യ ആഫ്രിക്കൻ [CFA] ഫ്രാങ്ക്</displayName>
 				<displayName count="other">മദ്ധ്യ ആഫ്രിക്കൻ [CFA] ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">FCFA</symbol>
+				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>വെള്ളി</displayName>
@@ -7234,8 +7256,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>കിഴക്കൻ കരീബിയൻ ഡോളർ</displayName>
 				<displayName count="one">കിഴക്കൻ കരീബിയൻ ഡോളർ</displayName>
 				<displayName count="other">കിഴക്കൻ കരീബിയൻ ഡോളർ</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol>EC$</symbol>
+				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>സ്പെഷ്യൽ ഡ്രോയിംഗ് റൈറ്റ്സ്</displayName>
@@ -7272,7 +7294,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>CFP ഫ്രാങ്ക്</displayName>
 				<displayName count="one">CFP ഫ്രാങ്ക്</displayName>
 				<displayName count="other">CFP ഫ്രാങ്ക്</displayName>
-				<symbol draft="contributed">CFPF</symbol>
+				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>പ്ലാറ്റിനം</displayName>
@@ -7303,7 +7325,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>യെമനി റിയാൽ</displayName>
 				<displayName count="one">യെമനി റിയാൽ</displayName>
 				<displayName count="other">യെമനി റിയാൽ</displayName>
-				<symbol draft="contributed">YER</symbol>
+				<symbol>YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>യൂഗോസ്ലേവിയൻ ഹാർഡ് ദിനാർ</displayName>
@@ -7329,8 +7351,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ദക്ഷിണാഫ്രിക്കൻ റാൻഡ്</displayName>
 				<displayName count="one">ദക്ഷിണാഫ്രിക്കൻ റാൻഡ്</displayName>
 				<displayName count="other">ദക്ഷിണാഫ്രിക്കൻ റാൻഡ്</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol>ZAR</symbol>
+				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>സാംബിയൻ ക്വാച (1968–2012)</displayName>
@@ -7341,8 +7363,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>സാംബിയൻ ക്വാച്ച</displayName>
 				<displayName count="one">സാംബിയൻ ക്വാച്ച</displayName>
 				<displayName count="other">സാംബിയൻ ക്വാച്ച</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol>ZMW</symbol>
+				<symbol alt="narrow">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>സൈറിയൻ ന്യൂ സൈർ</displayName>
@@ -7370,6 +7392,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="one">{0} വ്യക്തി</pluralMinimalPairs>
 			<pluralMinimalPairs count="other">{0} വ്യക്തികൾ</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">{0}-ാമത്തെ വലത്തേക്ക് തിരിയുക.</ordinalMinimalPairs>
+			<caseMinimalPairs case="accusative" draft="contributed">{0} ദിവസത്തിനെ</caseMinimalPairs>
+			<caseMinimalPairs case="dative" draft="contributed">{0} ദിവസത്തിന്</caseMinimalPairs>
+			<caseMinimalPairs case="genitive" draft="contributed">{0} ദിവസത്തിന്റെ</caseMinimalPairs>
+			<caseMinimalPairs case="instrumental" draft="contributed">{0} ദിവസത്തിനാൽ</caseMinimalPairs>
+			<caseMinimalPairs case="locative" draft="contributed">{0} ദിവസത്തിൽ</caseMinimalPairs>
+			<caseMinimalPairs case="nominative" draft="contributed">{0} ദിവസം</caseMinimalPairs>
+			<caseMinimalPairs case="sociative" draft="contributed">{0} ദിവസത്തിനോട്</caseMinimalPairs>
+			<genderMinimalPairs gender="feminine" draft="contributed">{0} സ്ത്രീലിംഗം</genderMinimalPairs>
+			<genderMinimalPairs gender="neuter" draft="contributed">{0} neuter</genderMinimalPairs>
 		</minimalPairs>
 	</numbers>
 	<units>
@@ -7464,9 +7495,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other">ക്യുബിക് {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ജി-ഫോഴ്‌സ്</displayName>
 				<unitPattern count="one">{0} ജി-ഫോഴ്‌സ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ജി-ഫോഴ്‌സിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ജി-ഫോഴ്‌സിനെ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ജി-ഫോഴ്‌സിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ജി-ഫോഴ്‌സിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ജി-ഫോഴ്‌സിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ജി-ഫോഴ്‌സ്</unitPattern>
 				<unitPattern count="other">{0} ജി-ഫോഴ്‌സ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ജി-ഫോഴ്‌സിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ജി-ഫോഴ്‌സിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ജി-ഫോഴ്‌സിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ജി-ഫോഴ്‌സിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ജി-ഫോഴ്‌സിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ജി-ഫോഴ്‌സിനോട്</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>മീറ്റർ/സെക്കൻഡ്²</displayName>
@@ -7474,29 +7518,94 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മീറ്റർ/സെക്കൻഡ്²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
+				<gender draft="contributed">neuter</gender>
 				<displayName>റെവല്യൂഷൻ</displayName>
 				<unitPattern count="one">{0} റെവല്യൂഷൻ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} റെവല്യൂഷനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} റെവല്യൂഷന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} റെവല്യൂഷന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} റെവല്യൂഷനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} റെവല്യൂഷനിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} റെവല്യൂഷനോട്</unitPattern>
 				<unitPattern count="other">{0} റെവല്യൂഷൻ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} റെവല്യൂഷനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} റെവല്യൂഷന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} റെവല്യൂഷന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} റെവല്യൂഷനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} റെവല്യൂഷനിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} റെവല്യൂഷനോട്</unitPattern>
 			</unit>
 			<unit type="angle-radian">
+				<gender draft="contributed">neuter</gender>
 				<displayName>റേഡിയൻ</displayName>
 				<unitPattern count="one">{0} റേഡിയൻ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} റേഡിയൻ</unitPattern>
+				<unitPattern count="one" case="dative">{0} റേഡിയന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} റേഡിയന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} റേഡിയനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} റേഡിയനിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} റേഡിയനോട്</unitPattern>
 				<unitPattern count="other">{0} റേഡിയൻ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} റേഡിയനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} റേഡിയന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} റേഡിയന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} റേഡിയനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} റേഡിയനിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} റേഡിയനോട്</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ഡിഗ്രി</displayName>
 				<unitPattern count="one">{0} ഡിഗ്രി</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഡിഗ്രിയെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഡിഗ്രിക്ക്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഡിഗ്രിയുടെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഡിഗ്രിയാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഡിഗ്രിയിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഡിഗ്രിയോട്</unitPattern>
 				<unitPattern count="other">{0} ഡിഗ്രി</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഡിഗ്രിയെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഡിഗ്രിക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഡിഗ്രിയുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഡിഗ്രിയാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഡിഗ്രിയിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഡിഗ്രിയോട്</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ആർക്ക്മിനിറ്റ്</displayName>
 				<unitPattern count="one">{0} ആർക്ക്മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ആർക്ക്മിനിറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ആർക്ക്മിനിറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ആക്ക്മിനിറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ആർക്ക്മിറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ആർക്ക്മിനിറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ആർക്ക്മിനിറ്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} ആർക്ക്മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ആർക്ക്മിനിറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ആർക്ക്മിനിറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ആർക്ക്മിനിറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ആർക്ക്മിനിറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ആർക്ക്മിനിറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ആർക്ക്മിനിറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ആർക്ക്സെക്കൻഡ്</displayName>
 				<unitPattern count="one">{0} ആർക്ക്സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ആർക്ക്സെക്കൻഡിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ആർക്ക്സെക്കൻഡിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ആർക്ക്സെക്കൻഡിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ആർക്ക്സെക്കൻഡിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ആർക്ക്സെക്കൻഡിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ആർക്ക്സെക്കൻഡിനോട്</unitPattern>
 				<unitPattern count="other">{0} ആർക്ക്സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ആർക്ക്സെക്കൻഡിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ആർക്ക്സെക്കൻഡിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ആർക്ക്സെക്കൻഡിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ആർക്ക്സെക്കൻഡിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ആർക്ക്സെക്കൻഡിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ആർക്ക്സെക്കൻഡിനോട്</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>ചതുരശ്ര കിലോമീറ്റർ</displayName>
@@ -7505,9 +7614,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ചതുരശ്ര കിലോമീറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ഹെക്‌ടർ</displayName>
 				<unitPattern count="one">{0} ഹെക്‌ടർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഹെക്‌ടറിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഹെക്‌ടറിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഹെക്‌ടറിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഹെക്‌ടറിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഹെക്‌ടറിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഹെക്‌ടറിനോട്</unitPattern>
 				<unitPattern count="other">{0} ഹെക്‌ടർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഹെക്‌ടറിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഹെക്‌ടറിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഹെക്‌ടറുകളുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഹെക്‌ടറുകളാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഹെക്‌ടറുകളിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഹെക്‌ടറുകളോട്</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>ചതുരശ്ര മീറ്റർ</displayName>
@@ -7554,9 +7676,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ദുനങ്ങൾ</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ക്യാരറ്റ്</displayName>
 				<unitPattern count="one">{0} ക്യാരറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} ക്യാരറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>മില്ലിഗ്രാം / ഡെസിലിറ്റർ</displayName>
@@ -7568,29 +7703,99 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} മില്ലിമോൾ / ലിറ്റർ</unitPattern>
 				<unitPattern count="other">{0} മില്ലിമോൾ / ലിറ്റർ</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>ഇനം</displayName>
+				<unitPattern count="one">{0} ഇനം</unitPattern>
+				<unitPattern count="other">{0} ഇനങ്ങൾ</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
+				<gender draft="contributed">neuter</gender>
 				<displayName>പാർട്‌സ് / മില്ല്യൺ</displayName>
 				<unitPattern count="one">പാർട്ട് / മില്ല്യൺ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} പാർട്ട് / മില്ല്യണിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} പാർട്ട് / മില്ല്യണിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} പാർട്ട് / മില്ല്യണിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} പാർട്ട് / മില്ല്യണിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} പാർട്ട് / മില്ല്യണിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} പാർട്ട് / മില്ല്യണിനോട്</unitPattern>
 				<unitPattern count="other">{0} പാർട്‌സ് / മില്ല്യൺ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} പാർട്ട് / മില്ല്യണിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} പാർട്ട് / മില്ല്യണിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} പാർട്ട് / മില്ല്യണിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} പാർട്ട് / മില്ല്യണിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} പാർട്ട് / മില്ല്യണിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} പാർട്ട് / മില്ല്യണിനോട്</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
+				<gender draft="contributed">neuter</gender>
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ശതമാനത്തിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ശതമാനത്തിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ശതമാനത്തിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ശതമാനത്തിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ശതമാനത്തിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ശതമാനത്തിനോട്</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ശതമാനത്തിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ശതമാനത്തിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ശതമാനത്തിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ശതമാനത്തിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ശതമാനത്തിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ശതമാനത്തിനോട്</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
+				<gender draft="contributed">neuter</gender>
 				<displayName>പ്രതിമില്ലി</displayName>
 				<unitPattern count="one">{0} പ്രതിമില്ലി</unitPattern>
+				<unitPattern count="one" case="accusative">{0} പ്രതിമില്ലിയെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} പ്രതിമില്ലിക്ക്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} പ്രതിമില്ലിയുടെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} പ്രതിമില്ലിയാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} പ്രതിമില്ലിയിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} പ്രതിമില്ലിയോട്</unitPattern>
 				<unitPattern count="other">{0} പ്രതിമില്ലി</unitPattern>
+				<unitPattern count="other" case="accusative">{0} പ്രതിമില്ലിയെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} പ്രതിമില്ലിക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} പ്രതിമില്ലിയുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} പ്രതിമില്ലിയാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} പ്രതിമില്ലിയിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} പ്രതിമില്ലിയോട്</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
+				<gender draft="contributed">neuter</gender>
 				<unitPattern count="one">{0} പിരമിഡ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} പിരമിഡിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} പിരമിഡിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} പിരമിഡിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} പിരമിഡിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} പിരമിഡിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} പിരമിഡിനോട്</unitPattern>
 				<unitPattern count="other">{0} പിരമിഡ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} പിരമിഡിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} പിരമിഡിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} പിരമിഡിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} പിരമിഡിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} പിരമിഡിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} പിരമിഡിനോട്</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മോളുകൾ</displayName>
 				<unitPattern count="one">{0} മോൾ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മോളിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മോളിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മോളിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മോളിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} മോളിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മോളിനോട്</unitPattern>
 				<unitPattern count="other">{0} മോളുകൾ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മോളുകളെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മോളുകൾക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മോളുകളുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മോളുകളാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} മോളുകളിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മോളുകളോട്</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ലിറ്റർ/കിലോമീറ്റർ</displayName>
@@ -7658,62 +7863,125 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} കിലോബിറ്റ്</unitPattern>
 			</unit>
 			<unit type="digital-byte">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ബൈറ്റ്</displayName>
 				<unitPattern count="one">{0} ബൈറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ബൈറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ബൈറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ബൈറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ബൈറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ബൈറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ബൈറ്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} ബൈറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ബൈറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ബൈറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ബൈറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ബൈറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ബൈറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ബൈറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="digital-bit">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ബിറ്റ്</displayName>
 				<unitPattern count="one">{0} ബിറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ബിറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ബിറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ബിറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ബിറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ബിറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ബിറ്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} ബിറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ബിറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ബിറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ബിറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ബിറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ബിറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ബിറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="duration-century">
+				<gender draft="contributed">neuter</gender>
 				<displayName>നൂറ്റാണ്ടുകൾ</displayName>
 				<unitPattern count="one">{0} നൂറ്റാണ്ട്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} നൂറ്റാണ്ടിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} നൂറ്റാണ്ടിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
+				<unitPattern count="one" case="locative">{0} നൂറ്റാണ്ടിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} നൂറ്റാണ്ടിനോട്</unitPattern>
 				<unitPattern count="other">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} നൂറ്റാണ്ടുകളുടെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} നൂറ്റാണ്ടിലെ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
+				<unitPattern count="other" case="locative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ദശാബ്‌ദം</displayName>
 				<unitPattern count="one">ദശാബ്‌ദം</unitPattern>
+				<unitPattern count="one" case="accusative">ദശാബ്‌ദത്തിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ദശാബ്‌ദത്തിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ദശാബ്‌ദത്തിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ദശാബ്‌ദം</unitPattern>
+				<unitPattern count="one" case="locative">{0} ദശാബ്‌ദത്തിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ദശാബ്‌ദത്തിനോട്</unitPattern>
 				<unitPattern count="other">{0} ദശാബ്‌ദം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ദശാബ്‌ദങ്ങളിലെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ദശാബ്‌ദങ്ങളിലെ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ദശാബ്‌ദത്തിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ദശാബ്‌ദത്തിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ദശാബ്‌ദങ്ങളിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ദശാബ്‌ദങ്ങളോട്</unitPattern>
 			</unit>
 			<unit type="duration-year">
+				<gender draft="contributed">neuter</gender>
 				<displayName>വർഷം</displayName>
 				<unitPattern count="one">{0} വർഷം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} വർഷത്തിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} വർഷത്തിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} വർഷത്തിന്റെ</unitPattern>
 				<unitPattern count="other">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="dative">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="genitive">{0} വർഷം</unitPattern>
 				<perUnitPattern>{0} / വർഷം</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മാസം</displayName>
 				<unitPattern count="one">{0} മാസം</unitPattern>
 				<unitPattern count="other">{0} മാസം</unitPattern>
 				<perUnitPattern>{0} / മാസം</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ആഴ്ച</displayName>
 				<unitPattern count="one">{0} ആഴ്ച</unitPattern>
 				<unitPattern count="other">{0} ആഴ്ച</unitPattern>
 				<perUnitPattern>{0} / ആഴ്ച</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ദിവസം</displayName>
 				<unitPattern count="one">{0} ദിവസം</unitPattern>
 				<unitPattern count="other">{0} ദിവസം</unitPattern>
 				<perUnitPattern>{0} / ദിവസം</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മണിക്കൂർ</displayName>
 				<unitPattern count="one">{0} മണിക്കൂർ</unitPattern>
 				<unitPattern count="other">{0} മണിക്കൂർ</unitPattern>
 				<perUnitPattern>{0} / മണിക്കൂർ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മിനിറ്റ്</displayName>
 				<unitPattern count="one">{0} മിനിറ്റ്</unitPattern>
 				<unitPattern count="other">{0} മിനിറ്റ്</unitPattern>
 				<perUnitPattern>{0} / മിനിറ്റ്</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
+				<gender draft="contributed">neuter</gender>
 				<displayName>സെക്കൻഡ്</displayName>
 				<unitPattern count="one">{0} സെക്കൻഡ്</unitPattern>
 				<unitPattern count="other">{0} സെക്കൻഡ്</unitPattern>
@@ -7735,9 +8003,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} നാനോസെക്കൻഡ്</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ആമ്പിയർ</displayName>
 				<unitPattern count="one">{0} ആമ്പിയർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ആമ്പിയറിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ആമ്പിയറിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ആമ്പിയറിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ആമ്പിയറിയാനിൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ആമ്പിയറിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ആമ്പിയറിനോട്</unitPattern>
 				<unitPattern count="other">{0} ആമ്പിയർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ആമ്പിയറിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ആമ്പിയറിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ആമ്പിയറിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ആമ്പിയറിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ആമ്പിയറിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ആമ്പിയറിനോട്</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>മില്ലിആമ്പിയർ</displayName>
@@ -7745,14 +8026,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മില്ലിആമ്പിയർ</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ഓം</displayName>
 				<unitPattern count="one">{0} ഓം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഓമിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഓമിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഓമിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഓമിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഓമിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഓമിനോട്</unitPattern>
 				<unitPattern count="other">{0} ഓം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഓമിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഓമിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഓമിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഓമിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഓമിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഓമിനോട്</unitPattern>
 			</unit>
 			<unit type="electric-volt">
+				<gender draft="contributed">neuter</gender>
 				<displayName>വോൾട്ട്</displayName>
 				<unitPattern count="one">{0} വോൾട്ട്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} വോൾട്ടിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} വോൾട്ടിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} വോൾട്ടിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} വോൾട്ടിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} വോൾട്ടിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} വോൾട്ടിനോട്</unitPattern>
 				<unitPattern count="other">{0} വോൾട്ട്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} വോൾട്ടിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} വോൾട്ടിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} വോൾട്ടിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} വോൾട്ടിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} വോൾട്ടിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} വോൾട്ടിനോട്</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>കിലോകലോറി</displayName>
@@ -7760,9 +8067,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} കിലോകലോറി</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
+				<gender draft="contributed">neuter</gender>
 				<displayName>കലോറി</displayName>
 				<unitPattern count="one">{0} കലോറി</unitPattern>
+				<unitPattern count="one" case="accusative">{0} കലോറിയെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} കലോറിക്ക്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} കലോറിയുടെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} കലോറിയാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} കലോറിയിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} കലോറിയോട്</unitPattern>
 				<unitPattern count="other">{0} കലോറി</unitPattern>
+				<unitPattern count="other" case="accusative">{0} കലോറിയെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} കലോറിക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} കലോറിയുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} കലോറിയാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} കലോറിയിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} കലോറിയോട്</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>കലോറി</displayName>
@@ -7775,9 +8095,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} കിലോജൂൾ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ജൂൾ</displayName>
 				<unitPattern count="one">{0} ജൂൾ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ജൂളിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ജൂളിൽ</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ജൂളിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ജൂളിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ജൂളിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ജൂളിനോട്</unitPattern>
 				<unitPattern count="other">{0} ജൂൾ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ജൂളിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ജൂളിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ജൂളിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ജൂളിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ജൂളിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ജൂളിനോട്</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>കിലോവാട്ട്/മണിക്കൂർ</displayName>
@@ -7793,15 +8126,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ബ്രിട്ടീഷ് തെർമൽ യൂണിറ്റ്</unitPattern>
 				<unitPattern count="other">{0} ബ്രിട്ടീഷ് തെർമൽ യൂണിറ്റുകൾ</unitPattern>
 			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0} US തേം</unitPattern>
+				<unitPattern count="other">{0} US തേം</unitPattern>
+			</unit>
 			<unit type="force-pound-force">
 				<displayName>പൗണ്ട്സ് ഓഫ് ഫോഴ്സ്</displayName>
 				<unitPattern count="one">{0} പൗണ്ട് ഓഫ് ഫോഴ്സ്</unitPattern>
 				<unitPattern count="other">{0} പൗണ്ട്സ് ഓഫ് ഫോഴ്സ്</unitPattern>
 			</unit>
 			<unit type="force-newton">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ന്യൂട്ടൻസ്</displayName>
 				<unitPattern count="one">{0} ന്യൂട്ടൻ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ന്യൂട്ടനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ന്യൂട്ടന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ന്യൂട്ടന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ന്യൂട്ടനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ന്യൂട്ടനിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ന്യൂട്ടനോട്</unitPattern>
 				<unitPattern count="other">{0} ന്യൂട്ടൻസ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ന്യൂട്ടനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ന്യൂട്ടന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ന്യൂട്ടന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ന്യൂട്ടനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ന്യൂട്ടനിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ന്യൂട്ടനോട്</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ജിഗാഹെർട്സ്</displayName>
@@ -7819,9 +8169,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} കിലോഹെർട്സ്</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ഹെർട്സ്</displayName>
 				<unitPattern count="one">{0} ഹെർട്സ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഹെർട്സിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഹെർ‌ട്സിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഹെർട്സിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഹെർട്സിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഹെർട്സിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഹെർട്സിനോട്</unitPattern>
 				<unitPattern count="other">{0} ഹെർട്സ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഹെർട്സിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഹെർട്സിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഹെർട്സിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഹെർട്‌സിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഹെർട്സിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഹെർട്സിനോട്</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<gender draft="contributed">neuter</gender>
+			</unit>
+			<unit type="graphics-pixel">
+				<gender draft="contributed">neuter</gender>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>ഡോട്ട്</displayName>
+				<unitPattern count="one">{0} ഡോട്ട്</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>കിലോമീറ്റർ</displayName>
@@ -7830,6 +8204,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} / കിലോമീറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മീറ്റർ</displayName>
 				<unitPattern count="one">{0} മീറ്റർ</unitPattern>
 				<unitPattern count="other">{0} മീറ്റർ</unitPattern>
@@ -7919,6 +8294,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} നോട്ടിക്കൽ മൈൽ</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
+				<gender draft="contributed">neuter</gender>
 				<displayName>സ്കാൻഡിനേവിയൻ മൈൽ</displayName>
 				<unitPattern count="one">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
 				<unitPattern count="other">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
@@ -7929,9 +8305,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} പോയിന്റ്</unitPattern>
 			</unit>
 			<unit type="light-lux">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ലക്സ്</displayName>
 				<unitPattern count="one">{0} ലക്സ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ലക്സിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ലക്‌സിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ലക്‌സിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ലക്‌സിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ലക്‌സിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ലക്‌സിനോട്</unitPattern>
 				<unitPattern count="other">{0} ലക്സ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ലക്‌സിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ലക്‌സിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ലക്‌സിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ലക്‌സിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ലക്‌സിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ലക്‌സിനോട്</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<gender draft="contributed">neuter</gender>
+				<unitPattern count="one" case="accusative">{0} കാൻഡെലയെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} കാൻഡെലയ്ക്ക്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} കാൻഡെലയുടെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} കാൻഡെലയാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} കാൻഡെലയിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} കാൻഡെലയോട്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} കാൻഡെലയെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} കാൻഡെലയ്ക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} കാൻഡെലയുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} കാൻഡെലയാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} കാൻഡെലയിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} കാൻഡെലയോട്</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<gender draft="contributed">neuter</gender>
+				<unitPattern count="one" case="accusative">{0} ലൂമെനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ലൂമെന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ലൂമെന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ലൂമെനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ലൂമെനിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ലൂമെനോട്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ലൂമെനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ലൂമെന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ലൂമെന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ലൂമെനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ലൂമെനിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ലൂമെനോട്</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>സോളാർ ലുമിനോസൈട്സ്</displayName>
@@ -7939,20 +8358,59 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} സോളാർ ലുമിനോസൈട്സ്</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മെട്രിക് ടൺ</displayName>
 				<unitPattern count="one">{0} മെട്രിക് ടൺ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മെട്രിക് ടണ്ണിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മെട്രിക് ടണ്ണിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മെട്രിക് ടണ്ണിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മെട്രിക് ടണ്ണിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} മെട്രിക് ടണ്ണിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മെട്രിക് ടണ്ണിനോട്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് ടൺ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മെട്രിക് ടണ്ണിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മെട്രിക് ടണ്ണിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മെട്രിക് ടണ്ണിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മെട്രിക് ടണ്ണിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} മെട്രിക് ടണ്ണിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മെട്രിക് ടണ്ണിനോട്</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
+				<gender draft="contributed">neuter</gender>
 				<displayName>കിലോഗ്രാം</displayName>
 				<unitPattern count="one">{0} കിലോഗ്രാം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} കിലോഗ്രാമിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} കിലോഗ്രാമിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} കിലോഗ്രാമിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} കിലോഗ്രാമിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} കിലോഗ്രാമിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} കിലോഗ്രാമിനോട്</unitPattern>
 				<unitPattern count="other">{0} കിലോഗ്രാം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} കിലോഗ്രാമിനാൽ</unitPattern>
+				<unitPattern count="other" case="dative">{0} കിലോഗ്രാമിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} കിലോഗ്രാമിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} കിലോഗ്രാമിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} കിലോഗ്രാമിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} കിലോഗ്രാമിനോട്</unitPattern>
 				<perUnitPattern>{0}/കിലോഗ്രാം</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ഗ്രാം</displayName>
 				<unitPattern count="one">{0} ഗ്രാം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഗ്രാമിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഗ്രാമിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഗ്രാമിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഗ്രാമിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഗ്രാമിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഗ്രാമിനോട്</unitPattern>
 				<unitPattern count="other">{0} ഗ്രാം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഗ്രാമിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഗ്രാമിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഗ്രാമിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഗ്രാമിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഗ്രാമിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഗ്രാമിനോട്</unitPattern>
 				<perUnitPattern>{0}/ഗ്രാം</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
@@ -7993,9 +8451,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ട്രോയ് ഔൺസ്</unitPattern>
 			</unit>
 			<unit type="mass-carat">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ക്യാരറ്റ്</displayName>
 				<unitPattern count="one">{0} ക്യാരറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} ക്യാരറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ഡാൽട്ടണുകൾ</displayName>
@@ -8031,9 +8502,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} കിലോവാട്ട്</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<gender draft="contributed">neuter</gender>
 				<displayName>വാട്ട്</displayName>
 				<unitPattern count="one">{0} വാട്ട്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} വാട്ടിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} വാട്ടിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} വാട്ടിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} വാട്ടിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} വാട്ടിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} വാട്ടിനോട്</unitPattern>
 				<unitPattern count="other">{0} വാട്ട്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} വാട്ടിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} വാട്ടിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} വാട്ടിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} വാട്ടിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} വാട്ടിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} വാട്ടിനോട്</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>മില്ലിവാട്ട്</displayName>
@@ -8061,9 +8545,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ഇഞ്ച് ഓഫ് മെർക്കുറി</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ബാറുകൾ</displayName>
 				<unitPattern count="one">{0} ബാർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ബാറിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ബാറിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ബാറിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ബാറിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ബാറിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ബാറിനോട്</unitPattern>
 				<unitPattern count="other">{0} ബാറുകൾ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ബാറിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ബാറിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ബാറിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ബാറുകളാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ബാറുകളിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ബാറുകളോട്</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>മില്ലിബാർ</displayName>
@@ -8071,14 +8568,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മില്ലിബാർ</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
+				<gender draft="contributed">neuter</gender>
 				<displayName>അറ്റ്‌മോസ്‌ഫിയർ</displayName>
 				<unitPattern count="one">{0} അറ്റ്‌മോസ്‌ഫിയർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} അറ്റ്‌മോസ്‌ഫിയറിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} അറ്റ്‌മോസ്‌ഫിയറിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} അറ്റ്‌മോസ്‌ഫിയറിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} അറ്റ്‌മോസ്‌ഫിയറിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} അറ്റ്‌മോസ്‌ഫിയറിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} അറ്റ്‌മോസ്‌ഫിയറിനോട്</unitPattern>
 				<unitPattern count="other">{0} അറ്റ്‌മോസ്‌ഫിയർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} അറ്റ്‌മോസ്‌ഫിയറിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} അറ്റ്‌മോസ്‌ഫിയറിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} അറ്റ്‌മോസ്‌ഫിയറിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} അറ്റ്‌മോസ്‌ഫിയറിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} അറ്റ്‌മോസ്‌ഫിയറിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} അറ്റ്‌മോസ്‌ഫിയറിനോട്</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
+				<gender draft="contributed">neuter</gender>
 				<displayName>പാസ്കൽസ്</displayName>
 				<unitPattern count="one">{0} പാസ്കൽ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} പാസ്‌കലിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} പാസ്‌കലിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} പാസ്‌കലിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} പാസ്‌കലിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} പാസ്‌കലിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} പാസ്‌കലിനോട്</unitPattern>
 				<unitPattern count="other">{0} പാസ്കൽസ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} പാസ്‌കലിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} പാസ്‌കലിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} പാസ്‌കലിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} പാസ്‌കലിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} പാസ്‌കലിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} പാസ്‌കലിനോട്</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>ഹെക്‌ടോപാസ്‌ക്കൽ</displayName>
@@ -8116,14 +8639,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} നോട്ട്</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
+				<gender draft="contributed">neuter</gender>
 				<displayName>°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഡിഗ്രിയെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഡിഗ്രിക്ക്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഡിഗ്രിയുടെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഡിഗ്രിയാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഡിഗ്രിയിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഡിഗ്രിയോട്</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഡിഗ്രിയെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഡിഗ്രിക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഡിഗ്രിയുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഡിഗ്രിയാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഡിഗ്രിയിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഡിഗ്രിയോട്</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ഡിഗ്രി സെൽഷ്യസ്</displayName>
 				<unitPattern count="one">{0} ഡിഗ്രി സെൽഷ്യസ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ഡിഗ്രി സെൽഷ്യസിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ഡിഗ്രി സെൽഷ്യസിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ഡിഗ്രി സെൽഷ്യസിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ഡിഗ്രി സെൽഷ്യസിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} ഡിഗ്രി സെൽഷ്യസിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ഡിഗ്രി സെൽഷ്യസിനോട്</unitPattern>
 				<unitPattern count="other">{0} ഡിഗ്രി സെൽഷ്യസ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ഡിഗ്രി സെൽഷ്യസിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ഡിഗ്രി സെൽഷ്യസിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ഡിഗ്രി സെൽഷ്യസിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ഡിഗ്രി സെൽഷ്യസിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ഡിഗ്രി സെൽഷ്യസിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ഡിഗ്രി സെൽഷ്യസിനോട്</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>ഡിഗ്രി ഫാരൻഹീറ്റ്</displayName>
@@ -8131,9 +8680,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ഡിഗ്രി ഫാരൻഹീറ്റ്</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
+				<gender draft="contributed">neuter</gender>
 				<displayName>കെൽവിൻ</displayName>
 				<unitPattern count="one">{0} കെൽവിൻ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} കെൽവിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} കെൽവിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} കെൽവിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} കെൽവിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} കെൽവിനിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} കെൽവിനോട്</unitPattern>
 				<unitPattern count="other">{0} കെൽവിൻ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} കെൽവിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} കെൽ‌വിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} കെൽവിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} കെൽവിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} കെൽവിനിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} കെൽവിനോട്</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>പൗണ്ട് ഫീറ്റ്</displayName>
@@ -8193,6 +8755,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ഹെക്ടോലിറ്റർ</unitPattern>
 			</unit>
 			<unit type="volume-liter">
+				<gender draft="contributed">neuter</gender>
 				<displayName>ലിറ്റർ</displayName>
 				<unitPattern count="one">{0} ലിറ്റർ</unitPattern>
 				<unitPattern count="other">{0} ലിറ്റർ</unitPattern>
@@ -8214,11 +8777,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മില്ലിലിറ്റർ</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മെട്രിക് പൈന്റ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് പൈന്റ്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് പൈന്റ്</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
+				<gender draft="contributed">neuter</gender>
 				<displayName>മെട്രിക് കപ്പ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് കപ്പ്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് കപ്പ്</unitPattern>
@@ -8415,6 +8980,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>മില്ലിമോൾ/ലിറ്റർ</displayName>
 				<unitPattern count="one">{0} മി.മോ/ലി.</unitPattern>
 				<unitPattern count="other">{0} മി.മോ/ലി.</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>ഇനം</displayName>
+				<unitPattern count="one">{0} ഇനം</unitPattern>
+				<unitPattern count="other">{0} ഇനം</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>പാർട്‌സ്/മില്ല്യൺ</displayName>
@@ -8638,9 +9208,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>BTU</displayName>
 			</unit>
 			<unit type="energy-therm-us">
-				<displayName>US therm</displayName>
-				<unitPattern count="one">{0} US therm</unitPattern>
-				<unitPattern count="other">{0} US therm</unitPattern>
+				<displayName>US തേം</displayName>
+				<unitPattern count="one">{0} US തേം</unitPattern>
+				<unitPattern count="other">{0} US തേം</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>പൗണ്ട് ഫോഴ്സ്</displayName>
@@ -8700,7 +9270,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-dot-per-inch">
 				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
@@ -9158,14 +9728,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName draft="contributed">ജി-ഫോഴ്‌സ്</displayName>
+				<displayName>ജി-ഫോഴ്‌സ്</displayName>
 				<unitPattern count="one">{0} ജി</unitPattern>
 				<unitPattern count="other">{0} ജി</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName draft="contributed">മീ/സെ²</displayName>
-				<unitPattern count="one" draft="contributed">{0}മീ/സെ²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}മീ/സെ²</unitPattern>
+				<displayName>മീ/സെ²</displayName>
+				<unitPattern count="one">{0}മീ/സെ²</unitPattern>
+				<unitPattern count="other">{0}മീ/സെ²</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}′</unitPattern>
@@ -9199,6 +9769,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ച. അടി</unitPattern>
 				<unitPattern count="other">{0} ച.അടി</unitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>ദുനം</displayName>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
@@ -9209,52 +9782,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}ലി/100കിമി</unitPattern>
 				<unitPattern count="other">{0}ലി/100കിമി</unitPattern>
 			</unit>
+			<unit type="digital-terabyte">
+				<displayName draft="contributed">ടിബി</displayName>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName draft="contributed">എംബി</displayName>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName draft="contributed">കെബി</displayName>
+			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">നൂ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} നൂ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} നൂ.</unitPattern>
+				<displayName>നൂ.</displayName>
+				<unitPattern count="one">{0} നൂ.</unitPattern>
+				<unitPattern count="other">{0} നൂ.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<unitPattern count="one">{0}ദശാ.</unitPattern>
+				<unitPattern count="other">{0}ദശാ.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>വ</displayName>
 				<unitPattern count="one">{0} വ</unitPattern>
 				<unitPattern count="other">{0} വ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/വ.</perUnitPattern>
+				<perUnitPattern>{0}/വ.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>മാസം</displayName>
 				<unitPattern count="one">{0} മാ</unitPattern>
 				<unitPattern count="other">{0} മാ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/മാ.</perUnitPattern>
+				<perUnitPattern>{0}/മാ.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>ആ</displayName>
 				<unitPattern count="one">{0} ആ</unitPattern>
 				<unitPattern count="other">{0} ആ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ആ.</perUnitPattern>
+				<perUnitPattern>{0}/ആ.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ദിവസം</displayName>
 				<unitPattern count="one">{0} ദി</unitPattern>
 				<unitPattern count="other">{0} ദി</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ദി.</perUnitPattern>
+				<perUnitPattern>{0}/ദി.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>മണിക്കൂർ</displayName>
 				<unitPattern count="one">{0} മ</unitPattern>
 				<unitPattern count="other">{0} മ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/മ.</perUnitPattern>
+				<perUnitPattern>{0}/മ.</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>മി.</displayName>
 				<unitPattern count="one">{0} മി.</unitPattern>
 				<unitPattern count="other">{0} മി.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/മി.</perUnitPattern>
+				<perUnitPattern>{0}/മി.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>സെ.</displayName>
 				<unitPattern count="one">{0} സെ.</unitPattern>
 				<unitPattern count="other">{0} സെ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/സെ.</perUnitPattern>
+				<perUnitPattern>{0}/സെ.</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>മി.സെ.</displayName>
@@ -9262,37 +9848,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മി.സെ.</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName draft="contributed">μ.സെ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} μ.സെ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} μ.സെ.</unitPattern>
+				<displayName>μ.സെ.</displayName>
+				<unitPattern count="one">{0} μ.സെ.</unitPattern>
+				<unitPattern count="other">{0} μ.സെ.</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="contributed">നാ.സെ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} നാ.സെ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} നാ.സെ.</unitPattern>
+				<displayName>നാ.സെ.</displayName>
+				<unitPattern count="one">{0} നാ.സെ.</unitPattern>
+				<unitPattern count="other">{0} നാ.സെ.</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US തേം</displayName>
+				<unitPattern count="one">{0} US തേം</unitPattern>
+				<unitPattern count="other">{0} US തേം</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>കി.മീ.</displayName>
 				<unitPattern count="one">{0} കി.മീ.</unitPattern>
 				<unitPattern count="other">{0} കി.മീ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/കി.മീ.</perUnitPattern>
+				<perUnitPattern>{0}/കി.മീ.</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>മീറ്റർ</displayName>
 				<unitPattern count="one">{0} മീ.</unitPattern>
 				<unitPattern count="other">{0} മീ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/മീ.</perUnitPattern>
+				<perUnitPattern>{0}/മീ.</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName draft="contributed">ഡെ.മീ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ഡെ.മീ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ഡെ.മീ</unitPattern>
+				<displayName>ഡെ.മീ.</displayName>
+				<unitPattern count="one">{0} ഡെ.മീ.</unitPattern>
+				<unitPattern count="other">{0} ഡെ.മീ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>സെ.മീ.</displayName>
 				<unitPattern count="one">{0} സെ.മീ.</unitPattern>
 				<unitPattern count="other">{0} സെ.മീ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/സെ.മീ.</perUnitPattern>
+				<perUnitPattern>{0}/സെ.മീ.</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>മി.മീ.</displayName>
@@ -9300,138 +9891,141 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} മി.മീ.</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName draft="contributed">μമീ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}μമീ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}μമീ.</unitPattern>
+				<displayName>μമീ.</displayName>
+				<unitPattern count="one">{0}μമീ.</unitPattern>
+				<unitPattern count="other">{0}μമീ.</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName draft="contributed">നാ.മീ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} നാ.മീ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} നാ.മീ.</unitPattern>
+				<displayName>നാ.മീ.</displayName>
+				<unitPattern count="one">{0} നാ.മീ.</unitPattern>
+				<unitPattern count="other">{0} നാ.മീ.</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName draft="contributed">പൈ.മീ.</displayName>
+				<displayName>പൈ.മീ.</displayName>
 				<unitPattern count="one">{0} പൈ.മീ</unitPattern>
 				<unitPattern count="other">{0} പൈ.മീ</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">മൈൽ</displayName>
+				<displayName>മൈൽ</displayName>
 				<unitPattern count="one">{0} മൈ</unitPattern>
 				<unitPattern count="other">{0} മൈ</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName draft="contributed">വാര</displayName>
+				<displayName>വാര</displayName>
 				<unitPattern count="one">{0} യാ</unitPattern>
 				<unitPattern count="other">{0} യാ</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">അടി</displayName>
+				<displayName>അടി</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
-				<perUnitPattern draft="contributed">{0}/അടി</perUnitPattern>
+				<perUnitPattern>{0}/അടി</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">ഇഞ്ച്</displayName>
+				<displayName>ഇഞ്ച്</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ഇഞ്ച്</perUnitPattern>
+				<perUnitPattern>{0}/ഇഞ്ച്</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName draft="contributed">പാർസെക്</displayName>
-				<unitPattern count="one" draft="contributed">{0} പാ.സെ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} പാ.സെ.</unitPattern>
+				<displayName>പാർസെക്</displayName>
+				<unitPattern count="one">{0} പാ.സെ.</unitPattern>
+				<unitPattern count="other">{0} പാ.സെ.</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">പ്ര.വ.</displayName>
+				<displayName>പ്ര.വ.</displayName>
 				<unitPattern count="one">{0} പ്ര.വ</unitPattern>
 				<unitPattern count="other">{0} പ്ര.വ</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName draft="contributed">ജ്യോ.യൂ.</displayName>
+				<displayName>ജ്യോ.യൂ.</displayName>
 				<unitPattern count="one">{0}ജ്യോ.യൂ</unitPattern>
 				<unitPattern count="other">{0}ജ്യോ.യൂ</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">ഫർലോങ്</displayName>
-				<unitPattern count="one" draft="contributed">{0}ഫർ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ഫർ.</unitPattern>
+				<displayName>ഫർലോങ്</displayName>
+				<unitPattern count="one">{0}ഫർ.</unitPattern>
+				<unitPattern count="other">{0}ഫർ.</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">ഫാതം</displayName>
-				<unitPattern count="one" draft="contributed">{0}ഫാ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ഫാ.</unitPattern>
+				<displayName>ഫാതം</displayName>
+				<unitPattern count="one">{0}ഫാ.</unitPattern>
+				<unitPattern count="other">{0}ഫാ.</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName draft="contributed">നോ.മൈ.</displayName>
+				<displayName>നോ.മൈ.</displayName>
 				<unitPattern count="one">{0}ന.മൈ.</unitPattern>
 				<unitPattern count="other">{0}ന.മൈ.</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName draft="contributed">സ്.മൈ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}സ്.മൈ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}സ്.മൈ.</unitPattern>
+				<displayName>സ്.മൈ.</displayName>
+				<unitPattern count="one">{0}സ്.മൈ.</unitPattern>
+				<unitPattern count="other">{0}സ്.മൈ.</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName draft="contributed">പോ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}പോ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}പോ.</unitPattern>
+				<displayName>പോ.</displayName>
+				<unitPattern count="one">{0}പോ.</unitPattern>
+				<unitPattern count="other">{0}പോ.</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName draft="contributed">ട.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ട.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ട.</unitPattern>
+				<displayName>ട.</displayName>
+				<unitPattern count="one">{0}ട.</unitPattern>
+				<unitPattern count="other">{0}ട.</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>കി.ഗ്രാം</displayName>
 				<unitPattern count="one">{0}കി.ഗ്രാം</unitPattern>
 				<unitPattern count="other">{0}കി.ഗ്രാം</unitPattern>
-				<perUnitPattern draft="contributed">{0}/കി.ഗ്രാം</perUnitPattern>
+				<perUnitPattern>{0}/കി.ഗ്രാം</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ഗ്രാം</displayName>
 				<unitPattern count="one">{0} ഗ്രാം</unitPattern>
 				<unitPattern count="other">{0} ഗ്രാം</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ഗ്രാം</perUnitPattern>
+				<perUnitPattern>{0}/ഗ്രാം</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName draft="contributed">മി.ഗ്രാം.</displayName>
-				<unitPattern count="one" draft="contributed">{0}മി.ഗ്രാം.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}മി.ഗ്രാം.</unitPattern>
+				<displayName>മി.ഗ്രാം.</displayName>
+				<unitPattern count="one">{0}മി.ഗ്രാം.</unitPattern>
+				<unitPattern count="other">{0}മി.ഗ്രാം.</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="contributed">μ.ഗ്രാം.</displayName>
-				<unitPattern count="one" draft="contributed">{0}μ.ഗ്രാം.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}μ.ഗ്രാം.</unitPattern>
+				<displayName>μ.ഗ്രാം.</displayName>
+				<unitPattern count="one">{0}μ.ഗ്രാം.</unitPattern>
+				<unitPattern count="other">{0}μ.ഗ്രാം.</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="contributed">ടൺ</displayName>
-				<unitPattern count="one" draft="contributed">{0}ടൺ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ടൺ</unitPattern>
+				<displayName>ടൺ</displayName>
+				<unitPattern count="one">{0}ടൺ</unitPattern>
+				<unitPattern count="other">{0}ടൺ</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">സ്റ്റോൺ</displayName>
-				<unitPattern count="one" draft="contributed">{0}സ്റ്റോ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}സ്റ്റോ.</unitPattern>
+				<displayName>സ്റ്റോൺ</displayName>
+				<unitPattern count="one">{0}സ്റ്റോ.</unitPattern>
+				<unitPattern count="other">{0}സ്റ്റോ.</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="contributed">പൗ</displayName>
+				<displayName>പൗ</displayName>
 				<unitPattern count="one">{0} പൗ</unitPattern>
 				<unitPattern count="other">{0} പൗ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/പൗ.</perUnitPattern>
+				<perUnitPattern>{0}/പൗ.</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName draft="contributed">ഔ.</displayName>
+				<displayName>ഔ.</displayName>
 				<unitPattern count="one">{0} ഔ</unitPattern>
 				<unitPattern count="other">{0} ഔ</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ഔ.</perUnitPattern>
+				<perUnitPattern>{0}/ഔ.</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName draft="contributed">ട്രോ.ഔ.</displayName>
+				<displayName>ട്രോ.ഔ.</displayName>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="contributed">ക്യാരറ്റ്</displayName>
-				<unitPattern count="one" draft="contributed">{0}CD</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}CD</unitPattern>
+				<displayName>ക്യാരറ്റ്</displayName>
+				<unitPattern count="one">{0}CD</unitPattern>
+				<unitPattern count="other">{0}CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>ഡാ.</displayName>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one" draft="contributed">{0}kW</unitPattern>
@@ -9453,6 +10047,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">ഇഞ്ച് മെ.</displayName>
 				<unitPattern count="one">{0}&quot; Hg</unitPattern>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0} ബാർ</unitPattern>
+				<unitPattern count="other">{0}ബാർ</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName draft="contributed">മി.ബാ</displayName>
@@ -9517,6 +10115,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ലി.</unitPattern>
 				<unitPattern count="other">{0} ലി.</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<unitPattern count="one">{0} പറ</unitPattern>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<unitPattern count="one">{0}fl oz Im</unitPattern>
+				<unitPattern count="other">{0}fl oz Im</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<unitPattern count="one">{0}dsp-Imp</unitPattern>
+				<unitPattern count="other">{0}dsp-Imp</unitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ദിശ</displayName>
 				<coordinateUnitPattern type="east">{0}കി.</coordinateUnitPattern>
@@ -9543,8 +10153,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} കൂടാതെ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="start">{0}, {1} എന്നിവ</listPatternPart>
-			<listPatternPart type="middle">{0}, {1} എന്നിവ</listPatternPart>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, അല്ലെങ്കിൽ {1}</listPatternPart>
 			<listPatternPart type="2">{0} അല്ലെങ്കിൽ {1}</listPatternPart>
 		</listPattern>
