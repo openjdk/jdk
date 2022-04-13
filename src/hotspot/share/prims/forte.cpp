@@ -666,7 +666,6 @@ public:
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
-#ifndef ASSERT
   if (Thread::current_or_null_safe() == NULL) {
     // we need the current Thread object for crash protection
     trace->num_frames = ticks_thread_exit;
@@ -680,10 +679,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
       trace->num_frames = ticks_unknown_state;
     }
   }
-#else
-  // we still want to see crashes in debug mode as they include asserts
-  asyncGetCallTraceImpl(trace, depth, ucontext);
-#endif
 }
 
 
