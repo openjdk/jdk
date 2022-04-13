@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.event.SecurityProviderServiceEvent;
+
 import java.io.*;
 import java.util.*;
 import static java.util.Locale.ENGLISH;
@@ -1267,6 +1269,15 @@ public abstract class Provider extends Properties {
      */
     public Service getService(String type, String algorithm) {
         checkInitialized();
+        System.out.println("getService of type: " + type + ", algorithm:" + algorithm
+               + "for provider: " + getName());
+        new Throwable().printStackTrace(System.out);
+        SecurityProviderServiceEvent e = new SecurityProviderServiceEvent();
+        if (e.shouldCommit()) {
+            e.provider = getName();
+            e.type = type;
+            e.algorithm = algorithm;
+        }
         // avoid allocating a new ServiceKey object if possible
         ServiceKey key = previousKey;
         if (key.matches(type, algorithm) == false) {
@@ -1276,6 +1287,10 @@ public abstract class Provider extends Properties {
 
         Service s = serviceMap.get(key);
         if (s != null) {
+            if (e.shouldCommit()) {
+                e.exists = true;
+                e.commit();
+            }
             return s;
         }
 
@@ -1283,9 +1298,17 @@ public abstract class Provider extends Properties {
         if (s != null && !s.isValid()) {
             legacyMap.remove(key, s);
         } else {
+            if (e.shouldCommit()) {
+                e.exists = true;
+                e.commit();
+            }
             return s;
         }
 
+        if (e.shouldCommit()) {
+            e.exists = false;
+            e.commit();
+        }
         return null;
     }
 
