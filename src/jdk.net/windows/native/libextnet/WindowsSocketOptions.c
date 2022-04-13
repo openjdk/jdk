@@ -73,7 +73,7 @@ JNIEXPORT void JNICALL Java_jdk_net_WindowsSocketOptions_setIpDontFragment0
         rv = setsockopt(fd, IPPROTO_IP, IP_DONTFRAGMENT, (char *)&opt, sizeof(int));
     } else {
         opt = optval ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
-        rv = setsockopt(fd, IPPROTO_IPV6, IP_MTU_DISCOVER, (char *)&opt, sizeof(int));
+        rv = setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, (char *)&opt, sizeof(int));
     }
     handleError(env, rv, "set option IP_DONTFRAGMENT failed");
 }
@@ -97,7 +97,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
         handleError(env, rv, "get option IP_DONTFRAGMENT failed");
 	return optval;
     } else {
-        rv = getsockopt(fd, IPPROTO_IPV6, IP_MTU_DISCOVER, (char *)&optval, &sz);
+        rv = getsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, (char *)&optval, &sz);
         handleError(env, rv, "get option IP_DONTFRAGMENT failed");
         return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
     }
