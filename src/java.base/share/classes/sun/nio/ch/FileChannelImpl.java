@@ -1061,7 +1061,7 @@ public class FileChannelImpl
     @Override
     public MemorySegment map(MapMode mode, long offset, long size,
                              MemorySession session)
-            throws IOException, UnsupportedOperationException
+            throws IOException
     {
         Objects.requireNonNull(mode,"Mode is null");
         Objects.requireNonNull(session, "Session is null");

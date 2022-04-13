@@ -1049,7 +1049,7 @@ public abstract class FileChannel
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public MemorySegment map(MapMode mode, long offset, long size,
                                       MemorySession session)
-            throws IOException, UnsupportedOperationException
+            throws IOException
     {
         throw new UnsupportedOperationException();
     }
