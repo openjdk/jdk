@@ -67,7 +67,7 @@ import org.w3c.dom.Element;
  * @xerces.internal
  *
  * @author Sandy Gao, IBM
- * @LastModified: Nov 2017
+ * @LastModified: Apr 2022
  */
 
 public class XSAttributeChecker {

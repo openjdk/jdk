@@ -83,7 +83,7 @@ import org.w3c.dom.ls.LSSerializer;
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: Sept 2019
+ * @LastModified: Apr 2022
  */
 public class CoreDocumentImpl
         extends ParentNode implements Document {
