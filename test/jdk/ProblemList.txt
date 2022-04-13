@@ -125,7 +125,6 @@ java/awt/Frame/FrameLocation/FrameLocation.java 8238436 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
-java/awt/dnd/DropTargetEnterExitTest/MissedDragExitTest.java 8159694 linux-all
 java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
 javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
