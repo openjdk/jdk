@@ -48,7 +48,7 @@ import static org.testng.Assert.assertNull;
 
 /*
  * @test
- * @bug 8210280 8281631
+ * @bug 8186958 8210280 8281631
  * @modules java.base/java.util:open
  * @summary White box tests for HashMap-related internals around table sizing
  * @run testng WhiteBoxResizeTest
@@ -320,4 +320,53 @@ public class WhiteBoxResizeTest {
         assertEquals(capacity(map), expectedCapacity);
     }
 
+    /*
+     * tests for requested size (static factory methods)
+     */
+
+    // helper method for one requested size case, to provide target types for lambda
+    Object[] rsc(String label,
+                 int size,
+                 int expectedCapacity,
+                 Supplier<Map<String, String>> supplier) {
+        return new Object[]{label, size, expectedCapacity, supplier};
+    }
+
+    List<Object[]> genRequestedSizeCases(int size, int cap) {
+        return Arrays.asList(
+                rsc("rshm", size, cap, () -> HashMap.newHashMap(size)),
+                rsc("rslm", size, cap, () -> LinkedHashMap.newLinkedHashMap(size)),
+                rsc("rswm", size, cap, () -> WeakHashMap.newWeakHashMap(size))
+        );
+    }
+
+    @DataProvider(name = "requestedSize")
+    public Iterator<Object[]> requestedSizeCases() {
+        ArrayList<Object[]> cases = new ArrayList<>();
+        cases.addAll(genRequestedSizeCases(12,  16));
+        cases.addAll(genRequestedSizeCases(13,  32));
+        cases.addAll(genRequestedSizeCases(24,  32));
+        cases.addAll(genRequestedSizeCases(25,  64));
+        cases.addAll(genRequestedSizeCases(48,  64));
+        cases.addAll(genRequestedSizeCases(49, 128));
+
+        // numbers in this range are truncated by a float computation with 0.75f
+        // but can get an exact result with a double computation with 0.75d
+        cases.addAll(genRequestedSizeCases(25165824,  33554432));
+        cases.addAll(genRequestedSizeCases(25165825,  67108864));
+        cases.addAll(genRequestedSizeCases(50331648,  67108864));
+        cases.addAll(genRequestedSizeCases(50331649, 134217728));
+
+        return cases.iterator();
+    }
+
+    @Test(dataProvider = "requestedSize")
+    public void requestedSize(String label,  // unused, included for diagnostics
+                              int size,      // unused, included for diagnostics
+                              int expectedCapacity,
+                              Supplier<Map<String, String>> s) {
+        Map<String, String> map = s.get();
+        map.put("", "");
+        assertEquals(capacity(map), expectedCapacity);
+    }
 }
