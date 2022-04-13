@@ -33,7 +33,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * A taglet that represents the @deprecated tag.
+ * A taglet that represents the {@code @deprecated} tag.
  */
 public class DeprecatedTaglet extends BaseTaglet {
 

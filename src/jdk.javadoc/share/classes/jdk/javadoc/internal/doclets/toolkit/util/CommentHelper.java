@@ -30,10 +30,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.AttributeTree;
@@ -157,7 +159,10 @@ public class CommentHelper {
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
-        return doctrees.getElement(docTreePath);
+        // Workaround for JDK-8284193
+        // DocTrees.getElement(DocTreePath) returns javac-internal Symbols
+        var e = doctrees.getElement(docTreePath);
+        return e == null || e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED ? null : e;
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
