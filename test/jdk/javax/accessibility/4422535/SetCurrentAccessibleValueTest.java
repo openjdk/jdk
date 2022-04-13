@@ -87,7 +87,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("JButton's Accessible Value"
                 + " implementation doesn't accept new "
-		+ "BigDecimal(BigInteger.ONE)");
+                + "BigDecimal(BigInteger.ONE)");
         }
 
         if (!jScrollBar.getAccessibleContext().getAccessibleValue()
@@ -124,7 +124,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("JScrollBar's Accessible Value"
                 + " implementation doesn't accept new "
-		+ "BigDecimal(BigInteger.ONE)");
+                + "BigDecimal(BigInteger.ONE)");
         }
 
         if (!iFrame.getAccessibleContext().getAccessibleValue()
@@ -161,7 +161,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("iFrame's Accessible Value"
                 + " implementation doesn't accept new "
-		+"BigDecimal(BigInteger.ONE)");
+                +"BigDecimal(BigInteger.ONE)");
         }
 
         if (!jSplitPane.getAccessibleContext().getAccessibleValue()
@@ -198,7 +198,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("jSplitPane's Accessible Value"
                 + " implementation doesn't accept new "
-		+ "BigDecimal(BigInteger.ONE)");
+                + "BigDecimal(BigInteger.ONE)");
         }
 
         if (!jScrollBar.getAccessibleContext().getAccessibleValue()
@@ -235,7 +235,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("jScrollBar's Accessible Value"
                 + " implementation doesn't accept new "
-		+ "BigDecimal(BigInteger.ONE)");
+                + "BigDecimal(BigInteger.ONE)");
         }
 
         if (!jProgressBar.getAccessibleContext().getAccessibleValue()
@@ -272,7 +272,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("jProgressBar's Accessible Value"
                 + " implementation doesn't accept new "
-		+ "BigDecimal(BigInteger.ONE)");
+                + "BigDecimal(BigInteger.ONE)");
         }
 
         if (!jSlider.getAccessibleContext().getAccessibleValue()
@@ -309,7 +309,7 @@ public class SetCurrentAccessibleValueTest {
             .setCurrentAccessibleValue(new BigDecimal(BigInteger.ONE))) {
             throw new RuntimeException("jSlider's Accessible Value"
                 + " implementation doesn't accept new "
-		+ "BigDecimal(BigInteger.ONE)");
+                + "BigDecimal(BigInteger.ONE)");
         }
     }
 
