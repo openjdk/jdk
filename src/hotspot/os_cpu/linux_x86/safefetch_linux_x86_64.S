@@ -21,8 +21,8 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-    .globl SafeFetch32
-    .globl SafeFetchN
+    .globl SafeFetch32_impl
+    .globl SafeFetchN_impl
     .globl _SafeFetch32_fault
     .globl _SafeFetchN_fault
     .globl _SafeFetch32_continuation
@@ -35,8 +35,8 @@
     #
     #  %rdi : address
     #  %esi : defaultval
-    .type    SafeFetch32,@function
-SafeFetch32:
+    .type    SafeFetch32_impl,@function
+SafeFetch32_impl:
 _SafeFetch32_fault:
     movl (%rdi), %eax       # load target value, may fault
     ret
@@ -48,8 +48,8 @@ _SafeFetch32_continuation:
     #
     #  %rdi : address
     #  %rsi : defaultval
-    .type    SafeFetchN,@function
-SafeFetchN:
+    .type    SafeFetchN_impl,@function
+SafeFetchN_impl:
 _SafeFetchN_fault:
     movq (%rdi), %rax       # load target value, may fault
     ret

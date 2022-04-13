@@ -93,12 +93,12 @@ static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
 }
 
-int SafeFetch32(int *adr, int errValue) {
+int SafeFetch32_impl(int *adr, int errValue) {
   int result;
   return _SafeFetchXX_internal<int>(adr, &result) ? result : errValue;
 }
 
-intptr_t SafeFetchN(intptr_t *adr, intptr_t errValue) {
+intptr_t SafeFetchN_impl(intptr_t *adr, intptr_t errValue) {
   intptr_t result;
   return _SafeFetchXX_internal<intptr_t>(adr, &result) ? result : errValue;
 }

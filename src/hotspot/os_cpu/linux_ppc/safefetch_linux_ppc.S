@@ -23,10 +23,10 @@
  *
  */
 
-    .globl SafeFetchN
+    .globl SafeFetchN_impl
     .globl _SafeFetchN_fault
     .globl _SafeFetchN_continuation
-    .globl SafeFetch32
+    .globl SafeFetch32_impl
     .globl _SafeFetch32_fault
     .globl _SafeFetch32_continuation
 
@@ -35,7 +35,7 @@
     #  r3 : address
     #  r4 : defaultval
     #  r3 : retval
-SafeFetch32:
+SafeFetch32_impl:
 _SafeFetch32_fault:
     lwa      %r3, 0(%r3)
     blr
@@ -48,7 +48,7 @@ _SafeFetch32_continuation:
     #  r3 : address
     #  r4 : defaultval
     #  r3 : retval
-SafeFetchN:
+SafeFetchN_impl:
 _SafeFetchN_fault:
     ld     %r3, 0(%r3)
     blr

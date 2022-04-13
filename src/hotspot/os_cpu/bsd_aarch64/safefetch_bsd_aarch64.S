@@ -32,10 +32,10 @@
 #define ELF_TYPE(name, description) .type name,description
 #endif
 
-    .global SYMBOL(SafeFetchN)
+    .global SYMBOL(SafeFetchN_impl)
     .global SYMBOL(_SafeFetchN_fault)
     .global SYMBOL(_SafeFetchN_continuation)
-    .global SYMBOL(SafeFetch32)
+    .global SYMBOL(SafeFetch32_impl)
     .global SYMBOL(_SafeFetch32_fault)
     .global SYMBOL(_SafeFetch32_continuation)
 
@@ -46,8 +46,8 @@
 
     # needed to align function start to 4 byte
     .align  6
-    ELF_TYPE(SafeFetch32,@function)
-SYMBOL(SafeFetch32):
+    ELF_TYPE(SafeFetch32_impl,@function)
+SYMBOL(SafeFetch32_impl):
 SYMBOL(_SafeFetch32_fault):
     ldr      w0, [x0]
     ret
@@ -61,8 +61,8 @@ SYMBOL(_SafeFetch32_continuation):
     #  x0 : defaultval
 
     .align  6
-    ELF_TYPE(SafeFetchN,@function)
-SYMBOL(SafeFetchN):
+    ELF_TYPE(SafeFetchN_impl,@function)
+SYMBOL(SafeFetchN_impl):
 SYMBOL(_SafeFetchN_fault):
     ldr      x0, [x0]
     ret

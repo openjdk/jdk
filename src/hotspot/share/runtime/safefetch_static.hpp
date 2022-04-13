@@ -28,13 +28,13 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-extern "C" int SafeFetch32(int* adr, int errValue);
+extern "C" int SafeFetch32_impl(int* adr, int errValue);
 
 #ifdef _LP64
-extern "C" intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue);
+extern "C" intptr_t SafeFetchN_impl(intptr_t* adr, intptr_t errValue);
 #else
-inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
-  return SafeFetch32(adr, errValue);
+inline intptr_t SafeFetchN_impl(intptr_t* adr, intptr_t errValue) {
+  return SafeFetch32_impl(adr, errValue);
 }
 #endif // _LP64
 

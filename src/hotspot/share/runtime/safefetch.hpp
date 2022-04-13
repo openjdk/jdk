@@ -43,4 +43,13 @@
   #define SAFEFETCH_METHOD_STATIC_ASSEMBLY
 #endif
 
+
+inline int SafeFetch32(int* adr, int errValue) {
+  return SafeFetch32_impl(adr, errValue);
+}
+
+inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
+  return SafeFetchN_impl(adr, errValue);
+}
+
 #endif // SHARE_RUNTIME_SAFEFETCH_HPP

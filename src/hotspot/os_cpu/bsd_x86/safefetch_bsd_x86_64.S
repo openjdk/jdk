@@ -31,8 +31,8 @@
 #define ELF_TYPE(name, description) .type name,description
 #endif
 
-    .globl SYMBOL(SafeFetch32)
-    .globl SYMBOL(SafeFetchN)
+    .globl SYMBOL(SafeFetch32_impl)
+    .globl SYMBOL(SafeFetchN_impl)
     .globl SYMBOL(_SafeFetch32_fault)
     .globl SYMBOL(_SafeFetchN_fault)
     .globl SYMBOL(_SafeFetch32_continuation)
@@ -44,8 +44,8 @@
     #
     #  %rdi : address
     #  %esi : defaultval
-	ELF_TYPE(SafeFetch32,@function)
-SYMBOL(SafeFetch32:)
+	ELF_TYPE(SafeFetch32_impl,@function)
+SYMBOL(SafeFetch32_impl:)
 SYMBOL(_SafeFetch32_fault:)
     movl (%rdi), %eax
     ret
@@ -57,8 +57,8 @@ SYMBOL(_SafeFetch32_continuation:)
     #
     #  %rdi : address
     #  %rsi : defaultval
-    ELF_TYPE(SafeFetchN,@function)
-SYMBOL(SafeFetchN:)
+    ELF_TYPE(SafeFetchN_impl,@function)
+SYMBOL(SafeFetchN_impl:)
 SYMBOL(_SafeFetchN_fault:)
     movq (%rdi), %rax
     ret

@@ -33,8 +33,8 @@
 // but slower than other methods, and needs more thread stack (the sigjmp buffer
 // lives on the thread stack).
 
-int SafeFetch32(int* adr, int errValue);
-intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue);
+int SafeFetch32_impl(int* adr, int errValue);
+intptr_t SafeFetchN_impl(intptr_t* adr, intptr_t errValue);
 
 // Handle safefetch, sigsetjmp style. Only call from signal handler.
 // If a safefetch jump had been established and the sig qualifies, we
