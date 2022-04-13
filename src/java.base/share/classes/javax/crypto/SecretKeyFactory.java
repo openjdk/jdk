@@ -158,7 +158,8 @@ public class SecretKeyFactory {
      *
      * @see java.security.Provider
      */
-    public static final SecretKeyFactory getInstance(String algorithm) throws NoSuchAlgorithmException {
+    public static final SecretKeyFactory getInstance(String algorithm)
+            throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         return new SecretKeyFactory(algorithm);
     }
