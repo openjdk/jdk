@@ -63,7 +63,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     static final AlgorithmConstraints DEFAULT_SSL_ONLY =
                         new SSLAlgorithmConstraints((SSLSocket)null, false);
 
-    SSLAlgorithmConstraints(AlgorithmConstraints userSpecifiedConstraints) {
+    private SSLAlgorithmConstraints(AlgorithmConstraints userSpecifiedConstraints) {
         this.userSpecifiedConstraints = userSpecifiedConstraints;
         this.peerSpecifiedConstraints = null;
         this.enabledX509DisabledAlgConstraints = true;
@@ -78,21 +78,24 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     SSLAlgorithmConstraints(SSLSocket socket,
             boolean withDefaultCertPathConstraints) {
-        this.userSpecifiedConstraints = getUserSpecifiedConstraints(socket);
+        this.userSpecifiedConstraints =
+                nullIfDefault(getUserSpecifiedConstraints(socket));
         this.peerSpecifiedConstraints = null;
         this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     SSLAlgorithmConstraints(SSLEngine engine,
             boolean withDefaultCertPathConstraints) {
-        this.userSpecifiedConstraints = getUserSpecifiedConstraints(engine);
+        this.userSpecifiedConstraints =
+                nullIfDefault(getUserSpecifiedConstraints(engine));
         this.peerSpecifiedConstraints = null;
         this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     SSLAlgorithmConstraints(SSLSocket socket, String[] supportedAlgorithms,
             boolean withDefaultCertPathConstraints) {
-        this.userSpecifiedConstraints = getUserSpecifiedConstraints(socket);
+        this.userSpecifiedConstraints =
+                nullIfDefault(getUserSpecifiedConstraints(socket));
         this.peerSpecifiedConstraints =
                 new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
         this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
@@ -100,10 +103,16 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     SSLAlgorithmConstraints(SSLEngine engine, String[] supportedAlgorithms,
             boolean withDefaultCertPathConstraints) {
-        this.userSpecifiedConstraints = getUserSpecifiedConstraints(engine);
+        this.userSpecifiedConstraints =
+                nullIfDefault(getUserSpecifiedConstraints(engine));
         this.peerSpecifiedConstraints =
                 new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
         this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
+    }
+
+    private static AlgorithmConstraints nullIfDefault(
+            AlgorithmConstraints constraints) {
+        return constraints == DEFAULT ? null : constraints;
     }
 
     private static AlgorithmConstraints getUserSpecifiedConstraints(
