@@ -46,7 +46,7 @@ inline frame::frame() {
 
 static int spin;
 
-inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool allowUnsafe) {
+inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool forSignalHandler) {
   assert(pauth_ptr_is_raw(pc), "cannot be signed");
   intptr_t a = intptr_t(sp);
   intptr_t b = intptr_t(fp);
@@ -55,7 +55,7 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool allowUnsafe
   _fp = fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-if (!allowUnsafe) {
+if (!forSignalHandler) {
     _cb = CodeCache::find_blob(pc);
   } else {
     _cb = CodeCache::find_blob_unsafe(pc);
@@ -76,8 +76,8 @@ if (!allowUnsafe) {
   _sp_is_trusted = false;
 }
 
-inline frame::frame(intptr_t* sp, intptr_t* fp, address pc, bool allowUnsafe) {
-  init(sp, fp, pc, allowUnsafe);
+inline frame::frame(intptr_t* sp, intptr_t* fp, address pc, bool forSignalHandler) {
+  init(sp, fp, pc, forSignalHandler);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {

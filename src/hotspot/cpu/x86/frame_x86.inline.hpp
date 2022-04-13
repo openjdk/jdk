@@ -42,13 +42,13 @@ inline frame::frame() {
   _deopt_state = unknown;
 }
 
-inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool allowUnsafe) {
+inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool forSignalHandler) {
   _sp = sp;
   _unextended_sp = sp;
   _fp = fp;
   _pc = pc;
   assert(pc != NULL, "no pc?");
-  if (!allowUnsafe) {
+  if (!forSignalHandler) {
     _cb = CodeCache::find_blob(pc);
   } else {
     _cb = CodeCache::find_blob_unsafe(pc);
@@ -67,8 +67,8 @@ inline void frame::init(intptr_t* sp, intptr_t* fp, address pc, bool allowUnsafe
   }
 }
 
-inline frame::frame(intptr_t* sp, intptr_t* fp, address pc, bool allowUnsafe) {
-  init(sp, fp, pc, allowUnsafe);
+inline frame::frame(intptr_t* sp, intptr_t* fp, address pc, bool forSignalHandler) {
+  init(sp, fp, pc, forSignalHandler);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc) {

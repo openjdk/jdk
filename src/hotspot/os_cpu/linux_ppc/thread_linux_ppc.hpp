@@ -33,7 +33,7 @@
   }
 
   // The `last' frame is the youngest Java frame on the thread's stack.
-  frame pd_last_frame(bool allowUnsafe = false);
+  frame pd_last_frame(bool forSignalHandler = false);
 
  public:
 
@@ -42,6 +42,6 @@
   bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
 
  private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool allowUnsafe);
+  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool forSignalHandler);
 
 #endif // OS_CPU_LINUX_PPC_THREAD_LINUX_PPC_HPP

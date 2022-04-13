@@ -29,7 +29,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/thread.hpp"
 
-frame JavaThread::pd_last_frame(bool allowUnsafe) {
+frame JavaThread::pd_last_frame(bool forSignalHandler) {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
 
   intptr_t* sp = last_Java_sp();
@@ -40,15 +40,15 @@ frame JavaThread::pd_last_frame(bool allowUnsafe) {
   // Should have been filled by method entry code.
   if (pc == NULL)
     pc =  (address) *(sp + 2);
-  return frame(sp, pc, cb, allowUnsafe);
+  return frame(sp, pc, cb, forSignalHandler);
 }
 
-bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool allowUnsafe) {
+bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool forSignalHandler) {
 
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
   if (has_last_Java_frame() && frame_anchor()->walkable()) {
-    *fr_addr = pd_last_frame(allowUnsafe);
+    *fr_addr = pd_last_frame(forSignalHandler);
     return true;
   }
 
@@ -64,7 +64,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava,
       return false;
     }
 
-    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc, allowUnsafe);
+    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc, forSignalHandler);
 
     if (ret_frame.fp() == NULL) {
       // The found frame does not have a valid frame pointer.

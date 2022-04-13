@@ -30,7 +30,7 @@
     _anchor.clear();
   }
 
-  frame pd_last_frame(bool allowUnsafe = false);
+  frame pd_last_frame(bool forSignalHandler = false);
 
  public:
   static ByteSize last_Java_fp_offset()          {
@@ -42,7 +42,7 @@
 
   bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
 private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool allowUnsafe);
+  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava, bool forSignalHandler);
 public:
 
 #endif // OS_CPU_LINUX_X86_THREAD_LINUX_X86_HPP
