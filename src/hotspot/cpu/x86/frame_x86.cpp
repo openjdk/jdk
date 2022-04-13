@@ -341,14 +341,14 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   // Since we are walking the stack now this nested anchor is obviously walkable
   // even if it wasn't when it was stacked.
+  address last_java_pc = jfa->last_Java_pc();
   if (!jfa->walkable()) {
-    // Capture _last_Java_pc (if needed) and mark anchor walkable.
-    jfa->capture_last_Java_pc();
+    // Capture _last_Java_pc (if needed)
+    last_java_pc = jfa->obtain_last_Java_pc();
   }
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-  vmassert(jfa->last_Java_pc() != NULL, "not walkable");
-  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), last_java_pc);
 
   return fr;
 }
@@ -377,14 +377,14 @@ frame frame::sender_for_optimized_entry_frame(RegisterMap* map) const {
   assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
   // Since we are walking the stack now this nested anchor is obviously walkable
   // even if it wasn't when it was stacked.
+  address last_java_pc = jfa->last_Java_pc();
   if (!jfa->walkable()) {
-    // Capture _last_Java_pc (if needed) and mark anchor walkable.
-    jfa->capture_last_Java_pc();
+    // Capture _last_Java_pc (if needed)
+    last_java_pc = jfa->obtain_last_Java_pc();
   }
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
-  vmassert(jfa->last_Java_pc() != NULL, "not walkable");
-  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), last_java_pc);
 
   return fr;
 }
@@ -734,6 +734,11 @@ void JavaFrameAnchor::make_walkable(JavaThread* thread) {
 
 void JavaFrameAnchor::capture_last_Java_pc() {
   vmassert(_last_Java_sp != NULL, "no last frame set");
-  vmassert(_last_Java_pc == NULL || _last_Java_pc == (address)_last_Java_sp[-1], "already walkable");
+  vmassert(_last_Java_pc == NULL, "already walkable");
   _last_Java_pc = (address)_last_Java_sp[-1];
+}
+
+address JavaFrameAnchor::obtain_last_Java_pc() const {
+  vmassert(_last_Java_sp != NULL, "no last frame set");
+  return (address)_last_Java_sp[-1];
 }
