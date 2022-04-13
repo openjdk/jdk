@@ -28,6 +28,9 @@
 
 #include "utilities/macros.hpp"
 
+// Safefetch allows to load a value from a location that's not known
+// to be valid. If the load causes a fault, the error value is returned.
+
 #ifdef _WIN32
   // Windows uses Structured Exception Handling
   #include "safefetch_windows.hpp"
