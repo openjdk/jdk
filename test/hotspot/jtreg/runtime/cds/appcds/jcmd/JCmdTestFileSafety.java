@@ -29,6 +29,7 @@
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @modules jdk.jcmd/sun.tools.common:+open
+ * @compile ../../../../../../lib/jdk/test/lib/apps/LingeredApp.java
  * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
  * @build sun.hotspot.WhiteBox
  * @build JCmdTestLingeredApp JCmdTestFileSafety
