@@ -41,6 +41,7 @@ public class bug6738668 {
                 UIManager.setLookAndFeel(lookAndFeelInfo.getClassName());
             } catch (UnsupportedLookAndFeelException ignored) {
                 System.out.println("Unsupported L&F: " + lookAndFeelInfo.getClassName());
+                continue;
             } catch (ClassNotFoundException | InstantiationException
                  | IllegalAccessException e) {
                 throw new RuntimeException(e);
