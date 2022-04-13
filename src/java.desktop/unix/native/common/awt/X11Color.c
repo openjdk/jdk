@@ -336,11 +336,14 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
     depth = awt_data->awt_depth;
     pVI = &awt_data->awt_visInfo;
     awt_data->awt_num_colors = awt_data->awt_visInfo.colormap_size;
-    awt_data->awtImage = (awtImageData *) calloc (1, sizeof (awtImageData));
     if (awt_data->awtImage == NULL) {
-        return 0;
+        awt_data->awtImage = (awtImageData *) calloc(1, sizeof(awtImageData));
+        if (awt_data->awtImage == NULL) {
+            return 0;
+        }
+    } else {
+        memset((void*)awt_data->awtImage, 0, sizeof(awtImageData));
     }
-
     pPFV = XListPixmapFormats(dpy, &numpfv);
     if (pPFV) {
         for (i = 0; i < numpfv; i++) {
