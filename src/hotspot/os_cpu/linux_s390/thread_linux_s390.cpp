@@ -133,7 +133,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava,
 
 // Forte Analyzer AsyncGetCallTrace profiling support.
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava) {
-  return pd_get_top_frame_for_profiling(fr_addr, ucontext, isInJava, false);
+  return pd_get_top_frame(fr_addr, ucontext, isInJava, false);
 }
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
