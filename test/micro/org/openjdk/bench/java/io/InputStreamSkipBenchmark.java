@@ -25,7 +25,12 @@ package org.openjdk.bench.java.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -50,38 +55,8 @@ import org.openjdk.jmh.annotations.Warmup;
 public class InputStreamSkipBenchmark {
 
     @Benchmark
-    public long testSkip0(Data data) throws IOException {
-        TestBaseInputStream0 testBaseInputStream = new TestBaseInputStream0(data.inputStreamSize);
-        long res;
-        do {
-            res = testBaseInputStream.skip(data.skipLength);
-        } while (res != 0);
-        return res;
-    }
-
-    @Benchmark
-    public long testSkip1(Data data) throws IOException {
-        TestBaseInputStream1 testBaseInputStream = new TestBaseInputStream1(data.inputStreamSize);
-        long res;
-        do {
-            res = testBaseInputStream.skip(data.skipLength);
-        } while (res != 0);
-        return res;
-    }
-
-    @Benchmark
-    public long testSkip2(Data data) throws IOException {
-        TestBaseInputStream2 testBaseInputStream = new TestBaseInputStream2(data.inputStreamSize);
-        long res;
-        do {
-            res = testBaseInputStream.skip(data.skipLength);
-        } while (res != 0);
-        return res;
-    }
-
-    @Benchmark
-    public long testSkip3(Data data) throws IOException {
-        TestBaseInputStream3 testBaseInputStream = new TestBaseInputStream3(data.inputStreamSize);
+    public long testSkip(Data data) throws IOException {
+        InputStream testBaseInputStream = data.inputStreamProvider.apply(data.inputStreamSize);
         long res;
         do {
             res = testBaseInputStream.skip(data.skipLength);
@@ -98,9 +73,33 @@ public class InputStreamSkipBenchmark {
         @Param({"1", "8", "32", "128", "512", "2048", "8192"})
         private int skipLength;
 
+        @Param({"LOCAL_VARIABLE", "FIELD", "FIELD_ONLY_MIN_MAX", "SOFT_REFERENCE"})
+        private String inputStreamType;
+
+        private Function<Integer, ? extends InputStream> inputStreamProvider;
+
         @Setup
         public void setup() {
-
+            switch (inputStreamType) {
+                case "LOCAL_VARIABLE": {
+                    this.inputStreamProvider = TestBaseInputStream0::new;
+                    break;
+                }
+                case "FIELD": {
+                    this.inputStreamProvider = TestBaseInputStream1::new;
+                    break;
+                }
+                case "FIELD_ONLY_MIN_MAX": {
+                    this.inputStreamProvider = TestBaseInputStream2::new;
+                    break;
+                }
+                case "SOFT_REFERENCE": {
+                    this.inputStreamProvider = TestBaseInputStream3::new;
+                    break;
+                }
+                default:
+                    // never
+            }
         }
     }
 
@@ -125,16 +124,15 @@ public class InputStreamSkipBenchmark {
 
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (length > len) {
-                length -= len;
-                return len;
-            } else if (length > 0) {
-                len = length;
-                length = 0;
-                return len;
-            } else {
+            if (length <= 0) {
                 return -1;
             }
+            if (length < len) {
+                len = length;
+            }
+            Arrays.fill(b, off, off + len, (byte) ThreadLocalRandom.current().nextInt());
+            length -= len;
+            return len;
         }
 
     }
