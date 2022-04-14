@@ -797,15 +797,16 @@ static markWord read_stable_mark(oop obj) {
 // word in order to prevent an stack-locks or inflations from interferring (or detect such
 // interference and retry), but then, instead of creating and installing a monitor, simply
 // read and return the real mark word.
-markWord ObjectSynchronizer::safe_load_mark(oop object) {
+markWord ObjectSynchronizer::stable_mark(oop object) {
   for (;;) {
-    const markWord mark = object->mark_acquire();
+    const markWord mark = read_stable_mark(object);
+    assert(!mark.is_being_inflated(), "read_stable_mark must prevent inflating mark");
 
     // The mark can be in one of the following states:
     // *  Inflated     - just return mark from inflated monitor
     // *  Stack-locked - coerce it to inflating, and then return displaced mark
-    // *  INFLATING    - busy wait for conversion to complete
     // *  Neutral      - return mark
+    // *  Marked       - return mark
 
     // CASE: inflated
     if (mark.has_monitor()) {
@@ -815,29 +816,23 @@ markWord ObjectSynchronizer::safe_load_mark(oop object) {
       return dmw;
     }
 
-    // CASE: inflation in progress - inflating over a stack-lock.
-    // Some other thread is converting from stack-locked to inflated.
-    // Only that thread can complete inflation -- other threads must wait.
-    // The INFLATING value is transient.
-    // Currently, we spin/yield/park and poll the markword, waiting for inflation to finish.
-    // We could always eliminate polling by parking the thread on some auxiliary list.
-    if (mark == markWord::INFLATING()) {
-      read_stable_mark(object);
-      continue;
-    }
-
     // CASE: stack-locked
     // Could be stack-locked either by this thread or by some other thread.
     if (mark.has_locker()) {
+      BasicLock* lock = mark.locker();
+      if (Thread::current()->is_lock_owned((address)lock)) {
+        // If locked by this thread, it is safe to access the displaced header.
+        markWord dmw = lock->displaced_header();
+        assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
+        return dmw;
+      }
+
+      // Otherwise, attempt to temporarily install INFLATING into the mark-word,
+      // to prevent inflation or unlocking by competing thread.
       markWord cmp = object->cas_set_mark(markWord::INFLATING(), mark);
       if (cmp != mark) {
         continue;       // Interference -- just retry
       }
-
-      // We've successfully installed INFLATING (0) into the mark-word.
-      // This is the only case where 0 will appear in a mark-word.
-      // Only the singular thread that successfully swings the mark-word
-      // to 0 can perform (or more precisely, complete) inflation.
 
       // fetch the displaced mark from the owner's stack.
       // The owner can't die or unwind past the lock while our INFLATING
@@ -850,41 +845,18 @@ markWord ObjectSynchronizer::safe_load_mark(oop object) {
 
       // Must preserve store ordering. The monitor state must
       // be stable at the time of publishing the monitor address.
-      guarantee(object->mark() == markWord::INFLATING(), "invariant");
+      assert(object->mark() == markWord::INFLATING(), "invariant");
       // Release semantics so that above set_object() is seen first.
       object->release_set_mark(mark);
 
       return dmw;
     }
 
-    // CASE: neutral
-    // Catch if the object's header is not neutral (not locked and
-    // not marked is what we care about here).
-    assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    // CASE: neutral or marked (for GC)
+    // Catch if the object's header is not neutral or marked (it must not be locked).
+    assert(mark.is_neutral() || mark.is_marked(), "invariant: header=" INTPTR_FORMAT, mark.value());
     return mark;
   }
-}
-
-markWord ObjectSynchronizer::stable_mark(const oop obj) {
-  markWord mark = read_stable_mark(obj);
-  if (!mark.is_neutral() && !mark.is_marked()) {
-    if (mark.has_monitor()) {
-      ObjectMonitor* monitor = mark.monitor();
-      mark = monitor->header();
-      assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
-    } else if (SafepointSynchronize::is_at_safepoint() || Thread::current()->is_lock_owned((address) mark.locker())) {
-      // This is a stack lock owned by the calling thread so fetch the
-      // displaced markWord from the BasicLock on the stack.
-      assert(mark.has_displaced_mark_helper(), "must be displaced header here");
-      mark = mark.displaced_mark_helper();
-      assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
-    } else {
-      mark = safe_load_mark(obj);
-      assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
-      assert(!mark.is_marked(), "no forwarded objects here");
-    }
-  }
-  return mark;
 }
 
 // hashCode() generation :

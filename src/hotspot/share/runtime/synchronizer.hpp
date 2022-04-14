@@ -179,14 +179,12 @@ class ObjectSynchronizer : AllStatic {
   static void inflate_helper(oop obj);
   static const char* inflate_cause_name(const InflateCause cause);
 
-  static markWord safe_load_mark(oop obj);
-
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
   static intptr_t identity_hash_value_for(Handle obj);
   static intptr_t FastHashCode(Thread* current, oop obj);
 
-  static markWord stable_mark(const oop obj);
+  static markWord stable_mark(oop obj);
 
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* current, Handle h_obj);
