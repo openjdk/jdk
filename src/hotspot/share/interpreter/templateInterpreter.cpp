@@ -47,10 +47,10 @@ void TemplateInterpreter::initialize_stub() {
   // allocate interpreter
   int code_size = InterpreterCodeSize;
   NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-  // 270+ interpreter codelets are generated and each of them is required to be aligned to
-  // CodeEntryAlignment twice. So we need additional size due to alignment.
+  // 270+ interpreter codelets are generated and each of them is aligned to HeapWordSize,
+  // plus their code section is aligned to CodeEntryAlignement. So we need additional size due to alignment.
   int max_aligned_codelets = 280;
-  int max_aligned_bytes = max_aligned_codelets * CodeEntryAlignment * 2;
+  int max_aligned_bytes = max_aligned_codelets * (HeapWordSize + CodeEntryAlignment);
   _code = new StubQueue(new InterpreterCodeletInterface, code_size + max_aligned_bytes, NULL,
                         "Interpreter");
 }
