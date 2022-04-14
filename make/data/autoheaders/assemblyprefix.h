@@ -22,6 +22,8 @@
 #
 
 // ASSEMBLY_SRC_FILE gets replaced by relative or absolute file path
-// in NativeCompilation.gmk, this ensures reproducible .debuginfo
+// in NativeCompilation.gmk for gcc tooling on Linux. This ensures a
+// reproducible object file through a predictable value of the STT_FILE
+// symbol, and subsequently a reproducible .debuginfo.
 .file ASSEMBLY_SRC_FILE
 
