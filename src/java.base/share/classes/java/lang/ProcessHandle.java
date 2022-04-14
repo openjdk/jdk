@@ -241,7 +241,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
          *          <p>
          *          The executable pathname may contain only the
          *          name of the executable without the full path information.
-         *          It is undecideable whether white space separates different
+         *          It is undecidable whether white space separates different
          *          arguments or is part of a single argument.
          *
          * @return an {@code Optional<String>} of the command line

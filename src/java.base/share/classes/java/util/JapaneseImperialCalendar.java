@@ -1219,7 +1219,7 @@ class JapaneseImperialCalendar extends Calendar {
                 } else {
                     value = getMinimum(field);
                     CalendarDate d = jcal.getCalendarDate(Long.MIN_VALUE, getZone());
-                    // Use an equvalent year of d.getYear() if
+                    // Use an equivalent year of d.getYear() if
                     // possible. Otherwise, ignore the leap year and
                     // common year difference.
                     int y = d.getYear();

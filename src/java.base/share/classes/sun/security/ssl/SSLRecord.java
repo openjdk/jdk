@@ -70,7 +70,7 @@ interface SSLRecord extends Record {
     /*
      * The maximum large record size.
      *
-     * Some SSL/TLS implementations support large fragment upto 2^15 bytes,
+     * Some SSL/TLS implementations support large fragment up to 2^15 bytes,
      * such as Microsoft. We support large incoming fragments.
      *
      * The maximum large record size is defined as maxRecordSize plus 2^14,

@@ -108,7 +108,7 @@ Java_sun_nio_fs_BsdNativeDispatcher_getfsstat(JNIEnv* env, jclass this)
     }
 
     // It's possible that a new filesystem gets mounted between
-    // the first getfsstat and the second so loop until consistant
+    // the first getfsstat and the second so loop until consistent
 
     while (nentries != iter->nentries) {
         if (iter->buf != NULL)

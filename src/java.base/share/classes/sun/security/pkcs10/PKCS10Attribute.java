@@ -34,7 +34,7 @@ import sun.security.util.*;
 /**
  * Represent a PKCS#10 Attribute.
  *
- * <p>Attributes are additonal information which can be inserted in a PKCS#10
+ * <p>Attributes are additional information which can be inserted in a PKCS#10
  * certificate request. For example a "Driving License Certificate" could have
  * the driving license number as an attribute.
  *

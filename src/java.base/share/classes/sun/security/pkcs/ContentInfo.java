@@ -59,7 +59,7 @@ public class ContentInfo {
     public static ObjectIdentifier OLD_DATA_OID =
             ObjectIdentifier.of(KnownOIDs.JDK_OLD_Data);
 
-    // The ASN.1 systax for the Netscape Certificate Sequence data type is
+    // The ASN.1 syntax for the Netscape Certificate Sequence data type is
     // defined at:
     //      http://wp.netscape.com/eng/security/comm4-cert-download.html
     public static ObjectIdentifier NETSCAPE_CERT_SEQUENCE_OID =

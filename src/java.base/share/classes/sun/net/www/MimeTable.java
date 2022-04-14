@@ -164,7 +164,7 @@ public class MimeTable implements FileNameMap {
         }
 
         i = fname.lastIndexOf('.');
-        // REMIND: OS specific delimters appear here
+        // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
         i = Math.max(i, fname.lastIndexOf('?'));
 

@@ -187,7 +187,7 @@ final class RBCollationTables {
      * with the specified comparison order.
      *
      * @param order a collation order returned by previous or next.
-     * @return the maximum length of any expansion seuences ending
+     * @return the maximum length of any expansion sequences ending
      *         with the specified order.
      *
      * @see CollationElementIterator#getMaxExpansion

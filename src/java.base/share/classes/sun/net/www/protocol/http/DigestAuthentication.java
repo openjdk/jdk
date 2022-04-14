@@ -467,7 +467,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String algorithm = p.findValue("algorithm");
         String digestName = algorithm;
         if (algorithm == null || algorithm.isEmpty()) {
-            algorithm = "MD5";  // The default, accoriding to rfc2069
+            algorithm = "MD5";  // The default, according to rfc2069
             digestName = "MD5";
         } else {
             algorithm = algorithm.toUpperCase(Locale.ROOT);

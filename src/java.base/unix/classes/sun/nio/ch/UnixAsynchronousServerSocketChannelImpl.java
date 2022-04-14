@@ -173,7 +173,7 @@ class UnixAsynchronousServerSocketChannelImpl
             }
         }
 
-        // copy field befores accept is re-renabled
+        // copy field before accept is re-renabled
         CompletionHandler<AsynchronousSocketChannel,Object> handler = acceptHandler;
         Object att = acceptAttachment;
         PendingFuture<AsynchronousSocketChannel,Object> future = acceptFuture;

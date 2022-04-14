@@ -71,7 +71,7 @@ public final class NTLMException extends GeneralSecurityException {
      * Constructs an NTLMException object.
      * @param errorCode the error code, which can be retrieved by
      * the {@link #errorCode() } method.
-     * @param msg the string message, which can be retrived by
+     * @param msg the string message, which can be retrieved by
      * the {@link Exception#getMessage() } method.
      */
     public NTLMException(int errorCode, String msg) {

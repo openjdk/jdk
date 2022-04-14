@@ -105,7 +105,7 @@ public final class ObjectIdentifier implements Serializable {
      *    Otherwise, old object cannot recognize the form (component not int[])
      *    and throw a ClassNotFoundException at deserialization time.
      *
-     * Therfore, for the first 3 cases, exact compatibility is preserved. In
+     * Therefore, for the first 3 cases, exact compatibility is preserved. In
      * the 4th case, non-huge OID is still supportable in old versions, while
      * huge OID is not.
      */

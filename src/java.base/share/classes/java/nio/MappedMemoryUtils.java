@@ -138,7 +138,7 @@ import java.io.UncheckedIOException;
         return mappingAddress(address, mappingOffset, 0);
     }
 
-    // Given an offset previously otained from calling
+    // Given an offset previously obtained from calling
     // mappingOffset(index) returns the largest page aligned address
     // of the mapping less than or equal to the address of the buffer
     // element identified by index.
@@ -147,7 +147,7 @@ import java.io.UncheckedIOException;
         return indexAddress - mappingOffset;
     }
 
-    // given a mappingOffset previously otained from calling
+    // given a mappingOffset previously obtained from calling
     // mappingOffset(index) return that offset added to the supplied
     // length.
     private static long mappingLength(long mappingOffset, long length) {

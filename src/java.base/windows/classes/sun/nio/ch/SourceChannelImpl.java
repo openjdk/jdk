@@ -43,7 +43,7 @@ class SourceChannelImpl
     extends Pipe.SourceChannel
     implements SelChImpl
 {
-    // The SocketChannel assoicated with this pipe
+    // The SocketChannel associated with this pipe
     private final SocketChannel sc;
 
     public FileDescriptor getFD() {

@@ -210,7 +210,7 @@ typedef struct jzfile {   /* Zip file */
     jlong len;            /* length (in bytes) of zip file */
 #ifdef USE_MMAP
     unsigned char *maddr; /* beginning address of the CEN & ENDHDR */
-    jlong mlen;           /* length (in bytes) mmaped */
+    jlong mlen;           /* length (in bytes) mmapped */
     jlong offset;         /* offset of the mmapped region from the
                              start of the file. */
     jboolean usemmap;     /* if mmap is used. */

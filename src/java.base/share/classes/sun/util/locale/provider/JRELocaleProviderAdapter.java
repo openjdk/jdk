@@ -511,7 +511,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     private static Locale[] createAvailableLocales() {
         /*
          * Gets the locale string list from LocaleDataMetaInfo classes and then
-         * contructs the Locale array and a set of language tags based on the
+         * constructs the Locale array and a set of language tags based on the
          * locale string returned above.
          */
         String supportedLocaleString = createSupportedLocaleString("AvailableLocales");

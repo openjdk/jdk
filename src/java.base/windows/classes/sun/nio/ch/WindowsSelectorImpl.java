@@ -73,7 +73,7 @@ class WindowsSelectorImpl extends SelectorImpl {
     // array,  where the corresponding entry is occupied by the wakeupSocket
     private SelectionKeyImpl[] channelArray = new SelectionKeyImpl[INIT_CAP];
 
-    // The global native poll array holds file decriptors and event masks
+    // The global native poll array holds file descriptors and event masks
     private PollArrayWrapper pollWrapper;
 
     // The number of valid entries in  poll array, including entries occupied

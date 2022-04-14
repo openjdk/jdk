@@ -410,7 +410,7 @@ public class FtpURLConnection extends URLConnection {
     }
 
     /**
-     * Get the InputStream to retreive the remote file. It will issue the
+     * Get the InputStream to retrieve the remote file. It will issue the
      * "get" (or "dir") command to the ftp server.
      *
      * @return  the {@code InputStream} to the connection.
@@ -553,7 +553,7 @@ public class FtpURLConnection extends URLConnection {
 
         if (http != null) {
             OutputStream out = http.getOutputStream();
-            // getInputStream() is neccessary to force a writeRequests()
+            // getInputStream() is necessary to force a writeRequests()
             // on the http client.
             http.getInputStream();
             return out;

@@ -591,7 +591,7 @@ public abstract class AbstractDrbg {
      * Returns the current configuration as a {@link DrbgParameters.Instantiation}
      * object.
      *
-     * @return the curent configuration
+     * @return the current configuration
      */
     protected SecureRandomParameters engineGetParameters() {
         // Or read from variable.

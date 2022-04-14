@@ -629,7 +629,7 @@ public final class ModuleLayer {
      * </p>
      *
      * @apiNote It is implementation specific as to whether creating a layer
-     * with this method is an atomic operation or not. Consequentially it is
+     * with this method is an atomic operation or not. Consequently it is
      * possible for this method to fail with some modules, but not all, defined
      * to the Java virtual machine.
      *

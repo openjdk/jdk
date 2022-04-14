@@ -63,7 +63,7 @@ import jdk.internal.org.objectweb.asm.Type;
 
 /**
  * A {@link Value} that is represented with its type in a seven types type system. This type system
- * distinguishes the UNINITIALZED, INT, FLOAT, LONG, DOUBLE, REFERENCE and RETURNADDRESS types.
+ * distinguishes the UNINITIALIZED, INT, FLOAT, LONG, DOUBLE, REFERENCE and RETURNADDRESS types.
  *
  * @author Eric Bruneton
  */

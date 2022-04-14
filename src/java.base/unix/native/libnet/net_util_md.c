@@ -132,7 +132,7 @@ jint  IPv6_supported()
     fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {
         /*
-         *  TODO: We really cant tell since it may be an unrelated error
+         *  TODO: We really can't tell since it may be an unrelated error
          *  for now we will assume that AF_INET6 is not available
          */
         return JNI_FALSE;

@@ -38,7 +38,7 @@ public class Input {
 
     /** The entity public identifier or null. */
     public String pubid;
-    /** The entity systen identifier or null. */
+    /** The entity system identifier or null. */
     public String sysid;
     /** The encoding from XML declaration or null */
     public String xmlenc;

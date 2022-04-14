@@ -161,7 +161,7 @@ class BreakDictionary {
                                                dictionaryName, "");
         }
 
-        // read in the column map for BMP characteres (this is serialized in
+        // read in the column map for BMP characters (this is serialized in
         // its internal form: an index array followed by a data array)
         len = bb.getInt();
         short[] temp = new short[len];

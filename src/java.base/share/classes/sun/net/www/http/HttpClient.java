@@ -523,7 +523,7 @@ public class HttpClient extends NetworkClient {
 
     /* We're very particular here about what our InputStream to the server
      * looks like for reasons that are apparent if you can decipher the
-     * method parseHTTP().  That's why this method is overidden from the
+     * method parseHTTP().  That's why this method is overridden from the
      * superclass.
      */
     @Override

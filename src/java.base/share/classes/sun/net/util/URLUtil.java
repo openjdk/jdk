@@ -63,7 +63,7 @@ public class URLUtil {
 
             int port = url.getPort();
             if (port == -1) {
-                /* if no port is specificed then use the protocols
+                /* if no port is specified then use the protocols
                  * default, if there is one */
                 port = url.getDefaultPort();
             }

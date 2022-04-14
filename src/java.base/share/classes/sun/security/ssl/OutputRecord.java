@@ -603,7 +603,7 @@ abstract class OutputRecord
          * Build the first part of the V3 record header from the V2 one
          * that's now buffered up.  (Lengths are fixed up later).
          */
-        int msgLen = dstBuf.position() - 2;   // Exclude the legth field itself
+        int msgLen = dstBuf.position() - 2;   // Exclude the length field itself
         dstBuf.position(0);
         dstBuf.put((byte)(0x80 | ((msgLen >>> 8) & 0xFF)));  // pos: 0
         dstBuf.put((byte)(msgLen & 0xFF));                   // pos: 1

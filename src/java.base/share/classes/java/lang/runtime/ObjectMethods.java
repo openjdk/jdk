@@ -331,7 +331,7 @@ public class ObjectMethods {
      * Chops the getters into smaller chunks according to the maximum number of slots
      * StringConcatFactory::makeConcatWithConstants can chew
      * @param getters the current getters
-     * @return chunks that wont surpass the maximum number of slots StringConcatFactory::makeConcatWithConstants can chew
+     * @return chunks that won't surpass the maximum number of slots StringConcatFactory::makeConcatWithConstants can chew
      */
     private static List<List<MethodHandle>> split(MethodHandle[] getters) {
         List<List<MethodHandle>> splits = new ArrayList<>();

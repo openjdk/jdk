@@ -1999,7 +1999,7 @@ public final class NormalizerImpl {
                     back=preBack;
                 }
 
-                // this is where we are right now with all these indicies:
+                // this is where we are right now with all these indices:
                 // [start]..[pPreBack] 0..? code points that we can ignore
                 // [pPreBack]..[pBack] 0..1 code points with prevCC<=cc
                 // [pBack]..[current] 0..n code points with >cc, move up to insert (c, c2)

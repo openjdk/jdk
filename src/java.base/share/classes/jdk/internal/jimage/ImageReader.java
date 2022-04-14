@@ -389,7 +389,7 @@ public final class ImageReader implements AutoCloseable {
         Node handlePackages(String name, ImageLocation loc) {
             long size = loc.getUncompressedSize();
             Node n = null;
-            // Only possiblities are /packages, /packages/package/module
+            // Only possibilities are /packages, /packages/package/module
             if (name.equals("/packages")) {
                 visitLocation(loc, (childloc) -> {
                     findNode(childloc.getFullName());

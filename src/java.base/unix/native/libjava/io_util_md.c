@@ -146,7 +146,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
     /* Set the fd to -1 before closing it so that the timing window
      * of other threads using the wrong fd (closed but recycled fd,
      * that gets re-opened with some other filename) is reduced.
-     * Practically the chance of its occurance is low, however, we are
+     * Practically the chance of its occurrence is low, however, we are
      * taking extra precaution over here.
      */
     (*env)->SetIntField(env, this, IO_fd_fdID, -1);

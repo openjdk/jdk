@@ -497,7 +497,7 @@ tzerr:
 /*
  * findJavaTZ_md() maps platform time zone ID to Java time zone ID
  * using <java_home>/lib/tzmappings. If the TZ value is not found, it
- * trys some libc implementation dependent mappings. If it still
+ * tries some libc implementation dependent mappings. If it still
  * can't map to a Java time zone ID, it falls back to the GMT+/-hh:mm
  * form.
  */

@@ -52,7 +52,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final HttpCallerInfo hci;
 
-    // These maps are used to manage the GSS availability for diffrent
+    // These maps are used to manage the GSS availability for different
     // hosts. The key for both maps is the host name.
     // <code>supported</code> is set when isSupported is checked,
     // if it's true, a cached Negotiator is put into <code>cache</code>.

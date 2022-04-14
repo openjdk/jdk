@@ -283,7 +283,7 @@ class ZipUtils {
     static final int READBLOCKSZ = 128;
 
     /**
-     * Loads zip native library, if not already laoded
+     * Loads zip native library, if not already loaded
      */
     static void loadLibrary() {
         jdk.internal.loader.BootLoader.loadLibrary("zip");

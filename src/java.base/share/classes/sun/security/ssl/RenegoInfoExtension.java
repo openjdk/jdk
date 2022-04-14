@@ -311,7 +311,7 @@ final class RenegoInfoExtension {
                     }
                 } else {
                     // Unsafe renegotiation should have been aborted in
-                    // ealier processes.
+                    // earlier processes.
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Terminate insecure renegotiation");
                     }
@@ -532,7 +532,7 @@ final class RenegoInfoExtension {
                     }
                 } else {
                     // Unsafe renegotiation should have been aborted in
-                    // ealier processes.
+                    // earlier processes.
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine("Terminate insecure renegotiation");
                     }

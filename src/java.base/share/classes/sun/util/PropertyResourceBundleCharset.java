@@ -97,7 +97,7 @@ public class PropertyResourceBundleCharset extends Charset {
             }
 
             // Invalid or unmappable UTF-8 sequence detected.
-            // Switching to the ISO 8859-1 decorder.
+            // Switching to the ISO 8859-1 decoder.
             assert cr.isMalformed() || cr.isUnmappable();
             in.reset();
             out.reset();

@@ -431,7 +431,7 @@ final class JrtPath implements Path {
         return r;
     }
 
-    // removes redundant slashs, replace "\" to separator "/"
+    // removes redundant slashes, replace "\" to separator "/"
     // and check for invalid characters
     private static String normalize(String path) {
         int len = path.length();

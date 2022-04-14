@@ -245,7 +245,7 @@ class ExplodedImage extends SystemImage {
 
     // initialize file system Nodes
     private void initNodes() throws IOException {
-        // same package prefix may exist in mutliple modules. This Map
+        // same package prefix may exist in multiple modules. This Map
         // is filled by walking "jdk modules" directory recursively!
         Map<String, List<String>> packageToModules = new HashMap<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(explodedModulesDir)) {

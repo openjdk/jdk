@@ -162,7 +162,7 @@ interface SSLTransport {
                     context.handshakeContext.sslConfig.enableRetransmissions &&
                     context.sslContext.isDTLS()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
-                        SSLLogger.finest("retransmited handshake flight");
+                        SSLLogger.finest("retransmitted handshake flight");
                     }
 
                     context.outputRecord.launchRetransmission();

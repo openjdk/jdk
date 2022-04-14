@@ -91,7 +91,7 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
                                 && skip(Math.min(nskip, available())) > 0L);
                     } else if (expected <= KeepAliveStreamCleaner.MAX_DATA_REMAINING && !hurried) {
                         //put this KeepAliveStream on the queue so that the data remaining
-                        //on the socket can be cleanup asyncronously.
+                        //on the socket can be cleanup asynchronously.
                         queueForCleanup(new KeepAliveCleanerEntry(this, hc));
                     } else {
                         hc.closeServer();

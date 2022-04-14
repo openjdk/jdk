@@ -129,7 +129,7 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
      * such as Kerberos.
      *
      * @return the server's principal. Returns an X500Principal of the
-     * end-entity certiticate for X509-based cipher suites, and
+     * end-entity certificate for X509-based cipher suites, and
      * KerberosPrincipal for Kerberos cipher suites.
      *
      * @throws SSLPeerUnverifiedException if the peer was not verified

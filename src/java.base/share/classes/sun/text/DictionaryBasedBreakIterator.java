@@ -294,7 +294,7 @@ public class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
                 divideUpDictionaryRange(startPos, result);
             }
 
-            // otherwise, the value we got back from the inherited fuction
+            // otherwise, the value we got back from the inherited function
             // is our return value, and we can dump the cache
             else {
                 cachedBreakPositions = null;

@@ -461,7 +461,7 @@ final class DigitList implements Cloneable {
              * rounding done, is needed in this class.
              *
              * - For the  HALF_DOWN, HALF_EVEN, HALF_UP rounding rules below:
-             *   In the case of formating float or double, We must take into
+             *   In the case of formatting float or double, We must take into
              *   account what FloatingDecimal has done in the binary to decimal
              *   conversion.
              *
@@ -469,7 +469,7 @@ final class DigitList implements Cloneable {
              *   value (returning decimal digits equal to tie when it is below),
              *   or "truncate" the value to the tie while value is above it,
              *   or provide the exact decimal digits when the binary value can be
-             *   converted exactly to its decimal representation given formating
+             *   converted exactly to its decimal representation given formatting
              *   rules of FloatingDecimal ( we have thus an exact decimal
              *   representation of the binary value).
              *

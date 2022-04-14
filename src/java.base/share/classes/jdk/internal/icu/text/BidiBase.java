@@ -772,7 +772,7 @@ public class BidiBase {
     private static final short REORDER_DEFAULT = 0;
 
     /** Reordering mode: Logical to Visual algorithm which handles numbers in
-     * a way which mimicks the behavior of Windows XP.
+     * a way which mimics the behavior of Windows XP.
      * @see #setReorderingMode
      * @stable ICU 3.8
      */

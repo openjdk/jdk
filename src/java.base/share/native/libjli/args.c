@@ -364,7 +364,7 @@ static JLI_List expandArgFile(const char *arg) {
     struct stat st;
     FILE *fptr = fopen(arg, "r");
 
-    /* arg file cannot be openned */
+    /* arg file cannot be opened */
     if (fptr == NULL || fstat(fileno(fptr), &st) != 0) {
         JLI_ReportMessage(CFG_ERROR6, arg);
         exit(1);

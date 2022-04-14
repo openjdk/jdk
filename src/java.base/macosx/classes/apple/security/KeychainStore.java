@@ -487,7 +487,7 @@ public final class KeychainStore extends KeyStoreSpi {
                 if (value instanceof TrustedCertEntry) {
                     TrustedCertEntry tce = (TrustedCertEntry)value;
                     if (tce.cert.equals(cert)) {
-                        throw new KeyStoreException("Keychain does not support mulitple copies of same certificate.");
+                        throw new KeyStoreException("Keychain does not support multiple copies of same certificate.");
                     }
                 }
             }

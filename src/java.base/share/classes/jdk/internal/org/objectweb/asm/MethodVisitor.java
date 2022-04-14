@@ -150,7 +150,7 @@ public abstract class MethodVisitor {
       * @return a visitor to the visit the actual default value of this annotation interface method, or
       *     {@literal null} if this visitor is not interested in visiting this default value. The
       *     'name' parameters passed to the methods of this annotation visitor are ignored. Moreover,
-      *     exacly one visit method must be called on this annotation visitor, followed by visitEnd.
+      *     exactly one visit method must be called on this annotation visitor, followed by visitEnd.
       */
     public AnnotationVisitor visitAnnotationDefault() {
         if (mv != null) {

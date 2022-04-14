@@ -208,7 +208,7 @@ final class HelloRequest {
             } else {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine(
-                            "Ingore HelloRequest, handshaking is in progress");
+                            "Ignore HelloRequest, handshaking is in progress");
                 }
             }
         }

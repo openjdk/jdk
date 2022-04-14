@@ -242,7 +242,7 @@ public final class LauncherHelper {
                         ostream.print("\\n ");
                         break;
                     default:
-                        // print any bizzare line separators in hex, but really
+                        // print any bizarre line separators in hex, but really
                         // shouldn't happen.
                         ostream.printf("0x%02X", b & 0xff);
                         break;
@@ -505,7 +505,7 @@ public final class LauncherHelper {
     }
 
     /**
-     * Appends the vm synoym message to the header, already created.
+     * Appends the vm synonym message to the header, already created.
      * initHelpSystem must be called before using this method.
      */
     static void appendVmSynonymMessage(String vm1, String vm2) {

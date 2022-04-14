@@ -179,7 +179,7 @@ public class ChunkedInputStream extends InputStream implements Hurryable {
     /**
      * Ensures there is <code>size</code> bytes available in
      * <code>rawData</code>. This requires that we either
-     * shift the bytes in use to the begining of the buffer
+     * shift the bytes in use to the beginning of the buffer
      * or allocate a large buffer with sufficient space available.
      */
     private void ensureRawAvailable(int size) {

@@ -676,7 +676,7 @@ public final class NormalizerBase implements Cloneable {
      *  <li>{@link #NFC}    - Unicode canonical decompositiion
      *                        followed by canonical composition.
      *  <li>{@link #NFKC}   - Unicode compatibility decompositiion
-     *                        follwed by canonical composition.
+     *                        followed by canonical composition.
      *  <li>{@link #NFD}    - Unicode canonical decomposition
      *  <li>{@link #NFKD}   - Unicode compatibility decomposition.
      *  <li>{@link #NONE}   - Do nothing but return characters

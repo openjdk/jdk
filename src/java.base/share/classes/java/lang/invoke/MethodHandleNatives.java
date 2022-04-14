@@ -238,7 +238,7 @@ class MethodHandleNatives {
                 throw new InternalError(err);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
                 String err = (name+": JVM has "+vmval+" which Java does not define");
-                // ignore exotic ops the JVM cares about; we just wont issue them
+                // ignore exotic ops the JVM cares about; we just won't issue them
                 //System.err.println("warning: "+err);
                 continue;
             }

@@ -237,7 +237,7 @@
  * This is made manageable through the use of consistent method prefixes.
  * <ul>
  * <li>{@code of} - static factory method</li>
- * <li>{@code parse} - static factory method focussed on parsing</li>
+ * <li>{@code parse} - static factory method focused on parsing</li>
  * <li>{@code get} - gets the value of something</li>
  * <li>{@code is} - checks if something is true</li>
  * <li>{@code with} - the immutable equivalent of a setter</li>

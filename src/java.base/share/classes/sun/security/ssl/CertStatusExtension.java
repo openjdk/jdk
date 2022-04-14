@@ -810,7 +810,7 @@ final class CertStatusExtension {
                                 new SSLProtocolException(
                             "Invalid status_request_v2 extension: " +
                             "insufficient data (request_length=" + requestLen +
-                            ", remining=" + message.remaining() + ")"));
+                            ", remaining=" + message.remaining() + ")"));
                 }
 
                 byte[] encoded = new byte[requestLen];

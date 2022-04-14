@@ -2983,7 +2983,7 @@ public class TreeMap<K,V>
      * potential speed-ups of using custom Spliterators versus default
      * mechanics.
      *
-     * To boostrap initialization, external constructors use
+     * To bootstrap initialization, external constructors use
      * negative size estimates: -1 for ascend, -2 for descend.
      */
     static class TreeMapSpliterator<K,V> {

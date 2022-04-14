@@ -65,7 +65,7 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger q;       // prime q
     private BigInteger pe;      // prime exponent p
     private BigInteger qe;      // prime exponent q
-    private BigInteger coeff;   // CRT coeffcient
+    private BigInteger coeff;   // CRT coefficient
 
     private transient KeyType type;
 

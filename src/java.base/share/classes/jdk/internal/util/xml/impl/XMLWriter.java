@@ -137,7 +137,7 @@ public class XMLWriter {
      * @param output The output stream
      * @param encoding The encoding
      * @return A suitable writer
-     * @throws UnsupportedEncodingException There is no convertor to support
+     * @throws UnsupportedEncodingException There is no converter to support
      * this encoding
      */
     private Writer getWriter(OutputStream output, String encoding, Charset cs)

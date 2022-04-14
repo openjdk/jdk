@@ -106,7 +106,7 @@ public class GetInstance {
     /**
      * Return a List of all the available Services that implement
      * (type, algorithm). Note that the list is initialized lazily
-     * and Provider loading and lookup is only trigered when
+     * and Provider loading and lookup is only triggered when
      * necessary.
      */
     public static List<Service> getServices(String type, String algorithm) {

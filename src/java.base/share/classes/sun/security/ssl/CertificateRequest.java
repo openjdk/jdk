@@ -433,7 +433,7 @@ final class CertificateRequest {
             if (signatureSchemes == null || signatureSchemes.isEmpty()) {
                 throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "No signature algorithms specified for " +
-                        "CertificateRequest hanshake message");
+                        "CertificateRequest handshake message");
             }
             this.algorithmIds = new int[signatureSchemes.size()];
             int i = 0;

@@ -930,7 +930,7 @@ class WindowsAsynchronousSocketChannelImpl
 
     private static native void updateConnectContext(long socket) throws IOException;
 
-    private static native int read0(long socket, int count, long addres, long overlapped)
+    private static native int read0(long socket, int count, long address, long overlapped)
         throws IOException;
 
     private static native int write0(long socket, int count, long address,

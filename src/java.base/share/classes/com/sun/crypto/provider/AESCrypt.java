@@ -162,7 +162,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
     private static final byte[] rcon = new byte[30];
 
 
-    // Static code - to intialise S-boxes and T-boxes
+    // Static code - to initialise S-boxes and T-boxes
     static
     {
         int ROOT = 0x11B;

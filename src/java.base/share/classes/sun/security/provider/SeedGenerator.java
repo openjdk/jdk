@@ -46,7 +46,7 @@ package sun.security.provider;
  * <p>
  * These values are gathered in the background by a daemon thread
  * thus allowing the system to continue performing it's different
- * activites, which in turn add entropy to the random seed.
+ * activities, which in turn add entropy to the random seed.
  * <p>
  * The class also gathers miscellaneous system information, some
  * machine dependent, some not. This information is then hashed together

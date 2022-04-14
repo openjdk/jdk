@@ -156,7 +156,7 @@ implements Serializable {
     }
 
     /**
-     * Checks if this object's PermissionCollection for permissons
+     * Checks if this object's PermissionCollection for permissions
      * of the specified permission's algorithm implies the specified
      * permission. Returns true if the checking succeeded.
      *

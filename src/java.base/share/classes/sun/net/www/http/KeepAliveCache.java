@@ -233,7 +233,7 @@ public class KeepAliveCache
         }
     }
 
-    /* Sleeps for an alloted timeout, then checks for timed out connections.
+    /* Sleeps for an allotted timeout, then checks for timed out connections.
      * Errs on the side of caution (leave connections idle for a relatively
      * short time).
      */

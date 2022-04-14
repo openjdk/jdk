@@ -723,7 +723,7 @@ public final class URL implements java.io.Serializable {
         String protocol = uri.getScheme();
 
         // In general we need to go via Handler.parseURL, but for the jrt
-        // protocol we enforce that the Handler is not overrideable and can
+        // protocol we enforce that the Handler is not overridable and can
         // optimize URI to URL conversion.
         //
         // Case-sensitive comparison for performance; malformed protocols will

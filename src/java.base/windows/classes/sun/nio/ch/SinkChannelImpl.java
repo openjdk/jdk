@@ -45,7 +45,7 @@ class SinkChannelImpl
     extends Pipe.SinkChannel
     implements SelChImpl
 {
-    // The SocketChannel assoicated with this pipe
+    // The SocketChannel associated with this pipe
     private final SocketChannelImpl sc;
 
     public FileDescriptor getFD() {

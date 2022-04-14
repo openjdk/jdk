@@ -389,7 +389,7 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
      * in server_name extension or the peer host of the connection.  Peer host
      * is not always a reliable fully qualified domain name. The HostName in
      * server_name extension is more reliable than peer host. So we prefer
-     * the identity checking aginst the server_name extension if present, and
+     * the identity checking against the server_name extension if present, and
      * may failove to peer host checking.
      */
     static void checkIdentity(SSLSession session,

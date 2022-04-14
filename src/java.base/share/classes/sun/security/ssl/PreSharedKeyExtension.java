@@ -570,7 +570,7 @@ final class PreSharedKeyExtension {
                 computeBinder(shc, binderKey, session, pskBinderHash);
         if (!MessageDigest.isEqual(binder, computedBinder)) {
             throw shc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
-                    "Incorect PSK binder value");
+                    "Incorrect PSK binder value");
         }
     }
 

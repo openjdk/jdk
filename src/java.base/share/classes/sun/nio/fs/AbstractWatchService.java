@@ -64,7 +64,7 @@ abstract class AbstractWatchService implements WatchService {
      */
     abstract WatchKey register(Path path,
                                WatchEvent.Kind<?>[] events,
-                               WatchEvent.Modifier... modifers)
+                               WatchEvent.Modifier... modifiers)
         throws IOException;
 
     // used by AbstractWatchKey to enqueue key

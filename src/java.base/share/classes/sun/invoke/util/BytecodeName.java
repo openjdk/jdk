@@ -431,7 +431,7 @@ public class BytecodeName {
         return true;
     }
     private static String quoteDisplay(String s) {
-        // TO DO:  Replace wierd characters in s by C-style escapes.
+        // TO DO:  Replace weird characters in s by C-style escapes.
         return "'"+s.replaceAll("['\\\\]", "\\\\$0")+"'";
     }
 

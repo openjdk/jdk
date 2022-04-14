@@ -800,7 +800,7 @@ IsWindows10RS3OrGreater() {
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopbackConnect(int fd) {
     TCP_INITIAL_RTO_PARAMETERS rto = {
-        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overriden by the Administrator
+        TCP_INITIAL_RTO_UNSPECIFIED_RTT,    // Use the default or overridden by the Administrator
         1                                   // Minimum possible value before Windows 10 RS3
     };
 

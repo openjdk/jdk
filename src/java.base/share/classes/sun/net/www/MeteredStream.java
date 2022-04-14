@@ -35,7 +35,7 @@ public class MeteredStream extends FilterInputStream {
 
     // Instance variables.
     /* if expected != -1, after we've read >= expected, we're "closed" and return -1
-     * from subsequest read() 's
+     * from subsequent read() 's
      */
     protected boolean closed = false;
     protected long expected;

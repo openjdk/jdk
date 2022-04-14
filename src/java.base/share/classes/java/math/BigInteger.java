@@ -3923,7 +3923,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param val BigInteger whose magnitude array to be compared.
      * @return -1, 0 or 1 as this magnitude array is less than, equal to or
-     *         greater than the magnitude aray for the specified BigInteger's.
+     *         greater than the magnitude array for the specified BigInteger's.
      */
     final int compareMagnitude(BigInteger val) {
         int[] m1 = mag;

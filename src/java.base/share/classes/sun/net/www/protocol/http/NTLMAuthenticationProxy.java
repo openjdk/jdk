@@ -32,7 +32,7 @@ import sun.util.logging.PlatformLogger;
 
 /**
  * Proxy class for loading NTLMAuthentication, so as to remove static
- * dependancy.
+ * dependency.
  */
 class NTLMAuthenticationProxy {
     private static Method supportsTA;

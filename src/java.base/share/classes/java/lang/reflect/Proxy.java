@@ -898,7 +898,7 @@ public class Proxy implements java.io.Serializable {
         private static final AtomicInteger counter = new AtomicInteger();
 
         /*
-         * Define a dynamic module with a packge named $MODULE which
+         * Define a dynamic module with a package named $MODULE which
          * is unconditionally exported and another package named
          * com.sun.proxy.$MODULE which is encapsulated.
          *

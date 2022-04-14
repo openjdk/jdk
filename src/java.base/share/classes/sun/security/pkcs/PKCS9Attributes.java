@@ -58,7 +58,7 @@ public class PKCS9Attributes {
     private final byte[] derEncoding;
 
     /*
-     * Contols how attributes, which are not recognized by the PKCS9Attribute
+     * Controls how attributes, which are not recognized by the PKCS9Attribute
      * class, are handled during parsing.
      */
     private boolean ignoreUnsupportedAttributes = false;

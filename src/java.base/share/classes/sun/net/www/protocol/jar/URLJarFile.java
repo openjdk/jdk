@@ -239,7 +239,7 @@ public class URLJarFile extends JarFile {
     }
 
     /*
-     * Set the call back interface to call retrive function in sun.plugin
+     * Set the call back interface to call retrieve function in sun.plugin
      * package if plugin is running.
      */
     public static void setCallBack(URLJarFileCallBack cb)
