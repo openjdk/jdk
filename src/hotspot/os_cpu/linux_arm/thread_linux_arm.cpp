@@ -34,7 +34,7 @@ frame JavaThread::pd_last_frame(bool forSignalHandler) {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
   address pc = _anchor.last_Java_pc();
   if (pc == NULL) {
-    pc = frame::pc_from_sp(_anchor.last_Java_sp());
+    pc = (address)(_anchor.last_Java_sp()[-1]);
   }
   return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), pc, forSignalHandler);
 }
