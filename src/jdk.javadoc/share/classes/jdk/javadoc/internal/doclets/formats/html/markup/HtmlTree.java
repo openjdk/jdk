@@ -1008,8 +1008,9 @@ public class HtmlTree extends Content {
 
     /**
      * Returns {@code true} if the HTML tree does not affect the output and can be discarded.
-     * This implementation considers non-void elements without content as discardable, with the
-     * exception of {@code SCRIPT} and {@code A} which can sometimes be used without content.
+     * This implementation considers non-void elements without content or {@code id} attribute
+     * as discardable, with the exception of {@code SCRIPT} which can sometimes be used without
+     * content.
      *
      * @return true if the HTML tree can be discarded without affecting the output
      */
@@ -1017,8 +1018,8 @@ public class HtmlTree extends Content {
     public boolean isDiscardable() {
         return !isVoid()
             && !hasContent()
-            && tagName != TagName.SCRIPT
-            && tagName != TagName.A;
+            && !hasAttr(HtmlAttr.ID)
+            && tagName != TagName.SCRIPT;
     }
 
     /**
