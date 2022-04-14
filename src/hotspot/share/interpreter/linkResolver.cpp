@@ -1355,6 +1355,15 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
   // a missing receiver might result in a bogus lookup.
   assert(resolved_method->method_holder()->is_linked(), "must be linked");
 
+  // Receriver should be compatible with resolved klass, i.e. it must be a type of resolved klass
+  // or a subtype of resolved klass(receiver instanceof resolved_klass)
+  if (!recv.is_null() && !recv()->is_a(resolved_klass)) {
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    ss.print("Receiver should be type/subtype of %s", resolved_klass->external_name());
+    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+  }
+
   // do lookup based on receiver klass using the vtable index
   if (resolved_method->method_holder()->is_interface()) { // default or miranda method
     vtable_index = vtable_index_of_interface_method(resolved_klass, resolved_method);
