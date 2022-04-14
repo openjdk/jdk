@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -47,7 +47,6 @@
 
 package sun.security.pkcs11.wrapper;
 
-import java.lang.ref.Cleaner;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -57,6 +56,7 @@ import java.security.PrivilegedAction;
 
 import sun.security.util.Debug;
 
+import sun.security.pkcs11.P11Util;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
@@ -164,7 +164,7 @@ public class PKCS11 {
         }
 
         // Calls disconnect() to cleanup the native part of the wrapper.
-        Cleaner.create().register(this,
+        P11Util.cleaner.register(this,
             () -> PKCS11.disconnect(pNativeData));
     }
 
