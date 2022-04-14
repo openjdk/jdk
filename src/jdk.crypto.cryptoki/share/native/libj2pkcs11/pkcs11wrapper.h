@@ -416,7 +416,6 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex);
 #endif /* NO_CALLBACKS */
 
 void putModuleEntry(JNIEnv *env, jobject pkcs11Implementation, ModuleData *moduleData);
-ModuleData * removeModuleEntry(JNIEnv *env, jobject pkcs11Implementation);
 CK_FUNCTION_LIST_PTR getFunctionList(JNIEnv *env, jobject pkcs11Implementation);
 CK_FUNCTION_LIST_3_0_PTR getFunctionList30(JNIEnv *env, jobject
         pkcs11Implementation);

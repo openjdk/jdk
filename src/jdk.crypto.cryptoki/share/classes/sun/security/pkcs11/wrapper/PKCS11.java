@@ -164,7 +164,8 @@ public class PKCS11 {
         }
 
         // Calls disconnect() to cleanup the native part of the wrapper.
-        Cleaner.create().register(this, this::disconnect);
+        Cleaner.create().register(this,
+            () -> PKCS11.disconnect(pNativeData));
     }
 
     public CK_VERSION getVersion() {
@@ -220,14 +221,15 @@ public class PKCS11 {
      * Disconnects the PKCS#11 library from this object. After calling this
      * method, this object is no longer connected to a native PKCS#11 module
      * and any subsequent calls to C_ methods will fail. This method is for
-     * internal use only.
+     * internal use only.  Please don't use this method other than finalization.
+     *
      * Declared private, because incorrect handling may result in errors in the
      * native part.
      *
      * @preconditions
      * @postconditions
      */
-    private native void disconnect();
+    private static native void disconnect(long pNativeData);
 
 
     // Implementation of PKCS11 methods delegated to native pkcs11wrapper library

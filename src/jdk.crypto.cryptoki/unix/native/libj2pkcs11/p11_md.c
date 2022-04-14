@@ -264,18 +264,19 @@ cleanup:
  * Method:    disconnect
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_disconnect
-    (JNIEnv *env, jobject obj)
-{
-    ModuleData *moduleData;
-    TRACE0("DEBUG: disconnecting module...");
-    moduleData = removeModuleEntry(env, obj);
+JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_disconnect(
+        JNIEnv *env, jclass thisClass, jlong ckpNativeData) {
 
-    if (moduleData != NULL) {
-        dlclose(moduleData->hModule);
+    TRACE0("DEBUG: disconnecting module...");
+    if (ckpNativeData != 0L) {
+        ModuleData *moduleData = jlong_to_ptr(ckpNativeData);
+
+        if (moduleData != NULL) {
+            dlclose(moduleData->hModule);
+        }
+
+        free(moduleData);
     }
 
-    free(moduleData);
     TRACE0("FINISHED\n");
-
 }

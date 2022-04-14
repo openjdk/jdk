@@ -165,21 +165,6 @@ int isModulePresent(JNIEnv *env, jobject pkcs11Implementation) {
     return present ;
 }
 
-
-/*
- * Removes the entry for the given pkcs11Implementation from the list. Returns
- * the module's data, after the node was removed. If this function returns NULL
- * the pkcs11Implementation was not in the list.
- */
-ModuleData * removeModuleEntry(JNIEnv *env, jobject pkcs11Implementation) {
-    ModuleData *moduleData = getModuleEntry(env, pkcs11Implementation);
-    if (moduleData == NULL) {
-        return NULL;
-    }
-    (*env)->SetLongField(env, pkcs11Implementation, pNativeDataID, 0);
-    return moduleData;
-}
-
 /*
  * Removes all present entries from the list of modules and frees all
  * associated resources. This function is used for clean-up.
