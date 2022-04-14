@@ -90,7 +90,7 @@ void xmlStream::write_text(const char* s, size_t len) {
   size_t written = 0;
   // All normally printed material goes inside XML quotes.
   // This leaves the output free to include markup also.
-  // Scan the string looking for inadvertant "<&>" chars
+  // Scan the string looking for inadvertent "<&>" chars
   for (size_t i = 0; i < len; i++) {
     char ch = s[i];
     // Escape special chars.

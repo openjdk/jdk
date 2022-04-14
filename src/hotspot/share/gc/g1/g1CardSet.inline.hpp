@@ -75,7 +75,7 @@ inline void G1CardSet::iterate_cards_or_ranges_in_container(ContainerPtr const c
       return;
     }
   }
-  log_error(gc)("Unkown card set container type %u", container_type(container));
+  log_error(gc)("Unknown card set container type %u", container_type(container));
   ShouldNotReachHere();
 }
 

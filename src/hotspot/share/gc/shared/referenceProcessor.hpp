@@ -426,7 +426,7 @@ public:
   process_discovered_references(RefProcProxyTask& proxy_task,
                                 ReferenceProcessorPhaseTimes& phase_times);
 
-  // If a discovery is in process that is being superceded, abandon it: all
+  // If a discovery is in process that is being superseded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will
   // have NULL discovered fields.  Must be called only at a safepoint.
   void abandon_partial_discovery();

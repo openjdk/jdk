@@ -131,7 +131,7 @@ void JfrAdaptiveSampler::reconfigure() {
   rotate(active_window());
 }
 
-// Call next_window_param() to report the expired window and to retreive params for the next window.
+// Call next_window_param() to report the expired window and to retrieve params for the next window.
 void JfrAdaptiveSampler::rotate(const JfrSamplerWindow* expired) {
   assert(expired == active_window(), "invariant");
   install(configure(next_window_params(expired), expired));

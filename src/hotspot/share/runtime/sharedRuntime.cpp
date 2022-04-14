@@ -2918,7 +2918,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   }
   entry->relocate(new_adapter->content_begin());
 #ifndef PRODUCT
-  // debugging suppport
+  // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
     ttyLocker ttyl;
     entry->print_adapter_on(tty);

@@ -978,7 +978,7 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
     }
   }
 
-  // Interate over current block
+  // Iterate over current block
   InstructionList arrays;
   AccessIndexedList accessIndexed;
   Instruction *cur = block;

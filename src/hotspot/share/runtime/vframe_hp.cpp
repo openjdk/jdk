@@ -396,7 +396,7 @@ jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int
   _bci = bci;
   _id = id;
   _vframe_id = vframe_id;
-  // Alway will need at least one, must be on C heap
+  // Always will need at least one, must be on C heap
   _locals = new(ResourceObj::C_HEAP, mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
   _objects_are_deoptimized = false;
 }

@@ -117,7 +117,7 @@ both map to
   Java_package_my_1class_method
 
 To address this potential conflict we need only check if the character after
-/ is a digit 0..3, or if the first character after an injected '_' seperator
+/ is a digit 0..3, or if the first character after an injected '_' separator
 is a digit 0..3. If we encounter an invalid identifier we reset the
 stringStream and return false. Otherwise the stringStream contains the mapped
 name and we return true.
@@ -376,7 +376,7 @@ void* NativeLookup::dll_load(const methodHandle& method) {
 }
 
 // Check if there are any JVM TI prefixes which have been applied to the native method name.
-// If any are found, remove them before attemping the look up of the
+// If any are found, remove them before attempting the look up of the
 // native implementation again.
 // See SetNativeMethodPrefix in the JVM TI Spec for more details.
 address NativeLookup::lookup_entry_prefixed(const methodHandle& method, TRAPS) {

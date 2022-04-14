@@ -187,7 +187,7 @@ void RelocIterator::set_limits(address begin, address limit) {
     }
     // At this point, either we are at the first matching record,
     // or else there is no such record, and !has_current().
-    // In either case, revert to the immediatly preceding state.
+    // In either case, revert to the immediately preceding state.
     _current = backup;
     _addr    = backup_addr;
     set_has_current(false);

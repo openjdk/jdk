@@ -30,7 +30,7 @@
 // A JavaThread for low memory detection support, GC and
 // diagnostic framework notifications. This thread is not hidden
 // from the external view to allow the debugger to stop at the
-// breakpoints inside registred MXBean notification listeners.
+// breakpoints inside registered MXBean notification listeners.
 
 class NotificationThread : public JavaThread {
   friend class VMStructs;

@@ -467,7 +467,7 @@ static void log_adjustments(MemoryArg& original_memory_size, julong new_memory_s
 
 // All "triangular" options are explicitly set
 // check that they are congruent and not causing
-// an ambiguous situtation
+// an ambiguous situation
 template <typename MemoryArg, typename NumberArg>
 static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer_size, NumberArg& num_global_buffers) {
   assert(memory_size.is_set(), "invariant");
@@ -488,7 +488,7 @@ static bool check_for_ambiguity(MemoryArg& memory_size, MemoryArg& global_buffer
       num_global_buffers.name(),
       memory_size.name());
     log_error(arguments) (
-      "Try to remove one of the involved options or make sure they are unambigous");
+      "Try to remove one of the involved options or make sure they are unambiguous");
     return false;
   }
   return true;

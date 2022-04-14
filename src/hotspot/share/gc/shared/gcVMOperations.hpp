@@ -71,7 +71,7 @@
 //
 //  VM_GenCollectFull
 //  VM_ParallelGCSystemGC
-//   - these operations preform full collection of heaps of
+//   - these operations perform full collection of heaps of
 //     different kind
 //
 //  VM_Verify

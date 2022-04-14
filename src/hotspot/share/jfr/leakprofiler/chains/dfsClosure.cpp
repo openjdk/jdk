@@ -46,7 +46,7 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
   assert(mark_bits != NULL," invariant");
   assert(start_edge != NULL, "invariant");
 
-  // Depth-first search, starting from a BFS egde
+  // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
   start_edge->pointee()->oop_iterate(&dfs);
 }

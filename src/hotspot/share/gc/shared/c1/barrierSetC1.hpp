@@ -107,7 +107,7 @@ public:
 };
 
 // The BarrierSetC1 class is the main entry point for the GC backend of the Access API in C1.
-// It is called by the LIRGenerator::access_* functions, which is the main entry poing for
+// It is called by the LIRGenerator::access_* functions, which is the main entry point for
 // access calls in C1.
 
 class BarrierSetC1: public CHeapObj<mtGC> {

@@ -148,7 +148,7 @@ class FieldInfo {
 
   void set_contended_group(u2 val) {
     assert((_shorts[low_packed_offset] & FIELDINFO_TAG_OFFSET) == 0, "Offset must not have been set");
-    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) == 0, "Overwritting contended group");
+    assert((_shorts[low_packed_offset] & FIELDINFO_TAG_CONTENDED) == 0, "Overwriting contended group");
     _shorts[low_packed_offset] |= FIELDINFO_TAG_CONTENDED;
     _shorts[high_packed_offset] = val;
   }

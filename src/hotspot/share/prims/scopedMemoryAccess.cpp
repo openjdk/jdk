@@ -145,7 +145,7 @@ public:
  * dekker synchronization schemes, where expensive synchronization
  * in performance sensitive common paths, may be shifted to
  * a less common slow path instead.
- * Top frames containg obj will be deoptimized.
+ * Top frames containing obj will be deoptimized.
  */
 JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception))
   CloseScopedMemoryClosure cl(deopt, exception);

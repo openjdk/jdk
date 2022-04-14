@@ -76,7 +76,7 @@ class JvmtiRawMonitor : public CHeapObj<mtSynchronizer>  {
   QNode* volatile _wait_set;    // Threads wait()ing on the monitor
   int _magic;
   char* _name;
-  // JVMTI_RM_MAGIC is set in contructor and unset in destructor.
+  // JVMTI_RM_MAGIC is set in constructor and unset in destructor.
   enum { JVMTI_RM_MAGIC = (int)(('T' << 24) | ('I' << 16) | ('R' << 8) | 'M') };
 
   // Helpers for queue management isolation

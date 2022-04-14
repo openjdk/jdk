@@ -34,7 +34,7 @@
 //
 // [Choi99] Jong-Deok Shoi, Manish Gupta, Mauricio Seffano,
 //          Vugranam C. Sreedhar, Sam Midkiff,
-//          "Escape Analysis for Java", Procedings of ACM SIGPLAN
+//          "Escape Analysis for Java", Proceedings of ACM SIGPLAN
 //          OOPSLA  Conference, November 1, 1999
 //
 // The flow-insensitive analysis described in the paper has been implemented.

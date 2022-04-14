@@ -52,7 +52,7 @@ class FreeChunkListVector;
 //  which may be committed or uncommitted independently from each other.
 //
 // (Both root chunk areas and commit granules have not much to do with each other - one is a way to
-//   reserve memory for the upper regions, see ChunkManager. One is a way to manage commited memory.)
+//   reserve memory for the upper regions, see ChunkManager. One is a way to manage committed memory.)
 //
 // VirtualSpaceNode:
 //  - exposes a function to allocate a new root chunk (see VirtualSpaceNode::allocate_root_chunk()).

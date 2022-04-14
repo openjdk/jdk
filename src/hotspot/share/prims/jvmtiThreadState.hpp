@@ -133,7 +133,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
  public:
   ~JvmtiThreadState();
 
-  // is event_type enabled and usable for this thread in any enviroments?
+  // is event_type enabled and usable for this thread in any environments?
   bool is_enabled(jvmtiEvent event_type) {
     return _thread_event_enable.is_enabled(event_type);
   }

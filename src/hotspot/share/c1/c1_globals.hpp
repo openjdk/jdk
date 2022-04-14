@@ -132,13 +132,13 @@
           range(0, 128)                                                     \
                                                                             \
   develop(bool, EliminateBlocks, true,                                      \
-          "Eliminate unneccessary basic blocks")                            \
+          "Eliminate unnecessary basic blocks")                            \
                                                                             \
   develop(bool, PrintBlockElimination, false,                               \
           "Print basic block elimination")                                  \
                                                                             \
   develop(bool, EliminateNullChecks, true,                                  \
-          "Eliminate unneccessary null checks")                             \
+          "Eliminate unnecessary null checks")                             \
                                                                             \
   develop(bool, PrintNullCheckElimination, false,                           \
           "Print null check elimination")                                   \

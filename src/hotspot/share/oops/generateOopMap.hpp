@@ -38,7 +38,7 @@ class BasicBlock;
 class CellTypeState;
 class StackMap;
 
-// These two should be removed. But requires som code to be cleaned up
+// These two should be removed. But requires some code to be cleaned up
 #define MAXARGSIZE      256      // This should be enough
 #define MAX_LOCAL_VARS  65536    // 16-bit entry
 
@@ -47,7 +47,7 @@ typedef void (*jmpFct_t)(GenerateOopMap *c, int bcpDelta, int* data);
 
 //  RetTable
 //
-// Contains maping between jsr targets and there return addresses. One-to-many mapping
+// Contains mapping between jsr targets and there return addresses. One-to-many mapping
 //
 class RetTableEntry : public ResourceObj {
  private:
@@ -304,7 +304,7 @@ class GenerateOopMap {
   bool         _got_error;                  // True, if an error occurred during interpretation.
   Handle       _exception;                  // Exception if got_error is true.
   bool         _did_rewriting;              // was bytecodes rewritten
-  bool         _did_relocation;             // was relocation neccessary
+  bool         _did_relocation;             // was relocation necessary
   bool         _monitor_safe;               // The monitors in this method have been determined
                                             // to be safe.
 
@@ -414,7 +414,7 @@ class GenerateOopMap {
 
   // Create result set
   bool  _report_result;
-  bool  _report_result_for_send;            // Unfortunatly, stackmaps for sends are special, so we need some extra
+  bool  _report_result_for_send;            // Unfortunately, stackmaps for sends are special, so we need some extra
   BytecodeStream *_itr_send;                // variables to handle them properly.
 
   void  report_result                       ();
@@ -450,7 +450,7 @@ class GenerateOopMap {
   int  binsToHold                           (int no)                      { return  ((no+(BitsPerWord-1))/BitsPerWord); }
   char *state_vec_to_string                 (CellTypeState* vec, int len);
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instuction
+  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  ret_jump_targets_do                 (BytecodeStream *bcs, jmpFct_t jmpFct, int varNo,int *data);
   bool  jump_targets_do                     (BytecodeStream *bcs, jmpFct_t jmpFct, int *data);
@@ -543,7 +543,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 
 
 //
-// Subclass used by the compiler to generate pairing infomation
+// Subclass used by the compiler to generate pairing information
 //
 class GeneratePairingInfo: public GenerateOopMap {
  private:

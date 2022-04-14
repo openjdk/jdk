@@ -488,7 +488,7 @@ public:
   // would_profile means we would like to profile this method,
   // meaning it's not trivial.
   void set_would_profile(bool p);
-  // Also set the numer of loops and blocks in the method.
+  // Also set the number of loops and blocks in the method.
   // Again, this is used to determine if a method is trivial.
   void set_compilation_stats(short loops, short blocks);
   // If the compiler finds a profiled type that is known statically

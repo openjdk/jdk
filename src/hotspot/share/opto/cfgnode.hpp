@@ -549,7 +549,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
-// CatchProjNode controls which exception handler is targetted after a call.
+// CatchProjNode controls which exception handler is targeted after a call.
 // It is passed in the bci of the target handler, or no_handler_bci in case
 // the projection doesn't lead to an exception handler.
 class CatchProjNode : public CProjNode {

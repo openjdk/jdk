@@ -84,7 +84,7 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
   } else {
     bol = Bool(CmpP(left, right), relop);
   }
-  // Delay gvn.tranform on if-nodes until construction is finished
+  // Delay gvn.transform on if-nodes until construction is finished
   // to prevent a constant bool input from discarding a control output.
   IfNode* iff = delay_transform(new IfNode(ctrl(), bol, prob, cnt))->as_If();
   Node* then  = IfTrue(iff);

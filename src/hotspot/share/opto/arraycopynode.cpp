@@ -336,7 +336,7 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
     adr_src  = phase->transform(new AddPNode(base_src, base_src, src_offset));
     adr_dest = phase->transform(new AddPNode(base_dest, base_dest, dest_offset));
 
-    // The address is offseted to an aligned address where a raw copy would start.
+    // The address is offsetted to an aligned address where a raw copy would start.
     // If the clone copy is decomposed into load-stores - the address is adjusted to
     // point at where the array starts.
     const Type* toff = phase->type(src_offset);

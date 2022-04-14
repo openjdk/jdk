@@ -813,7 +813,7 @@ static void trace_method_resolution(const char* prefix,
 #endif // PRODUCT
 }
 
-// Do linktime resolution of a method in the interface within the context of the specied bytecode.
+// Do linktime resolution of a method in the interface within the context of the specified bytecode.
 Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Bytecodes::Code code, TRAPS) {
 
   Klass* resolved_klass = link_info.resolved_klass();

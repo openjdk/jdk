@@ -29,7 +29,7 @@
 #include "runtime/thread.hpp"
 
 // A hidden from external view JavaThread for JVMTI compiled-method-load
-// events, oop storage cleanup, and the maintainance of string, symbol,
+// events, oop storage cleanup, and the maintenance of string, symbol,
 // protection domain, and resolved method tables.
 class JvmtiDeferredEvent;
 

@@ -55,7 +55,7 @@ class ModuleClosure;
 //   - pointer to the java.lang.Module for this module.
 //   - pointer to the java.security.ProtectionDomain shared by classes defined to this module.
 //   - ClassLoaderData*, class loader of this module.
-//   - a growable array containg other module entries that this module can read.
+//   - a growable array containing other module entries that this module can read.
 //   - a flag indicating if this module can read all unnamed modules.
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either

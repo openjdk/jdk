@@ -33,7 +33,7 @@
 //                   retrieve with MetaspaceUtils::get_statistics(MetadataType) for either class space
 //                   or non-class space
 //
-// - MetaspaceCombinedStats: keeps reserved, committed and used byte counters, seperately for both class- and non-class-space;
+// - MetaspaceCombinedStats: keeps reserved, committed and used byte counters, separately for both class- and non-class-space;
 //                      retrieve with MetaspaceUtils::get_combined_statistics()
 
 // (Note: just for NMT these objects need to be mutable)

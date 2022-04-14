@@ -357,7 +357,7 @@ class JvmtiExport : public AllStatic {
   // used to post a CompiledMethodUnload event
   static void post_compiled_method_unload(jmethodID mid, const void *code_begin) NOT_JVMTI_RETURN;
 
-  // similiar to post_dynamic_code_generated except that it can be used to
+  // similar to post_dynamic_code_generated except that it can be used to
   // post a DynamicCodeGenerated event while holding locks in the VM. Any event
   // posted using this function is recorded by the enclosing event collector
   // -- JvmtiDynamicCodeEventCollector.

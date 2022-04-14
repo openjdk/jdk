@@ -148,7 +148,7 @@ class InstanceKlass: public Klass {
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
-    fully_initialized,                  // initialized (successfull final state)
+    fully_initialized,                  // initialized (successful final state)
     initialization_error                // error happened during initialization
   };
 

@@ -64,7 +64,7 @@
 
 // Only materialize src code for range checking when required, ignore otherwise
 #define IGNORE_RANGE(a, b)
-// Only materialize src code for contraint checking when required, ignore otherwise
+// Only materialize src code for constraint checking when required, ignore otherwise
 #define IGNORE_CONSTRAINT(func,type)
 
 #define IGNORE_FLAG(...)

@@ -360,7 +360,7 @@ public:
 
   // Attempt to fold similar nodes among this node's children. We only fold leaf nodes
   // (no child class loaders).
-  // For non-leaf nodes (class loaders with child class loaders), do this recursivly.
+  // For non-leaf nodes (class loaders with child class loaders), do this recursively.
   void fold_children() {
     LoaderTreeNode* node = _child;
     LoaderTreeNode* prev = NULL;

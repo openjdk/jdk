@@ -1219,7 +1219,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
                 bad_type_msg, "aastore");
             return;
           }
-          // 4938384: relaxed constraint in JVMS 3nd edition.
+          // 4938384: relaxed constraint in JVMS 3rd edition.
           no_control_flow = false; break;
         case Bytecodes::_pop :
           current_frame.pop_stack(

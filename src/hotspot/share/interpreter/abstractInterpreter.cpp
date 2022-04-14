@@ -387,7 +387,7 @@ bool AbstractInterpreter::bytecode_should_reexecute(Bytecodes::Code code) {
     case Bytecodes::_tableswitch:
     case Bytecodes::_fast_binaryswitch:
     case Bytecodes::_fast_linearswitch:
-    // recompute condtional expression folded into _if<cond>
+    // recompute conditional expression folded into _if<cond>
     case Bytecodes::_lcmp      :
     case Bytecodes::_fcmpl     :
     case Bytecodes::_fcmpg     :

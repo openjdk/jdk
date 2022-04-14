@@ -324,7 +324,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
           // Get the chosen name for the Node
           uint name = _phc._lrg_map.find(n);
           assert (name, "no 2-address specials");
-          // Check for name mis-match on the 2-address input
+          // Check for name mismatch on the 2-address input
           Node *m = n->in(idx);
           if (_phc._lrg_map.find(m) != name) {
             Node *copy;

@@ -153,7 +153,7 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
       // Flipped and shifted first word is zero.  Word search through
       // aligned up r_index for a non-zero flipped word.
       idx_t limit = aligned_right
-                    ? to_words_align_down(r_index) // Miniscule savings when aligned.
+                    ? to_words_align_down(r_index) // Minuscule savings when aligned.
                     : to_words_align_up(r_index);
       while (++index < limit) {
         cword = map(index) ^ flip;

@@ -585,7 +585,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
         int offset = addp_type->offset();
 
         if (offset == Type::OffsetTop || offset == Type::OffsetBot) {
-          NOT_PRODUCT(fail_eliminate = "Undefined field referrence";)
+          NOT_PRODUCT(fail_eliminate = "Undefined field reference";)
           can_eliminate = false;
           break;
         }
@@ -598,7 +598,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
             } else {
-              NOT_PRODUCT(fail_eliminate = "Not store field referrence";)
+              NOT_PRODUCT(fail_eliminate = "Not store field reference";)
             }
             can_eliminate = false;
           }
@@ -2121,7 +2121,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   // The input to a Lock is merged memory, so extract its RawMem input
   // (unless the MergeMem has been optimized away.)
   if (alock->is_Lock()) {
-    // Seach for MemBarAcquireLock node and delete it also.
+    // Search for MemBarAcquireLock node and delete it also.
     MemBarNode* membar = fallthroughproj->unique_ctrl_out()->as_MemBar();
     assert(membar != NULL && membar->Opcode() == Op_MemBarAcquireLock, "");
     Node* ctrlproj = membar->proj_out(TypeFunc::Control);
@@ -2138,7 +2138,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     }
   }
 
-  // Seach for MemBarReleaseLock node and delete it also.
+  // Search for MemBarReleaseLock node and delete it also.
   if (alock->is_Unlock() && ctrl->is_Proj() && ctrl->in(0)->is_MemBar()) {
     MemBarNode* membar = ctrl->in(0)->as_MemBar();
     assert(membar->Opcode() == Op_MemBarReleaseLock &&

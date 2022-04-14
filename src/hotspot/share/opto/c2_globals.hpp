@@ -165,7 +165,7 @@
           "Print New compiler peephole replacements")                       \
                                                                             \
   develop(bool, PrintCFGBlockFreq, false,                                   \
-          "Print CFG block freqencies")                                     \
+          "Print CFG block frequencies")                                    \
                                                                             \
   develop(bool, TraceOptoParse, false,                                      \
           "Trace bytecode parse and control-flow merge")                    \
@@ -334,7 +334,7 @@
           "Trace loop unswitching")                                         \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
-          "Globally supress vectorization set in VectorizeMethod")          \
+          "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
@@ -529,7 +529,7 @@
           "Use edge frequencies to drive block ordering")                   \
                                                                             \
   product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
-          "Miniumum %% of a successor (predecessor) for which block "       \
+          "Minimum %% of a successor (predecessor) for which block "        \
           "layout a will allow a fork (join) in a single chain")            \
           range(0, 100)                                                     \
                                                                             \

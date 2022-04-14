@@ -116,7 +116,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
     if (h_name == NULL) {
-      // atleast an informative message.
+      // at least an informative message.
       vm_exit_during_initialization("Exception", message);
     } else {
       vm_exit_during_initialization(h_name, message);

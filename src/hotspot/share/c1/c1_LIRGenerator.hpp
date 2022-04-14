@@ -635,7 +635,7 @@ class LIRItem: public CompilationResourceObj {
   ValueType* type() const      { return value()->type(); }
   LIR_Opr result()             {
     assert(!_destroys_register || (!_result->is_register() || _result->is_virtual()),
-           "shouldn't use set_destroys_register with physical regsiters");
+           "shouldn't use set_destroys_register with physical registers");
     if (_destroys_register && _result->is_register()) {
       if (_new_result->is_illegal()) {
         _new_result = _gen->new_register(type());

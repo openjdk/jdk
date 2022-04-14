@@ -773,7 +773,7 @@ bool BlockBegin::try_merge(ValueStack* new_state, bool has_irreducible_loops) {
     set_state(new_state);
 
   } else if (existing_state->is_same(new_state)) {
-    TRACE_PHI(tty->print_cr("exisiting state found"));
+    TRACE_PHI(tty->print_cr("existing state found"));
 
     assert(existing_state->scope() == new_state->scope(), "not matching");
     assert(existing_state->locals_size() == new_state->locals_size(), "not matching");

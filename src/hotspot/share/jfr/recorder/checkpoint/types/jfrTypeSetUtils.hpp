@@ -198,7 +198,7 @@ class LeakPredicate<const Method*> {
  * during the write process itself.
  *
  * It can also provide opportunities for caching, as the ideal should
- * be to reduce the amount of iterations neccessary for locating artifacts
+ * be to reduce the amount of iterations necessary for locating artifacts
  * in the respective VM subsystems.
  */
 class JfrArtifactSet : public JfrCHeapObj {

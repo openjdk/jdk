@@ -91,7 +91,7 @@ void ReplacedNodes::reset() {
   }
 }
 
-// Perfom node replacement (used when returning to caller)
+// Perform node replacement (used when returning to caller)
 void ReplacedNodes::apply(Node* n, uint idx) {
   if (is_empty()) {
     return;

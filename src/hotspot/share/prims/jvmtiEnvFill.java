@@ -94,7 +94,7 @@ class SourceFile {
         while(true) {
             line = in.readLine();
             if (line == null) {
-                line = ""; // so error does not look wierd
+                line = ""; // so error does not look weird
                 error("unexpected end of file");
             }
             if (line.startsWith("}")) {

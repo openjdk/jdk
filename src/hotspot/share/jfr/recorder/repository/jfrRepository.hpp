@@ -37,7 +37,7 @@ class JfrPostBox;
 // has been moved out of process memory.
 //
 // Chunk files are associated with recordings and are managed at a higher level in Java.
-// Java continously keeps the VM informed about new chunk locations via set_chunk_path().
+// Java continuously keeps the VM informed about new chunk locations via set_chunk_path().
 //
 // A JfrChunkWriter will open the next chunk file which it maintains as the current chunk.
 // There is a rotation scheme in place for creating new chunks at certain intervals.

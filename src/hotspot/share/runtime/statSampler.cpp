@@ -292,7 +292,7 @@ void StatSampler::create_misc_perfdata() {
                                           Arguments::jvm_args(), CHECK);
 
   // java class name/jar file and arguments to main class
-  // note: name is cooridnated with launcher and Arguments.cpp
+  // note: name is coordinated with launcher and Arguments.cpp
   PerfDataManager::create_string_constant(SUN_RT, "javaCommand",
                                           Arguments::java_command(), CHECK);
 

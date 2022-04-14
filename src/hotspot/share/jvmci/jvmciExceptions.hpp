@@ -27,7 +27,7 @@
 
 class JVMCIEnv;
 
-// JVMCIEnv exception utility macros.  Analagous to the regular CHECK, TRAP and THREAD macros.
+// JVMCIEnv exception utility macros.  Analogous to the regular CHECK, TRAP and THREAD macros.
 
 #define JVMCIENV __jvmci_env__
 #define JVMCI_TRAPS  JVMCIEnv* JVMCIENV

@@ -81,7 +81,7 @@ public:
 
   // Iterate over all remaining collection set candidate regions.
   void iterate(HeapRegionClosure* cl);
-  // Iterate over all remaining collectin set candidate regions from the end
+  // Iterate over all remaining collection set candidate regions from the end
   // to the beginning of the set.
   void iterate_backwards(HeapRegionClosure* cl);
 

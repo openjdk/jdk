@@ -756,7 +756,7 @@ void PhaseStringOpts::remove_dead_nodes() {
       }
       case Op_AddP:
       case Op_CreateEx: {
-        // Recurisvely clean up references to CreateEx so EA doesn't
+        // Recursively clean up references to CreateEx so EA doesn't
         // get unhappy about the partially collapsed graph.
         for (SimpleDUIterator i(use); i.has_next(); i.next()) {
           Node* m = i.get();

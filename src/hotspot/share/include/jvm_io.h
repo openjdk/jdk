@@ -45,7 +45,7 @@ extern "C" {
  * - The string written to str is always zero-terminated, also in case of
  *   truncation (count is too small to hold the result string), unless count
  *   is 0. In case of truncation count-1 characters are written and '\0'
- *   appendend.
+ *   appended.
  * - If count is too small to hold the whole string, -1 is returned across
  *   all platforms. */
 

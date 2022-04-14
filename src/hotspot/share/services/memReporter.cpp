@@ -363,7 +363,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
       // One region spanning the entire reserved region, with the same stack trace.
       // Don't print this regions because the "reserved and committed" line above
-      // already indicates that the region is comitted.
+      // already indicates that the region is committed.
       assert(itr.next() == NULL, "Unexpectedly more than one regions");
       return;
     }

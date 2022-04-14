@@ -241,7 +241,7 @@ void ADLParser::instr_parse(void) {
       parse_err(SYNERR, "Instructions do not specify an interface\n");
     }
     else if (!strcmp(ident, "ins_pipe"))        ins_pipe_parse(*instr);
-    else {  // Done with staticly defined parts of instruction definition
+    else {  // Done with statically defined parts of instruction definition
       // Check identifier to see if it is the name of an attribute
       const Form    *form = _globalNames[ident];
       AttributeForm *attr = form ? form->is_attribute() : NULL;
@@ -1558,7 +1558,7 @@ void ADLParser::pipe_parse(void) {
       if (!vsi_seen)
         parse_err(SYNERR, "\"variable_size_instruction\" or \"fixed_size_instruction\" unspecified\n");
     }
-    else {  // Done with staticly defined parts of instruction definition
+    else {  // Done with statically defined parts of instruction definition
       parse_err(SYNERR, "expected one of \"resources\", \"pipe_desc\", \"pipe_class\", found \"%s\"\n", ident);
       return;
     }

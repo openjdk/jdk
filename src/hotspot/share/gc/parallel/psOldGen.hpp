@@ -52,7 +52,7 @@ class PSOldGen : public CHeapObj<mtGC> {
 
 #ifdef ASSERT
   void assert_block_in_covered_region(MemRegion new_memregion) {
-    // Explictly capture current covered_region in a local
+    // Explicitly capture current covered_region in a local
     MemRegion covered_region = this->start_array()->covered_region();
     assert(covered_region.contains(new_memregion),
            "new region is not in covered_region [ " PTR_FORMAT ", " PTR_FORMAT " ], "

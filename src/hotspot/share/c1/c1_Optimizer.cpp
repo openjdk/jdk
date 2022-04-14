@@ -165,7 +165,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   if (t_value->type()->is_float_kind()) return;
 
   // check that successor has no other phi functions but sux_phi
-  // this can happen when t_block or f_block contained additonal stores to local variables
+  // this can happen when t_block or f_block contained additional stores to local variables
   // that are no longer represented by explicit instructions
   for_each_phi_fun(sux, phi,
                    if (phi != sux_phi) return;

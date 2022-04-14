@@ -482,7 +482,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
   void bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f);
 
-  // Calcuate statistics. Item sizes are calculated with VALUE_SIZE_FUNC.
+  // Calculate statistics. Item sizes are calculated with VALUE_SIZE_FUNC.
   template <typename VALUE_SIZE_FUNC>
   TableStatistics statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f);
 

@@ -52,7 +52,7 @@ bool ElfSymbolTable::compare(const Elf_Sym* sym, address addr, int* stringtableI
     const Elf_Shdr* shdr = _section.section_header();
     address sym_addr;
     if (funcDescTable != NULL && funcDescTable->get_index() == sym->st_shndx) {
-      // We need to go another step trough the function descriptor table (currently PPC64 only)
+      // We need to go another step through the function descriptor table (currently PPC64 only)
       sym_addr = funcDescTable->lookup(sym->st_value);
     } else {
       sym_addr = (address)sym->st_value;

@@ -35,7 +35,7 @@ class CodeBlob;
 template <class T> class ValueRecorder : public StackObj {
  public:
   // A two-way mapping from positive indexes to oop handles.
-  // The zero index is reserved for a constant (sharable) null.
+  // The zero index is reserved for a constant (shareable) null.
   // Indexes may not be negative.
 
   // Use the given arena to manage storage, if not NULL.

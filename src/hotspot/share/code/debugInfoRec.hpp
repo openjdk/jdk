@@ -122,7 +122,7 @@ class DebugInformationRecorder: public ResourceObj {
   void end_safepoint(int pc_offset)      { end_scopes(pc_offset, true); }
   void end_non_safepoint(int pc_offset)  { end_scopes(pc_offset, false); }
 
-  // helper fuctions for describe_scope to enable sharing
+  // helper functions for describe_scope to enable sharing
   DebugToken* create_scope_values(GrowableArray<ScopeValue*>* values);
   DebugToken* create_monitor_values(GrowableArray<MonitorValue*>* monitors);
 

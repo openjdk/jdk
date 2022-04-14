@@ -151,7 +151,7 @@ class klassVtable {
       bool is_interface);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
-  // When loading a class from CDS archive at run time, and no class redefintion
+  // When loading a class from CDS archive at run time, and no class redefinition
   // has happened, it is expected that the class's itable/vtables are
   // laid out exactly the same way as they had been during dump time.
   // Therefore, in klassVtable::initialize_[iv]table, we do not layout the

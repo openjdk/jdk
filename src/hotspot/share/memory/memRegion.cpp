@@ -28,7 +28,7 @@
 #include "memory/memRegion.hpp"
 #include "runtime/globals.hpp"
 
-// A very simple data structure representing a contigous word-aligned
+// A very simple data structure representing a contiguous word-aligned
 // region of address space.
 
 MemRegion MemRegion::intersection(const MemRegion mr2) const {

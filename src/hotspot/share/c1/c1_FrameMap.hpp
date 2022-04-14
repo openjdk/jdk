@@ -58,7 +58,7 @@ class CallingConvention;
 //  |arguments | x | monitors | spill | reserved argument area | ABI |
 //  +----------+---+----------+-------+------------------------+-----+
 //
-//  x =  ABI area (SPARC) or  return adress and link (i486)
+//  x =  ABI area (SPARC) or  return address and link (i486)
 //  ABI  = ABI area (SPARC) or nothing (i486)
 
 

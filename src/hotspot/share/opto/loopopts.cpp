@@ -1429,7 +1429,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 }
 
-// Tranform:
+// Transform:
 //
 // if (some_condition) {
 //   // body 1

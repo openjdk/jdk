@@ -67,7 +67,7 @@ bool MallocSiteTable::initialize() {
 
   assert(_hash_entry_allocation_stack == NULL &&
          _hash_entry_allocation_site == NULL,
-         "Already initailized");
+         "Already initialized");
 
   _hash_entry_allocation_stack = &stack;
   _hash_entry_allocation_site = &entry;

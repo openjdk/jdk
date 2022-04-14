@@ -432,7 +432,7 @@ void RegMask::dump(outputStream *st) const {
           st->print("-");
           OptoReg::dump(last, st);
         }
-        st->print(",");         // Seperate start of new run
+        st->print(",");         // Separate start of new run
         start = last = reg;     // Start a new register run
         OptoReg::dump(start, st); // Print register
       } // End of if ending a register run or not

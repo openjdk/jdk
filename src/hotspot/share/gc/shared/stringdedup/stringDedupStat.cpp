@@ -83,7 +83,7 @@ void StringDedup::Stat::add(const Stat* const stat) {
   _block_elapsed       += stat->_block_elapsed;
 }
 
-// Support for log output formating
+// Support for log output formatting
 #define STRDEDUP_PERCENT_FORMAT         "%5.1f%%"
 #define STRDEDUP_PERCENT_FORMAT_NS      "%.1f%%"
 #define STRDEDUP_BYTES_FORMAT           "%8.1f%s"

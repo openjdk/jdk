@@ -29,7 +29,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// A very simple data structure representing a contigous region
+// A very simple data structure representing a contiguous region
 // region of address space.
 
 // Note that MemRegions are typically passed by value, not by reference.

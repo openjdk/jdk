@@ -526,7 +526,7 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
       w->_semi = dfsnum;               // Node to DFS map
       w->_label = w;                   // DFS to vertex map
       w->_ancestor = NULL;             // Fast LINK & EVAL setup
-      w->_child = &ntarjan[0];         // Sentinal
+      w->_child = &ntarjan[0];         // Sentinel
       w->_size = 1;
       w->_bucket = NULL;
 

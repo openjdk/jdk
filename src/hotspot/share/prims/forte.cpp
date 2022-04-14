@@ -652,7 +652,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
 
 #ifndef _WINDOWS
-// Support for the Forte(TM) Peformance Tools collector.
+// Support for the Forte(TM) Performance Tools collector.
 //
 // The method prototype is derived from libcollector.h. For more
 // information, please see the libcollect man page.

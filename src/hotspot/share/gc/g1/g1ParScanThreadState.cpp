@@ -263,7 +263,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                    _partial_objarray_chunk_size);
 
   // Push any needed partial scan tasks.  Pushed before processing the
-  // intitial chunk to allow other workers to steal while we're processing.
+  // initial chunk to allow other workers to steal while we're processing.
   for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }

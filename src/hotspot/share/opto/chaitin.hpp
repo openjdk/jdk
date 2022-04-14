@@ -260,10 +260,10 @@ public:
   PhaseIFG( Arena *arena );
   void init( uint maxlrg );
 
-  // Add edge between a and b.  Returns true if actually addded.
+  // Add edge between a and b.  Returns true if actually added.
   int add_edge( uint a, uint b );
 
-  // Test for edge existance
+  // Test for edge existence
   int test_edge( uint a, uint b ) const;
 
   // Square-up matrix for faster Union

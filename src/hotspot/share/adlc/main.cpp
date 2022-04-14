@@ -347,7 +347,7 @@ static void usage(ArchDesc& AD)
   printf("Usage: adlc [-doqwTs] [-#]* [-D<FLAG>[=<DEF>]] [-U<FLAG>] [-c<CPP_FILE_NAME>] [-h<HPP_FILE_NAME>] [-a<DFA_FILE_NAME>] [-v<GLOBALS_FILE_NAME>] <ADL_FILE_NAME>\n");
   printf(" d  produce DFA debugging info\n");
   printf(" o  no output produced, syntax and semantic checking only\n");
-  printf(" q  quiet mode, supresses all non-essential messages\n");
+  printf(" q  quiet mode, suppresses all non-essential messages\n");
   printf(" w  suppress warning messages\n");
   printf(" T  make DFA as many subroutine calls\n");
   printf(" s  output which instructions are cisc-spillable\n");

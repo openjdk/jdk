@@ -276,7 +276,7 @@ public:
   uint                alignment() { return _alignment; }
   void                set_alignment(uint val) { _alignment = val; }
 
-  // Seach through operands to determine operands unique positions.
+  // Search through operands to determine operands unique positions.
   void                set_unique_opnds();
   uint                num_unique_opnds() { return _num_uniq; }
   uint                unique_opnds_idx(int idx) {

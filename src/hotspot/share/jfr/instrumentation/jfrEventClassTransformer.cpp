@@ -1365,7 +1365,7 @@ static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
   // We would need to do:
   // 1. Nothing (@Registered(false) annotation)
   // 2. Build up a new <clinit> - and if the original class already contains a <clinit>,
-  //                              merging will be neccessary.
+  //                              merging will be necessary.
   //
   if (register_klass) {
     insert_clinit_method(ik, parser, writer, orig_cp_len, utf8_indexes, flr_register_method_ref_index, clinit_method, THREAD);

@@ -2125,7 +2125,7 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
   Node* my_mem = current->in(MemNode::Memory);
   bool sched_up = sched_before.member(current);
 
-  // remove current_store from its current position in the memmory graph
+  // remove current_store from its current position in the memory graph
   for (DUIterator i = current->outs(); current->has_out(i); i++) {
     Node* use = current->out(i);
     if (use->is_Mem()) {

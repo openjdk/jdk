@@ -279,7 +279,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception);
 
-  // Check the stack guard pages and reenable them if necessary and there is
+  // Check the stack guard pages and re-enable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
   bool guard_pages_enabled = current->stack_overflow_state()->reguard_stack_if_needed();

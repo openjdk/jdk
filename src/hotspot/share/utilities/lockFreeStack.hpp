@@ -88,7 +88,7 @@ public:
       if (result != NULL) {
         new_top = next(*result);
       }
-      // CAS even on empty pop, for consistent membar bahavior.
+      // CAS even on empty pop, for consistent membar behavior.
       result = Atomic::cmpxchg(&_top, result, new_top);
     } while (result != old);
     if (result != NULL) {

@@ -537,7 +537,7 @@ void BranchData::print_data_on(outputStream* st, const char* extra) const {
 // A MultiBranchData is used to access profiling information for
 // a multi-way branch (*switch bytecodes).  It consists of a series
 // of (count, displacement) pairs, which count the number of times each
-// case was taken and specify the data displacment for each branch target.
+// case was taken and specify the data displacement for each branch target.
 
 int MultiBranchData::compute_cell_count(BytecodeStream* stream) {
   int cell_count = 0;

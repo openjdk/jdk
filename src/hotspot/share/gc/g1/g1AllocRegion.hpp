@@ -112,7 +112,7 @@ protected:
                                 size_t* actual_word_size);
 
   // Ensure that the region passed as a parameter has been filled up
-  // so that noone else can allocate out of it any more.
+  // so that no one else can allocate out of it any more.
   // Returns the number of bytes that have been wasted by filled up
   // the space.
   size_t fill_up_remaining_space(HeapRegion* alloc_region);

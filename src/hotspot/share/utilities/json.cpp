@@ -566,7 +566,7 @@ u_char JSON::skip_to(u_char want) {
  * Otherwise it is an internal error.
  *
  * Will return the first token after the line comment without consuming it.
- * Returns 0 if EOS is encoutered.
+ * Returns 0 if EOS is encountered.
  */
 u_char JSON::skip_line_comment() {
   u_char c;

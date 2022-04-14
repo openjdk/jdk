@@ -312,7 +312,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   last_pd->set_has_ea_local_in_scope(has_ea_local_in_scope);
   last_pd->set_arg_escape(arg_escape);
 
-  // serialize sender stream offest
+  // serialize sender stream offset
   stream()->write_int(sender_stream_offset);
 
   // serialize scope

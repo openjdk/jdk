@@ -174,7 +174,7 @@ bool MetaspaceArena::attempt_enlarge_current_chunk(size_t requested_word_size) {
   Metachunk* c = current_chunk();
   assert(c->free_words() < requested_word_size, "Sanity");
 
-  // Not if chunk enlargment is switched off...
+  // Not if chunk enlargement is switched off...
   if (Settings::enlarge_chunks_in_place() == false) {
     return false;
   }

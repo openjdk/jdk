@@ -373,7 +373,7 @@ void PhaseChaitin::Register_Allocate() {
   de_ssa();
 
 #ifdef ASSERT
-  // Veify the graph before RA.
+  // Verify the graph before RA.
   verify(&live_arena);
 #endif
 
@@ -593,7 +593,7 @@ void PhaseChaitin::Register_Allocate() {
   merge_multidefs();
 
 #ifdef ASSERT
-  // Veify the graph after RA.
+  // Verify the graph after RA.
   verify(&live_arena);
 #endif
 
