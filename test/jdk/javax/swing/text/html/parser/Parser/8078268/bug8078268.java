@@ -35,7 +35,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /* @test
    @bug 8078268
    @summary  javax.swing.text.html.parser.Parser parseScript incorrectly optimized
-   @author Mikhail Cherkasov
    @run main bug8078268
 */
 public class bug8078268 {
