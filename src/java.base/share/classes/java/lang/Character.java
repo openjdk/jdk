@@ -5285,7 +5285,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         /**
          * Unicode script "Unknown".
          */
-        UNKNOWN; // must be the last enum constant for calculating the size of "alias" hash map.
+        UNKNOWN; // must be the last enum constant for calculating the size of "aliases" hash map.
 
         private static final int[] scriptStarts = {
             0x0000,   // 0000..0040; COMMON
