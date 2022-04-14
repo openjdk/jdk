@@ -68,12 +68,12 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
     CAST_FROM_FN_PTR(address,zero_null_code_stub));
 }
 
-nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
-                                                const methodHandle& method,
-                                                int compile_id,
-                                                BasicType *sig_bt,
-                                                VMRegPair *regs,
-                                                BasicType ret_type) {
+CompiledMethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
+                                                       const methodHandle& method,
+                                                       int compile_id,
+                                                       BasicType *sig_bt,
+                                                       VMRegPair *regs,
+                                                       BasicType ret_type) {
   ShouldNotCallThis();
   return NULL;
 }

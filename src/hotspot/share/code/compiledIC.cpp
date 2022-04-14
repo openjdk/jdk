@@ -509,7 +509,6 @@ void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            Klass* receiver_klass,
                                            bool is_optimized,
                                            bool static_bound,
-                                           bool caller_is_nmethod,
                                            CompiledICInfo& info,
                                            TRAPS) {
   CompiledMethod* method_code = method->code();
@@ -638,7 +637,7 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
-void CompiledStaticCall::compute_entry(const methodHandle& m, bool caller_is_nmethod, StaticCallInfo& info) {
+void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
   CompiledMethod* m_code = m->code();
   info._callee = m;
   if (m_code != NULL && m_code->is_in_use() && !m_code->is_unloading()) {

@@ -39,10 +39,6 @@ class AdapterHandlerTable;
 class AdapterFingerPrint;
 class vframeStream;
 
-#if defined(AARCH64)
-class mintrinsic;
-#endif
-
 // Runtime is the base class for various runtime interfaces
 // (InterpreterRuntime, CompilerRuntime, etc.). It provides
 // shared functionality such as exception forwarding (C++ to
@@ -477,7 +473,7 @@ class SharedRuntime: AllStatic {
   //
   // The wrapper may contain special-case code if the given method
   // is a compiled method handle adapter, such as _invokeBasic, _linkToVirtual, etc.
-  static nmethod* generate_native_wrapper(MacroAssembler* masm,
+  static CompiledMethod* generate_native_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
@@ -485,7 +481,7 @@ class SharedRuntime: AllStatic {
                                           BasicType ret_type);
 
 #if defined(AARCH64)
-  static mintrinsic* generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
+  static CompiledMethod* generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
@@ -723,7 +719,6 @@ class AdapterHandlerLibrary: public AllStatic {
                                         address c2i_unverified_entry,
                                         address c2i_no_clinit_check_entry = NULL);
   static void create_native_wrapper(const methodHandle& method);
-  static void create_method_handle_intrinsic_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }

@@ -479,7 +479,7 @@ void CompileTask::print_ul(const char* msg){
   }
 }
 
-void CompileTask::print_ul(const nmethod* nm, const char* msg) {
+void CompileTask::print_ul(const CompiledMethod* nm, const char* msg) {
   LogTarget(Debug, jit, compilation) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);

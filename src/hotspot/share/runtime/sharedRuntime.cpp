@@ -1277,18 +1277,16 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   address dest_entry_point = callee == NULL ? 0 : callee->entry_point(); // used below
 #endif
 
-  bool is_nmethod = caller_nm->is_nmethod();
-
   if (is_virtual) {
     assert(receiver.not_null() || invoke_code == Bytecodes::_invokehandle, "sanity check");
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
     Klass* klass = invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass();
     CompiledIC::compute_monomorphic_entry(callee_method, klass,
-                     is_optimized, static_bound, is_nmethod, virtual_call_info,
+                     is_optimized, static_bound, virtual_call_info,
                      CHECK_false);
   } else {
     // static call
-    CompiledStaticCall::compute_entry(callee_method, is_nmethod, static_call_info);
+    CompiledStaticCall::compute_entry(callee_method, static_call_info);
   }
 
   // grab lock, check for deoptimization and potentially patch caller
@@ -1634,7 +1632,7 @@ bool SharedRuntime::handle_ic_miss_helper_internal(Handle receiver, CompiledMeth
     inline_cache->compute_monomorphic_entry(callee_method,
                                             receiver_klass,
                                             inline_cache->is_optimized(),
-                                            false, caller_nm->is_nmethod(),
+                                            false,
                                             info, CHECK_false);
     if (!inline_cache->set_to_monomorphic(info)) {
       needs_ic_stub_refill = true;
@@ -3009,7 +3007,7 @@ bool AdapterHandlerEntry::compare_code(AdapterHandlerEntry* other) {
  */
 void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
-  nmethod* nm = NULL;
+  CompiledMethod* nm = NULL;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
@@ -3085,96 +3083,9 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       ttyLocker ttyl;
       CompileTask::print(tty, nm, msg);
     }
-    nm->post_compiled_method_load_event();
-  }
-}
-
-void AdapterHandlerLibrary::create_method_handle_intrinsic_wrapper(const methodHandle& method) {
-  ResourceMark rm;
-#if defined(AARCH64)
-  mintrinsic* nm = NULL;
-#else
-  nmethod* nm = NULL;
-#endif
-
-  assert(method->is_native(), "must be native");
-  assert(method->is_method_handle_intrinsic(), "must have something valid to call!");
-
-  {
-    // Perform the work while holding the lock, but perform any printing outside the lock
-    MutexLocker mu(AdapterHandlerLibrary_lock);
-    // See if somebody beat us to it
-    if (method->code() != NULL) {
-      return;
+    if (nm->is_nmethod()) {
+      nm->as_nmethod()->post_compiled_method_load_event();
     }
-
-    const int compile_id = CompileBroker::assign_compile_id(method, CompileBroker::standard_entry_bci);
-    assert(compile_id > 0, "Must generate native wrapper");
-
-
-    ResourceMark rm;
-    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
-    if (buf != NULL) {
-      CodeBuffer buffer(buf);
-      struct { double data[20]; } locs_buf;
-      buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
-#if defined(AARCH64)
-      // On AArch64 with ZGC and nmethod entry barriers, we need all oops to be
-      // in the constant pool to ensure ordering between the barrier and oops
-      // accesses. For native_wrappers we need a constant.
-      buffer.initialize_consts_size(8);
-#endif
-      MacroAssembler _masm(&buffer);
-
-      // Fill in the signature array, for the calling-convention call.
-      const int total_args_passed = method->size_of_parameters();
-
-      VMRegPair stack_regs[16];
-      VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
-
-      AdapterSignatureIterator si(method->signature(), method->constMethod()->fingerprint(),
-                              method->is_static(), total_args_passed);
-      BasicType* sig_bt = si.basic_types();
-      assert(si.slots() == total_args_passed, "");
-      BasicType ret_type = si.return_type();
-
-      // Now get the compiled-Java arguments layout.
-      int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
-
-      // Generate the compiled-to-native wrapper code
-#if defined(AARCH64)
-      nm = SharedRuntime::generate_method_handle_intrinsic_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
-#else
-      nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
-#endif
-
-      if (nm != NULL) {
-        {
-          MutexLocker pl(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
-          if (nm->make_in_use()) {
-            method->set_code(method, nm);
-          }
-        }
-
-        DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_simple));
-        if (directive->PrintAssemblyOption) {
-          nm->print_code();
-        }
-        DirectivesStack::release(directive);
-      }
-    }
-  } // Unlock AdapterHandlerLibrary_lock
-
-
-  // Install the generated code.
-  if (nm != NULL) {
-    const char *msg = method->is_static() ? "(static)" : "";
-    //CompileTask::print_ul(nm, msg);
-    if (PrintCompilation) {
-      ttyLocker ttyl;
-      //CompileTask::print(tty, nm, msg);
-    }
-    // nm->post_compiled_method_load_event();
   }
 }
 

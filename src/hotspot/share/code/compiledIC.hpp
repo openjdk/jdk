@@ -264,7 +264,7 @@ class CompiledIC: public ResourceObj {
   bool set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, bool& needs_ic_stub_refill, TRAPS);
 
   static void compute_monomorphic_entry(const methodHandle& method, Klass* receiver_klass,
-                                        bool is_optimized, bool static_bound, bool caller_is_nmethod,
+                                        bool is_optimized, bool static_bound,
                                         CompiledICInfo& info, TRAPS);
 
   // Location
@@ -344,7 +344,7 @@ class CompiledStaticCall : public ResourceObj {
   static int reloc_to_interp_stub();
 
   // Compute entry point given a method
-  static void compute_entry(const methodHandle& m, bool caller_is_nmethod, StaticCallInfo& info);
+  static void compute_entry(const methodHandle& m, StaticCallInfo& info);
 
 public:
   // Clean static call (will force resolving on next use)

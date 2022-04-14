@@ -1137,12 +1137,12 @@ static void gen_special_dispatch(MacroAssembler* masm,
 //    transition back to thread_in_Java
 //    return to caller
 //
-nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
-                                                const methodHandle& method,
-                                                int compile_id,
-                                                BasicType* in_sig_bt,
-                                                VMRegPair* in_regs,
-                                                BasicType ret_type) {
+CompiledMethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
+                                                       const methodHandle& method,
+                                                       int compile_id,
+                                                       BasicType* in_sig_bt,
+                                                       VMRegPair* in_regs,
+                                                       BasicType ret_type) {
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();

@@ -1257,35 +1257,19 @@ static void gen_special_dispatch(MacroAssembler* masm,
 // block and the check for pending exceptions it's impossible for them
 // to be thrown.
 //
-nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
-                                                const methodHandle& method,
-                                                int compile_id,
-                                                BasicType* in_sig_bt,
-                                                VMRegPair* in_regs,
-                                                BasicType ret_type) {
+CompiledMethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
+                                                       const methodHandle& method,
+                                                       int compile_id,
+                                                       BasicType* in_sig_bt,
+                                                       VMRegPair* in_regs,
+                                                       BasicType ret_type) {
   if (method->is_method_handle_intrinsic()) {
-    vmIntrinsics::ID iid = method->intrinsic_id();
-    intptr_t start = (intptr_t)__ pc();
-    int vep_offset = ((intptr_t)__ pc()) - start;
-
-    // First instruction must be a nop as it may need to be patched on deoptimisation
-    __ nop();
-    gen_special_dispatch(masm,
-                         method,
-                         in_sig_bt,
-                         in_regs);
-    int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ flush();
-    int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
-    return nmethod::new_native_nmethod(method,
-                                       compile_id,
-                                       masm->code(),
-                                       vep_offset,
-                                       frame_complete,
-                                       stack_slots / VMRegImpl::slots_per_word,
-                                       in_ByteSize(-1),
-                                       in_ByteSize(-1),
-                                       (OopMapSet*)NULL);
+    return generate_method_handle_intrinsic_wrapper(masm,
+                                                    method,
+                                                    compile_id,
+                                                    in_sig_bt,
+                                                    in_regs,
+                                                    ret_type);
   }
   address native_func = method->native_function();
   assert(native_func != NULL, "must have function");
@@ -2009,8 +1993,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   return nm;
 }
 
-#if defined(AARCH64)
-mintrinsic* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
+CompiledMethod* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler* masm,
                                                 const methodHandle& method,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
@@ -2032,13 +2015,12 @@ mintrinsic* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembl
   __ flush();
   int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
   return mintrinsic::new_mintrinsic(method,
-                                       compile_id,
-                                       masm->code(),
-                                       vep_offset,
-                                       frame_complete,
-                                       stack_slots / VMRegImpl::slots_per_word);
+                                    compile_id,
+                                    masm->code(),
+                                    vep_offset,
+                                    frame_complete,
+                                    stack_slots / VMRegImpl::slots_per_word);
 }
-#endif
 
 // this function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization
