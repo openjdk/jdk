@@ -25,6 +25,8 @@
 
 package sun.invoke.util;
 
+import jdk.internal.annotation.vm.DontInline;
+
 public enum Wrapper {
     //        wrapperType      simple     primitiveType  simple     char  emptyArray     format
     BOOLEAN(  Boolean.class,   "Boolean", boolean.class, "boolean", 'Z', new boolean[0], Format.unsigned( 1)),
@@ -276,7 +278,7 @@ public enum Wrapper {
     public static Wrapper forPrimitiveType(char basicTypeChar) {
         Wrapper w = FROM_CHAR[(basicTypeChar + (basicTypeChar >> 1)) & 0xf];
         if (w == null || w.basicTypeChar != basicTypeChar) {
-            handleBasicTypeError(basicTypeChar);
+            throw basicTypeError(basicTypeChar);
         }
         if (w == OBJECT) {
             throw newIllegalArgumentException("not primitive: " + basicTypeChar);
@@ -312,7 +314,7 @@ public enum Wrapper {
         return null;
     }
 
-    @jdk.internal.vm.annotation.DontInline
+    @DontInline
     private static RuntimeException wrapperTypeError(Class<?> type) {
         for (Wrapper x : values())
             if (x.wrapperType == type)
@@ -332,7 +334,7 @@ public enum Wrapper {
         throw basicTypeError(type);
     }
 
-    @jdk.internal.vm.annotation.DontInline
+    @DontInline
     private static RuntimeException basicTypeError(char type) {
         for (Wrapper x : values()) {
             if (x.basicTypeChar == type) {
