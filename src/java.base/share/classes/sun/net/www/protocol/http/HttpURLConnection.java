@@ -1465,9 +1465,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
                 return poster;
             }
-        } catch (RuntimeException e) {
-            disconnectInternal();
-            throw e;
         } catch (ProtocolException e) {
             // Save the response code which may have been set while enforcing
             // the 100-continue. disconnectInternal() forces it to -1
@@ -1475,7 +1472,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             disconnectInternal();
             responseCode = i;
             throw e;
-        } catch (IOException e) {
+        } catch (RuntimeException | IOException e) {
             disconnectInternal();
             throw e;
         }

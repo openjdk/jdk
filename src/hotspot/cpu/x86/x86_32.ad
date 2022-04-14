@@ -260,17 +260,7 @@ source %{
 // instructions, to allow sign-masking or sign-bit flipping.  They allow
 // fast versions of NegF/NegD and AbsF/AbsD.
 
-void reg_mask_init() {
-  if (Matcher::has_predicated_vectors()) {
-    // Post-loop multi-versioning expects mask to be present in K1 register, till the time
-    // its fixed, RA should not be allocting K1 register, this shall prevent any accidental
-    // curruption of value held in K1 register.
-    if (PostLoopMultiversioning) {
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()));
-      const_cast<RegMask*>(&_VECTMASK_REG_mask)->Remove(OptoReg::as_OptoReg(k1->as_VMReg()->next()));
-    }
-  }
-}
+void reg_mask_init() {}
 
 // Note: 'double' and 'long long' have 32-bits alignment on x86.
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
@@ -12610,7 +12600,6 @@ instruct jmpCon(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cr);
   effect(USE labl);
 
@@ -12626,7 +12615,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
 instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12641,7 +12629,6 @@ instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
-  predicate(!n->has_vector_mask_set());
   match(CountedLoopEnd cop cmp);
   effect(USE labl);
 
@@ -12651,66 +12638,6 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
   ins_encode %{
     Label* L = $labl$$label;
     __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// mask version
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEnd_and_restoreMask(cmpOp cop, kReg_K1 ktmp, eFlagsReg cr, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cr);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop    $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndU_and_restoreMask(cmpOpU cop, kReg_K1 ktmp, eFlagsRegU cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(400);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-// Bounded mask operand used in following patten is needed for
-// post-loop multiversioning.
-instruct jmpLoopEndUCF_and_restoreMask(cmpOpUCF cop, kReg_K1 ktmp, eFlagsRegUCF cmp, label labl) %{
-  predicate(PostLoopMultiversioning && n->has_vector_mask_set());
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl, TEMP ktmp);
-
-  ins_cost(300);
-  format %{ "J$cop,u  $labl\t# Loop end\n\t"
-            "restorevectmask \t# vector mask restore for loops" %}
-  size(10);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-    __ restorevectmask($ktmp$$KRegister);
   %}
   ins_pipe( pipe_jcc );
 %}
