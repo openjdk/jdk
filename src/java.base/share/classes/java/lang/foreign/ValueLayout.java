@@ -160,6 +160,7 @@ public sealed class ValueLayout extends AbstractLayout implements MemoryLayout {
      * @throws UnsupportedOperationException if the layout path has one or more elements with incompatible alignment constraints.
      * @see MethodHandles#memorySegmentViewVarHandle
      * @see MemoryLayout#varHandle(PathElement...)
+     * @see SequenceLayout
      */
     public VarHandle arrayElementVarHandle(int... shape) {
         Objects.requireNonNull(shape);
