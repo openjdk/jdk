@@ -1853,6 +1853,14 @@ Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
 
+inline int Op_ConIL(BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    return Op_ConI;
+  }
+  return Op_ConL;
+}
+
 inline int Op_Cmp_unsigned(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");
   if (bt == T_INT) {
