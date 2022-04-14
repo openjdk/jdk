@@ -40,6 +40,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class bug8078268 {
     private static final long TIMEOUT = 10_000;
 
+    private static final String FILENAME = "slowparse.html";
+
     private static final CountDownLatch latch = new CountDownLatch(1);
     private static volatile Exception exception;
 
@@ -50,7 +52,7 @@ public class bug8078268 {
                 HTMLEditorKit htmlKit = new HTMLEditorKit();
                 Document doc = htmlKit.createDefaultDocument();
                 try {
-                    htmlKit.read(new FileReader(getDirURL() + "slowparse.html"), doc, 0);
+                    htmlKit.read(new FileReader(getAbsolutePath()), doc, 0);
                 } catch (Exception e) {
                     exception = e;
                 }
@@ -66,8 +68,8 @@ public class bug8078268 {
         }
     }
 
-    static String getDirURL() {
-        return new File(System.getProperty("test.src", ".")).getAbsolutePath() +
-                File.separator;
+    private static String getAbsolutePath() {
+        return System.getProperty("test.src", ".")
+               + File.separator + FILENAME;
     }
 }
