@@ -432,7 +432,7 @@ final class AixPollPort
                         continue;
                     }
 
-                    // contine after we processed a control event
+                    // continue after we processed a control event
                     if (ev == CONTINUE_AFTER_CTL_EVENT) {
                         continue;
                     }

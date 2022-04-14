@@ -97,7 +97,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
     /**
      * Find out if the HttpCallerInfo supports Negotiate protocol. In order to
      * find out yes or no, an initialization of a Negotiator object against it
-     * is tried. The generated object will be cached under the name of ths
+     * is tried. The generated object will be cached under the name of the
      * hostname at a success try.<br>
      *
      * If this method is called for the second time on an HttpCallerInfo with

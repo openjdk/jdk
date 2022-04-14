@@ -255,7 +255,7 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Sets the first pollfd enty in the poll array to the given fd
+     * Sets the first pollfd entry in the poll array to the given fd
      */
     private void setFirst(int fd, int ops) {
         assert pollArraySize == 0;

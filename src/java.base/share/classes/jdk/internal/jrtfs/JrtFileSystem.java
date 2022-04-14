@@ -274,7 +274,7 @@ class JrtFileSystem extends FileSystem {
 
     // check that the options passed are supported by (read-only) jrt file system
     static void checkOptions(Set<? extends OpenOption> options) {
-        // check for options of null type and option is an intance of StandardOpenOption
+        // check for options of null type and option is an instance of StandardOpenOption
         for (OpenOption option : options) {
             Objects.requireNonNull(option);
             if (!(option instanceof StandardOpenOption)) {

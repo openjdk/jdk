@@ -416,7 +416,7 @@ public class FtpURLConnection extends URLConnection {
      * @return  the {@code InputStream} to the connection.
      *
      * @throws  IOException if already opened for output
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -543,7 +543,7 @@ public class FtpURLConnection extends URLConnection {
      *
      * @throws  IOException if already opened for input or the URL
      *          points to a directory
-     * @throws  FtpProtocolException if errors occur during the transfert.
+     * @throws  FtpProtocolException if errors occur during the transfer.
      */
     @Override
     public OutputStream getOutputStream() throws IOException {

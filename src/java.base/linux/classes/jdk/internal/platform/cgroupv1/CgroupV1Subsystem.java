@@ -185,9 +185,9 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     }
 
     private static long getLongValue(CgroupSubsystemController controller,
-                              String parm) {
+                              String param) {
         return CgroupSubsystemController.getLongValue(controller,
-                                                      parm,
+                                                      param,
                                                       CgroupV1SubsystemController::convertStringToLong,
                                                       CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }

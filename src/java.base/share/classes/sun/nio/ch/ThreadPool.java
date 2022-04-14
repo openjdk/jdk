@@ -47,7 +47,7 @@ public class ThreadPool {
     // indicates if thread pool is fixed size
     private final boolean isFixed;
 
-    // indicates the pool size (for a fixed thread pool configuratin this is
+    // indicates the pool size (for a fixed thread pool configuration this is
     // the maximum pool size; for other thread pools it is the initial size)
     private final int poolSize;
 

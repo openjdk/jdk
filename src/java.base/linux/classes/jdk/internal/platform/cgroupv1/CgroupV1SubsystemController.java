@@ -80,9 +80,9 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
                                                       CgroupSubsystem.LONG_RETVAL_UNLIMITED /* retval on error */);
     }
 
-    public static double getDoubleValue(CgroupSubsystemController controller, String parm) {
+    public static double getDoubleValue(CgroupSubsystemController controller, String param) {
         return CgroupSubsystemController.getDoubleValue(controller,
-                                                        parm,
+                                                        param,
                                                         DOUBLE_RETVAL_UNLIMITED /* retval on error */);
     }
 

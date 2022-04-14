@@ -136,7 +136,7 @@ interface SSLTransport {
             // may be record sequence number overflow
             throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
         } catch (EOFException eofe) {
-            // rethrow EOFException, the call will handle it if neede.
+            // rethrow EOFException, the call will handle it if needed.
             throw eofe;
         } catch (InterruptedIOException | SocketException se) {
             // don't close the Socket in case of timeouts or interrupts or SocketException.

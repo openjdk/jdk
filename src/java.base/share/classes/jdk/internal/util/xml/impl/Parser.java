@@ -216,11 +216,11 @@ public abstract class Parser {
         while (i < 'A') {
             nmttyp[i++] = (byte) 0xff;
         }
-        // skiped upper case alphabetical character are already 0
+        // skipped upper case alphabetical character are already 0
         for (i = '['; i < 'a'; i++) {
             nmttyp[i] = (byte) 0xff;
         }
-        // skiped lower case alphabetical character are already 0
+        // skipped lower case alphabetical character are already 0
         for (i = '{'; i < 0x80; i++) {
             nmttyp[i] = (byte) 0xff;
         }

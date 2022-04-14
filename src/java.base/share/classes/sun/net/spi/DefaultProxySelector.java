@@ -66,7 +66,7 @@ public class DefaultProxySelector extends ProxySelector {
      *   listed in order of priority.
      * Example:
      * {"ftp", "ftp.proxy", "ftpProxy", "proxy", "socksProxy"},
-     * means for FTP we try in that oder:
+     * means for FTP we try in that order:
      *          + ftp.proxyHost & ftp.proxyPort
      *          + ftpProxyHost & ftpProxyPort
      *          + proxyHost & proxyPort
