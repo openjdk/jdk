@@ -70,7 +70,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     }
 
     static AlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
-        if (userSpecifiedConstraints == DEFAULT) {
+        if (userSpecifiedConstraints == DEFAULT || userSpecifiedConstraints == null) {
             return DEFAULT;
         }
         return new SSLAlgorithmConstraints(userSpecifiedConstraints);
