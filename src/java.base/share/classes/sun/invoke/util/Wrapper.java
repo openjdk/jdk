@@ -25,7 +25,7 @@
 
 package sun.invoke.util;
 
-import jdk.internal.annotation.vm.DontInline;
+import jdk.internal.vm.annotation.DontInline;
 
 public enum Wrapper {
     //        wrapperType      simple     primitiveType  simple     char  emptyArray     format
