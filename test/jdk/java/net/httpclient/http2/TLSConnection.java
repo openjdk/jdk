@@ -166,12 +166,13 @@ public class TLSConnection {
                 System.out.println(new String(body));
             }
 
+            sslSession = t.getSSLSession();
+
             try (OutputStream os = t.getResponseBody()) {
                 t.sendResponseHeaders(200, BODY.length);
                 os.write(BODY);
             }
 
-            sslSession = t.getSSLSession();
         }
 
         SSLSession getSSLSession() {
