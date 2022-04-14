@@ -2256,10 +2256,10 @@ bool os::Linux::print_container_info(outputStream* st) {
   print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
   print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
   print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
-  print_container_helper(st, OSContainer::OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
-  print_container_helper(st, OSContainer::OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+  print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
 
-  jlong j = OSContainer::OSContainer::pids_max();
+  jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
@@ -2267,7 +2267,7 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
-  j = OSContainer::OSContainer::pids_current();
+  j = OSContainer::pids_current();
   st->print("current number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
