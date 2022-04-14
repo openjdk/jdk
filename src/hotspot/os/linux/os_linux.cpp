@@ -2188,7 +2188,11 @@ void os::Linux::print_uptime_info(outputStream* st) {
 static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
   st->print("%s: ", metrics);
   if (j > 0) {
-    st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
+    if (j >= 1024) {
+      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
+    } else {
+      st->print_cr(UINT64_FORMAT, uint64_t(j));
+    }
   } else {
     st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
