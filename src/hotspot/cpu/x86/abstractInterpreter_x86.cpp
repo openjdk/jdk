@@ -44,7 +44,7 @@ int AbstractInterpreter::size_activation(int max_stack,
   int overhead = frame::sender_sp_offset -
                  frame::interpreter_frame_initial_sp_offset;
   // Our locals were accounted for by the caller (or last_frame_adjust
-  // on the transistion) Since the callee parameters already account
+  // on the transition) Since the callee parameters already account
   // for the callee's params we only need to account for the extra
   // locals.
   int size = overhead +

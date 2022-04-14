@@ -122,7 +122,7 @@ LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
 // i486 instructions can inline constants
 bool LIRGenerator::can_store_as_constant(Value v, BasicType type) const {
   if (type == T_SHORT || type == T_CHAR) {
-    // there is no immediate move of word values in asembler_i486.?pp
+    // there is no immediate move of word values in assembler_i486.?pp
     return false;
   }
   Constant* c = v->as_Constant();

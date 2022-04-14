@@ -125,7 +125,7 @@ public:
 // Given our scheme to use a large address space range this turns out to
 // use too much memory.
 //
-// 2) It requires memory locking privilages, even for small pages. This
+// 2) It requires memory locking privileges, even for small pages. This
 // has always been a requirement for large pages, and would be an extra
 // restriction for usage with small pages.
 //

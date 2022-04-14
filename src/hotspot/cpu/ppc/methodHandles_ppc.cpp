@@ -534,7 +534,7 @@ void trace_method_handle_stub(const char* adaptername,
       // Current C frame
       frame cur_frame = os::current_frame();
 
-      // Robust search of trace_calling_frame (independant of inlining).
+      // Robust search of trace_calling_frame (independent of inlining).
       assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
       frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
       while (trace_calling_frame.fp() < saved_regs) {

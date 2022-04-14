@@ -787,7 +787,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
   stack->overflow_check(
     extra_locals + header_words + monitor_words + stack_words, CHECK_NULL);
 
-  // Adjust the caller's stack frame to accomodate any additional
+  // Adjust the caller's stack frame to accommodate any additional
   // local variables we have contiguously with our parameters.
   for (int i = 0; i < extra_locals; i++)
     stack->push(0);

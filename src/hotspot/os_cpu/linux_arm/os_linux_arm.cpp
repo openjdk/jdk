@@ -273,7 +273,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
           overflow_state->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
-            // Throw a stack overflow exception.  Guard pages will be reenabled
+            // Throw a stack overflow exception.  Guard pages will be re-enabled
             // while unwinding the stack.
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {

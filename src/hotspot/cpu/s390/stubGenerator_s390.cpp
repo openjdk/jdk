@@ -1962,7 +1962,7 @@ class StubGenerator: public StubCodeGenerator {
     if (multiBlock) {  // Process everything from offset to limit.
 
       // The following description is valid if we get a raw (unpimped) source data buffer,
-      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailled above,
+      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailed above,
       // the calling convention for these stubs is different. We leave the description in
       // to inform the reader what must be happening hidden in the calling code.
       //
@@ -2042,7 +2042,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (multiBlock) {  // Process everything from offset to limit.
       // The following description is valid if we get a raw (unpimped) source data buffer,
-      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailled above,
+      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailed above,
       // the calling convention for these stubs is different. We leave the description in
       // to inform the reader what must be happening hidden in the calling code.
       //
@@ -2122,7 +2122,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (multiBlock) {  // Process everything from offset to limit.
       // The following description is valid if we get a raw (unpimped) source data buffer,
-      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailled above,
+      // spanning the range between [srcOff(Z_ARG3), srcLimit(Z_ARG4)). As detailed above,
       // the calling convention for these stubs is different. We leave the description in
       // to inform the reader what must be happening hidden in the calling code.
       //

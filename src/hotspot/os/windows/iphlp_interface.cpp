@@ -46,7 +46,7 @@ void IphlpDll::initialize(void) {
     return;
   }
 
-  // The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods
+  // The 'A' at the end means the ANSI (not the UNICODE) versions of the methods
   _GetIfTable2 = (GetIfTable2_Fn)::GetProcAddress(_hModule, "GetIfTable2");
   _FreeMibTable = (FreeMibTable_Fn)::GetProcAddress(_hModule, "FreeMibTable");
 

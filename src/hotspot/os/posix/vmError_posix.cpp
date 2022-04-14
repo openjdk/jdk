@@ -59,7 +59,7 @@ void VMError::reporting_started() {
 void VMError::interrupt_reporting_thread() {
   // We misuse SIGILL here, but it does not really matter. We need
   //  a signal which is handled by crash_handler and not likely to
-  //  occurr during error reporting itself.
+  //  occur during error reporting itself.
   ::pthread_kill(reporter_thread_id, SIGILL);
 }
 

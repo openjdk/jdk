@@ -30,7 +30,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 typedef ByteSize (*OffsetFunction)(uint);
 

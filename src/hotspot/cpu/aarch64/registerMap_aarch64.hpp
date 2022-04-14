@@ -26,7 +26,7 @@
 #ifndef CPU_AARCH64_REGISTERMAP_AARCH64_HPP
 #define CPU_AARCH64_REGISTERMAP_AARCH64_HPP
 
-// machine-dependent implemention for register maps
+// machine-dependent implementation for register maps
   friend class frame;
 
  private:

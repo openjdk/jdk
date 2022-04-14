@@ -84,7 +84,7 @@ bool OSXSemaphore::timedwait(int64_t millis) {
 
   kr = semaphore_timedwait(_semaphore, waitspec);
   while (kr == KERN_ABORTED) {
-    // reduce the timout and try again
+    // reduce the timeout and try again
     int64_t totalwait = millis_to_nanos(millis);
     int64_t current = os::javaTimeNanos();
     int64_t passedtime = current - starttime;

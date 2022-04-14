@@ -998,7 +998,7 @@ public:
 
 #ifndef PRODUCT
   // Preserves flags and all registers.
-  // On SMP the updated value might not be visible to external observers without a sychronization barrier
+  // On SMP the updated value might not be visible to external observers without a synchronization barrier
   void cond_atomic_inc32(AsmCondition cond, int* counter_addr);
 #endif // !PRODUCT
 

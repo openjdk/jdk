@@ -26,7 +26,7 @@
 #ifndef CPU_RISCV_REGISTERMAP_RISCV_HPP
 #define CPU_RISCV_REGISTERMAP_RISCV_HPP
 
-// machine-dependent implemention for register maps
+// machine-dependent implementation for register maps
   friend class frame;
 
  private:

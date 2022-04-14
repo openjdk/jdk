@@ -31,7 +31,7 @@
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"
 
-// This file specializes the assember with interpreter-specific macros
+// This file specializes the assembler with interpreter-specific macros
 
 
 class InterpreterMacroAssembler: public MacroAssembler {

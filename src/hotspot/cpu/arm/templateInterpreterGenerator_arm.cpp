@@ -929,7 +929,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ sub(SP, SP, AsmOperand(Rsize_of_params, lsl, LogBytesPerLong));
 
 #ifdef __ABI_HARD__
-  // Allocate more stack space to accomodate all GP as well as FP registers:
+  // Allocate more stack space to accommodate all GP as well as FP registers:
   // 4 * wordSize
   // 8 * BytesPerLong
   int reg_arguments = align_up((4*wordSize) + (8*BytesPerLong), StackAlignmentInBytes);

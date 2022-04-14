@@ -750,7 +750,7 @@ void InterpreterMacroAssembler::get_cpool_and_tags(Register Rcpool, Register Rta
 // Unlock if synchronized method.
 //
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 //
 // If there are locked Java monitors
 //   If throw_monitor_exception
@@ -910,7 +910,7 @@ void InterpreterMacroAssembler::narrow(Register result, Register ret_type) {
 // remove activation
 //
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors

@@ -1456,7 +1456,7 @@ void TemplateTable::wide_iinc() {
 }
 
 void TemplateTable::convert() {
-  // %%%%% Factor this first part accross platforms
+  // %%%%% Factor this first part across platforms
 #ifdef ASSERT
   TosState tos_in  = ilgl;
   TosState tos_out = ilgl;
@@ -2334,7 +2334,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other. ALSO reads &
-//     writes act as aquire & release, so:
+//     writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that
 //     happen after the read float up to before the read. It's OK for
 //     non-volatile memory refs that happen before the volatile read to
@@ -4033,7 +4033,7 @@ void TemplateTable::athrow() {
 // =============================================================================
 // Synchronization
 // Searches the basic object lock list on the stack for a free slot
-// and uses it to lock the obect in tos.
+// and uses it to lock the object in tos.
 //
 // Recursive locking is enabled by exiting the search if the same
 // object is already found in the list. Thus, a new basic lock obj lock

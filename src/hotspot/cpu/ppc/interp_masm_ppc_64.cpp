@@ -1838,7 +1838,7 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
     if (MethodData::profile_return_jsr292_only()) {
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length.
       lbz(tmp1, 0, R14_bcp);

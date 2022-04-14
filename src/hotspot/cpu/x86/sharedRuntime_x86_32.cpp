@@ -965,7 +965,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   // require some stack space.  We grow the current (compiled) stack, then repack
   // the args.  We  finally end in a jump to the generic interpreter entry point.
   // On exit from the interpreter, the interpreter will restore our SP (lest the
-  // compiled code, which relys solely on SP and not EBP, get sick).
+  // compiled code, which relies solely on SP and not EBP, get sick).
 
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;

@@ -359,7 +359,7 @@ public:
                          FloatRegister b,
                          /* non-offsetted (shared) registers */
                          FloatRegister a, FloatRegister a1_xor_a0, FloatRegister p, FloatRegister vzr,
-                         /* offseted (temp) registers */
+                         /* offsetted (temp) registers */
                          FloatRegister tmp1, FloatRegister tmp2, FloatRegister tmp3)
     : KernelGenerator(as, unrolls),
       _result_lo(result_lo), _result_hi(result_hi), _b(b),
@@ -436,7 +436,7 @@ public:
                        FloatRegister result, FloatRegister lo, FloatRegister hi,
                        /* non-offsetted (shared) registers */
                        FloatRegister p, FloatRegister vzr, FloatRegister data,
-                       /* offseted (temp) registers */
+                       /* offsetted (temp) registers */
                        FloatRegister t1)
     : KernelGenerator(as, unrolls),
       _result(result), _lo(lo), _hi(hi),

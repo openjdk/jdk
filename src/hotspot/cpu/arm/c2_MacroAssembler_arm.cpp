@@ -57,7 +57,7 @@ void C2_MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   mov(result, 1, eq);
   b(Ldone, eq);
 
-  // word by word compare, dont't need alignment check
+  // word by word compare, don't need alignment check
   bind(Lvector);
 
   // Shift ary1 and ary2 to the end of the arrays, negate limit

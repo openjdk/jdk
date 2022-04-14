@@ -1585,7 +1585,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
   // Calculate the value for last_Java_sp
   // somewhat subtle. call_VM does an intermediate call
   // which places a return address on the stack just under the
-  // stack pointer as the user finsihed with it. This allows
+  // stack pointer as the user finished with it. This allows
   // use to retrieve last_Java_pc from last_Java_sp[-1].
   // On 32bit we then have to push additional args on the stack to accomplish
   // the actual requested call. On 64bit call_VM only can use register args
@@ -4781,7 +4781,7 @@ void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
   access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
 }
 
-// Doesn't do verfication, generates fixed size code
+// Doesn't do verification, generates fixed size code
 void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
                                             Register thread_tmp, DecoratorSet decorators) {
   access_load_at(T_OBJECT, IN_HEAP | IS_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
@@ -6107,7 +6107,7 @@ void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
 }
 
 /**
- * Code for BigInteger::multiplyToLen() instrinsic.
+ * Code for BigInteger::multiplyToLen() intrinsic.
  *
  * rdi: x
  * rax: xlen
@@ -6316,7 +6316,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
     jcc(Assembler::zero, SAME_TILL_END);
 
     //bind(VECTOR64_TAIL);
-    // AVX512 code to compare upto 63 byte vectors.
+    // AVX512 code to compare up to 63 byte vectors.
     mov64(tmp2, 0xFFFFFFFFFFFFFFFF);
     shlxq(tmp2, tmp2, tmp1);
     notq(tmp2);
@@ -6597,7 +6597,7 @@ void MacroAssembler::multiply_add_64(Register sum, Register op1, Register op2, R
 }
 
 /**
- * Add 64 bit long carry into z[] with carry propogation.
+ * Add 64 bit long carry into z[] with carry propagation.
  * Preserves z and carry register values and modifies rest of registers.
  *
  */
@@ -6777,7 +6777,7 @@ void MacroAssembler::square_to_len(Register x, Register len, Register z, Registe
   bind(L_third_loop_exit);
 
   // Fourth loop
-  // Add 64 bit long carry into z with carry propogation.
+  // Add 64 bit long carry into z with carry propagation.
   // Uses offsetted zlen.
   add_one_64(z, zlen, carry, tmp1);
 
@@ -7687,7 +7687,7 @@ void MacroAssembler::crc32c_rec_alt2(uint32_t const_or_pre_comp_const_index_u1, 
 }
 
 // Set N to predefined value
-// Subtract from a lenght of a buffer
+// Subtract from a length of a buffer
 // execute in a loop:
 // CRC_A = 0xFFFFFFFF, CRC_B = 0, CRC_C = 0
 // for i = 1 to N do
@@ -8096,7 +8096,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     testl(len, -32);
     jcc(Assembler::zero, below_threshold);
 
-    // First check whether a character is compressable ( <= 0xFF).
+    // First check whether a character is compressible ( <= 0xFF).
     // Create mask to test for Unicode chars inside zmm vector
     movl(result, 0x00FF);
     evpbroadcastw(tmp2Reg, result, Assembler::AVX_512bit);

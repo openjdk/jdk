@@ -25,7 +25,7 @@
 #ifndef CPU_X86_REGISTERMAP_X86_HPP
 #define CPU_X86_REGISTERMAP_X86_HPP
 
-// machine-dependent implemention for register maps
+// machine-dependent implementation for register maps
   friend class frame;
 
  private:

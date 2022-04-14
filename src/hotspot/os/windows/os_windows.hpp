@@ -125,7 +125,7 @@ class win32 {
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
 #ifndef _WIN64
-  // A wrapper to install a structured exception handler for fast JNI accesors.
+  // A wrapper to install a structured exception handler for fast JNI accessors.
   static address fast_jni_accessor_wrapper(BasicType);
 #endif
 

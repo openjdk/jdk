@@ -682,7 +682,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 // remove activation
 //
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors

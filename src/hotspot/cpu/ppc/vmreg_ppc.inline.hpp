@@ -28,12 +28,12 @@
 
 inline VMReg RegisterImpl::as_VMReg() {
   if (this == noreg) return VMRegImpl::Bad();
-  // Two halfs, multiply by 2.
+  // Two halves, multiply by 2.
   return VMRegImpl::as_VMReg(encoding() << 1);
 }
 
 inline VMReg FloatRegisterImpl::as_VMReg() {
-  // Two halfs, multiply by 2.
+  // Two halves, multiply by 2.
   return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
 }
 

@@ -42,7 +42,7 @@
 // addressable heap address space are adjusted accordingly.
 //
 // The following memory schema shows an exemplary layout in which bit '45' is the highest addressable bit.
-// It is assumed that this virtual memroy address space layout is predominant on the power platform.
+// It is assumed that this virtual memory address space layout is predominant on the power platform.
 //
 // Standard Address Space & Pointer Layout
 // ---------------------------------------

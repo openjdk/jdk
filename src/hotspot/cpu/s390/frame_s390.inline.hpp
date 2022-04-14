@@ -93,7 +93,7 @@ inline BasicObjectLock** frame::interpreter_frame_monitors_addr() const {
   return (BasicObjectLock**) &(ijava_state()->monitors);
 }
 
-// The next two funcions read and write z_ijava_state.monitors.
+// The next two functions read and write z_ijava_state.monitors.
 inline BasicObjectLock* frame::interpreter_frame_monitors() const {
   return *interpreter_frame_monitors_addr();
 }

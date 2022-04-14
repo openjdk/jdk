@@ -74,7 +74,7 @@ void VM_Version::get_os_cpu_info() {
   if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, NULL, 0)) {
     cache_line_size = 16;
   }
-  _icache_line_size = 16; // minimal line lenght CCSIDR_EL1 can hold
+  _icache_line_size = 16; // minimal line length CCSIDR_EL1 can hold
   _dcache_line_size = cache_line_size;
 
   uint64_t dczid_el0;

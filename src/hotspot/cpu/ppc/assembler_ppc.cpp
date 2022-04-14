@@ -343,7 +343,7 @@ void Assembler::load_const(Register d, long x, Register tmp) {
   }
 }
 
-// Load a 64 bit constant, optimized, not identifyable.
+// Load a 64 bit constant, optimized, not identifiable.
 // Tmp can be used to increase ILP. Set return_simm16_rest=true to get a
 // 16 bit immediate offset.
 int Assembler::load_const_optimized(Register d, long x, Register tmp, bool return_simm16_rest) {

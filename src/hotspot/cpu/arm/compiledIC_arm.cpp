@@ -96,7 +96,7 @@ int CompiledStaticCall::to_trampoline_stub_size() {
   return 0;
 }
 
-// size of C2 call stub, compiled java to interpretor
+// size of C2 call stub, compiled java to interpreter
 int CompiledStaticCall::to_interp_stub_size() {
   return 8 * NativeInstruction::instruction_size;
 }

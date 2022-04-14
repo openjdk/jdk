@@ -60,7 +60,7 @@ void PdhDll::initialize(void) {
   if (NULL == _hModule) {
     return;
   }
-  // The 'A' at the end means the ANSI (not the UNICODE) vesions of the methods
+  // The 'A' at the end means the ANSI (not the UNICODE) versions of the methods
   _PdhAddCounter               = (PdhAddCounter_Fn)::GetProcAddress(_hModule, "PdhAddCounterA");
   _PdhOpenQuery                = (PdhOpenQuery_Fn)::GetProcAddress(_hModule, "PdhOpenQueryA");
   _PdhCloseQuery               = (PdhCloseQuery_Fn)::GetProcAddress(_hModule, "PdhCloseQuery");
