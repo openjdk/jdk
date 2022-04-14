@@ -39,6 +39,8 @@ public:
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
+  size_t _success_old_gcs;
+  size_t _interrupted_old_gcs;
   size_t _success_degenerated_gcs;
   size_t _success_full_gcs;
   size_t _alloc_failure_degenerated;
@@ -64,6 +66,8 @@ public:
   void record_cycle_start();
 
   void record_success_concurrent();
+  void record_success_old();
+  void record_interrupted_old();
   void record_success_degenerated();
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);

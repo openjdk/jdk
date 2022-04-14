@@ -53,6 +53,8 @@ class outputStream;
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \
   f(init_manage_tlabs,                              "  Manage TLABs")                  \
+  f(init_swap_rset,                                 "  Swap Remembered Set")           \
+  f(init_transfer_satb,                             "  Transfer Old From SATB")        \
   f(init_update_region_states,                      "  Update Region States")          \
                                                                                        \
   f(init_scan_rset,                                 "Concurrent Scan Remembered Set")  \
@@ -66,8 +68,6 @@ class outputStream;
   f(final_mark,                                     "Pause Final Mark (N)")            \
   f(finish_mark,                                    "  Finish Mark")                   \
   SHENANDOAH_PAR_PHASE_DO(finish_mark_,             "    FM: ", f)                     \
-  f(coalesce_and_fill,                              "Coalesce and Fill Old Dead")      \
-  SHENANDOAH_PAR_PHASE_DO(coalesce_and_fill_,       "    CFOD: ", f)                   \
   f(purge,                                          "  System Purge")                  \
   SHENANDOAH_PAR_PHASE_DO(purge_cu_par_,            "      CU: ", f)                   \
   f(purge_weak_par,                                 "    Weak Roots")                  \
@@ -100,6 +100,8 @@ class outputStream;
   f(conc_class_unload_purge_ec,                     "    Exception Caches")            \
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
+  f(coalesce_and_fill,                              "Coalesce and Fill Old Dead")      \
+  SHENANDOAH_PAR_PHASE_DO(coalesce_and_fill_,       "    CFOD: ", f)                   \
   f(conc_evac,                                      "Concurrent Evacuation")           \
                                                                                        \
   f(final_roots_gross,                              "Pause Final Roots (G)")           \

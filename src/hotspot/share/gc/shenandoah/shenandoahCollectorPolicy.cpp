@@ -31,6 +31,8 @@
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
+  _success_old_gcs(0),
+  _interrupted_old_gcs(0),
   _success_degenerated_gcs(0),
   _success_full_gcs(0),
   _alloc_failure_degenerated(0),
@@ -83,6 +85,14 @@ void ShenandoahCollectorPolicy::record_success_concurrent() {
   _success_concurrent_gcs++;
 }
 
+void ShenandoahCollectorPolicy::record_success_old() {
+  _success_old_gcs++;
+}
+
+void ShenandoahCollectorPolicy::record_interrupted_old() {
+  _interrupted_old_gcs++;
+}
+
 void ShenandoahCollectorPolicy::record_success_degenerated() {
   _success_degenerated_gcs++;
 }
@@ -114,9 +124,13 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
   out->print_cr("to avoid Degenerated and Full GC cycles.");
   out->cr();
 
-  out->print_cr(SIZE_FORMAT_W(5) " successful concurrent GCs",         _success_concurrent_gcs);
+  out->print_cr(SIZE_FORMAT_W(5) " Successful Concurrent GCs",         _success_concurrent_gcs);
   out->print_cr("  " SIZE_FORMAT_W(5) " invoked explicitly",           _explicit_concurrent);
   out->print_cr("  " SIZE_FORMAT_W(5) " invoked implicitly",           _implicit_concurrent);
+  out->cr();
+
+  out->print_cr(SIZE_FORMAT_W(5) " Completed Old GCs",                 _success_old_gcs);
+  out->print_cr("  " SIZE_FORMAT_W(5) " interruptions",                _interrupted_old_gcs);
   out->cr();
 
   out->print_cr(SIZE_FORMAT_W(5) " Degenerated GCs",                   _success_degenerated_gcs);

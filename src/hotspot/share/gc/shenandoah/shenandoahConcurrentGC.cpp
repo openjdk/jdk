@@ -603,7 +603,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // The current implementation of swap_remembered_set() copies the write-card-table
       // to the read-card-table. The remembered sets are also swapped for GLOBAL collections
       // so that the verifier works with the correct copy of the card table when verifying.
-      _generation->swap_remembered_set();
+        ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_swap_rset);
+        _generation->swap_remembered_set();
     }
 
     if (_generation->generation_mode() == GLOBAL) {
@@ -612,6 +613,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // Purge the SATB buffers, transferring any valid, old pointers to the
       // old generation mark queue. Any pointers in a young region will be
       // abandoned.
+      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
       heap->transfer_old_pointers_from_satb();
     }
   }

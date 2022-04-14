@@ -132,6 +132,8 @@ private:
 
   bool check_soft_max_changed() const;
 
+  void process_phase_timings(const ShenandoahHeap* heap);
+
 public:
   // Constructor
   ShenandoahControlThread();
