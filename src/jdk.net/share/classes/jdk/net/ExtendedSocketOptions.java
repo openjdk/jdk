@@ -206,16 +206,17 @@ public final class ExtendedSocketOptions {
      * whether the option is enabled or disabled. When {@code true} fragmentation
      * of outgoing IPv4 and IPv6 packets does not occur. This option can only be used
      * with datagram sockets. When set, care must be taken to limit outgoing packet
-     * sizes to the {@link java.net.NetworkInterface#getMTU() local MTU}. Depending 
-     * on the implementation and the network interface, packets larger than the MTU 
+     * sizes to the {@link java.net.NetworkInterface#getMTU() local MTU}. Depending
+     * on the implementation and the network interface, packets larger than the MTU
      * may be sent or dropped silently or dropped with an exception thrown.
      *
-     * <p> Note, for IPv4 this option sets the DF (Do not Fragment) flag
-     * in the IP packet header. This instructs intermediate routers to not fragment
-     * the packet. IPv6 routers never fragment packets. Instead, fragmentation is
-     * handled by the sending and receiving nodes exclusively. Setting this option for
-     * an IPv6 socket ensures that packets to be sent are never fragmented, in which
-     * case, the local network MTU must be observed.
+     * @apiNote
+     * For IPv4 this option sets the DF (Do not Fragment) flag in the IP packet 
+     * header. This instructs intermediate routers to not fragment the packet.
+     * IPv6 routers never fragment packets. Instead, fragmentation is handled
+     * by the sending and receiving nodes exclusively. Setting this option for
+     * an IPv6 socket ensures that packets to be sent are never fragmented, in
+     * which case, the local network MTU must be observed.
      */
     public static final SocketOption<Boolean> IP_DONTFRAGMENT =
         new ExtSocketOption<Boolean>("IP_DONTFRAGMENT", Boolean.class);
