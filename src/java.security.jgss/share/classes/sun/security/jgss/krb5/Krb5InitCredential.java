@@ -130,7 +130,8 @@ public class Krb5InitCredential
                                Date startTime,
                                Date endTime,
                                Date renewTill,
-                               InetAddress[] clientAddresses) {
+                               InetAddress[] clientAddresses)
+                               throws GSSException {
         super(asn1Encoding,
               client,
               server,
@@ -367,12 +368,13 @@ public class Krb5InitCredential
                                    ? GSSCaller.CALLER_INITIATE
                                    : caller;
             return AccessController.doPrivilegedWithCombiner(
-                    (PrivilegedExceptionAction<KerberosTicket>) () -> {
-                        // It's OK to use null as serverPrincipal. TGT is almost
-                        // the first ticket for a principal, and we use list.
-                        return Krb5Util.getInitialTicket(
-                            realCaller, clientPrincipal);
-                            });
+                new PrivilegedExceptionAction<KerberosTicket>() {
+                public KerberosTicket run() throws Exception {
+                    // It's OK to use null as serverPrincipal. TGT is almost
+                    // the first ticket for a principal and we use list.
+                    return Krb5Util.getInitialTicket(
+                        realCaller, clientPrincipal);
+                        }});
         } catch (PrivilegedActionException e) {
             GSSException ge =
                 new GSSException(GSSException.NO_CRED, -1,

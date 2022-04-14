@@ -440,7 +440,13 @@ public final class ProviderList {
      * PreferencesEntry's and iterates through them as it tries to
      * instantiate MechanismFactory's.
      */
-    private record PreferencesEntry(Provider p, Oid oid) {
+    private static final class PreferencesEntry {
+        private Provider p;
+        private Oid oid;
+        PreferencesEntry(Provider p, Oid oid) {
+            this.p = p;
+            this.oid = oid;
+        }
 
         public boolean equals(Object other) {
             if (this == other) {

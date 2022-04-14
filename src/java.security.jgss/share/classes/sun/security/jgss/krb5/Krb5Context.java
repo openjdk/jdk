@@ -642,21 +642,22 @@ class Krb5Context implements GSSContextSpi {
                            // get service ticket from caller's subject
                            @SuppressWarnings("removal")
                            var tmp = AccessController.doPrivilegedWithCombiner(
-                                   (PrivilegedExceptionAction<KerberosTicket>) () -> {
-                                       // XXX to be cleaned
-                                       // highly consider just calling:
-                                       // Subject.getSubject
-                                       // SubjectComber.find
-                                       // instead of Krb5Util.getServiceTicket
-                                       return Krb5Util.getServiceTicket(
-                                           GSSCaller.CALLER_UNKNOWN,
-                                           // since it's useSubjectCredsOnly here,
-                                           // don't worry about the null
-                                           proxyCreds == null ?
-                                               myName.getKrb5PrincipalName().getName():
-                                               proxyCreds.getName().getKrb5PrincipalName().getName(),
-                                           peerName.getKrb5PrincipalName().getName());
-                                   });
+                                new PrivilegedExceptionAction<KerberosTicket>() {
+                                public KerberosTicket run() throws Exception {
+                                    // XXX to be cleaned
+                                    // highly consider just calling:
+                                    // Subject.getSubject
+                                    // SubjectComber.find
+                                    // instead of Krb5Util.getServiceTicket
+                                    return Krb5Util.getServiceTicket(
+                                        GSSCaller.CALLER_UNKNOWN,
+                                        // since it's useSubjectCredsOnly here,
+                                        // don't worry about the null
+                                        proxyCreds == null ?
+                                            myName.getKrb5PrincipalName().getName():
+                                            proxyCreds.getName().getKrb5PrincipalName().getName(),
+                                        peerName.getKrb5PrincipalName().getName());
+                                }});
                             kerbTicket = tmp;
                         } catch (PrivilegedActionException e) {
                             if (DEBUG) {

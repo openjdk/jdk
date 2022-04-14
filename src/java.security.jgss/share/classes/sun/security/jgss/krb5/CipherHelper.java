@@ -672,7 +672,7 @@ class CipherHelper {
 
     void decryptData(WrapToken_v2 token, InputStream cipherStream, int cLen,
         byte[] plaintext, int pStart, int key_usage)
-        throws GSSException {
+        throws GSSException, IOException {
 
         // Read encrypted data from stream
         byte[] ciphertext = new byte[cLen];

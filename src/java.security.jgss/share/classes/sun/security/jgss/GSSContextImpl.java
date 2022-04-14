@@ -161,7 +161,8 @@ public class GSSContextImpl implements GSSContext {
     /**
      * Creates a GSSContextImpl on the context acceptor's side.
      */
-    public GSSContextImpl(GSSManagerImpl gssManager, GSSCredential myCred) {
+    public GSSContextImpl(GSSManagerImpl gssManager, GSSCredential myCred)
+        throws GSSException {
         this.gssManager = gssManager;
         this.myCred = (GSSCredentialImpl) myCred; // XXX Check first
         initiator = false;

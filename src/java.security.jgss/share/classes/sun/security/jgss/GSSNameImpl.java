@@ -131,7 +131,7 @@ public class GSSNameImpl implements GSSName {
     private GSSNameSpi mechElement = null;
 
     static GSSNameImpl wrapElement(GSSManagerImpl gssManager,
-        GSSNameSpi mechElement) {
+        GSSNameSpi mechElement) throws GSSException {
         return (mechElement == null ?
             null : new GSSNameImpl(gssManager, mechElement));
     }

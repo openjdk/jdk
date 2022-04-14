@@ -67,9 +67,12 @@ public class Krb5AcceptCredential
         ServiceCreds creds;
         try {
             creds = AccessController.doPrivilegedWithCombiner(
-                    (PrivilegedExceptionAction<ServiceCreds>) () -> Krb5Util.getServiceCreds(
+                        new PrivilegedExceptionAction<ServiceCreds>() {
+                public ServiceCreds run() throws Exception {
+                    return Krb5Util.getServiceCreds(
                         caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
-                        serverPrinc));
+                        serverPrinc);
+                }});
         } catch (PrivilegedActionException e) {
             GSSException ge =
                 new GSSException(GSSException.NO_CRED, -1,

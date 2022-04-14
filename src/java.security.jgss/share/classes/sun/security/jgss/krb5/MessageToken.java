@@ -529,13 +529,13 @@ abstract class MessageToken extends Krb5Token {
         return TOKEN_NO_CKSUM_SIZE + cipherHelper.getChecksumLength();
     }
 
-    protected static int getTokenSize(CipherHelper ch)
+    protected static final int getTokenSize(CipherHelper ch)
         throws GSSException {
          return TOKEN_NO_CKSUM_SIZE + ch.getChecksumLength();
     }
 
     /**
-     * Obtains the context key that is associated with this token.
+     * Obtains the context key associated with this token.
      * @return the context key
      */
     /*
