@@ -51,7 +51,7 @@ public class TestComboBoxHeight {
             SwingUtilities.invokeAndWait(() -> {
                 jframe = new JFrame();
 
-		GridBagLayout gridBag = new GridBagLayout();
+                GridBagLayout gridBag = new GridBagLayout();
                 GridBagConstraints c = new GridBagConstraints();
                 JPanel p = new JPanel(gridBag);
                 c.fill = GridBagConstraints.NONE;
@@ -59,7 +59,7 @@ public class TestComboBoxHeight {
                 // fine-looking combo
                 combo1 = new JComboBox(data);
                 combo1.setEditable(true);
-		gridBag.setConstraints(combo1, c);
+                gridBag.setConstraints(combo1, c);
                 p.add(combo1);
 
                 // combo has border
@@ -67,7 +67,7 @@ public class TestComboBoxHeight {
                 combo2.setEditable(true);
                 combo2.setBorder(BorderFactory.
                         createTitledBorder("Combo Border"));
-		gridBag.setConstraints(combo2, c);
+                gridBag.setConstraints(combo2, c);
                 p.add(combo2);
 
                 jframe.setContentPane(p);
@@ -86,7 +86,7 @@ public class TestComboBoxHeight {
             });
 
             if (heightCombo2 >= heightCombo1 * 2) {
-               throw new RuntimeException("combo boxes with border " + 
+                throw new RuntimeException("combo boxes with border " +
                  " should not have double height compared to normal combobox");
             }
         } finally {
