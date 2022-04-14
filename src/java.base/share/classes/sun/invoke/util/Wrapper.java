@@ -274,7 +274,7 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for unexpected types
      */
     public static Wrapper forPrimitiveType(char basicTypeChar) {
-        Wrapper w = FROM_CHAR[(basicTypeChar + (basicTypeChar >> 1)) % 16];
+        Wrapper w = FROM_CHAR[(basicTypeChar + (basicTypeChar >> 1)) & 0xf];
         if (w == null || w.basicTypeChar != basicTypeChar) {
             handleBasicTypeError(basicTypeChar);
         }
@@ -325,7 +325,7 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for any non-signature character or {@code '['}.
      */
     public static Wrapper forBasicType(char type) {
-        Wrapper w = FROM_CHAR[(type + (type >> 1)) % 16];
+        Wrapper w = FROM_CHAR[(type + (type >> 1)) & 0xf];
         if (w != null && w.basicTypeChar == type) {
             return w;
         }
@@ -359,14 +359,12 @@ public enum Wrapper {
     }
 
     // Note on perfect hashes:
-    //   for signature chars c, do (c + (c >> 1)) % 16
+    //   for signature chars c, do (c + (c >> 1)) & 0xf
     private static final Wrapper[] FROM_CHAR = new Wrapper[16];
 
     static {
         for (Wrapper w : values()) {
-            int ci = (w.basicTypeChar + (w.basicTypeChar >> 1)) % 16;
-            assert(FROM_CHAR[ci] == null);
-            FROM_CHAR[ci] = w;
+            FROM_CHAR[(w.basicTypeChar + (w.basicTypeChar >> 1)) & 0xf] = w;
         }
     }
 
@@ -456,13 +454,6 @@ public enum Wrapper {
     /** What is the simple name of the primitive type?
      */
     public String primitiveSimpleName() { return primitiveSimpleName; }
-
-//    /** Wrap a value in the given type, which may be either a primitive or wrapper type.
-//     *  Performs standard primitive conversions, including truncation and float conversions.
-//     */
-//    public static <T> T wrap(Object x, Class<T> type) {
-//        return Wrapper.valueOf(type).cast(x, type);
-//    }
 
     /** Cast a wrapped value to the given type, which may be either a primitive or wrapper type.
      *  The given target type must be this wrapper's primitive or wrapper type.
