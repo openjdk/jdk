@@ -506,10 +506,9 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
 
 static void asyncGetCallTraceImpl(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
-  JavaThread* thread;
+  JavaThread* thread = JavaThread::current();
 
-  if (trace->env_id == NULL ||
-      (thread = JavaThread::thread_from_jni_environment(trace->env_id))->is_exiting()) {
+  if (trace->env_id == NULL || thread->is_terminated() || thread->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
@@ -521,7 +520,7 @@ static void asyncGetCallTraceImpl(ASGCT_CallTrace *trace, jint depth, void* ucon
     return;
   }
 
-  assert(JavaThread::current() == thread,
+  assert(thread == JavaThread::thread_from_jni_environment(trace->env_id),
          "AsyncGetCallTrace must be called by the current interrupted thread");
 
   if (!JvmtiExport::should_post_class_load()) {
