@@ -137,7 +137,7 @@ bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucont
 }
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
-  return pd_get_top_frame_for_profiling(fr_addr, ucontext, isInJava, true);
+  return pd_get_top_frame(fr_addr, ucontext, isInJava, true);
 }
 
 void JavaThread::cache_global_variables() { }
