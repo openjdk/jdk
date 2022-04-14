@@ -458,6 +458,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
                                             ASGCT_CallTrace* trace,
                                             int depth,
                                             frame top_frame) {
+
   frame initial_Java_frame;
   Method* method;
   int bci = -1; // assume BCI is not available for method
