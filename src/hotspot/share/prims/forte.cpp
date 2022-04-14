@@ -671,13 +671,17 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_thread_exit;
     return;
   }
-  trace->num_frames = ticks_unknown_state;
-  AsyncGetCallTraceCallBack cb(trace, depth, ucontext);
-  os::ThreadCrashProtection crash_protection;
-  if (!crash_protection.call(cb)) {
-    if (trace->num_frames >= 0) {
-      trace->num_frames = ticks_unknown_state;
+  if (CrashProtectAsyncGetCallTrace) {
+    trace->num_frames = ticks_unknown_state;
+    AsyncGetCallTraceCallBack cb(trace, depth, ucontext);
+    os::ThreadCrashProtection crash_protection;
+    if (!crash_protection.call(cb)) {
+      if (trace->num_frames >= 0) {
+        trace->num_frames = ticks_unknown_state;
+      }
     }
+  } else {
+    asyncGetCallTraceImpl(trace, depth, ucontext);
   }
 }
 
