@@ -129,7 +129,9 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         Button printButton = new Button("PRINT");
         PrinterJob pj = PrinterJob.getPrinterJob();
         if (pj == null || pj.getPrintService() == null) {
-            printButton.setEnabled(false);
+            System.out.println("Printer not configured or available."
+                    + " Test cannot continue.");
+            PassFailJFrame.forcePass();
         }
 
         printButton.addActionListener((e) -> {
@@ -158,8 +160,7 @@ public class PrintGlyphVectorTest extends Component implements Printable {
     }
 
     public static void main(String[] arg) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
-                "Frame", INSTRUCTIONS, 10, 40, 5);
+        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
         createTestUI();
         passFailJFrame.awaitAndCheck();
     }
