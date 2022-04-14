@@ -458,8 +458,6 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
                                             ASGCT_CallTrace* trace,
                                             int depth,
                                             frame top_frame) {
-  NoHandleMark nhm;
-
   frame initial_Java_frame;
   Method* method;
   int bci = -1; // assume BCI is not available for method
@@ -666,6 +664,7 @@ public:
 extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
+  NoHandleMark nhm;
   if (Thread::current_or_null_safe() == NULL) {
     // we need the current Thread object for crash protection
     trace->num_frames = ticks_thread_exit;
