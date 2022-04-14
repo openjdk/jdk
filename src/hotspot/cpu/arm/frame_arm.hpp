@@ -118,6 +118,4 @@
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
 
-  static address pc_from_sp(intptr_t* sp);
-
 #endif // CPU_ARM_FRAME_ARM_HPP
