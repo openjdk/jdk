@@ -68,11 +68,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * one of a list of tabs above the table. If the table does not support filtered
  * views, the caption element is typically displayed as a single (inactive)
  * tab.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Table extends Content {
     private final HtmlStyle tableStyle;
@@ -340,7 +335,7 @@ public class Table extends Content {
         for (Content c : contents) {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
             // Always add content to make sure the cell isn't dropped
-            HtmlTree cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
+            var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
             if (rowStyle != null) {
                 cell.addStyle(rowStyle);
             }
@@ -387,7 +382,7 @@ public class Table extends Content {
             default -> throw new IllegalStateException();
         };
 
-        HtmlTree table = HtmlTree.DIV(tableStyle).addStyle(columnStyle);
+        var table = HtmlTree.DIV(tableStyle).addStyle(columnStyle);
         if ((tabMap == null || tabs.size() == 1) && !alwaysShowDefaultTab) {
             if (tabMap == null) {
                 main.add(caption);
@@ -397,7 +392,7 @@ public class Table extends Content {
             table.add(getTableBody());
             main.add(table);
         } else {
-            HtmlTree tablist = HtmlTree.DIV(tabListStyle)
+            var tablist = HtmlTree.DIV(tabListStyle)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
@@ -414,7 +409,7 @@ public class Table extends Content {
             if (id == null) {
                 throw new IllegalStateException("no id set for table");
             }
-            HtmlTree tabpanel = new HtmlTree(TagName.DIV)
+            var tabpanel = new HtmlTree(TagName.DIV)
                     .setId(HtmlIds.forTabPanel(id))
                     .put(HtmlAttr.ROLE, "tabpanel");
             table.add(getTableBody());
@@ -426,7 +421,7 @@ public class Table extends Content {
     }
 
     private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, Content tabLabel) {
-        HtmlTree tab = new HtmlTree(TagName.BUTTON)
+        var tab = new HtmlTree(TagName.BUTTON)
                 .setId(tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")

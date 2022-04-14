@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ final class ParserFactory {
         if (constantPool) {
             ConstantLookup lookup = constantLookups.get(id);
             if (lookup == null) {
-                ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
+                ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
                 lookup = new ConstantLookup(pool, type);
                 constantLookups.put(id, lookup);
             }
@@ -140,7 +140,7 @@ final class ParserFactory {
         case "byte":
             return new ByteParser();
         case "java.lang.String":
-            ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type.getName());
+            ConstantMap pool = new ConstantMap(ObjectFactory.create(type, timeConverter), type);
             ConstantLookup lookup = new ConstantLookup(pool, type);
             constantLookups.put(type.getId(), lookup);
             return new StringParser(lookup, event);
@@ -304,6 +304,16 @@ final class ParserFactory {
         }
 
         @Override
+        public Object parseReferences(RecordingInput input) throws IOException {
+            final int size = input.readInt();
+            final Object[] array = new Object[size];
+            for (int i = 0; i < size; i++) {
+                array[i] = elementParser.parse(input);
+            }
+            return array;
+        }
+
+        @Override
         public void skip(RecordingInput input) throws IOException {
             final int size = input.readInt();
             for (int i = 0; i < size; i++) {
@@ -312,34 +322,12 @@ final class ParserFactory {
         }
     }
 
-    private static final class CompositeParser extends Parser {
-        private final Parser[] parsers;
-
-        public CompositeParser(Parser[] valueParsers) {
-            this.parsers = valueParsers;
-        }
-
-        @Override
-        public Object parse(RecordingInput input) throws IOException {
-            final Object[] values = new Object[parsers.length];
-            for (int i = 0; i < values.length; i++) {
-                values[i] = parsers[i].parse(input);
-            }
-            return values;
-        }
-
-        @Override
-        public void skip(RecordingInput input) throws IOException {
-            for (int i = 0; i < parsers.length; i++) {
-                parsers[i].skip(input);
-            }
-        }
-    }
-
     private static final class EventValueConstantParser extends Parser {
         private final ConstantLookup lookup;
         private Object lastValue = 0;
         private long lastKey = -1;
+        private Object lastReferenceValue;
+        private long lastReferenceKey = -1;
         EventValueConstantParser(ConstantLookup lookup) {
             this.lookup = lookup;
         }
@@ -359,6 +347,17 @@ final class ParserFactory {
         public void skip(RecordingInput input) throws IOException {
             input.readLong();
         }
+
+        @Override
+        public Object parseReferences(RecordingInput input) throws IOException {
+            long key = input.readLong();
+            if (key == lastReferenceKey) {
+                return lastReferenceValue;
+            }
+            lastReferenceKey = key;
+            lastReferenceValue = new Reference(lookup.getLatestPool(), key);
+            return lastReferenceValue;
+        }
     }
 
     private static final class ConstantValueParser extends Parser {
@@ -375,6 +374,11 @@ final class ParserFactory {
         @Override
         public void skip(RecordingInput input) throws IOException {
             input.readLong();
+        }
+
+        @Override
+        public Object parseReferences(RecordingInput input) throws IOException {
+            return new Reference(lookup.getLatestPool(), input.readLong());
         }
     }
 }

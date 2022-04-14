@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html.markup;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,7 +37,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * A sequence of Content nodes.
  */
 public class ContentBuilder extends Content {
-    protected List<Content> contents = Collections.emptyList();
+    protected List<Content> contents = List.of();
 
     public ContentBuilder() { }
 

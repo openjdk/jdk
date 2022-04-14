@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,16 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.AttributeTree;
@@ -76,12 +77,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import static com.sun.source.doctree.DocTree.Kind.*;
 
 /**
- *  A utility class.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * A utility class.
  */
 public class CommentHelper {
     private final BaseConfiguration configuration;
@@ -163,7 +159,10 @@ public class CommentHelper {
             return null;
         }
         DocTrees doctrees = configuration.docEnv.getDocTrees();
-        return doctrees.getElement(docTreePath);
+        // Workaround for JDK-8284193
+        // DocTrees.getElement(DocTreePath) returns javac-internal Symbols
+        var e = doctrees.getElement(docTreePath);
+        return e == null || e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED ? null : e;
     }
 
     public TypeMirror getType(ReferenceTree rtree) {
@@ -677,7 +676,7 @@ public class CommentHelper {
 
             @Override
             protected List<? extends DocTree> defaultAction(DocTree node, Void p) {
-               return Collections.emptyList();
+               return List.of();
             }
         }.visit(dtree, null);
     }

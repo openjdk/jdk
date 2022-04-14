@@ -264,6 +264,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
+  bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
   bool inline_reference_refersTo0(bool is_phantom);
   bool inline_Class_cast();
@@ -296,7 +297,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
-  bool inline_hasNegatives();
+  bool inline_countPositives();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
