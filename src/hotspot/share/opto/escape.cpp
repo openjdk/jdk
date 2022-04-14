@@ -808,21 +808,22 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
     case Op_Blackhole: {
-      // All blackhole arguments are globally escaping.
+      // All blackhole pointer arguments are globally escaping.
       for (uint i = 0; i < n->req(); i++) {
-        Node *in = n->in(i);
-        if (in == nullptr) continue;
+        Node* in = n->in(i);
+        if (in != nullptr) {
+          const Type* at = _igvn->type(in);
+          if (!at->isa_ptr()) continue;
 
-        PointsToNode* ptn = ptnode_adr(in->_idx);
-        if (ptn == nullptr) {
-          // Not registered yet
-          add_local_var(in, PointsToNode::GlobalEscape);
-          ptn = ptnode_adr(in->_idx);
-        } else {
-          // Registered already, force the escape state
+          if (in->is_AddP()) {
+            in = get_addp_base(in);
+          }
+
+          PointsToNode* ptn = ptnode_adr(in->_idx);
+          assert(ptn != nullptr, "should be defined already");
           set_escape_state(ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA "blackhole"));
+          add_edge(n_ptn, ptn);
         }
-        add_edge(n_ptn, ptn);
       }
       break;
     }
