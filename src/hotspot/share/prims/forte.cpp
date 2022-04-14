@@ -563,9 +563,9 @@ extern "C" {
 JNIEXPORT
 void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 
-  JavaThread* thread = JavaThread::current();
+  JavaThread* thread = JavaThread::current_or_null();
 
-  if (trace->env_id == NULL || thread->is_terminated() || thread->is_exiting()) {
+  if (trace->env_id == NULL || thread == NULL || thread->is_terminated() || thread->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
     return;
