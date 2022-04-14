@@ -115,5 +115,4 @@ public class IntegerDivMod {
         quotients[i] = Integer.divideUnsigned(dividend, divisor);
         remainders[i] = Integer.remainderUnsigned(dividend, divisor);
     }
-
 }

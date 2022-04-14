@@ -436,7 +436,7 @@ void Parse::do_multianewarray() {
 
 // On some architectures, a division cannot be done immediately due to
 // the special case with min_jint / -1. As a result, we need to have
-// special handling for the this case
+// special handling for this case
 void Parse::do_divmod_fixup() {
   Bytecodes::Code bc = this->bc();
   BasicType bt = (bc == Bytecodes::_idiv || bc == Bytecodes::_irem) ? T_INT : T_LONG;
