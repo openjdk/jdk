@@ -215,7 +215,7 @@ public class StackStreamTest {
 
     private static <T> void equalsOrThrow(String label, List<T> list, List<T> expected) {
         System.out.println("List:     " + list);
-        System.out.println("Expected: " + list);
+        System.out.println("Expected: " + expected);
         if (!list.equals(expected)) {
             System.err.println("Observed " + label);
             for (T s1 : list) {
