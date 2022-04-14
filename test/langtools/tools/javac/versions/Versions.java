@@ -88,7 +88,8 @@ public class Versions {
         SIXTEEN(false,  "60.0", "16", Versions::checksrc16),
         SEVENTEEN(false, "61.0", "17", Versions::checksrc17),
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
-        NINETEEN(false,  "63.0", "19", Versions::checksrc19);
+        NINETEEN(false,  "63.0", "19", Versions::checksrc19),
+        TWENTY(false,  "64.0", "20", Versions::checksrc20);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -323,6 +324,13 @@ public class Versions {
 
    protected void checksrc19(List<String> args) {
        printargs("checksrc19", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java", "New16.java", "New17.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
+   protected void checksrc20(List<String> args) {
+       printargs("checksrc20", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
                                   "New14.java", "New15.java", "New16.java", "New17.java"));
        // Add expectedFail after new language features added in a later release.
