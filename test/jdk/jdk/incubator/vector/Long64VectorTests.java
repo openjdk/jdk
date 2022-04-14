@@ -60,6 +60,8 @@ public class Long64VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
+    private static final long CONST_SHIFT = Long.SIZE / 2;
+
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
 
     interface FUnOp {
@@ -414,6 +416,50 @@ public class Long64VectorTests extends AbstractVectorTest {
             }
         } catch (AssertionError err) {
             Assert.assertEquals(r[i+j], f.apply(a[i+j], b[j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", input2 = " + b[j] + ", mask = " + mask[i]);
+        }
+    }
+
+    interface FBinConstOp {
+        long apply(long a);
+    }
+
+    interface FBinConstMaskOp {
+        long apply(long a, boolean m);
+
+        static FBinConstMaskOp lift(FBinConstOp f) {
+            return (a, m) -> m ? f.apply(a) : a;
+        }
+    }
+
+    static void assertShiftConstEquals(long[] r, long[] a, FBinConstOp f) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; j < a.length; j += SPECIES.length()) {
+                for (i = 0; i < SPECIES.length(); i++) {
+                    Assert.assertEquals(r[i+j], f.apply(a[i+j]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i+j], f.apply(a[i+j]), "at index #" + i + ", " + j);
+        }
+    }
+
+    static void assertShiftConstEquals(long[] r, long[] a, boolean[] mask, FBinConstOp f) {
+        assertShiftConstEquals(r, a, mask, FBinConstMaskOp.lift(f));
+    }
+
+    static void assertShiftConstEquals(long[] r, long[] a, boolean[] mask, FBinConstMaskOp f) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; j < a.length; j += SPECIES.length()) {
+                for (i = 0; i < SPECIES.length(); i++) {
+                    Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]));
+                }
+            }
+        } catch (AssertionError err) {
+            Assert.assertEquals(r[i+j], f.apply(a[i+j], mask[i]), "at index #" + i + ", input1 = " + a[i+j] + ", mask = " + mask[i]);
         }
     }
 
@@ -2541,7 +2587,7 @@ public class Long64VectorTests extends AbstractVectorTest {
 
 
     static long ROR_unary(long a, long b) {
-        return (long)(ROR_scalar(a,b));
+        return (long)(ROR_scalar(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2583,7 +2629,7 @@ public class Long64VectorTests extends AbstractVectorTest {
 
 
     static long ROL_unary(long a, long b) {
-        return (long)(ROL_scalar(a,b));
+        return (long)(ROL_scalar(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -2622,6 +2668,215 @@ public class Long64VectorTests extends AbstractVectorTest {
 
         assertShiftArraysEquals(r, a, b, mask, Long64VectorTests::ROL_unary);
     }
+
+
+    static long LSHR_binary_const(long a) {
+        return (long)((a >>> CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "longUnaryOpProvider")
+    static void LSHRLong64VectorTestsScalarShiftConst(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Long64VectorTests::LSHR_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "longUnaryOpMaskProvider")
+    static void LSHRLong64VectorTestsScalarShiftMaskedConst(IntFunction<long[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Long64VectorTests::LSHR_binary_const);
+    }
+
+
+
+
+
+
+
+    static long LSHL_binary_const(long a) {
+        return (long)((a << CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "longUnaryOpProvider")
+    static void LSHLLong64VectorTestsScalarShiftConst(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHL, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Long64VectorTests::LSHL_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "longUnaryOpMaskProvider")
+    static void LSHLLong64VectorTestsScalarShiftMaskedConst(IntFunction<long[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.LSHL, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Long64VectorTests::LSHL_binary_const);
+    }
+
+
+
+    static long ASHR_binary_const(long a) {
+        return (long)((a >> CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "longUnaryOpProvider")
+    static void ASHRLong64VectorTestsScalarShiftConst(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ASHR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Long64VectorTests::ASHR_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "longUnaryOpMaskProvider")
+    static void ASHRLong64VectorTestsScalarShiftMaskedConst(IntFunction<long[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ASHR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Long64VectorTests::ASHR_binary_const);
+    }
+
+
+
+    static long ROR_binary_const(long a) {
+        return (long)(ROR_scalar(a, CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "longUnaryOpProvider")
+    static void RORLong64VectorTestsScalarShiftConst(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Long64VectorTests::ROR_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "longUnaryOpMaskProvider")
+    static void RORLong64VectorTestsScalarShiftMaskedConst(IntFunction<long[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROR, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Long64VectorTests::ROR_binary_const);
+    }
+
+
+
+    static long ROL_binary_const(long a) {
+        return (long)(ROL_scalar(a, CONST_SHIFT));
+    }
+
+    @Test(dataProvider = "longUnaryOpProvider")
+    static void ROLLong64VectorTestsScalarShiftConst(IntFunction<long[]> fa) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, CONST_SHIFT).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, Long64VectorTests::ROL_binary_const);
+    }
+
+
+
+    @Test(dataProvider = "longUnaryOpMaskProvider")
+    static void ROLLong64VectorTestsScalarShiftMaskedConst(IntFunction<long[]> fa,
+                                          IntFunction<boolean[]> fm) {
+        long[] a = fa.apply(SPECIES.length());
+        long[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Long> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                LongVector av = LongVector.fromArray(SPECIES, a, i);
+                av.lanewise(VectorOperators.ROL, CONST_SHIFT, vmask).intoArray(r, i);
+            }
+        }
+
+        assertShiftConstEquals(r, a, mask, Long64VectorTests::ROL_binary_const);
+    }
+
 
     static long MIN(long a, long b) {
         return (long)(Math.min(a, b));
