@@ -786,7 +786,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
+           _oop_alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
            "bad oop alias idx");
   }
   virtual int Opcode() const;

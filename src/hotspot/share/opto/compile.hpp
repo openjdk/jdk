@@ -320,7 +320,7 @@ class Compile : public Phase {
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
   bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
-  bool                  _do_aliasing;           // True if we intend to do aliasing
+  int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
@@ -611,7 +611,7 @@ class Compile : public Phase {
   void          set_use_cmove(bool z)           { _use_cmove = z; }
   bool              age_code() const             { return _age_code; }
   void          set_age_code(bool z)             { _age_code = z; }
-  bool              do_aliasing() const          { return _do_aliasing; }
+  int               AliasLevel() const           { return _AliasLevel; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
   bool              print_inlining() const       { return _print_inlining; }
@@ -1091,7 +1091,9 @@ class Compile : public Phase {
 
  private:
   // Phase control:
-  void Init(bool aliasing);                      // Prepare for a single compilation
+  void Init(int aliaslevel);                     // Prepare for a single compilation
+  int  Inline_Warm();                            // Find more inlining work.
+  void Finish_Warm();                            // Give up on further inlines.
   void Optimize();                               // Given a graph, optimize it
   void Code_Gen();                               // Generate code from a graph
 

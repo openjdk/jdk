@@ -679,7 +679,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     method()->ensure_method_data();
   }
 
-  Init(/*do_aliasing=*/ true);
+  Init(::AliasLevel);
+
 
   print_compile_messages();
 
@@ -923,7 +924,7 @@ Compile::Compile( ciEnv* ci_env,
   set_has_irreducible_loop(false); // no loops
 
   CompileWrapper cw(this);
-  Init(/*do_aliasing=*/ false);
+  Init(/*AliasLevel=*/ 0);
   init_tf((*generator)());
 
   {
@@ -945,8 +946,7 @@ Compile::Compile( ciEnv* ci_env,
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
-void Compile::Init(bool aliasing) {
-  _do_aliasing = aliasing;
+void Compile::Init(int aliaslevel) {
   _unique  = 0;
   _regalloc = NULL;
 
@@ -1039,6 +1039,16 @@ void Compile::Init(bool aliasing) {
     set_default_node_notes(Node_Notes::make(this));
   }
 
+  // // -- Initialize types before each compile --
+  // // Update cached type information
+  // if( _method && _method->constants() )
+  //   Type::update_loaded_types(_method, _method->constants());
+
+  // Init alias_type map.
+  if (!do_escape_analysis() && aliaslevel == 3) {
+    aliaslevel = 2;  // No unique types without escape analysis
+  }
+  _AliasLevel = aliaslevel;
   const int grow_ats = 16;
   _max_alias_types = grow_ats;
   _alias_types   = NEW_ARENA_ARRAY(comp_arena(), AliasType*, grow_ats);
@@ -1303,7 +1313,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       offset = Type::OffsetBot; // Flatten constant access into array body only
       tj = ta = TypeAryPtr::make(ptr, ta->ary(), ta->klass(), true, offset, ta->instance_id());
     }
-  } else if(ta) {
+  } else if( ta && _AliasLevel >= 2 ) {
     // For arrays indexed by constant indices, we flatten the alias
     // space to include all of the array body.  Only the header, klass
     // and array length can be accessed un-aliased.
@@ -1358,7 +1368,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Oop pointers need some flattening
   const TypeInstPtr *to = tj->isa_instptr();
-  if(to && do_aliasing() && to != TypeOopPtr::BOTTOM ) {
+  if( to && _AliasLevel >= 2 && to != TypeOopPtr::BOTTOM ) {
     ciInstanceKlass *k = to->klass()->as_instance_klass();
     if( ptr == TypePtr::Constant ) {
       if (to->klass() != ciEnv::current()->Class_klass() ||
@@ -1454,8 +1464,28 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     tj = TypePtr::BOTTOM;      // An error, which the caller must check for.
 
   // Flatten all to bottom for now
-  if (!do_aliasing()) {
+  switch( _AliasLevel ) {
+  case 0:
     tj = TypePtr::BOTTOM;
+    break;
+  case 1:                       // Flatten to: oop, static, field or array
+    switch (tj->base()) {
+    //case Type::AryPtr: tj = TypeAryPtr::RANGE;    break;
+    case Type::RawPtr:   tj = TypeRawPtr::BOTTOM;   break;
+    case Type::AryPtr:   // do not distinguish arrays at all
+    case Type::InstPtr:  tj = TypeInstPtr::BOTTOM;  break;
+    case Type::KlassPtr:
+    case Type::AryKlassPtr:
+    case Type::InstKlassPtr: tj = TypeInstKlassPtr::OBJECT; break;
+    case Type::AnyPtr:   tj = TypePtr::BOTTOM;      break;  // caller checks it
+    default: ShouldNotReachHere();
+    }
+    break;
+  case 2:                       // No collapsing at level 2; keep all splits
+  case 3:                       // No collapsing at level 3; keep all splits
+    break;
+  default:
+    Unimplemented();
   }
 
   offset = tj->offset();
@@ -1564,9 +1594,8 @@ void Compile::grow_alias_types() {
 
 //--------------------------------find_alias_type------------------------------
 Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_create, ciField* original_field) {
-  if (!do_aliasing()) {
+  if (_AliasLevel == 0)
     return alias_type(AliasIdxBot);
-  }
 
   AliasCacheEntry* ace = probe_alias_cache(adr_type);
   if (ace->_adr_type == adr_type) {
