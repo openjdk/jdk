@@ -68,9 +68,11 @@ public class SimpleWindowActivationTest {
 
         createAndShowWindow();
         robot.waitForIdle();
+        robot.delay(500);
 
         createAndShowFrame();
         robot.waitForIdle();
+        robot.delay(500);
 
         // click on Frame
         clickOn(getClickPoint(frame));
