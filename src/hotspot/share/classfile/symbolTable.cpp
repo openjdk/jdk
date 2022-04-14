@@ -613,16 +613,16 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
       log_info(symboltable)("dump unavailable at this moment");
     }
     if (!_shared_table.empty()) {
-      st->print_cr("---------------");
-      st->print_cr("Shared symbols:");
-      st->print_cr("---------------");
+      st->print_cr("#----------------");
+      st->print_cr("# Shared symbols:");
+      st->print_cr("#----------------");
       DumpSharedSymbol dss(st);
       _shared_table.iterate(&dss);
     }
     if (!_dynamic_shared_table.empty()) {
-      st->print_cr("---------------");
-      st->print_cr("Dynamic shared symbols:");
-      st->print_cr("---------------");
+      st->print_cr("#------------------------");
+      st->print_cr("# Dynamic shared symbols:");
+      st->print_cr("#------------------------");
       DumpSharedSymbol dss(st);
       _dynamic_shared_table.iterate(&dss);
     }

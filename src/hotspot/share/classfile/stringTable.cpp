@@ -722,9 +722,9 @@ void StringTable::dump(outputStream* st, bool verbose) {
     }
 #if INCLUDE_CDS_JAVA_HEAP
     if (!_shared_table.empty()) {
-      st->print_cr("---------------");
-      st->print_cr("Shared strings:");
-      st->print_cr("---------------");
+      st->print_cr("#----------------");
+      st->print_cr("# Shared strings:");
+      st->print_cr("#----------------");
       PrintSharedString pss(thr, st);
       _shared_table.iterate(&pss);
     }
