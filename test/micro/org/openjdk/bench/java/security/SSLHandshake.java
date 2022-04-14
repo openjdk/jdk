@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
@@ -34,10 +35,10 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
-import java.util.Enumeration;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -45,7 +46,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
 @BenchmarkMode(Mode.Throughput)
@@ -109,6 +109,9 @@ public class SSLHandshake {
      * The client and the server both operate on the same thread.
      */
     @Benchmark
+    @Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+    @Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+    @Fork(3)
     public SSLSession doHandshake() throws Exception {
 
         createSSLEngines();
