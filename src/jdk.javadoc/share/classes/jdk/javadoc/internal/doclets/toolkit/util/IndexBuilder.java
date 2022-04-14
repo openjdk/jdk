@@ -40,11 +40,11 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.*;
 
 /**
- *  An alphabetical index of elements, search tags, and other items.
- *  Two tables are maintained:
- *  one is indexed by the first character of each items name;
- *  the other is index by the item's category, indicating the JavaScript
- *  file in which the item should be written.
+ * An alphabetical index of elements, search tags, and other items.
+ * Two tables are maintained:
+ * one is indexed by the first character of each items name;
+ * the other is index by the item's category, indicating the JavaScript
+ * file in which the item should be written.
  */
 public class IndexBuilder {
 

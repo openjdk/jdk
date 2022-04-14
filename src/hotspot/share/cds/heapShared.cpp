@@ -211,6 +211,23 @@ void HeapShared::reset_archived_object_states(TRAPS) {
   reset_states(SystemDictionary::java_platform_loader(), CHECK);
   log_debug(cds)("Resetting system loader");
   reset_states(SystemDictionary::java_system_loader(), CHECK);
+
+  // Clean up jdk.internal.loader.ClassLoaders::bootLoader(), which is not
+  // directly used for class loading, but rather is used by the core library
+  // to keep track of resources, etc, loaded by the null class loader.
+  //
+  // Note, this object is non-null, and is not the same as
+  // ClassLoaderData::the_null_class_loader_data()->class_loader(),
+  // which is null.
+  log_debug(cds)("Resetting boot loader");
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
+                         vmSymbols::bootLoader_name(),
+                         vmSymbols::void_BuiltinClassLoader_signature(),
+                         CHECK);
+  Handle boot_loader(THREAD, result.get_oop());
+  reset_states(boot_loader(), CHECK);
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = NULL;
