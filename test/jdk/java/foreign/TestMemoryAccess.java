@@ -73,6 +73,12 @@ public class TestMemoryAccess {
     }
 
     @Test(dataProvider = "arrayElements")
+    public void testArrayAccessAlt(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, ArrayChecker checker) {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, elemLayout.withName("elem"));
+        testArrayAccessInternal(viewFactory, seq, elemLayout.arrayElementVarHandle(), checker);
+    }
+
+    @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem")));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
@@ -156,6 +162,13 @@ public class TestMemoryAccess {
                 MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
         testMatrixAccessInternal(viewFactory, seq, seq.varHandle(
                 PathElement.sequenceElement(), PathElement.sequenceElement()), checker);
+    }
+
+    @Test(dataProvider = "matrixElements")
+    public void testMatrixAccessAlt(Function<MemorySegment, MemorySegment> viewFactory, ValueLayout elemLayout, MatrixChecker checker) {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(20,
+                MemoryLayout.sequenceLayout(10, elemLayout.withName("elem")));
+        testMatrixAccessInternal(viewFactory, seq, elemLayout.arrayElementVarHandle(10), checker);
     }
 
     @Test(dataProvider = "matrixElements")
