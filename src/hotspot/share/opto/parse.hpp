@@ -414,6 +414,10 @@ class Parse : public GraphKit {
     return block()->successor_for_bci(bci);
   }
 
+  // implementation of div/rem bytecodes for handling of special case
+  // min_jint / -1, called from Matcher::parse_one_bytecode
+  void do_divmod_fixup();
+
  private:
   // Create a JVMS & map for the initial state of this method.
   SafePointNode* create_entry_map();
