@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ final class ProcessEnvironment
         // We cache the C environment.  This means that subsequent calls
         // to putenv/setenv from C will not be visible from Java code.
         byte[][] environ = environ();
-        theEnvironment = HashMap.newHashMap(environ.length/2 + 3);
+        theEnvironment = new HashMap<>(environ.length/2 + 3);
         // Read environment variables back to front,
         // so that earlier variables override later ones.
         for (int i = environ.length-1; i > 0; i-=2)
@@ -99,7 +99,7 @@ final class ProcessEnvironment
 
     /* Only for use by Runtime.exec(...String[]envp...) */
     static Map<String,String> emptyEnvironment(int capacity) {
-        return new StringEnvironment(HashMap.newHashMap(capacity));
+        return new StringEnvironment(new HashMap<>(capacity));
     }
 
     private static native byte[][] environ();
