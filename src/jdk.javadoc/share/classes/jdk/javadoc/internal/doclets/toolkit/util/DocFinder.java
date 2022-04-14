@@ -133,7 +133,7 @@ public class DocFinder {
             this.docTreeInfo = dtInfo;
         }
 
-        private Input copy(Utils utils) {
+        private Input copy() {
             var copy = new Input(utils, element, taglet, docTreeInfo,
                     isFirstSentence, isInheritDocTag);
             copy.tagId = tagId;
@@ -234,7 +234,7 @@ public class DocFinder {
             return output;
         }
         output.isValidInheritDocTag = false;
-        Input inheritedSearchInput = input.copy(configuration.utils);
+        Input inheritedSearchInput = input.copy();
         inheritedSearchInput.isInheritDocTag = false;
         if (utils.isMethod(input.element)) {
             ExecutableElement m = (ExecutableElement) input.element;

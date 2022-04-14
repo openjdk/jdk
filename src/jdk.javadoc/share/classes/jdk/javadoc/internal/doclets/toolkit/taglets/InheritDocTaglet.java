@@ -87,7 +87,7 @@ public class InheritDocTaglet extends BaseTaglet {
                 ? null
                 : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
         if (taglet != null && !(taglet instanceof InheritableTaglet)) {
-            //This tag does not support inheritance.
+            // This tag does not support inheritance.
             var path = writer.configuration().utils.getCommentHelper(e).getDocTreePath(holderTag);
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
@@ -109,11 +109,11 @@ public class InheritDocTaglet extends BaseTaglet {
             // which would clearly be an error, we shouldn't reach here.
             assert !(e instanceof TypeElement typeElement)
                     || typeElement.getSuperclass().getKind() == TypeKind.NONE;
-            String message = utils.getSimpleName(e) +
+            String signature = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
                             ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
-                            : "");
-            messages.warning(e, "doclet.noInheritedDoc", message);
+                            : e.toString());
+            messages.warning(e, "doclet.noInheritedDoc", signature);
         }
         return replacement;
     }
