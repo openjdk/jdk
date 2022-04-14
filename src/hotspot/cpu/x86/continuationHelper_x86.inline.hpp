@@ -100,11 +100,11 @@ inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f)
   return (intptr_t**)(f.sp() - frame::sender_sp_offset);
 }
 
-inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
+address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
   return (address*)(f.real_fp() - 1);
 }
 
-inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {
+address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {
   return (address*)(f.fp() + frame::return_addr_offset);
 }
 

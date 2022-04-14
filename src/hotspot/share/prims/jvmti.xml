@@ -1732,7 +1732,7 @@ jvmtiEnv *jvmti;
         <i>Preview features may be removed in a future release, or upgraded to
         permanent features of the Java platform.</i>
         <p/>
-        Suspend all virtual threads except those already suspended.
+        Suspend all virtual threads except those in the exception list.
         Virtual threads that are currently suspended do not change state.
         Virtual threads may be resumed with
         <functionlink id="ResumeAllVirtualThreads"></functionlink> or
@@ -1860,7 +1860,7 @@ jvmtiEnv *jvmti;
         <i>Preview features may be removed in a future release, or upgraded to
         permanent features of the Java platform.</i>
         <p/>
-        Resume all virtual threads except those already resumed.
+        Resume all virtual threads except those in the exception list.
         Virtual threads that are currently resumed do not change state.
         Virtual threads may be suspended with
         <functionlink id="SuspendAllVirtualThreads"></functionlink> or
@@ -1911,7 +1911,7 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to stop.
               The <code>thread</code> may not be a virtual thread. Otherwise, the error code
@@ -1926,7 +1926,7 @@ jvmtiEnv *jvmti;
         </param>
       </parameters>
       <errors>
-        <error id="JVMTI_ERROR_INVALID_THREAD">
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
           <paramlink id="thread"/> is a virtual thread.
         </error>
       </errors>
@@ -2235,7 +2235,7 @@ jvmtiEnv *jvmti;
             <description>
               The thread to run.
               The <code>thread</code> may not be a virtual thread. Otherwise, the error code
-              <errorlink id="JVMTI_ERROR_INVALID_THREAD"></errorlink> will be returned.
+              <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
              </description>
         </param>
         <param id="proc">
@@ -2271,7 +2271,7 @@ jvmtiEnv *jvmti;
               or greater than
             <datalink id="JVMTI_THREAD_MAX_PRIORITY"/>
         </error>
-        <error id="JVMTI_ERROR_INVALID_THREAD">
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
           <paramlink id="thread"/> is a virtual thread.
         </error>
       </errors>
@@ -2440,8 +2440,7 @@ jvmtiEnv *jvmti;
       <synopsis>Get Thread Group Children</synopsis>
       <description>
         Get the live platform threads and the child thread groups in this
-        thread group.  Virtual threads are not considered live threads in
-        a thread group and not returned by this function.
+        thread group. Virtual threads are not returned by this function.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -10972,7 +10971,7 @@ myInit() {
             <functionlink id="GetCurrentThreadCpuTimerInfo"/> vs
             <functionlink id="GetThreadCpuTimerInfo"/>).
             The current thread may not be a virtual thread. Otherwise, the error code
-            <errorlink id="JVMTI_ERROR_INVALID_THREAD"></errorlink> will be returned.
+            <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
             On many platforms this call will be equivalent to:
 <example>
   GetThreadCpuTime(env, NULL, nanos_ptr)
@@ -11006,7 +11005,7 @@ myInit() {
         </param>
       </parameters>
       <errors>
-        <error id="JVMTI_ERROR_INVALID_THREAD">
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
           Current thread is a virtual thread.
         </error>
       </errors>
@@ -11070,11 +11069,11 @@ myInit() {
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current"/>
+          <jthread null="current" impl="noconvert"/>
             <description>
               The thread to query.
               The <code>thread</code> may not be a virtual thread. Otherwise, the error code
-               <errorlink id="JVMTI_ERROR_INVALID_THREAD"></errorlink> will be returned.
+               <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
              </description>
         </param>
         <param id="nanos_ptr">
@@ -11088,7 +11087,7 @@ myInit() {
         </param>
       </parameters>
       <errors>
-        <error id="JVMTI_ERROR_INVALID_THREAD">
+        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
           <paramlink id="thread"/> is a virtual thread.
         </error>
       </errors>
@@ -12059,6 +12058,9 @@ myInit() {
     </errorid>
     <errorid id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED" num="72">
       A new class version has unsupported differences in class attributes.
+    </errorid>
+    <errorid id="JVMTI_ERROR_UNSUPPORTED_OPERATION" num="73">
+      Functionality is unsupported in this implementation.
     </errorid>
   </errorcategory>
 </errorsection>

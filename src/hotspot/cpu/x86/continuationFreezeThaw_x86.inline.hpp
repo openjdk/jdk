@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_X86_CONTINUATION_X86_INLINE_HPP
-#define CPU_X86_CONTINUATION_X86_INLINE_HPP
+#ifndef CPU_X86_CONTINUATION_FREEZE_THAW_X86_INLINE_HPP
+#define CPU_X86_CONTINUATION_FREEZE_THAW_X86_INLINE_HPP
 
 #include "code/codeBlob.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
@@ -282,4 +282,4 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
   *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
 }
-#endif // CPU_X86_CONTINUATION_X86_INLINE_HPP
+#endif // CPU_X86_CONTINUATION_FREEZE_THAW_X86_INLINE_HPP

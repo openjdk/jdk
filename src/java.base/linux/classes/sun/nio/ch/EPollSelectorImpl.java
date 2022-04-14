@@ -116,7 +116,7 @@ class EPollSelectorImpl extends SelectorImpl {
 
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
-                long comp = Blocker.begin();
+                long comp = Blocker.begin(blocking);
                 try {
                     numEntries = EPoll.wait(epfd, pollArrayAddress, NUM_EPOLLEVENTS, to);
                 } finally {

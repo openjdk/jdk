@@ -2214,10 +2214,9 @@ JDWP "Java(tm) Debug Wire Protocol"
         )
     )
     (Command Children=3
-        "Returns the live threads and active thread groups directly contained "
-        "in this thread group. Virtual threads are not considered live threads "
-        "in a thread group and are not included. Threads and thread groups in child "
-        "thread groups are not included. "
+        "Returns the live platform threads and active thread groups directly "
+        "contained in this thread group. Virtual threads are not included. "
+        "Threads and thread groups in child thread groups are not included. "
         "A thread is alive if it has been started and has not yet been stopped. "
         "See <a href=../../api/java.base/java/lang/ThreadGroup.html>java.lang.ThreadGroup</a> "
         "for information about active ThreadGroups.

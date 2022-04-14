@@ -77,10 +77,10 @@ test_get_frame_location(JNIEnv* jni, jthread thread, char* tname) {
 
   jvmtiError err = jvmti->GetFrameLocation(thread, DEPTH, &method, &loc);
   if (err != JVMTI_ERROR_NONE) {
-    if (!is_virtual || err != JVMTI_ERROR_NO_MORE_FRAMES) { // TMP work around
+    if (err != JVMTI_ERROR_NO_MORE_FRAMES) { // TMP work around
       check_jvmti_status(jni, err, "test_get_frame_location: error in JVMTI GetFrameLocation");
     } else {
-      LOG("## Agent: test_get_frame_location: ignoring JVMTI_ERROR_NO_MORE_FRAMES for vt\n\n");
+      LOG("## Agent: test_get_frame_location: ignoring JVMTI_ERROR_NO_MORE_FRAMES in GetFrameLocation\n\n");
     }
     return;
   }

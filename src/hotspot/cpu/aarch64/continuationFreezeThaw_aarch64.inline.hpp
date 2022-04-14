@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef CPU_AARCH64_CONTINUATION_AARCH64_INLINE_HPP
-#define CPU_AARCH64_CONTINUATION_AARCH64_INLINE_HPP
+#ifndef CPU_AARCH64_CONTINUATION_FREEZE_THAW_AARCH64_INLINE_HPP
+#define CPU_AARCH64_CONTINUATION_FREEZE_THAW_AARCH64_INLINE_HPP
 
 #include "code/codeBlob.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
@@ -275,4 +275,4 @@ inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bot
   *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
 }
 
-#endif // CPU_AARCH64_CONTINUATION_AARCH64_INLINE_HPP
+#endif // CPU_AARCH64_CONTINUATION_FREEZE_THAW_AARCH64_INLINE_HPP

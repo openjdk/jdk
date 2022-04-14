@@ -173,7 +173,7 @@ public:
 
   static address entry_pc() { return return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
-  inline intptr_t* entry_fp() const;
+  intptr_t* entry_fp() const;
 
   int argsize() const { return _argsize; }
   void set_argsize(int value) { _argsize = value; }

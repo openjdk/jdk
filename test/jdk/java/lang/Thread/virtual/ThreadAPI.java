@@ -2046,7 +2046,7 @@ public class ThreadAPI {
 
 
     /**
-     * Test Thread::getThreadGroup of virtual thread created by platform thread.
+     * Test Thread::getThreadGroup on virtual thread created by platform thread.
      */
     @Test
     public void testThreadGroup1() throws Exception {
@@ -2063,7 +2063,7 @@ public class ThreadAPI {
     }
 
     /**
-     * Test Thread::getThreadGroup of platform thread created by virtual thread.
+     * Test Thread::getThreadGroup on platform thread created by virtual thread.
      */
     @Test
     public void testThreadGroup2() throws Exception {
@@ -2072,6 +2072,60 @@ public class ThreadAPI {
             Thread child = new Thread(() -> { });
             ThreadGroup group = child.getThreadGroup();
             assertTrue(group == vgroup);
+        });
+    }
+
+    /**
+     * Test ThreadGroup returned by Thread::getThreadGroup and subgroup
+     * created with 2-arg ThreadGroup constructor.
+     */
+    @Test
+    public void testThreadGroup3() throws Exception {
+        var ref = new AtomicReference<ThreadGroup>();
+        var thread = Thread.startVirtualThread(() -> {
+            ref.set(Thread.currentThread().getThreadGroup());
+        });
+        thread.join();
+
+        ThreadGroup vgroup = ref.get();
+        assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+
+        ThreadGroup group = new ThreadGroup(vgroup, "group");
+        assertTrue(group.getParent() == vgroup);
+        assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY);
+
+        vgroup.setMaxPriority(Thread.MAX_PRIORITY - 1);
+        assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+        assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY - 1);
+
+        vgroup.setMaxPriority(Thread.MIN_PRIORITY);
+        assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+        assertTrue(group.getMaxPriority() == Thread.MIN_PRIORITY);
+    }
+
+    /**
+     * Test ThreadGroup returned by Thread::getThreadGroup and subgroup
+     * created with 1-arg ThreadGroup constructor.
+     */
+    @Test
+    public void testThreadGroup4() throws Exception {
+        TestHelper.runInVirtualThread(() -> {
+            ThreadGroup vgroup = Thread.currentThread().getThreadGroup();
+
+            assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+
+            ThreadGroup group = new ThreadGroup("group");
+            assertTrue(group.getParent() == vgroup);
+            assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY);
+
+            vgroup.setMaxPriority(Thread.MAX_PRIORITY - 1);
+            assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+            assertTrue(group.getMaxPriority() == Thread.MAX_PRIORITY - 1);
+
+            vgroup.setMaxPriority(Thread.MIN_PRIORITY);
+            assertTrue(vgroup.getMaxPriority() == Thread.MAX_PRIORITY);
+            assertTrue(group.getMaxPriority() == Thread.MIN_PRIORITY);
+
         });
     }
 

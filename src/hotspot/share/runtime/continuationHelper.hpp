@@ -35,11 +35,11 @@
 
 class ContinuationHelper {
 public:
-  static void set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp);
-  static void set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry);
+  static inline void set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp);
+  static inline void set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry);
 
   template<typename FKind> static void update_register_map(const frame& f, RegisterMap* map);
-  static void update_register_map_with_callee(const frame& f, RegisterMap* map);
+  static inline void update_register_map_with_callee(const frame& f, RegisterMap* map);
 
   static inline void push_pd(const frame& f);
 
@@ -63,11 +63,11 @@ public:
   static const bool stub = false;
 
   static inline intptr_t** callee_link_address(const frame& f);
-  static inline Method* frame_method(const frame& f);
+  static Method* frame_method(const frame& f);
   static inline address real_pc(const frame& f);
   static inline void patch_pc(const frame& f, address pc);
   static address* return_pc_address(const frame& f);
-  static address return_pc(const frame& f);
+  static address return_pc(const frame& f) { return *return_pc_address(f); }
   static bool is_stub(CodeBlob* cb);
 
 #ifdef ASSERT
@@ -93,7 +93,7 @@ public:
   static inline int stack_argsize(const frame& f);
 
   static inline address* return_pc_address(const frame& f);
-  static inline address return_pc(const frame& f);
+  static address return_pc(const frame& f);
   static void patch_sender_sp(frame& f, intptr_t* sp);
 
   static int size(const frame& f, InterpreterOopMap* mask);

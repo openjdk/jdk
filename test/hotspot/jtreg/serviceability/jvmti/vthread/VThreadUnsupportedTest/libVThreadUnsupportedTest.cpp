@@ -34,9 +34,9 @@ static jvmtiEnv *jvmti = NULL;
 static std::atomic<bool> is_completed_test_in_event;
 
 static void
-check_jvmti_error_invalid_thread(JNIEnv* jni, const char* msg, jvmtiError err) {
-  if (err != JVMTI_ERROR_INVALID_THREAD) {
-    LOG("%s failed: expected JVMTI_ERROR_INVALID_THREAD instead of: %d\n", msg, err);
+check_jvmti_error_unsupported_operation(JNIEnv* jni, const char* msg, jvmtiError err) {
+  if (err != JVMTI_ERROR_UNSUPPORTED_OPERATION) {
+    LOG("%s failed: expected JVMTI_ERROR_UNSUPPORTED_OPERATION instead of: %d\n", msg, err);
     fatal(jni, msg);
   }
 }
@@ -60,8 +60,8 @@ Java_VThreadUnsupportedTest_isCompletedTestInEvent(JNIEnv *env, jobject obj) {
 }
 
 /*
- * Execute JVMTI functions which currently don't support vthreads and check that
- * they return error code JVMTI_ERROR_INVALID_THREAD correctly.
+ * Execute JVMTI functions which currently don't support vthreads and check that they
+ * return error code JVMTI_ERROR_INVALID_THREAD or JVMTI_ERROR_OPAQUE_FRAME correctly.
  */
 static void
 test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
@@ -89,7 +89,7 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
 
   LOG("Testing StopThread\n");
   err = jvmti->StopThread(vthread, vthread);
-  check_jvmti_error_invalid_thread(jni, "StopThread", err);
+  check_jvmti_error_unsupported_operation(jni, "StopThread", err);
 
   LOG("Testing PopFrame\n");
   err = jvmti->PopFrame(vthread);
@@ -101,17 +101,17 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
 
   LOG("Testing GetThreadCpuTime\n");
   err = jvmti->GetThreadCpuTime(vthread, &nanos);
-  check_jvmti_error_invalid_thread(jni, "GetThreadCpuTime", err);
+  check_jvmti_error_unsupported_operation(jni, "GetThreadCpuTime", err);
 
   jthread cur_thread = get_current_thread(jvmti, jni);
   if (jni->IsVirtualThread(cur_thread)) {
     LOG("Testing GetCurrentThreadCpuTime\n");
     err = jvmti->GetCurrentThreadCpuTime(&nanos);
-    check_jvmti_error_invalid_thread(jni, "GetCurrentThreadCpuTime", err);
+    check_jvmti_error_unsupported_operation(jni, "GetCurrentThreadCpuTime", err);
   }
 
   err = jvmti->RunAgentThread(vthread, agent_proc, (const void*)NULL, JVMTI_THREAD_NORM_PRIORITY);
-  check_jvmti_error_invalid_thread(jni, "RunAgentThread", err);
+  check_jvmti_error_unsupported_operation(jni, "RunAgentThread", err);
 
   LOG("test_unsupported_jvmti_functions: finished\n");
 }
@@ -147,7 +147,7 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
 
   jlong nanos;
   jvmtiError err = jvmti->GetCurrentThreadCpuTime(&nanos);
-  check_jvmti_error_invalid_thread(jni, "GetCurrentThreadCpuTime", err);
+  check_jvmti_error_unsupported_operation(jni, "GetCurrentThreadCpuTime", err);
 
   is_completed_test_in_event.store(true);
 }

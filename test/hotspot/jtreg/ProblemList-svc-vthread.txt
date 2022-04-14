@@ -35,6 +35,7 @@ vmTestbase/nsk/jvmti/GetAllThreads/allthr001/TestDescription.java 8284027 generi
 ## Tests for functionality which currently is not supported for virtual threads
 
 vmTestbase/nsk/jvmti/GetCurrentThreadCpuTime/curthrcputime001/TestDescription.java
+vmTestbase/nsk/jvmti/GetThreadCpuTime/thrcputime001/TestDescription.java
 vmTestbase/nsk/jvmti/NotifyFramePop/nframepop002/TestDescription.java
 vmTestbase/nsk/jvmti/NotifyFramePop/nframepop003/TestDescription.java
 vmTestbase/nsk/jvmti/PopFrame/popframe004/TestDescription.java

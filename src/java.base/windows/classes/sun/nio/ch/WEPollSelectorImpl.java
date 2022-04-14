@@ -109,7 +109,7 @@ class WEPollSelectorImpl extends SelectorImpl {
         processDeregisterQueue();
         try {
             begin(blocking);
-            long comp = Blocker.begin();
+            long comp = Blocker.begin(blocking);
             try {
                 numEntries = WEPoll.wait(eph, pollArrayAddress, NUM_EPOLLEVENTS, to);
             } finally {

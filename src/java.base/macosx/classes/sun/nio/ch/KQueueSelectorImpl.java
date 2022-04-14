@@ -120,7 +120,7 @@ class KQueueSelectorImpl extends SelectorImpl {
 
             do {
                 long startTime = timedPoll ? System.nanoTime() : 0;
-                long comp = Blocker.begin();
+                long comp = Blocker.begin(blocking);
                 try {
                     numEntries = KQueue.poll(kqfd, pollArrayAddress, MAX_KEVENTS, to);
                 } finally {

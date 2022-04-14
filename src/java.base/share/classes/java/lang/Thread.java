@@ -114,8 +114,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <em>carrier threads</em>. Locking and I/O operations are examples of operations
  * where a carrier thread may be re-scheduled from one virtual thread to another.
  * Code executing in a virtual thread is not aware of underlying carrier thread.
- *
- *
  * The {@linkplain Thread#currentThread()} method, used to obtain a reference
  * to the <i>current thread</i>, will always return the {@code Thread} object
  * for the virtual thread.
@@ -124,9 +122,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * getName} method returns the empty string if a thread name is not set.
  *
  * <p> Virtual threads are daemon threads and so do not prevent the Java virtual
- * machine from terminating. They have a fixed priority (see {@link #getPriority()
- * getPriority}). Virtual threads are not members of a thread group (see
- * {@link #getThreadGroup() getThreadGroup}).
+ * machine from terminating. Virtual threads have a fixed {@linkplain #getPriority()
+ * thread priority} that cannot be changed.
  *
  * <h2>Creating and starting threads</h2>
  *
@@ -1918,7 +1915,8 @@ public class Thread implements Runnable {
 
     /**
      * Returns this thread's priority.
-     * The priority of a virtual thread is always {@link Thread#NORM_PRIORITY}.
+     *
+     * <p> The priority of a virtual thread is always {@link Thread#NORM_PRIORITY}.
      *
      * @return  this thread's priority.
      * @see     #setPriority
@@ -1977,41 +1975,24 @@ public class Thread implements Runnable {
      * Returns the thread's thread group or {@code null} if the thread has
      * terminated.
      *
-     * <p> Virtual threads are not members of a thread group. If invoked on a
-     * virtual thread that has not terminated, this method returns a special
-     * thread group that behaves as follows:
-     * <ul>
-     *  <li> There are no {@linkplain ThreadGroup#activeCount() active} virtual
-     *       threads in the thread group. The {@link ThreadGroup#enumerate(Thread[])
-     *       enumerate} method does not enumerate virtual threads.
-     *  <li> There may be active platform threads in the thread group. The thread
-     *       group may be provided when creating a platform thread, the thread group
-     *       may be <a href="Thread.html#inheritance">inherited</a> when a
-     *       virtual thread creates a platform thread, or the thread group may
-     *       be inherited when a platform thread in the thread group creates
-     *       another platform thread.
-     *  <li> The {@linkplain ThreadGroup#getMaxPriority() maximum priority} of
-     *       the thread group is {@link Thread#NORM_PRIORITY} when initially
-     *       created. Changing the maximum priority of the thread group has no
-     *       impact on the priority of virtual threads.
-     * </ul>
+     * <p> The thread group returned for a virtual thread is the special
+     * <a href="ThreadGroup.html#virtualthreadgroup"><em>ThreadGroup for
+     * virtual threads</em></a>.
      *
      * @return  this thread's thread group or {@code null}
      */
     public final ThreadGroup getThreadGroup() {
         if (Thread.currentThread() == this || (threadState() != State.TERMINATED)) {
-            return isVirtual() ? Constants.VTHREAD_GROUP : holder.group;
+            return isVirtual() ? virtualThreadGroup() : holder.group;
         } else {
             return null;   // terminated
         }
     }
 
     /**
-     * Returns an estimate of the number of active threads in the current
-     * thread's {@linkplain java.lang.ThreadGroup thread group} and its
-     * subgroups. Virtual threads are not considered active threads in a
-     * thread group so this method does not include virtual threads in the
-     * estimate.
+     * Returns an estimate of the number of active platform threads in the
+     * current thread's thread group and its subgroups. Virtual threads are
+     * not included in the estimate.
      *
      * <p> The value returned is only an estimate because the number of
      * threads may change dynamically while this method traverses internal
@@ -2019,21 +2000,20 @@ public class Thread implements Runnable {
      * system threads. This method is intended primarily for debugging
      * and monitoring purposes.
      *
-     * @return  an estimate of the number of active threads in the current
-     *          thread's thread group and in any other thread group that
-     *          has the current thread's thread group as an ancestor
+     * @return  an estimate of the number of active platform threads in the
+     *          current thread's thread group and in any other thread group
+     *          that has the current thread's thread group as an ancestor
      */
     public static int activeCount() {
         return currentThread().getThreadGroup().activeCount();
     }
 
     /**
-     * Copies into the specified array every active thread in the current
-     * thread's thread group and its subgroups. This method simply
+     * Copies into the specified array every active platform thread in the
+     * current thread's thread group and its subgroups. This method simply
      * invokes the {@link java.lang.ThreadGroup#enumerate(Thread[])}
      * method of the current thread's thread group. Virtual threads are
-     * not considered active threads in a thread group so this method
-     * does not enumerate virtual threads.
+     * not enumerated by this method.
      *
      * <p> An application might use the {@linkplain #activeCount activeCount}
      * method to get an estimate of how big the array should be, however
@@ -2399,8 +2379,13 @@ public class Thread implements Runnable {
 
     /**
      * Sets the context {@code ClassLoader} for this thread.
-     * The context {@code ClassLoader} may be set by the creator of the thread
+     *
+     * <p> The context {@code ClassLoader} may be set by the creator of the thread
      * for use by code running in this thread when loading classes and resources.
+     *
+     * <p> The context {@code ClassLoader} cannot be set when the thread is
+     * {@linkplain Thread.Builder#allowSetThreadLocals(boolean) not allowed} to have
+     * its own copy of thread local variables.
      *
      * <p> If a security manager is present, its {@link
      * SecurityManager#checkPermission(java.security.Permission) checkPermission}
@@ -2992,7 +2977,7 @@ public class Thread implements Runnable {
             };
             @SuppressWarnings("removal")
             ThreadGroup root = AccessController.doPrivileged(getThreadGroup);
-            VTHREAD_GROUP = new ThreadGroup(root, "VirtualThreads", NORM_PRIORITY, false);
+            VTHREAD_GROUP = new ThreadGroup(root, "VirtualThreads", MAX_PRIORITY, false);
 
             NO_PERMISSIONS_ACC = new AccessControlContext(new ProtectionDomain[] {
                 new ProtectionDomain(null, null)
@@ -3008,6 +2993,13 @@ public class Thread implements Runnable {
             ClassLoader loader = AccessController.doPrivileged(createClassLoader);
             NOT_SUPPORTED_CLASSLOADER = loader;
         }
+    }
+
+    /**
+     * Returns the special ThreadGroup for virtual threads.
+     */
+    static ThreadGroup virtualThreadGroup() {
+        return Constants.VTHREAD_GROUP;
     }
 
     // The following three initially uninitialized fields are exclusively

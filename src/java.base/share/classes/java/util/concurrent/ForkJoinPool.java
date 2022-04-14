@@ -3663,13 +3663,14 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * For use by jdk.internal.misc.Blocker to mark the beginning of a possibly
-     * blocking operation on a virtual thread that pins the underlying carrier
-     * thread in this pool. This method works like managedBlock and invokes
-     * tryCompensate to create or re-activate a spare thread to compensate for
-     * the blocked thread. When the blocking operation is done then
-     * endCompensatedBlock must be invoked (with the value returned by this
-     * method) to re-adjust the parallelism.
+     * Invoked reflectively by jdk.internal.misc.Blocker to mark the beginning
+     * of a possibly blocking operation on a virtual thread that pins the
+     * underlying carrier thread in this pool.
+     *
+     * This method works like managedBlock and invokes tryCompensate to create
+     * or re-activate a spare thread to compensate for the blocked thread. When
+     * the blocking operation is done then endCompensatedBlock must be invoked
+     * with the value returned by this method to re-adjust the parallelism.
      */
     private long beginCompensatedBlock() {
         for (;;) {
@@ -3683,9 +3684,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * For use by jdk.internal.misc.Blocker to mark the end of a blocking
-     * operation on a virtual thread that pinned the underlying carrier
-     * thread in this pool.
+     * Invoked reflectively by jdk.internal.misc.Blocker to mark the end of
+     * a blocking operation on a virtual thread that pinned the underlying
+     * carrier thread in this pool.
      */
     void endCompensatedBlock(long post) {
         if (post > 0) {
