@@ -71,9 +71,9 @@ public class Versions {
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19");
+               "15", "16", "17", "18", "19", "20");
 
-    public static final String LATEST_MAJOR_VERSION = "63.0";
+    public static final String LATEST_MAJOR_VERSION = "64.0";
 
     static enum SourceTarget {
         SEVEN(true,   "51.0",  "7", Versions::checksrc7),
