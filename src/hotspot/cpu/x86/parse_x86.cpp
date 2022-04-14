@@ -26,17 +26,16 @@
 
 #ifdef COMPILER2
 
-#include "opto/matcher.hpp"
 #include "opto/parse.hpp"
 #include "interpreter/bytecodes.hpp"
 
-bool Matcher::parse_one_bytecode(Parse& parser) {
-  switch (parser.bc()) {
+bool Parse::do_one_bytecode_targeted() {
+  switch (bc()) {
     case Bytecodes::_idiv: // fallthrough
     case Bytecodes::_ldiv: // fallthrough
     case Bytecodes::_irem: // fallthrough
     case Bytecodes::_lrem:
-      parser.do_divmod_fixup();
+      do_divmod_fixup();
       return true;
     default:
       return false;

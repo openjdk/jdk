@@ -2100,10 +2100,6 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
   return 0;
 }
 
-bool Matcher::parse_one_bytecode(Parse& parser) {
-  return false;
-}
-
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
@@ -2409,6 +2405,10 @@ RegMask Matcher::modL_proj_mask() {
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return RegMask();
+}
+
+bool Parse::do_one_bytecode_targeted() {
+  return false;
 }
 
 %}

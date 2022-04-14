@@ -2407,10 +2407,6 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-bool Matcher::parse_one_bytecode(Parse& parser) {
-  return false;
-}
-
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
@@ -2797,6 +2793,10 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
   }
+  return false;
+}
+
+bool Parse::do_one_bytecode_targeted() {
   return false;
 }
 

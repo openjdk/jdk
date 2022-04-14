@@ -926,10 +926,6 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   return offset;
 }
 
-bool Matcher::parse_one_bytecode(Parse& parser) {
-  return false;
-}
-
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
@@ -1161,6 +1157,10 @@ bool maybe_far_call(const CallNode *n) {
 
 bool maybe_far_call(const MachCallNode *n) {
   return !MacroAssembler::_reachable_from_cache(n->as_MachCall()->entry_point());
+}
+
+bool Parse::do_one_bytecode_targeted() {
+  return false;
 }
 
 %}

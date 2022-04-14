@@ -1492,10 +1492,6 @@ static Register reg_to_register_object(int register_encoding) {
   return as_Register(register_encoding);
 }
 
-bool Matcher::parse_one_bytecode(Parse& parser) {
-  return false;
-}
-
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
@@ -1700,6 +1696,10 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
+}
+
+bool Parse::do_one_bytecode_targeted() {
+  return false;
 }
 
 %} // source

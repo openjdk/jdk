@@ -1555,8 +1555,8 @@ void Parse::do_one_block() {
 
     // Try parsing machine-dependently, then if it is not needed then parse
     // the bytecode in a machine independent manner
-    if (!Matcher::parse_one_bytecode(*this)) {
-      do_one_bytecode();
+    if (!do_one_bytecode_targeted()) {
+      do_one_bytecode_common();
     }
 #ifndef PRODUCT
     if (C->should_print_igv(1)) {
