@@ -50,6 +50,7 @@ import org.xml.sax.XMLReader;
 
 /**
  * @author Morten Jorgensen
+ * @LastModified: Apr 2022
  */
 public final class DocumentCache implements DOMCache {
 
