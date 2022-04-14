@@ -453,14 +453,28 @@ void PhaseChaitin::Register_Allocate() {
 //        tty->print_cr("XXX %d %d", loop->id(), loop->depth());
         if (loop->_child == NULL /*&& loop->depth() == 3*/) {
           GrowableArray<CFGElement*> blocks = loop->_members;
-//          for (int i = 0; i < blocks.length(); ++i) {
-//            Block* block = blocks.at(i)->as_Block();
+          bool skip = false;
+          for (int i = 0; i < blocks.length() && !skip; ++i) {
+            Block* block = blocks.at(i)->as_Block();
+            for (uint j = 0; j < block->_num_succs && !skip; ++j) {
+              Block* succ = block->_succs[j];
+              if (succ->_loop != loop) {
+                for (uint k = 1; k < succ->end_idx() && !skip; ++k) {
+                  Node* n = succ->get_node(k);
+                  if (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+                    skip = true;
+                  }
+                }
+              }
+            }
 //            block->dump();
-//          }
-          if (most_frequent == NULL) {
-            most_frequent = loop;
-          } else if (loop->trip_count() > most_frequent->trip_count()) {
-            most_frequent = loop;
+          }
+          if (!skip) {
+            if (most_frequent == NULL) {
+              most_frequent = loop;
+            } else if (loop->trip_count() > most_frequent->trip_count()) {
+              most_frequent = loop;
+            }
           }
         }
         for (;;) {

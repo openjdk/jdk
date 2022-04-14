@@ -402,6 +402,11 @@ Node*PhaseChaitin::split_Rematerialize(Node* def, Block* b, uint insidx, uint &m
       if (lidx < _lrg_map.max_lrg_id() && lrgs(lidx).reg() >= LRG::SPILL_REG) {
         Node *rdef = Reachblock[lrg2reach[lidx]];
         if (rdef) {
+          if (rdef->is_SpillCopy() && rdef->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry &&
+              _cfg.get_block_for_node(rdef) == b) {
+            rdef = rdef->in(1);
+            assert(!(rdef->is_SpillCopy() && rdef->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry), "");
+          }
           spill->set_req(i, rdef);
         }
       }
@@ -1524,18 +1529,18 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
 
               if (def->rematerialize()) {
 //                assert(_was_up_in_prev_region.test(def->_idx), "");
-                uint pos = b->end_idx();
-                while (b->get_node(pos - 1)->is_SpillCopy() &&
-                       b->get_node(pos - 1)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
-                  pos--;
+                uint pos = 1;
+                while (b->get_node(b->end_idx() - pos)->is_SpillCopy() &&
+                       b->get_node(b->end_idx() - pos)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+                  pos++;
                 }
-                Node* spill = split_Rematerialize(def, b, pos, maxlrg, splits, slidx, lrg2reach, Reachblock,
+                Node* spill = split_Rematerialize(def, b, b->end_idx() - pos + 1, maxlrg, splits, slidx, lrg2reach, Reachblock,
                                                   true, region);
                 if( !spill ) return -1; // Bail out
 
                 spill = get_spillcopy_wide(MachSpillCopyNode::RegToMem, spill, NULL, 0);
                 if (!spill) return -1;        // Bailed out
-                insert_proj(b, pos+1, spill, maxlrg);
+                insert_proj(b, b->end_idx() - pos + 1, spill, maxlrg);
                 maxlrg++;
                 def = spill;
               }
