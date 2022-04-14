@@ -485,8 +485,8 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassID id) :
-  Klass(id),
+InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind) :
+  Klass(kind),
   _nest_members(NULL),
   _nest_host(NULL),
   _permitted_subclasses(NULL),

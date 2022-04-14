@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
  * Abstract class to generate the overview files.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  */
 public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
 
@@ -62,35 +56,34 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * summary at the top of the page and generate a link to the description,
      * which is added at the end of this page.
      *
-     * @param main the documentation tree to which the overview header will be added
+     * @param target the content to which the overview header will be added
      */
-    protected void addOverviewHeader(Content main) {
-        addConfigurationTitle(main);
-        addOverviewComment(main);
-        addOverviewTags(main);
+    protected void addOverviewHeader(Content target) {
+        addConfigurationTitle(target);
+        addOverviewComment(target);
+        addOverviewTags(target);
     }
 
     /**
      * Adds the overview comment as provided in the file specified by the
      * "-overview" option on the command line.
      *
-     * @param htmltree the documentation tree to which the overview comment will
-     *                 be added
+     * @param content the content to which the overview comment will be added
      */
-    protected void addOverviewComment(Content htmltree) {
+    protected void addOverviewComment(Content content) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            addInlineComment(configuration.overviewElement, htmltree);
+            addInlineComment(configuration.overviewElement, content);
         }
     }
 
     /**
      * Adds the block tags provided in the file specified by the "-overview" option.
      *
-     * @param htmlTree the content tree to which the tags will be added
+     * @param content the content to which the tags will be added
      */
-    protected void addOverviewTags(Content htmlTree) {
+    protected void addOverviewTags(Content content) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            addTagsInfo(configuration.overviewElement, htmlTree);
+            addTagsInfo(configuration.overviewElement, content);
         }
     }
 
@@ -118,25 +111,25 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds the index to the documentation tree.
+     * Adds the index to the documentation.
      *
-     * @param main the document tree to which the packages/modules list will be added
+     * @param target the content to which the packages/modules list will be added
      */
-    protected abstract void addIndex(Content main);
+    protected abstract void addIndex(Content target);
 
     /**
-     * Adds the doctitle to the documentation tree, if it is specified on the command line.
+     * Adds the doctitle to the documentation, if it is specified on the command line.
      *
-     * @param body the document tree to which the title will be added
+     * @param target the content to which the title will be added
      */
-    protected void addConfigurationTitle(Content body) {
+    protected void addConfigurationTitle(Content target) {
         String doctitle = configuration.getOptions().docTitle();
         if (!doctitle.isEmpty()) {
-            Content title = new RawHtml(doctitle);
-            Content heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
+            var title = new RawHtml(doctitle);
+            var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                     HtmlStyle.title, title);
-            Content div = HtmlTree.DIV(HtmlStyle.header, heading);
-            body.add(div);
+            var div = HtmlTree.DIV(HtmlStyle.header, heading);
+            target.add(div);
         }
     }
 }

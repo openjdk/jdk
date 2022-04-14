@@ -172,7 +172,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
                                 ((AccessibleState)oldValue) == AccessibleState.VISIBLE ) {
                             menuClosed(ptr);
                         }
-                    } else if (thisRole == AccessibleRole.MENU_ITEM) {
+                    } else if (thisRole == AccessibleRole.MENU_ITEM ||
+                            (thisRole == AccessibleRole.MENU)) {
                         if ( newValue != null &&
                                 ((AccessibleState)newValue) == AccessibleState.FOCUSED ) {
                             menuItemSelected(ptr);
@@ -199,7 +200,6 @@ class CAccessible extends CFRetainedResource implements Accessible {
             }
         }
     }
-
 
     static Accessible getSwingAccessible(final Accessible a) {
         return (a instanceof CAccessible) ? ((CAccessible)a).accessible : a;

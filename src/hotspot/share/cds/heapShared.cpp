@@ -51,8 +51,9 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/objArrayOop.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -210,9 +211,27 @@ void HeapShared::reset_archived_object_states(TRAPS) {
   reset_states(SystemDictionary::java_platform_loader(), CHECK);
   log_debug(cds)("Resetting system loader");
   reset_states(SystemDictionary::java_system_loader(), CHECK);
+
+  // Clean up jdk.internal.loader.ClassLoaders::bootLoader(), which is not
+  // directly used for class loading, but rather is used by the core library
+  // to keep track of resources, etc, loaded by the null class loader.
+  //
+  // Note, this object is non-null, and is not the same as
+  // ClassLoaderData::the_null_class_loader_data()->class_loader(),
+  // which is null.
+  log_debug(cds)("Resetting boot loader");
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
+                         vmSymbols::bootLoader_name(),
+                         vmSymbols::void_BuiltinClassLoader_signature(),
+                         CHECK);
+  Handle boot_loader(THREAD, result.get_oop());
+  reset_states(boot_loader(), CHECK);
 }
 
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = NULL;
+HeapShared::OriginalObjectTable* HeapShared::_original_object_table = NULL;
 oop HeapShared::find_archived_heap_object(oop obj) {
   assert(DumpSharedSpaces, "dump-time only");
   ArchivedObjectCache* cache = archived_object_cache();
@@ -317,6 +336,9 @@ oop HeapShared::archive_object(oop obj) {
     ArchivedObjectCache* cache = archived_object_cache();
     CachedOopInfo info = make_cached_oop_info(archived_oop);
     cache->put(obj, info);
+    if (_original_object_table != NULL) {
+      _original_object_table->put(archived_oop, obj);
+    }
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT " : %s",
@@ -466,7 +488,7 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
     NoSafepointVerifier nsv;
 
     // Cache for recording where the archived objects are copied to
-    create_archived_object_cache();
+    create_archived_object_cache(log_is_enabled(Info, cds, map));
 
     log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                    UseCompressedOops ? p2i(CompressedOops::begin()) :
@@ -480,7 +502,6 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
     copy_open_objects(open_regions);
 
     CDSHeapVerifier::verify();
-    destroy_archived_object_cache();
   }
 
   G1HeapVerifier::verify_archive_regions();
@@ -532,6 +553,12 @@ void HeapShared::copy_open_objects(GrowableArray<MemRegion>* open_regions) {
 
 // Copy _pending_archive_roots into an objArray
 void HeapShared::copy_roots() {
+  // HeapShared::roots() points into an ObjArray in the open archive region. A portion of the
+  // objects in this array are discovered during HeapShared::archive_objects(). For example,
+  // in HeapShared::archive_reachable_objects_from() ->  HeapShared::check_enum_obj().
+  // However, HeapShared::archive_objects() happens inside a safepoint, so we can't
+  // allocate a "regular" ObjArray and pass the result to HeapShared::archive_object().
+  // Instead, we have to roll our own alloc/copy routine here.
   int length = _pending_roots != NULL ? _pending_roots->length() : 0;
   size_t size = objArrayOopDesc::object_size(length);
   Klass* k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass

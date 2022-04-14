@@ -40,7 +40,7 @@
  *      8145136 8145952 8164784 8037111 8081643 7037368 8178872 8185841 8190918
  *      8187946 8195478 8181157 8179071 8193552 8202026 8204269 8202537 8208746
  *      8209775 8221432 8227127 8230284 8231273 8233579 8234288 8250665 8255086
- *      8251317 8274658 8283277
+ *      8251317 8274658 8283277 8283805 8265315
  * @summary Verify locale data
  * @modules java.base/sun.util.resources
  * @modules jdk.localedata
@@ -341,7 +341,7 @@ public class LocaleDataTest
             if (use_tag) {
                 locale = Locale.forLanguageTag(localeName);
             } else {
-                locale = new Locale(language, country, variant);
+                locale = Locale.of(language, country, variant);
             }
             ResourceBundle bundle = LocaleData.getBundle(fullName, locale);
             resource = bundle.getObject(resTag);

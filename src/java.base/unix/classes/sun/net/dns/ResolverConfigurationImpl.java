@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.io.IOException;
  * and Linux.
  */
 
-public class ResolverConfigurationImpl
+public final class ResolverConfigurationImpl
     extends ResolverConfiguration
 {
     // Lock helds whilst loading configuration or checking

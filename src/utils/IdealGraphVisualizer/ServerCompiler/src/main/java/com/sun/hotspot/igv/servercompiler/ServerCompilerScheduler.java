@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.Scheduler;
 import java.util.*;
+import java.util.function.Predicate;
 import org.openide.ErrorManager;
 import org.openide.util.lookup.ServiceProvider;
 import com.ibm.wala.util.graph.Graph;
@@ -52,14 +53,44 @@ public class ServerCompilerScheduler implements Scheduler {
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
+        public int rank; // Rank for local scheduling priority.
+
+        public Node(InputNode n) {
+            inputNode = n;
+            String p = n.getProperties().get("is_block_proj");
+            isBlockProjection = (p != null && p.equals("true"));
+            p = n.getProperties().get("is_block_start");
+            isBlockStart = (p != null && p.equals("true"));
+            computeRank();
+        }
+
+        // Rank by local scheduling priority.
+        private void computeRank() {
+            if (isBlockStart || isOtherBlockStart(this)) {
+                rank = 1;
+            } else if (isPhi(this)) {
+                rank = 2;
+            } else if (isParm(this)) {
+                rank = 3;
+            } else if (isProj(this)) {
+                rank = 4;
+            } else if (!isControl(this)) { // Every other node except terminators.
+                rank = 5;
+            } else {
+                rank = 6;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return inputNode.getProperties().get("idx") + " " + inputNode.getProperties().get("name");
+        }
     }
     private InputGraph graph;
     private Collection<Node> nodes;
     private Map<InputNode, Node> inputNodeToNode;
     private Vector<InputBlock> blocks;
     private Map<InputBlock, InputBlock> dominatorMap;
-    private Map<InputBlock, Integer> blockIndex;
-    private InputBlock[][] commonDominator;
     private static final Comparator<InputEdge> edgeComparator = new Comparator<InputEdge>() {
 
         @Override
@@ -80,15 +111,17 @@ public class ServerCompilerScheduler implements Scheduler {
         Set<Node> visited = new HashSet<>();
         Map<InputBlock, Set<Node>> terminators = new HashMap<>();
         // Pre-compute control successors of each node, excluding self edges.
-        Map<Node, Set<Node>> controlSuccs = new HashMap<>();
+        Map<Node, List<Node>> controlSuccs = new HashMap<>();
         for (Node n : nodes) {
             if (n.isCFG) {
-                Set<Node> nControlSuccs = new HashSet<>();
+                List<Node> nControlSuccs = new ArrayList<>();
                 for (Node s : n.succs) {
                     if (s.isCFG && s != n) {
                         nControlSuccs.add(s);
                     }
                 }
+                // Ensure that the block ordering is deterministic.
+                nControlSuccs.sort(Comparator.comparingInt((Node a) -> a.inputNode.getId()));
                 controlSuccs.put(n, nControlSuccs);
             }
         }
@@ -173,7 +206,18 @@ public class ServerCompilerScheduler implements Scheduler {
                 }
             }
             for (Node s : uniqueSuccs) {
-                graph.addBlockEdge(terms.getKey(), s.block);
+                // Label the block edge with the short name of the corresponding
+                // control projection, if any.
+                String label = null;
+                if (terms.getValue().size() > 1) {
+                    for (Node t : terms.getValue()) {
+                        if (s.preds.contains(t)) {
+                            label = t.inputNode.getProperties().get("short_name");
+                            break;
+                        }
+                    }
+                }
+                graph.addBlockEdge(terms.getKey(), s.block, label);
             }
         }
 
@@ -183,14 +227,6 @@ public class ServerCompilerScheduler implements Scheduler {
             if (block != null) {
                 block.addNode(n.inputNode.getId());
             }
-        }
-
-        // Compute block index map for dominator computation.
-        int z = 0;
-        blockIndex = new HashMap<>(blocks.size());
-        for (InputBlock b : blocks) {
-            blockIndex.put(b, z);
-            z++;
         }
     }
 
@@ -230,14 +266,13 @@ public class ServerCompilerScheduler implements Scheduler {
             connectOrphansAndWidows();
             buildBlocks();
             buildDominators();
-            buildCommonDominators();
             scheduleLatest();
 
             InputBlock noBlock = null;
             for (InputNode n : graph.getNodes()) {
                 if (graph.getBlock(n) == null) {
                     if (noBlock == null) {
-                        noBlock = graph.addBlock("(no block)");
+                        noBlock = graph.addArtificialBlock();
                         blocks.add(noBlock);
                     }
 
@@ -246,8 +281,102 @@ public class ServerCompilerScheduler implements Scheduler {
                 assert graph.getBlock(n) != null;
             }
 
+            scheduleLocal();
+
             return blocks;
         }
+    }
+
+    private void scheduleLocal() {
+        // Leave only local predecessors and successors.
+        for (InputBlock b : blocks) {
+            for (InputNode in : b.getNodes()) {
+                Node n = inputNodeToNode.get(in);
+                Predicate<Node> excludePredecessors =
+                    node -> isPhi(node) || node.isBlockStart;
+                List<Node> localPreds = new ArrayList<>(n.preds.size());
+                for (Node p : n.preds) {
+                    if (p.block == b && p != n && !excludePredecessors.test(n)) {
+                        localPreds.add(p);
+                    }
+                }
+                n.preds = localPreds;
+                Set<Node> localSuccs = new HashSet<>(n.succs.size());
+                for (Node s : n.succs) {
+                    if (s.block == b && s != n && !excludePredecessors.test(s)) {
+                        localSuccs.add(s);
+                    }
+                }
+                n.succs = localSuccs;
+            }
+        }
+        // Schedule each block independently.
+        for (InputBlock b : blocks) {
+            List<Node> nodes = new ArrayList<>(b.getNodes().size());
+            for (InputNode n : b.getNodes()) {
+                nodes.add(inputNodeToNode.get(n));
+            }
+            List<InputNode> schedule = scheduleBlock(nodes);
+            b.setNodes(schedule);
+        }
+    }
+
+    private static final Comparator<Node> schedulePriority = new Comparator<Node>(){
+            @Override
+            public int compare(Node n1, Node n2) {
+                // Order by rank, then idx.
+                int r1 = n1.rank, r2 = n2.rank;
+                int o1, o2;
+                if (r1 != r2) { // Different rank.
+                    o1 = r1;
+                    o2 = r2;
+                } else { // Same rank, order by idx.
+                    o1 = Integer.parseInt(n1.inputNode.getProperties().get("idx"));
+                    o2 = Integer.parseInt(n2.inputNode.getProperties().get("idx"));
+                }
+                return Integer.compare(o1, o2);
+            };
+        };
+
+    private List<InputNode> scheduleBlock(Collection<Node> nodes) {
+        List<InputNode> schedule = new ArrayList<InputNode>();
+
+        // Initialize ready priority queue with nodes without predecessors.
+        Queue<Node> ready = new PriorityQueue<Node>(schedulePriority);
+        // Set of nodes that have been enqueued.
+        Set<Node> visited = new HashSet<Node>(nodes.size());
+        for (Node n : nodes) {
+            if (n.preds.isEmpty()) {
+                ready.add(n);
+                visited.add(n);
+            }
+        }
+
+        // Classic list scheduling algorithm.
+        while (!ready.isEmpty()) {
+            Node n = ready.remove();
+            schedule.add(n.inputNode);
+
+            // Add nodes that are now ready after scheduling n.
+            for (Node s : n.succs) {
+                if (visited.contains(s)) {
+                    continue;
+                }
+                boolean allPredsScheduled = true;
+                for (Node p : s.preds) {
+                    if (!visited.contains(p)) {
+                        allPredsScheduled = false;
+                        break;
+                    }
+                }
+                if (allPredsScheduled) {
+                    ready.add(s);
+                    visited.add(s);
+                }
+            }
+        }
+        assert(schedule.size() == nodes.size());
+        return schedule;
     }
 
     private void scheduleLatest() {
@@ -299,7 +428,7 @@ public class ServerCompilerScheduler implements Scheduler {
                                 if (block == null) {
                                     block = s.block;
                                 } else {
-                                    block = commonDominator[this.blockIndex.get(block)][blockIndex.get(s.block)];
+                                    block = getCommonDominator(block, s.block);
                                 }
                             }
                         }
@@ -365,18 +494,7 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    public void buildCommonDominators() {
-        commonDominator = new InputBlock[this.blocks.size()][this.blocks.size()];
-        for (int i = 0; i < blocks.size(); i++) {
-            for (int j = 0; j < blocks.size(); j++) {
-                commonDominator[i][j] = getCommonDominator(i, j);
-            }
-        }
-    }
-
-    public InputBlock getCommonDominator(int a, int b) {
-        InputBlock ba = blocks.get(a);
-        InputBlock bb = blocks.get(b);
+    public InputBlock getCommonDominator(InputBlock ba, InputBlock bb) {
         if (ba == bb) {
             return ba;
         }
@@ -426,12 +544,32 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    private boolean isRegion(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Region");
+    private static boolean isOtherBlockStart(Node n) {
+        return hasName(n, "CountedLoopEnd");
     }
 
-    private boolean isPhi(Node n) {
-        return n.inputNode.getProperties().get("name").equals("Phi");
+    private static boolean isPhi(Node n) {
+        return hasName(n, "Phi");
+    }
+
+    private static boolean isProj(Node n) {
+        return hasName(n, "Proj") || hasName(n, "MachProj");
+    }
+
+    private static boolean isParm(Node n) {
+        return hasName(n, "Parm");
+    }
+
+    private static boolean hasName(Node n, String name) {
+        String nodeName = n.inputNode.getProperties().get("name");
+        if (nodeName == null) {
+            return false;
+        }
+        return nodeName.equals(name);
+    }
+
+    private static boolean isControl(Node n) {
+        return n.inputNode.getProperties().get("category").equals("control");
     }
 
     private Node findRoot() {
@@ -439,9 +577,7 @@ public class ServerCompilerScheduler implements Scheduler {
         Node alternativeRoot = null;
 
         for (Node node : nodes) {
-            InputNode inputNode = node.inputNode;
-            String s = inputNode.getProperties().get("name");
-            if (s != null && s.equals("Root")) {
+            if (hasName(node, "Root")) {
                 return node;
             }
 
@@ -473,13 +609,8 @@ public class ServerCompilerScheduler implements Scheduler {
     public void buildUpGraph() {
 
         for (InputNode n : graph.getNodes()) {
-            Node node = new Node();
-            node.inputNode = n;
+            Node node = new Node(n);
             nodes.add(node);
-            String p = n.getProperties().get("is_block_proj");
-            node.isBlockProjection = (p != null && p.equals("true"));
-            p = n.getProperties().get("is_block_start");
-            node.isBlockStart = (p != null && p.equals("true"));
             inputNodeToNode.put(n, node);
         }
 
