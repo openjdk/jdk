@@ -176,7 +176,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
       _runtime = JVMCI::java_runtime();
       return;
     }
-    _runtime = JVMCI::compiler_runtime();
+    _runtime = thread->libjvmci_runtime();
     assert(_runtime != NULL, "npe");
     _env = parent_env;
     return;
@@ -186,7 +186,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   // is loaded and initialized and get a shared library JNIEnv
   _is_hotspot = false;
 
-  _runtime = JVMCI::compiler_runtime();
+  _runtime = JVMCI::compiler_runtime(thread);
   _env = _runtime->init_shared_library_javavm();
 
   if (_env != NULL) {

@@ -148,6 +148,7 @@ extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against
                                                  // Only used locally in PrintCodeCacheLayout processing.
 
 #if INCLUDE_JVMCI
+#define JVMCIRuntime_lock_rank safepoint
 extern Monitor* JVMCI_lock;                      // Monitor to control initialization of JVMCI
 #endif
 

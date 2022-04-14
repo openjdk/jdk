@@ -336,7 +336,8 @@ void mutex_init() {
   def(Zip_lock                     , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
 
 #if INCLUDE_JVMCI
-  def(JVMCI_lock                   , PaddedMonitor, safepoint, true);
+  // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock
+  def(JVMCI_lock                   , PaddedMonitor, JVMCIRuntime_lock_rank-1, true);
 #endif
 
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
