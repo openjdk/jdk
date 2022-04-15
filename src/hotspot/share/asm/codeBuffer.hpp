@@ -361,6 +361,21 @@ class SharedStubToInterpRequest {
 };
 typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
 
+class SharedStubToRuntimeCallRequest {
+ private:
+  address _dest;
+  int _caller_offset;
+
+ public:
+  SharedStubToRuntimeCallRequest(address dest = nullptr, int caller_offset = -1):
+      _dest(dest),
+      _caller_offset(caller_offset) {}
+
+  address dest()      const { return _dest; }
+  int caller_offset() const { return _caller_offset; }
+};
+typedef GrowableArray<SharedStubToRuntimeCallRequest> SharedStubToRuntimeCallRequests;
+
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
 // interior of a single BufferBlob, but in some cases it may be
@@ -434,6 +449,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  SharedStubToRuntimeCallRequests* _shared_stub_to_runtime_call_requests;
   bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
 
 #ifndef PRODUCT
@@ -455,6 +471,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _last_insn       = NULL;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = NULL;
+    _shared_stub_to_runtime_call_requests = NULL;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -711,6 +728,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // Request for a shared stub to the interpreter
   void shared_stub_to_interp_for(Method* call, address caller_pc);
+
+  void shared_stub_to_runtime_call_for(address dest, int caller_offset);
 
 #ifndef PRODUCT
  public:

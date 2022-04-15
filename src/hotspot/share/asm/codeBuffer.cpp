@@ -996,6 +996,15 @@ void CodeBuffer::shared_stub_to_interp_for(Method* method, address caller_pc) {
   _finalize_stubs = true;
 }
 
+void CodeBuffer::shared_stub_to_runtime_call_for(address dest, int caller_offset) {
+  if (_shared_stub_to_runtime_call_requests == nullptr) {
+    _shared_stub_to_runtime_call_requests = new SharedStubToRuntimeCallRequests();
+  }
+  SharedStubToRuntimeCallRequest request(dest, caller_offset);
+  _shared_stub_to_runtime_call_requests->push(request);
+  _finalize_stubs = true;
+}
+
 #ifndef PRODUCT
 void CodeBuffer::block_comment(ptrdiff_t offset, const char* comment) {
   if (_collect_comments) {

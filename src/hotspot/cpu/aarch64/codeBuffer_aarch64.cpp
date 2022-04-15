@@ -27,5 +27,6 @@
 #include "asm/macroAssembler.hpp"
 
 bool CodeBuffer::pd_finalize_stubs() {
-  return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests);
+  return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)
+    && emit_shared_stubs_to_runtime_call<MacroAssembler>(this, _shared_stub_to_runtime_call_requests);
 }

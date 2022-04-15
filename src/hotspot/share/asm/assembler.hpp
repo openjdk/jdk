@@ -344,6 +344,12 @@ class AbstractAssembler : public ResourceObj  {
         "call relocate() between instructions");
     code_section()->relocate(code_section()->end(), rspec, format);
   }
+  void relocate(address addr, RelocationHolder const& rspec, int format = 0) {
+    assert(!pd_check_instruction_mark()
+        || inst_mark() == NULL || inst_mark() == code_section()->end(),
+        "call relocate() between instructions");
+    code_section()->relocate(addr, rspec, format);
+  }
   void relocate(   relocInfo::relocType rtype, int format = 0) {
     code_section()->relocate(code_section()->end(), rtype, format);
   }

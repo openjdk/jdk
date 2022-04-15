@@ -580,10 +580,14 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
        Compile::current()->output()->in_scratch_emit_size());
 #endif
     if (!in_scratch_emit_size) {
-      address stub = emit_trampoline_stub(offset(), entry.target());
-      if (stub == NULL) {
-        postcond(pc() == badAddress);
-        return NULL; // CodeCache is full
+      if (UseSharedStubs && entry.rspec().type() == relocInfo::runtime_call_type) {
+        code()->shared_stub_to_runtime_call_for(entry.target(), offset());
+      } else {
+        address stub = emit_trampoline_stub(offset(), entry.target());
+        if (stub == NULL) {
+          postcond(pc() == badAddress);
+          return NULL; // CodeCache is full
+        }
       }
     }
   }
