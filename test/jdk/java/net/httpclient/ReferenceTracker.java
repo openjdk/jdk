@@ -24,6 +24,7 @@
 import jdk.internal.net.http.common.OperationTrackers;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.net.http.HttpClient;
 import java.util.Arrays;
@@ -85,12 +86,20 @@ public class ReferenceTracker {
     public AssertionError check(long graceDelayMs) {
         return check(graceDelayMs,
                 (t) -> t.getOutstandingHttpOperations() > 0,
-                "outstanding operations");
+                "outstanding operations", true);
+    }
+
+    private void printThreads(String why, PrintStream out) {
+        out.println(why);
+        Arrays.stream(ManagementFactory.getThreadMXBean()
+                        .dumpAllThreads(true, true))
+                .forEach(out::println);
     }
 
     public AssertionError check(long graceDelayMs,
                                 Predicate<Tracker> hasOutstanding,
-                                String description) {
+                                String description,
+                                boolean printThreads) {
         AssertionError fail = null;
         graceDelayMs = Math.max(graceDelayMs, 100);
         long delay = Math.min(graceDelayMs, 500);
@@ -115,6 +124,13 @@ public class ReferenceTracker {
         } else {
             System.out.println("PASSED: No " + description + " found in "
                     + getTrackedClientCount() + " clients");
+        }
+        if (fail != null) {
+            Predicate<Tracker> isAlive = Tracker::isSelectorAlive;
+            if (printThreads && TRACKERS.stream().anyMatch(isAlive)) {
+                printThreads("Some selector manager threads are still alive: ", System.out);
+                printThreads("Some selector manager threads are still alive: ", System.err);
+            }
         }
         return fail;
     }
@@ -174,13 +190,7 @@ public class ReferenceTracker {
         Predicate<Tracker> hasPendingConnections = (t) -> t.getOutstandingTcpConnections() > 0;
         AssertionError failed = check(graceDelayMs,
                 isAlive.or(hasPendingRequests).or(hasPendingConnections),
-                "outstanding unclosed resources");
-        if (TRACKERS.stream().anyMatch(isAlive)) {
-            System.err.println("Some selector manager threads are still alive: ");
-            Arrays.stream(ManagementFactory.getThreadMXBean()
-                    .dumpAllThreads(true, true))
-                    .forEach(System.err::println);
-        }
+                "outstanding unclosed resources", true);
         return failed;
     }
 }
