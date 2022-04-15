@@ -29,41 +29,40 @@ import java.util.Objects;
  * @bug 8178355
  * @summary Use identity-based comparison for IdentityHashMap#remove and #replace
  */
-
 public class DefaultRemoveReplace {
-	public static void main(String[] args) {
-		final String key = "key";
-		final String internedValue = "value";
-		final String constructedValue = new String(new char[]{'v', 'a', 'l', 'u', 'e'});
+    public static void main(String[] args) {
+        final String key = "key";
+        final String internedValue = "value";
+        final String constructedValue = new String(new char[]{'v', 'a', 'l', 'u', 'e'});
 
-		if (!Objects.equals(internedValue, constructedValue)) {
-			throw new AssertionError("Bad test data: equality should hold");
-		}
+        if (!Objects.equals(internedValue, constructedValue)) {
+            throw new AssertionError("Bad test data: equality should hold");
+        }
 
-		if (internedValue == constructedValue) {
-			throw new AssertionError("Bad test data: identity should be different");
-		}
+        if (internedValue == constructedValue) {
+            throw new AssertionError("Bad test data: identity should be different");
+        }
 
-		final IdentityHashMap<String, String> map = new IdentityHashMap<>();
-		map.put(key, internedValue);
+        final IdentityHashMap<String, String> map = new IdentityHashMap<>();
+        map.put(key, internedValue);
 
-		if (map.replace(key, constructedValue, "dummy")) {
-			throw new AssertionError("Erroneously replacd value by equality");
-		}
+        if (map.replace(key, constructedValue, "dummy")) {
+            throw new AssertionError("Erroneously replacd value by equality");
+        }
 
-		if (!map.replace(key, internedValue, "dummy")) {
-			throw new AssertionError("Failed to replace value by identity");
-		}
+        if (!map.replace(key, internedValue, "dummy")) {
+            throw new AssertionError("Failed to replace value by identity");
+        }
 
-		map.clear();
-		map.put(key, constructedValue);
+        map.clear();
+        map.put(key, constructedValue);
 
-		if (map.remove(key, internedValue)) {
-			throw new AssertionError("Erroneously removed value by equality");
-		}
+        if (map.remove(key, internedValue)) {
+            throw new AssertionError("Erroneously removed value by equality");
+        }
 
-		if (!map.remove(key, constructedValue)) {
-			throw new AssertionError("Failed to remove value by identity");
-		}
-	}
+        if (!map.remove(key, constructedValue)) {
+            throw new AssertionError("Failed to remove value by identity");
+        }
+    }
 }
