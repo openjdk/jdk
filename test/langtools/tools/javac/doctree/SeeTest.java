@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8031212 8273244
+ * @bug 7021614 8031212 8273244 8284908
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -168,7 +168,7 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:1, abc.]
   body: empty
   block tags: 1
-    Erroneous[ERRONEOUS, pos:7
+    Erroneous[ERRONEOUS, pos:7, prefPos:19
       code: compiler.err.dc.unexpected.content
       body: @see_123_text
     ]
