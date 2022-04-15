@@ -231,7 +231,8 @@ public class PKCS11 {
      * Disconnects the PKCS#11 library from this object. After calling this
      * method, this object is no longer connected to a native PKCS#11 module
      * and any subsequent calls to C_ methods will fail. This method is for
-     * internal use only.  Please don't use this method other than finalization.
+     * internal use only.  Please don't use this method other than finalization
+     * as implemented in the releaserFor() method.
      *
      * Declared private, because incorrect handling may result in errors in the
      * native part.
