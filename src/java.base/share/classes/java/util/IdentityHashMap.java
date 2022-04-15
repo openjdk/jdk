@@ -545,38 +545,6 @@ public class IdentityHashMap<K,V>
     }
 
     /**
-     * Removes the specified key-value mapping from the map if it is present.
-     *
-     * @param   key   possible key
-     * @param   value possible value
-     * @return  {@code true} if and only if the specified key-value
-     *          mapping was in the map
-     */
-    private boolean removeMapping(Object key, Object value) {
-        Object k = maskNull(key);
-        Object[] tab = table;
-        int len = tab.length;
-        int i = hash(k, len);
-
-        while (true) {
-            Object item = tab[i];
-            if (item == k) {
-                if (tab[i + 1] != value)
-                    return false;
-                modCount++;
-                size--;
-                tab[i] = null;
-                tab[i + 1] = null;
-                closeDeletion(i);
-                return true;
-            }
-            if (item == null)
-                return false;
-            i = nextKeyIndex(i, len);
-        }
-    }
-
-    /**
      * Rehash all possibly-colliding entries following a
      * deletion. This preserves the linear-probe
      * collision properties required by get, put, etc.
@@ -1192,7 +1160,7 @@ public class IdentityHashMap<K,V>
         }
         public boolean remove(Object o) {
             return o instanceof Entry<?, ?> entry
-                    && removeMapping(entry.getKey(), entry.getValue());
+                    && IdentityHashMap.this.remove(entry.getKey(), entry.getValue());
         }
         public int size() {
             return size;
@@ -1376,6 +1344,70 @@ public class IdentityHashMap<K,V>
             if (modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>More formally, if this map contains a mapping from a key
+     * {@code k} to a value {@code v} such that {@code key == k}
+     * and {@code value == v}, then this method removes the mapping
+     * for this key and returns {@code true}; otherwise it returns
+     * {@code false}.
+     */
+    @Override
+    public boolean remove(Object key, Object value) {
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int len = tab.length;
+        int i = hash(k, len);
+
+        while (true) {
+            Object item = tab[i];
+            if (item == k) {
+                if (tab[i + 1] != value)
+                    return false;
+                modCount++;
+                size--;
+                tab[i] = null;
+                tab[i + 1] = null;
+                closeDeletion(i);
+                return true;
+            }
+            if (item == null)
+                return false;
+            i = nextKeyIndex(i, len);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>More formally, if this map contains a mapping from a key
+     * {@code k} to a value {@code v} such that {@code key == k}
+     * and {@code oldValue == v}, then this method associates
+     * {@code k} to {@code newValue} and returns {@code true};
+     * otherwise it returns {@code false}.
+     */
+    @Override
+    public boolean replace(K key, V oldValue, V newValue) {
+        Object k = maskNull(key);
+        Object[] tab = table;
+        int len = tab.length;
+        int i = hash(k, len);
+
+        while (true) {
+            Object item = tab[i];
+            if (item == k) {
+                if (tab[i + 1] != oldValue)
+                    return false;
+                tab[i + 1] = newValue;
+                return true;
+            }
+            if (item == null)
+                return false;
+            i = nextKeyIndex(i, len);
         }
     }
 
