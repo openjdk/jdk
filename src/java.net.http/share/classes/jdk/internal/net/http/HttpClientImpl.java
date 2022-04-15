@@ -777,6 +777,14 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Thread.currentThread() == selmgr;
     }
 
+    boolean isSelectorClosed() {
+        return selmgr.isClosed();
+    }
+
+    IOException selectorClosedException() {
+        return selmgr.selectorClosedException();
+    }
+
     Http2ClientImpl client2() {
         return client2;
     }
