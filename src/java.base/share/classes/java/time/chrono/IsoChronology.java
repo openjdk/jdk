@@ -123,7 +123,7 @@ import java.util.Objects;
  *
  * @since 1.8
  */
-public final class IsoChronology extends AbstractChronology implements Serializable, IsoBasedChronology {
+public final class IsoChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the ISO chronology.
@@ -675,6 +675,19 @@ public final class IsoChronology extends AbstractChronology implements Serializa
     @Override  // override with covariant return type
     public Period period(int years, int months, int days) {
         return Period.of(years, months, days);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * {@code IsoChronology} is an ISO based chronology, which supports fields,
+     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
+     * @implSpec The implementation always returns {@code true}.
+     * @return {@code true}
+     * @since 19
+     */
+    @Override
+    public boolean isIsoBased() {
+        return true;
     }
 
     //-----------------------------------------------------------------------

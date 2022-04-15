@@ -104,7 +104,7 @@ import java.util.Map;
  *
  * @since 1.8
  */
-public final class ThaiBuddhistChronology extends AbstractChronology implements Serializable, IsoBasedChronology {
+public final class ThaiBuddhistChronology extends AbstractChronology implements Serializable {
 
     /**
      * Singleton instance of the Buddhist chronology.
@@ -333,6 +333,19 @@ public final class ThaiBuddhistChronology extends AbstractChronology implements 
     @Override  // override for return type
     public ThaiBuddhistDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
         return (ThaiBuddhistDate) super.resolveDate(fieldValues, resolverStyle);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * {@code ThaiBuddhistChronology} is an ISO based chronology, which supports fields,
+     * such as {@code DAY_OF_QUARTER} and {@code QUARTER_OF_YEAR}.
+     * @implSpec The implementation always returns {@code true}.
+     * @return {@code true}
+     * @since 19
+     */
+    @Override
+    public boolean isIsoBased() {
+        return true;
     }
 
     //-----------------------------------------------------------------------

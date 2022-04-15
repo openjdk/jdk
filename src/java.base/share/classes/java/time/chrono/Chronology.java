@@ -76,6 +76,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQueries;
@@ -770,6 +771,30 @@ public interface Chronology extends Comparable<Chronology> {
         Objects.requireNonNull(era, "era");
         return epochSecond(prolepticYear(era, yearOfEra), month, dayOfMonth, hour, minute, second, zoneOffset);
     }
+
+    /**
+     * Checks if this chronology is ISO based.
+     * <p>
+     * An ISO based chronology has the same basic structure of days and
+     * months as the ISO chronology, with month lengths generally aligned
+     * with those in the ISO January to December definitions.
+     * For example, the Minguo, ThaiBuddhist and Japanese chronologies.
+     *
+     * @implSpec
+     * The default implementation returns {@code false}.
+     *
+     * @return true if the chronology is ISO based
+     * @see IsoChronology
+     * @see JapaneseChronology
+     * @see MinguoChronology
+     * @see ThaiBuddhistChronology
+     * @see IsoFields
+     * @since 19
+     */
+    default boolean isIsoBased() {
+        return false;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Compares this chronology to another chronology.

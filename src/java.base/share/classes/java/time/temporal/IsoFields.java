@@ -74,7 +74,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
-import java.time.chrono.IsoBasedChronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.ResolverStyle;
 import java.util.Locale;
@@ -91,8 +90,6 @@ import sun.util.locale.provider.LocaleResources;
  * including quarter-of-year and week-based-year.
  * <p>
  * This class defines fields and units that are specific to the ISO calendar system.
- * Other non-ISO calendar systems may provide these fields by implementing
- * {@link IsoBasedChronology} interface.
  *
  * <h2>Quarter of year</h2>
  * The ISO-8601 standard is based on the standard civic 12 month year.
@@ -159,7 +156,6 @@ import sun.util.locale.provider.LocaleResources;
  * <p>
  * This class is immutable and thread-safe.
  *
- * @see IsoBasedChronology
  * @since 1.8
  */
 public final class IsoFields {
@@ -740,6 +736,6 @@ public final class IsoFields {
     }
 
     static boolean isIsoBased(TemporalAccessor temporal) {
-        return Chronology.from(temporal) instanceof IsoBasedChronology;
+        return Chronology.from(temporal).isIsoBased();
     }
 }
