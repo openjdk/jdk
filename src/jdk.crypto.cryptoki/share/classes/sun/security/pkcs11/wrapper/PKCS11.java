@@ -112,6 +112,9 @@ public class PKCS11 {
      */
     private final String pkcs11ModulePath;
     private final CK_VERSION version;
+
+    // Note: Please don't update this field other than the constructor.
+    // Otherwise, the native data is not able to be collected.
     private long pNativeData;
 
     /**
@@ -164,8 +167,7 @@ public class PKCS11 {
         }
 
         // Calls disconnect() to cleanup the native part of the wrapper.
-        P11Util.cleaner.register(this,
-            () -> PKCS11.disconnect(pNativeData));
+        P11Util.cleaner.register(this, releaserFor(pNativeData));
     }
 
     public CK_VERSION getVersion() {
@@ -201,11 +203,19 @@ public class PKCS11 {
         return pkcs11;
     }
 
+    private static Runnable releaserFor(long pNativeData) {
+        return () -> {
+            if (pNativeData != 0) {
+                PKCS11.disconnect(pNativeData);
+            }
+        };
+    }
+
     /**
      * Connects this object to the specified PKCS#11 library. This method is for
      * internal use only.
      * Declared private, because incorrect handling may result in errors in the
-     * native part.
+     * native part.  Please don't use this method other than the constructor.
      *
      * @param pkcs11ModulePath The PKCS#11 library path.
      * @param functionList the method name for retrieving the PKCS#11
