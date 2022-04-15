@@ -231,8 +231,7 @@ final class P11KeyStore extends KeyStoreSpi {
         private PasswordCallbackHandler(char[] password) {
             if (password != null) {
                 this.password = password.clone();
-                P11Util.cleaner.register(this,
-                        () -> Arrays.fill(this.password, ' '));
+                P11Util.cleaner.register(this, releaserFor(this.password));
             }
         }
 
@@ -243,6 +242,12 @@ final class P11KeyStore extends KeyStoreSpi {
             }
             PasswordCallback pc = (PasswordCallback)callbacks[0];
             pc.setPassword(password);  // this clones the password if not null
+        }
+
+        private static Runnable releaserFor(char[] password) {
+            return () -> {
+                Arrays.fill(password, ' ');
+            };
         }
     }
 
