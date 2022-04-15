@@ -34,6 +34,10 @@
 #define __APPLE_USE_RFC_3542
 #include <netinet/in.h>
 
+#ifndef IP_DONTFRAG
+#define IP_DONTFRAG             28
+#endif
+
 #include "jni_util.h"
 
 /*
