@@ -43,8 +43,9 @@ class PhaseRegAlloc : public Phase {
   static void (*_alloc_statistics[MAX_REG_ALLOCATORS])();
   static int _num_allocators;
 
-protected:
+public:
   GrowableArray<OptoRegPair>  _node_regs;
+protected:
   uint         _node_regs_max_index;
   VectorSet    _node_oops;         // Mapping from node indices to oopiness
 

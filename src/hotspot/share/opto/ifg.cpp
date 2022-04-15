@@ -976,6 +976,23 @@ uint PhaseChaitin::build_ifg_physical(ResourceArea* a, const Block_List &blocks,
     // set the final_pressure as the register pressure for the block
     block->_reg_pressure = int_pressure.final_pressure();
     block->_freg_pressure = float_pressure.final_pressure();
+    if ((block->_ihrp_index < last_inst + 1 || block->_fhrp_index < last_inst + 1) && block->_region > region) {
+      Block* b = block;
+      while (b->_region > region) {
+        b = b->_idom;
+      }
+      uint pos = b->end_idx() - 1;
+      while (b->get_node(pos)->is_SpillCopy() &&
+             b->get_node(pos)->as_MachSpillCopy()->_spill_type == MachSpillCopyNode::RegionEntry) {
+        pos--;
+      }
+      if (block->_ihrp_index < last_inst + 1) {
+        b->_ihrp_index = pos + 1;
+      }
+      if (block->_fhrp_index < last_inst + 1) {
+        b->_fhrp_index = pos + 1;
+      }
+    }
 
 #ifndef PRODUCT
     // Gather Register Pressure Statistics

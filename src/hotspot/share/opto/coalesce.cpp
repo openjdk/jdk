@@ -769,7 +769,14 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
     }
   } // End of if dst_copy & src_copy are different
 
-  if (lrgs(lr1)._region != _region || lrgs(lr2)._region != _region) {
+//  if (lrgs(lr1)._region != _region || lrgs(lr2)._region != _region) {
+//    return false;
+//  }
+  if (lrgs(lr1)._region < _region || lrgs(lr2)._region < _region) {
+    return false;
+  }
+
+  if (b->_region > _region) {
     return false;
   }
 
@@ -831,6 +838,10 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // being not-lo-degree, it can happen.  In any case the combined coalesced
   // live range better Simplify nicely.
   lrgs(lr1)._was_lo = 1;
+
+  if (dst_copy->_idx < (uint)_phc._node_regs.length()) {
+    _phc._node_regs.at_put_grow(dst_copy->_idx, _phc._node_regs.at(src_def->_idx));
+  }
 
   // kinda expensive to do all the time
   //tty->print_cr("warning: slow verify happening");
