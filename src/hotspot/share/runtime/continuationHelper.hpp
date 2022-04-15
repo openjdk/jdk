@@ -32,6 +32,7 @@
 #include "runtime/stackValue.hpp"
 
 // Helper, all-static
+class ContinuationEntry;
 
 class ContinuationHelper {
 public:

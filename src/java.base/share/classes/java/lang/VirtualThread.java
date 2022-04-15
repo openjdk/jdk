@@ -62,7 +62,7 @@ import static java.util.concurrent.TimeUnit.*;
  * A thread that is scheduled by the Java virtual machine rather than the operating
  * system.
  */
-class VirtualThread extends Thread {
+final class VirtualThread extends Thread {
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final ContinuationScope VTHREAD_SCOPE = new ContinuationScope("VirtualThreads");
     private static final ForkJoinPool DEFAULT_SCHEDULER = createDefaultScheduler();
@@ -90,8 +90,8 @@ class VirtualThread extends Thread {
      *  STARTED -> RUNNING         // first run
      *
      *  RUNNING -> PARKING         // Thread attempts to park
-     *  PARKING -> PARKED          // yield successful, thread is parked
-     *  PARKING -> PINNED          // yield failed, thread is pinned
+     *  PARKING -> PARKED          // cont.yield successful, thread is parked
+     *  PARKING -> PINNED          // cont.yield failed, thread is pinned
      *
      *   PARKED -> RUNNABLE        // unpark or interrupted
      *   PINNED -> RUNNABLE        // unpark or interrupted

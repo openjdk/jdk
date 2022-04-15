@@ -136,6 +136,7 @@ static inline intptr_t tag_derived_oop_offset(intptr_t untagged) {
   return tagged;
 #else
   Unimplemented();
+  return 0;
 #endif
 }
 
@@ -148,6 +149,7 @@ static inline intptr_t untag_derived_oop_offset(intptr_t tagged) {
   return untagged;
 #else
   Unimplemented();
+  return 0;
 #endif
 }
 

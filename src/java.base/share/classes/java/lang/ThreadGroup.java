@@ -355,10 +355,10 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Returns an estimate of the number of active (meaning {@linkplain
-     * Thread#isAlive() alive}) platform threads in this thread group and its
-     * subgroups. Virtual threads are not included in the estimate. This
-     * method recursively iterates over all subgroups in this thread group.
+     * Returns an estimate of the number of {@linkplain Thread#isAlive() live}
+     * platform threads in this thread group and its subgroups. Virtual threads
+     * are not included in the estimate. This method recursively iterates over
+     * all subgroups in this thread group.
      *
      * <p> The value returned is only an estimate because the number of
      * threads may change dynamically while this method traverses internal
@@ -366,7 +366,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * system threads. This method is intended primarily for debugging
      * and monitoring purposes.
      *
-     * @return  an estimate of the number of active threads in this thread
+     * @return  an estimate of the number of live threads in this thread
      *          group and in any other thread group that has this thread
      *          group as an ancestor
      */
@@ -383,9 +383,9 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Copies into the specified array every active (meaning {@linkplain
-     * Thread#isAlive() alive}) platform thread in this thread group and
-     * its subgroups. Virtual threads are not enumerated by this method.
+     * Copies into the specified array every {@linkplain Thread#isAlive() live}
+     * platform thread in this thread group and its subgroups. Virtual threads
+     * are not enumerated by this method.
      *
      * <p> An invocation of this method behaves in exactly the same
      * way as the invocation
@@ -408,18 +408,17 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Copies into the specified array every active (meaning {@linkplain
-     * Thread#isAlive() alive}) platform thread in this thread group. Virtual
-     * threads are not enumerated by this method. If {@code recurse} is {@code
-     * true}, this method recursively enumerates all subgroups of this thread
-     * group and references to every active platform thread in these subgroups
-     * are also included. If the array is too short to hold all the threads,
-     * the extra threads are silently ignored.
+     * Copies into the specified array every {@linkplain Thread#isAlive() live}
+     * platform thread in this thread group. Virtual threads are not enumerated
+     * by this method. If {@code recurse} is {@code true}, this method recursively
+     * enumerates all subgroups of this thread group and references to every live
+     * platform thread in these subgroups are also included. If the array is too
+     * short to hold all the threads, the extra threads are silently ignored.
      *
      * <p> An application might use the {@linkplain #activeCount activeCount}
      * method to get an estimate of how big the array should be, however
      * <i>if the array is too short to hold all the threads, the extra threads
-     * are silently ignored.</i>  If it is critical to obtain every active
+     * are silently ignored.</i>  If it is critical to obtain every live
      * thread in this thread group, the caller should verify that the returned
      * int value is strictly less than the length of {@code list}.
      *
@@ -567,8 +566,8 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Interrupts all active (meaning {@linkplain Thread#isAlive() alive})
-     * platform threads in this thread group and its subgroups.
+     * Interrupts all {@linkplain Thread#isAlive() live} platform threads in
+     * this thread group and its subgroups.
      *
      * @throws     SecurityException  if the current thread is not allowed
      *               to access this thread group or any of the threads in

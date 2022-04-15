@@ -856,7 +856,7 @@ public class Thread implements Runnable {
          * @param prefix thread name prefix
          * @param start the starting value of the counter
          * @return this builder
-         * @throws IllegalArgumentException if count is negative
+         * @throws IllegalArgumentException if start is negative
          */
         Builder name(String prefix, long start);
 
@@ -1990,9 +1990,9 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Returns an estimate of the number of active platform threads in the
-     * current thread's thread group and its subgroups. Virtual threads are
-     * not included in the estimate.
+     * Returns an estimate of the number of {@linkplain #isAlive() live}
+     * platform threads in the current thread's thread group and its subgroups.
+     * Virtual threads are not included in the estimate.
      *
      * <p> The value returned is only an estimate because the number of
      * threads may change dynamically while this method traverses internal
@@ -2000,7 +2000,7 @@ public class Thread implements Runnable {
      * system threads. This method is intended primarily for debugging
      * and monitoring purposes.
      *
-     * @return  an estimate of the number of active platform threads in the
+     * @return  an estimate of the number of live platform threads in the
      *          current thread's thread group and in any other thread group
      *          that has the current thread's thread group as an ancestor
      */
@@ -2009,16 +2009,16 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Copies into the specified array every active platform thread in the
-     * current thread's thread group and its subgroups. This method simply
-     * invokes the {@link java.lang.ThreadGroup#enumerate(Thread[])}
+     * Copies into the specified array every {@linkplain #isAlive() live}
+     * platform thread in the current thread's thread group and its subgroups.
+     * This method simply invokes the {@link java.lang.ThreadGroup#enumerate(Thread[])}
      * method of the current thread's thread group. Virtual threads are
      * not enumerated by this method.
      *
      * <p> An application might use the {@linkplain #activeCount activeCount}
      * method to get an estimate of how big the array should be, however
      * <i>if the array is too short to hold all the threads, the extra threads
-     * are silently ignored.</i>  If it is critical to obtain every active
+     * are silently ignored.</i>  If it is critical to obtain every live
      * thread in the current thread's thread group and its subgroups, the
      * invoker should verify that the returned int value is strictly less
      * than the length of {@code tarray}.

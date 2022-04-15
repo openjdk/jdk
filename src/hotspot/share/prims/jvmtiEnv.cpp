@@ -1166,6 +1166,8 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* java_thread = NULL;
   oop thread_oop = NULL;
 
+  NULL_CHECK(thread, JVMTI_ERROR_INVALID_THREAD);
+
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
@@ -3894,6 +3896,7 @@ JvmtiEnv::GetThreadCpuTime(jthread thread, jlong* nanos_ptr) {
     // No support for virtual threads.
     return JVMTI_ERROR_UNSUPPORTED_OPERATION;
   }
+  NULL_CHECK(nanos_ptr, JVMTI_ERROR_NULL_POINTER);
 
   *nanos_ptr = os::thread_cpu_time(java_thread);
   return JVMTI_ERROR_NONE;

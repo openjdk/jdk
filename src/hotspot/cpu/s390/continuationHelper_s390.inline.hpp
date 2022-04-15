@@ -27,25 +27,7 @@
 
 #include "runtime/continuationHelper.hpp"
 
-#include "runtime/frame.inline.hpp"
-#include "runtime/registerMap.hpp"
-#include "utilities/macros.hpp"
-
 // TODO: Implement
-
-frame ContinuationEntry::to_frame() const {
-  Unimplemented();
-  return frame();
-}
-
-intptr_t* ContinuationEntry::entry_fp() const {
-  Unimplemented();
-  return nullptr;
-}
-
-void ContinuationEntry::update_register_map(RegisterMap* map) const {
-  Unimplemented();
-}
 
 template<typename FKind>
 static inline intptr_t** link_address(const frame& f) {
@@ -76,12 +58,12 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   Unimplemented();
 }
 
-void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* cont) {
+inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* cont) {
   Unimplemented();
 }
 
 #ifdef ASSERT
-void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
+inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   Unimplemented();
 }
 

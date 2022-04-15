@@ -22,13 +22,25 @@
  *
  */
 
-#ifndef CPU_AARCH64_CONTINUATION_FREEZE_THAW_AARCH64_INLINE_HPP
-#define CPU_AARCH64_CONTINUATION_FREEZE_THAW_AARCH64_INLINE_HPP
+#ifndef CPU_AARCH64_CONTINUATIONFREEZETHAW_AARCH64_INLINE_HPP
+#define CPU_AARCH64_CONTINUATIONFREEZETHAW_AARCH64_INLINE_HPP
 
 #include "code/codeBlob.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/frame.inline.hpp"
+
+
+inline void patch_callee_link(const frame& f, intptr_t* fp) {
+  DEBUG_ONLY(intptr_t* orig = *ContinuationHelper::Frame::callee_link_address(f));
+  *ContinuationHelper::Frame::callee_link_address(f) = fp;
+}
+
+inline void patch_callee_link_relative(const frame& f, intptr_t* fp) {
+  intptr_t* la = (intptr_t*)ContinuationHelper::Frame::callee_link_address(f);
+  intptr_t new_value = fp - la;
+  *la = new_value;
+}
 
 ////// Freeze
 
@@ -275,4 +287,4 @@ inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bot
   *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
 }
 
-#endif // CPU_AARCH64_CONTINUATION_FREEZE_THAW_AARCH64_INLINE_HPP
+#endif // CPU_AARCH64_CONTINUATIONFREEZETHAW_AARCH64_INLINE_HPP

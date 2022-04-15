@@ -130,7 +130,9 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_current_contended_monitor = 1;
   jc.can_generate_early_vmstart = 1;
   jc.can_generate_early_class_hook_events = 1;
-  jc.can_support_virtual_threads = 1;
+  if (java_lang_VirtualThread::notify_jvmti_events()) {
+    jc.can_support_virtual_threads = 1;
+  }
   return jc;
 }
 
@@ -270,10 +272,6 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
 
   // return the result
   either(current, desired, result);
-
-  // Special case for virtual thread events.
-  // TBD: There can be a performance impact after check for can_support_virtual_threads has been removed.
-  java_lang_VirtualThread::set_notify_jvmti_events(true);
 
   update();
 

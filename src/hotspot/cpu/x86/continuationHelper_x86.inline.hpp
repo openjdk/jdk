@@ -27,6 +27,7 @@
 
 #include "runtime/continuationHelper.hpp"
 
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 #include "utilities/macros.hpp"
@@ -59,15 +60,6 @@ inline void ContinuationHelper::update_register_map(const frame& f, RegisterMap*
   frame::update_map_with_saved_link(map, link_address<FKind>(f));
 }
 
-intptr_t* ContinuationEntry::entry_fp() const {
-  return (intptr_t*)((address)this + size());
-}
-
-void ContinuationEntry::update_register_map(RegisterMap* map) const {
-  intptr_t** fp = (intptr_t**)(bottom_sender_sp() - frame::sender_sp_offset);
-  frame::update_map_with_saved_link(map, fp);
-}
-
 inline void ContinuationHelper::update_register_map_with_callee(const frame& f, RegisterMap* map) {
   frame::update_map_with_saved_link(map, ContinuationHelper::Frame::callee_link_address(f));
 }
@@ -76,12 +68,12 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   *(intptr_t**)(f.sp() - frame::sender_sp_offset) = f.fp();
 }
 
-void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
+inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
   anchor->set_last_Java_fp(entry->entry_fp());
 }
 
 #ifdef ASSERT
-void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
+inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   intptr_t* fp = *(intptr_t**)(sp - frame::sender_sp_offset);
   anchor->set_last_Java_fp(fp);
 }
@@ -100,11 +92,11 @@ inline intptr_t** ContinuationHelper::Frame::callee_link_address(const frame& f)
   return (intptr_t**)(f.sp() - frame::sender_sp_offset);
 }
 
-address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
+inline address* ContinuationHelper::Frame::return_pc_address(const frame& f) {
   return (address*)(f.real_fp() - 1);
 }
 
-address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {
+inline address* ContinuationHelper::InterpretedFrame::return_pc_address(const frame& f) {
   return (address*)(f.fp() + frame::return_addr_offset);
 }
 

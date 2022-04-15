@@ -22,6 +22,11 @@
 #
 
 ####
+# Bugs
+
+vmTestbase/nsk/jdb/kill/kill001/kill001.java                00000000 generic-all
+
+####
 ## Classes not unloaded as expected (TODO, need to check if FJ keep link)
 
 vmTestbase/nsk/jvmti/CompiledMethodUnload/compmethunload001/TestDescription.java

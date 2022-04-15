@@ -24,8 +24,10 @@
 
 #include "precompiled.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/continuation.inline.hpp"
-#include "runtime/continuationHelper.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
+#include "runtime/continuationHelper.inline.hpp"
+#include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -400,42 +402,6 @@ void Continuation::print_on(outputStream* st, oop continuation) {
     st->print("* ");
     chunk->print_on(true, st);
   }
-}
-
-bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
-  assert(thread->has_last_Java_frame(), "Wrong place to use this assertion");
-
-  ContinuationEntry* entry = thread->last_continuation();
-  assert(entry != nullptr, "");
-
-  intptr_t* unextended_sp = entry->entry_sp();
-  intptr_t* sp;
-  if (entry->argsize() > 0) {
-    sp = entry->bottom_sender_sp();
-  } else {
-    sp = unextended_sp;
-    bool interpreted_bottom = false;
-    RegisterMap map(thread, false, false, false);
-    frame f;
-    for (f = thread->last_frame();
-         !f.is_first_frame() && f.sp() <= unextended_sp && !Continuation::is_continuation_enterSpecial(f);
-         f = f.sender(&map)) {
-      interpreted_bottom = f.is_interpreted_frame();
-    }
-    assert(Continuation::is_continuation_enterSpecial(f), "");
-    sp = interpreted_bottom ? f.sp() : entry->bottom_sender_sp();
-  }
-
-  assert(sp != nullptr, "");
-  assert(sp <= entry->entry_sp(), "");
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
-
-  if (pc != StubRoutines::cont_returnBarrier()) {
-    CodeBlob* cb = pc != nullptr ? CodeCache::find_blob(pc) : nullptr;
-    assert(cb->as_compiled_method()->method()->is_continuation_enter_intrinsic(), "");
-  }
-
-  return true;
 }
 #endif // ASSERT
 

@@ -871,11 +871,5 @@ java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 
 # Loom specific
 
-java/util/logging/CheckZombieLockTest.java                      8283719 generic-all
-
 com/sun/jdi/EATests.java#id0                                    8264699 generic-all
-
-jdk/jfr/event/runtime/TestClassLoaderStatsEvent.java            8247965 generic-all
-jdk/jfr/tool/TestPrintXML.java                                  8278262 generic-all
-jdk/jfr/threading/TestDeepVirtualStackTrace.java                8283068 macosx-aarch64
 

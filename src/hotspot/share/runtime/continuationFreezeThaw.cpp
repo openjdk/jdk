@@ -44,8 +44,9 @@
 #include "oops/stackChunkOop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/continuation.inline.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
+#include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -61,6 +62,36 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
+#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
+#if CONT_JFR
+  #define CONT_JFR_ONLY(code) code
+#else
+  #define CONT_JFR_ONLY(code)
+#endif
+
+#if CONT_JFR
+class FreezeThawJfrInfo : public StackObj {
+  short _e_size;
+  short _e_num_interpreted_frames;
+ public:
+
+  FreezeThawJfrInfo() : _e_size(0), _e_num_interpreted_frames(0) {}
+  inline void record_interpreted_frame() { _e_num_interpreted_frames++; }
+  inline void record_size_copied(int size) { _e_size += size << LogBytesPerWord; }
+  template<typename Event> void post_jfr_event(Event *e, oop continuation, JavaThread* jt);
+};
+
+template<typename Event> void FreezeThawJfrInfo::post_jfr_event(Event* e, oop continuation, JavaThread* jt) {
+  if (e->should_commit()) {
+    log_develop_trace(continuations)("JFR event: iframes: %d size: %d", _e_num_interpreted_frames, _e_size);
+    e->set_carrierThread(JFR_JVM_THREAD_ID(jt));
+    e->set_contClass(continuation->klass());
+    e->set_numIFrames(_e_num_interpreted_frames);
+    e->set_size(_e_size);
+    e->commit();
+  }
+}
+#endif // CONT_JFR
 
 static const bool TEST_THAW_ONE_CHUNK_FRAME = false; // force thawing frames one-at-a-time for testing
 
@@ -296,33 +327,13 @@ static void set_anchor_to_entry(JavaThread* thread, ContinuationEntry* entry) {
   assert(thread->last_frame().cb() != nullptr, "");
 }
 
-NOINLINE static void flush_stack_processing(JavaThread* thread, intptr_t* sp) {
-  log_develop_trace(continuations)("flush_stack_processing");
-  for (StackFrameStream fst(thread, true, true); fst.current()->sp() <= sp; fst.next()) {
-    ;
-  }
-}
-
-inline void maybe_flush_stack_processing(JavaThread* thread, intptr_t* sp) {
-  StackWatermark* sw;
-  uintptr_t watermark;
-  if ((sw = StackWatermarkSet::get(thread, StackWatermarkKind::gc)) != nullptr
-        && (watermark = sw->watermark()) != 0
-        && watermark <= (uintptr_t)sp) {
-    flush_stack_processing(thread, sp);
-  }
-}
-
-inline void maybe_flush_stack_processing(JavaThread* thread, const ContinuationEntry* entry) {
-  maybe_flush_stack_processing(thread, (intptr_t*)((uintptr_t)entry->entry_sp() + ContinuationEntry::size()));
-}
-
 /////////////// FREEZE ////
 
 class FreezeBase : public StackObj {
 protected:
   JavaThread* const _thread;
   ContinuationWrapper& _cont;
+  CONT_JFR_ONLY(FreezeThawJfrInfo _jfr_info;)
   bool _barriers;
   const bool _preempt; // used only on the slow path
 
@@ -341,6 +352,7 @@ protected:
 public:
   NOINLINE freeze_result freeze_slow();
 
+  CONT_JFR_ONLY(FreezeThawJfrInfo& jfr_info() { return _jfr_info; })
   void set_jvmti_event_collector(JvmtiSampledObjectAllocEventCollector* jsoaec) { _jvmti_event_collector = jsoaec; }
 
 protected:
@@ -441,7 +453,7 @@ void FreezeBase::init_rest() { // we want to postpone some initialization after 
 void FreezeBase::copy_to_chunk(intptr_t* from, intptr_t* to, int size) {
   stackChunkOop chunk = _cont.tail();
   chunk->copy_from_stack_to_chunk(from, to, size);
-  CONT_JFR_ONLY(_cont.record_size_copied(size);)
+  CONT_JFR_ONLY(_jfr_info.record_size_copied(size);)
 
 #ifdef ASSERT
   if (_last_write != nullptr) {
@@ -456,7 +468,7 @@ void FreezeBase::copy_to_chunk(intptr_t* from, intptr_t* to, int size) {
 // Called _after_ the last possible safepoint during the freeze operation (chunk allocation)
 void FreezeBase::unwind_frames() {
   ContinuationEntry* entry = _cont.entry();
-  maybe_flush_stack_processing(_thread, entry);
+  entry->flush_stack_processing(_thread);
   set_anchor_to_entry(_thread, entry);
 }
 
@@ -536,6 +548,7 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
   int is_chunk_available_size;
   bool is_chunk_available0 = is_chunk_available(frame_sp, &is_chunk_available_size);
   intptr_t* orig_chunk_sp = nullptr;
+  CONT_JFR_ONLY(bool chunk_is_allocated = false;)
 #endif
 
   stackChunkOop chunk = _cont.tail();
@@ -593,6 +606,7 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
     chunk_start_sp = cont_size + frame::metadata_words;
     assert(chunk_start_sp == chunk->stack_size(), "");
 
+    DEBUG_ONLY(CONT_JFR_ONLY(chunk_is_allocated = true;))
     DEBUG_ONLY(orig_chunk_sp = chunk->start_address() + chunk_start_sp;)
   }
 
@@ -653,8 +667,8 @@ bool Freeze<ConfigT>::freeze_fast(intptr_t* frame_sp) {
   EventContinuationFreezeYoung e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(chunk));
-    DEBUG_ONLY(e.set_allocate(allocated);)
-    e.set_size(size << LogBytesPerWord);
+    DEBUG_ONLY(e.set_allocate(chunk_is_allocated);)
+    e.set_size(cont_size << LogBytesPerWord);
     e.commit();
   }
 #endif
@@ -1022,7 +1036,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
 
   patch(f, hf, caller, bottom);
 
-  CONT_JFR_ONLY(_cont.record_interpreted_frame();)
+  CONT_JFR_ONLY(_jfr_info.record_interpreted_frame();)
   DEBUG_ONLY(after_freeze_java_frame(hf, bottom);)
   caller = hf;
 
@@ -1389,7 +1403,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   if (fast && fr.is_chunk_available(sp)) {
     freeze_result res = fr.template try_freeze_fast<true>(sp);
     assert(res == freeze_ok, "");
-    CONT_JFR_ONLY(cont.post_jfr_event(&event, current);)
+    CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont);
     StackWatermarkSet::after_unwind(current);
     return 0;
@@ -1404,7 +1418,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
     freeze_result res = fast ? fr.template try_freeze_fast<false>(sp)
                              : fr.freeze_slow();
-    CONT_JFR_ONLY(cont.post_jfr_event(&event, current);)
+    CONT_JFR_ONLY(fr.jfr_info().post_jfr_event(&event, oopCont, current);)
     freeze_epilog(current, cont, res);
     cont.done(); // allow safepoint in the transition back to Java
     StackWatermarkSet::after_unwind(current);
@@ -1521,6 +1535,7 @@ class ThawBase : public StackObj {
 protected:
   JavaThread* _thread;
   ContinuationWrapper& _cont;
+  CONT_JFR_ONLY(FreezeThawJfrInfo _jfr_info;)
 
   intptr_t* _fastpath;
   bool _barriers;
@@ -1582,6 +1597,9 @@ private:
 
   static inline void derelativize_interpreted_frame_metadata(const frame& hf, const frame& f);
   static inline void set_interpreter_frame_bottom(const frame& f, intptr_t* bottom);
+
+ public:
+  CONT_JFR_ONLY(FreezeThawJfrInfo& jfr_info() { return _jfr_info; })
 };
 
 template <typename ConfigT>
@@ -1725,7 +1743,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   EventContinuationThawYoung e;
   if (e.should_commit()) {
     e.set_id(cast_from_oop<u8>(chunk));
-    e.set_size(size << LogBytesPerWord);
+    e.set_size(thaw_size << LogBytesPerWord);
     e.set_full(!partial);
     e.commit();
   }
@@ -1746,7 +1764,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
 void ThawBase::copy_from_chunk(intptr_t* from, intptr_t* to, int size) {
   assert(to + size <= _cont.entrySP(), "");
   _cont.tail()->copy_from_chunk_to_stack(from, to, size);
-  CONT_JFR_ONLY(_cont.record_size_copied(size);)
+  CONT_JFR_ONLY(_jfr_info.record_size_copied(size);)
   assert(to >= _top_stack_address, "overwrote past thawing space"
     " to: " INTPTR_FORMAT " top_address: " INTPTR_FORMAT, p2i(to), p2i(_top_stack_address));
 }
@@ -1963,7 +1981,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   assert(f.is_interpreted_frame_valid(_cont.thread()), "invalid thawed frame");
   assert(ContinuationHelper::InterpretedFrame::frame_bottom(f) <= ContinuationHelper::Frame::frame_top(caller), "");
 
-  CONT_JFR_ONLY(_cont.record_interpreted_frame();)
+  CONT_JFR_ONLY(_jfr_info.record_interpreted_frame();)
 
   maybe_set_fastpath(f.sp());
 
@@ -2203,7 +2221,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const thaw_kind kind) 
   }
 #endif
 
-  CONT_JFR_ONLY(cont.post_jfr_event(&event, thread);)
+  CONT_JFR_ONLY(thw.jfr_info().post_jfr_event(&event, cont.continuation(), thread);)
 
   verify_continuation(cont.continuation());
   log_develop_debug(continuations)("=== End of thaw #" INTPTR_FORMAT, cont.hash());
@@ -2343,49 +2361,7 @@ static void log_frames(JavaThread* thread) {
 
 #include CPU_HEADER_INLINE(continuationFreezeThaw)
 
-/////////////////////////////////////////////
-
-int ContinuationEntry::return_pc_offset = 0;
-nmethod* ContinuationEntry::continuation_enter = nullptr;
-address ContinuationEntry::return_pc = nullptr;
-
-void ContinuationEntry::set_enter_nmethod(nmethod* nm) {
-  assert(return_pc_offset != 0, "");
-  continuation_enter = nm;
-  return_pc = nm->code_begin() + return_pc_offset;
-}
-
-ContinuationEntry* ContinuationEntry::from_frame(const frame& f) {
-  assert(Continuation::is_continuation_enterSpecial(f), "");
-  return (ContinuationEntry*)f.unextended_sp();
-}
-
-void ContinuationEntry::flush_stack_processing(JavaThread* thread) const {
-  maybe_flush_stack_processing(thread, this);
-}
-
-/////////////////////////////////////////////
-
 #ifdef ASSERT
-bool ContinuationWrapper::chunk_invariant(outputStream* st) {
-  // only the topmost chunk can be empty
-  if (_tail == nullptr) {
-    return true;
-  }
-
-  int i = 1;
-  for (stackChunkOop chunk = _tail->parent(); chunk != nullptr; chunk = chunk->parent()) {
-    if (chunk->is_empty()) {
-      assert(chunk != _tail, "");
-      st->print_cr("i: %d", i);
-      chunk->print_on(true, st);
-      return false;
-    }
-    i++;
-  }
-  return true;
-}
-
 static void print_frame_layout(const frame& f, bool callee_complete, outputStream* st) {
   ResourceMark rm;
   FrameValues values;

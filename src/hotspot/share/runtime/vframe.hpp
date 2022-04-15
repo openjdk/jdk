@@ -53,6 +53,7 @@
 // - BasicLock
 
 class StackFrameStream;
+class ContinuationEntry;
 
 class vframe: public ResourceObj {
  protected:

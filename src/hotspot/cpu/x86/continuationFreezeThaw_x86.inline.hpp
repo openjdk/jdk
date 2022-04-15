@@ -22,27 +22,22 @@
  *
  */
 
-#ifndef CPU_X86_CONTINUATION_FREEZE_THAW_X86_INLINE_HPP
-#define CPU_X86_CONTINUATION_FREEZE_THAW_X86_INLINE_HPP
+#ifndef CPU_X86_CONTINUATIONFREEZETHAW_X86_INLINE_HPP
+#define CPU_X86_CONTINUATIONFREEZETHAW_X86_INLINE_HPP
 
 #include "code/codeBlob.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/frame.inline.hpp"
 
-static void patch_callee_link(const frame& f, intptr_t* fp) {
+inline void patch_callee_link(const frame& f, intptr_t* fp) {
   *ContinuationHelper::Frame::callee_link_address(f) = fp;
 }
 
-static void patch_callee_link_relative(const frame& f, intptr_t* fp) {
+inline void patch_callee_link_relative(const frame& f, intptr_t* fp) {
   intptr_t* la = (intptr_t*)ContinuationHelper::Frame::callee_link_address(f);
   intptr_t new_value = fp - la;
   *la = new_value;
-}
-
-frame ContinuationEntry::to_frame() const {
-  static CodeBlob* cb = CodeCache::find_blob(entry_pc());
-  return frame(entry_sp(), entry_sp(), entry_fp(), entry_pc(), cb);
 }
 
 ////// Freeze
@@ -282,4 +277,4 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
   *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
 }
-#endif // CPU_X86_CONTINUATION_FREEZE_THAW_X86_INLINE_HPP
+#endif // CPU_X86_CONTINUATIONFREEZE_THAW_X86_INLINE_HPP

@@ -160,6 +160,7 @@
    <!ELEMENT outptr     ((struct|jmethodID|jfieldID|jframeID|jrawMonitorID|jclass|jthread|
                                    jthreadGroup|jobject|jvalue|enum|jchar|jint|jlong|jfloat|jdouble|
                                    jlocation|jboolean|char|uchar|size_t|void), nullok?)>
+   <!ATTLIST outptr impl CDATA #IMPLIED>
 
    <!ELEMENT allocbuf   ((struct|jmethodID|jfieldID|jframeID|jrawMonitorID|jclass|jthread|
                                    jthreadGroup|jobject|jvalue|enum|jint|jlong|jfloat|jdouble|
@@ -1911,11 +1912,11 @@ jvmtiEnv *jvmti;
       </capabilities>
       <parameters>
         <param id="thread">
-          <jthread null="current" impl="noconvert"/>
+          <jthread impl="noconvert"/>
             <description>
               The thread to stop.
               The <code>thread</code> may not be a virtual thread. Otherwise, the error code
-              <errorlink id="JVMTI_ERROR_INVALID_THREAD"></errorlink> will be returned.
+              <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
              </description>
         </param>
         <param id="exception">
@@ -11077,7 +11078,7 @@ myInit() {
              </description>
         </param>
         <param id="nanos_ptr">
-          <outptr><jlong/></outptr>
+          <outptr impl="nonullcheck"><jlong/></outptr>
           <description>
             On return, points to the CPU time used by the specified thread
             in nanoseconds.

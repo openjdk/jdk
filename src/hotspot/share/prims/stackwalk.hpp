@@ -29,6 +29,7 @@
 #include "jvm.h"
 #include "oops/oop.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/vframe.hpp"
 
 // BaseFrameStream is an abstract base class for encapsulating the VM-side

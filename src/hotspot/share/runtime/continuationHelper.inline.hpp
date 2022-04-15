@@ -44,7 +44,7 @@ inline bool ContinuationHelper::Frame::is_stub(CodeBlob* cb) {
   return cb != nullptr && (cb->is_safepoint_stub() || cb->is_runtime_stub());
 }
 
-Method* ContinuationHelper::Frame::frame_method(const frame& f) {
+inline Method* ContinuationHelper::Frame::frame_method(const frame& f) {
   return f.is_interpreted_frame() ? f.interpreter_frame_method() : f.cb()->as_compiled_method()->method();
 }
 
@@ -88,7 +88,7 @@ inline bool ContinuationHelper::InterpretedFrame::is_instance(const frame& f) {
   return f.is_interpreted_frame();
 }
 
-address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
+inline address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
   return *return_pc_address(f);
 }
 

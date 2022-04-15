@@ -178,12 +178,7 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 
 # Loom specific
 
-compiler/c2/4998314/Test.java                                                8284109 generic-all
-compiler/c2/irTests/DivLNodeIdealizationTests.java                           8284115 generic-all
-
 runtime/Thread/StopAtExit.java                                               8283610 generic-all
-
-runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java                 8283555 generic-all
 
 serviceability/jvmti/GetLocalVariable/GetLocalWithoutSuspendTest.java        8279663 windows-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java          8264699 generic-all

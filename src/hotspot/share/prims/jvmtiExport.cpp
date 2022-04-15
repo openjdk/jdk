@@ -379,6 +379,10 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
         return JNI_EVERSION;  // unsupported major version number
       }
   }
+  if (Continuations::enabled()) {
+    // Virtual threads support. There is a performance impact of VTMT transitions enabled.
+    java_lang_VirtualThread::set_notify_jvmti_events(true);
+  }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
     JavaThread* current_thread = JavaThread::current();

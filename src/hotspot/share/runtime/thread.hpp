@@ -1186,6 +1186,7 @@ private:
   void set_requires_cross_modify_fence(bool val) PRODUCT_RETURN NOT_PRODUCT({ _requires_cross_modify_fence = val; })
 
   // Continuation support
+  oop get_continuation() const;
   ContinuationEntry* last_continuation() const { return _cont_entry; }
   void set_cont_fastpath(intptr_t* x)          { _cont_fastpath = x; }
   void push_cont_fastpath(intptr_t* sp)        { if (sp > _cont_fastpath) _cont_fastpath = sp; }

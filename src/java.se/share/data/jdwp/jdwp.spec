@@ -2183,6 +2183,7 @@ JDWP "Java(tm) Debug Wire Protocol"
     )
 )
 (CommandSet ThreadGroupReference=12
+    "See <a href=../../api/java.base/java/lang/ThreadGroup.html>java.lang.ThreadGroup</a>."
     (Command Name=1
         "Returns the thread group name. "
         (Out
@@ -2214,12 +2215,10 @@ JDWP "Java(tm) Debug Wire Protocol"
         )
     )
     (Command Children=3
-        "Returns the live platform threads and active thread groups directly "
+        "Returns the live platform threads and the thread groups directly "
         "contained in this thread group. Virtual threads are not included. "
         "Threads and thread groups in child thread groups are not included. "
-        "A thread is alive if it has been started and has not yet been stopped. "
-        "See <a href=../../api/java.base/java/lang/ThreadGroup.html>java.lang.ThreadGroup</a> "
-        "for information about active ThreadGroups.
+        "A thread is alive if it has been started and has not yet terminated."
         (Out
             (threadGroupObject group "The thread group object ID. ")
         )

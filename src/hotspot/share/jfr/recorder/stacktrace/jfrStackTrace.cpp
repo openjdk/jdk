@@ -33,6 +33,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 

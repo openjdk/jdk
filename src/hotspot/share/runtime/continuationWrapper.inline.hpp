@@ -22,17 +22,20 @@
  *
  */
 
-#include "jfr/jfrEvents.hpp"
-#include "runtime/continuation.hpp"
-#include "runtime/frame.inline.hpp"
+#ifndef SHARE_VM_RUNTIME_CONTINUATIONWRAPPER_INLINE_HPP
+#define SHARE_VM_RUNTIME_CONTINUATIONWRAPPER_INLINE_HPP
+
+// There is no continuationWrapper.hpp file
+
+#include "classfile/javaClasses.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/stackChunkOop.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/thread.hpp"
 
-#define CONT_JFR false // emit low-level JFR events that count slow/fast path for continuation peformance debugging only
-#if CONT_JFR
-  #define CONT_JFR_ONLY(code) code
-#else
-  #define CONT_JFR_ONLY(code)
-#endif
+/////////////////////////////////////////////////////////////////////
 
 // Intermediary to the jdk.internal.vm.Continuation objects and ContinuationEntry
 // This object is created when we begin a operation for a continuation, and is destroyed when the operation completes.
@@ -45,11 +48,6 @@ private:
   // These oops are managed by SafepointOp
   oop                _continuation;  // jdk.internal.vm.Continuation instance
   stackChunkOop      _tail;
-
-#if CONT_JFR // Profiling data for the JFR event
-  short _e_size;
-  short _e_num_interpreted_frames;
-#endif
 
   ContinuationWrapper(const ContinuationWrapper& cont); // no copy constructor
 
@@ -91,38 +89,34 @@ public:
       : _cont(cont), _conth(current, cont._continuation) {
       _cont.allow_safepoint();
     }
-    ~SafepointOp() { // reload oops
+    inline ~SafepointOp() { // reload oops
       _cont._continuation = _conth();
       if (_cont._tail != nullptr) {
         _cont._tail = jdk_internal_vm_Continuation::tail(_cont._continuation);
-      }
-      _cont.disallow_safepoint();
+       }
+       _cont.disallow_safepoint();
     }
   };
 
 public:
   ~ContinuationWrapper() { allow_safepoint(); }
 
-  inline ContinuationWrapper(JavaThread* thread, oop continuation);
-  inline ContinuationWrapper(oop continuation);
-  inline ContinuationWrapper(const RegisterMap* map);
+  ContinuationWrapper(JavaThread* thread, oop continuation);
+  ContinuationWrapper(oop continuation);
+  ContinuationWrapper(const RegisterMap* map);
 
   JavaThread* thread() const         { return _thread; }
   oop continuation()                 { return _continuation; }
   stackChunkOop tail() const         { return _tail; }
   void set_tail(stackChunkOop chunk) { _tail = chunk; }
 
-  oop parent()                   { return jdk_internal_vm_Continuation::parent(_continuation); }
-  bool is_preempted()            { return jdk_internal_vm_Continuation::is_preempted(_continuation); }
-  void set_preempted(bool value) { jdk_internal_vm_Continuation::set_preempted(_continuation, value); }
-  void read()                    { _tail  = jdk_internal_vm_Continuation::tail(_continuation); }
-  void write() {
-    assert(oopDesc::is_oop(_continuation), "bad oop");
-    assert(oopDesc::is_oop_or_null(_tail), "bad oop");
-    jdk_internal_vm_Continuation::set_tail(_continuation, _tail);
-  }
+  inline oop parent();
+  inline bool is_preempted();
+  inline void set_preempted(bool value);
+  inline void read();
+  inline void write();
 
-  NOT_PRODUCT(intptr_t hash()    { return Thread::current()->is_Java_thread() ? _continuation->identity_hash() : -1; })
+  NOT_PRODUCT(intptr_t hash();)
 
   ContinuationEntry* entry() const { return _entry; }
   bool is_mounted()   const { return _entry != nullptr; }
@@ -133,29 +127,20 @@ public:
   void set_argsize(int value) { _entry->set_argsize(value); }
 
   bool is_empty() const { return last_nonempty_chunk() == nullptr; }
-  inline const frame last_frame();
+  const frame last_frame();
 
   stackChunkOop last_nonempty_chunk() const { return nonempty_chunk(_tail); }
   inline stackChunkOop nonempty_chunk(stackChunkOop chunk) const;
-  inline stackChunkOop find_chunk_by_address(void* p) const;
-
-#if CONT_JFR
-  inline void record_interpreted_frame() { _e_num_interpreted_frames++; }
-  inline void record_size_copied(int size) { _e_size += size << LogBytesPerWord; }
-  template<typename Event> void post_jfr_event(Event *e, JavaThread* jt);
-#endif
+  stackChunkOop find_chunk_by_address(void* p) const;
 
 #ifdef ASSERT
-  inline bool is_entry_frame(const frame& f);
+  bool is_entry_frame(const frame& f);
   bool chunk_invariant(outputStream* st);
 #endif
 };
 
-ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
+inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
   : _thread(thread), _entry(thread->last_continuation()), _continuation(continuation)
-#if CONT_JFR
-  , _e_size(0), _e_num_interpreted_frames(0)
-#endif
   {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
@@ -165,11 +150,8 @@ ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continuation)
   read();
 }
 
-ContinuationWrapper::ContinuationWrapper(oop continuation)
+inline ContinuationWrapper::ContinuationWrapper(oop continuation)
   : _thread(nullptr), _entry(nullptr), _continuation(continuation)
-#if CONT_JFR
-  , _e_size(0), _e_num_interpreted_frames(0)
-#endif
   {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
@@ -177,28 +159,26 @@ ContinuationWrapper::ContinuationWrapper(oop continuation)
   read();
 }
 
-ContinuationWrapper::ContinuationWrapper(const RegisterMap* map)
-  : _thread(map->thread()),
-    _entry(Continuation::get_continuation_entry_for_continuation(_thread, map->stack_chunk()->cont())),
-    _continuation(map->stack_chunk()->cont())
-#if CONT_JFR
-  , _e_size(0), _e_num_interpreted_frames(0)
-#endif
-  {
-  assert(oopDesc::is_oop(_continuation),"Invalid cont: " INTPTR_FORMAT, p2i((void*)_continuation));
-  assert(_entry == nullptr || _continuation == _entry->cont_oop(),
-    "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: " INTPTR_FORMAT,
-    p2i( (oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop()), p2i(entrySP()));
-  disallow_safepoint();
-  read();
+inline oop ContinuationWrapper::parent() {
+  return jdk_internal_vm_Continuation::parent(_continuation);
 }
 
-const frame ContinuationWrapper::last_frame() {
-  stackChunkOop chunk = last_nonempty_chunk();
-  if (chunk == nullptr) {
-    return frame();
-  }
-  return StackChunkFrameStream<ChunkFrames::Mixed>(chunk).to_frame();
+inline bool ContinuationWrapper::is_preempted() {
+  return jdk_internal_vm_Continuation::is_preempted(_continuation);
+}
+
+inline void ContinuationWrapper::set_preempted(bool value) {
+  jdk_internal_vm_Continuation::set_preempted(_continuation, value);
+}
+
+inline void ContinuationWrapper::read() {
+  _tail  = jdk_internal_vm_Continuation::tail(_continuation);
+}
+
+inline void ContinuationWrapper::write() {
+  assert(oopDesc::is_oop(_continuation), "bad oop");
+  assert(oopDesc::is_oop_or_null(_tail), "bad oop");
+  jdk_internal_vm_Continuation::set_tail(_continuation, _tail);
 }
 
 inline stackChunkOop ContinuationWrapper::nonempty_chunk(stackChunkOop chunk) const {
@@ -208,31 +188,4 @@ inline stackChunkOop ContinuationWrapper::nonempty_chunk(stackChunkOop chunk) co
   return chunk;
 }
 
-stackChunkOop ContinuationWrapper::find_chunk_by_address(void* p) const {
-  for (stackChunkOop chunk = tail(); chunk != nullptr; chunk = chunk->parent()) {
-    if (chunk->is_in_chunk(p)) {
-      assert(chunk->is_usable_in_chunk(p), "");
-      return chunk;
-    }
-  }
-  return nullptr;
-}
-
-#if CONT_JFR
-template<typename Event> void ContinuationWrapper::post_jfr_event(Event* e, JavaThread* jt) {
-  if (e->should_commit()) {
-    log_develop_trace(continuations)("JFR event: iframes: %d size: %d", _e_num_interpreted_frames, _e_size);
-    e->set_carrierThread(JFR_JVM_THREAD_ID(jt));
-    e->set_contClass(_continuation->klass());
-    e->set_numIFrames(_e_num_interpreted_frames);
-    e->set_size(_e_size);
-    e->commit();
-  }
-}
-#endif
-
-#ifdef ASSERT
-inline bool ContinuationWrapper::is_entry_frame(const frame& f) {
-  return f.sp() == entrySP();
-}
-#endif // ASSERT
+#endif // SHARE_VM_RUNTIME_CONTINUATIONWRAPPER_INLINE_HPP
