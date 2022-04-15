@@ -652,10 +652,21 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_Blackhole: {
-      add_local_var(n, PointsToNode::GlobalEscape);
+      // All blackhole pointer arguments are globally escaping.
+      // Only do this if there is at least one pointer argument.
       // Do not add edges during first iteration because some could be
-      // not defined yet.
-      delayed_worklist->push(n);
+      // not defined yet, defer to final step.
+      for (uint i = 0; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in != nullptr) {
+          const Type* at = _igvn->type(in);
+          if (!at->isa_ptr()) continue;
+
+          add_local_var(n, PointsToNode::GlobalEscape);
+          delayed_worklist->push(n);
+          break;
+        }
+      }
       break;
     }
     default:
