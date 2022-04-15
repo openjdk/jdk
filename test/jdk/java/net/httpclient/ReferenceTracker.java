@@ -24,7 +24,9 @@
 import jdk.internal.net.http.common.OperationTrackers;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 
+import java.lang.management.ManagementFactory;
 import java.net.http.HttpClient;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -175,7 +177,9 @@ public class ReferenceTracker {
                 "outstanding unclosed resources");
         if (TRACKERS.stream().anyMatch(isAlive)) {
             System.err.println("Some selector manager threads are still alive: ");
-            Thread.dumpStack();
+            Arrays.stream(ManagementFactory.getThreadMXBean()
+                    .dumpAllThreads(true, true))
+                    .forEach(System.err::println);
         }
         return failed;
     }

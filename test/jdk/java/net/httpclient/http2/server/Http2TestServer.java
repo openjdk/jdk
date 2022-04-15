@@ -54,7 +54,7 @@ public class Http2TestServer implements AutoCloseable {
     final Map<String,Http2Handler> handlers;
     final SSLContext sslContext;
     final String serverName;
-    final Map<InetSocketAddress,Http2TestServerConnection> connections;
+    final Set<Http2TestServerConnection> connections;
     final Properties properties;
     final String name;
 
@@ -191,7 +191,7 @@ public class Http2TestServer implements AutoCloseable {
         this.exec = exec == null ? getDefaultExecutor() : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
         this.properties = properties;
-        this.connections = new ConcurrentHashMap<>();
+        this.connections = ConcurrentHashMap.newKeySet();
     }
 
     /**
@@ -245,7 +245,7 @@ public class Http2TestServer implements AutoCloseable {
         // TODO: clean shutdown GoAway
         stopping = true;
         System.err.printf("%s: stopping %d connections\n", name, connections.size());
-        for (Http2TestServerConnection connection : connections.values()) {
+        for (Http2TestServerConnection connection : connections) {
             connection.close(ErrorFrame.NO_ERROR);
         }
         try {
@@ -282,11 +282,11 @@ public class Http2TestServer implements AutoCloseable {
 
     private synchronized void putConnection(InetSocketAddress addr, Http2TestServerConnection c) {
         if (!stopping)
-            connections.put(addr, c);
+            connections.add(c);
     }
 
     private synchronized void removeConnection(InetSocketAddress addr, Http2TestServerConnection c) {
-        connections.remove(addr, c);
+        connections.remove(c);
     }
 
     record AcceptedConnection(Http2TestServer server,

@@ -53,6 +53,7 @@ import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -124,6 +125,28 @@ public class ExecutorShutdown implements HttpServerAdapters {
         return t;
     }
 
+    static void checkCause(String what, Throwable cause) {
+        Throwable t = cause;
+        Throwable accepted = null;
+        while (t != null) {
+            out.println(what + ": checking " + t);
+            if (t instanceof  RejectedExecutionException) {
+                out.println(what + ": Got expected RejectedExecutionException in cause: " + t);
+                return;
+            } else if (t instanceof ClosedChannelException) {
+                out.println(what + ": Accepting ClosedChannelException as a valid cause: " + t);
+                accepted = t;
+            } else t = t.getCause();
+        }
+        if (accepted != null) {
+            out.println(what + ": Didn't find expected RejectedExecutionException, " +
+                    "but accepting " + t.getClass().getSimpleName()
+                    + " as a valid cause: " + t);
+            return;
+        }
+        throw new AssertionError(what + ": Unexpected exception: " + cause, cause);
+    }
+
     @Test(dataProvider = "positive")
     void testConcurrent(String uriString) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
@@ -172,26 +195,7 @@ public class ExecutorShutdown implements HttpServerAdapters {
                 }).exceptionally((t) -> {
                     Throwable cause = getCause(t);
                     out.println(si + ": Got expected exception: " + cause);
-                    if (!RejectedExecutionException.class.isAssignableFrom(cause.getClass())) {
-                        if (SSLHandshakeException.class.isAssignableFrom(cause.getClass())) {
-                            if (!(cause.getCause() instanceof RejectedExecutionException)) {
-                                out.println(si + ": Unexpected exception: " + cause);
-                                cause.printStackTrace(out);
-                                cause = cause.getCause() == null ? cause : cause.getCause();
-                                assertEquals(cause.getClass(), RejectedExecutionException.class);
-                            } else {
-                                out.println(si + ": Got expected cause: " + cause.getCause());
-                            }
-                        } else if (!IOException.class.isAssignableFrom(cause.getClass())) {
-                            out.println(si + ": Unexpected exception: " + cause);
-                            cause.printStackTrace(out);
-                            assertEquals(cause.getClass(), RejectedExecutionException.class);
-                        } else if (!cause.getMessage().contains("selector manager closed")) {
-                            out.println(si + ": Unexpected exception: " + cause);
-                            cause.printStackTrace(out);
-                            throw new AssertionError(si + ": Unexpected exception message in: " + cause);
-                        }
-                    }
+                    checkCause(String.valueOf(si), cause);
                     return null;
                 });
                 responses.add(cf);
@@ -253,27 +257,8 @@ public class ExecutorShutdown implements HttpServerAdapters {
                         try {
                             Throwable cause = getCause(t);
                             out.println(si + ": Got expected exception: " + cause);
-                            if (!RejectedExecutionException.class.isAssignableFrom(cause.getClass())) {
-                                if (SSLHandshakeException.class.isAssignableFrom(cause.getClass())) {
-                                    if (!(cause.getCause() instanceof RejectedExecutionException)) {
-                                        out.println(si + ": Unexpected exception: " + cause);
-                                        cause.printStackTrace(out);
-                                        cause = cause.getCause() == null ? cause : cause.getCause();
-                                        assertEquals(cause.getClass(), RejectedExecutionException.class);
-                                    } else {
-                                        out.println(si + ": Got expected cause: " + cause.getCause());
-                                    }
-                                } else if (!IOException.class.isAssignableFrom(cause.getClass())) {
-                                    out.println(si + ": Unexpected exception: " + cause);
-                                    cause.printStackTrace(out);
-                                    assertEquals(cause.getClass(), RejectedExecutionException.class);
-                                } else if (!cause.getMessage().contains("selector manager closed")) {
-                                    out.println(si + ": Unexpected exception: " + cause);
-                                    cause.printStackTrace(out);
-                                    throw new AssertionError(si + ": Unexpected exception message in: " + cause);
-                                }
-                            }
-                        } catch (Throwable ase) {
+                            checkCause(String.valueOf(si), cause);
+                         } catch (Throwable ase) {
                             return CompletableFuture.failedFuture(ase);
                         }
                         return CompletableFuture.completedFuture(null);

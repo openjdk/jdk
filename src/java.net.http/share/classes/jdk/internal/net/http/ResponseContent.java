@@ -578,8 +578,12 @@ class ResponseContent {
 
         @Override
         public void onError(Throwable t) {
-            closedExceptionally = t;
-            onComplete.accept(t);
+            if (contentLength != 0) {
+                closedExceptionally = t;
+                onComplete.accept(t);
+            } else {
+                onComplete.accept(null);
+            }
         }
 
         @Override

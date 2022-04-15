@@ -73,6 +73,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
@@ -290,7 +291,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         // should not happen, unless the selector manager has already
         // exited abnormally
         if (client.selmgr.isClosed()) {
-            pending.abort(new IOException("selector manager closed"));
+            pending.abort(client.selmgr.selectorClosedException());
         }
     }
 
@@ -514,7 +515,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
     private void closeSubscribers() {
         if (subscribers.isEmpty()) return;
-        IOException io = new IOException("selector manager closed");
+        IOException io = selmgr.selectorClosedException();
         closeSubscribers(this, io);
     }
 
@@ -531,7 +532,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 }
             }
         }
-        subscriber.onError(new IOException("selector manager closed"));
+        subscriber.onError(selmgr.selectorClosedException());
     }
 
     public void subscriberCompleted(HttpBodySubscriberWrapper<?> subscriber) {
@@ -869,7 +870,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         // should not happen, unless the selector manager has
         // exited abnormally
         if (selmgr.isClosed()) {
-            return MinimalFuture.failedFuture(new IOException("selector manager closed"));
+            return MinimalFuture.failedFuture(selmgr.selectorClosedException());
         }
 
         AccessControlContext acc = null;
@@ -966,8 +967,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         private final List<AsyncTriggerEvent> deregistrations;
         private final Logger debug;
         private final Logger debugtimeout;
-        HttpClientImpl owner;
-        ConnectionPool pool;
+        private final HttpClientImpl owner;
+        private final ConnectionPool pool;
+        private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
         SelectorManager(HttpClientImpl ref) throws IOException {
             super(null, null,
@@ -980,6 +982,15 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             registrations = new ArrayList<>();
             deregistrations = new ArrayList<>();
             selector = Selector.open();
+        }
+
+        IOException selectorClosedException() {
+            var io = new IOException("selector manager closed");
+            var cause = errorRef.get();
+            if (cause != null) {
+                io.initCause(cause);
+            }
+            return io;
         }
 
         void eventUpdated(AsyncEvent e) throws ClosedChannelException {
@@ -1005,7 +1016,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         // This returns immediately. So caller not allowed to send/receive
         // on connection.
         synchronized void register(AsyncEvent e) {
-            if (closed) e.abort(new IOException("selector closed"));
+            if (closed) e.abort(selectorClosedException());
             registrations.add(e);
             selector.wakeup();
         }
@@ -1023,12 +1034,22 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
 
         void abort(Throwable t) {
-            abortPendingRequests(owner, t);
+            boolean closed = this.closed;
+            errorRef.compareAndSet(null, t);
+            if (debug.on()) {
+                debug.log("aborting selector manager(closed=%s): " + t, closed);
+            }
+            t = errorRef.get();
+            boolean inSelectorThread = owner.isSelectorThread();
+            if (!inSelectorThread) {
+                // abort anything pending, then close
+                abortPendingRequests(owner, t);
+            }
             Set<SelectionKey> keys = new HashSet<>();
             Set<AsyncEvent> toAbort = new HashSet<>();
             synchronized (this) {
-                if (closed) return;
-                closed = true;
+                if (closed = this.closed) return;
+                this.closed = true;
                 try {
                     keys.addAll(selector.keys());
                 } catch (ClosedSelectorException ce) {
@@ -1039,10 +1060,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 this.registrations.clear();
                 this.deregistrations.clear();
             }
+            // double check after closing
             abortPendingRequests(owner, t);
 
             IOException io = toAbort.isEmpty()
-                    ? null : new IOException("selector closed", t);
+                    ? null : selectorClosedException();
             for (AsyncEvent e : toAbort) {
                 try {
                     e.abort(io);
@@ -1050,11 +1072,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     debug.log("Failed to abort event: " + x);
                 }
             }
-            try {
-                selector.close();
-            } catch (IOException x) {
-                debug.log("Failed to close selector: " + x);
-            }
+            if (!inSelectorThread) selector.wakeup();
         }
 
         synchronized void shutdown() {
@@ -1114,7 +1132,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                                 // may throw IOE if channel closed: that's OK
                                 sa.register(event);
                                 if (!chan.isOpen()) {
-                                    throw new IOException("Channel closed");
+                                    throw new ClosedChannelException();
                                 }
                             } catch (IOException e) {
                                 Log.logTrace("{0}: {1}", getName(), e);
@@ -1233,7 +1251,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     selector.selectedKeys().clear();
 
                     // handle selected events
-                    readyList.forEach((e) -> handleEvent(e, null));
+                    IOException ioe = closed ? selectorClosedException() : null;
+                    readyList.forEach((e) -> handleEvent(e, ioe));
                     readyList.clear();
 
                     // handle errors (closed channels etc...)
@@ -1246,6 +1265,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
                 }
             } catch (Throwable e) {
+                errorRef.compareAndSet(null, e);
                 if (!closed) {
                     closed = true; // set closed early so that new requests are rejected
                     // This terminates thread. So, better just print stack trace
@@ -1253,7 +1273,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     Log.logError("{0}: {1}: {2}", getName(),
                             "HttpClientImpl shutting down due to fatal error", err);
                 }
-                abortPendingRequests(owner, e);
+                abortPendingRequests(owner, selectorClosedException());
                 if (debug.on()) debug.log("shutting down", e);
                 if (Utils.ASSERTIONSENABLED && !debug.on()) {
                     e.printStackTrace(System.err); // always print the stack
@@ -1281,8 +1301,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
         /** Handles the given event. The given ioe may be null. */
         void handleEvent(AsyncEvent event, IOException ioe) {
-            if (closed || ioe != null) {
-                if (ioe == null) ioe = new IOException("selector manager closed");
+            if (ioe == null && closed) {
+                ioe = selectorClosedException();
+            }
+            if (ioe != null) {
                 event.abort(ioe);
             } else {
                 event.handle();
