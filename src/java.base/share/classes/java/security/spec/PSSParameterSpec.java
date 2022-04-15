@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package java.security.spec;
 import java.util.Objects;
 
 /**
- * This class specifies a parameter spec for RSASSA-PSS signature scheme,
+ * This class specifies a parameter spec for the RSASSA-PSS signature scheme,
  * as defined in the
  * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard.
  *
- * <p>Its ASN.1 definition in PKCS#1 standard is described below:
+ * <p>Its ASN.1 definition in the PKCS #1 standard is described below:
  * <pre>
  * RSASSA-PSS-params ::= SEQUENCE {
  *   hashAlgorithm      [0] HashAlgorithm      DEFAULT sha1,
@@ -64,12 +64,6 @@ import java.util.Objects;
  *   ...  -- Allows for future expansion --
  * }
  * </pre>
- * <p>Note: the PSSParameterSpec.DEFAULT uses the following:
- *     message digest  -- "SHA-1"
- *     mask generation function (mgf) -- "MGF1"
- *     parameters for mgf -- MGF1ParameterSpec.SHA1
- *     SaltLength   -- 20
- *     TrailerField -- 1
  *
  * @see MGF1ParameterSpec
  * @see AlgorithmParameterSpec
@@ -94,17 +88,26 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     private final int trailerField;
 
     /**
-     * The {@code TrailerFieldBC} constant as defined in PKCS#1
+     * The {@code TrailerFieldBC} constant as defined in the PKCS #1 standard.
      *
      * @since 11
      */
     public static final int TRAILER_FIELD_BC = 1;
 
     /**
-     * The PSS parameter set with all default values
+     * The PSS parameter set with all default values.
+     * @deprecated This field uses the default values defined in the PKCS #1
+     *         standard. Some of these defaults are no longer recommended due
+     *         to advances in cryptanalysis -- see the
+     *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
+     *         standard for more details. Thus, it is recommended to create
+     *         a new {@code PSSParameterSpec} with the desired parameter values
+     *         using the
+     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int)} constructor.
      *
      * @since 1.5
      */
+    @Deprecated(since="19")
     public static final PSSParameterSpec DEFAULT = new PSSParameterSpec
         ("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, 20, TRAILER_FIELD_BC);
 
@@ -126,7 +129,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * @param mgfSpec      the parameters for the mask generation function.
      *         If null is specified, null will be returned by
      *         getMGFParameters().
-     * @param saltLen      the length of salt
+     * @param saltLen      the length of salt in bytes
      * @param trailerField the value of the trailer field
      * @throws    NullPointerException if {@code mdName}, or {@code mgfName}
      *         is null
@@ -157,13 +160,21 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     /**
      * Creates a new {@code PSSParameterSpec}
      * using the specified salt length and other default values as
-     * defined in PKCS#1.
+     * defined in the PKCS #1 standard.
      *
-     * @param saltLen the length of salt in bytes to be used in PKCS#1
-     *         PSS encoding
+     * @param saltLen the length of salt in bytes
      * @throws    IllegalArgumentException if {@code saltLen} is
      *         less than 0
+     * @deprecated This constructor uses the default values defined in
+     *         the PKCS #1 standard except for the salt length. Some of these
+     *         defaults are no longer recommended due to advances in
+     *         cryptanalysis -- see the
+     *         <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a>
+     *         standard for more details. Thus, it is recommended to explicitly
+     *         specify all desired parameter values with the
+     *         {@link #PSSParameterSpec(String, String, AlgorithmParameterSpec, int, int)} constructor.
      */
+    @Deprecated(since="19")
     public PSSParameterSpec(int saltLen) {
         this("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, saltLen, TRAILER_FIELD_BC);
     }

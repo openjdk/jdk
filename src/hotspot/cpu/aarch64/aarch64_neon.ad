@@ -350,16 +350,23 @@ instruct vcvt4Bto4I(vecX dst, vecD src)
   ins_pipe(pipe_class_default);
 %}
 
-instruct vcvt2Lto2F(vecD dst, vecX src)
+instruct vcvt2Lto2F(vecD dst, vecX src, vRegF tmp)
 %{
   predicate(n->as_Vector()->length() == 2 && n->bottom_type()->is_vect()->element_basic_type() == T_FLOAT);
   match(Set dst (VectorCastL2X src));
-  format %{ "scvtfv  T2D, $dst, $src\n\t"
-            "fcvtn   $dst, T2S, $dst, T2D\t# convert 2L to 2F vector"
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "umov   rscratch1, $src, D, 0\n\t"
+            "scvtfs $dst, rscratch1\n\t"
+            "umov   rscratch1, $src, D, 1\n\t"
+            "scvtfs $tmp, rscratch1\n\t"
+            "ins    $dst, S, $tmp, 1, 0\t# convert 2L to 2F vector"
   %}
   ins_encode %{
-    __ scvtfv(__ T2D, as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
-    __ fcvtn(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($dst$$reg), __ T2D);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 0);
+    __ scvtfs(as_FloatRegister($dst$$reg), rscratch1);
+    __ umov(rscratch1, as_FloatRegister($src$$reg), __ D, 1);
+    __ scvtfs(as_FloatRegister($tmp$$reg), rscratch1);
+    __ ins(as_FloatRegister($dst$$reg), __ S, as_FloatRegister($tmp$$reg), 1, 0);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3255,16 +3262,14 @@ instruct replicate2L(vecX dst, iRegL src)
   ins_pipe(vdup_reg_reg128);
 %}
 
-instruct replicate2L_zero(vecX dst, immI0 zero)
+instruct replicate2L_imm(vecX dst, immL con)
 %{
   predicate(UseSVE == 0 && n->as_Vector()->length() == 2);
-  match(Set dst (ReplicateI zero));
+  match(Set dst (ReplicateL con));
   ins_cost(INSN_COST);
-  format %{ "movi  $dst, $zero\t# vector (4I)" %}
+  format %{ "movi  $dst, $con\t# vector (2L)" %}
   ins_encode %{
-    __ eor(as_FloatRegister($dst$$reg), __ T16B,
-           as_FloatRegister($dst$$reg),
-           as_FloatRegister($dst$$reg));
+    __ mov(as_FloatRegister($dst$$reg), __ T2D, $con$$constant);
   %}
   ins_pipe(vmovi_reg_imm128);
 %}
@@ -3276,8 +3281,7 @@ instruct replicate2F(vecD dst, vRegF src)
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (2F)" %}
   ins_encode %{
-    __ dup(as_FloatRegister($dst$$reg), __ T2S,
-           as_FloatRegister($src$$reg));
+    __ dup(as_FloatRegister($dst$$reg), __ T2S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vdup_reg_freg64);
 %}
@@ -3289,8 +3293,7 @@ instruct replicate4F(vecX dst, vRegF src)
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (4F)" %}
   ins_encode %{
-    __ dup(as_FloatRegister($dst$$reg), __ T4S,
-           as_FloatRegister($src$$reg));
+    __ dup(as_FloatRegister($dst$$reg), __ T4S, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vdup_reg_freg128);
 %}
@@ -3302,8 +3305,7 @@ instruct replicate2D(vecX dst, vRegD src)
   ins_cost(INSN_COST);
   format %{ "dup  $dst, $src\t# vector (2D)" %}
   ins_encode %{
-    __ dup(as_FloatRegister($dst$$reg), __ T2D,
-           as_FloatRegister($src$$reg));
+    __ dup(as_FloatRegister($dst$$reg), __ T2D, as_FloatRegister($src$$reg));
   %}
   ins_pipe(vdup_reg_dreg128);
 %}
@@ -4265,6 +4267,47 @@ instruct vsqrt2D(vecX dst, vecX src)
 %}
 
 // --------------------------------- NEG --------------------------------------
+
+instruct vnegID(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length_in_bytes() < 16);
+  match(Set dst (NegVI src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst, $src\t# vector (8B/4H/2S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), false);
+    __ negr(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp64);
+%}
+
+instruct vnegIX(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (NegVI src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst, $src\t# vector (16B/8H/4S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), true);
+    __ negr(as_FloatRegister($dst$$reg), size, as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp128);
+%}
+
+instruct vneg2L(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (NegVL src));
+  ins_cost(INSN_COST);
+  format %{ "negr  $dst,$src\t# vector (2D)" %}
+  ins_encode %{
+    __ negr(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(vunop_fp128);
+%}
 
 instruct vneg2F(vecD dst, vecD src)
 %{
