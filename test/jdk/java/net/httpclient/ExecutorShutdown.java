@@ -136,7 +136,8 @@ public class ExecutorShutdown implements HttpServerAdapters {
             } else if (t instanceof ClosedChannelException) {
                 out.println(what + ": Accepting ClosedChannelException as a valid cause: " + t);
                 accepted = t;
-            } else t = t.getCause();
+            }
+            t = t.getCause();
         }
         if (accepted != null) {
             out.println(what + ": Didn't find expected RejectedExecutionException, " +
