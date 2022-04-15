@@ -1508,7 +1508,7 @@ source %{
   // node sequence to a normal volatile get because of the
   // introduction of some CPUOrder memory barriers to bracket the
   // Load. However, but the same basic skeleton of a LoadX feeding a
-  // MemBarAcquire, possibly thorugh an optional DecodeN, is still
+  // MemBarAcquire, possibly through an optional DecodeN, is still
   // present
   //
   //   MemBarCPUOrder
@@ -17344,7 +17344,7 @@ instruct tlsLoadP(thread_RegP dst)
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_iReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

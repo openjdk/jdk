@@ -191,7 +191,7 @@ class BytecodeStream: public BaseBytecodeStream {
       //
       // note that we cannot advance before having the
       // tty bytecode otherwise the stepping is wrong!
-      // (carefull: length_for(...) must be used first!)
+      // (careful: length_for(...) must be used first!)
       int len = Bytecodes::length_for(code);
       if (len == 0) len = Bytecodes::length_at(_method(), bcp);
       if (len <= 0 || (_bci > _end_bci - len) || (_bci - len >= _next_bci)) {

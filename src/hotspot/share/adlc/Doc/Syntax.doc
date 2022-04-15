@@ -139,7 +139,7 @@ D. Delimiters
 	1. Comments
 		a. /* ... */  (like C code)
 		b. // ... EOL (like C++ code)
-		c. Comments must be preceeded by whitespace
+		c. Comments must be preceded by whitespace
 
 	2. Blocks
 		a. %{ ... %} (% just distinguishes from C++ syntax)

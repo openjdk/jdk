@@ -47,7 +47,7 @@
 //    branch target. When I-fetching crosses a cache line, there may be
 //    a small stall. The worst case: the branch target (at the end of
 //    a cache line) is a L1 I-cache miss and the next line as well.
-//    Then, the entire target line must be filled first (to contine at the
+//    Then, the entire target line must be filled first (to continue at the
 //    branch target). Only then can the next sequential line be filled.
 //  - Avoid multiple poorly predicted branches in a row.
 //
@@ -10339,7 +10339,7 @@ instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch (incI_eReg movI);
 //   // require that the destination register of the increment
 //   // match the destination register of the move

@@ -174,7 +174,7 @@
     return VM_Version::supports_evex();
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static constexpr bool convL2FSupported(void) {
       return true;

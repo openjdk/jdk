@@ -1762,7 +1762,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   SafePointNode* map = new SafePointNode(size, jvms);
 
   // copy the control and memory state from the final call into our
-  // new starting state.  This allows any preceeding tests to feed
+  // new starting state.  This allows any preceding tests to feed
   // into the new section of code.
   for (uint i1 = 0; i1 < TypeFunc::Parms; i1++) {
     map->init_req(i1, sc->end()->in(i1));

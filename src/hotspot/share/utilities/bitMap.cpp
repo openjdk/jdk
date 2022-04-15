@@ -88,7 +88,7 @@ BitMap::bm_word_t* BitMap::reallocate(const Allocator& allocator, bm_word_t* old
     }
 
     if (clear && (new_size_in_bits > old_size_in_bits)) {
-      // If old_size_in_bits is not word-aligned, then the preceeding
+      // If old_size_in_bits is not word-aligned, then the preceding
       // copy can include some trailing bits in the final copied word
       // that also need to be cleared.  See clear_range_within_word.
       bm_word_t mask = bit_mask(old_size_in_bits) - 1;

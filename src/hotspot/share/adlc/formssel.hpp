@@ -434,7 +434,7 @@ private:
   // blank, RegReg, RegMem, MemReg, ...
   NameList    _encoding;
   // NameList    _parameter;
-  // The parameters for each encoding are preceeded by a NameList::_signal
+  // The parameters for each encoding are preceded by a NameList::_signal
   // and follow the parameters for the previous encoding.
 
   // char *_encode;                  // Type of instruction encoding

@@ -521,7 +521,7 @@ void MacroAssembler::ghash_processBlocks_wide(address field_polynomial, Register
   // everything big-endian or reverse the bits in each byte and do
   // it little-endian.  On AArch64 it's more idiomatic to reverse
   // the bits in each byte (we have an instruction, RBIT, to do
-  // that) and keep the data in little-endian bit order throught the
+  // that) and keep the data in little-endian bit order through the
   // calculation, bit-reversing the inputs and outputs.
 
   assert(unrolls * register_stride < 32, "out of registers");

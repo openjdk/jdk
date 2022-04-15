@@ -485,7 +485,7 @@ class GenerateOopMap {
   //   number of gc points
   // - fill_stackmap_for_opcodes is called once for each bytecode index in order (0...code_length-1)
   // - fill_stackmap_epilog is called after all results has been reported. Note: Since the algorithm does not report
-  //   stackmaps for deadcode, fewer gc_points might have been encounted than assumed during the epilog. It is the
+  //   stackmaps for deadcode, fewer gc_points might have been encountered than assumed during the epilog. It is the
   //   responsibility of the subclass to count the correct number.
   // - fill_init_vars are called once with the result of the init_vars computation
   //

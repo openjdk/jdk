@@ -43,7 +43,7 @@
 // flags. Analogous to PromotionFailureALot for the other collectors.
 //
 // Every G1EvacuationFailureALotInterval collections without evacuation failure
-// inbetween we "arm" the injector to induce evacuation failures after
+// in between we "arm" the injector to induce evacuation failures after
 // G1EvacuationFailureALotCount successful evacuations.
 //
 // Available only when EVAC_FAILURE_INJECTOR is defined.

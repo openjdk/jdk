@@ -1438,7 +1438,7 @@ const TypeInteger* TypeInteger::minus_1(BasicType bt) {
 }
 
 //=============================================================================
-// Convience common pre-built types.
+// Convenience common pre-built types.
 const TypeInt *TypeInt::MAX;    // INT_MAX
 const TypeInt *TypeInt::MIN;    // INT_MIN
 const TypeInt *TypeInt::MINUS_1;// -1

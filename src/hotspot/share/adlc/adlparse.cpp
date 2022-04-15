@@ -922,7 +922,7 @@ void ADLParser::enc_class_parse_block(EncClass* encoding, char* ec_name) {
 
   // Collect the parts of the encode description
   // (1) strings that are passed through to output
-  // (2) replacement/substitution variable, preceeded by a '$'
+  // (2) replacement/substitution variable, preceded by a '$'
   while ( (_curchar != '%') && (*(_ptr+1) != '}') ) {
 
     // (1)
@@ -2863,7 +2863,7 @@ void ADLParser::ins_encode_parse_block_impl(InstructForm& inst, EncClass* encodi
 
   // Collect the parts of the encode description
   // (1) strings that are passed through to output
-  // (2) replacement/substitution variable, preceeded by a '$'
+  // (2) replacement/substitution variable, preceded by a '$'
   while ((_curchar != '%') && (*(_ptr+1) != '}')) {
 
     // (1)
@@ -3329,7 +3329,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
 
   // Collect the parts of the constant expression.
   // (1) strings that are passed through to output
-  // (2) replacement/substitution variable, preceeded by a '$'
+  // (2) replacement/substitution variable, preceded by a '$'
   while (parens_depth > 0) {
     if (_curchar == '(') {
       parens_depth++;
@@ -3818,7 +3818,7 @@ FormatRule* ADLParser::format_parse(void) {
 
       // Collect the parts of the format description
       // (1) strings that are passed through to tty->print
-      // (2) replacement/substitution variable, preceeded by a '$'
+      // (2) replacement/substitution variable, preceded by a '$'
       // (3) multi-token ANSIY C style strings
       while ( true ) {
         if ( _curchar == '%' || _curchar == '\n' ) {
@@ -3955,7 +3955,7 @@ FormatRule* ADLParser::template_parse(void) {
 
           // Collect the parts of the format description
           // (1) strings that are passed through to tty->print
-          // (2) replacement/substitution variable, preceeded by a '$'
+          // (2) replacement/substitution variable, preceded by a '$'
           // (3) multi-token ANSIY C style strings
           while ( true ) {
             if ( _curchar == '%' || _curchar == '\n' ) {

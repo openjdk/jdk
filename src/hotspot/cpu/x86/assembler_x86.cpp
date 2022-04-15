@@ -1765,7 +1765,7 @@ void Assembler::cmpxchgb(Register reg, Address adr) { // cmpxchg
 
 void Assembler::comisd(XMMRegister dst, Address src) {
   // NOTE: dbx seems to decode this as comiss even though the
-  // 0x66 is there. Strangly ucomisd comes out correct
+  // 0x66 is there. Strangely ucomisd comes out correct
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);;

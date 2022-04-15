@@ -593,7 +593,7 @@ class Address {
   }
 };
 
-// Convience classes
+// Convenience classes
 class RuntimeAddress: public Address {
 
   public:

@@ -36,7 +36,7 @@ void ZResurrection::block() {
 
 void ZResurrection::unblock() {
   // No need for anything stronger than a relaxed store here.
-  // The preceeding handshake makes sure that all non-strong
+  // The preceding handshake makes sure that all non-strong
   // oops have already been healed at this point.
   Atomic::store(&_blocked, false);
 }

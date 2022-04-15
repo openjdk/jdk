@@ -624,7 +624,7 @@ void entryVFrame::print_value() const {
 
 void entryVFrame::print() {
   vframe::print();
-  tty->print_cr("C Chunk inbetween Java");
+  tty->print_cr("C Chunk in between Java");
   tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
 }
 

@@ -257,7 +257,7 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   // If the loader is null we have a system class, so we attempt a lookup in
   // the native Java library. This takes care of any bootstrapping problems.
   // Note: It is critical for bootstrapping that Java_java_lang_ClassLoader_findNative
-  // gets found the first time around - otherwise an infinite loop can occure. This is
+  // gets found the first time around - otherwise an infinite loop can occur. This is
   // another VM/library dependency
   Handle loader(THREAD, method->method_holder()->class_loader());
   if (loader.is_null()) {

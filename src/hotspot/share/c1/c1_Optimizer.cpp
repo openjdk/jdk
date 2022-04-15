@@ -334,7 +334,7 @@ void Optimizer::eliminate_conditional_expressions() {
   CE_Eliminator ce(ir());
 }
 
-// This removes others' relation to block, but doesnt empty block's lists
+// This removes others' relation to block, but doesn't empty block's lists
 void disconnect_from_graph(BlockBegin* block) {
   for (int p = 0; p < block->number_of_preds(); p++) {
     BlockBegin* pred = block->pred_at(p);

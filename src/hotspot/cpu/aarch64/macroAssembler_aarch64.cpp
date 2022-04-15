@@ -1581,7 +1581,7 @@ void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register t
   // flush and load exclusive from the memory location
   ldxrw(tmp, counter_addr);
   addw(tmp, tmp, 1);
-  // if we store+flush with no intervening write tmp wil be zero
+  // if we store+flush with no intervening write tmp will be zero
   stxrw(tmp2, tmp, counter_addr);
   cbnzw(tmp2, retry_load);
 }
@@ -2305,7 +2305,7 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     ldaxr(tmp, addr);
     cmp(tmp, oldv);
     br(Assembler::NE, nope);
-    // if we store+flush with no intervening write tmp wil be zero
+    // if we store+flush with no intervening write tmp will be zero
     stlxr(tmp, newv, addr);
     cbzw(tmp, succeed);
     // retry so we only ever return after a load fails to compare
@@ -2348,7 +2348,7 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     ldaxrw(tmp, addr);
     cmp(tmp, oldv);
     br(Assembler::NE, nope);
-    // if we store+flush with no intervening write tmp wil be zero
+    // if we store+flush with no intervening write tmp will be zero
     stlxrw(tmp, newv, addr);
     cbzw(tmp, succeed);
     // retry so we only ever return after a load fails to compare

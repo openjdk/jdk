@@ -122,7 +122,7 @@ class VMError : public AllStatic {
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
 
   // Timeout handling.
-  // Hook functions for platform dependend functionality:
+  // Hook functions for platform dependent functionality:
   static void reporting_started();
   static void interrupt_reporting_thread();
 

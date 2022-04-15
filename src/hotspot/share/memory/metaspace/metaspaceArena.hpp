@@ -67,7 +67,7 @@ struct ArenaStats;
 //
 //
 
-// When the current chunk is used up, MetaspaceArena requestes a new chunk from
+// When the current chunk is used up, MetaspaceArena requests a new chunk from
 //  the associated ChunkManager.
 //
 // MetaspaceArena also keeps a FreeBlocks structure to manage memory blocks which

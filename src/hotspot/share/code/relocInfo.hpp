@@ -414,7 +414,7 @@ class relocInfo {
 
   // Update methods for relocation information
   // (since code is dynamically patched, we also need to dynamically update the relocation info)
-  // Both methods takes old_type, so it is able to performe sanity checks on the information removed.
+  // Both methods takes old_type, so it is able to perform sanity checks on the information removed.
   static void change_reloc_info_for_address(RelocIterator *itr, address pc, relocType old_type, relocType new_type);
 
   // Machine dependent stuff

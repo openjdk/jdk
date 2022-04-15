@@ -153,7 +153,7 @@
     return false;
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static const bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).

@@ -415,7 +415,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 //    this list from first to last, all definitions are visited before their uses.
 //
 // 2) A point-to-point dependence graph is constructed between memory references.
-//    This simplies the upcoming "independence" checker.
+//    This simplifies the upcoming "independence" checker.
 //
 // 3) The maximum depth in the node graph from the beginning of the block
 //    to each node is computed.  This is used to prune the graph search

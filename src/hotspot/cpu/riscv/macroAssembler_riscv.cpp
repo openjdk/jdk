@@ -2551,7 +2551,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // This self-check enables sharing of secondary supertype arrays among
   // non-primary types such as array-of-interface. Otherwise, each such
   // type would need its own customized SSA.
-  // We move this check to the front fo the fast path because many
+  // We move this check to the front of the fast path because many
   // type checks are in fact trivially successful in this manner,
   // so we get a nicely predicted branch right at the start of the check.
   beq(sub_klass, super_klass, *L_success);
@@ -2565,7 +2565,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   Address super_check_addr(t0);
   ld(t0, super_check_addr); // load displayed supertype
 
-  // Ths check has worked decisively for primary supers.
+  // This check has worked decisively for primary supers.
   // Secondary supers are sought in the super_cache ('super_cache_addr').
   // (Secondary supers are interfaces and very deeply nested subtypes.)
   // This works in the same check above because of a tricky aliasing

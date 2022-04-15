@@ -4330,7 +4330,7 @@ void TemplateTable::monitorenter() {
   __ bind(allocated);
 
   // Increment bcp to point to the next bytecode, so exception handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the expression stack looks correct.
+  // The object has already been popped from the stack, so the expression stack looks correct.
   __ add(Rbcp, Rbcp, 1);
 
   __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset_in_bytes()));     // store object

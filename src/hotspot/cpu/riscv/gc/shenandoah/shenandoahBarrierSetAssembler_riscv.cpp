@@ -499,7 +499,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   // If success, then we are done.
   __ beq(expected, t1, success);
 
-  // Step2: CAS failed, check the forwared pointer.
+  // Step2: CAS failed, check the forwarded pointer.
   __ mv(t0, t1);
 
   if (is_narrow) {

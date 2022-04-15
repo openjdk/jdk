@@ -472,7 +472,7 @@ extern "C" {
 
 // Unsigned byte types for os and stream.hpp
 
-// Unsigned one, two, four and eigth byte quantities used for describing
+// Unsigned one, two, four and eight byte quantities used for describing
 // the .class file format. See JVM book chapter 4.
 
 typedef jubyte  u1;

@@ -4120,7 +4120,7 @@ void TemplateTable::monitorenter() {
   __ bind(Lfound);
 
   // Increment bcp to point to the next bytecode, so exception handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the expression stack looks correct.
+  // The object has already been popped from the stack, so the expression stack looks correct.
   __ addi(R14_bcp, R14_bcp, 1);
 
   __ std(Robj_to_lock, 0, Rcurrent_obj_addr);

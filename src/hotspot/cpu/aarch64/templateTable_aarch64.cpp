@@ -3854,7 +3854,7 @@ void TemplateTable::monitorenter()
 
   // Increment bcp to point to the next bytecode, so exception
   // handling for async. exceptions work correctly.
-  // The object has already been poped from the stack, so the
+  // The object has already been popped from the stack, so the
   // expression stack looks correct.
   __ increment(rbcp);
 

@@ -55,7 +55,7 @@ public:
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
          ValueIn,               // Value to store
-         OopStore               // Preceeding oop store, only in StoreCM
+         OopStore               // Preceding oop store, only in StoreCM
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
@@ -770,7 +770,7 @@ public:
 //------------------------------StoreCMNode-----------------------------------
 // Store card-mark byte to memory for CM
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
-// Preceeding equivalent StoreCMs may be eliminated.
+// Preceding equivalent StoreCMs may be eliminated.
 class StoreCMNode : public StoreNode {
  private:
   virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }

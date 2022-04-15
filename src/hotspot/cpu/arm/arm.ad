@@ -11798,7 +11798,7 @@ instruct vxorX(vecX dst, vecX src1, vecX src2) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

@@ -1241,7 +1241,7 @@ bool MacroAssembler::is_compare_immediate_narrow_klass(address pos) {
 //  patch the load_constant
 //-----------------------------------
 
-// CPU-version dependend patching of load_const.
+// CPU-version dependent patching of load_const.
 void MacroAssembler::patch_const(address a, long x) {
   assert(is_load_const(a), "not a load of a constant");
   // Note: Right shift is only cleanly defined for unsigned types

@@ -388,7 +388,7 @@ class AddressLiteral {
   friend class LIR_Assembler;
 };
 
-// Convience classes
+// Convenience classes
 class RuntimeAddress: public AddressLiteral {
 
   public:

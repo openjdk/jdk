@@ -319,7 +319,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
         method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
@@ -333,7 +333,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       methodHandle mh(thread, method);
       type = Bytecode_invoke(mh, bci).result_type();
       // since the cache entry might not be initialized:
-      // (NOT needed for the old calling convension)
+      // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
         method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);

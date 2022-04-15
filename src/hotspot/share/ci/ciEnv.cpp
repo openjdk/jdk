@@ -1614,7 +1614,7 @@ void ciEnv::find_dynamic_call_sites() {
         }
       }
 
-      // Look for MethodHandle contant pool entries
+      // Look for MethodHandle constant pool entries
       RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
       int len = pool->length();
       for (int i = 0; i < len; ++i) {

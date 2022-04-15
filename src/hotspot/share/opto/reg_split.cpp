@@ -599,7 +599,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Grab the live range number
       uint lidx = lidxs.at(slidx);
       // Do not bother splitting or putting in Phis for single-def
-      // rematerialized live ranges.  This happens alot to constants
+      // rematerialized live ranges.  This happens a lot to constants
       // with long live ranges.
       if( lrgs(lidx).is_singledef() &&
           lrgs(lidx)._def->rematerialize() ) {

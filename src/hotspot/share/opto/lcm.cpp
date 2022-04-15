@@ -52,7 +52,7 @@ static bool accesses_heap_base_zone(Node *val) {
         }
       }
       // Must recognize load operation with Decode matched in memory operand.
-      // We should not reach here exept for PPC/AIX, as os::zero_page_read_protected()
+      // We should not reach here except for PPC/AIX, as os::zero_page_read_protected()
       // returns true everywhere else. On PPC, no such memory operands
       // exist, therefore we did not yet implement a check for such operands.
       NOT_AIX(Unimplemented());

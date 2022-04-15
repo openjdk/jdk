@@ -365,7 +365,7 @@ ciType* Invoke::declared_type() const {
   return t;
 }
 
-// Implementation of Contant
+// Implementation of Constant
 intx Constant::hash() const {
   if (state_before() == NULL) {
     switch (type()->tag()) {

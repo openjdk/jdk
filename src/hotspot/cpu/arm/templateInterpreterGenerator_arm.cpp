@@ -1456,7 +1456,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // restore exception
   __ get_vm_result(Rexception_obj, Rtemp);
 
-  // Inbetween activations - previous activation type unknown yet
+  // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects
   // the following registers set up:
   //

@@ -13416,7 +13416,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_rReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

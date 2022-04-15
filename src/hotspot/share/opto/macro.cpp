@@ -1021,7 +1021,7 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
   Node* res = alloc->result_cast();
   // Eliminate boxing allocations which are not used
-  // regardless scalar replacable status.
+  // regardless scalar replaceable status.
   bool boxing_alloc = C->eliminate_boxing() &&
                       tklass->klass()->is_instance_klass()  &&
                       tklass->klass()->as_instance_klass()->is_box_klass();

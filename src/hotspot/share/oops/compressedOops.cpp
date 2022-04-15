@@ -226,7 +226,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     //  and shift should be zero. The simplest way to fix this for now is to force
     //  shift to zero for both runtime and dumptime.
     // Note however that this is not a perfect solution. Ideally this whole function
-    //  should be CDS agnostic, that would simplify it - and testing - alot. See JDK-8267141
+    //  should be CDS agnostic, that would simplify it - and testing - a lot. See JDK-8267141
     //  for details.
     shift = 0;
 
