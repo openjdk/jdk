@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,11 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        throw (InvalidKeySpecException)failure;
+        if (failure instanceof InvalidKeySpecException) {
+            throw (InvalidKeySpecException)failure;
+        }
+        throw new InvalidKeySpecException
+                ("Could not generate public key", failure);
     }
 
     /**
@@ -393,7 +397,11 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        throw (InvalidKeySpecException)failure;
+        if (failure instanceof InvalidKeySpecException) {
+            throw (InvalidKeySpecException)failure;
+        }
+        throw new InvalidKeySpecException
+                ("Could not generate private key", failure);
     }
 
     /**
@@ -438,7 +446,11 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        throw (InvalidKeySpecException)failure;
+        if (failure instanceof InvalidKeySpecException) {
+            throw (InvalidKeySpecException)failure;
+        }
+        throw new InvalidKeySpecException
+                ("Could not get key spec", failure);
     }
 
     /**
@@ -471,7 +483,11 @@ public class KeyFactory {
         if (failure instanceof RuntimeException) {
             throw (RuntimeException)failure;
         }
-        throw (InvalidKeyException)failure;
+        if (failure instanceof InvalidKeyException) {
+            throw (InvalidKeyException)failure;
+        }
+        throw new InvalidKeyException
+                ("Could not translate key", failure);
     }
 
 }

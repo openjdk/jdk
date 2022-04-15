@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public final class Security {
 
         // first load the system properties file
         // to determine the value of security.overridePropertiesFile
-        File propFile = securityPropFile();
+        File propFile = securityPropFile("java.security");
         if (propFile.exists()) {
             InputStream is = null;
             try {
@@ -211,12 +211,12 @@ public final class Security {
     private Security() {
     }
 
-    private static File securityPropFile() {
+    private static File securityPropFile(String filename) {
         // maybe check for a system property which will specify where to
         // look. Someday.
         String sep = File.separator;
         return new File(StaticProperty.javaHome() + sep + "conf" + sep +
-                        "security" + sep + "java.security");
+                        "security" + sep + filename);
     }
 
     /**

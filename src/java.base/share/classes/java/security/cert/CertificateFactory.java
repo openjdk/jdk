@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public class CertificateFactory {
      *
      * @see java.security.Provider
      */
-    public static CertificateFactory getInstance(String type)
+    public static final CertificateFactory getInstance(String type)
             throws CertificateException {
         Objects.requireNonNull(type, "null type name");
         try {
@@ -235,8 +235,9 @@ public class CertificateFactory {
      *
      * @see java.security.Provider
      */
-    public static CertificateFactory getInstance(String type, String provider)
-            throws CertificateException, NoSuchProviderException {
+    public static final CertificateFactory getInstance(String type,
+            String provider) throws CertificateException,
+            NoSuchProviderException {
         Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",
@@ -279,8 +280,8 @@ public class CertificateFactory {
      *
      * @since 1.4
      */
-    public static CertificateFactory getInstance(String type, Provider provider)
-            throws CertificateException {
+    public static final CertificateFactory getInstance(String type,
+            Provider provider) throws CertificateException {
         Objects.requireNonNull(type, "null type name");
         try {
             Instance instance = GetInstance.getInstance("CertificateFactory",
