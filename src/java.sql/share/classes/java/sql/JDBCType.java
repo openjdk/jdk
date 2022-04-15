@@ -209,9 +209,9 @@ public enum JDBCType implements SQLType {
     private final Integer type;
 
     /**
-     * Constructor to specify the data type value from {@code Types) for
+     * Constructor to specify the data type value from {@code Types} for
      * this data type.
-     * @param type The value from {@code Types) for this data type
+     * @param type The value from {@code Types} for this data type
      */
     JDBCType(final Integer type) {
         this.type = type;
