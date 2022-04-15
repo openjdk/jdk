@@ -127,6 +127,10 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     }
   }
 
+  if (FLAG_IS_CMDLINE(InitialHeapSize) && InitialHeapSize >= os::physical_memory()) {
+    vm_exit_during_initialization("Initial heap size set to a larger value than the os or container memory");
+  }
+
   // Check heap parameter properties
   if (MaxHeapSize < 2 * M) {
     vm_exit_during_initialization("Too small maximum heap");
