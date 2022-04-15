@@ -228,7 +228,7 @@ public class ExemptionMechanism {
      * @see java.security.Provider
      */
     public static final ExemptionMechanism getInstance(String algorithm,
-            Provider provider) throws NoSuchAlgorithmException {
+        Provider provider) throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = JceSecurity.getInstance("ExemptionMechanism",
                 ExemptionMechanismSpi.class, algorithm, provider);

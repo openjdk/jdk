@@ -279,7 +279,7 @@ final class CryptoPolicyParser {
         return e;
     }
 
-    private static final AlgorithmParameterSpec getInstance(String type,
+    private static AlgorithmParameterSpec getInstance(String type,
                                                       Integer[] params)
         throws ParsingException
     {
