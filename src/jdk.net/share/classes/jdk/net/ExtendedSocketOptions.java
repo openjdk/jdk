@@ -211,7 +211,7 @@ public final class ExtendedSocketOptions {
      * may be sent or dropped silently or dropped with an exception thrown.
      *
      * @apiNote
-     * For IPv4 this option sets the DF (Do not Fragment) flag in the IP packet 
+     * For IPv4 this option sets the DF (Do not Fragment) flag in the IP packet
      * header. This instructs intermediate routers to not fragment the packet.
      * IPv6 routers never fragment packets. Instead, fragmentation is handled
      * by the sending and receiving nodes exclusively. Setting this option for

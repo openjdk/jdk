@@ -39,16 +39,16 @@ class WindowsSocketOptions extends PlatformSocketOptions {
     @Override
     void setIpDontFragment(int fd, final boolean value) throws SocketException {
         setIpDontFragment0(fd, value);
-    }   
+    }
 
     @Override
     boolean getIpDontFragment(int fd) throws SocketException {
         return getIpDontFragment0(fd);
-    }   
+    }
 
     private static native void setIpDontFragment0(int fd, boolean value) throws SocketException;
     private static native boolean getIpDontFragment0(int fd) throws SocketException;
-    
+
     static {
         if (System.getSecurityManager() == null) {
             System.loadLibrary("extnet");
