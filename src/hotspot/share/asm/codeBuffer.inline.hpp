@@ -45,7 +45,6 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
   };
   shared_stub_to_interp_requests->sort(by_shared_method);
   MacroAssembler masm(cb);
-  int relocations_created = 0;
   for (int i = 0; i < shared_stub_to_interp_requests->length();) {
     address stub = masm.start_a_stub(CompiledStaticCall::to_interp_stub_size());
     if (stub == NULL) {
@@ -57,15 +56,9 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
     do {
       masm.relocate(static_stub_Relocation::spec(shared_stub_to_interp_requests->at(i).caller_pc()), relocate_format);
       ++i;
-      ++relocations_created;
     } while (i < shared_stub_to_interp_requests->length() && shared_stub_to_interp_requests->at(i).shared_method() == method);
     masm.emit_static_call_stub();
     masm.end_a_stub();
-  }
-
-  if (relocations_created > 1 && UseNewCode) {
-    tty->print_cr("Requests %d", (int)shared_stub_to_interp_requests->length());
-    tty->print_cr("Saved %d", (relocations_created-1)*CompiledStaticCall::to_interp_stub_size());
   }
   return true;
 }

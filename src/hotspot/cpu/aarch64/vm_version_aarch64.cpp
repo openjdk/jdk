@@ -129,6 +129,10 @@ void VM_Version::initialize() {
     }
   }
 
+  if (FLAG_IS_DEFAULT(UseSharedStubs)) {
+    FLAG_SET_DEFAULT(UseSharedStubs, true);
+  }
+
   // Enable vendor specific features
 
   // Ampere eMAG
