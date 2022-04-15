@@ -878,7 +878,7 @@ class RuleBasedBreakIteratorBuilder {
         //   It will not always work right when nested in parentheses or braces (although
         //   sometimes it will).  It also will not work right if the group of repeating
         //   characters and the group of characters that follows overlap partially
-        //   (e.g., "[a-g]*?[e-j]").  None of these capabilites was deemed necessary for
+        //   (e.g., "[a-g]*?[e-j]").  None of these capabilities was deemed necessary for
         //   describing breaking rules we know about, so we left them out for
         //   expeditiousness.
         //   - Rules such as "[a-z]*?abc;" will be treated the same as "[a-z]*?aa*bc;"--
@@ -998,7 +998,7 @@ class RuleBasedBreakIteratorBuilder {
                 if (pendingChars.length() != 0) {
 
                     // if the expression is followed by an asterisk, then push a copy
-                    // of the current desicion point list onto the stack (this is
+                    // of the current decision point list onto the stack (this is
                     // the same thing we do on an opening brace)
                     if (p + 1 < rule.length() && rule.charAt(p + 1) == '*') {
                         @SuppressWarnings("unchecked")
@@ -1287,7 +1287,7 @@ class RuleBasedBreakIteratorBuilder {
      * @param rows The list of rows that need updating (the decision point list)
      * @param pendingChars A character category list, encoded in a String.  This is the
      * list of the columns that need updating.
-     * @param newValue Update the cells specfied above to contain this value
+     * @param newValue Update the cells specified above to contain this value
      */
     private void updateStateTable(Vector<Integer> rows,
                                   String pendingChars,
